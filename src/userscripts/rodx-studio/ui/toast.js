@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 export let rodxToastTimer;
 
 export function initializeDeckRodxToastTimer() {
@@ -16,5 +17,5 @@ export function showRodxToast(message, kind = "info") {
   toast.style.setProperty("color", "#fff", "important");
   toast.textContent = String(message || "");
   clearTimeout(rodxToastTimer);
-  rodxToastTimer = setTimeout(() => toast.remove(), 2600);
+  rodxToastTimer = setTimeout(() => toast.remove(), RUNTIME_LIMITS.uiToast.showRodxToastDelayMs);
 }

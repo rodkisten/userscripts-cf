@@ -1,4 +1,4 @@
-export function studioPageBridge(page, channel) {
+export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) {
   "use strict";
 
   if (page.__rodxStudioNetworkV3) {
@@ -53,10 +53,7 @@ export function studioPageBridge(page, channel) {
       if (active.route !== path)
         active = JSON.parse(page.sessionStorage.getItem("rodx:feed:routes") || "{}")[path] || {};
     } catch {}
-    let defaults = {
-      media: "media",
-      reposts: true,
-    };
+    let defaults = { ...defaultSettings.feed };
     try {
       defaults = {
         ...defaults,
@@ -161,14 +158,14 @@ export function studioPageBridge(page, channel) {
     for (const rule of settings._patterns || []) {
       if (
         rule.kind === "textre"
-          ? !rule.re.test(words.slice(0, 20000))
-          : !urls.some((url) => rule.re.test(String(url).slice(0, 20000)))
+          ? !rule.re.test(words.slice(0, runtimeLimits.maxPatternCharacters))
+          : !urls.some((url) => rule.re.test(String(url).slice(0, runtimeLimits.maxPatternCharacters)))
       )
         return false;
     }
     if (settings.limit > 0 && id) {
       if (!accepted.has(id)) {
-        if (accepted.size > 120000) return false;
+        if (accepted.size > runtimeLimits.maxAcceptedPostIds) return false;
         accepted.set(id, accepted.size);
       }
       if (accepted.get(id) >= settings.limit) return false;
@@ -249,13 +246,13 @@ export function studioPageBridge(page, channel) {
 
   // Parse at most once, inspect the unfiltered payload and transform before React reads it.
   function process(url, raw) {
-    if (raw.length > 4_000_000) return raw;
+    if (raw.length > runtimeLimits.maxFilterResponseCharacters) return raw;
     const payload = JSON.parse(raw);
     if (allowed.test(url)) {
       const items = [],
         stack = [payload];
       let visited = 0;
-      while (stack.length && visited++ < 30000) {
+      while (stack.length && visited++ < runtimeLimits.maxTraversalNodes) {
         const node = stack.pop();
         if (!node || typeof node !== "object") continue;
         if (node.rest_id && node.legacy) {
@@ -286,7 +283,7 @@ export function studioPageBridge(page, channel) {
       }
       if (items.length)
         emit("media", {
-          items: items.slice(0, 100),
+          items: items.slice(0, runtimeLimits.maxCapturedMediaItems),
         });
     }
     if (
@@ -302,11 +299,11 @@ export function studioPageBridge(page, channel) {
   // One MAIN-world interceptor owns the raw GraphQL inspector and feed transformation.
   // This observer never mutates requests, consumes original response streams or replays writes.
   let traceSequence = 0;
-  const TRACE_LIMIT_BYTES = 1_500_000;
+  const TRACE_LIMIT_BYTES = runtimeLimits.defaultTraceLimitBytes;
   function traceBodyLimit() {
     const configured = Number(doc.documentElement?.getAttribute("data-rodx-inspect-body-limit"));
-    return Number.isFinite(configured) && configured >= 16384
-      ? Math.min(10_000_000, configured)
+    return Number.isFinite(configured) && configured >= runtimeLimits.minimumTraceLimitBytes
+      ? Math.min(runtimeLimits.maximumTraceLimitBytes, configured)
       : TRACE_LIMIT_BYTES;
   }
   const graphqlRequest = (url) => {
@@ -349,7 +346,7 @@ export function studioPageBridge(page, channel) {
     const queryId = graphqlAt >= 0 && segments.length > graphqlAt + 2 ? segments[graphqlAt + 1] : "";
     let operationName = target.searchParams.get("operationName") || (queryId ? segments[graphqlAt + 2] : "");
     let batchCount = 0;
-    if (typeof body === "string" && body.length < 200_000) {
+    if (typeof body === "string" && body.length < runtimeLimits.maxRequestBodyCharacters) {
       try {
         const parsed = JSON.parse(body);
         const operations = Array.isArray(parsed) ? parsed : [parsed];
@@ -428,7 +425,7 @@ export function studioPageBridge(page, channel) {
       timedOut = false,
       timer;
     const deadline = new Promise((resolve) => {
-      timer = setTimeout(() => resolve({ timeout: true }), 10000);
+      timer = setTimeout(() => resolve({ timeout: true }), runtimeLimits.bodyReadTimeoutMs);
     });
     try {
       for (;;) {
@@ -645,8 +642,8 @@ export function studioPageBridge(page, channel) {
       m.listener = () => {
         if (
           this.readyState !== 4 ||
-          this.status < 200 ||
-          this.status >= 300 ||
+          this.status < runtimeLimits.successStatusMinimum ||
+          this.status >= runtimeLimits.successStatusExclusiveMaximum ||
           m.route !== location.pathname + location.search ||
           (!allowed.test(m.url) && !relevant(m.url))
         )
@@ -787,7 +784,7 @@ export function studioPageBridge(page, channel) {
       const raw = await r.text();
       if (scriptTrace) traceFinishText(scriptTrace, r, raw);
       let data = null;
-      if (raw.length < 3_000_000) {
+      if (raw.length < runtimeLimits.maxResponsePreviewCharacters) {
         try {
           data = JSON.parse(raw);
         } catch {}

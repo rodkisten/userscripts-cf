@@ -1,27 +1,10 @@
+import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
 
 export function createStudioRuntime() {
   const key = "rodx:studio:runtime:v3";
-  const defaults = {
-    feedDefaults: {
-      media: "media",
-      reposts: true,
-    },
-    budgetMs: 7,
-    scanDelayMs: 110,
-    maintenanceMs: 15000,
-    modules: {
-      lists: true,
-      profile: true,
-      layout: true,
-      media: true,
-      links: true,
-      translation: true,
-      hygiene: true,
-      customTimeline: false,
-    },
-    homeListLimit: 12,
-  };
+  const defaults = createDefaults("studio");
   let saved = {};
   try {
     saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -38,10 +21,22 @@ export function createStudioRuntime() {
       ...saved.modules,
     },
   };
-  config.budgetMs = Math.max(3, Math.min(12, Number(config.budgetMs) || 7));
-  config.scanDelayMs = Math.max(60, Math.min(500, Number(config.scanDelayMs) || 110));
-  config.maintenanceMs = Math.max(5000, Number(config.maintenanceMs) || 15000);
-  config.homeListLimit = Math.max(0, Math.min(50, Number(config.homeListLimit) || 12));
+  config.budgetMs = Math.max(
+    STUDIO_RANGES.budgetMs.min,
+    Math.min(STUDIO_RANGES.budgetMs.max, Number(config.budgetMs) || defaults.budgetMs),
+  );
+  config.scanDelayMs = Math.max(
+    STUDIO_RANGES.scanDelayMs.min,
+    Math.min(STUDIO_RANGES.scanDelayMs.max, Number(config.scanDelayMs) || defaults.scanDelayMs),
+  );
+  config.maintenanceMs = Math.max(
+    STUDIO_RANGES.maintenanceMs.min,
+    Number(config.maintenanceMs) || defaults.maintenanceMs,
+  );
+  config.homeListLimit = Math.max(
+    STUDIO_RANGES.homeListLimit.min,
+    Math.min(STUDIO_RANGES.homeListLimit.max, Number(config.homeListLimit) || defaults.homeListLimit),
+  );
   const state = {
     config,
     network: {
@@ -177,7 +172,12 @@ export function createStudioRuntime() {
       if (performance.now() - begin >= config.budgetMs) break;
     }
     if (pending.size && !drainTimer)
-      drainTimer = setTimeout(drain, Number.isFinite(remainingDelay) ? Math.max(16, remainingDelay) : 16);
+      drainTimer = setTimeout(
+        drain,
+        Number.isFinite(remainingDelay)
+          ? Math.max(RUNTIME_LIMITS.scheduler.minimumFrameDelayMs, remainingDelay)
+          : RUNTIME_LIMITS.scheduler.minimumFrameDelayMs,
+      );
   }
   function nodes(selector) {
     const hit = cache.get(selector);
@@ -244,7 +244,7 @@ export function createStudioRuntime() {
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
     setInterval(() => {
       if (!document.hidden) route();
-    }, 1000);
+    }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
     setInterval(() => {
       if (!document.hidden) invalidate("maintenance");
     }, config.maintenanceMs);

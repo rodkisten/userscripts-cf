@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
@@ -211,7 +212,7 @@ export function initializeDeckScrollChrome() {
       () => {
         request();
         clearTimeout(settleTimer);
-        settleTimer = setTimeout(settle, 180);
+        settleTimer = setTimeout(settle, RUNTIME_LIMITS.layoutChrome.settleDelayMs);
       },
       {
         passive: true,

@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { Studio } from "../core/studio.js";
 import { queueRunning } from "./queue.js";
 import {
@@ -529,7 +530,10 @@ export async function refreshListName(id) {
         const response = await Promise.race([
           requestInternal(template.path, options),
           new Promise((_, reject) => {
-            timer = setTimeout(() => reject(Error("Timeout de 18 segundos")), 18000);
+            timer = setTimeout(
+              () => reject(Error("Timeout de 18 segundos")),
+              RUNTIME_LIMITS.listsGraphql.refreshListNameDelayMs,
+            );
           }),
         ]);
         // Require this ID's own metadata, even if the name has not changed.

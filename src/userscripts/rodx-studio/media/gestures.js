@@ -1,13 +1,14 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { COMPOSITE_SELECTORS, NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-gestures-1.css?inline";
 export let VideoTapGuard;
 
 export function initializeDeckVideoTapGuard() {
   VideoTapGuard = (() => {
-    const DOUBLE_TAP_MS = 420;
-    const TOUCH_CLICK_MS = 900;
-    const MOVE_LIMIT = 16;
-    const SAME_SPOT_PX = 90;
+    const DOUBLE_TAP_MS = RUNTIME_LIMITS.mediaGestures.doubleTapMs;
+    const TOUCH_CLICK_MS = RUNTIME_LIMITS.mediaGestures.touchClickMs;
+    const MOVE_LIMIT = RUNTIME_LIMITS.mediaGestures.moveLimit;
+    const SAME_SPOT_PX = RUNTIME_LIMITS.mediaGestures.sameSpotPx;
     const PLAYER = [
       '[data-testid="videoPlayerContainer"]',
       '[data-testid="videoPlayer"]',

@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import {
   RODX_SELECTORS,
   NATIVE_X_SELECTORS,
@@ -205,7 +206,7 @@ export function initializeRodX_deck_185() {
     clearTimeout(databaseSaveTimer);
     databaseSaveTimer = setTimeout(() => {
       if (state.account) void saveState().catch(console.warn);
-    }, 2500);
+    }, RUNTIME_LIMITS.bootstrapDeckEvents.databaseSaveDebounceMs);
   });
 }
 
@@ -221,7 +222,7 @@ export function initializeRodX_deck_186() {
         refreshingCloud = false;
       }
     },
-    { events: ["maintenance"], minMs: 60000 },
+    { events: ["maintenance"], minMs: RUNTIME_LIMITS.bootstrapDeckEvents.cloudRefreshIntervalMs },
   );
 }
 
@@ -233,7 +234,7 @@ export function initializeRodX_deck_187() {
 
 export function initializeRodX_deck_188() {
   Studio.register("identity.navigation", tick, {
-    minMs: 300,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.identityNavigationIntervalMs,
   });
 }
 
@@ -246,27 +247,27 @@ export function initializeRodX_deck_189() {
       // The old page-wide search launcher is intentionally no longer inserted.
     },
     {
-      minMs: 250,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.dockRefreshIntervalMs,
     },
   );
 }
 
 export function initializeRodX_deck_190() {
   Studio.register("feeds.filters", FeedFilters.scan, {
-    minMs: 150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.feedFilterScanIntervalMs,
   });
 }
 
 export function initializeRodX_deck_191() {
   Studio.register("search.navigation", SearchAnchors.scan, {
-    minMs: 150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.searchNavigationIntervalMs,
   });
 }
 
 export function initializeRodX_deck_192() {
   Studio.register("profile.lists", ProfileLists.scan, {
     group: "profile",
-    minMs: 350,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.profileListsScanIntervalMs,
   });
 }
 
@@ -278,7 +279,7 @@ export function initializeRodX_deck_193() {
       ResultEnhancer.scan();
     },
     {
-      minMs: 200,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.tweetEnhancementIntervalMs,
     },
   );
 }
@@ -295,7 +296,7 @@ export function initializeRodX_deck_194() {
     },
     {
       group: "links",
-      minMs: 350,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.socialLinksScanIntervalMs,
     },
   );
 }
@@ -303,7 +304,7 @@ export function initializeRodX_deck_194() {
 export function initializeRodX_deck_195() {
   Studio.register("translation.native", NativeTranslation.scan, {
     group: "translation",
-    minMs: 1150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.nativeTranslationIntervalMs,
   });
 }
 
@@ -320,7 +321,7 @@ export function initializeRodX_deck_196() {
     },
     {
       group: "media",
-      minMs: 220,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
 }
@@ -334,7 +335,7 @@ export function initializeRodX_deck_197() {
     },
     {
       group: "layout",
-      minMs: 550,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.quickActionsScanIntervalMs,
     },
   );
 }

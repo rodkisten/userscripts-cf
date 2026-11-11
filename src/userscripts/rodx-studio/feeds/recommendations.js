@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 export function installRecommendationCleanup(Studio) {
   Studio.register(
@@ -14,6 +15,6 @@ export function installRecommendationCleanup(Studio) {
       for (const box of candidates)
         if (!box.closest(DOM_SELECTORS.articles)) box.style.setProperty("display", "none", "important");
     },
-    { minMs: 700 },
+    { minMs: RUNTIME_LIMITS.feedsRecommendations.installRecommendationCleanupMinMs },
   );
 }

@@ -1,9 +1,11 @@
+import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
 
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
+  plugins: [inlineSVG()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },

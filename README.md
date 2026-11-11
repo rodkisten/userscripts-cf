@@ -169,3 +169,9 @@ As folhas de estilo ficam em `src/styles/` e nos arquivos `.css` dos módulos. `
 Os elementos construídos por JavaScript usam `applyComponentStyle()` com classes de componentes; estilos calculados usam propriedades semânticas como `--rodx-anchor-left` e `--rodx-anchor-width`. Não há arquivos `.declarations` nem extração de declarações por manipulação de strings. O código-fonte CSS não precisa de `!important`: a prioridade é responsabilidade do build. Valores calculados por JavaScript são aplicados com a mesma prioridade para preservar o comportamento interativo.
 
 Não use `?raw` para CSS de produção: essa opção ignora o processamento. Os arquivos em `diagnostics/` e `labs/` são ferramentas independentes, mantidas separadas dos módulos de produção. Funções serializadas entre contextos continuam autossuficientes.
+
+### Defaults, limites e ícones
+
+`src/config/defaults.js` reúne os valores iniciais das preferências. Use `createDefaults(section)` para obter uma cópia independente: alterar uma conta ou sessão não modifica os defaults nem outra conta. Os limites operacionais, intervalos, timeouts, códigos HTTP e faixas de validação ficam em `src/config/runtime.js`, com nomes de domínio. A ponte de rede recebe esses dados serializados explicitamente; não depende de imports no contexto de destino.
+
+Os ícones ficam em `src/assets/icons/*.svg`. Importe com `?inline` para receber markup SVG otimizado pelo SVGO no build, preservando `viewBox` e atributos de acessibilidade. Nenhum ícone requer uma requisição de rede no userscript instalado.

@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import downloadSVG from "../../../assets/icons/download.svg?inline";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-download-1.css?inline";
 export let ImmersiveDownload;
@@ -6,11 +8,7 @@ export function initializeDeckImmersiveDownload() {
   ImmersiveDownload = (() => {
     const TWR = "https://api.twirrl.app/video";
     const TWR_VERSION = "ab8222fb13a47e82c36032c4ddcc622dc0d33f0e8f852b5b420085b9fd32c94e";
-    const ICON =
-      '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" ' +
-      'stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/>' +
-      '<path d="M4 17v3h16v-3"/></svg>';
+    const ICON = downloadSVG;
     let button = null;
     let activeKey = "";
     let busy = false;
@@ -142,7 +140,7 @@ export function initializeDeckImmersiveDownload() {
       const response = await request({
         url: TWR,
         method: "POST",
-        timeout: 25_000,
+        timeout: RUNTIME_LIMITS.mediaDownload.resolveMP4Timeout,
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -229,7 +227,7 @@ export function initializeDeckImmersiveDownload() {
           url,
           method: "GET",
           responseType: "blob",
-          timeout: 120_000,
+          timeout: RUNTIME_LIMITS.mediaDownload.downloadTimeout,
           onprogress: (e) => {
             if (e.lengthComputable && e.total) {
               setLabel(`${Math.max(1, Math.min(99, Math.round((e.loaded / e.total) * 100)))}%`);
@@ -251,7 +249,7 @@ export function initializeDeckImmersiveDownload() {
         document.body.append(anchor);
         anchor.click();
         anchor.remove();
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), RUNTIME_LIMITS.mediaDownload.downloadDelayMs);
       } catch (error) {
         // A visible link lets Safari users save through the iOS Share menu,
         // rather than pretending the content was downloaded.
@@ -278,7 +276,7 @@ export function initializeDeckImmersiveDownload() {
         if (!now || now.key !== current.key) throw new Error("O vídeo aberto mudou durante a preparação.");
         const outcome = await download(url, `X-${current.id}-${current.videoIndex + 1}.mp4`);
         setLabel(outcome === "opened" ? "MP4 aberto" : "Baixado ✓");
-        await new Promise((resolve) => setTimeout(resolve, 1400));
+        await new Promise((resolve) => setTimeout(resolve, RUNTIME_LIMITS.mediaDownload.resolveDelayMs));
       } catch (error) {
         console.warn("[RodX Download]", error);
         setLabel("Não baixou");

@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import listNotebookSVG from "../../../assets/icons/list-notebook.svg?inline";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import { studioListIndex } from "./routes.js";
@@ -22,8 +24,7 @@ export function createListAccess(Studio, navigateSearch) {
     "jobs",
     "premium",
   ]);
-  const svg =
-    '<svg viewBox="0 0 24 24" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+  const svg = listNotebookSVG;
   function nativeLists() {
     Studio.navigate(studioListIndex(Studio));
   }
@@ -167,6 +168,9 @@ export function createListAccess(Studio, navigateSearch) {
     footer();
     profile();
   }
-  Studio.register("lists.access", scan, { group: "lists", minMs: 300 });
+  Studio.register("lists.access", scan, {
+    group: "lists",
+    minMs: RUNTIME_LIMITS.listsAccess.createListAccessMinMs,
+  });
   return { open, scan };
 }

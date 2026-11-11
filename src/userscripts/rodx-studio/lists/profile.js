@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline";
@@ -104,7 +105,7 @@ export function initializeDeckProfileLists() {
       trigger.click();
       const label = /(?:add.*remove.*lists?|adicionar.*(?:remover|listas)|agregar.*listas|añadir.*listas)/i;
       for (let attempt = 0; attempt < 25; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, RUNTIME_LIMITS.listsProfile.resolveDelayMs));
         if (profile() !== expected) return;
         const action = [...document.querySelectorAll(DOM_SELECTORS.menuItems)].find((el) =>
           label.test(el.textContent || ""),
@@ -199,7 +200,7 @@ export function initializeDeckProfileLists() {
       const expectedHandle = handle,
         expectedAccount = account;
       const controller = requestController;
-      const timeout = setTimeout(() => controller.abort(), 20000);
+      const timeout = setTimeout(() => controller.abort(), RUNTIME_LIMITS.listsProfile.loadDelayMs);
       try {
         const loaded = await XClientLists.memberships(handle, controller.signal);
         if (

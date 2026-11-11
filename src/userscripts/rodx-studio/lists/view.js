@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-view-1.css?inline";
 import { refresh } from "./render.js";
 
@@ -13,7 +14,7 @@ export function scheduleRefresh() {
   setTimeout(() => {
     refreshScheduled = false;
     refresh();
-  }, 240);
+  }, RUNTIME_LIMITS.listsView.scheduleRefreshDelayMs);
 }
 
 export let host;

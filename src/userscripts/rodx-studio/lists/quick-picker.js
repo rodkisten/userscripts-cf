@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import {
@@ -215,7 +216,10 @@ export function quickToast(message) {
   el.textContent = message;
   el.classList.add("show");
   clearTimeout(quickToastTimer);
-  quickToastTimer = setTimeout(() => el.classList.remove("show"), 3800);
+  quickToastTimer = setTimeout(
+    () => el.classList.remove("show"),
+    RUNTIME_LIMITS.listsQuickPicker.quickToastDelayMs,
+  );
 }
 
 export function closeQuickPicker() {

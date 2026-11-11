@@ -1,3 +1,5 @@
+import { DEFAULT_SETTINGS, createDefaults } from "../src/config/defaults.js";
+import { RUNTIME_LIMITS, HTTP_STATUS } from "../src/config/runtime.js";
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { parse } from "@babel/parser";
@@ -24,7 +26,7 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
     };
     const values = {};
     for (const node of ast.program.body) {
-      if (node.type !== "ImportDeclaration" || !node.source.value.endsWith(".css?inline")) continue;
+      if (node.type !== "ImportDeclaration" || !/\.(css|svg)\?inline$/.test(node.source.value)) continue;
       const css = fs.readFileSync(
         new URL(node.source.value.replace("?inline", ""), new URL(entry, directory)),
         "utf8",
@@ -32,6 +34,14 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
       values[node.specifiers[0].local.name] = css;
     }
     code = code.replace(/^import[^;]+;\s*/gm, "");
+    code = code.replace(/createDefaults\("([^"\n]+)"\)/g, (_, section) =>
+      JSON.stringify(createDefaults(section)),
+    );
+    code = code.replace(/RUNTIME_LIMITS\.(\w+)\.(\w+)/g, (_, group, key) =>
+      JSON.stringify(RUNTIME_LIMITS[group][key]),
+    );
+    code = code.replace(/HTTP_STATUS\.(\w+)/g, (_, key) => JSON.stringify(HTTP_STATUS[key]));
+    code = code.replace(/\bDEFAULT_SETTINGS\b/g, () => JSON.stringify(DEFAULT_SETTINGS));
     // These fixtures evaluate individual declarations. Resolve their imported data explicitly.
     code = code.replace(
       /(DOM_SELECTORS|NATIVE_X_SELECTORS|RODX_SELECTORS|MEDIA_COMPONENT_SELECTORS|COMPOSITE_SELECTORS)\.([A-Za-z][A-Za-z0-9]*)/g,
@@ -86,7 +96,7 @@ function realm() {
       new Response('{"data":{"ok":true}}', { headers: { "content-type": "application/json" } }),
     );
   w.eval(functions.get("studioPageBridge") + ";window.bridge=studioPageBridge;");
-  w.bridge(w, "fixture");
+  w.bridge(w, "fixture", DEFAULT_SETTINGS, RUNTIME_LIMITS.networkPageBridge);
   const request = new Request("https://x.com/i/api/graphql/hash/ListByRestId", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -115,7 +125,14 @@ function realm() {
       new Response(multipart, { headers: { "content-type": "multipart/mixed;boundary=part" } }),
     );
   z.document.addEventListener("multi:inspect", (e) => traces.push(JSON.parse(e.detail)));
-  z.eval(functions.get("studioPageBridge") + ';studioPageBridge(window,"multi");');
+  z.eval(
+    functions.get("studioPageBridge") +
+      ';studioPageBridge(window,"multi",' +
+      JSON.stringify(DEFAULT_SETTINGS) +
+      "," +
+      JSON.stringify(RUNTIME_LIMITS.networkPageBridge) +
+      ");",
+  );
   const r = await z.fetch("https://x.com/graphql");
   assert.equal(await r.text(), multipart);
   await pause(30);
@@ -128,7 +145,14 @@ function realm() {
     Promise.resolve(new Response("x".repeat(30000), { headers: { "content-type": "text/plain" } }));
   q.document.documentElement.setAttribute("data-rodx-inspect-body-limit", "16384");
   q.document.addEventListener("big:inspect", (e) => trace.push(JSON.parse(e.detail)));
-  q.eval(functions.get("studioPageBridge") + ';studioPageBridge(window,"big");');
+  q.eval(
+    functions.get("studioPageBridge") +
+      ';studioPageBridge(window,"big",' +
+      JSON.stringify(DEFAULT_SETTINGS) +
+      "," +
+      JSON.stringify(RUNTIME_LIMITS.networkPageBridge) +
+      ");",
+  );
   const big = await q.fetch("https://x.com/graphql");
   assert.equal((await big.text()).length, 30000);
   await pause(30);

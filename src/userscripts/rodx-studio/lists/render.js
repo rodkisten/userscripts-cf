@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
@@ -125,22 +127,7 @@ export function initializeListsOwnTabId() {
 export let DEFAULTS;
 
 export function initializeListsDEFAULTS() {
-  DEFAULTS = {
-    hideReposts: true,
-    showHomeBar: true,
-    homeAll: true,
-    homeIds: [],
-    media: "media",
-    replies: true,
-    queryText: "",
-    sort: "live",
-    minLikes: "",
-    lastListId: "",
-    autoSyncApi: true,
-    queueIntervalSeconds: 90,
-    quickAddFollow: false,
-    quickAddDisableReposts: false,
-  };
+  DEFAULTS = createDefaults("lists");
 }
 
 export let LIST_URL_RE;
@@ -1256,7 +1243,7 @@ export async function scan() {
 export function initializeRodX_lists_234() {
   Studio.register("lists.repository", scan, {
     group: "lists",
-    minMs: 450,
+    minMs: RUNTIME_LIMITS.listsRender.repositoryScanIntervalMs,
   });
 }
 
@@ -1272,7 +1259,7 @@ export function initializeRodX_lists_235() {
     {
       group: "lists",
       events: ["route", "maintenance"],
-      minMs: 7000,
+      minMs: RUNTIME_LIMITS.listsRender.metadataSyncIntervalMs,
     },
   );
 }

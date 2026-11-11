@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-publisher-1.css?inline";
@@ -16,7 +18,7 @@ export let XRepost;
 export function initializeDeckXRepost() {
   XRepost = (() => {
     const PREFS_KEY = PREFIX + "x-repost:";
-    const MAX_ROWS = 100;
+    const MAX_ROWS = RUNTIME_LIMITS.tweetsPublisher.maxRows;
     const STATUSES = ["queued", "claimed", "posted", "cancelled"];
     const LABELS = {
       queued: "Na fila",
@@ -24,13 +26,7 @@ export function initializeDeckXRepost() {
       posted: "Publicados",
       cancelled: "Cancelados",
     };
-    const defaults = Object.freeze({
-      shareMode: "direct",
-      destination: "instagram",
-      enqueueAfterTelegram: true,
-      copyCaptionOnShare: true,
-      includeSourceUrl: false,
-    });
+    const defaults = createDefaults("repost");
     let preferences = { ...defaults };
     let account = "";
     let view = "queued";
@@ -593,7 +589,7 @@ export function initializeDeckXRepost() {
           method: "GET",
           url,
           responseType: "arraybuffer",
-          timeout: 90_000,
+          timeout: RUNTIME_LIMITS.tweetsPublisher.requestVideoTimeout,
           headers: privateUrl ? { Authorization: "Bearer " + Relay.tokenForTransfer() } : {},
           onload(result) {
             const code = Number(result.status);

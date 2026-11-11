@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import grokReplacementSVG from "../../../assets/icons/grok-replacement.svg?inline";
 import {
   DOM_SELECTORS,
   NATIVE_X_SELECTORS,
@@ -52,13 +54,7 @@ export function initializeDeckXInterfaceHygiene() {
       button.className = "rodx-grok-replacement";
       button.title = "Abrir tweet";
       button.setAttribute("aria-label", "Abrir tweet");
-      button.innerHTML = `<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19"
-        fill="none" stroke="currentColor" stroke-width="1.8"
-        stroke-linecap="round" stroke-linejoin="round">
-          <path d="M13.5 5H19v5.5"/>
-          <path d="M19 5 10 14"/>
-          <path d="M18 13.5V18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.5"/>
-        </svg>`;
+      button.innerHTML = grokReplacementSVG;
       button.addEventListener("click", (event) => openTweet(article, event));
       // Pointerup and touchend must not trigger the article's open handler.
       for (const type of ["pointerup", "touchend"]) {
@@ -135,7 +131,7 @@ export function initializeDeckXInterfaceHygiene() {
       (document.head || document.documentElement).append(style);
       Studio.register("interface.hygiene", scan, {
         group: "hygiene",
-        minMs: 250,
+        minMs: RUNTIME_LIMITS.layoutHygiene.installMinMs,
       });
       scan();
     }

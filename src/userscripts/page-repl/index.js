@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../config/runtime.js";
 import { applyComponentStyle } from "../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../selectors.js";
 import { createMarkup } from "./markup.js";
@@ -293,7 +294,7 @@ export default {
       link.href = url;
       link.download = "page-repl-" + Date.now() + ".json";
       link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), RUNTIME_LIMITS.pageReplIndex.downloadDelayMs);
     }
     async function fetchURL() {
       const url = new URL($(RODX_SELECTORS.replUrl).value);
@@ -303,7 +304,7 @@ export default {
         GM_xmlhttpRequest({
           method: "GET",
           url: url.href,
-          timeout: 20000,
+          timeout: RUNTIME_LIMITS.pageReplIndex.fetchURLTimeout,
           onload: (response) =>
             response.status >= 200 && response.status < 300
               ? resolve(response.responseText)
@@ -479,7 +480,7 @@ export default {
         } catch (error) {
           $(RODX_SELECTORS.replSyntax).textContent = error.message;
         }
-      }, 300);
+      }, RUNTIME_LIMITS.pageReplIndex.editorAutocompleteDelayMs);
     });
     ctx.listen(editor, "keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {

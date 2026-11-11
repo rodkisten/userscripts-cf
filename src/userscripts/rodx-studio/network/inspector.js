@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-network-inspector-1.css?inline";
 export function createNetworkInspector(Studio) {
@@ -109,7 +110,7 @@ export function createNetworkInspector(Studio) {
       renderTimer = 0;
       renderRows();
       renderDetail();
-    }, 180);
+    }, RUNTIME_LIMITS.networkInspector.refreshSoonDelayMs);
   }
   Studio.on("network:inspect", (event) => {
     if (!state.capture) return;
@@ -397,7 +398,7 @@ export function createNetworkInspector(Studio) {
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(href), 10000);
+    setTimeout(() => URL.revokeObjectURL(href), RUNTIME_LIMITS.networkInspector.exportSelectionDelayMs);
   }
   root.addEventListener("input", (event) => {
     if (event.target.matches(RODX_SELECTORS.inspectorFilter)) {

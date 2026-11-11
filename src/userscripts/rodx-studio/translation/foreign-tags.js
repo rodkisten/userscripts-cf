@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
@@ -9,7 +10,7 @@ export function initializeDeckForeignTags() {
       waiting = new Map();
     let active = 0,
       started = 0;
-    const MAX = 180;
+    const MAX = RUNTIME_LIMITS.translationForeignTags.max;
     const languageAllowed = new Set(["pt", "es", "en"]);
     const gmRequest = (args) => {
       const fn =
@@ -40,7 +41,7 @@ export function initializeDeckForeignTags() {
           "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=" +
           encodeURIComponent(text),
         method: "GET",
-        timeout: 7000,
+        timeout: RUNTIME_LIMITS.translationForeignTags.initializeDeckForeignTagsTimeout,
         responseType: "text",
       });
       const json = JSON.parse(response.responseText || "null");

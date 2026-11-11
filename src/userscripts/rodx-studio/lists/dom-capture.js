@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
@@ -104,7 +105,7 @@ export async function captureVisibleLists() {
       nameRetry = setTimeout(() => {
         nameRetry = null;
         Studio.queue("lists.repository");
-      }, 850);
+      }, RUNTIME_LIMITS.listsDomCapture.captureVisibleListsDelayMs);
     if (ids.size) scheduleNameRefresh();
   } finally {
     captureRunning = false;

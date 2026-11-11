@@ -1,3 +1,6 @@
+import { RUNTIME_LIMITS, HTTP_STATUS } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
+import telegramSendSVG from "../../../assets/icons/telegram-send.svg?inline";
 import {
   RODX_SELECTORS,
   NATIVE_X_SELECTORS,
@@ -21,23 +24,12 @@ export let Relay;
 export function initializeDeckRelay() {
   Relay = (() => {
     const KEY = PREFIX + "telegram:";
-    const DEFAULT_URL = "https://xtelegram-cf.migos.club";
-    const STATUS_TTL = 60_000;
-    const MAX_CHECK = 60;
+    const DEFAULT_URL = createDefaults("relay").url;
+    const STATUS_TTL = RUNTIME_LIMITS.telegramRelay.statusCacheTtlMs;
+    const MAX_CHECK = RUNTIME_LIMITS.telegramRelay.statusCheckBatchSize;
     const TWITTER_STATUS = /^\/(?:i\/web\/status\/|[^/]+\/status\/)(\d{8,25})(?:\/|$)/;
-    const ICON =
-      '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" ' +
-      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
-      'stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/>' +
-      '<path d="M22 2 11 13"/></svg>';
-    const DEFAULTS = Object.freeze({
-      enabled: true,
-      url: DEFAULT_URL,
-      token: "",
-      channels: "",
-      autoCheck: true,
-      labelSent: true,
-    });
+    const ICON = telegramSendSVG;
+    const DEFAULTS = createDefaults("relay");
     let settings = {
       ...DEFAULTS,
     };
@@ -103,7 +95,7 @@ export function initializeDeckRelay() {
             value="${clean(settings.url)}" placeholder="${DEFAULT_URL}"></div>
         <div class="field"><label>Bearer token</label>
           <input class="ctrl" type="password" data-relay="token" autocomplete="off"
-            placeholder="${settings.token ? "Token ativo (••••" + clean(settings.token.slice(-4)) + ") · substitua se necessário" : "Cole o RELAY_TOKEN"}">
+            placeholder="${settings.token ? "Token ativo (••••" + clean(settings.token.slice(-RUNTIME_LIMITS.telegramRelay.tokenPreviewCharacters)) + ") · substitua se necessário" : "Cole o RELAY_TOKEN"}">
           <span class="hint-small">${settings.token ? "✓ Token já configurado; não precisa digitar novamente." : "Nenhum token configurado."}</span>
           <label class="tog"><input type="checkbox" data-relay="clearToken"> Apagar token salvo</label></div>
         <div class="field"><label>Canais e tópicos (separados por vírgula ou linha)</label>
@@ -262,7 +254,10 @@ export function initializeDeckRelay() {
         ...original,
         enabled: preferences.enabled !== false,
         url: validUrl(preferences.url || original.url || DEFAULT_URL),
-        channels: String(preferences.channels || original.channels || DEFAULTS.channels).slice(0, 1000),
+        channels: String(preferences.channels || original.channels || DEFAULTS.channels).slice(
+          0,
+          RUNTIME_LIMITS.telegramRelay.channelSelectionMaxCharacters,
+        ),
         autoCheck: preferences.autoCheck !== false,
         labelSent: preferences.labelSent !== false,
       };
@@ -272,7 +267,12 @@ export function initializeDeckRelay() {
         invalidate(true);
       }
     }
-    function transport({ path, method = "POST", payload = null, timeout = 45_000 }) {
+    function transport({
+      path,
+      method = "POST",
+      payload = null,
+      timeout = RUNTIME_LIMITS.telegramRelay.requestTimeoutMs,
+    }) {
       if (!settings.token) return Promise.reject(new Error("Token não configurado."));
       const request =
         typeof GM_xmlhttpRequest === "function"
@@ -374,7 +374,7 @@ export function initializeDeckRelay() {
             key: `twitter:${id}`,
             url: `https://x.com/${owner && owner !== "i" ? owner : "i/web"}/status/${id}`,
             author: owner && owner !== "i" ? `@${owner}` : "",
-            text: String(text).slice(0, 1800),
+            text: String(text).slice(0, RUNTIME_LIMITS.telegramRelay.sourceExcerptMaxCharacters),
             isVideo: containsVideo(article),
           };
         } catch {
@@ -393,7 +393,12 @@ export function initializeDeckRelay() {
       const label = post.author || "X / Twitter";
       const link = `<a href="${esc(post.url)}">Abrir no X</a>`;
       // Telegram media captions: 1024 visible chars including label and link.
-      const allowance = Math.max(0, 1024 - [...label].length - 15);
+      const allowance = Math.max(
+        0,
+        RUNTIME_LIMITS.telegramRelay.captionMaxCodePoints -
+          [...label].length -
+          RUNTIME_LIMITS.telegramRelay.captionReservedCodePoints,
+      );
       const words = [...post.text.replace(/\s+/g, " ").trim()];
       const body = words.length > allowance ? words.slice(0, allowance - 1).join("") + "…" : words.join("");
       return `<b>${esc(label)}</b>${body ? `\n\n${esc(body)}` : ""}\n\n${link}`;
@@ -463,7 +468,8 @@ export function initializeDeckRelay() {
         sent: [],
       });
       paintAll(post.key);
-      if (!checkTimer) checkTimer = setTimeout(runQueuedChecks, 230);
+      if (!checkTimer)
+        checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.statusCheckDebounceMs);
     }
     function paintAll(key) {
       const card = cards.get(key);
@@ -499,7 +505,11 @@ export function initializeDeckRelay() {
             payload: request,
           });
           if (epoch !== myEpoch) return;
-          if (response.status < 200 || response.status >= 300 || response.data?.ok === false) {
+          if (
+            response.status < HTTP_STATUS.ok ||
+            response.status >= HTTP_STATUS.redirectBoundary ||
+            response.data?.ok === false
+          ) {
             throw new Error(String(response.data?.error || `HTTP ${response.status}`));
           }
           const list = Array.isArray(response.data?.results)
@@ -583,7 +593,8 @@ export function initializeDeckRelay() {
         console.warn("[RodX Relay] Verificação falhou:", error.message);
       } finally {
         checking = false;
-        if (checkQueue.size && !checkTimer) checkTimer = setTimeout(runQueuedChecks, 400);
+        if (checkQueue.size && !checkTimer)
+          checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.queuedCheckRetryMs);
       }
     }
     function notice(message, kind = "info") {
@@ -599,7 +610,7 @@ export function initializeDeckRelay() {
       node.textContent = message;
       node.dataset.kind = kind;
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => node.remove(), 4400);
+      toastTimer = setTimeout(() => node.remove(), RUNTIME_LIMITS.telegramRelay.noticeDurationMs);
     }
     function removeConfirm() {
       state.rootShadow?.querySelector(RODX_SELECTORS.relayConfirm)?.remove();
@@ -654,19 +665,27 @@ export function initializeDeckRelay() {
       const response = await transport({
         path: "/resolve-and-send",
         payload,
-        timeout: 120_000,
+        timeout: RUNTIME_LIMITS.telegramRelay.sendTimeoutMs,
       });
       const data = response.data || {};
       if (
-        response.status >= 500 ||
-        response.status === 401 ||
-        response.status === 403 ||
-        response.status === 404
+        response.status >= HTTP_STATUS.serverErrorBoundary ||
+        response.status === HTTP_STATUS.unauthorized ||
+        response.status === HTTP_STATUS.forbidden ||
+        response.status === HTTP_STATUS.notFound
       ) {
         throw new Error(String(data.error || data.message || `Relay HTTP ${response.status}`));
       }
       // 207 partial and 409 already_sent are authoritative outcomes to reconcile.
-      if (![200, 201, 202, 207, 409].includes(response.status)) {
+      if (
+        ![
+          HTTP_STATUS.ok,
+          HTTP_STATUS.created,
+          HTTP_STATUS.accepted,
+          HTTP_STATUS.multiStatus,
+          HTTP_STATUS.conflict,
+        ].includes(response.status)
+      ) {
         throw new Error(String(data.error || data.message || `Relay HTTP ${response.status}`));
       }
       return {
@@ -900,13 +919,13 @@ export function initializeDeckRelay() {
         return;
       }
       const now = Date.now();
-      if (!force && now - lastScan < 450) return;
+      if (!force && now - lastScan < RUNTIME_LIMITS.telegramRelay.scanThrottleMs) return;
       lastScan = now;
       ensureStyle();
       const articles = document.querySelectorAll(NATIVE_X_SELECTORS.tweetArticleContainers);
       let count = 0;
       for (const article of articles) {
-        if (count++ >= 220) break;
+        if (count++ >= RUNTIME_LIMITS.telegramRelay.maxArticlesPerScan) break;
         const post = parsePost(article);
         if (!post?.isVideo) {
           const oldKey = article.dataset.rodxRelayId;
@@ -941,17 +960,17 @@ export function initializeDeckRelay() {
           cards.delete(key);
         }
       }
-      if (status.size > 2000) {
+      if (status.size > RUNTIME_LIMITS.telegramRelay.statusCacheHighWaterMark) {
         const active = new Set(cards.keys());
         for (const key of status.keys()) {
-          if (status.size <= 1100) break;
+          if (status.size <= RUNTIME_LIMITS.telegramRelay.statusCacheLowWaterMark) break;
           if (!active.has(key)) {
             status.delete(key);
             latestCheck.delete(key);
           }
         }
       }
-      if (cards.size > 400) {
+      if (cards.size > RUNTIME_LIMITS.telegramRelay.cardCacheMaxEntries) {
         for (const [key, card] of cards) {
           if (!card.article.isConnected) cards.delete(key);
         }
@@ -971,7 +990,10 @@ export function initializeDeckRelay() {
         key: `twitter:${viewer.id}`,
         url: viewer.url,
         author: viewer.url.match(/x\.com\/([^/]+)\/status/)?.[1] || "",
-        text: viewer.layer.querySelector(NATIVE_X_SELECTORS.nativeTweetText)?.innerText?.slice(0, 1800) || "",
+        text:
+          viewer.layer
+            .querySelector(NATIVE_X_SELECTORS.nativeTweetText)
+            ?.innerText?.slice(0, RUNTIME_LIMITS.telegramRelay.sourceExcerptMaxCharacters) || "",
         isVideo: true,
       };
       if (
@@ -1011,16 +1033,16 @@ export function initializeDeckRelay() {
         return;
       }
       status.clear();
-      await checkNow(visible.slice(0, 120));
+      await checkNow(visible.slice(0, RUNTIME_LIMITS.telegramRelay.manualRefreshBatchSize));
       notice("Status consultado no Worker/D1.", "success");
     }
     async function health() {
       const response = await transport({
         path: "/health",
         method: "GET",
-        timeout: 12_000,
+        timeout: RUNTIME_LIMITS.telegramRelay.healthTimeoutMs,
       });
-      if (response.status >= 200 && response.status < 300) {
+      if (response.status >= HTTP_STATUS.ok && response.status < HTTP_STATUS.redirectBoundary) {
         notice("Relay conectado ✓", "success");
       } else throw new Error(`Relay HTTP ${response.status}.`);
     }

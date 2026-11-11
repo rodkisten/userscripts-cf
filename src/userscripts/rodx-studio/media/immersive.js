@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { ImmersiveDownload } from "./download.js";
 import { state } from "../state/deck.js";
@@ -93,7 +94,7 @@ export function initializeDeckImmersiveSwipe() {
       if (/\/status\/\d+\/video\/\d+/.test(location.pathname) && history.length > 1) {
         setTimeout(() => {
           if (ImmersiveDownload.current()?.key === g.id) history.back();
-        }, 100);
+        }, RUNTIME_LIMITS.mediaImmersive.onEndDelayMs);
       }
     }
     function scan() {

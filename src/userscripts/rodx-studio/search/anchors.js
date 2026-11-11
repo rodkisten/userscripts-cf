@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-anchors-1.css?inline";
@@ -98,7 +99,7 @@ export function initializeDeckSearchAnchors() {
         if (explore) {
           explore.click();
           for (let i = 0; i < 20 && !field; i++) {
-            await new Promise((r) => setTimeout(r, 80));
+            await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.searchAnchors.navigationRetryDelayMs));
             field = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
           }
         }
@@ -115,7 +116,7 @@ export function initializeDeckSearchAnchors() {
             bubbles: true,
           }),
         );
-        await new Promise((r) => setTimeout(r, 40));
+        await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryShortDelayMs));
         const form = field.closest(DOM_SELECTORS.forms);
         if (form) form.requestSubmit();
         else
@@ -129,7 +130,7 @@ export function initializeDeckSearchAnchors() {
             }),
           );
         for (let i = 0; i < 15; i++) {
-          await new Promise((r) => setTimeout(r, 80));
+          await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.searchAnchors.navigationRetryDelayMs));
           if (matches()) return;
         }
       }
@@ -169,7 +170,7 @@ export function initializeDeckSearchAnchors() {
           } else if (++stable >= 3) stop();
         } else if (ticks < 8)
           scrollTo(0, Math.min(entry.y, Math.max(0, document.documentElement.scrollHeight - innerHeight)));
-      }, 200);
+      }, RUNTIME_LIMITS.searchAnchors.restoreIntervalMs);
       cancelRestore = stop;
       document.addEventListener("touchstart", stop, {
         once: true,
@@ -191,7 +192,7 @@ export function initializeDeckSearchAnchors() {
       const delta = entry.index - index();
       if (delta < 0 && delta >= -40) {
         history.go(delta);
-        await new Promise((r) => setTimeout(r, 750));
+        await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryLongDelayMs));
         if (searchPage() && query() === entry.query) return;
       }
       try {
@@ -344,7 +345,7 @@ export function initializeDeckSearchAnchors() {
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
           if (searchPage()) capture();
-        }, 180);
+        }, RUNTIME_LIMITS.searchAnchors.initializeDeckSearchAnchorsDelayMs);
       },
       {
         passive: true,

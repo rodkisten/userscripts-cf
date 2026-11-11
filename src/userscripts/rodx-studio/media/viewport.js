@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { state } from "../state/deck.js";
@@ -9,8 +10,8 @@ export function initializeDeckViewportPlayback() {
     const info = new WeakMap();
     let raf = 0,
       installed = false;
-    const RESUME_COOLDOWN_MS = 1400;
-    const EXIT_GRACE_MS = 5000;
+    const RESUME_COOLDOWN_MS = RUNTIME_LIMITS.mediaViewport.resumeCooldownMs;
+    const EXIT_GRACE_MS = RUNTIME_LIMITS.mediaViewport.exitGraceMs;
     function ratio(video) {
       const rect = video.getBoundingClientRect();
       const width = window.visualViewport?.width || innerWidth;
@@ -143,7 +144,7 @@ export function initializeDeckViewportPlayback() {
     Studio.register("media.playback-clock", request, {
       group: "media",
       events: ["media"],
-      minMs: 350,
+      minMs: RUNTIME_LIMITS.mediaViewport.initializeDeckViewportPlaybackMinMs,
     });
     return {
       scan,

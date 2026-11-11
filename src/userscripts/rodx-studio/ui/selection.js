@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { XDOM } from "../platform/selectors.js";
 import { NativeQueryTags } from "../search/native-tags.js";
@@ -124,12 +125,20 @@ export function initializeDeckSelectionPopover() {
       "selectionchange",
       () => {
         last = Date.now();
-        if (!node) setTimeout(show, 280);
+        if (!node) setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
       },
       true,
     );
-    document.addEventListener("pointerup", () => setTimeout(show, 120), true);
-    document.addEventListener("touchend", () => setTimeout(show, 160), true);
+    document.addEventListener(
+      "pointerup",
+      () => setTimeout(show, RUNTIME_LIMITS.selection.pointerReleaseDelayMs),
+      true,
+    );
+    document.addEventListener(
+      "touchend",
+      () => setTimeout(show, RUNTIME_LIMITS.selection.touchReleaseDelayMs),
+      true,
+    );
     document.addEventListener("scroll", close, true);
     document.addEventListener(
       "pointerdown",

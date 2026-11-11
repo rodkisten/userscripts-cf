@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
@@ -322,7 +323,10 @@ export function initializeDeckQuickUI() {
       }
       function queueSuggestions() {
         clearTimeout(refreshTimer);
-        refreshTimer = setTimeout(() => void suggestions(), 110);
+        refreshTimer = setTimeout(
+          () => void suggestions(),
+          RUNTIME_LIMITS.uiQuickActions.queueSuggestionsDelayMs,
+        );
       }
       const captureCursor = () => {
         preservedCursor = input.selectionStart ?? input.value.length;
@@ -639,7 +643,9 @@ export function initializeDeckQuickUI() {
         a.after(b);
       }
     }
-    Studio.register("ui.quick-actions", scan, { minMs: 550 });
+    Studio.register("ui.quick-actions", scan, {
+      minMs: RUNTIME_LIMITS.uiQuickActions.initializeDeckQuickUIMinMs,
+    });
     return { search };
   })();
 }

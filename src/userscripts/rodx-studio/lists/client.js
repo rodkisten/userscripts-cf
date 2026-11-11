@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { Studio } from "../core/studio.js";
 
 export let XClientLists;
@@ -21,7 +22,7 @@ export function initializeDeckXClientLists() {
         gm({
           method: "GET",
           url,
-          timeout: 12000,
+          timeout: RUNTIME_LIMITS.listsClient.sourceTimeout,
           onload: (r) =>
             r.status === 200 ? resolve(r.responseText) : reject(Error("Bundle do X: HTTP " + r.status)),
           onerror: () => reject(Error("Não foi possível ler o cliente do X")),

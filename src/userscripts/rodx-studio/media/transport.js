@@ -1,3 +1,5 @@
+import volumeMutedSVG from "../../../assets/icons/volume-muted.svg?inline";
+import volumeOnSVG from "../../../assets/icons/volume-on.svg?inline";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
 import { VideoExperience } from "./experience.js";
@@ -59,10 +61,7 @@ export function initializeDeckVideoTransport() {
       clock.textContent = "0:00";
       const volume = document.createElement("button");
       volume.type = "button";
-      const soundIcon = (muted) =>
-        muted
-          ? '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>'
-          : '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+      const soundIcon = (muted) => (muted ? volumeMutedSVG : volumeOnSVG);
       volume.innerHTML = soundIcon(true);
       volume.title = "Ativar / desativar som";
       volume.setAttribute("aria-label", "Ativar / desativar volume");

@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { IDENT } from "../config/search.js";
 import { identityLabel } from "../identity/account.js";
 import { state } from "../state/deck.js";
@@ -28,7 +29,7 @@ export function exportJSON() {
   document.body.append(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), RUNTIME_LIMITS.storageBackup.exportJSONDelayMs);
 }
 
 export async function importJSON(file, strategy) {

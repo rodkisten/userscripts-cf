@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 export let QuickRepost;
 
@@ -39,7 +40,7 @@ export function initializeDeckQuickRepost() {
           childList: true,
           subtree: true,
         });
-        timeout = setTimeout(stop, 1400);
+        timeout = setTimeout(stop, RUNTIME_LIMITS.tweetsQuickRepost.stopDelayMs);
         setTimeout(confirm, 0);
       },
       true,

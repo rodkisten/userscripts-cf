@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 export let DirectLinks;
 
@@ -55,7 +56,7 @@ export function initializeDeckDirectLinks() {
           gm({
             url: short,
             method: "HEAD",
-            timeout: 7500,
+            timeout: RUNTIME_LIMITS.linksDirect.resolveTimeout,
             onload: (resp) => resolve(safeLink(resp.finalUrl || resp.responseURL)),
             onerror: () => resolve(""),
             ontimeout: () => resolve(""),

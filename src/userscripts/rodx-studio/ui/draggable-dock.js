@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
@@ -149,7 +150,7 @@ export function initializeDeckDragDock() {
         if (e.type === "touchstart" && e.cancelable) e.preventDefault();
         active.timer = setTimeout(() => {
           if (active && active.id === id) start(active.startX, active.startY);
-        }, 160);
+        }, RUNTIME_LIMITS.uiDraggableDock.attachDelayMs);
       };
       const track = (e) => {
         if (!active) return;

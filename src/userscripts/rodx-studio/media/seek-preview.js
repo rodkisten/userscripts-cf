@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS, MEDIA_COMPONENT_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline";
@@ -209,7 +210,7 @@ export function createSeekPreviews(Studio, getOptions) {
       if (!Number.isFinite(x)) return;
       const time = Math.max(0, Math.min(1, (x - rect.left) / rect.width)) * video.duration;
       clearTimeout(timer);
-      timer = setTimeout(() => void capture(item, time), 120);
+      timer = setTimeout(() => void capture(item, time), RUNTIME_LIMITS.mediaSeekPreview.attachDelayMs);
     };
     slider.addEventListener("pointerdown", schedule, {
       passive: true,

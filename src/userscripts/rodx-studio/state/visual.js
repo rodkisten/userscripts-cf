@@ -1,3 +1,5 @@
+import { DEFAULT_SETTINGS } from "../../../config/defaults.js";
+import { VISUAL_RANGES } from "../../../config/runtime.js";
 export function normalizeVisual(source = {}) {
   const v = source && typeof source === "object" ? source : {};
   return {
@@ -6,34 +8,71 @@ export function normalizeVisual(source = {}) {
       v.feedFilters && typeof v.feedFilters === "object"
         ? Object.fromEntries(
             Object.entries(v.feedFilters)
-              .slice(-300)
+              .slice(-VISUAL_RANGES.feedFilterEntries)
               .map(([key, value]) => [
                 key,
                 {
                   reposts: value?.reposts !== false,
-                  media: ["all", "media", "video", "image"].includes(value?.media) ? value.media : "media",
+                  media: ["all", "media", "video", "image"].includes(value?.media)
+                    ? value.media
+                    : DEFAULT_SETTINGS.feed.media,
                 },
               ]),
           )
         : {},
-    density: Math.min(1.4, Math.max(0.55, Number(v.density) || 1)),
-    font: Math.min(19, Math.max(11, Number(v.font) || 15)),
+    density: Math.min(
+      VISUAL_RANGES.density.max,
+      Math.max(VISUAL_RANGES.density.min, Number(v.density) || DEFAULT_SETTINGS.visual.density),
+    ),
+    font: Math.min(
+      VISUAL_RANGES.font.max,
+      Math.max(VISUAL_RANGES.font.min, Number(v.font) || DEFAULT_SETTINGS.visual.font),
+    ),
     compact: v.compact === true,
     colorfulTags: v.colorfulTags === true,
     hideSeen: Boolean(v.hideSeen),
-    viewedThreshold: Math.min(0.9, Math.max(0.35, Number(v.viewedThreshold) || 0.65)),
-    seenDelayMs: Math.min(8000, Math.max(1000, Number(v.seenDelayMs) || 2500)),
+    viewedThreshold: Math.min(
+      VISUAL_RANGES.viewedThreshold.max,
+      Math.max(
+        VISUAL_RANGES.viewedThreshold.min,
+        Number(v.viewedThreshold) || DEFAULT_SETTINGS.visual.viewedThreshold,
+      ),
+    ),
+    seenDelayMs: Math.min(
+      VISUAL_RANGES.seenDelayMs.max,
+      Math.max(VISUAL_RANGES.seenDelayMs.min, Number(v.seenDelayMs) || DEFAULT_SETTINGS.visual.seenDelayMs),
+    ),
     translatePosts: v.translatePosts !== false,
     blockTweetOpen: v.blockTweetOpen !== false,
     translateForeignTags: v.translateForeignTags !== false,
     seekPreviews: v.seekPreviews !== false,
     videoPauseDim: v.videoPauseDim === true,
-    previewStepSeconds: Math.max(1, Math.min(15, Number(v.previewStepSeconds) || 5)),
-    playerMode: ["twitter", "rodx", "videojs"].includes(v.playerMode) ? v.playerMode : "videojs",
+    previewStepSeconds: Math.min(
+      VISUAL_RANGES.previewStepSeconds.max,
+      Math.max(
+        VISUAL_RANGES.previewStepSeconds.min,
+        Number(v.previewStepSeconds) || DEFAULT_SETTINGS.visual.previewStepSeconds,
+      ),
+    ),
+    playerMode: ["twitter", "rodx", "videojs"].includes(v.playerMode)
+      ? v.playerMode
+      : DEFAULT_SETTINGS.visual.playerMode,
     videoMute: v.videoMute !== false,
     bestQuality: v.bestQuality !== false,
-    autoPlayEnterPercent: Math.min(100, Math.max(10, Number(v.autoPlayEnterPercent) || 55)),
-    autoPauseExitPercent: Math.min(100, Math.max(10, Number(v.autoPauseExitPercent) || 75)),
+    autoPlayEnterPercent: Math.min(
+      VISUAL_RANGES.autoPlayEnterPercent.max,
+      Math.max(
+        VISUAL_RANGES.autoPlayEnterPercent.min,
+        Number(v.autoPlayEnterPercent) || DEFAULT_SETTINGS.visual.autoPlayEnterPercent,
+      ),
+    ),
+    autoPauseExitPercent: Math.min(
+      VISUAL_RANGES.autoPauseExitPercent.max,
+      Math.max(
+        VISUAL_RANGES.autoPauseExitPercent.min,
+        Number(v.autoPauseExitPercent) || DEFAULT_SETTINGS.visual.autoPauseExitPercent,
+      ),
+    ),
     swipeToCloseVideo: v.swipeToCloseVideo !== false,
   };
 }

@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import bookmarkSVG from "../../../assets/icons/bookmark.svg?inline";
 import {
   DOM_SELECTORS,
   NATIVE_X_SELECTORS,
@@ -298,8 +300,7 @@ export function initializeDeckResultEnhancer() {
       btn.type = "button";
       btn.title = "Salvar nos Itens salvos do X";
       btn.setAttribute("aria-label", btn.title);
-      btn.innerHTML =
-        '<svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.8A1.8 1.8 0 0 1 7.8 2h8.4A1.8 1.8 0 0 1 18 3.8V22l-6-4-6 4V3.8Z"/></svg>';
+      btn.innerHTML = bookmarkSVG;
       btn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -338,7 +339,7 @@ export function initializeDeckResultEnhancer() {
           childList: true,
           subtree: true,
         });
-        timeout = setTimeout(finish, 1400);
+        timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
         menuButton.click();
         setTimeout(choose, 0);
       });
