@@ -18,6 +18,14 @@ Abra o botão **>_**, escreva código e clique em **Executar**. Também pode abr
 
 Ative **Script global (sem wrapper)** para inserir o código no nível superior, sem transformar declarações nem envolvê-lo em função async. Isso preserva a semântica nativa do método escolhido: scripts clássicos e módulos continuam tendo escopos diferentes. Não oferece ctx, _, $, $$, retorno da última expressão ou captura de console. A confirmação indica apenas que o trecho síncrono final foi alcançado; não aguarda trabalho assíncrono arbitrário. Imports estáticos só funcionam em métodos de módulo.
 
+## Editor
+
+A interface inteira é construída em TSX com Solid 2.0.0-rc.21 e estado reativo para resultados, métodos e histórico. CodeMirror 6 fornece números de linha, destaque JavaScript, quebra automática de linhas, indentação, pares de delimitadores, undo/redo e diagnósticos de sintaxe no texto. **Selecionar tudo**, **Copiar**, **Colar** e **Validar** também funcionam por botões; copiar usa a seleção ou o documento inteiro. Quando o Safari não permite ler o clipboard, o botão instrui a usar o menu nativo de colagem.
+
+Autocomplete combina escopo lexical do editor, nomes persistidos no REPL e propriedades expostas na página via unsafeWindow, incluindo caminhos de propriedades de dados. Não avalia expressões nem chama getters arbitrários. Variáveis privadas de closures e módulos, propriedades acessoras de aplicação e objetos de outras origens podem não estar disponíveis. A validação é sintática, não uma análise de tipos ou garantia de execução. Validação automática aguarda 350 ms; todos os listeners e o editor são descartados ao encerrar.
+
+Solid, CodeMirror e suas dependências são incorporados ao IIFE no build Cloudflare, sem imports remotos durante a abertura. Os templates estáticos do Solid são convertidos em factories DOM no build para preservar montagem em páginas com Trusted Types.
+
 ## Estratégias
 
 27 métodos: eval direto/indireto no sandbox, Function, unsafeWindow eval/Function/string timer, wrappedJSObject, execScript legado, script por textContent/text/text node/innerHTML, nonce observado, Trusted Types, GM_addElement e GM.addElement, scripts clássicos e módulos por Blob/data URL, módulo inline/nonce, import(Blob)/import(data), import no realm de unsafeWindow, onclick e javascript: opcional.

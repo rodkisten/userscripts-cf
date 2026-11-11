@@ -155,6 +155,7 @@ export const NATIVE_X_SELECTORS = Object.freeze({
 });
 
 export const RODX_SELECTORS = Object.freeze({
+  replCodeEditor: "[data-code-editor]",
   replPanel: ".panel",
   replLauncher: ".launcher",
   replOutput: ".output",

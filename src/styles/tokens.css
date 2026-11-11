@@ -7,8 +7,8 @@
   --rodx-ds-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --rodx-ds-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --rodx-ds-color-accent: #1d9bf0;
-  --rodx-ds-color-text: CanvasText;
-  --rodx-ds-color-surface: Canvas;
+  --rodx-ds-color-text: var(--rx-text, #e7e9ea);
+  --rodx-ds-color-surface: var(--rx-surface, #15202b);
   --rodx-ds-color-muted: #71767b;
   --rodx-ds-color-border: #71767b55;
   --rodx-ds-color-hover: #71767b22;
