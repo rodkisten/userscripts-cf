@@ -1,0 +1,165 @@
+.rodx-quick-search {
+  display: grid;
+  gap: var(--rodx-ds-space-12);
+  min-width: 0;
+  font:
+    var(--rodx-ds-text-13)/1.5 TwitterChirp,
+    var(--rodx-ds-font-sans);
+}
+.rodx-quick-search * {
+  box-sizing: border-box;
+}
+.rxq-editor {
+  position: relative;
+  isolation: isolate;
+  min-height: 112px;
+  border: 1px solid #71767b77;
+  border-radius: var(--rodx-ds-radius-12);
+  background: color-mix(in srgb, Canvas 94%, var(--rodx-ds-color-accent) 6%);
+  overflow: hidden;
+}
+.rxq-editor:focus-within {
+  border-color: var(--rodx-ds-color-accent);
+  outline: 1px solid var(--rodx-ds-color-accent) 66;
+}
+.rxq-syntax,
+.rxq-input {
+  margin: 0;
+  padding: var(--rodx-ds-space-12);
+  display: block;
+  width: 100%;
+  min-height: 112px;
+  max-height: min(40dvh, 330px);
+  border: 0;
+  font: 15px/1.55 var(--rodx-ds-font-mono);
+  letter-spacing: 0;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.rxq-syntax {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  color: var(--rodx-ds-color-text);
+}
+.rxq-input {
+  position: relative;
+  z-index: 2;
+  display: block;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--rodx-ds-color-accent);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: 0;
+}
+.rxq-input::placeholder {
+  color: var(--rodx-ds-color-muted);
+  -webkit-text-fill-color: #71767b;
+}
+.rxq-input::selection {
+  background: var(--rodx-ds-color-accent) 55;
+}
+.rxq-syntax .syn-negative {
+  color: #f04458;
+}
+.rxq-syntax .syn-filter {
+  color: #169de4;
+}
+.rxq-syntax .syn-tag {
+  color: #a47bff;
+}
+.rxq-syntax .syn-bool,
+.rxq-syntax .syn-paren {
+  color: #e8a33d;
+  font-weight: 700;
+}
+.rxq-syntax .syn-phrase {
+  color: #22af80;
+}
+.rxq-syntax .rodx-syntax-error {
+  text-decoration: underline wavy #f04458;
+}
+.rxq-syntax .rodx-syntax-warning {
+  text-decoration: underline dotted #e8a33d;
+}
+.rxq-message {
+  min-height: 16px;
+  color: var(--rodx-ds-color-muted);
+}
+.rxq-message[data-level="error"] {
+  color: #f04458;
+}
+.rxq-suggestions {
+  display: grid;
+  gap: var(--rodx-ds-space-2);
+  max-height: min(34dvh, 300px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #71767b44;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-4);
+}
+.rxq-suggestions[hidden] {
+  display: none;
+}
+.rxq-option {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
+  gap: var(--rodx-ds-space-1);
+  border: 0;
+  border-radius: var(--rodx-ds-radius-8);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.rxq-option[aria-selected="true"] {
+  background: var(--rodx-ds-color-accent) 24;
+}
+.rxq-option small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+  font-size: var(--rodx-ds-text-11);
+  line-height: 1.4;
+}
+.rxq-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rodx-ds-space-4);
+  align-items: center;
+}
+.rxq-tools button {
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
+  border: 1px solid var(--rodx-ds-color-border);
+  border-radius: var(--rodx-ds-radius-16);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.rxq-tools [type="submit"] {
+  margin-left: auto;
+  background: var(--rodx-ds-color-accent);
+  color: var(--rodx-ds-color-white);
+  border-color: var(--rodx-ds-color-accent);
+  font-weight: 700;
+}
+.rxq-tools [type="submit"]:disabled {
+  opacity: 0.45;
+}

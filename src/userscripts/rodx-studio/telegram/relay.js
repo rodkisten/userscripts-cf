@@ -1,3 +1,13 @@
+import { RUNTIME_LIMITS, HTTP_STATUS } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
+import telegramSendSVG from "../../../assets/icons/telegram-send.svg?inline";
+import {
+  RODX_SELECTORS,
+  NATIVE_X_SELECTORS,
+  DOM_SELECTORS,
+  COMPOSITE_SELECTORS,
+} from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-telegram-relay-1.css?inline";
 import { PREFIX } from "../config/search.js";
 import { identityLabel } from "../identity/account.js";
 import { ImmersiveDownload } from "../media/download.js";
@@ -14,23 +24,12 @@ export let Relay;
 export function initializeDeckRelay() {
   Relay = (() => {
     const KEY = PREFIX + "telegram:";
-    const DEFAULT_URL = "https://xtelegram-cf.migos.club";
-    const STATUS_TTL = 60_000;
-    const MAX_CHECK = 60;
+    const DEFAULT_URL = createDefaults("relay").url;
+    const STATUS_TTL = RUNTIME_LIMITS.telegramRelay.statusCacheTtlMs;
+    const MAX_CHECK = RUNTIME_LIMITS.telegramRelay.statusCheckBatchSize;
     const TWITTER_STATUS = /^\/(?:i\/web\/status\/|[^/]+\/status\/)(\d{8,25})(?:\/|$)/;
-    const ICON =
-      '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" ' +
-      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
-      'stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/>' +
-      '<path d="M22 2 11 13"/></svg>';
-    const DEFAULTS = Object.freeze({
-      enabled: true,
-      url: DEFAULT_URL,
-      token: "",
-      channels: "",
-      autoCheck: true,
-      labelSent: true,
-    });
+    const ICON = telegramSendSVG;
+    const DEFAULTS = createDefaults("relay");
     let settings = {
       ...DEFAULTS,
     };
@@ -83,9 +82,9 @@ export function initializeDeckRelay() {
       const isOn = settings.enabled;
       return `<div class="stack" id="rodx-relay-settings">
         ${!gmAvailable ? '<div class="banner">Sem GM Storage, as configurações personalizadas não podem ser persistidas com segurança. Os padrões incorporados ao script continuam disponíveis.</div>' : ""}
-        <div class="banner" style="margin-bottom:6px">✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
+        <div class="banner rx-relay-banner" >✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
           · Destino padrão ${clean(settings.channels || DEFAULTS.channels)}.
-          <details style="margin-top:6px"><summary style="cursor:pointer">Sobre segurança e confirmação</summary>
+          <details class="rx-relay-details"><summary class="rx-relay-summary">Sobre segurança e confirmação</summary>
             O Worker/D1 confirma os envios; o script nunca marca um post como enviado
             só por ter sido clicado. O token não entra nos backups das buscas.
           </details></div>
@@ -96,7 +95,7 @@ export function initializeDeckRelay() {
             value="${clean(settings.url)}" placeholder="${DEFAULT_URL}"></div>
         <div class="field"><label>Bearer token</label>
           <input class="ctrl" type="password" data-relay="token" autocomplete="off"
-            placeholder="${settings.token ? "Token ativo (••••" + clean(settings.token.slice(-4)) + ") · substitua se necessário" : "Cole o RELAY_TOKEN"}">
+            placeholder="${settings.token ? "Token ativo (••••" + clean(settings.token.slice(-RUNTIME_LIMITS.telegramRelay.tokenPreviewCharacters)) + ") · substitua se necessário" : "Cole o RELAY_TOKEN"}">
           <span class="hint-small">${settings.token ? "✓ Token já configurado; não precisa digitar novamente." : "Nenhum token configurado."}</span>
           <label class="tog"><input type="checkbox" data-relay="clearToken"> Apagar token salvo</label></div>
         <div class="field"><label>Canais e tópicos (separados por vírgula ou linha)</label>
@@ -112,7 +111,7 @@ export function initializeDeckRelay() {
         <div class="row">
           <button class="btn" data-act="relay-refresh">↻ Rever status dos posts visíveis</button>
         </div>
-        <details class="section" style="margin-top:4px">
+        <details class="section rx-relay-section" >
           <summary>ℹ Como funciona e segurança</summary>
           <div class="section-body">
             <p class="muted">Em buscas, hashtags, Home, bookmarks e perfis, o botão Telegram
@@ -129,7 +128,7 @@ export function initializeDeckRelay() {
     }
     function getForm() {
       const root = state.rootShadow;
-      const field = (name) => root?.querySelector(`[data-relay="${name}"]`);
+      const field = (name) => root?.querySelector(RODX_SELECTORS.relayFieldByName(name));
       return {
         enabled: Boolean(field("enabled")?.checked),
         url: String(field("url")?.value || ""),
@@ -255,7 +254,10 @@ export function initializeDeckRelay() {
         ...original,
         enabled: preferences.enabled !== false,
         url: validUrl(preferences.url || original.url || DEFAULT_URL),
-        channels: String(preferences.channels || original.channels || DEFAULTS.channels).slice(0, 1000),
+        channels: String(preferences.channels || original.channels || DEFAULTS.channels).slice(
+          0,
+          RUNTIME_LIMITS.telegramRelay.channelSelectionMaxCharacters,
+        ),
         autoCheck: preferences.autoCheck !== false,
         labelSent: preferences.labelSent !== false,
       };
@@ -265,7 +267,12 @@ export function initializeDeckRelay() {
         invalidate(true);
       }
     }
-    function transport({ path, method = "POST", payload = null, timeout = 45_000 }) {
+    function transport({
+      path,
+      method = "POST",
+      payload = null,
+      timeout = RUNTIME_LIMITS.telegramRelay.requestTimeoutMs,
+    }) {
       if (!settings.token) return Promise.reject(new Error("Token não configurado."));
       const request =
         typeof GM_xmlhttpRequest === "function"
@@ -346,18 +353,14 @@ export function initializeDeckRelay() {
     function containsVideo(article) {
       // Keep images, GIF previews represented only as images, and link cards
       // free of the Telegram button. Retest as lazy-loaded video mounts.
-      return Boolean(
-        article.querySelector(
-          'video, [data-testid="videoPlayer"], [data-testid="videoComponent"], ' +
-            '[data-testid="video-player"], [data-testid="videoPlayerContainer"], ' +
-            '[data-testid="videoComponent"], [data-testid="videoPlayerDiv"]',
-        ),
-      );
+      return Boolean(article.querySelector(NATIVE_X_SELECTORS.videoAndPlayerContainers()));
     }
     function parsePost(article) {
       if (!(article instanceof Element)) return null;
-      const timeLink = article.querySelector("time")?.closest('a[href*="/status/"]');
-      const links = [timeLink, ...article.querySelectorAll('a[href*="/status/"]')].filter(Boolean);
+      const timeLink = article
+        .querySelector(DOM_SELECTORS.timestamps)
+        ?.closest(NATIVE_X_SELECTORS.statusLinks);
+      const links = [timeLink, ...article.querySelectorAll(NATIVE_X_SELECTORS.statusLinks)].filter(Boolean);
       for (const a of links) {
         try {
           const parsed = new URL(a.href, location.origin);
@@ -365,13 +368,13 @@ export function initializeDeckRelay() {
           if (!match) continue;
           const id = match[1];
           const owner = parsed.pathname.match(/^\/([^/]+)\/status\//)?.[1] || "";
-          const text = article.querySelector('[data-testid="tweetText"]')?.innerText || "";
+          const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText)?.innerText || "";
           return {
             id,
             key: `twitter:${id}`,
             url: `https://x.com/${owner && owner !== "i" ? owner : "i/web"}/status/${id}`,
             author: owner && owner !== "i" ? `@${owner}` : "",
-            text: String(text).slice(0, 1800),
+            text: String(text).slice(0, RUNTIME_LIMITS.telegramRelay.sourceExcerptMaxCharacters),
             isVideo: containsVideo(article),
           };
         } catch {
@@ -390,7 +393,12 @@ export function initializeDeckRelay() {
       const label = post.author || "X / Twitter";
       const link = `<a href="${esc(post.url)}">Abrir no X</a>`;
       // Telegram media captions: 1024 visible chars including label and link.
-      const allowance = Math.max(0, 1024 - [...label].length - 15);
+      const allowance = Math.max(
+        0,
+        RUNTIME_LIMITS.telegramRelay.captionMaxCodePoints -
+          [...label].length -
+          RUNTIME_LIMITS.telegramRelay.captionReservedCodePoints,
+      );
       const words = [...post.text.replace(/\s+/g, " ").trim()];
       const body = words.length > allowance ? words.slice(0, allowance - 1).join("") + "…" : words.join("");
       return `<b>${esc(label)}</b>${body ? `\n\n${esc(body)}` : ""}\n\n${link}`;
@@ -460,7 +468,8 @@ export function initializeDeckRelay() {
         sent: [],
       });
       paintAll(post.key);
-      if (!checkTimer) checkTimer = setTimeout(runQueuedChecks, 230);
+      if (!checkTimer)
+        checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.statusCheckDebounceMs);
     }
     function paintAll(key) {
       const card = cards.get(key);
@@ -496,7 +505,11 @@ export function initializeDeckRelay() {
             payload: request,
           });
           if (epoch !== myEpoch) return;
-          if (response.status < 200 || response.status >= 300 || response.data?.ok === false) {
+          if (
+            response.status < HTTP_STATUS.ok ||
+            response.status >= HTTP_STATUS.redirectBoundary ||
+            response.data?.ok === false
+          ) {
             throw new Error(String(response.data?.error || `HTTP ${response.status}`));
           }
           const list = Array.isArray(response.data?.results)
@@ -580,12 +593,13 @@ export function initializeDeckRelay() {
         console.warn("[RodX Relay] Verificação falhou:", error.message);
       } finally {
         checking = false;
-        if (checkQueue.size && !checkTimer) checkTimer = setTimeout(runQueuedChecks, 400);
+        if (checkQueue.size && !checkTimer)
+          checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.queuedCheckRetryMs);
       }
     }
     function notice(message, kind = "info") {
       if (!state.rootShadow) return;
-      let node = state.rootShadow.querySelector("#rodx-relay-notice");
+      let node = state.rootShadow.querySelector(RODX_SELECTORS.relayNotice);
       if (!node) {
         node = document.createElement("div");
         node.id = "rodx-relay-notice";
@@ -596,10 +610,10 @@ export function initializeDeckRelay() {
       node.textContent = message;
       node.dataset.kind = kind;
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => node.remove(), 4400);
+      toastTimer = setTimeout(() => node.remove(), RUNTIME_LIMITS.telegramRelay.noticeDurationMs);
     }
     function removeConfirm() {
-      state.rootShadow?.querySelector("#rodx-relay-confirm")?.remove();
+      state.rootShadow?.querySelector(RODX_SELECTORS.relayConfirm)?.remove();
     }
     function showConfirm({ post, destinations, title, onAccept }) {
       removeConfirm();
@@ -616,13 +630,13 @@ export function initializeDeckRelay() {
           <p>${destinations.length} destino(s) já confirmado(s) pelo D1.<br>
             Reenviar <b>${html(post.url)}</b> apenas para esses destinos?</p>
           <p class="muted">${html(destinations.join(", "))}</p>
-          <div class="row" style="justify-content:flex-end">
+          <div class="row rx-relay-row" >
             <button class="btn" data-act="relay-cancel">Cancelar</button>
             <button class="btn primary" data-act="relay-force">Reenviar</button>
           </div>
         </section>`;
       state.rootShadow?.append(wrapper);
-      wrapper.querySelector('[data-act="relay-force"]')?.focus();
+      wrapper.querySelector(RODX_SELECTORS.relayForceAction)?.focus();
     }
     function handleConfirm(action) {
       const pending = confirmState;
@@ -651,19 +665,27 @@ export function initializeDeckRelay() {
       const response = await transport({
         path: "/resolve-and-send",
         payload,
-        timeout: 120_000,
+        timeout: RUNTIME_LIMITS.telegramRelay.sendTimeoutMs,
       });
       const data = response.data || {};
       if (
-        response.status >= 500 ||
-        response.status === 401 ||
-        response.status === 403 ||
-        response.status === 404
+        response.status >= HTTP_STATUS.serverErrorBoundary ||
+        response.status === HTTP_STATUS.unauthorized ||
+        response.status === HTTP_STATUS.forbidden ||
+        response.status === HTTP_STATUS.notFound
       ) {
         throw new Error(String(data.error || data.message || `Relay HTTP ${response.status}`));
       }
       // 207 partial and 409 already_sent are authoritative outcomes to reconcile.
-      if (![200, 201, 202, 207, 409].includes(response.status)) {
+      if (
+        ![
+          HTTP_STATUS.ok,
+          HTTP_STATUS.created,
+          HTTP_STATUS.accepted,
+          HTTP_STATUS.multiStatus,
+          HTTP_STATUS.conflict,
+        ].includes(response.status)
+      ) {
         throw new Error(String(data.error || data.message || `Relay HTTP ${response.status}`));
       }
       return {
@@ -785,103 +807,7 @@ export function initializeDeckRelay() {
       if (styleAdded) return;
       const css = document.createElement("style");
       css.id = "rodx-relay-native-css";
-      css.textContent = `
-button.rodx-tg-action {
-  appearance: none !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: rgb(113, 118, 123) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  min-height: 34px !important;
-  min-width: 34px !important;
-  font:
-    400 12px/1.2 system-ui,
-    -apple-system,
-    sans-serif !important;
-  border-radius: 999px !important;
-  padding: 5px 9px !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  touch-action: manipulation !important;
-  transition:
-    color 0.12s,
-    background 0.12s !important;
-}
-button.rodx-tg-action:hover,
-button.rodx-tg-action:focus-visible {
-  color: rgb(29, 155, 240) !important;
-  background: rgba(29, 155, 240, 0.1) !important;
-}
-button.rodx-tg-action[data-relay-state="sent"] {
-  color: rgb(0, 186, 124) !important;
-}
-button.rodx-tg-action[data-relay-state="partial"] {
-  color: rgb(255, 173, 59) !important;
-}
-button.rodx-tg-action[data-relay-state="sending"],
-button.rodx-tg-action[data-relay-state="checking"] {
-  opacity: 0.6 !important;
-}
-button.rodx-tg-action:disabled {
-  cursor: progress !important;
-}
-button.rodx-tg-action.rodx-tg-immersive {
-  position: fixed !important;
-  right: max(131px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  padding: 9px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  z-index: 2147481101 !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-}
-button.rodx-tg-immersive[data-relay-state="sent"] {
-  color: #00ba7c !important;
-}
-button.rodx-tg-immersive[data-relay-state="partial"] {
-  color: #ffad3b !important;
-}
-button.rodx-tg-action.rodx-tg-video-overlay {
-  position: absolute !important;
-  top: 7px !important;
-  right: 7px !important;
-  z-index: 91 !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 6px !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.7) !important;
-  opacity: 0.8 !important;
-  border: 1px solid rgba(255, 255, 255, 0.17) !important;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-button.rodx-tg-video-overlay:is(:hover, :focus-visible) {
-  opacity: 1 !important;
-}
-button.rodx-tg-video-overlay[data-relay-state="sent"] {
-  color: #00ba7c !important;
-}
-button.rodx-tg-video-overlay[data-relay-state="partial"] {
-  color: #ffad3b !important;
-}
-@media (max-width: 500px) {
-  button.rodx-tg-action {
-    padding: 5px !important;
-    gap: 3px !important;
-  }
-}
-`;
+      css.textContent = extractedCSS1;
       document.head.append(css);
       styleAdded = true;
     }
@@ -921,8 +847,8 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
       }
       if (previous) previous.button?.remove();
       const action =
-        article.querySelector('[data-testid="reply"]')?.closest('[role="group"]') ||
-        article.querySelector('[role="group"]');
+        article.querySelector(COMPOSITE_SELECTORS.replyButton)?.closest(DOM_SELECTORS.actionGroups) ||
+        article.querySelector(DOM_SELECTORS.actionGroups);
       const container = action || article;
       const button = document.createElement("button");
       button.type = "button";
@@ -946,12 +872,9 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
       observe(card);
     }
     function addVideoOverlay(article, post) {
-      const video = article.querySelector("video");
+      const video = article.querySelector(DOM_SELECTORS.videos);
       if (!video) return;
-      const wrapper =
-        video.closest(
-          '[data-testid="videoPlayerContainer"], [data-testid="videoPlayer"], [data-testid="videoComponent"]',
-        ) || video.parentElement;
+      const wrapper = video.closest(NATIVE_X_SELECTORS.tweetVideoContainers) || video.parentElement;
       if (!wrapper) return;
       let card = videoOverlays.get(post.key);
       if (card && (card.wrapper !== wrapper || !card.button.isConnected)) {
@@ -960,7 +883,8 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         card = null;
       }
       if (!card) {
-        if (getComputedStyle(wrapper).position === "static") wrapper.style.position = "relative";
+        if (getComputedStyle(wrapper).position === "static")
+          wrapper.style.setProperty("position", "relative", "important");
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rodx-tg-action rodx-tg-video-overlay";
@@ -995,15 +919,13 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         return;
       }
       const now = Date.now();
-      if (!force && now - lastScan < 450) return;
+      if (!force && now - lastScan < RUNTIME_LIMITS.telegramRelay.scanThrottleMs) return;
       lastScan = now;
       ensureStyle();
-      const articles = document.querySelectorAll(
-        ':is(article,[role="article"])[data-testid="tweet"], article',
-      );
+      const articles = document.querySelectorAll(NATIVE_X_SELECTORS.tweetArticleContainers);
       let count = 0;
       for (const article of articles) {
-        if (count++ >= 220) break;
+        if (count++ >= RUNTIME_LIMITS.telegramRelay.maxArticlesPerScan) break;
         const post = parsePost(article);
         if (!post?.isVideo) {
           const oldKey = article.dataset.rodxRelayId;
@@ -1022,8 +944,7 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         if (
           !overlay.button.isConnected ||
           !overlay.wrapper.isConnected ||
-          overlay.wrapper.closest(':is(article,[role="article"])[data-testid="tweet"]')?.dataset
-            .rodxRelayId !== overlay.post.id
+          overlay.wrapper.closest(NATIVE_X_SELECTORS.nativeTweets)?.dataset.rodxRelayId !== overlay.post.id
         ) {
           overlay.button.remove();
           videoOverlays.delete(key);
@@ -1039,17 +960,17 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
           cards.delete(key);
         }
       }
-      if (status.size > 2000) {
+      if (status.size > RUNTIME_LIMITS.telegramRelay.statusCacheHighWaterMark) {
         const active = new Set(cards.keys());
         for (const key of status.keys()) {
-          if (status.size <= 1100) break;
+          if (status.size <= RUNTIME_LIMITS.telegramRelay.statusCacheLowWaterMark) break;
           if (!active.has(key)) {
             status.delete(key);
             latestCheck.delete(key);
           }
         }
       }
-      if (cards.size > 400) {
+      if (cards.size > RUNTIME_LIMITS.telegramRelay.cardCacheMaxEntries) {
         for (const [key, card] of cards) {
           if (!card.article.isConnected) cards.delete(key);
         }
@@ -1069,7 +990,10 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         key: `twitter:${viewer.id}`,
         url: viewer.url,
         author: viewer.url.match(/x\.com\/([^/]+)\/status/)?.[1] || "",
-        text: viewer.layer.querySelector('[data-testid="tweetText"]')?.innerText?.slice(0, 1800) || "",
+        text:
+          viewer.layer
+            .querySelector(NATIVE_X_SELECTORS.nativeTweetText)
+            ?.innerText?.slice(0, RUNTIME_LIMITS.telegramRelay.sourceExcerptMaxCharacters) || "",
         isVideo: true,
       };
       if (
@@ -1109,16 +1033,16 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         return;
       }
       status.clear();
-      await checkNow(visible.slice(0, 120));
+      await checkNow(visible.slice(0, RUNTIME_LIMITS.telegramRelay.manualRefreshBatchSize));
       notice("Status consultado no Worker/D1.", "success");
     }
     async function health() {
       const response = await transport({
         path: "/health",
         method: "GET",
-        timeout: 12_000,
+        timeout: RUNTIME_LIMITS.telegramRelay.healthTimeoutMs,
       });
-      if (response.status >= 200 && response.status < 300) {
+      if (response.status >= HTTP_STATUS.ok && response.status < HTTP_STATUS.redirectBoundary) {
         notice("Relay conectado ✓", "success");
       } else throw new Error(`Relay HTTP ${response.status}.`);
     }

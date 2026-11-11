@@ -1,3 +1,7 @@
+import volumeMutedSVG from "../../../assets/icons/volume-muted.svg?inline";
+import volumeOnSVG from "../../../assets/icons/volume-on.svg?inline";
+import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
 import { VideoExperience } from "./experience.js";
 
 export let VideoTransport;
@@ -12,65 +16,7 @@ export function initializeDeckVideoTransport() {
       styled = true;
       const css = document.createElement("style");
       css.id = "rodx-video-transport-css";
-      css.textContent = `
-.rodx-video-transport {
-  position: absolute !important;
-  bottom: 4px;
-  left: 5px;
-  right: 5px;
-  z-index: 15;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-sizing: border-box;
-  padding: 3px 7px;
-  border-radius: 9px;
-  font:
-    11px TwitterChirp,
-    system-ui,
-    sans-serif;
-  color: white;
-  background: rgba(15, 20, 25, 0.78);
-  backdrop-filter: blur(6px);
-  pointer-events: auto !important;
-  touch-action: pan-y;
-}
-.rodx-video-transport button {
-  flex: none;
-  border: 0;
-  background: none;
-  color: white;
-  min-width: 29px;
-  min-height: 29px;
-  padding: 0 3px;
-  cursor: pointer;
-  font:
-    17px TwitterChirp,
-    system-ui;
-  touch-action: manipulation;
-}
-.rodx-video-transport .rodx-transport-seek {
-  flex: 1;
-  min-width: 28px;
-  width: 100%;
-  margin: 0;
-  accent-color: #1d9bf0;
-  cursor: pointer;
-  touch-action: none !important;
-}
-.rodx-video-transport time {
-  font:
-    10px TwitterChirp,
-    system-ui;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  min-width: 36px;
-}
-.rodx-video-transport:focus-within {
-  outline: 1px solid rgba(29, 155, 240, 0.7);
-}
-`;
+      css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
     }
     const format = (n) => {
@@ -80,21 +26,19 @@ export function initializeDeckVideoTransport() {
     };
     function attach(video) {
       if (installed.has(video)) return;
-      const wrapper =
-        video.closest(
-          '[data-testid="videoPlayerContainer"], [data-testid="videoPlayer"], [data-testid="videoComponent"], [data-testid="videoPlayerDiv"]',
-        ) || video.parentElement;
+      const wrapper = video.closest(NATIVE_X_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
       if (
         !wrapper ||
-        wrapper.closest(".rodx-video-transport") ||
-        wrapper.querySelector(":scope > .rodx-video-transport")
+        wrapper.closest(RODX_SELECTORS.videoTransport) ||
+        wrapper.querySelector(RODX_SELECTORS.directVideoTransport)
       )
         return;
       const parentRect = wrapper.getBoundingClientRect();
       if (parentRect.width && (parentRect.width < 135 || parentRect.height < 90)) return;
       styleOnce();
       installed.add(video);
-      if (getComputedStyle(wrapper).position === "static") wrapper.style.position = "relative";
+      if (getComputedStyle(wrapper).position === "static")
+        wrapper.style.setProperty("position", "relative", "important");
       const bar = document.createElement("div");
       bar.className = "rodx-video-transport";
       bar.setAttribute("data-rodx-player-control", "1");
@@ -117,10 +61,7 @@ export function initializeDeckVideoTransport() {
       clock.textContent = "0:00";
       const volume = document.createElement("button");
       volume.type = "button";
-      const soundIcon = (muted) =>
-        muted
-          ? '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>'
-          : '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+      const soundIcon = (muted) => (muted ? volumeMutedSVG : volumeOnSVG);
       volume.innerHTML = soundIcon(true);
       volume.title = "Ativar / desativar som";
       volume.setAttribute("aria-label", "Ativar / desativar volume");
@@ -215,8 +156,8 @@ export function initializeDeckVideoTransport() {
       update();
     }
     function scan() {
-      for (const video of document.querySelectorAll("main video, #layers video")) {
-        if (video.closest(".rodx-video-transport")) continue;
+      for (const video of document.querySelectorAll(NATIVE_X_SELECTORS.visiblePageVideos)) {
+        if (video.closest(RODX_SELECTORS.videoTransport)) continue;
         attach(video);
         clocks.get(video)?.();
       }

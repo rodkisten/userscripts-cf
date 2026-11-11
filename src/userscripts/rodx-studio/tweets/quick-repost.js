@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 export let QuickRepost;
 
 export function initializeDeckQuickRepost() {
@@ -9,9 +11,8 @@ export function initializeDeckQuickRepost() {
         // Only actual taps on X's native repost action, never programmatic clicks,
         // quotes, menu actions or interactions with RodX controls.
         if (!event.isTrusted || active) return;
-        const button = event.target.closest?.('[data-testid="retweet"], [data-testid="unretweet"]');
-        if (!button || button.closest('[data-testid="retweetConfirm"], [data-testid="unretweetConfirm"]'))
-          return;
+        const button = event.target.closest?.(NATIVE_X_SELECTORS.retweetToggleButtons);
+        if (!button || button.closest(NATIVE_X_SELECTORS.retweetConfirmButtons)) return;
         const undo = button.getAttribute("data-testid") === "unretweet";
         const selector = undo ? '[data-testid="unretweetConfirm"]' : '[data-testid="retweetConfirm"]';
         let observer = null;
@@ -39,7 +40,7 @@ export function initializeDeckQuickRepost() {
           childList: true,
           subtree: true,
         });
-        timeout = setTimeout(stop, 1400);
+        timeout = setTimeout(stop, RUNTIME_LIMITS.tweetsQuickRepost.stopDelayMs);
         setTimeout(confirm, 0);
       },
       true,

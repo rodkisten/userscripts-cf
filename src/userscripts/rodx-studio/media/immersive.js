@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { ImmersiveDownload } from "./download.js";
 import { state } from "../state/deck.js";
 
@@ -25,7 +27,7 @@ export function initializeDeckImmersiveSwipe() {
       const rect = viewer.video.getBoundingClientRect();
       const point = target.getBoundingClientRect?.();
       if (point && rect.height && point.top >= rect.bottom - Math.min(54, rect.height * 0.32)) return null;
-      const player = viewer.video.closest('[data-testid="videoPlayerContainer"]');
+      const player = viewer.video.closest(NATIVE_X_SELECTORS.nativeVideoPlayerContainer);
       if (target === viewer.video || viewer.video.contains(target) || player?.contains(target)) return viewer;
       return null;
     };
@@ -69,7 +71,7 @@ export function initializeDeckImmersiveSwipe() {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       const layer = viewer.layer;
-      const close = [...layer.querySelectorAll('button,[role="button"]')].find((el) => {
+      const close = [...layer.querySelectorAll(DOM_SELECTORS.interactiveButtons)].find((el) => {
         const label = [el.getAttribute("aria-label"), el.getAttribute("title"), el.dataset.testid]
           .filter(Boolean)
           .join(" ");
@@ -92,7 +94,7 @@ export function initializeDeckImmersiveSwipe() {
       if (/\/status\/\d+\/video\/\d+/.test(location.pathname) && history.length > 1) {
         setTimeout(() => {
           if (ImmersiveDownload.current()?.key === g.id) history.back();
-        }, 100);
+        }, RUNTIME_LIMITS.mediaImmersive.onEndDelayMs);
       }
     }
     function scan() {

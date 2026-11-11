@@ -1,3 +1,10 @@
+import { applyComponentStyle, clearComponentStyle } from "../../../core/css.js";
+import {
+  MEDIA_COMPONENT_SELECTORS,
+  DOM_SELECTORS,
+  NATIVE_X_SELECTORS,
+  RODX_SELECTORS,
+} from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { VideoExperience } from "./experience.js";
 import { SeekPreviews } from "./previews.js";
@@ -24,8 +31,8 @@ export function initializeDeckPlayerPreference() {
     }
     function configureGestures(entry) {
       const container =
-        entry.skin.shadowRoot?.querySelector("media-container") ||
-        entry.skin.querySelector("media-container");
+        entry.skin.shadowRoot?.querySelector(MEDIA_COMPONENT_SELECTORS.mediaContainer) ||
+        entry.skin.querySelector(MEDIA_COMPONENT_SELECTORS.mediaContainer);
       SeekPreviews.attach(entry.video, entry);
       if (!container || entry.gestureContainer === container) return;
       const specs = [
@@ -54,7 +61,7 @@ export function initializeDeckPlayerPreference() {
         },
       ];
       for (const spec of specs) {
-        const matches = [...container.querySelectorAll("media-gesture")].filter(
+        const matches = [...container.querySelectorAll(MEDIA_COMPONENT_SELECTORS.mediaGesture)].filter(
           (el) =>
             el.getAttribute("type") === spec.type &&
             el.getAttribute("region") === spec.region &&
@@ -87,10 +94,8 @@ export function initializeDeckPlayerPreference() {
         )
           return;
         const path = event.composedPath();
-        const play = path.some((el) => el?.matches?.("media-play-button"));
-        const interactive = path.some((el) =>
-          el?.matches?.('button,a,input,select,[role="slider"],[role="button"],[data-interactive]'),
-        );
+        const play = path.some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaPlayButton));
+        const interactive = path.some((el) => el?.matches?.(DOM_SELECTORS.playerInteractiveControls));
         if (!play) {
           if (interactive || event.pointerType !== "mouse") return;
           const rect = video.getBoundingClientRect();
@@ -167,6 +172,7 @@ export function initializeDeckPlayerPreference() {
       if (entry.skin.contains(video)) entry.root.before(video);
       entry.root.remove();
       video.controls = entry.controls;
+      clearComponentStyle(video);
       video.style.cssText = entry.style;
       delete video.dataset.rodxGesturePaused;
       mounted.delete(video);
@@ -178,20 +184,17 @@ export function initializeDeckPlayerPreference() {
         if (!video.isConnected || mode !== "videojs") restore(video, entry);
         else configureGestures(entry);
       }
-      for (const video of document.querySelectorAll("main video, #layers video")) {
-        const wrapper =
-          video.closest('[data-testid="videoPlayerContainer"], [data-testid="videoComponent"]') ||
-          video.parentElement;
+      for (const video of document.querySelectorAll(NATIVE_X_SELECTORS.visiblePageVideos)) {
+        const wrapper = video.closest(NATIVE_X_SELECTORS.videoComponentWrappers) || video.parentElement;
         if (!wrapper) continue;
-        wrapper.querySelectorAll(".rodx-video-transport").forEach((bar) => {
+        wrapper.querySelectorAll(RODX_SELECTORS.videoTransport).forEach((bar) => {
           bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
         });
         if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) continue;
         const root = document.createElement("video-player");
         const skin = document.createElement("video-skin");
         root.dataset.rodxPlayerControl = "1";
-        root.style.cssText =
-          "display:block;position:relative;width:100%;min-width:0;z-index:20;pointer-events:auto";
+        applyComponentStyle(root, "rx-player-root", false);
         const rect = video.getBoundingClientRect();
         const ratio =
           video.videoWidth && video.videoHeight
@@ -199,10 +202,11 @@ export function initializeDeckPlayerPreference() {
             : rect.width && rect.height
               ? rect.width / rect.height
               : 16 / 9;
-        skin.style.cssText = "display:block;width:100%;aspect-ratio:" + ratio;
+        applyComponentStyle(skin, "rx-player-skin", false);
+        skin.style.setProperty("aspect-ratio", String(ratio), "important");
         video.addEventListener("loadedmetadata", () => {
           if (video.videoWidth && video.videoHeight)
-            skin.style.aspectRatio = String(video.videoWidth / video.videoHeight);
+            skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeight), "important");
         });
         const entry = {
           video,
@@ -215,8 +219,7 @@ export function initializeDeckPlayerPreference() {
         root.append(skin);
         skin.append(video);
         video.controls = false;
-        video.style.cssText +=
-          ";position:relative!important;width:100%!important;height:100%!important;object-fit:contain";
+        applyComponentStyle(video, "rx-player-video", true);
         mounted.set(video, entry);
         configureGestures(entry);
         void Promise.resolve(skin.updateComplete).then(() => {
@@ -227,7 +230,9 @@ export function initializeDeckPlayerPreference() {
         root.addEventListener(
           "pointerdown",
           (event) => {
-            if (event.composedPath().some((el) => el?.matches?.("media-mute-button,media-volume-slider"))) {
+            if (
+              event.composedPath().some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls))
+            ) {
               requestedAudio = video.muted || video.volume === 0;
               if (requestedAudio) VideoExperience.enableAudio(video, true);
             }
@@ -237,7 +242,7 @@ export function initializeDeckPlayerPreference() {
         root.addEventListener("click", (event) => {
           const control = event
             .composedPath()
-            .find((el) => el?.matches?.("media-mute-button,media-volume-slider"));
+            .find((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls));
           if (control) {
             const audible = requestedAudio ?? (video.muted || video.volume === 0);
             requestedAudio = undefined;

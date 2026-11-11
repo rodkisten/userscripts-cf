@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { createDefaults } from "../../../config/defaults.js";
 import { Studio } from "../core/studio.js";
 import { requestInternal, requestTemplates, templateRequest } from "./graphql.js";
 import { currentList, notice, toggle } from "./quick-picker.js";
@@ -227,14 +229,7 @@ export async function resolveUserId(username) {
 export let DEFAULT_MUTATION_FEATURES;
 
 export function initializeListsDEFAULT_MUTATION_FEATURES() {
-  DEFAULT_MUTATION_FEATURES = {
-    profile_label_improvements_pcf_label_in_post_enabled: true,
-    responsive_web_profile_redirect_enabled: false,
-    rweb_tipjar_consumption_enabled: false,
-    verified_phone_label_enabled: false,
-    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-    responsive_web_graphql_timeline_navigation_enabled: true,
-  };
+  DEFAULT_MUTATION_FEATURES = createDefaults("listMutationFeatures");
 }
 
 export async function addMemberInternal(listId, userId, username) {
@@ -411,7 +406,7 @@ export function downloadBlob(name, text, type) {
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  setTimeout(() => URL.revokeObjectURL(url), RUNTIME_LIMITS.listsQueue.downloadBlobDelayMs);
 }
 
 export async function exportJSON() {

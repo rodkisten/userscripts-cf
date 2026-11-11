@@ -1,0 +1,102 @@
+#rodx-network-root {
+  & {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    color: var(--rm-color, inherit);
+    font: var(--rodx-ds-text-13) var(--rodx-ds-font-sans);
+  }
+  & * {
+    box-sizing: border-box;
+  }
+  & .rx-row {
+    display: flex;
+    gap: var(--rodx-ds-space-8);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  & button,
+  & input,
+  & select {
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-8);
+    padding: var(--rodx-ds-space-8) var(--rodx-ds-space-8);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    min-height: var(--rodx-ds-control-height);
+  }
+  & button[aria-pressed="true"],
+  & button.rx-current {
+    border-color: var(--rodx-ds-color-accent);
+    color: var(--rodx-ds-color-accent);
+  }
+  & input[type="search"] {
+    flex: 1;
+    min-width: 120px;
+    font-size: var(--rodx-ds-text-16);
+  }
+  & .rx-list {
+    max-height: 34dvh;
+    overflow: auto;
+    margin-top: var(--rodx-ds-space-12);
+  }
+  & .rx-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--rodx-ds-space-6);
+    padding: var(--rodx-ds-space-8) var(--rodx-ds-space-4);
+    border-bottom: 1px solid var(--rodx-ds-color-border);
+  }
+  & .rx-entry button {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  & .rx-small {
+    font-size: var(--rodx-ds-text-11);
+    opacity: 0.78;
+  }
+  & .rx-detail {
+    margin-top: var(--rodx-ds-space-12);
+    border-top: 1px solid var(--rodx-ds-color-border);
+    padding-top: var(--rodx-ds-space-12);
+  }
+  & pre {
+    width: 100%;
+    max-height: 42dvh;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+    -webkit-user-select: text;
+    font: var(--rodx-ds-text-11)/1.55 var(--rodx-ds-font-mono);
+    padding: var(--rodx-ds-space-12);
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-8);
+  }
+  & .rx-tree {
+    max-height: 45dvh;
+    overflow: auto;
+    font: var(--rodx-ds-text-12)/1.55 var(--rodx-ds-font-mono);
+  }
+  & .rx-tree details {
+    margin-left: var(--rodx-ds-space-12);
+    border-left: 1px solid var(--rodx-ds-color-border);
+    padding-left: var(--rodx-ds-space-4);
+  }
+  & .rx-tree summary {
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  & .rx-tree .leaf {
+    margin-left: var(--rodx-ds-space-8);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  & .rx-warning {
+    opacity: 0.78;
+    margin: var(--rodx-ds-space-8) 0;
+  }
+}

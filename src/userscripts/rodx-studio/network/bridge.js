@@ -1,3 +1,6 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { DEFAULT_SETTINGS } from "../../../config/defaults.js";
+import { DOM_SELECTORS } from "../../../selectors.js";
 import { studioPageBridge } from "./page-bridge.js";
 
 export function connectStudioNetwork(Studio) {
@@ -89,7 +92,7 @@ export function connectStudioNetwork(Studio) {
               id: number,
             });
           reject(Error("Tempo esgotado na ponte. Verifique a ação antes de repetir."));
-        }, 30000);
+        }, RUNTIME_LIMITS.networkBridge.connectStudioNetworkDelayMs);
         pending.set(number, {
           resolve,
           reject,
@@ -108,7 +111,8 @@ export function connectStudioNetwork(Studio) {
     },
   };
   try {
-    if (typeof unsafeWindow !== "undefined") studioPageBridge(unsafeWindow, channel);
+    if (typeof unsafeWindow !== "undefined")
+      studioPageBridge(unsafeWindow, channel, DEFAULT_SETTINGS, RUNTIME_LIMITS.networkPageBridge);
   } catch {}
   const tried = new Set();
   let observer, timeout;
@@ -120,13 +124,22 @@ export function connectStudioNetwork(Studio) {
     }
     const root = document.documentElement;
     if (!root) return;
-    const nonce = document.querySelector("script[nonce]")?.nonce || "";
+    const nonce = document.querySelector(DOM_SELECTORS.nonceScript)?.nonce || "";
     if (tried.has(nonce)) return;
     tried.add(nonce);
     try {
       const script = document.createElement("script");
       if (nonce) script.nonce = nonce;
-      script.textContent = ";(" + studioPageBridge.toString() + ")(window," + JSON.stringify(channel) + ");";
+      script.textContent =
+        ";(" +
+        studioPageBridge.toString() +
+        ")(window," +
+        JSON.stringify(channel) +
+        "," +
+        JSON.stringify(DEFAULT_SETTINGS) +
+        "," +
+        JSON.stringify(RUNTIME_LIMITS.networkPageBridge) +
+        ");";
       root.append(script);
       script.remove();
     } catch {}

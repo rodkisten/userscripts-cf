@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import {
   cleanHandle,
@@ -53,7 +55,7 @@ export function initializeRodX_lists_83() {
       <div class="quick-head"><div><strong id="xls-quick-title">Escolher lista</strong>
         <div class="small" id="xls-quick-subtitle">Toque na lista para colocar na fila</div></div>
         <button class="btn mini ghost" id="xls-quick-close" type="button" aria-label="Fechar">✕</button></div>
-      <div style="padding:10px 12px"><input id="xls-quick-search" class="quick-search" type="search"
+      <div class="rx-quick-picker-search-field"><input id="xls-quick-search" class="quick-search" type="search"
         placeholder="Buscar listas" autocomplete="off" aria-label="Buscar lista"></div>
       <div class="quick-flags"><label><input type="checkbox" id="xls-quick-follow"> Seguir</label>
         <label><input type="checkbox" id="xls-quick-reposts"> Desativar reposts</label></div>
@@ -69,27 +71,27 @@ export function initializeRodX_lists_84() {
 export let overlay;
 
 export function initializeListsOverlay() {
-  overlay = qs("#xls-overlay", shadow);
+  overlay = qs(RODX_SELECTORS.listsOverlay, shadow);
 }
 
 export let body;
 
 export function initializeListsBody() {
-  body = qs("#xls-body", shadow);
+  body = qs(RODX_SELECTORS.listsBody, shadow);
 }
 
 export let tabArea;
 
 export function initializeListsTabArea() {
-  tabArea = qs("#xls-tabs", shadow);
+  tabArea = qs(RODX_SELECTORS.listsTabs, shadow);
 }
 
 export function initializeRodX_lists_88() {
-  qs("#xls-fab", shadow).remove();
+  qs(RODX_SELECTORS.listsFloatingButton, shadow).remove();
 }
 
 export function initializeRodX_lists_89() {
-  qs("#xls-overlay", shadow).addEventListener("click", (event) => {
+  qs(RODX_SELECTORS.listsOverlay, shadow).addEventListener("click", (event) => {
     if (event.target === overlay) toggle(false);
   });
 }
@@ -187,34 +189,37 @@ export function initializeListsQuickToastTimer() {
 export let quickBackdrop;
 
 export function initializeListsQuickBackdrop() {
-  quickBackdrop = qs("#xls-quick-backdrop", shadow);
+  quickBackdrop = qs(RODX_SELECTORS.quickPickerBackdrop, shadow);
 }
 
 export let quickPicker;
 
 export function initializeListsQuickPicker() {
-  quickPicker = qs("#xls-quick-picker", shadow);
+  quickPicker = qs(RODX_SELECTORS.quickPicker, shadow);
 }
 
 export let quickSearch;
 
 export function initializeListsQuickSearch() {
-  quickSearch = qs("#xls-quick-search", shadow);
+  quickSearch = qs(RODX_SELECTORS.quickPickerSearch, shadow);
 }
 
 export let quickOptions;
 
 export function initializeListsQuickOptions() {
-  quickOptions = qs("#xls-quick-options", shadow);
+  quickOptions = qs(RODX_SELECTORS.quickPickerOptions, shadow);
 }
 
 export function quickToast(message) {
-  const el = qs("#xls-quick-toast", shadow);
+  const el = qs(RODX_SELECTORS.quickPickerToast, shadow);
   if (!el) return;
   el.textContent = message;
   el.classList.add("show");
   clearTimeout(quickToastTimer);
-  quickToastTimer = setTimeout(() => el.classList.remove("show"), 3800);
+  quickToastTimer = setTimeout(
+    () => el.classList.remove("show"),
+    RUNTIME_LIMITS.listsQuickPicker.quickToastDelayMs,
+  );
 }
 
 export function closeQuickPicker() {
@@ -235,9 +240,10 @@ export function positionQuickPicker() {
   const height = Math.min(500, Math.round(window.innerHeight * 0.65));
   let top = rect.bottom + 6;
   if (top + height > window.innerHeight - 8) top = Math.max(8, rect.top - height - 6);
-  quickPicker.style.left = `${left}px`;
-  quickPicker.style.top = `${top}px`;
-  if (viewport && viewport.scale !== 1) quickPicker.style.top = `${Math.max(8, top)}px`;
+  quickPicker.style.setProperty("left", `${left}px`, "important");
+  quickPicker.style.setProperty("top", `${top}px`, "important");
+  if (viewport && viewport.scale !== 1)
+    quickPicker.style.setProperty("top", `${Math.max(8, top)}px`, "important");
 }
 
 export function renderQuickOptions() {
@@ -260,13 +266,13 @@ export function renderQuickOptions() {
         const frequent = stat.count > 1 && !last;
         const already = quickUser.sourceId && l.id === quickUser.sourceId;
         return `<button class="quick-option" type="button" data-quick-list-id="${esc(l.id)}" ${already ? "disabled" : ""}>
-        <span style="font-size:17px">${last ? "★" : frequent ? "◷" : "☷"}</span>
+        <span class="rx-quick-picker-list-icon">${last ? "★" : frequent ? "◷" : "☷"}</span>
         <span class="copy">${esc(displayListName(l))}<small>${last ? "Última lista usada" : frequent ? `Usada ${Number(stat.count)} vezes` : `Lista #${esc(l.id)}`}</small></span>
         <span class="checkmark">${already ? "Origem" : "Adicionar"}</span></button>`;
       })
       .join("") ||
-    `<div style="padding:16px;color:#aaa;font-size:13px">${term ? "Nenhuma lista corresponde à busca." : "Nenhuma lista salva. Abra a aba Listas e sincronize suas listas."}</div>`;
-  qs("#xls-quick-status", shadow).textContent =
+    `<div class="rx-quick-picker-empty-state">${term ? "Nenhuma lista corresponde à busca." : "Nenhuma lista salva. Abra a aba Listas e sincronize suas listas."}</div>`;
+  qs(RODX_SELECTORS.quickPickerStatus, shadow).textContent =
     `${state.lists.length} listas locais · Adição imediata · ${state.bridgeStatus}`;
 }
 
@@ -289,10 +295,11 @@ export async function openQuickPicker(user, anchor) {
   quickOrder = orderedQuickLists().map((row) => String(row.id));
   quickSearchValue = "";
   quickSearch.value = "";
-  qs("#xls-quick-title", shadow).textContent = `@${quickUser.username}`;
-  qs("#xls-quick-subtitle", shadow).textContent = "Adição individual imediata, confirmada pelo X";
-  qs("#xls-quick-follow", shadow).checked = Boolean(settings.quickAddFollow);
-  qs("#xls-quick-reposts", shadow).checked = Boolean(settings.quickAddDisableReposts);
+  qs(RODX_SELECTORS.quickPickerTitle, shadow).textContent = `@${quickUser.username}`;
+  qs(RODX_SELECTORS.quickPickerSubtitle, shadow).textContent =
+    "Adição individual imediata, confirmada pelo X";
+  qs(RODX_SELECTORS.quickPickerFollow, shadow).checked = Boolean(settings.quickAddFollow);
+  qs(RODX_SELECTORS.quickPickerReposts, shadow).checked = Boolean(settings.quickAddDisableReposts);
   quickBackdrop.classList.add("open");
   quickPicker.classList.add("open");
   renderQuickOptions();
@@ -304,7 +311,7 @@ export function initializeRodX_lists_112() {
 }
 
 export function initializeRodX_lists_113() {
-  qs("#xls-quick-close", shadow).addEventListener("click", closeQuickPicker);
+  qs(RODX_SELECTORS.quickPickerClose, shadow).addEventListener("click", closeQuickPicker);
 }
 
 export function initializeRodX_lists_114() {

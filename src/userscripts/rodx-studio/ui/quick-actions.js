@@ -1,3 +1,8 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
+import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "../identity/account.js";
 import { XDOM } from "../platform/selectors.js";
@@ -15,7 +20,7 @@ export function initializeDeckQuickUI() {
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
       if (!identity) return "";
-      const link = [...identity.querySelectorAll('a[href^="/"]')].find((anchor) =>
+      const link = [...identity.querySelectorAll(DOM_SELECTORS.relativeLinks)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
       return link?.getAttribute("href")?.match(/^\/([A-Za-z0-9_]{1,15})\/?$/)?.[1] || "";
@@ -26,171 +31,7 @@ export function initializeDeckQuickUI() {
       const form = document.createElement("form");
       form.className = "rodx-quick-search";
       form.innerHTML = `
-            <style>
-              .rodx-quick-search {
-                display: grid;
-                gap: 10px;
-                min-width: 0;
-                font: 13px/1.5 TwitterChirp, -apple-system, system-ui, sans-serif;
-              }
-              .rodx-quick-search * {
-                box-sizing: border-box;
-              }
-              .rxq-editor {
-                position: relative;
-                isolation: isolate;
-                min-height: 112px;
-                border: 1px solid #71767b77;
-                border-radius: 14px;
-                background: color-mix(in srgb, Canvas 94%, #1d9bf0 6%);
-                overflow: hidden;
-              }
-              .rxq-editor:focus-within {
-                border-color: #1d9bf0;
-                outline: 1px solid #1d9bf066;
-              }
-              .rxq-syntax,
-              .rxq-input {
-                margin: 0;
-                padding: 12px;
-                display: block;
-                width: 100%;
-                min-height: 112px;
-                max-height: min(40dvh, 330px);
-                border: 0;
-                font: 15px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
-                letter-spacing: 0;
-                tab-size: 2;
-                white-space: pre-wrap;
-                overflow-wrap: anywhere;
-                word-break: break-word;
-              }
-              .rxq-syntax {
-                position: absolute;
-                inset: 0;
-                z-index: 1;
-                pointer-events: none;
-                overflow: hidden;
-                color: CanvasText;
-              }
-              .rxq-input {
-                position: relative;
-                z-index: 2;
-                display: block;
-                resize: none;
-                background: transparent;
-                color: transparent;
-                -webkit-text-fill-color: transparent;
-                caret-color: #1d9bf0;
-                -webkit-appearance: none;
-                appearance: none;
-                outline: 0;
-              }
-              .rxq-input::placeholder {
-                color: #71767b;
-                -webkit-text-fill-color: #71767b;
-              }
-              .rxq-input::selection {
-                background: #1d9bf055;
-              }
-              .rxq-syntax .syn-negative {
-                color: #f04458;
-              }
-              .rxq-syntax .syn-filter {
-                color: #169de4;
-              }
-              .rxq-syntax .syn-tag {
-                color: #a47bff;
-              }
-              .rxq-syntax .syn-bool,
-              .rxq-syntax .syn-paren {
-                color: #e8a33d;
-                font-weight: 700;
-              }
-              .rxq-syntax .syn-phrase {
-                color: #22af80;
-              }
-              .rxq-syntax .rodx-syntax-error {
-                text-decoration: underline wavy #f04458;
-              }
-              .rxq-syntax .rodx-syntax-warning {
-                text-decoration: underline dotted #e8a33d;
-              }
-              .rxq-message {
-                min-height: 16px;
-                color: #71767b;
-              }
-              .rxq-message[data-level="error"] {
-                color: #f04458;
-              }
-              .rxq-suggestions {
-                display: grid;
-                gap: 2px;
-                max-height: min(34dvh, 300px);
-                overflow-y: auto;
-                overscroll-behavior: contain;
-                border: 1px solid #71767b44;
-                border-radius: 14px;
-                padding: 4px;
-              }
-              .rxq-suggestions[hidden] {
-                display: none;
-              }
-              .rxq-option {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                width: 100%;
-                padding: 9px 10px;
-                gap: 1px;
-                border: 0;
-                border-radius: 9px;
-                background: transparent;
-                color: inherit;
-                text-align: left;
-                font: inherit;
-                cursor: pointer;
-                touch-action: manipulation;
-              }
-              .rxq-option[aria-selected="true"] {
-                background: #1d9bf024;
-              }
-              .rxq-option small {
-                display: block;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                opacity: 0.75;
-                font-size: 11px;
-                line-height: 1.4;
-              }
-              .rxq-tools {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                align-items: center;
-              }
-              .rxq-tools button {
-                padding: 7px 10px;
-                border: 1px solid #71767b55;
-                border-radius: 18px;
-                background: transparent;
-                color: inherit;
-                font: inherit;
-                cursor: pointer;
-                touch-action: manipulation;
-              }
-              .rxq-tools [type="submit"] {
-                margin-left: auto;
-                background: #1d9bf0;
-                color: white;
-                border-color: #1d9bf0;
-                font-weight: 700;
-              }
-              .rxq-tools [type="submit"]:disabled {
-                opacity: 0.45;
-              }
-            </style>
+            <style>${extractedCSS1}</style>
             <div class="rxq-editor">
               <pre class="rxq-syntax" data-rxq="syntax" aria-hidden="true"></pre>
               <textarea class="rxq-input" data-rxq="input" name="q" spellcheck="false"
@@ -209,11 +50,11 @@ export function initializeDeckQuickUI() {
               <button type="submit" data-rxq="submit">Pesquisar</button>
             </div>
           `;
-      const input = form.querySelector('[data-rxq="input"]');
-      const syntax = form.querySelector('[data-rxq="syntax"]');
-      const message = form.querySelector('[data-rxq="message"]');
-      const submit = form.querySelector('[data-rxq="submit"]');
-      const suggestionBox = form.querySelector('[data-rxq="suggestions"]');
+      const input = form.querySelector(RODX_SELECTORS.queryWorkbenchInput);
+      const syntax = form.querySelector(RODX_SELECTORS.queryWorkbenchSyntax);
+      const message = form.querySelector(RODX_SELECTORS.queryWorkbenchMessage);
+      const submit = form.querySelector(RODX_SELECTORS.queryWorkbenchSubmit);
+      const suggestionBox = form.querySelector(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
       let rows = [];
@@ -460,9 +301,13 @@ export function initializeDeckQuickUI() {
       }
       function validate() {
         const value = input.value;
-        input.style.height = "auto";
-        input.style.height = `${Math.min(Math.max(112, input.scrollHeight), innerHeight * 0.4)}px`;
-        syntax.style.height = input.style.height;
+        input.style.setProperty("height", "auto", "important");
+        input.style.setProperty(
+          "height",
+          `${Math.min(Math.max(112, input.scrollHeight), innerHeight * 0.4)}px`,
+          "important",
+        );
+        syntax.style.setProperty("height", input.style.height, "important");
         syntax.innerHTML = highlightWithIssues(value, diagnosticSpans(value)) + "\n";
         syntax.scrollTop = input.scrollTop;
         const diagnostic = inspectNativeQuery(value);
@@ -478,7 +323,10 @@ export function initializeDeckQuickUI() {
       }
       function queueSuggestions() {
         clearTimeout(refreshTimer);
-        refreshTimer = setTimeout(() => void suggestions(), 110);
+        refreshTimer = setTimeout(
+          () => void suggestions(),
+          RUNTIME_LIMITS.uiQuickActions.queueSuggestionsDelayMs,
+        );
       }
       const captureCursor = () => {
         preservedCursor = input.selectionStart ?? input.value.length;
@@ -515,7 +363,7 @@ export function initializeDeckQuickUI() {
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
           renderSuggestions();
-          suggestionBox.querySelector(`[aria-selected="true"]`)?.scrollIntoView({ block: "nearest" });
+          suggestionBox.querySelector(DOM_SELECTORS.selectedItems)?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
           event.preventDefault();
           event.stopPropagation();
@@ -531,7 +379,7 @@ export function initializeDeckQuickUI() {
         }
       });
       form.addEventListener("click", async (event) => {
-        const action = event.target.closest("[data-rxq-action]")?.dataset.rxqAction;
+        const action = event.target.closest(RODX_SELECTORS.queryWorkbenchActions)?.dataset.rxqAction;
         if (!action) return;
         event.preventDefault();
         if (action === "copy") {
@@ -630,23 +478,11 @@ export function initializeDeckQuickUI() {
       const margin = 8;
       const left = Math.max(margin, Math.min(innerWidth - size - margin, Number(c.x ?? 12)));
       const top = Math.max(60, Math.min(availableHeight - size - 76, Number(c.y ?? availableHeight - 170)));
-      floating.style.cssText = `
-            position: fixed;
-            z-index: 1400;
-            -webkit-user-select: none;
-            user-select: none;
-            left: ${left}px;
-            top: ${top}px;
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
-            border: 1px solid #71767b66;
-            background: Canvas;
-            color: CanvasText;
-            font: 24px Arial, sans-serif;
-            touch-action: none;
-            cursor: pointer;
-          `;
+      applyComponentStyle(floating, "rx-quick-actions-floating", false);
+      floating.style.setProperty("--rodx-anchor-left", String(left) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-top", String(top) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-width", String(size) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-height", String(size) + "px", "important");
     }
     function scan() {
       if (!floating) {
@@ -670,10 +506,16 @@ export function initializeDeckQuickUI() {
           if (Math.hypot(dx, dy) > 7) moved = true;
           if (moved) {
             e.preventDefault();
-            floating.style.left =
-              Math.max(0, Math.min(innerWidth - floating.offsetWidth, press.left + dx)) + "px";
-            floating.style.top =
-              Math.max(0, Math.min(innerHeight - floating.offsetHeight - 60, press.top + dy)) + "px";
+            floating.style.setProperty(
+              "left",
+              Math.max(0, Math.min(innerWidth - floating.offsetWidth, press.left + dx)) + "px",
+              "important",
+            );
+            floating.style.setProperty(
+              "top",
+              Math.max(0, Math.min(innerHeight - floating.offsetHeight - 60, press.top + dy)) + "px",
+              "important",
+            );
           }
         };
         floating.onpointerup = () => {
@@ -698,17 +540,16 @@ export function initializeDeckQuickUI() {
         document.body.append(floating);
         position();
         const style = document.createElement("style");
-        style.textContent =
-          '[data-testid="FloatingActionButton_Tweet"],[data-testid="SideNav_NewTweet_Button"]{display:none!important}';
+        style.textContent = extractedCSS2;
         document.head.append(style);
         window.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        const bar = article.querySelector(".rodx-tweet-topbar");
+        const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);
         if (!bar) continue;
-        let button = bar.querySelector("[data-rodx-add-list]");
+        let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -731,14 +572,14 @@ export function initializeDeckQuickUI() {
         listInfo = null;
       } else {
         const main =
-          document.querySelector('[data-testid="primaryColumn"]') || document.querySelector("main");
+          document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+          document.querySelector(DOM_SELECTORS.mainElement);
         if (main && (!listInfo || listInfo.dataset.id !== id)) {
           listInfo?.remove();
           listInfo = document.createElement("div");
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
-          listInfo.style.cssText =
-            "display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:12px Arial;padding:5px 8px";
+          applyComponentStyle(listInfo, "rx-quick-actions-listInfo", false);
           const text = document.createElement("span");
           text.textContent = "ID: " + id;
           const name = document.createElement("strong");
@@ -777,11 +618,11 @@ export function initializeDeckQuickUI() {
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector("[data-rodx-live-name]");
+        const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
         if (currentName && currentName.textContent !== name) currentName.textContent = name;
       }
-      for (const a of document.querySelectorAll('a[href*="/lists/"]')) {
-        if (a.closest('article,[id^="rodx-"],#x-lists-studio-root')) continue;
+      for (const a of document.querySelectorAll(NATIVE_X_SELECTORS.listLinks)) {
+        if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) continue;
         const id = a.pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&
@@ -793,8 +634,7 @@ export function initializeDeckQuickUI() {
         b.type = "button";
         b.textContent = "▷ Vídeos";
         b.dataset.rodxListVideo = id;
-        b.style.cssText =
-          "font:12px Arial;padding:4px 8px;border:1px solid #71767b55;border-radius:12px;background:transparent;color:inherit";
+        applyComponentStyle(b, "rx-quick-actions-b", false);
         b.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -803,7 +643,9 @@ export function initializeDeckQuickUI() {
         a.after(b);
       }
     }
-    Studio.register("ui.quick-actions", scan, { minMs: 550 });
+    Studio.register("ui.quick-actions", scan, {
+      minMs: RUNTIME_LIMITS.uiQuickActions.initializeDeckQuickUIMinMs,
+    });
     return { search };
   })();
 }

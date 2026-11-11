@@ -1,0 +1,38 @@
+.rodx-xrepost {
+  display: grid;
+  gap: var(--rodx-ds-space-12);
+  padding-bottom: var(--rodx-ds-space-8);
+}
+.rodx-xrepost .xr-choices {
+  display: flex;
+  gap: var(--rodx-ds-space-6);
+  overflow-x: auto;
+  padding: var(--rodx-ds-space-4) 0;
+}
+.rodx-xrepost .xr-choices button {
+  white-space: nowrap;
+}
+.rodx-xrepost .xr-item {
+  border: 1px solid var(--rodx-ds-color-border);
+  border-radius: var(--rodx-ds-radius-16);
+  padding: var(--rodx-ds-space-12);
+}
+.rodx-xrepost .xr-caption {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rodx-xrepost .xr-meta {
+  font-size: var(--rodx-ds-text-12);
+  opacity: 0.8;
+  margin: var(--rodx-ds-space-6) 0;
+}
+.rodx-xrepost .xr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rodx-ds-space-8);
+  padding-top: var(--rodx-ds-space-8);
+}
+.rodx-xrepost button {
+  min-height: var(--rodx-ds-control-height);
+  touch-action: manipulation;
+}

@@ -1,3 +1,5 @@
+import { RODX_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-links-social-1.css?inline";
 export let SocialAppLinks;
 
 export function initializeDeckSocialAppLinks() {
@@ -51,52 +53,13 @@ export function initializeDeckSocialAppLinks() {
       styled = true;
       const style = document.createElement("style");
       style.id = "rodx-social-app-links-css";
-      style.textContent = `
-:is(article,[role="article"])[data-testid="tweet"] a.rodx-app-link {
-  display: inline !important;
-  width: auto !important;
-  max-width: 100%;
-  padding: 1px 4px !important;
-  margin: 0 1px 0 0 !important;
-  border-radius: 5px !important;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-  color: #1d9bf0 !important;
-  text-decoration: none !important;
-  font-family:
-    TwitterChirp,
-    Chirp,
-    -apple-system,
-    system-ui,
-    sans-serif !important;
-  overflow-wrap: anywhere;
-}
-:is(article,[role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="telegram"] {
-  background: rgba(34, 158, 217, 0.17) !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="whatsapp"] {
-  background: rgba(37, 211, 102, 0.17) !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="instagram"] {
-  background: rgba(225, 48, 108, 0.15) !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] a.rodx-app-link .rodx-app-icon {
-  display: inline-block !important;
-  vertical-align: -2px !important;
-  width: 15px;
-  height: 15px;
-  margin: 0 4px 0 0 !important;
-  fill: currentColor;
-  stroke-linejoin: round;
-  pointer-events: none !important;
-}
-`;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
     }
     function decorate(anchor, app) {
       if (!app) return;
-      if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(".rodx-app-icon")) {
-        anchor.querySelector(".rodx-app-icon")?.remove();
+      if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(RODX_SELECTORS.appLinkIcon)) {
+        anchor.querySelector(RODX_SELECTORS.appLinkIcon)?.remove();
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("viewBox", "0 0 24 24");
         icon.setAttribute("aria-hidden", "true");
@@ -127,9 +90,7 @@ export function initializeDeckSocialAppLinks() {
       if (!document.body) return;
       ensureStyle();
       let inspected = 0;
-      for (const anchor of document.querySelectorAll(
-        ':is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] a[href],:is(article,[role="article"])[data-testid="tweet"] [data-testid="card.wrapper"] a[href]',
-      )) {
+      for (const anchor of document.querySelectorAll(COMPOSITE_SELECTORS.tweetSocialLinks)) {
         if (++inspected > 320) break;
         let app = identify(
           anchor.dataset.rodxExpanded || anchor.getAttribute("data-expanded-url") || anchor.href,

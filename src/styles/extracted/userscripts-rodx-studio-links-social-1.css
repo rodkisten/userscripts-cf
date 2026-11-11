@@ -1,0 +1,33 @@
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link {
+  display: inline;
+  width: auto;
+  max-width: 100%;
+  padding: var(--rodx-ds-space-1) var(--rodx-ds-space-4);
+  margin: 0 var(--rodx-ds-space-1) 0 0;
+  border-radius: var(--rodx-ds-radius-4);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: var(--rodx-ds-color-accent);
+  text-decoration: none;
+  font-family: TwitterChirp, Chirp, var(--rodx-ds-font-sans);
+  overflow-wrap: anywhere;
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="telegram"] {
+  background: var(--rodx-ds-social-telegram-bg);
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="whatsapp"] {
+  background: var(--rodx-ds-social-whatsapp-bg);
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="instagram"] {
+  background: var(--rodx-ds-social-instagram-bg);
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link .rodx-app-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  width: var(--rodx-ds-icon-size-small);
+  height: var(--rodx-ds-icon-size-small);
+  margin: 0 var(--rodx-ds-space-4) 0 0;
+  fill: currentColor;
+  stroke-linejoin: round;
+  pointer-events: none;
+}

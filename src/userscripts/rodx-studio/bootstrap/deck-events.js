@@ -1,3 +1,10 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import {
+  RODX_SELECTORS,
+  NATIVE_X_SELECTORS,
+  COMPOSITE_SELECTORS,
+  DOM_SELECTORS,
+} from "../../../selectors.js";
 import { createListsModule } from "../lists/index.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
@@ -41,7 +48,7 @@ export function initializeRodX_deck_164() {
     "click",
     (event) => {
       const el = event.target instanceof Element ? event.target : null;
-      if (!el || el.closest("#rodx-search-deck-root,#rodx-selection-popover")) return;
+      if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) return;
       if (
         !state.visual.blockTweetOpen ||
         event.defaultPrevented ||
@@ -54,15 +61,8 @@ export function initializeRodX_deck_164() {
       )
         return;
       const article = el.closest(XDOM.tweet);
-      if (!article || article.closest("#layers")) return;
-      if (
-        el.closest(
-          'a,button,input,textarea,select,video,[role="button"],[role="link"],' +
-            '[data-testid="tweetPhoto"],[data-testid="videoPlayerContainer"],' +
-            ".rodx-hashtags,.rodx-result-actions",
-        )
-      )
-        return;
+      if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) return;
+      if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) return;
       if (window.getSelection()?.toString().trim()) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -130,8 +130,11 @@ export function initializeRodX_deck_175() {
 export function initializeRodX_deck_176() {
   Studio.navigate = (href) => {
     const target = new URL(href, location.origin);
-    const anchor = [...document.querySelectorAll("a[href]")].find(
-      (a) => a.pathname === target.pathname && a.search === target.search && !a.closest('[id^="rodx-"]'),
+    const anchor = [...document.querySelectorAll(DOM_SELECTORS.linksWithHref)].find(
+      (a) =>
+        a.pathname === target.pathname &&
+        a.search === target.search &&
+        !a.closest(RODX_SELECTORS.studioOwnedElements),
     );
     if (anchor) anchor.click();
     else location.assign(target.href);
@@ -203,7 +206,7 @@ export function initializeRodX_deck_185() {
     clearTimeout(databaseSaveTimer);
     databaseSaveTimer = setTimeout(() => {
       if (state.account) void saveState().catch(console.warn);
-    }, 2500);
+    }, RUNTIME_LIMITS.bootstrapDeckEvents.databaseSaveDebounceMs);
   });
 }
 
@@ -219,7 +222,7 @@ export function initializeRodX_deck_186() {
         refreshingCloud = false;
       }
     },
-    { events: ["maintenance"], minMs: 60000 },
+    { events: ["maintenance"], minMs: RUNTIME_LIMITS.bootstrapDeckEvents.cloudRefreshIntervalMs },
   );
 }
 
@@ -231,7 +234,7 @@ export function initializeRodX_deck_187() {
 
 export function initializeRodX_deck_188() {
   Studio.register("identity.navigation", tick, {
-    minMs: 300,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.identityNavigationIntervalMs,
   });
 }
 
@@ -244,27 +247,27 @@ export function initializeRodX_deck_189() {
       // The old page-wide search launcher is intentionally no longer inserted.
     },
     {
-      minMs: 250,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.dockRefreshIntervalMs,
     },
   );
 }
 
 export function initializeRodX_deck_190() {
   Studio.register("feeds.filters", FeedFilters.scan, {
-    minMs: 150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.feedFilterScanIntervalMs,
   });
 }
 
 export function initializeRodX_deck_191() {
   Studio.register("search.navigation", SearchAnchors.scan, {
-    minMs: 150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.searchNavigationIntervalMs,
   });
 }
 
 export function initializeRodX_deck_192() {
   Studio.register("profile.lists", ProfileLists.scan, {
     group: "profile",
-    minMs: 350,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.profileListsScanIntervalMs,
   });
 }
 
@@ -276,7 +279,7 @@ export function initializeRodX_deck_193() {
       ResultEnhancer.scan();
     },
     {
-      minMs: 200,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.tweetEnhancementIntervalMs,
     },
   );
 }
@@ -293,7 +296,7 @@ export function initializeRodX_deck_194() {
     },
     {
       group: "links",
-      minMs: 350,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.socialLinksScanIntervalMs,
     },
   );
 }
@@ -301,7 +304,7 @@ export function initializeRodX_deck_194() {
 export function initializeRodX_deck_195() {
   Studio.register("translation.native", NativeTranslation.scan, {
     group: "translation",
-    minMs: 1150,
+    minMs: RUNTIME_LIMITS.bootstrapDeckEvents.nativeTranslationIntervalMs,
   });
 }
 
@@ -318,7 +321,7 @@ export function initializeRodX_deck_196() {
     },
     {
       group: "media",
-      minMs: 220,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
 }
@@ -332,7 +335,7 @@ export function initializeRodX_deck_197() {
     },
     {
       group: "layout",
-      minMs: 550,
+      minMs: RUNTIME_LIMITS.bootstrapDeckEvents.quickActionsScanIntervalMs,
     },
   );
 }

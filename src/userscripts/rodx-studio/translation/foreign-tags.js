@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
 export let ForeignTags;
@@ -8,7 +10,7 @@ export function initializeDeckForeignTags() {
       waiting = new Map();
     let active = 0,
       started = 0;
-    const MAX = 180;
+    const MAX = RUNTIME_LIMITS.translationForeignTags.max;
     const languageAllowed = new Set(["pt", "es", "en"]);
     const gmRequest = (args) => {
       const fn =
@@ -39,7 +41,7 @@ export function initializeDeckForeignTags() {
           "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=" +
           encodeURIComponent(text),
         method: "GET",
-        timeout: 7000,
+        timeout: RUNTIME_LIMITS.translationForeignTags.initializeDeckForeignTagsTimeout,
         responseType: "text",
       });
       const json = JSON.parse(response.responseText || "null");
@@ -64,14 +66,14 @@ export function initializeDeckForeignTags() {
     };
     const apply = (key) => {
       const value = cache.get(key);
-      for (const item of document.querySelectorAll(".rodx-hashtag-item")) {
+      for (const item of document.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         if (
           String(item.dataset.tag || "")
             .replace(/^#/, "")
             .toLocaleLowerCase() !== key
         )
           continue;
-        item.querySelector(".rodx-tag-translation")?.remove();
+        item.querySelector(RODX_SELECTORS.tagTranslation)?.remove();
         // All hashtag actions live in OUR tray. Keep original tags visible here;
         // only add parenthesized translation for languages outside PT/ES/EN.
         item.hidden = false;
@@ -86,7 +88,7 @@ export function initializeDeckForeignTags() {
     };
     function scan(tray) {
       if (!state.visual.translateForeignTags) return;
-      for (const item of tray.querySelectorAll(".rodx-hashtag-item")) {
+      for (const item of tray.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         const key = String(item.dataset.tag || "")
           .replace(/^#/, "")
           .toLocaleLowerCase();

@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { SearchHistory } from "../search/history.js";
@@ -44,7 +45,7 @@ export function initializeDeckCloudSync() {
             "Content-Type": "application/json",
           },
           data: body == null ? undefined : JSON.stringify(body),
-          timeout: 20000,
+          timeout: RUNTIME_LIMITS.syncCloud.requestTimeout,
           onload: (response) => {
             let data;
             try {
@@ -115,7 +116,7 @@ export function initializeDeckCloudSync() {
             console.warn("[RodX cloud] Backup local preservado:", error);
             state.storageWarning = `Sincronização não concluída: ${error.message}. Dados locais preservados.`;
           });
-        }, 1300),
+        }, RUNTIME_LIMITS.syncCloud.queueSnapshotDelayMs),
       );
     }
     async function sendSnapshot(account, payload) {

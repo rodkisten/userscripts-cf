@@ -1,3 +1,4 @@
+import { createDefaults } from "../../../config/defaults.js";
 export function buildStudioPreferences(Studio, deck) {
   const { state } = deck;
   const labels = {
@@ -159,10 +160,7 @@ export function buildStudioPreferences(Studio, deck) {
               ])
             : field("l_" + key, label, settings[key]),
       );
-    const defaults = Studio.config.feedDefaults || {
-      media: "media",
-      reposts: true,
-    };
+    const defaults = Studio.config.feedDefaults || createDefaults("feed");
     return Studio.menu.open({
       id: "rodx-preferences",
       title: "RodX · Preferências",

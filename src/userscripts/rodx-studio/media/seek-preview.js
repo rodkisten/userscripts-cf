@@ -1,3 +1,7 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS, MEDIA_COMPONENT_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline";
 export function createSeekPreviews(Studio, getOptions) {
   const entries = new Map(),
     sources = Studio.state.mediaSources || (Studio.state.mediaSources = new Map());
@@ -37,17 +41,17 @@ export function createSeekPreviews(Studio, getOptions) {
   }
   function source(item) {
     const video = item.video,
-      article = video.closest("article");
-    const id = [...(article?.querySelectorAll('a[href*="/status/"]') || [])]
+      article = video.closest(DOM_SELECTORS.articles);
+    const id = [...(article?.querySelectorAll(NATIVE_X_SELECTORS.statusLinks) || [])]
       .map((a) => a.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1])
       .find(Boolean);
-    const index = article ? [...article.querySelectorAll("video")].indexOf(video) : 0;
+    const index = article ? [...article.querySelectorAll(DOM_SELECTORS.videos)].indexOf(video) : 0;
     const media = sources.get(id)?.[index] || sources.get(id)?.[0];
     return (
       media?.url ||
       [
         /\.mp4(?:\?|$)/.test(video.currentSrc || "") ? video.currentSrc : "",
-        video.querySelector('source[type="video/mp4"]')?.src,
+        video.querySelector(DOM_SELECTORS.mp4Sources)?.src,
       ].find(Boolean) ||
       ""
     );
@@ -111,8 +115,7 @@ export function createSeekPreviews(Studio, getOptions) {
       decoder.preload = "metadata";
       decoder.setAttribute("aria-hidden", "true");
       decoder.tabIndex = -1;
-      decoder.style.cssText =
-        "position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0;pointer-events:none";
+      applyComponentStyle(decoder, "rx-seek-preview-decoder", false);
       decoder.src = url;
       document.body.append(decoder);
     }
@@ -181,29 +184,12 @@ export function createSeekPreviews(Studio, getOptions) {
     let item = entries.get(video);
     if (item?.skin === skin) return;
     if (item) cleanup(video);
-    const slider = root.querySelector("media-time-slider"),
-      thumbnail = root.querySelector("media-slider-thumbnail");
+    const slider = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaTimeSlider),
+      thumbnail = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaSliderThumbnail);
     if (!slider || !thumbnail) return;
     const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";
-    style.textContent = `
-:host([data-rodx-no-dim]) {
-  --media-controls-gradient: transparent !important;
-}
-:host([data-rodx-no-dim]) media-controls-backdrop.video-controls-backdrop {
-  background: transparent !important;
-  background-image: none !important;
-  opacity: 0 !important;
-}
-media-slider-thumbnail {
-  min-width: 160px;
-  max-width: 240px;
-  min-height: 90px;
-}
-media-slider-thumbnail[data-rodx-preview="unavailable"] {
-  display: none !important;
-}
-`;
+    style.textContent = extractedCSS1;
     skin.toggleAttribute("data-rodx-no-dim", getOptions().videoPauseDim !== true);
     root.append(style);
     const abort = new AbortController();
@@ -224,7 +210,7 @@ media-slider-thumbnail[data-rodx-preview="unavailable"] {
       if (!Number.isFinite(x)) return;
       const time = Math.max(0, Math.min(1, (x - rect.left) / rect.width)) * video.duration;
       clearTimeout(timer);
-      timer = setTimeout(() => void capture(item, time), 120);
+      timer = setTimeout(() => void capture(item, time), RUNTIME_LIMITS.mediaSeekPreview.attachDelayMs);
     };
     slider.addEventListener("pointerdown", schedule, {
       passive: true,

@@ -1,3 +1,7 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-anchors-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { parseQueryBlocks } from "./query-parser.js";
@@ -57,8 +61,8 @@ export function initializeDeckSearchAnchors() {
       if (!searchPage() || !q || dismissed === q || Date.now() < captureBlockedUntil) return;
       const article = [...Studio.dom.nodes(XDOM.tweet)].find((a) => a.getBoundingClientRect().bottom > 65);
       const status =
-        article?.querySelector("time")?.closest('a[href*="/status/"]') ||
-        article?.querySelector('a[href*="/status/"]');
+        article?.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+        article?.querySelector(NATIVE_X_SELECTORS.statusLinks);
       const saved = state.searches?.find((item) => item.query === q);
       origin = {
         account: state.account,
@@ -79,26 +83,24 @@ export function initializeDeckSearchAnchors() {
         location.origin,
       );
       const matches = () => location.pathname === "/search" && query() === q;
-      const existing = [...document.querySelectorAll("a[href]")].find(
+      const existing = [...document.querySelectorAll(DOM_SELECTORS.linksWithHref)].find(
         (a) =>
           a.pathname === wanted.pathname &&
           a.search === wanted.search &&
-          !a.closest("#rodx-navigation-strip"),
+          !a.closest(RODX_SELECTORS.navigationStrip),
       );
       if (existing) {
         existing.click();
         return;
       }
-      let field = document.querySelector('input[data-testid="SearchBox_Search_Input"]');
+      let field = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       if (!field) {
-        const explore = document.querySelector(
-          'a[data-testid="AppTabBar_Explore_Link"],a[data-testid="SideNav_Explore_Link"],a[href="/explore"]',
-        );
+        const explore = document.querySelector(NATIVE_X_SELECTORS.exploreNavigationLinks);
         if (explore) {
           explore.click();
           for (let i = 0; i < 20 && !field; i++) {
-            await new Promise((r) => setTimeout(r, 80));
-            field = document.querySelector('input[data-testid="SearchBox_Search_Input"]');
+            await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.searchAnchors.navigationRetryDelayMs));
+            field = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
           }
         }
       }
@@ -114,8 +116,8 @@ export function initializeDeckSearchAnchors() {
             bubbles: true,
           }),
         );
-        await new Promise((r) => setTimeout(r, 40));
-        const form = field.closest("form");
+        await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryShortDelayMs));
+        const form = field.closest(DOM_SELECTORS.forms);
         if (form) form.requestSubmit();
         else
           field.dispatchEvent(
@@ -128,7 +130,7 @@ export function initializeDeckSearchAnchors() {
             }),
           );
         for (let i = 0; i < 15; i++) {
-          await new Promise((r) => setTimeout(r, 80));
+          await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.searchAnchors.navigationRetryDelayMs));
           if (matches()) return;
         }
       }
@@ -156,7 +158,7 @@ export function initializeDeckSearchAnchors() {
         const target =
           entry.tweet &&
           [...Studio.dom.nodes(XDOM.tweet)].find((a) =>
-            [...a.querySelectorAll('a[href*="/status/"]')].some((link) =>
+            [...a.querySelectorAll(NATIVE_X_SELECTORS.statusLinks)].some((link) =>
               link.getAttribute("href")?.includes("/status/" + entry.tweet),
             ),
           );
@@ -168,7 +170,7 @@ export function initializeDeckSearchAnchors() {
           } else if (++stable >= 3) stop();
         } else if (ticks < 8)
           scrollTo(0, Math.min(entry.y, Math.max(0, document.documentElement.scrollHeight - innerHeight)));
-      }, 200);
+      }, RUNTIME_LIMITS.searchAnchors.restoreIntervalMs);
       cancelRestore = stop;
       document.addEventListener("touchstart", stop, {
         once: true,
@@ -190,14 +192,14 @@ export function initializeDeckSearchAnchors() {
       const delta = entry.index - index();
       if (delta < 0 && delta >= -40) {
         history.go(delta);
-        await new Promise((r) => setTimeout(r, 750));
+        await new Promise((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryLongDelayMs));
         if (searchPage() && query() === entry.query) return;
       }
       try {
         await nativeSearch(entry.query, entry.href);
       } catch (error) {
         cancelRestore?.();
-        shadow.querySelector("[data-nav-status]").textContent = String(error.message || error);
+        shadow.querySelector(RODX_SELECTORS.navigationStatus).textContent = String(error.message || error);
       } finally {
         pending = false;
         render();
@@ -205,84 +207,26 @@ export function initializeDeckSearchAnchors() {
     }
     function mount() {
       const main =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('main,[role="main"]');
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainContent);
       if (!main) return false;
       if (!host) {
-        document.querySelectorAll("#rodx-search-anchors").forEach((el) => el.remove());
+        document.querySelectorAll(RODX_SELECTORS.searchAnchors).forEach((el) => el.remove());
         host = document.createElement("section");
         host.id = "rodx-navigation-strip";
-        host.style.cssText =
-          "display:block;position:relative;z-index:auto;width:100%;min-width:0;box-sizing:border-box;flex:0 0 auto;padding:4px 8px;";
+        applyComponentStyle(host, "rx-anchors-host", false);
         shadow = host.attachShadow({
           mode: "open",
         });
-        shadow.innerHTML = `<style>
-:host {
-  color: inherit;
-  font:
-    13px TwitterChirp,
-    Arial,
-    sans-serif;
-}
-* {
-  box-sizing: border-box;
-}
-.list-context {
-  padding: 8px 10px;
-  border-bottom: 1px solid #71767b33;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-  line-height: 1.4;
-}
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  border: 1px solid #71767b44;
-  border-radius: 16px;
-  background: transparent;
-  padding: 5px 9px;
-  flex: none;
-}
-.return {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  min-width: 0;
-  margin-top: 4px;
-}
-.return button:first-child {
-  flex: 1;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 5px 0;
-}
-.return button:last-child {
-  border: 0;
-  font-size: 18px;
-  padding: 3px 8px;
-}
-small {
-  color: #71767b;
-}
-[hidden] {
-  display: none !important;
-}
-</style>
+        shadow.innerHTML = `<style>${extractedCSS1}</style>
 <div class="list-context" role="status" hidden></div>
 <div class="return" hidden>
   <button type="button" data-return></button>
   <button type="button" data-dismiss aria-label="Fechar retorno à pesquisa">×</button>
 </div>
 <small data-nav-status role="status"></small>`;
-        shadow.querySelector("[data-return]").onclick = () => void returnToSearch();
-        shadow.querySelector("[data-dismiss]").onclick = () => {
+        shadow.querySelector(RODX_SELECTORS.searchReturnAction).onclick = () => void returnToSearch();
+        shadow.querySelector(RODX_SELECTORS.searchDismissAction).onclick = () => {
           dismissed = origin?.query || "";
           clear();
         };
@@ -319,9 +263,9 @@ small {
     let listNameCheck = "";
     function render() {
       if (!mount()) return;
-      const native = document.querySelector('input[data-testid="SearchBox_Search_Input"]');
+      const native = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       const positiveIds = searchPage() ? positiveListIds(query()) : [];
-      const listContext = shadow.querySelector(".list-context");
+      const listContext = shadow.querySelector(RODX_SELECTORS.searchListContext);
       listContext.hidden = positiveIds.length === 0;
       if (positiveIds.length) {
         const rows = Studio.services.lists?.all() || [];
@@ -360,9 +304,9 @@ small {
         !searchPage() &&
         !globalPage() &&
         dismissed !== origin.query;
-      const row = shadow.querySelector(".return");
+      const row = shadow.querySelector(RODX_SELECTORS.searchReturnButton);
       row.hidden = !show;
-      const button = shadow.querySelector("[data-return]");
+      const button = shadow.querySelector(RODX_SELECTORS.searchReturnAction);
       button.textContent = "↩ Voltar para a pesquisa " + (origin?.label || "");
       button.title = origin?.query || "";
       button.disabled = pending;
@@ -377,7 +321,7 @@ small {
     document.addEventListener(
       "click",
       (event) => {
-        const link = event.target.closest?.("a[href]");
+        const link = event.target.closest?.(DOM_SELECTORS.linksWithHref);
         if (!link) return;
         const testid = link.getAttribute("data-testid") || "";
         if (
@@ -401,7 +345,7 @@ small {
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
           if (searchPage()) capture();
-        }, 180);
+        }, RUNTIME_LIMITS.searchAnchors.initializeDeckSearchAnchorsDelayMs);
       },
       {
         passive: true,
@@ -424,7 +368,7 @@ small {
           dismissed = "";
           persist();
         }
-        shadow?.querySelector("[data-nav-status]")?.replaceChildren();
+        shadow?.querySelector(RODX_SELECTORS.navigationStatus)?.replaceChildren();
       }
       render();
     }

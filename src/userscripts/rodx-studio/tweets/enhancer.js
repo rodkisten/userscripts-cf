@@ -1,3 +1,12 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import bookmarkSVG from "../../../assets/icons/bookmark.svg?inline";
+import {
+  DOM_SELECTORS,
+  NATIVE_X_SELECTORS,
+  RODX_SELECTORS,
+  COMPOSITE_SELECTORS,
+} from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { currentFullQuery, nativeSearch } from "../feeds/local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "../feeds/local-rules.js";
@@ -19,385 +28,15 @@ export function initializeDeckResultEnhancer() {
     const actionClass = "rodx-result-actions";
     function postId(article) {
       const link =
-        article.querySelector("time")?.closest('a[href*="/status/"]') ||
-        article.querySelector('a[href*="/status/"]');
+        article.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+        article.querySelector(NATIVE_X_SELECTORS.statusLinks);
       return link?.getAttribute("href")?.match(UID_RE)?.[1] || "";
     }
     function ensureStyle() {
       if (style?.isConnected) return;
       style = document.createElement("style");
       style.id = "rodx-results-css";
-      style.textContent = `
-/* Apply typography and density throughout X, without touching its search box. */
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] {
-  font-size: var(--rodx-font, 15px) !important;
-  line-height: calc(1.18 + 0.23 * var(--rodx-dense, 1)) !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] a[data-rodx-tag="1"] {
-  border-radius: 4px;
-  padding: 0 2px;
-  background: var(--rodx-tag-bg, rgba(29, 155, 240, 0.09));
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-tight="1"] [data-testid="tweetText"] {
-  line-height: 1.24 !important;
-}
-/* Compress whitespace *around* media and keep the media's native ratio. */
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-tight="1"] [data-testid="tweetText"] + div {
-  margin-top: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-tight="1"] [data-testid="tweetPhoto"],
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-tight="1"] [data-testid="videoPlayerContainer"] {
-  margin-block: 0 !important;
-}
-/* X may have different nested padding wrappers on each route. Only shrink
-         the tweet's top/bottom padding. Never set min-height on media wrappers. */
-:is(article,[role="article"])[data-testid="tweet"] {
-  --rodx-edge: clamp(2px, calc(var(--rodx-dense, 1) * 10px), 14px);
-}
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-tight="1"] {
-  padding-block: 0 !important;
-}
-body.rodx-search-page article[data-rodx-read="1"] {
-  opacity: 1 !important;
-}
-/* Full available tweet content width with no extra side gutter. */
-:is(article,[role="article"])[data-testid="tweet"] > div {
-  max-width: 100% !important;
-  min-width: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoPlayerContainer"] {
-  box-sizing: border-box !important;
-}
-/* Avoid an extra reserved right gutter without changing the avatar column. */
-:is(article,[role="article"])[data-testid="tweet"] {
-  box-sizing: border-box !important;
-  max-width: 100% !important;
-  padding-right: 6px !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoPlayerContainer"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetPhoto"] {
-  max-width: 100% !important;
-  min-width: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] {
-  overflow-wrap: anywhere;
-  margin-block: 0 !important;
-  padding-block: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] > div,
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] > span {
-  margin-block: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetPhoto"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoPlayerContainer"] {
-  margin-block: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtags + [role="group"] {
-  margin-top: 0 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions {
-  min-width: 0 !important;
-  flex-shrink: 0;
-}
-/* The hashtag tray is a separate, complete list below the media. No ellipsis,
-         line clamp, scrollbox or oversized blank space between media and actions. */
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtags {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  gap: 0 2px !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow: visible !important;
-  white-space: normal !important;
-  -webkit-line-clamp: unset !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  line-height: 1.25 !important;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  max-width: 100%;
-  min-width: 0;
-  padding: 0 !important;
-  margin: 0 !important;
-  border-radius: 4px;
-  background: transparent;
-  font-family:
-    TwitterChirp,
-    Chirp,
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif !important;
-  line-height: 1.15 !important;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item[data-selected="0"][data-color="1"] {
-  background: transparent !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item[data-selected="0"][data-color="1"] > a {
-  background: var(--rodx-tag-bg, rgba(29, 155, 240, 0.1));
-  padding: 1px 3px !important;
-  border-radius: 4px;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item[data-selected="1"] {
-  color: inherit;
-  opacity: 0.6;
-  background: transparent !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item .rodx-tag-translation {
-  font-size: calc(var(--rodx-font, 15px) - 2px);
-  font-weight: 400;
-  opacity: 0.72;
-  padding-left: 2px;
-  white-space: normal;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item > a {
-  color: inherit;
-  text-decoration: none;
-  font-size: var(--rodx-font, 15px);
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item[data-selected="0"] > a {
-  color: rgb(29, 155, 240);
-}
-:is(article,[role="article"])[data-testid="tweet"] button.rodx-tag-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 23px;
-  width: 23px;
-  height: 23px;
-  min-width: 23px;
-  min-height: 23px;
-  color: rgb(29, 155, 240);
-  border: 0;
-  border-radius: 50%;
-  padding: 0 !important;
-  margin: 0;
-  background: transparent;
-  opacity: 0.85;
-  cursor: pointer;
-  font:
-    600 18px/1 TwitterChirp,
-    Chirp,
-    -apple-system,
-    system-ui;
-  touch-action: manipulation;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item,
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item > a,
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item .rodx-tag-translation {
-  font-family:
-    TwitterChirp,
-    Chirp,
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif !important;
-  font-size: var(--rodx-font, 15px) !important;
-  font-weight: 400;
-  line-height: 1.15 !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item[data-excluded="1"] > a {
-  color: rgb(244, 33, 46) !important;
-  background: transparent !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item button.rodx-tag-exclude {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 23px;
-  height: 23px;
-  min-width: 23px;
-  min-height: 23px;
-  border: 0;
-  background: transparent;
-  border-radius: 50%;
-  padding: 0;
-  color: rgb(244, 33, 46);
-  font:
-    600 18px/1 TwitterChirp,
-    Chirp,
-    -apple-system,
-    system-ui;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item button.rodx-tag-exclude:is(:active, :hover) {
-  background: rgba(244, 33, 46, 0.1);
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"].rodx-native-only-tags,
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] .rodx-native-tag-tail,
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] .rodx-native-tag-source {
-  display: none !important;
-}
-/* Leave native search/header geometry untouched on every route. */
-#rodx-open-builder {
-  display: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-hashtag-item button[hidden] {
-  display: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="tweetText"] a[data-rodx-selected="1"] {
-  color: inherit !important;
-  background: transparent !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] button.rodx-tag-add:is(:hover, :focus-visible, :active) {
-  opacity: 1;
-  background: rgba(29, 155, 240, 0.11);
-}
-/* Native actions keep their normal geometry, including bookmark and share.
-         Our additional Read / Expand affordances no longer consume a separate row. */
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions {
-  display: inline-flex;
-  gap: 0;
-  align-items: center;
-  justify-content: center;
-  padding: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  background: transparent;
-  border: 0;
-  opacity: 0.5;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions:focus-within {
-  opacity: 1;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions button,
-:is(article,[role="article"])[data-testid="tweet"] .rodx-bookmark-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font:
-    500 14px TwitterChirp,
-    -apple-system,
-    system-ui;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  min-height: 30px;
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0.75;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-bookmark-btn:is(:hover, :focus-visible),
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions button:is(:hover, :focus-visible) {
-  background: rgba(29, 155, 240, 0.09);
-  color: rgb(29, 155, 240);
-  opacity: 1;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions button[data-seen="1"] {
-  opacity: 0.65;
-}
-@media (hover: hover) and (pointer: fine) {
-  :is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions {
-    opacity: 0.35;
-  }
-  :is(article,[role="article"])[data-testid="tweet"]:hover .rodx-result-actions {
-    opacity: 0.85;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rodx-result-actions {
-    transition: none;
-  }
-}
-/* Shared runtime UI: X-like toast, selection popover and drag feedback. */
-#rodx-native-toast {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 58px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2147483601;
-  pointer-events: none;
-  max-width: calc(100vw - 36px);
-  padding: 11px 17px;
-  border-radius: 999px;
-  font:
-    600 13px/1.4 TwitterChirp,
-    Chirp,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-  box-shadow: 0 6px 24px #0005;
-  text-align: center;
-  white-space: normal;
-}
-.rodx-drag-ghost {
-  position: fixed;
-  z-index: 2147483600;
-  pointer-events: none;
-  user-select: none;
-  max-width: 180px;
-  padding: 9px 13px;
-  border-radius: 18px;
-  background: #1d9bf0;
-  color: white;
-  opacity: 0.94;
-  box-shadow: 0 4px 16px #0006;
-  font:
-    600 13px TwitterChirp,
-    Chirp,
-    -apple-system,
-    sans-serif;
-}
-#rodx-selection-popover {
-  position: fixed;
-  z-index: 2147483650;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  max-width: calc(100vw - 20px);
-  padding: 5px;
-  border: 1px solid rgb(83 100 113 / 0.25);
-  border-radius: 20px;
-  background: rgb(32, 35, 39);
-  color: white;
-  box-shadow: 0 5px 19px #0005;
-  font:
-    500 12px TwitterChirp,
-    Chirp,
-    -apple-system,
-    sans-serif;
-}
-#rodx-selection-popover .rodx-selection-caption {
-  max-width: 110px;
-  padding: 0 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#rodx-selection-popover button {
-  min-width: 38px;
-  min-height: 34px;
-  border: 0;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  font:
-    600 20px TwitterChirp,
-    Chirp,
-    sans-serif;
-}
-`;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
     }
     function currentRules() {
@@ -415,7 +54,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
       return rules;
     }
     function seenButtonText(article, id) {
-      const btn = article.querySelector("." + actionClass + " [data-rodx-read-btn]");
+      const btn = article.querySelector(RODX_SELECTORS.resultReadButtonByActionClass(actionClass));
       if (btn) {
         const read = state.seen.has(id);
         btn.textContent = read ? "✓" : "◦";
@@ -431,9 +70,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
         .toLocaleLowerCase();
     }
     function nativeQueryInput() {
-      return document.querySelector(
-        'input[data-testid="SearchBox_Search_Input"], [data-testid="SearchBox_Search_Input"] input',
-      );
+      return document.querySelector(NATIVE_X_SELECTORS.nestedNativeSearchInput);
     }
     function nativeQueryText() {
       const input = nativeQueryInput();
@@ -456,16 +93,16 @@ body.rodx-search-page article[data-rodx-read="1"] {
       NativeQueryTags.flush();
     }
     function findActions(article) {
-      const reply = article.querySelector('[data-testid="reply"]');
-      const retweet = article.querySelector('[data-testid="retweet"], [data-testid="unretweet"]');
-      const share = article.querySelector('[data-testid="share"]');
-      return (reply || retweet || share)?.closest('[role="group"]') || null;
+      const reply = article.querySelector(COMPOSITE_SELECTORS.replyButton);
+      const retweet = article.querySelector(NATIVE_X_SELECTORS.retweetToggleButtons);
+      const share = article.querySelector(NATIVE_X_SELECTORS.shareButton);
+      return (reply || retweet || share)?.closest(DOM_SELECTORS.actionGroups) || null;
     }
     function collectHashtags(article) {
-      const text = article.querySelector('[data-testid="tweetText"]');
+      const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return [];
       const found = new Map();
-      for (const anchor of text.querySelectorAll('a[href*="/hashtag/"],a[href*="%23"],a[href*="%2523"]')) {
+      for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.encodedHashtagLinks)) {
         const t = (anchor.textContent || "").trim().match(/#[\p{L}\p{N}_]+/u)?.[0];
         if (t && !found.has(normalizedTag(t)))
           found.set(normalizedTag(t), {
@@ -485,31 +122,30 @@ body.rodx-search-page article[data-rodx-read="1"] {
       return [...found.values()];
     }
     function removeOldInlineButtons(article) {
-      for (const old of article.querySelectorAll("button.rodx-tag-add:not(.rodx-hashtags button)"))
-        old.remove();
+      for (const old of article.querySelectorAll(RODX_SELECTORS.externalTagAddButtons)) old.remove();
     }
     function refreshAllHashtagStates() {
       const { positive, negative } = queryHashtags();
-      for (const item of document.querySelectorAll(".rodx-hashtag-item")) {
+      for (const item of document.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         const id = normalizedTag(item.dataset.tag);
         const yes = positive.has(id),
           no = negative.has(id);
         item.dataset.selected = yes ? "1" : "0";
         item.dataset.excluded = no ? "1" : "0";
         item.dataset.color = state.visual.colorfulTags && !yes && !no ? "1" : "0";
-        const add = item.querySelector(".rodx-tag-add");
+        const add = item.querySelector(RODX_SELECTORS.tagAddButton);
         if (add) add.hidden = yes;
-        const remove = item.querySelector(".rodx-tag-exclude");
+        const remove = item.querySelector(RODX_SELECTORS.tagExcludeButton);
         if (remove) remove.hidden = no;
       }
     }
     function suppressNativeHashtagList(article, tags) {
-      const text = article.querySelector('[data-testid="tweetText"]');
+      const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return;
       // No destructive textContent/innerHTML edits on React-controlled X nodes.
       // Recompute on each scan so recycled posts don't keep stale CSS classes.
       text.classList.remove("rodx-native-only-tags");
-      for (const node of text.querySelectorAll(".rodx-native-tag-tail,.rodx-native-tag-source")) {
+      for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove("rodx-native-tag-tail", "rodx-native-tag-source");
       }
       if (tags.length < 2) return;
@@ -524,10 +160,10 @@ body.rodx-search-page article[data-rodx-read="1"] {
 
       // Hide discrete hashtag-only DOM subtrees first (including when X wraps
       // several tags in a single span). An inline hashtag between words remains.
-      const candidates = [...text.querySelectorAll("span,div,p")].reverse();
+      const candidates = [...text.querySelectorAll(DOM_SELECTORS.textContainers)].reverse();
       for (const node of candidates) {
         if (node.classList.contains("rodx-native-tag-source")) continue;
-        if (node.closest(".rodx-native-tag-source")) continue;
+        if (node.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const value = (node.innerText || node.textContent || "").trim();
         if (!value || !onlyTags.test(value) || !multi.test(value)) continue;
         const parent = node.parentElement;
@@ -545,8 +181,8 @@ body.rodx-search-page article[data-rodx-read="1"] {
           .flatMap((line) => line.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
           .map((tag) => tag.normalize("NFKC").toLocaleLowerCase()),
       );
-      for (const anchor of text.querySelectorAll('a[href*="/hashtag/"],a[href*="%23"]')) {
-        if (anchor.closest(".rodx-native-tag-source")) continue;
+      for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.hashtagLinks)) {
+        if (anchor.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const tag = anchor.textContent.trim().normalize("NFKC").toLocaleLowerCase();
         if (!wanted.has(tag)) continue;
         // A parent containing regular text marks a sentence; never hide it.
@@ -557,8 +193,8 @@ body.rodx-search-page article[data-rodx-read="1"] {
       }
       // Remove visible line breaks directly before a trailing tag-only block.
       // This prevents the empty two-line gap seen on iOS when hashes moved.
-      const breaks = [...text.querySelectorAll("br")];
-      for (const source of text.querySelectorAll(".rodx-native-tag-source")) {
+      const breaks = [...text.querySelectorAll(DOM_SELECTORS.lineBreaks)];
+      for (const source of text.querySelectorAll(RODX_SELECTORS.nativeTagSource)) {
         let previous = source.previousSibling;
         let steps = 0;
         while (previous && steps++ < 5) {
@@ -582,7 +218,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
     function addHashtagBtns(article) {
       removeOldInlineButtons(article);
       const tags = collectHashtags(article);
-      let tray = article.querySelector(":scope .rodx-hashtags");
+      let tray = article.querySelector(RODX_SELECTORS.scopedHashtagContainer);
       if (!tags.length) {
         tray?.remove();
         return;
@@ -638,9 +274,9 @@ body.rodx-search-page article[data-rodx-read="1"] {
       }
       if (state.visual.translateForeignTags) ForeignTags.scan(tray);
       else
-        for (const item of tray.querySelectorAll(".rodx-hashtag-item")) {
+        for (const item of tray.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
           item.hidden = false;
-          item.querySelector(".rodx-tag-translation")?.remove();
+          item.querySelector(RODX_SELECTORS.tagTranslation)?.remove();
         }
       suppressNativeHashtagList(article, tags);
       refreshAllHashtagStates();
@@ -650,10 +286,10 @@ body.rodx-search-page article[data-rodx-read="1"] {
     function ensureBookmark(article) {
       const group = findActions(article);
       if (!group) return;
-      const native = group.querySelector('[data-testid="bookmark"], [data-testid="removeBookmark"]');
+      const native = group.querySelector(NATIVE_X_SELECTORS.bookmarkToggleButtons);
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
-      const existing = group.querySelector(".rodx-bookmark-btn");
+      const existing = group.querySelector(RODX_SELECTORS.bookmarkButton);
       if (visibleNative) {
         existing?.remove();
         return;
@@ -664,14 +300,13 @@ body.rodx-search-page article[data-rodx-read="1"] {
       btn.type = "button";
       btn.title = "Salvar nos Itens salvos do X";
       btn.setAttribute("aria-label", btn.title);
-      btn.innerHTML =
-        '<svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.8A1.8 1.8 0 0 1 7.8 2h8.4A1.8 1.8 0 0 1 18 3.8V22l-6-4-6 4V3.8Z"/></svg>';
+      btn.innerHTML = bookmarkSVG;
       btn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         const menuButton =
-          article.querySelector('[data-testid="caret"]') ||
-          article.querySelector('button[aria-label*="More"],button[aria-label*="Mais"]');
+          article.querySelector(NATIVE_X_SELECTORS.tweetCaret) ||
+          article.querySelector(DOM_SELECTORS.localizedMoreButtons);
         if (!menuButton) {
           btn.title = "O X não mostrou o menu deste post";
           return;
@@ -685,11 +320,9 @@ body.rodx-search-page article[data-rodx-read="1"] {
         };
         const choose = () => {
           if (committed) return;
-          const options = [
-            ...document.querySelectorAll(
-              '[role="menuitem"], [data-testid="bookmark"], [data-testid="removeBookmark"]',
-            ),
-          ].filter((el) => !article.contains(el) && el.getClientRects().length > 0);
+          const options = [...document.querySelectorAll(NATIVE_X_SELECTORS.bookmarkMenuItems)].filter(
+            (el) => !article.contains(el) && el.getClientRects().length > 0,
+          );
           const target =
             options.find((el) =>
               /^(?:bookmark|save to bookmarks|salvar nos itens salvos|adicionar aos itens salvos|remove bookmark|remover dos itens salvos|remover marcador)/i.test(
@@ -706,11 +339,11 @@ body.rodx-search-page article[data-rodx-read="1"] {
           childList: true,
           subtree: true,
         });
-        timeout = setTimeout(finish, 1400);
+        timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
         menuButton.click();
         setTimeout(choose, 0);
       });
-      const share = group.querySelector('[data-testid="share"]');
+      const share = group.querySelector(NATIVE_X_SELECTORS.shareButton);
       if (share?.parentElement?.parentElement === group) share.parentElement.before(btn);
       else group.append(btn);
     }
@@ -744,7 +377,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
           article.isConnected &&
           document.visibilityState === "visible" &&
           document.body.classList.contains("rodx-search-page") &&
-          article.closest('[data-testid="cellInnerDiv"]')?.style.display !== "none"
+          article.closest(NATIVE_X_SELECTORS.timelineCells)?.style.display !== "none"
         );
       }
       state.readObserver = new IntersectionObserver(
@@ -827,7 +460,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
           state.readObserver?.disconnect();
           state.readObserver = null;
           state.readProgress = new WeakMap();
-          document.querySelectorAll("[data-rodx-observed]").forEach((article) => {
+          document.querySelectorAll(RODX_SELECTORS.observedElements).forEach((article) => {
             delete article.dataset.rodxObserved;
           });
         });
@@ -845,8 +478,8 @@ body.rodx-search-page article[data-rodx-read="1"] {
       // seen-state and filtering remain restricted to search results.
       if (!current || !["live", "top"].includes(current.sort)) {
         for (const article of Studio.dom.nodes(XDOM.tweet)) {
-          article.style.setProperty("--rodx-font", state.visual.font + "px");
-          article.style.setProperty("--rodx-dense", String(state.visual.density));
+          article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
+          article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
           article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
           addHashtagBtns(article);
           ensureBookmark(article);
@@ -856,25 +489,25 @@ body.rodx-search-page article[data-rodx-read="1"] {
       ensureStyle();
       setupReader();
       const local = currentRules();
-      const main = document.querySelector('[data-testid="primaryColumn"]');
+      const main = document.querySelector(NATIVE_X_SELECTORS.primaryColumn);
       if (!main) return;
-      const matches = main.querySelectorAll(':is(article,[role="article"])[data-testid="tweet"]');
+      const matches = main.querySelectorAll(NATIVE_X_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
         if (!id) continue;
-        const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
+        const cell = article.closest(NATIVE_X_SELECTORS.timelineCells) || article;
         // Query patterns, seen filters and limits run before X renders the response.
         if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
           cell.style.removeProperty("display");
         delete cell.dataset.rodxUnmatched;
         delete cell.dataset.rodxLimited;
-        article.style.setProperty("--rodx-font", state.visual.font + "px");
-        article.style.setProperty("--rodx-dense", String(state.visual.density));
+        article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
+        article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
         article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
         setSeen(article, id);
         addHashtagBtns(article);
         ensureBookmark(article);
-        let actions = article.querySelector("." + actionClass);
+        let actions = article.querySelector(DOM_SELECTORS.resultActionsByClass(actionClass));
         if (!actions) {
           actions = document.createElement("div");
           actions.className = actionClass;
@@ -889,8 +522,8 @@ body.rodx-search-page article[data-rodx-read="1"] {
             event.preventDefault();
             event.stopImmediatePropagation();
             const anchor =
-              article.querySelector("time")?.closest('a[href*="/status/"]') ||
-              article.querySelector('a[href*="/status/"]');
+              article.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+              article.querySelector(NATIVE_X_SELECTORS.statusLinks);
             if (!anchor) {
               showRodxToast("Não foi possível localizar o link nativo deste post.", "error");
               return;
@@ -921,7 +554,7 @@ body.rodx-search-page article[data-rodx-read="1"] {
           actions.hidden = false;
           targetActions.append(actions);
         }
-        const exp = actions.querySelector("[data-rodx-expand]");
+        const exp = actions.querySelector(RODX_SELECTORS.expandAction);
         if (exp) {
           exp.textContent = "↗";
           exp.title = "Expandir e abrir tweet";

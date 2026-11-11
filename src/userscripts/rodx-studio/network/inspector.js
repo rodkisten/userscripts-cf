@@ -1,3 +1,6 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-network-inspector-1.css?inline";
 export function createNetworkInspector(Studio) {
   const records = new Map();
   const order = [];
@@ -107,7 +110,7 @@ export function createNetworkInspector(Studio) {
       renderTimer = 0;
       renderRows();
       renderDetail();
-    }, 180);
+    }, RUNTIME_LIMITS.networkInspector.refreshSoonDelayMs);
   }
   Studio.on("network:inspect", (event) => {
     if (!state.capture) return;
@@ -151,69 +154,9 @@ export function createNetworkInspector(Studio) {
   });
   const root = document.createElement("section");
   root.id = "rodx-network-root";
-  root.style.display = "none";
+  root.style.setProperty("display", "none", "important");
   root.innerHTML = `
-      <style>
-        #rodx-network-root {
-          display: block;
-          width: 100%;
-          min-width: 0;
-          color: var(--rm-color, inherit);
-          font: 13px -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-        }
-        #rodx-network-root * { box-sizing: border-box; }
-        #rodx-network-root .rx-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
-        #rodx-network-root button, #rodx-network-root input, #rodx-network-root select {
-          border: 1px solid #8885;
-          border-radius: 9px;
-          padding: 7px 9px;
-          background: transparent;
-          color: inherit;
-          font: inherit;
-          min-height: 36px;
-        }
-        #rodx-network-root button[aria-pressed="true"],
-        #rodx-network-root button.rx-current { border-color: #1d9bf0; color: #1d9bf0; }
-        #rodx-network-root input[type="search"] { flex: 1; min-width: 120px; font-size: 16px; }
-        #rodx-network-root .rx-list { max-height: 34dvh; overflow: auto; margin-top: 10px; }
-        #rodx-network-root .rx-entry {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 7px 3px;
-          border-bottom: 1px solid #8883;
-        }
-        #rodx-network-root .rx-entry button {
-          flex: 1;
-          min-width: 0;
-          text-align: left;
-          overflow-wrap: anywhere;
-        }
-        #rodx-network-root .rx-small { font-size: 11px; opacity: .78; }
-        #rodx-network-root .rx-detail { margin-top: 10px; border-top: 1px solid #8885; padding-top: 10px; }
-        #rodx-network-root pre {
-          width: 100%;
-          max-height: 42dvh;
-          overflow: auto;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-          user-select: text;
-          -webkit-user-select: text;
-          font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
-          padding: 10px;
-          border: 1px solid #8884;
-          border-radius: 8px;
-        }
-        #rodx-network-root .rx-tree {
-          max-height: 45dvh;
-          overflow: auto;
-          font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
-        }
-        #rodx-network-root .rx-tree details { margin-left: 11px; border-left: 1px solid #8884; padding-left: 5px; }
-        #rodx-network-root .rx-tree summary { cursor: pointer; overflow-wrap: anywhere; }
-        #rodx-network-root .rx-tree .leaf { margin-left: 9px; white-space: pre-wrap; overflow-wrap: anywhere; }
-        #rodx-network-root .rx-warning { opacity: .78; margin: 7px 0; }
-      </style>
+      <style>${extractedCSS1}</style>
       <div class="rx-row">
         <strong>REDE · GraphQL observado</strong>
         <button data-rx="pause">Pausar</button>
@@ -267,11 +210,11 @@ export function createNetworkInspector(Studio) {
       .reverse()
       .map((id) => records.get(id))
       .filter((x) => x && match(x));
-    $("[data-rx=stats]").textContent =
+    $(RODX_SELECTORS.inspectorStats).textContent =
       `${order.length} registros · ${(state.bytes / 1048576).toFixed(1)} MiB · ` +
       `${state.countDropped} descartados por limite/TTL · ${state.capture ? "capturando" : "pausado"}`;
-    $("[data-rx=pause]").textContent = state.capture ? "Pausar" : "Retomar";
-    const box = $("[data-rx=list]");
+    $(RODX_SELECTORS.inspectorPause).textContent = state.capture ? "Pausar" : "Retomar";
+    const box = $(RODX_SELECTORS.inspectorRequestList);
     const previousScroll = box.scrollTop;
     box.innerHTML =
       rows
@@ -294,7 +237,7 @@ export function createNetworkInspector(Studio) {
         )
         .join("") || '<p class="rx-warning">Nenhum request corresponde ao filtro.</p>';
     box.scrollTop = previousScroll;
-    $("[data-rx=more]").hidden = rows.length <= state.visible;
+    $(RODX_SELECTORS.inspectorLoadMore).hidden = rows.length <= state.visible;
   }
   function textValue(item) {
     if (state.tab === "Headers")
@@ -346,7 +289,7 @@ export function createNetworkInspector(Studio) {
           fragment.append(child);
         }
         offset += 70;
-        wrap.querySelector("[data-rx-page]")?.remove();
+        wrap.querySelector(RODX_SELECTORS.inspectorPages)?.remove();
         wrap.append(fragment);
         if (offset < keys.length) {
           const more = document.createElement("button");
@@ -363,7 +306,7 @@ export function createNetworkInspector(Studio) {
   }
   function renderDetail() {
     const item = records.get(state.active);
-    const target = $("[data-rx=detail]");
+    const target = $(RODX_SELECTORS.inspectorDetail);
     if (!item) {
       target.textContent = "Selecione um request para inspecionar Headers, Payload e Response.";
       return;
@@ -407,7 +350,7 @@ export function createNetworkInspector(Studio) {
         </div>
         <div data-rx="body"></div>
       `;
-    const body = $("[data-rx=body]");
+    const body = $(RODX_SELECTORS.inspectorBody);
     if (state.raw) {
       const pre = document.createElement("pre");
       pre.textContent = state.reveal ? String(raw) : String(redact(String(raw)));
@@ -455,24 +398,27 @@ export function createNetworkInspector(Studio) {
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(href), 10000);
+    setTimeout(() => URL.revokeObjectURL(href), RUNTIME_LIMITS.networkInspector.exportSelectionDelayMs);
   }
   root.addEventListener("input", (event) => {
-    if (event.target.matches('[data-rx="filter"]')) {
+    if (event.target.matches(RODX_SELECTORS.inspectorFilter)) {
       state.search = event.target.value;
       state.visible = 75;
       renderRows();
     }
-    if (event.target.matches('[data-rx="body-find"]')) {
+    if (event.target.matches(RODX_SELECTORS.inspectorBodySearch)) {
       const text = event.target.value.trim().toLocaleLowerCase("pt-BR");
-      for (const node of root.querySelectorAll(".rx-tree summary,.rx-tree .leaf")) {
-        node.style.background =
-          text && node.textContent.toLocaleLowerCase("pt-BR").includes(text) ? "#faca3766" : "";
+      for (const node of root.querySelectorAll(RODX_SELECTORS.inspectorTreeRows)) {
+        node.style.setProperty(
+          "background",
+          text && node.textContent.toLocaleLowerCase("pt-BR").includes(text) ? "#faca3766" : "",
+          "important",
+        );
       }
     }
   });
   root.addEventListener("change", (event) => {
-    if (event.target.matches("[data-rx-retain]")) {
+    if (event.target.matches(RODX_SELECTORS.inspectorRetentionFields)) {
       const field = event.target.dataset.rxRetain;
       const limits = {
         maxItems: [20, 1000, 1],
@@ -489,17 +435,17 @@ export function createNetworkInspector(Studio) {
       renderRows();
       renderDetail();
     }
-    if (event.target.matches('[data-rx="status"]')) {
+    if (event.target.matches(RODX_SELECTORS.inspectorStatus)) {
       state.status = event.target.value;
       renderRows();
     }
-    if (event.target.matches("[data-rx-select]")) {
+    if (event.target.matches(RODX_SELECTORS.inspectorSelection)) {
       if (event.target.checked) selected.add(event.target.dataset.rxSelect);
       else selected.delete(event.target.dataset.rxSelect);
     }
   });
   root.addEventListener("click", async (event) => {
-    const open = event.target.closest("[data-rx-open]");
+    const open = event.target.closest(RODX_SELECTORS.inspectorOpenActions);
     if (open) {
       state.active = open.dataset.rxOpen;
       state.reveal = false;
@@ -508,14 +454,14 @@ export function createNetworkInspector(Studio) {
       renderDetail();
       return;
     }
-    const tab = event.target.closest("[data-rx-tab]");
+    const tab = event.target.closest(RODX_SELECTORS.inspectorTabs);
     if (tab) {
       state.tab = tab.dataset.rxTab;
       state.raw = false;
       renderDetail();
       return;
     }
-    const action = event.target.closest("[data-rx]")?.dataset.rx;
+    const action = event.target.closest(RODX_SELECTORS.inspectorControls)?.dataset.rx;
     switch (action) {
       case "pause":
         state.capture = !state.capture;
@@ -580,14 +526,14 @@ export function createNetworkInspector(Studio) {
         let prefix = "$";
         for (const key of ["", ...keys]) {
           if (key) prefix += "." + key;
-          const branch = [...root.querySelectorAll(".rx-tree details")].find(
+          const branch = [...root.querySelectorAll(RODX_SELECTORS.inspectorTreeDetails)].find(
             (el) => el.dataset.path === prefix,
           );
           if (branch) branch.open = true;
           await Promise.resolve();
         }
         root
-          .querySelector('.rx-tree details[data-path="' + CSS.escape(prefix) + '"]')
+          .querySelector(RODX_SELECTORS.inspectorTreePath(CSS.escape(prefix)))
           ?.scrollIntoView({ block: "nearest" });
         break;
       }
@@ -600,13 +546,15 @@ export function createNetworkInspector(Studio) {
       ["ttlMs", 60000],
       ["bodyLimit", 1048576],
     ]) {
-      root.querySelector('[data-rx-retain="' + field + '"]').value = String(settings[field] / scale);
+      root.querySelector(RODX_SELECTORS.inspectorRetentionField(field)).value = String(
+        settings[field] / scale,
+      );
     }
     if (state.open) return;
     state.open = true;
-    root.style.display = "block";
+    root.style.setProperty("display", "block", "important");
     const diagnostic = Studio.diagnostics().selectors;
-    $("[data-rx=selectors]").textContent =
+    $(RODX_SELECTORS.inspectorSelectors).textContent =
       `X nesta tela: ${diagnostic.tweets} tweets · ${diagnostic.userCells} células de usuário · ` +
       `coluna ${diagnostic.primaryColumnFound ? "encontrada" : "não encontrada"} · ` +
       `busca ${diagnostic.nativeSearchFound ? "encontrada" : "não encontrada"}. ` +
@@ -615,7 +563,7 @@ export function createNetworkInspector(Studio) {
     renderDetail();
     Studio.menu.panel("network", "RodX Studio · REDE", root, () => {
       state.open = false;
-      root.style.display = "none";
+      root.style.setProperty("display", "none", "important");
     });
   }
   function close() {

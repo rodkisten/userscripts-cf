@@ -1,0 +1,6 @@
+:is(article, [role="article"])[data-testid="tweet"] video,
+:is(article, [role="article"])[data-testid="tweet"] [data-testid="videoPlayer"],
+:is(article, [role="article"])[data-testid="tweet"] [data-testid="videoPlayerContainer"],
+:is(article, [role="article"])[data-testid="tweet"] [data-testid="videoComponent"] {
+  touch-action: manipulation;
+}

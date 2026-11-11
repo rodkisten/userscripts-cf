@@ -1,0 +1,16 @@
+:host([data-rodx-no-dim]) {
+  --media-controls-gradient: transparent;
+}
+:host([data-rodx-no-dim]) media-controls-backdrop.video-controls-backdrop {
+  background: transparent;
+  background-image: none;
+  opacity: 0;
+}
+media-slider-thumbnail {
+  min-width: 160px;
+  max-width: 240px;
+  min-height: 90px;
+}
+media-slider-thumbnail[data-rodx-preview="unavailable"] {
+  display: none;
+}

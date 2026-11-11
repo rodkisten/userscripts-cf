@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { PREFIX } from "../config/search.js";
 import { state } from "../state/deck.js";
 import { storage } from "../storage/gm.js";
@@ -42,7 +43,7 @@ export function initializeDeckSeen() {
         } catch (e) {
           console.warn("[RodX] Vistos preservados localmente", e);
         }
-      }, 1200);
+      }, RUNTIME_LIMITS.tweetsSeen.flushSoonDelayMs);
     }
     function mark(id) {
       if (!state.account || !id || state.seen.has(id)) return;

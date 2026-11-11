@@ -1,3 +1,4 @@
+import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { state } from "../state/deck.js";
 
@@ -10,7 +11,7 @@ export function initializeDeckVideoExperience() {
     const MUTE_LABEL =
       /(?:^|\W)(?:mute|unmute|volume|sound|som|áudio|audio|silenciar|ativar som|desativar som)(?:\W|$)/i;
     function allowNativeVolume(event) {
-      const control = event.target?.closest?.('button,[role="button"],[data-testid*="volume" i]');
+      const control = event.target?.closest?.(NATIVE_X_SELECTORS.volumeControlCandidates);
       if (!control) return;
       const label = [
         control.getAttribute("aria-label"),
@@ -21,9 +22,9 @@ export function initializeDeckVideoExperience() {
         .join(" ");
       if (!MUTE_LABEL.test(label)) return;
       const video = control
-        .closest('[data-testid="videoPlayerContainer"],article,#layers')
-        ?.querySelector("video");
-      if (video && !control.closest(".rodx-video-transport")) {
+        .closest(NATIVE_X_SELECTORS.videoOverlayContainers)
+        ?.querySelector(DOM_SELECTORS.videos);
+      if (video && !control.closest(RODX_SELECTORS.videoTransport)) {
         soundEnabled.add(video);
         video.dataset.rodxUserUnmuted = "1";
       }
@@ -33,7 +34,7 @@ export function initializeDeckVideoExperience() {
     function scan() {
       // Quality UI intentionally disabled: the X-managed HLS/MSE player must
       // own its adaptive resolution and progress timeline.
-      document.querySelectorAll(".rodx-quality").forEach((select) => select.remove());
+      document.querySelectorAll(RODX_SELECTORS.videoQualityControl).forEach((select) => select.remove());
       for (const video of Studio.dom.nodes("video")) {
         if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) video.muted = true;
         if (initialized.has(video)) continue;

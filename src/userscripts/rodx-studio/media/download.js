@@ -1,14 +1,14 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import downloadSVG from "../../../assets/icons/download.svg?inline";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-download-1.css?inline";
 export let ImmersiveDownload;
 
 export function initializeDeckImmersiveDownload() {
   ImmersiveDownload = (() => {
     const TWR = "https://api.twirrl.app/video";
     const TWR_VERSION = "ab8222fb13a47e82c36032c4ddcc622dc0d33f0e8f852b5b420085b9fd32c94e";
-    const ICON =
-      '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" ' +
-      'stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/>' +
-      '<path d="M4 17v3h16v-3"/></svg>';
+    const ICON = downloadSVG;
     let button = null;
     let activeKey = "";
     let busy = false;
@@ -67,7 +67,7 @@ export function initializeDeckImmersiveDownload() {
     function locate() {
       const layer = document.getElementById("layers");
       if (!layer) return null;
-      const videos = [...layer.querySelectorAll("video")];
+      const videos = [...layer.querySelectorAll(DOM_SELECTORS.videos)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
@@ -82,21 +82,11 @@ export function initializeDeckImmersiveDownload() {
         );
       });
       if (!visible.length) return null;
-      const isViewer = Boolean(
-        layer.querySelector(
-          '[data-testid="media-viewer"], [data-testid="mediaViewer"], ' +
-            '[data-testid="mediaViewerContainer"], [data-testid="swipe-to-dismiss"], ' +
-            '[aria-modal="true"], [role="dialog"]',
-        ),
-      );
+      const isViewer = Boolean(layer.querySelector(NATIVE_X_SELECTORS.mediaViewerRoots()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
       const nativePlayerInStatus = Boolean(
-        route &&
-        layer.querySelector(
-          '[data-testid="videoPlayer"], [data-testid="videoComponent"], ' +
-            '[data-testid="video-player"], [data-testid="videoPlayerContainer"]',
-        ),
+        route && layer.querySelector(NATIVE_X_SELECTORS.playableVideoContainers()),
       );
       if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
       const video = visible.sort((a, b) => {
@@ -104,8 +94,10 @@ export function initializeDeckImmersiveDownload() {
           rb = b.getBoundingClientRect();
         return rb.width * rb.height - ra.width * ra.height;
       })[0];
-      const related = video.closest('article, [data-testid="tweet"], [role="dialog"]') || layer;
-      const link = related.querySelector('a[href*="/status/"]') || layer.querySelector('a[href*="/status/"]');
+      const related = video.closest(NATIVE_X_SELECTORS.tweetOrDialogContainers) || layer;
+      const link =
+        related.querySelector(NATIVE_X_SELECTORS.statusLinks) ||
+        layer.querySelector(NATIVE_X_SELECTORS.statusLinks);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
       if (!id) return null;
       const owner =
@@ -134,42 +126,7 @@ export function initializeDeckImmersiveDownload() {
       if (styleAdded) return;
       const css = document.createElement("style");
       css.id = "rodx-immersive-download-css";
-      css.textContent = `
-#rodx-immersive-download {
-  position: fixed !important;
-  right: max(14px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  z-index: 2147481100 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  border-radius: 999px !important;
-  padding: 10px 15px !important;
-  font:
-    700 14px/1.2 TwitterChirp,
-    -apple-system,
-    sans-serif !important;
-  cursor: pointer !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  min-height: 44px !important;
-  touch-action: manipulation !important;
-  box-shadow: 0 3px 13px rgba(0, 0, 0, 0.2);
-}
-#rodx-immersive-download:hover {
-  background: rgba(29, 155, 240, 0.95) !important;
-}
-#rodx-immersive-download:disabled {
-  opacity: 0.7 !important;
-  cursor: progress !important;
-}
-#rodx-immersive-download svg {
-  flex: none;
-}
-`;
+      css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
       styleAdded = true;
     }
@@ -183,7 +140,7 @@ export function initializeDeckImmersiveDownload() {
       const response = await request({
         url: TWR,
         method: "POST",
-        timeout: 25_000,
+        timeout: RUNTIME_LIMITS.mediaDownload.resolveMP4Timeout,
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -270,7 +227,7 @@ export function initializeDeckImmersiveDownload() {
           url,
           method: "GET",
           responseType: "blob",
-          timeout: 120_000,
+          timeout: RUNTIME_LIMITS.mediaDownload.downloadTimeout,
           onprogress: (e) => {
             if (e.lengthComputable && e.total) {
               setLabel(`${Math.max(1, Math.min(99, Math.round((e.loaded / e.total) * 100)))}%`);
@@ -288,11 +245,11 @@ export function initializeDeckImmersiveDownload() {
         const anchor = document.createElement("a");
         anchor.href = objectUrl;
         anchor.download = filename;
-        anchor.style.display = "none";
+        anchor.style.setProperty("display", "none", "important");
         document.body.append(anchor);
         anchor.click();
         anchor.remove();
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), RUNTIME_LIMITS.mediaDownload.downloadDelayMs);
       } catch (error) {
         // A visible link lets Safari users save through the iOS Share menu,
         // rather than pretending the content was downloaded.
@@ -319,7 +276,7 @@ export function initializeDeckImmersiveDownload() {
         if (!now || now.key !== current.key) throw new Error("O vídeo aberto mudou durante a preparação.");
         const outcome = await download(url, `X-${current.id}-${current.videoIndex + 1}.mp4`);
         setLabel(outcome === "opened" ? "MP4 aberto" : "Baixado ✓");
-        await new Promise((resolve) => setTimeout(resolve, 1400));
+        await new Promise((resolve) => setTimeout(resolve, RUNTIME_LIMITS.mediaDownload.resolveDelayMs));
       } catch (error) {
         console.warn("[RodX Download]", error);
         setLabel("Não baixou");

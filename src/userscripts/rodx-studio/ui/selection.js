@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { XDOM } from "../platform/selectors.js";
 import { NativeQueryTags } from "../search/native-tags.js";
 import { QueryEngine } from "../search/query-compiler.js";
@@ -37,8 +39,8 @@ export function initializeDeckSelectionPopover() {
       if (!selection || selection.isCollapsed) return close();
       const ancestor = selection.anchorNode?.parentElement;
       const focus = selection.focusNode?.parentElement;
-      const firstText = ancestor?.closest('[data-testid="tweetText"]');
-      const lastText = focus?.closest('[data-testid="tweetText"]');
+      const firstText = ancestor?.closest(NATIVE_X_SELECTORS.nativeTweetText);
+      const lastText = focus?.closest(NATIVE_X_SELECTORS.nativeTweetText);
       const firstTweet = firstText?.closest(XDOM.tweet);
       if (!firstTweet || firstTweet !== lastText?.closest(XDOM.tweet)) {
         return close();
@@ -93,7 +95,7 @@ export function initializeDeckSelectionPopover() {
               showRodxToast(error.message, "error");
               return;
             }
-            const native = document.querySelector('input[data-testid="SearchBox_Search_Input"]');
+            const native = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
             if (native) NativeQueryTags.write(QueryEngine.normalized(changed));
             else showRodxToast("Abra a busca para adicionar a palavra.");
           }
@@ -116,19 +118,27 @@ export function initializeDeckSelectionPopover() {
         10,
         Math.min(window.innerHeight - node.offsetHeight - 10, rect.top - node.offsetHeight - 8),
       );
-      node.style.left = x + "px";
-      node.style.top = y + "px";
+      node.style.setProperty("left", x + "px", "important");
+      node.style.setProperty("top", y + "px", "important");
     };
     document.addEventListener(
       "selectionchange",
       () => {
         last = Date.now();
-        if (!node) setTimeout(show, 280);
+        if (!node) setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
       },
       true,
     );
-    document.addEventListener("pointerup", () => setTimeout(show, 120), true);
-    document.addEventListener("touchend", () => setTimeout(show, 160), true);
+    document.addEventListener(
+      "pointerup",
+      () => setTimeout(show, RUNTIME_LIMITS.selection.pointerReleaseDelayMs),
+      true,
+    );
+    document.addEventListener(
+      "touchend",
+      () => setTimeout(show, RUNTIME_LIMITS.selection.touchReleaseDelayMs),
+      true,
+    );
     document.addEventListener("scroll", close, true);
     document.addEventListener(
       "pointerdown",

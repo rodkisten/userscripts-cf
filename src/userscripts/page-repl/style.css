@@ -19,7 +19,7 @@
   box-sizing: border-box;
 }
 [hidden] {
-  display: none !important;
+  display: none;
 }
 button,
 input,
@@ -36,9 +36,9 @@ button {
   line-height: 1.25;
   background: #223047;
   border: 1px solid #435067;
-  border-radius: 9px;
-  padding: 8px 11px;
-  min-height: 36px;
+  border-radius: var(--rodx-ds-radius-8);
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
+  min-height: var(--rodx-ds-control-height);
 }
 button:hover {
   background: #32435e;
@@ -51,8 +51,8 @@ input,
 select {
   background: #111a28;
   border: 1px solid #435067;
-  border-radius: 8px;
-  padding: 8px;
+  border-radius: var(--rodx-ds-radius-8);
+  padding: var(--rodx-ds-space-8);
   min-width: 0;
   max-width: 100%;
   -webkit-text-fill-color: #e9edf4;
@@ -82,13 +82,11 @@ select:focus-visible {
   width: 46px;
   height: 46px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--rodx-ds-radius-full);
   background: #1c385c;
   color: #ddebff;
   touch-action: none;
-  font:
-    bold 19px ui-monospace,
-    monospace;
+  font: bold 19px var(--rodx-ds-font-mono);
 }
 .panel {
   position: fixed;
@@ -103,7 +101,7 @@ select:focus-visible {
   overflow: hidden;
   background: #0c1420;
   border: 1px solid #5a6b84;
-  border-radius: 14px;
+  border-radius: var(--rodx-ds-radius-12);
   box-shadow: 0 8px 40px #0008;
 }
 header,
@@ -114,8 +112,8 @@ footer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 9px 12px;
+  gap: var(--rodx-ds-space-8);
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
 }
 header,
 .tabs,
@@ -128,15 +126,15 @@ header {
 }
 header strong {
   flex: 1;
-  font-size: 15px;
+  font-size: var(--rodx-ds-text-14);
 }
 header button {
   min-width: 36px;
 }
 .tabs {
   display: flex;
-  gap: 5px;
-  padding: 8px 12px;
+  gap: var(--rodx-ds-space-4);
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
 }
 .tabs button[aria-selected="true"] {
   background: #315b8e;
@@ -157,7 +155,7 @@ header button {
   margin-bottom: 10px;
 }
 .editor-wrap {
-  padding: 0 12px;
+  padding: 0 var(--rodx-ds-space-12);
 }
 .toolbar select {
   flex: 1;
@@ -173,11 +171,11 @@ header button {
 .hint,
 .status,
 small {
-  font-size: 12px;
+  font-size: var(--rodx-ds-text-12);
   color: #a8b7ca;
 }
 .hint {
-  margin: 6px 12px 10px;
+  margin: var(--rodx-ds-space-6) var(--rodx-ds-space-12) var(--rodx-ds-space-12);
   line-height: 1.5;
 }
 .status {
@@ -190,20 +188,18 @@ footer {
   overflow-wrap: anywhere;
 }
 pre {
-  margin: 6px 0;
+  margin: var(--rodx-ds-space-6) 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font:
-    12px/1.5 ui-monospace,
-    monospace;
+  font: var(--rodx-ds-text-12)/1.5 var(--rodx-ds-font-mono);
 }
 .output {
-  padding: 0 12px 12px;
+  padding: 0 var(--rodx-ds-space-12) var(--rodx-ds-space-12);
 }
 .record,
 .history-item {
   border-top: 1px solid #2c3b51;
-  padding: 8px 0;
+  padding: var(--rodx-ds-space-8) 0;
 }
 .record[data-kind="error"] {
   color: #ffaaa9;
@@ -215,14 +211,14 @@ pre {
   cursor: pointer;
 }
 .results {
-  padding: 0 12px 12px;
+  padding: 0 var(--rodx-ds-space-12) var(--rodx-ds-space-12);
   display: grid;
-  gap: 8px;
+  gap: var(--rodx-ds-space-8);
 }
 .result {
   border: 1px solid #39485f;
-  border-radius: 9px;
-  padding: 9px;
+  border-radius: var(--rodx-ds-radius-8);
+  padding: var(--rodx-ds-space-8);
 }
 .result strong {
   display: block;
@@ -235,13 +231,13 @@ pre {
   border-color: #89524f;
 }
 .result button {
-  margin-top: 6px;
+  margin-top: var(--rodx-ds-space-6);
 }
 .history-item {
-  margin: 0 12px;
+  margin: 0 var(--rodx-ds-space-12);
 }
 .history-item button {
-  margin-right: 6px;
+  margin-right: var(--rodx-ds-space-6);
 }
 .row input[type="url"] {
   flex: 1;
@@ -255,7 +251,7 @@ pre {
     right: 4px;
     bottom: var(--repl-bottom, 4px);
     width: calc(100vw - 8px);
-    border-radius: 11px;
+    border-radius: var(--rodx-ds-radius-12);
   }
   header,
   .toolbar,
@@ -293,7 +289,7 @@ pre {
     flex-basis: 100%;
   }
   .toolbar {
-    gap: 6px;
+    gap: var(--rodx-ds-space-6);
   }
   .toolbar select {
     flex-basis: 100%;

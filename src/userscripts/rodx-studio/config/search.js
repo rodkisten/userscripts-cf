@@ -1,3 +1,4 @@
+import { createDefaults } from "../../../config/defaults.js";
 export let VERSION;
 
 export function initializeDeckVERSION() {
@@ -25,51 +26,7 @@ export function initializeDeckMAX_VISIBLE() {
 export let EMPTY_FIELDS;
 
 export function initializeDeckEMPTY_FIELDS() {
-  EMPTY_FIELDS = Object.freeze({
-    all: "",
-    exact: "",
-    any: "",
-    none: "",
-    hashtags: "",
-    cashtags: "",
-    lang: "",
-    from: "",
-    to: "",
-    mentions: "",
-    listId: "",
-    following: "any",
-    verified: "any",
-    since: "",
-    until: "",
-    withinTime: "",
-    sinceTime: "",
-    untilTime: "",
-    minLikes: "",
-    maxLikes: "",
-    minReposts: "",
-    maxReposts: "",
-    minReplies: "",
-    maxReplies: "",
-    media: "any",
-    replies: "any",
-    reposts: "any",
-    quotes: "any",
-    links: "any",
-    hashtagFilter: "any",
-    mentionFilter: "any",
-    safe: "any",
-    postType: "any",
-    hasEngagement: "any",
-    urlDomain: "",
-    placeId: "",
-    conversationId: "",
-    replyToId: "",
-    quoteId: "",
-    quotedUserId: "",
-    sinceId: "",
-    maxId: "",
-    extra: "",
-  });
+  EMPTY_FIELDS = createDefaults("searchFields");
 }
 
 export let LANGUAGE_OPTIONS;

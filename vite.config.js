@@ -1,3 +1,5 @@
+import { inlineSVG } from "./build/svg.mjs";
+import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
 import solid from "@solidjs/vite-plugin";
 import { solidDOMTemplates } from "./build/solid-dom.mjs";
@@ -5,11 +7,16 @@ import { solidDOMTemplates } from "./build/solid-dom.mjs";
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
-  plugins: [solid({ refresh: false }), solidDOMTemplates()],
+  plugins: [inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
+  css: {
+    transformer: "postcss",
+    postcss: { plugins: stylesPipeline() },
+    lightningcss: { targets: { safari: 15 << 16 } },
+  },
   build: {
     target: "safari15",
     minify: false,
-    cssMinify: false,
+    cssMinify: "lightningcss",
     sourcemap: false,
     cssCodeSplit: false,
     lib: {

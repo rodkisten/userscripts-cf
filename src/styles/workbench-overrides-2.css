@@ -1,0 +1,19 @@
+.scrim {
+  display: none;
+}
+.panel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+.body {
+  overflow: visible;
+}
+.head-row {
+  display: none;
+}

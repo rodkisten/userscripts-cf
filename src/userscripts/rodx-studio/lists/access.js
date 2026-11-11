@@ -1,3 +1,7 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import listNotebookSVG from "../../../assets/icons/list-notebook.svg?inline";
+import { applyComponentStyle } from "../../../core/css.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import { studioListIndex } from "./routes.js";
 
 export function createListAccess(Studio, navigateSearch) {
@@ -20,8 +24,7 @@ export function createListAccess(Studio, navigateSearch) {
     "jobs",
     "premium",
   ]);
-  const svg =
-    '<svg viewBox="0 0 24 24" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+  const svg = listNotebookSVG;
   function nativeLists() {
     Studio.navigate(studioListIndex(Studio));
   }
@@ -114,18 +117,16 @@ export function createListAccess(Studio, navigateSearch) {
         void open().catch((error) => console.warn("[RodX] Listas:", error));
       };
     }
-    const home = document.querySelector('a[data-testid="AppTabBar_Home_Link"]');
+    const home = document.querySelector(NATIVE_X_SELECTORS.homeTabLink);
     let row = home?.parentElement;
-    while (row && row !== document.body && !row.querySelector('a[data-testid="AppTabBar_Explore_Link"]'))
+    while (row && row !== document.body && !row.querySelector(NATIVE_X_SELECTORS.exploreTabLink))
       row = row.parentElement;
     if (innerWidth < 800 && row && row !== document.body) {
-      footerButton.style.cssText =
-        "display:flex;flex-direction:column;gap:1px;font:10px Arial;align-items:center;justify-content:center;flex:0 0 44px;width:44px;min-height:44px;padding:0;border:0;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation";
+      applyComponentStyle(footerButton, "rx-list-shortcut-tab", false);
       if (footerButton.parentElement !== row) row.append(footerButton);
     } else {
       // A compact fallback keeps access available when X temporarily unmounts its bottom navigation.
-      footerButton.style.cssText =
-        "position:fixed;left:12px;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:1400;width:42px;height:42px;display:flex;flex-direction:column;gap:1px;font:10px Arial;align-items:center;justify-content:center;border:1px solid #71767b66;border-radius:50%;background:var(--rodx-bar-bg,Canvas);color:var(--rodx-bar-fg,CanvasText);cursor:pointer;touch-action:manipulation";
+      applyComponentStyle(footerButton, "rx-list-shortcut-floating", false);
       if (footerButton.parentElement !== document.body) document.body.append(footerButton);
     }
   }
@@ -138,18 +139,19 @@ export function createListAccess(Studio, navigateSearch) {
       profileHost?.remove();
       return;
     }
-    const main = document.querySelector('[data-testid="primaryColumn"]') || document.querySelector("main");
-    const identity = main?.querySelector('.rodx-profile-identity,[data-testid="UserName"]');
-    if (!identity || identity.closest("article")) return;
+    const main =
+      document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+      document.querySelector(DOM_SELECTORS.mainElement);
+    const identity = main?.querySelector(COMPOSITE_SELECTORS.profileIdentityOrUserName);
+    if (!identity || identity.closest(DOM_SELECTORS.articles)) return;
     if (!profileHost) {
       profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";
-      profileHost.style.cssText = "display:block;position:relative;max-width:100%;min-width:0;margin:4px 0;";
+      applyComponentStyle(profileHost, "rx-access-profileHost", false);
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "＋ Adicionar à lista";
-      button.style.cssText =
-        "font:500 13px TwitterChirp,Arial,sans-serif;min-height:36px;padding:5px 11px;border:1px solid #71767b66;border-radius:18px;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation";
+      applyComponentStyle(button, "rx-profile-add-to-list", false);
       button.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -166,6 +168,9 @@ export function createListAccess(Studio, navigateSearch) {
     footer();
     profile();
   }
-  Studio.register("lists.access", scan, { group: "lists", minMs: 300 });
+  Studio.register("lists.access", scan, {
+    group: "lists",
+    minMs: RUNTIME_LIMITS.listsAccess.createListAccessMinMs,
+  });
   return { open, scan };
 }

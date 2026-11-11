@@ -1,3 +1,4 @@
+import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
 export function readAccountCookie() {
@@ -58,7 +59,7 @@ export function extractHandle() {
       if (name) return name;
     }
   }
-  const switcher = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
+  const switcher = document.querySelector(NATIVE_X_SELECTORS.accountSwitcher);
   if (switcher) {
     const labels = [
       switcher.innerText,
@@ -70,7 +71,7 @@ export function extractHandle() {
       const match = label.match(/(?:^|[^\w])@([A-Za-z0-9_]{1,15})(?!\w)/);
       if (match) return match[1].toLowerCase();
     }
-    for (const link of switcher.querySelectorAll("a[href]")) {
+    for (const link of switcher.querySelectorAll(DOM_SELECTORS.linksWithHref)) {
       const name = handleFromHref(link.getAttribute("href"));
       if (name) return name;
     }

@@ -1,5 +1,5 @@
-import rawCSS from "./search-deck.css?raw";
-import rawCUSTOM_CSS from "./search-custom.css?raw";
+import rawCSS from "./search-deck.css?inline";
+import rawCUSTOM_CSS from "./search-custom.css?inline";
 
 export let CSS;
 

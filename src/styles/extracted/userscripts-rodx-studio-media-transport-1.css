@@ -1,0 +1,56 @@
+.rodx-video-transport {
+  & {
+    position: absolute;
+    bottom: 4px;
+    left: 5px;
+    right: 5px;
+    z-index: 15;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    gap: var(--rodx-ds-space-6);
+    box-sizing: border-box;
+    padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
+    border-radius: var(--rodx-ds-radius-8);
+    font: var(--rodx-ds-text-11) var(--rodx-ds-font-ui);
+    color: var(--rodx-ds-color-white);
+    background: rgba(15, 20, 25, 0.78);
+    backdrop-filter: blur(6px);
+    pointer-events: auto;
+    touch-action: pan-y;
+  }
+  & button {
+    flex: none;
+    border: 0;
+    background: none;
+    color: var(--rodx-ds-color-white);
+    min-width: 29px;
+    min-height: 29px;
+    padding: 0 var(--rodx-ds-space-4);
+    cursor: pointer;
+    font:
+      17px TwitterChirp,
+      system-ui;
+    touch-action: manipulation;
+  }
+  & .rodx-transport-seek {
+    flex: 1;
+    min-width: 28px;
+    width: 100%;
+    margin: 0;
+    accent-color: var(--rodx-ds-color-accent);
+    cursor: pointer;
+    touch-action: none;
+  }
+  & time {
+    font:
+      10px TwitterChirp,
+      system-ui;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+  }
+  &:focus-within {
+    outline: 1px solid rgba(29, 155, 240, 0.7);
+  }
+}

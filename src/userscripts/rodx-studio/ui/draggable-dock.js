@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { renderDock } from "./search-workbench.js";
@@ -15,7 +17,7 @@ export function initializeDeckDragDock() {
       clearTimeout(active.timer);
       const shadow = active.shadow;
       shadow
-        .querySelectorAll(".dragging,.drop-before,.drop-after")
+        .querySelectorAll(RODX_SELECTORS.dragStateItems)
         .forEach((el) => el.classList.remove("dragging", "drop-before", "drop-after"));
       active.ghost?.remove();
       active = null;
@@ -38,10 +40,10 @@ export function initializeDeckDragDock() {
     }
     function closestTarget(x, y) {
       if (!active) return null;
-      const elements = [...active.shadow.querySelectorAll("[data-drag-id]")].filter(
+      const elements = [...active.shadow.querySelectorAll(RODX_SELECTORS.draggableItems)].filter(
         (el) => el.dataset.dragId !== active.id,
       );
-      const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.("[data-drag-id]");
+      const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.(RODX_SELECTORS.draggableItems);
       if (direct && direct.dataset.dragId !== active.id) return direct;
       // A touch can land between tabs or outside the dock; use nearest center.
       return (
@@ -60,7 +62,7 @@ export function initializeDeckDragDock() {
     function setDrop(x, y) {
       if (!active?.started) return;
       const shadow = active.shadow;
-      const nav = shadow.querySelector(".dock");
+      const nav = shadow.querySelector(RODX_SELECTORS.searchDock);
       if (nav) {
         const r = nav.getBoundingClientRect();
         if (x > r.right - 34) nav.scrollLeft += 15;
@@ -68,7 +70,7 @@ export function initializeDeckDragDock() {
       }
       const item = closestTarget(x, y);
       shadow
-        .querySelectorAll(".drop-before,.drop-after")
+        .querySelectorAll(RODX_SELECTORS.dropIndicators)
         .forEach((el) => el.classList.remove("drop-before", "drop-after"));
       if (item) {
         const r = item.getBoundingClientRect();
@@ -79,14 +81,14 @@ export function initializeDeckDragDock() {
         active.target = null;
       }
       if (active.ghost) {
-        active.ghost.style.left = x + 9 + "px";
-        active.ghost.style.top = y - 14 + "px";
+        active.ghost.style.setProperty("left", x + 9 + "px", "important");
+        active.ghost.style.setProperty("top", y - 14 + "px", "important");
       }
     }
     function start(x, y) {
       if (!active || active.started) return;
       active.started = true;
-      active.handle.closest("[data-drag-id]")?.classList.add("dragging");
+      active.handle.closest(RODX_SELECTORS.draggableItems)?.classList.add("dragging");
       const ghost = document.createElement("div");
       ghost.textContent = active.label;
       ghost.className = "rodx-drag-ghost";
@@ -98,28 +100,28 @@ export function initializeDeckDragDock() {
       shadow.addEventListener(
         "dragstart",
         (e) => {
-          if (e.target.closest("[data-drag-id]")) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.draggableItems)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "selectstart",
         (e) => {
-          if (e.target.closest("[data-drag-handle]")) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.dragHandles)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "contextmenu",
         (e) => {
-          if (e.target.closest("[data-drag-handle]")) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.dragHandles)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "click",
         (e) => {
-          if (Date.now() < swallowUntil && e.target.closest("[data-drag-id]")) {
+          if (Date.now() < swallowUntil && e.target.closest(RODX_SELECTORS.draggableItems)) {
             e.stopImmediatePropagation();
             e.preventDefault();
           }
@@ -127,7 +129,7 @@ export function initializeDeckDragDock() {
         true,
       );
       const down = (e) => {
-        const h = e.target.closest?.("[data-drag-handle]");
+        const h = e.target.closest?.(RODX_SELECTORS.dragHandles);
         if (!h) return;
         if (active) reset();
         const p = point(e),
@@ -148,7 +150,7 @@ export function initializeDeckDragDock() {
         if (e.type === "touchstart" && e.cancelable) e.preventDefault();
         active.timer = setTimeout(() => {
           if (active && active.id === id) start(active.startX, active.startY);
-        }, 160);
+        }, RUNTIME_LIMITS.uiDraggableDock.attachDelayMs);
       };
       const track = (e) => {
         if (!active) return;

@@ -159,3 +159,19 @@ O publicador recusa código não commitado, builds com versão antiga, checksums
 O instalável independente [page-repl.user.js](https://userscripts-cf.kisten.workers.dev/page-repl.user.js) abre um painel com 27 estratégias de execução, diagnóstico de contexto/CSP, await, console, sessão persistente, autocompletar, histórico e importação/exportação. Fica fora do RodX unificado para não carregar um console de desenvolvimento em todas as páginas automaticamente.
 
 Use **Testar compatibilidade** para sondas inofensivas e **Executar** para seu código. O modo automático sonda antes de escolher um método e não repete seu código depois de erro/timeout. **Executar em todos** repete efeitos. O modo **Script global** insere código sem a função async do REPL, preservando o escopo nativo do método escolhido. Veja [a documentação](src/userscripts/page-repl/README.md) para as diferenças entre contextos, limites de cancelamento e semântica de variáveis.
+
+### Seletores e estilos
+
+Os seletores usados pelas consultas DOM ficam em `src/selectors.js`, organizados por propriedade: `NATIVE_X_SELECTORS` (X), `RODX_SELECTORS` (interface própria), `DOM_SELECTORS` (HTML genérico), `MEDIA_COMPONENT_SELECTORS` (web components de mídia) e `COMPOSITE_SELECTORS` (consultas que combinam contextos). Os seletores dinâmicos são funções que recebem os valores do módulo; os aliases da plataforma X continuam disponíveis em `platform/selectors.js`.
+
+As folhas de estilo ficam em `src/styles/` e nos arquivos `.css` dos módulos. `tokens.css` define espaçamento, tipografia, cores, raios e camadas; `core.css` reúne resets e classes dos componentes compartilhados. As folhas específicas usam CSS aninhado. Importe CSS com `?inline`: PostCSS injeta o core e os tokens em cada escopo, compila nesting e aplica prioridade às declarações (exceto keyframes); Lightning CSS minifica o resultado para Safari 15. Os bundles continuam autossuficientes, inclusive em Shadow DOM.
+
+Os elementos construídos por JavaScript usam `applyComponentStyle()` com classes de componentes; estilos calculados usam propriedades semânticas como `--rodx-anchor-left` e `--rodx-anchor-width`. Não há arquivos `.declarations` nem extração de declarações por manipulação de strings. O código-fonte CSS não precisa de `!important`: a prioridade é responsabilidade do build. Valores calculados por JavaScript são aplicados com a mesma prioridade para preservar o comportamento interativo.
+
+Não use `?raw` para CSS de produção: essa opção ignora o processamento. Os arquivos em `diagnostics/` e `labs/` são ferramentas independentes, mantidas separadas dos módulos de produção. Funções serializadas entre contextos continuam autossuficientes.
+
+### Defaults, limites e ícones
+
+`src/config/defaults.js` reúne os valores iniciais das preferências. Use `createDefaults(section)` para obter uma cópia independente: alterar uma conta ou sessão não modifica os defaults nem outra conta. Os limites operacionais, intervalos, timeouts, códigos HTTP e faixas de validação ficam em `src/config/runtime.js`, com nomes de domínio. A ponte de rede recebe esses dados serializados explicitamente; não depende de imports no contexto de destino.
+
+Os ícones ficam em `src/assets/icons/*.svg`. Importe com `?inline` para receber markup SVG otimizado pelo SVGO no build, preservando `viewBox` e atributos de acessibilidade. Nenhum ícone requer uma requisição de rede no userscript instalado.

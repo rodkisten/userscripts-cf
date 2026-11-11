@@ -1,3 +1,5 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "./account.js";
 import { SearchHistory } from "../search/history.js";
@@ -20,7 +22,7 @@ export function tick() {
     state.readTimers.clear();
     state.readProgress = new WeakMap();
     document
-      .querySelectorAll("[data-rodx-observed]")
+      .querySelectorAll(RODX_SELECTORS.observedElements)
       .forEach((article) => delete article.dataset.rodxObserved);
     state.filterSignature = "";
     repaint();
@@ -32,7 +34,7 @@ export function tick() {
     if (detected.key !== state.accountCandidate) {
       state.accountCandidate = detected.key;
       state.accountCandidateSince = now;
-      setTimeout(() => Studio.queue("identity.navigation"), 2700);
+      setTimeout(() => Studio.queue("identity.navigation"), RUNTIME_LIMITS.identityNavigation.tickDelayMs);
     }
     // A numeric ID is stable even while X is updating its desktop/mobile menu.
     // Fallback handles require a short stable interval to avoid stale-account reads.
