@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
 import { VideoExperience } from "./experience.js";
 
@@ -24,18 +24,19 @@ export function initializeDeckVideoTransport() {
     };
     function attach(video) {
       if (installed.has(video)) return;
-      const wrapper = video.closest(CSS_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
+      const wrapper = video.closest(NATIVE_X_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
       if (
         !wrapper ||
-        wrapper.closest(CSS_SELECTORS.videoTransport) ||
-        wrapper.querySelector(CSS_SELECTORS.directVideoTransport)
+        wrapper.closest(RODX_SELECTORS.videoTransport) ||
+        wrapper.querySelector(RODX_SELECTORS.directVideoTransport)
       )
         return;
       const parentRect = wrapper.getBoundingClientRect();
       if (parentRect.width && (parentRect.width < 135 || parentRect.height < 90)) return;
       styleOnce();
       installed.add(video);
-      if (getComputedStyle(wrapper).position === "static") wrapper.style.position = "relative";
+      if (getComputedStyle(wrapper).position === "static")
+        wrapper.style.setProperty("position", "relative", "important");
       const bar = document.createElement("div");
       bar.className = "rodx-video-transport";
       bar.setAttribute("data-rodx-player-control", "1");
@@ -156,8 +157,8 @@ export function initializeDeckVideoTransport() {
       update();
     }
     function scan() {
-      for (const video of document.querySelectorAll(CSS_SELECTORS.visiblePageVideos)) {
-        if (video.closest(CSS_SELECTORS.videoTransport)) continue;
+      for (const video of document.querySelectorAll(NATIVE_X_SELECTORS.visiblePageVideos)) {
+        if (video.closest(RODX_SELECTORS.videoTransport)) continue;
         attach(video);
         clocks.get(video)?.();
       }

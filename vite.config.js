@@ -1,10 +1,12 @@
+import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
 
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
   css: {
-    transformer: "lightningcss",
+    transformer: "postcss",
+    postcss: { plugins: stylesPipeline() },
     lightningcss: { targets: { safari: 15 << 16 } },
   },
   build: {

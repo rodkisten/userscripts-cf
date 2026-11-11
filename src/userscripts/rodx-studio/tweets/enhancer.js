@@ -1,4 +1,9 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import {
+  DOM_SELECTORS,
+  NATIVE_X_SELECTORS,
+  RODX_SELECTORS,
+  COMPOSITE_SELECTORS,
+} from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { currentFullQuery, nativeSearch } from "../feeds/local-limits.js";
@@ -21,8 +26,8 @@ export function initializeDeckResultEnhancer() {
     const actionClass = "rodx-result-actions";
     function postId(article) {
       const link =
-        article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
-        article.querySelector(CSS_SELECTORS.statusLinks);
+        article.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+        article.querySelector(NATIVE_X_SELECTORS.statusLinks);
       return link?.getAttribute("href")?.match(UID_RE)?.[1] || "";
     }
     function ensureStyle() {
@@ -47,7 +52,7 @@ export function initializeDeckResultEnhancer() {
       return rules;
     }
     function seenButtonText(article, id) {
-      const btn = article.querySelector(CSS_SELECTORS.resultReadButtonByActionClass(actionClass));
+      const btn = article.querySelector(RODX_SELECTORS.resultReadButtonByActionClass(actionClass));
       if (btn) {
         const read = state.seen.has(id);
         btn.textContent = read ? "✓" : "◦";
@@ -63,7 +68,7 @@ export function initializeDeckResultEnhancer() {
         .toLocaleLowerCase();
     }
     function nativeQueryInput() {
-      return document.querySelector(CSS_SELECTORS.nestedNativeSearchInput);
+      return document.querySelector(NATIVE_X_SELECTORS.nestedNativeSearchInput);
     }
     function nativeQueryText() {
       const input = nativeQueryInput();
@@ -86,16 +91,16 @@ export function initializeDeckResultEnhancer() {
       NativeQueryTags.flush();
     }
     function findActions(article) {
-      const reply = article.querySelector(CSS_SELECTORS.replyButton);
-      const retweet = article.querySelector(CSS_SELECTORS.retweetToggleButtons);
-      const share = article.querySelector(CSS_SELECTORS.shareButton);
-      return (reply || retweet || share)?.closest(CSS_SELECTORS.actionGroups) || null;
+      const reply = article.querySelector(COMPOSITE_SELECTORS.replyButton);
+      const retweet = article.querySelector(NATIVE_X_SELECTORS.retweetToggleButtons);
+      const share = article.querySelector(NATIVE_X_SELECTORS.shareButton);
+      return (reply || retweet || share)?.closest(DOM_SELECTORS.actionGroups) || null;
     }
     function collectHashtags(article) {
-      const text = article.querySelector(CSS_SELECTORS.nativeTweetText);
+      const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return [];
       const found = new Map();
-      for (const anchor of text.querySelectorAll(CSS_SELECTORS.encodedHashtagLinks)) {
+      for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.encodedHashtagLinks)) {
         const t = (anchor.textContent || "").trim().match(/#[\p{L}\p{N}_]+/u)?.[0];
         if (t && !found.has(normalizedTag(t)))
           found.set(normalizedTag(t), {
@@ -115,30 +120,30 @@ export function initializeDeckResultEnhancer() {
       return [...found.values()];
     }
     function removeOldInlineButtons(article) {
-      for (const old of article.querySelectorAll(CSS_SELECTORS.externalTagAddButtons)) old.remove();
+      for (const old of article.querySelectorAll(RODX_SELECTORS.externalTagAddButtons)) old.remove();
     }
     function refreshAllHashtagStates() {
       const { positive, negative } = queryHashtags();
-      for (const item of document.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
+      for (const item of document.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         const id = normalizedTag(item.dataset.tag);
         const yes = positive.has(id),
           no = negative.has(id);
         item.dataset.selected = yes ? "1" : "0";
         item.dataset.excluded = no ? "1" : "0";
         item.dataset.color = state.visual.colorfulTags && !yes && !no ? "1" : "0";
-        const add = item.querySelector(CSS_SELECTORS.tagAddButton);
+        const add = item.querySelector(RODX_SELECTORS.tagAddButton);
         if (add) add.hidden = yes;
-        const remove = item.querySelector(CSS_SELECTORS.tagExcludeButton);
+        const remove = item.querySelector(RODX_SELECTORS.tagExcludeButton);
         if (remove) remove.hidden = no;
       }
     }
     function suppressNativeHashtagList(article, tags) {
-      const text = article.querySelector(CSS_SELECTORS.nativeTweetText);
+      const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return;
       // No destructive textContent/innerHTML edits on React-controlled X nodes.
       // Recompute on each scan so recycled posts don't keep stale CSS classes.
       text.classList.remove("rodx-native-only-tags");
-      for (const node of text.querySelectorAll(CSS_SELECTORS.nativeTagArtifacts)) {
+      for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove("rodx-native-tag-tail", "rodx-native-tag-source");
       }
       if (tags.length < 2) return;
@@ -153,10 +158,10 @@ export function initializeDeckResultEnhancer() {
 
       // Hide discrete hashtag-only DOM subtrees first (including when X wraps
       // several tags in a single span). An inline hashtag between words remains.
-      const candidates = [...text.querySelectorAll(CSS_SELECTORS.textContainers)].reverse();
+      const candidates = [...text.querySelectorAll(DOM_SELECTORS.textContainers)].reverse();
       for (const node of candidates) {
         if (node.classList.contains("rodx-native-tag-source")) continue;
-        if (node.closest(CSS_SELECTORS.nativeTagSource)) continue;
+        if (node.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const value = (node.innerText || node.textContent || "").trim();
         if (!value || !onlyTags.test(value) || !multi.test(value)) continue;
         const parent = node.parentElement;
@@ -174,8 +179,8 @@ export function initializeDeckResultEnhancer() {
           .flatMap((line) => line.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
           .map((tag) => tag.normalize("NFKC").toLocaleLowerCase()),
       );
-      for (const anchor of text.querySelectorAll(CSS_SELECTORS.hashtagLinks)) {
-        if (anchor.closest(CSS_SELECTORS.nativeTagSource)) continue;
+      for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.hashtagLinks)) {
+        if (anchor.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const tag = anchor.textContent.trim().normalize("NFKC").toLocaleLowerCase();
         if (!wanted.has(tag)) continue;
         // A parent containing regular text marks a sentence; never hide it.
@@ -186,8 +191,8 @@ export function initializeDeckResultEnhancer() {
       }
       // Remove visible line breaks directly before a trailing tag-only block.
       // This prevents the empty two-line gap seen on iOS when hashes moved.
-      const breaks = [...text.querySelectorAll(CSS_SELECTORS.lineBreaks)];
-      for (const source of text.querySelectorAll(CSS_SELECTORS.nativeTagSource)) {
+      const breaks = [...text.querySelectorAll(DOM_SELECTORS.lineBreaks)];
+      for (const source of text.querySelectorAll(RODX_SELECTORS.nativeTagSource)) {
         let previous = source.previousSibling;
         let steps = 0;
         while (previous && steps++ < 5) {
@@ -211,7 +216,7 @@ export function initializeDeckResultEnhancer() {
     function addHashtagBtns(article) {
       removeOldInlineButtons(article);
       const tags = collectHashtags(article);
-      let tray = article.querySelector(CSS_SELECTORS.scopedHashtagContainer);
+      let tray = article.querySelector(RODX_SELECTORS.scopedHashtagContainer);
       if (!tags.length) {
         tray?.remove();
         return;
@@ -267,9 +272,9 @@ export function initializeDeckResultEnhancer() {
       }
       if (state.visual.translateForeignTags) ForeignTags.scan(tray);
       else
-        for (const item of tray.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
+        for (const item of tray.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
           item.hidden = false;
-          item.querySelector(CSS_SELECTORS.tagTranslation)?.remove();
+          item.querySelector(RODX_SELECTORS.tagTranslation)?.remove();
         }
       suppressNativeHashtagList(article, tags);
       refreshAllHashtagStates();
@@ -279,10 +284,10 @@ export function initializeDeckResultEnhancer() {
     function ensureBookmark(article) {
       const group = findActions(article);
       if (!group) return;
-      const native = group.querySelector(CSS_SELECTORS.bookmarkToggleButtons);
+      const native = group.querySelector(NATIVE_X_SELECTORS.bookmarkToggleButtons);
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
-      const existing = group.querySelector(CSS_SELECTORS.bookmarkButton);
+      const existing = group.querySelector(RODX_SELECTORS.bookmarkButton);
       if (visibleNative) {
         existing?.remove();
         return;
@@ -299,8 +304,8 @@ export function initializeDeckResultEnhancer() {
         event.preventDefault();
         event.stopPropagation();
         const menuButton =
-          article.querySelector(CSS_SELECTORS.tweetCaret) ||
-          article.querySelector(CSS_SELECTORS.localizedMoreButtons);
+          article.querySelector(NATIVE_X_SELECTORS.tweetCaret) ||
+          article.querySelector(DOM_SELECTORS.localizedMoreButtons);
         if (!menuButton) {
           btn.title = "O X não mostrou o menu deste post";
           return;
@@ -314,7 +319,7 @@ export function initializeDeckResultEnhancer() {
         };
         const choose = () => {
           if (committed) return;
-          const options = [...document.querySelectorAll(CSS_SELECTORS.bookmarkMenuItems)].filter(
+          const options = [...document.querySelectorAll(NATIVE_X_SELECTORS.bookmarkMenuItems)].filter(
             (el) => !article.contains(el) && el.getClientRects().length > 0,
           );
           const target =
@@ -337,7 +342,7 @@ export function initializeDeckResultEnhancer() {
         menuButton.click();
         setTimeout(choose, 0);
       });
-      const share = group.querySelector(CSS_SELECTORS.shareButton);
+      const share = group.querySelector(NATIVE_X_SELECTORS.shareButton);
       if (share?.parentElement?.parentElement === group) share.parentElement.before(btn);
       else group.append(btn);
     }
@@ -371,7 +376,7 @@ export function initializeDeckResultEnhancer() {
           article.isConnected &&
           document.visibilityState === "visible" &&
           document.body.classList.contains("rodx-search-page") &&
-          article.closest(CSS_SELECTORS.timelineCells)?.style.display !== "none"
+          article.closest(NATIVE_X_SELECTORS.timelineCells)?.style.display !== "none"
         );
       }
       state.readObserver = new IntersectionObserver(
@@ -454,7 +459,7 @@ export function initializeDeckResultEnhancer() {
           state.readObserver?.disconnect();
           state.readObserver = null;
           state.readProgress = new WeakMap();
-          document.querySelectorAll(CSS_SELECTORS.observedElements).forEach((article) => {
+          document.querySelectorAll(RODX_SELECTORS.observedElements).forEach((article) => {
             delete article.dataset.rodxObserved;
           });
         });
@@ -472,8 +477,8 @@ export function initializeDeckResultEnhancer() {
       // seen-state and filtering remain restricted to search results.
       if (!current || !["live", "top"].includes(current.sort)) {
         for (const article of Studio.dom.nodes(XDOM.tweet)) {
-          article.style.setProperty("--rodx-font", state.visual.font + "px");
-          article.style.setProperty("--rodx-dense", String(state.visual.density));
+          article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
+          article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
           article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
           addHashtagBtns(article);
           ensureBookmark(article);
@@ -483,25 +488,25 @@ export function initializeDeckResultEnhancer() {
       ensureStyle();
       setupReader();
       const local = currentRules();
-      const main = document.querySelector(CSS_SELECTORS.primaryColumn);
+      const main = document.querySelector(NATIVE_X_SELECTORS.primaryColumn);
       if (!main) return;
-      const matches = main.querySelectorAll(CSS_SELECTORS.nativeTweets);
+      const matches = main.querySelectorAll(NATIVE_X_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
         if (!id) continue;
-        const cell = article.closest(CSS_SELECTORS.timelineCells) || article;
+        const cell = article.closest(NATIVE_X_SELECTORS.timelineCells) || article;
         // Query patterns, seen filters and limits run before X renders the response.
         if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
           cell.style.removeProperty("display");
         delete cell.dataset.rodxUnmatched;
         delete cell.dataset.rodxLimited;
-        article.style.setProperty("--rodx-font", state.visual.font + "px");
-        article.style.setProperty("--rodx-dense", String(state.visual.density));
+        article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
+        article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
         article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
         setSeen(article, id);
         addHashtagBtns(article);
         ensureBookmark(article);
-        let actions = article.querySelector(CSS_SELECTORS.resultActionsByClass(actionClass));
+        let actions = article.querySelector(DOM_SELECTORS.resultActionsByClass(actionClass));
         if (!actions) {
           actions = document.createElement("div");
           actions.className = actionClass;
@@ -516,8 +521,8 @@ export function initializeDeckResultEnhancer() {
             event.preventDefault();
             event.stopImmediatePropagation();
             const anchor =
-              article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
-              article.querySelector(CSS_SELECTORS.statusLinks);
+              article.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+              article.querySelector(NATIVE_X_SELECTORS.statusLinks);
             if (!anchor) {
               showRodxToast("Não foi possível localizar o link nativo deste post.", "error");
               return;
@@ -548,7 +553,7 @@ export function initializeDeckResultEnhancer() {
           actions.hidden = false;
           targetActions.append(actions);
         }
-        const exp = actions.querySelector(CSS_SELECTORS.expandAction);
+        const exp = actions.querySelector(RODX_SELECTORS.expandAction);
         if (exp) {
           exp.textContent = "↗";
           exp.title = "Expandir e abrir tweet";

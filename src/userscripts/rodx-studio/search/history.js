@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-search-history-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { NATIVE_X_SELECTORS, RODX_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-history-1.css?inline";
 import { currentFullQuery, nativeSearch } from "../feeds/local-limits.js";
 import { extractIdentity } from "../identity/account.js";
@@ -128,14 +127,14 @@ export function initializeDeckSearchHistory() {
     }
     function onSubmit(event) {
       const form = event.target;
-      if (!(form instanceof Element) || !form.querySelector(CSS_SELECTORS.nativeSearchInput)) return;
-      const input = form.querySelector(CSS_SELECTORS.nativeSearchInput);
+      if (!(form instanceof Element) || !form.querySelector(NATIVE_X_SELECTORS.nativeSearchInput)) return;
+      const input = form.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       void record(input.value, "submit", "live");
     }
     function onKeydown(event) {
       if (event.key !== "Enter" || event.isComposing) return;
       const input = event.target;
-      if (input instanceof HTMLInputElement && input.matches(CSS_SELECTORS.nativeSearchBox)) {
+      if (input instanceof HTMLInputElement && input.matches(NATIVE_X_SELECTORS.nativeSearchBox)) {
         void record(input.value, "submit", "live");
       }
     }
@@ -240,8 +239,16 @@ export function initializeDeckSearchHistory() {
     function placePanel() {
       if (!dialog || !launch) return;
       const rect = launch.getBoundingClientRect();
-      dialog.style.top = `${Math.max(8, Math.min(window.innerHeight - 160, rect.bottom + 8))}px`;
-      dialog.style.left = `${Math.min(window.innerWidth - dialog.offsetWidth - 10, Math.max(10, rect.left - 200))}px`;
+      dialog.style.setProperty(
+        "top",
+        `${Math.max(8, Math.min(window.innerHeight - 160, rect.bottom + 8))}px`,
+        "important",
+      );
+      dialog.style.setProperty(
+        "left",
+        `${Math.min(window.innerWidth - dialog.offsetWidth - 10, Math.max(10, rect.left - 200))}px`,
+        "important",
+      );
     }
     function createPanel() {
       close();
@@ -280,7 +287,7 @@ export function initializeDeckSearchHistory() {
       if (!dialog) return;
       const generation = ++renderGeneration;
       const account = accountKey();
-      const target = dialog.querySelector(CSS_SELECTORS.recentHistoryRows);
+      const target = dialog.querySelector(RODX_SELECTORS.recentHistoryRows);
       try {
         const { rows, more } = await page(account, 0, visible, searchTerm);
         if (generation !== renderGeneration || !dialog || account !== accountKey()) return;
@@ -329,7 +336,7 @@ export function initializeDeckSearchHistory() {
           target.append(moreBtn);
         }
         const options = document.createElement("div");
-        options.style.cssText = cssDeclarations(inlineCSS1);
+        applyComponentStyle(options, "rx-history-options", false);
         const edit = document.createElement("button");
         edit.className = "rh-more";
         edit.textContent = "Abrir Query Lab";
@@ -359,7 +366,7 @@ export function initializeDeckSearchHistory() {
       }
     }
     function ensureLauncher() {
-      const input = document.querySelector(CSS_SELECTORS.nativeSearchInput);
+      const input = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       if (!input?.isConnected) {
         launch?.remove();
         launch = null;
@@ -398,7 +405,7 @@ export function initializeDeckSearchHistory() {
       // Fixed/portal placement means the X header keeps its exact flex tree.
       // Show one button on narrow screens; Query Lab remains in its menu.
       const rect =
-        input.closest(CSS_SELECTORS.searchLandmarks)?.getBoundingClientRect() ||
+        input.closest(DOM_SELECTORS.searchLandmarks)?.getBoundingClientRect() ||
         input.getBoundingClientRect();
       const spaceRight = window.innerWidth - rect.right;
       const spaceLeft = rect.left;
@@ -415,7 +422,7 @@ export function initializeDeckSearchHistory() {
       // drawing over that native control or forcing the header to wrap.
       const centerY = rect.top + Math.max(0, rect.height / 2);
       const occupied = document.elementFromPoint(x + 19, centerY);
-      const competing = occupied?.closest?.(CSS_SELECTORS.interactiveButtons);
+      const competing = occupied?.closest?.(DOM_SELECTORS.interactiveButtons);
       const collide = competing && !launch.contains(competing) && !input.contains(competing);
       if (collide) {
         two = false;
@@ -424,16 +431,24 @@ export function initializeDeckSearchHistory() {
           input.dataset.rodxPaddingSaved = "1";
           input.dataset.rodxPaddingRight = input.style.paddingRight || "";
         }
-        input.style.paddingRight = "43px";
+        input.style.setProperty("padding-right", "43px", "important");
       } else if (input.dataset.rodxPaddingSaved) {
-        input.style.paddingRight = input.dataset.rodxPaddingRight;
+        input.style.setProperty("padding-right", input.dataset.rodxPaddingRight, "important");
         delete input.dataset.rodxPaddingSaved;
         delete input.dataset.rodxPaddingRight;
       }
       launch.children[1].hidden = !two;
-      launch.style.left = `${Math.round(x)}px`;
-      launch.style.top = `${Math.round(rect.top + Math.max(0, (rect.height - 36) / 2))}px`;
-      launch.style.display = rect.width < 60 || rect.bottom < 0 || rect.top > innerHeight ? "none" : "flex";
+      launch.style.setProperty("left", `${Math.round(x)}px`, "important");
+      launch.style.setProperty(
+        "top",
+        `${Math.round(rect.top + Math.max(0, (rect.height - 36) / 2))}px`,
+        "important",
+      );
+      launch.style.setProperty(
+        "display",
+        rect.width < 60 || rect.bottom < 0 || rect.top > innerHeight ? "none" : "flex",
+        "important",
+      );
       if (dialog) placePanel();
       currentRoute();
     }

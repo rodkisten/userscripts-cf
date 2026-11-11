@@ -1,38 +1,38 @@
 .rodx-xrepost {
   display: grid;
-  gap: 12px;
-  padding-bottom: 8px;
+  gap: var(--rodx-ds-space-12);
+  padding-bottom: var(--rodx-ds-space-8);
 }
 .rodx-xrepost .xr-choices {
   display: flex;
-  gap: 6px;
+  gap: var(--rodx-ds-space-6);
   overflow-x: auto;
-  padding: 3px 0;
+  padding: var(--rodx-ds-space-4) 0;
 }
 .rodx-xrepost .xr-choices button {
   white-space: nowrap;
 }
 .rodx-xrepost .xr-item {
-  border: 1px solid #71767b55;
-  border-radius: 15px;
-  padding: 12px;
+  border: 1px solid var(--rodx-ds-color-border);
+  border-radius: var(--rodx-ds-radius-16);
+  padding: var(--rodx-ds-space-12);
 }
 .rodx-xrepost .xr-caption {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .rodx-xrepost .xr-meta {
-  font-size: 12px;
+  font-size: var(--rodx-ds-text-12);
   opacity: 0.8;
-  margin: 6px 0;
+  margin: var(--rodx-ds-space-6) 0;
 }
 .rodx-xrepost .xr-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  padding-top: 9px;
+  gap: var(--rodx-ds-space-8);
+  padding-top: var(--rodx-ds-space-8);
 }
 .rodx-xrepost button {
-  min-height: 36px;
+  min-height: var(--rodx-ds-control-height);
   touch-action: manipulation;
 }

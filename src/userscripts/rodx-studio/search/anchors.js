@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-search-anchors-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-anchors-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
@@ -61,8 +60,8 @@ export function initializeDeckSearchAnchors() {
       if (!searchPage() || !q || dismissed === q || Date.now() < captureBlockedUntil) return;
       const article = [...Studio.dom.nodes(XDOM.tweet)].find((a) => a.getBoundingClientRect().bottom > 65);
       const status =
-        article?.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
-        article?.querySelector(CSS_SELECTORS.statusLinks);
+        article?.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+        article?.querySelector(NATIVE_X_SELECTORS.statusLinks);
       const saved = state.searches?.find((item) => item.query === q);
       origin = {
         account: state.account,
@@ -83,24 +82,24 @@ export function initializeDeckSearchAnchors() {
         location.origin,
       );
       const matches = () => location.pathname === "/search" && query() === q;
-      const existing = [...document.querySelectorAll(CSS_SELECTORS.linksWithHref)].find(
+      const existing = [...document.querySelectorAll(DOM_SELECTORS.linksWithHref)].find(
         (a) =>
           a.pathname === wanted.pathname &&
           a.search === wanted.search &&
-          !a.closest(CSS_SELECTORS.navigationStrip),
+          !a.closest(RODX_SELECTORS.navigationStrip),
       );
       if (existing) {
         existing.click();
         return;
       }
-      let field = document.querySelector(CSS_SELECTORS.nativeSearchInput);
+      let field = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       if (!field) {
-        const explore = document.querySelector(CSS_SELECTORS.exploreNavigationLinks);
+        const explore = document.querySelector(NATIVE_X_SELECTORS.exploreNavigationLinks);
         if (explore) {
           explore.click();
           for (let i = 0; i < 20 && !field; i++) {
             await new Promise((r) => setTimeout(r, 80));
-            field = document.querySelector(CSS_SELECTORS.nativeSearchInput);
+            field = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
           }
         }
       }
@@ -117,7 +116,7 @@ export function initializeDeckSearchAnchors() {
           }),
         );
         await new Promise((r) => setTimeout(r, 40));
-        const form = field.closest(CSS_SELECTORS.forms);
+        const form = field.closest(DOM_SELECTORS.forms);
         if (form) form.requestSubmit();
         else
           field.dispatchEvent(
@@ -158,7 +157,7 @@ export function initializeDeckSearchAnchors() {
         const target =
           entry.tweet &&
           [...Studio.dom.nodes(XDOM.tweet)].find((a) =>
-            [...a.querySelectorAll(CSS_SELECTORS.statusLinks)].some((link) =>
+            [...a.querySelectorAll(NATIVE_X_SELECTORS.statusLinks)].some((link) =>
               link.getAttribute("href")?.includes("/status/" + entry.tweet),
             ),
           );
@@ -199,7 +198,7 @@ export function initializeDeckSearchAnchors() {
         await nativeSearch(entry.query, entry.href);
       } catch (error) {
         cancelRestore?.();
-        shadow.querySelector(CSS_SELECTORS.navigationStatus).textContent = String(error.message || error);
+        shadow.querySelector(RODX_SELECTORS.navigationStatus).textContent = String(error.message || error);
       } finally {
         pending = false;
         render();
@@ -207,14 +206,14 @@ export function initializeDeckSearchAnchors() {
     }
     function mount() {
       const main =
-        document.querySelector(CSS_SELECTORS.primaryColumn) ||
-        document.querySelector(CSS_SELECTORS.mainContent);
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainContent);
       if (!main) return false;
       if (!host) {
-        document.querySelectorAll(CSS_SELECTORS.searchAnchors).forEach((el) => el.remove());
+        document.querySelectorAll(RODX_SELECTORS.searchAnchors).forEach((el) => el.remove());
         host = document.createElement("section");
         host.id = "rodx-navigation-strip";
-        host.style.cssText = cssDeclarations(inlineCSS1);
+        applyComponentStyle(host, "rx-anchors-host", false);
         shadow = host.attachShadow({
           mode: "open",
         });
@@ -225,8 +224,8 @@ export function initializeDeckSearchAnchors() {
   <button type="button" data-dismiss aria-label="Fechar retorno à pesquisa">×</button>
 </div>
 <small data-nav-status role="status"></small>`;
-        shadow.querySelector(CSS_SELECTORS.searchReturnAction).onclick = () => void returnToSearch();
-        shadow.querySelector(CSS_SELECTORS.searchDismissAction).onclick = () => {
+        shadow.querySelector(RODX_SELECTORS.searchReturnAction).onclick = () => void returnToSearch();
+        shadow.querySelector(RODX_SELECTORS.searchDismissAction).onclick = () => {
           dismissed = origin?.query || "";
           clear();
         };
@@ -263,9 +262,9 @@ export function initializeDeckSearchAnchors() {
     let listNameCheck = "";
     function render() {
       if (!mount()) return;
-      const native = document.querySelector(CSS_SELECTORS.nativeSearchInput);
+      const native = document.querySelector(NATIVE_X_SELECTORS.nativeSearchInput);
       const positiveIds = searchPage() ? positiveListIds(query()) : [];
-      const listContext = shadow.querySelector(CSS_SELECTORS.searchListContext);
+      const listContext = shadow.querySelector(RODX_SELECTORS.searchListContext);
       listContext.hidden = positiveIds.length === 0;
       if (positiveIds.length) {
         const rows = Studio.services.lists?.all() || [];
@@ -304,9 +303,9 @@ export function initializeDeckSearchAnchors() {
         !searchPage() &&
         !globalPage() &&
         dismissed !== origin.query;
-      const row = shadow.querySelector(CSS_SELECTORS.searchReturnButton);
+      const row = shadow.querySelector(RODX_SELECTORS.searchReturnButton);
       row.hidden = !show;
-      const button = shadow.querySelector(CSS_SELECTORS.searchReturnAction);
+      const button = shadow.querySelector(RODX_SELECTORS.searchReturnAction);
       button.textContent = "↩ Voltar para a pesquisa " + (origin?.label || "");
       button.title = origin?.query || "";
       button.disabled = pending;
@@ -321,7 +320,7 @@ export function initializeDeckSearchAnchors() {
     document.addEventListener(
       "click",
       (event) => {
-        const link = event.target.closest?.(CSS_SELECTORS.linksWithHref);
+        const link = event.target.closest?.(DOM_SELECTORS.linksWithHref);
         if (!link) return;
         const testid = link.getAttribute("data-testid") || "";
         if (
@@ -368,7 +367,7 @@ export function initializeDeckSearchAnchors() {
           dismissed = "";
           persist();
         }
-        shadow?.querySelector(CSS_SELECTORS.navigationStatus)?.replaceChildren();
+        shadow?.querySelector(RODX_SELECTORS.navigationStatus)?.replaceChildren();
       }
       render();
     }

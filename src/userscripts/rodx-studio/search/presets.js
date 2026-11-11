@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { MAX_BLOCK_DEPTH, MAX_BLOCK_NODES } from "../config/search.js";
 import { parseLocalDirectives } from "../feeds/local-rules.js";
 import { identityLabel } from "../identity/account.js";
@@ -29,7 +29,7 @@ export function resolvePreset(id) {
 export async function savePreset(asNew = false) {
   if (!state.account) throw new Error("Conta não identificada.");
   if (!state.draft) throw new Error("Abra o editor antes de salvar um preset.");
-  const input = state.rootShadow?.querySelector(CSS_SELECTORS.presetNameField);
+  const input = state.rootShadow?.querySelector(RODX_SELECTORS.presetNameField);
   const name = String(input?.value || state.draft.presetName || "")
     .trim()
     .slice(0, 100);
@@ -152,7 +152,7 @@ export function toggleBlockOperator(id) {
 }
 
 export function applyRawBlocks() {
-  const value = state.rootShadow?.querySelector(CSS_SELECTORS.rawQueryField)?.value || "";
+  const value = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField)?.value || "";
   if (!value.trim()) throw new Error("Informe uma query para converter.");
   const issue = diagnosticSpans(value).find((i) => i.severity === "error");
   if (issue) throw new Error(`${issue.message}. ${issue.suggestion}`);

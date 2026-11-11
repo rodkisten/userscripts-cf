@@ -1,15 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-1.css?inline";
-import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-2.css?inline";
-import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-3.css?inline";
-import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-4.css?inline";
-import inlineCSS5 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-5.css?inline";
-import inlineCSS6 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-6.css?inline";
-import inlineCSS7 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-7.css?inline";
-import inlineCSS8 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-8.css?inline";
-import inlineCSS9 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-9.css?inline";
-import inlineCSS10 from "../../../styles/inline/userscripts-rodx-studio-tweets-publisher-10.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-publisher-1.css?inline";
 import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-tweets-publisher-2.css?inline";
 import { PREFIX } from "../config/search.js";
@@ -69,9 +59,9 @@ export function initializeDeckXRepost() {
       let origin = "";
       if (looksLikeMarkup) {
         const parsed = new DOMParser().parseFromString(raw, "text/html");
-        for (const br of parsed.body.querySelectorAll(CSS_SELECTORS.lineBreaks)) br.replaceWith("\n");
-        for (const block of parsed.body.querySelectorAll(CSS_SELECTORS.paragraphs)) block.append("\n");
-        for (const anchor of parsed.body.querySelectorAll(CSS_SELECTORS.linksWithHref)) {
+        for (const br of parsed.body.querySelectorAll(DOM_SELECTORS.lineBreaks)) br.replaceWith("\n");
+        for (const block of parsed.body.querySelectorAll(DOM_SELECTORS.paragraphs)) block.append("\n");
+        for (const anchor of parsed.body.querySelectorAll(DOM_SELECTORS.linksWithHref)) {
           const label = String(anchor.textContent || "").trim();
           const href = safeSource(anchor.getAttribute("href"));
           if (href && /^(?:abrir (?:no|o) x|open (?:in|on) x|ver (?:no )?x)$/i.test(label)) {
@@ -201,11 +191,11 @@ export function initializeDeckXRepost() {
     async function savePreferences() {
       if (!gmAvailable || !account) throw Error("Identifique sua conta e habilite GM Storage.");
       const shadow = state.rootShadow;
-      const modeField = shadow?.querySelector(CSS_SELECTORS.repostShareMode);
-      const destinationField = shadow?.querySelector(CSS_SELECTORS.repostDestination);
-      const queueField = shadow?.querySelector(CSS_SELECTORS.repostEnqueueAfterTelegram);
-      const copyField = shadow?.querySelector(CSS_SELECTORS.repostCopyCaption);
-      const urlField = shadow?.querySelector(CSS_SELECTORS.repostIncludeSourceUrl);
+      const modeField = shadow?.querySelector(RODX_SELECTORS.repostShareMode);
+      const destinationField = shadow?.querySelector(RODX_SELECTORS.repostDestination);
+      const queueField = shadow?.querySelector(RODX_SELECTORS.repostEnqueueAfterTelegram);
+      const copyField = shadow?.querySelector(RODX_SELECTORS.repostCopyCaption);
+      const urlField = shadow?.querySelector(RODX_SELECTORS.repostIncludeSourceUrl);
       preferences = {
         shareMode: ["direct", "review", "off"].includes(modeField?.value)
           ? modeField.value
@@ -290,7 +280,7 @@ export function initializeDeckXRepost() {
               🎬 Fila global do token Relay/D1: inclui vídeos enviados pelo Safari, Scriptable e Shortcuts.
               Telegram entregue ≠ vídeo publicado no X. Publicar requer confirmação sua.
             </div>
-            <div class="row" style="${cssDeclarations(inlineCSS1)}">
+            <div class="row rx-publisher-row" >
               <button class="btn" data-act="xrepost-refresh">↻ Atualizar D1</button>
               <button class="btn primary" data-act="xrepost-next">▶ Próximo vencido</button>
             </div>
@@ -341,11 +331,11 @@ export function initializeDeckXRepost() {
               .join("")}
             <p class="muted">Até 100 itens por status (limite do endpoint atual).
               Consultas têm backoff e jitter, sem reenvio automático de mutations.</p>
-            <fieldset style="${cssDeclarations(inlineCSS2)}">
+            <fieldset class="rx-publisher-fieldset">
               <legend>Compartilhamento depois do Telegram</legend>
-              <label style="${cssDeclarations(inlineCSS3)}">
+              <label class="rx-repost-share-mode-field">
                 Destino preferido
-                <select class="btn" data-xrepost-setting="destination" style="${cssDeclarations(inlineCSS4)}">
+                <select class="btn rx-publisher-btn" data-xrepost-setting="destination" >
                   <option value="instagram" ${preferences.destination === "instagram" ? "selected" : ""}>
                     Instagram (selecionar na folha do iPhone)
                   </option>
@@ -354,9 +344,9 @@ export function initializeDeckXRepost() {
                   </option>
                 </select>
               </label>
-              <label style="${cssDeclarations(inlineCSS5)}">
+              <label class="rx-repost-destination-field">
                 Fluxo de publicação
-                <select class="btn" data-xrepost-setting="shareMode" style="${cssDeclarations(inlineCSS6)}">
+                <select class="btn rx-publisher-btn-width" data-xrepost-setting="shareMode" >
                   <option value="direct" ${preferences.shareMode === "direct" ? "selected" : ""}>
                     Direto: preparar MP4 e compartilhar com um toque
                   </option>
@@ -383,7 +373,7 @@ export function initializeDeckXRepost() {
                   ${preferences.includeSourceUrl ? "checked" : ""}>
                 Acrescentar link do tweet original à legenda
               </label>
-              <p class="muted" style="${cssDeclarations(inlineCSS7)}">
+              <p class="muted rx-publisher-muted" >
                 O Safari não pode escolher automaticamente um aplicativo nem anexar um arquivo ao
                 compositor por deep link. O MP4 é preparado antes; um toque abre o compartilhamento
                 nativo do iOS. Instagram pode ignorar o texto compartilhado. A fila só é marcada como
@@ -521,7 +511,7 @@ export function initializeDeckXRepost() {
             chrome: "bare",
             render() {
               const details = document.createElement("p");
-              details.style.cssText = cssDeclarations(inlineCSS8);
+              applyComponentStyle(details, "rx-publisher-details", false);
               details.textContent =
                 "O vídeo é preparado antes de abrir a folha de compartilhamento do iPhone. " +
                 "Escolha o aplicativo na folha nativa. A fila só muda para Publicados após " +
@@ -700,13 +690,13 @@ export function initializeDeckXRepost() {
       const destination = shareDestination();
       const panel = document.createElement("section");
       panel.className = "rodx-direct-share";
-      panel.style.cssText = cssDeclarations(inlineCSS9);
+      applyComponentStyle(panel, "rx-publisher-panel", false);
       panel.innerHTML = `
             <style>${extractedCSS2}</style>
             <p class="rdx-ds-status" data-share-status role="status" aria-live="polite">
               Preparando o vídeo do Relay para o iPhone…
             </p>
-            <label style="${cssDeclarations(inlineCSS10)}">
+            <label class="rx-repost-caption-field">
               Legenda (sem tags HTML, com @/usuario)
               <textarea class="rdx-ds-caption" data-share-caption spellcheck="false"></textarea>
             </label>
@@ -730,22 +720,22 @@ export function initializeDeckXRepost() {
               }
             </p>
           `;
-      const textArea = panel.querySelector(CSS_SELECTORS.shareCaption);
-      const statusElement = panel.querySelector(CSS_SELECTORS.shareStatus);
-      const nativeButton = panel.querySelector(CSS_SELECTORS.shareNativeAction);
-      const saveButton = panel.querySelector(CSS_SELECTORS.shareSaveAction);
+      const textArea = panel.querySelector(RODX_SELECTORS.shareCaption);
+      const statusElement = panel.querySelector(RODX_SELECTORS.shareStatus);
+      const nativeButton = panel.querySelector(RODX_SELECTORS.shareNativeAction);
+      const saveButton = panel.querySelector(RODX_SELECTORS.shareSaveAction);
       textArea.value = caption;
       const source = safeSource(item.source_url);
-      if (!source) panel.querySelector(CSS_SELECTORS.shareSourceAction).disabled = true;
+      if (!source) panel.querySelector(RODX_SELECTORS.shareSourceAction).disabled = true;
 
       function status(message, isError = false) {
         statusElement.textContent = message;
-        statusElement.style.color = isError ? "#f4212e" : "inherit";
+        statusElement.style.setProperty("color", isError ? "#f4212e" : "inherit", "important");
       }
       // No user-activation-consuming API is called before navigator.share() during the click.
       // Download is asynchronous and must finish BEFORE the user taps this button on Safari.
       panel.addEventListener("click", (event) => {
-        const button = event.target.closest(CSS_SELECTORS.shareActions);
+        const button = event.target.closest(RODX_SELECTORS.shareActions);
         if (!button || !panel.contains(button) || button.disabled) return;
         const actionName = button.dataset.shareAction;
         const text = normalizeCaption(textArea.value);

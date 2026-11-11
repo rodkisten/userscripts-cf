@@ -1,8 +1,5 @@
-import dynamicCSS from "../../../styles/dynamic-quick-actions.css?inline";
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
-import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
 import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
 import { Studio } from "../core/studio.js";
@@ -22,7 +19,7 @@ export function initializeDeckQuickUI() {
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
       if (!identity) return "";
-      const link = [...identity.querySelectorAll(CSS_SELECTORS.relativeLinks)].find((anchor) =>
+      const link = [...identity.querySelectorAll(DOM_SELECTORS.relativeLinks)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
       return link?.getAttribute("href")?.match(/^\/([A-Za-z0-9_]{1,15})\/?$/)?.[1] || "";
@@ -52,11 +49,11 @@ export function initializeDeckQuickUI() {
               <button type="submit" data-rxq="submit">Pesquisar</button>
             </div>
           `;
-      const input = form.querySelector(CSS_SELECTORS.queryWorkbenchInput);
-      const syntax = form.querySelector(CSS_SELECTORS.queryWorkbenchSyntax);
-      const message = form.querySelector(CSS_SELECTORS.queryWorkbenchMessage);
-      const submit = form.querySelector(CSS_SELECTORS.queryWorkbenchSubmit);
-      const suggestionBox = form.querySelector(CSS_SELECTORS.queryWorkbenchSuggestions);
+      const input = form.querySelector(RODX_SELECTORS.queryWorkbenchInput);
+      const syntax = form.querySelector(RODX_SELECTORS.queryWorkbenchSyntax);
+      const message = form.querySelector(RODX_SELECTORS.queryWorkbenchMessage);
+      const submit = form.querySelector(RODX_SELECTORS.queryWorkbenchSubmit);
+      const suggestionBox = form.querySelector(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
       let rows = [];
@@ -303,9 +300,13 @@ export function initializeDeckQuickUI() {
       }
       function validate() {
         const value = input.value;
-        input.style.height = "auto";
-        input.style.height = `${Math.min(Math.max(112, input.scrollHeight), innerHeight * 0.4)}px`;
-        syntax.style.height = input.style.height;
+        input.style.setProperty("height", "auto", "important");
+        input.style.setProperty(
+          "height",
+          `${Math.min(Math.max(112, input.scrollHeight), innerHeight * 0.4)}px`,
+          "important",
+        );
+        syntax.style.setProperty("height", input.style.height, "important");
         syntax.innerHTML = highlightWithIssues(value, diagnosticSpans(value)) + "\n";
         syntax.scrollTop = input.scrollTop;
         const diagnostic = inspectNativeQuery(value);
@@ -358,7 +359,7 @@ export function initializeDeckQuickUI() {
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
           renderSuggestions();
-          suggestionBox.querySelector(CSS_SELECTORS.selectedItems)?.scrollIntoView({ block: "nearest" });
+          suggestionBox.querySelector(DOM_SELECTORS.selectedItems)?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
           event.preventDefault();
           event.stopPropagation();
@@ -374,7 +375,7 @@ export function initializeDeckQuickUI() {
         }
       });
       form.addEventListener("click", async (event) => {
-        const action = event.target.closest(CSS_SELECTORS.queryWorkbenchActions)?.dataset.rxqAction;
+        const action = event.target.closest(RODX_SELECTORS.queryWorkbenchActions)?.dataset.rxqAction;
         if (!action) return;
         event.preventDefault();
         if (action === "copy") {
@@ -473,11 +474,11 @@ export function initializeDeckQuickUI() {
       const margin = 8;
       const left = Math.max(margin, Math.min(innerWidth - size - margin, Number(c.x ?? 12)));
       const top = Math.max(60, Math.min(availableHeight - size - 76, Number(c.y ?? availableHeight - 170)));
-      floating.style.cssText = cssDeclarations(dynamicCSS);
-      floating.style.setProperty("--rodx-value-1", String(left) + "px");
-      floating.style.setProperty("--rodx-value-2", String(top) + "px");
-      floating.style.setProperty("--rodx-value-3", String(size) + "px");
-      floating.style.setProperty("--rodx-value-4", String(size) + "px");
+      applyComponentStyle(floating, "rx-quick-actions-floating", false);
+      floating.style.setProperty("--rodx-anchor-left", String(left) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-top", String(top) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-width", String(size) + "px", "important");
+      floating.style.setProperty("--rodx-anchor-height", String(size) + "px", "important");
     }
     function scan() {
       if (!floating) {
@@ -501,10 +502,16 @@ export function initializeDeckQuickUI() {
           if (Math.hypot(dx, dy) > 7) moved = true;
           if (moved) {
             e.preventDefault();
-            floating.style.left =
-              Math.max(0, Math.min(innerWidth - floating.offsetWidth, press.left + dx)) + "px";
-            floating.style.top =
-              Math.max(0, Math.min(innerHeight - floating.offsetHeight - 60, press.top + dy)) + "px";
+            floating.style.setProperty(
+              "left",
+              Math.max(0, Math.min(innerWidth - floating.offsetWidth, press.left + dx)) + "px",
+              "important",
+            );
+            floating.style.setProperty(
+              "top",
+              Math.max(0, Math.min(innerHeight - floating.offsetHeight - 60, press.top + dy)) + "px",
+              "important",
+            );
           }
         };
         floating.onpointerup = () => {
@@ -536,9 +543,9 @@ export function initializeDeckQuickUI() {
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        const bar = article.querySelector(CSS_SELECTORS.tweetTopbar);
+        const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);
         if (!bar) continue;
-        let button = bar.querySelector(CSS_SELECTORS.addToListAction);
+        let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -561,14 +568,14 @@ export function initializeDeckQuickUI() {
         listInfo = null;
       } else {
         const main =
-          document.querySelector(CSS_SELECTORS.primaryColumn) ||
-          document.querySelector(CSS_SELECTORS.mainElement);
+          document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+          document.querySelector(DOM_SELECTORS.mainElement);
         if (main && (!listInfo || listInfo.dataset.id !== id)) {
           listInfo?.remove();
           listInfo = document.createElement("div");
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
-          listInfo.style.cssText = cssDeclarations(inlineCSS1);
+          applyComponentStyle(listInfo, "rx-quick-actions-listInfo", false);
           const text = document.createElement("span");
           text.textContent = "ID: " + id;
           const name = document.createElement("strong");
@@ -607,11 +614,11 @@ export function initializeDeckQuickUI() {
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector(CSS_SELECTORS.liveListName);
+        const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
         if (currentName && currentName.textContent !== name) currentName.textContent = name;
       }
-      for (const a of document.querySelectorAll(CSS_SELECTORS.listLinks)) {
-        if (a.closest(CSS_SELECTORS.ownedTimelineContainers)) continue;
+      for (const a of document.querySelectorAll(NATIVE_X_SELECTORS.listLinks)) {
+        if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) continue;
         const id = a.pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&
@@ -623,7 +630,7 @@ export function initializeDeckQuickUI() {
         b.type = "button";
         b.textContent = "▷ Vídeos";
         b.dataset.rodxListVideo = id;
-        b.style.cssText = cssDeclarations(inlineCSS2);
+        applyComponentStyle(b, "rx-quick-actions-b", false);
         b.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();

@@ -1,7 +1,13 @@
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { parse } from "@babel/parser";
-import { CSS_SELECTORS, X_SELECTORS } from "../src/selectors.js";
+import {
+  DOM_SELECTORS,
+  NATIVE_X_SELECTORS,
+  RODX_SELECTORS,
+  MEDIA_COMPONENT_SELECTORS,
+  COMPOSITE_SELECTORS,
+} from "../src/selectors.js";
 import { Window } from "happy-dom";
 const directory = new URL("../src/userscripts/rodx-studio/", import.meta.url);
 const sourceFiles = [];
@@ -9,7 +15,14 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
   if (entry.endsWith(".js")) {
     let code = fs.readFileSync(new URL(entry, directory), "utf8");
     const ast = parse(code, { sourceType: "module" });
-    const values = { CSS_SELECTORS, X_SELECTORS };
+    const selectorGroups = {
+      DOM_SELECTORS,
+      NATIVE_X_SELECTORS,
+      RODX_SELECTORS,
+      MEDIA_COMPONENT_SELECTORS,
+      COMPOSITE_SELECTORS,
+    };
+    const values = {};
     for (const node of ast.program.body) {
       if (node.type !== "ImportDeclaration" || !node.source.value.endsWith(".css?inline")) continue;
       const css = fs.readFileSync(
@@ -20,18 +33,17 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
     }
     code = code.replace(/^import[^;]+;\s*/gm, "");
     // These fixtures evaluate individual declarations. Resolve their imported data explicitly.
-    code = code.replace(/CSS_SELECTORS\.([A-Za-z][A-Za-z0-9]*)/g, (_, key) => {
-      const value = CSS_SELECTORS[key];
-      return typeof value === "function" ? "(" + value.toString() + ")" : JSON.stringify(value);
-    });
+    code = code.replace(
+      /(DOM_SELECTORS|NATIVE_X_SELECTORS|RODX_SELECTORS|MEDIA_COMPONENT_SELECTORS|COMPOSITE_SELECTORS)\.([A-Za-z][A-Za-z0-9]*)/g,
+      (_, group, key) => {
+        const value = selectorGroups[group][key];
+        return typeof value === "function" ? "(" + value.toString() + ")" : JSON.stringify(value);
+      },
+    );
     for (const [name, value] of Object.entries(values)) {
       if (typeof value !== "string") continue;
       code = code.replace(new RegExp("\\b" + name + "\\b", "g"), () => JSON.stringify(value));
     }
-    code = code.replace(
-      /cssDeclarations\(/g,
-      '(css => css.slice(css.indexOf("{") + 1, css.lastIndexOf("}")))(',
-    );
     // Import declarations are not evaluated by this isolated-function harness.
     code = code.replace(/^import[^;]+;\s*/gm, "");
     sourceFiles.push(code);

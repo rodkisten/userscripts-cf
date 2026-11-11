@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 export let DirectLinks;
 
 export function initializeDeckDirectLinks() {
@@ -72,7 +72,7 @@ export function initializeDeckDirectLinks() {
     }
     function scan() {
       if (++scans % 3 !== 0) return;
-      const anchors = [...document.querySelectorAll(CSS_SELECTORS.tweetContentLinks)].filter((a) =>
+      const anchors = [...document.querySelectorAll(NATIVE_X_SELECTORS.tweetContentLinks)].filter((a) =>
         SHORT.test(a.getAttribute("href") || ""),
       );
       let count = 0;

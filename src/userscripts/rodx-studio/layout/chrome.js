@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-layout-chrome-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { state } from "../state/deck.js";
@@ -26,12 +25,12 @@ export function initializeDeckScrollChrome() {
     }
     function discover() {
       const main =
-        document.querySelector(CSS_SELECTORS.primaryColumn) ||
-        document.querySelector(CSS_SELECTORS.mainContent);
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainContent);
       if (!main) return;
-      for (const seed of main.querySelectorAll(CSS_SELECTORS.stickyChromeCandidates)) {
-        if (seed.closest(CSS_SELECTORS.articles)) continue;
-        if (seed.matches(CSS_SELECTORS.topNavigationBars)) chrome.add(seed);
+      for (const seed of main.querySelectorAll(NATIVE_X_SELECTORS.stickyChromeCandidates)) {
+        if (seed.closest(DOM_SELECTORS.articles)) continue;
+        if (seed.matches(NATIVE_X_SELECTORS.topNavigationBars)) chrome.add(seed);
         let node = seed;
         while (node && node !== main) {
           const pos = getComputedStyle(node).position;
@@ -42,9 +41,9 @@ export function initializeDeckScrollChrome() {
           node = node.parentElement;
         }
       }
-      for (const node of document.querySelectorAll(CSS_SELECTORS.studioNavigationRoots)) chrome.add(node);
+      for (const node of document.querySelectorAll(RODX_SELECTORS.studioNavigationRoots)) chrome.add(node);
       // Mobile X sometimes places its main toolbar outside the primary column.
-      for (const node of document.querySelectorAll(CSS_SELECTORS.bannerHeader)) {
+      for (const node of document.querySelectorAll(DOM_SELECTORS.bannerHeader)) {
         const r = node.getBoundingClientRect();
         if (innerWidth < 800 && r.width > innerWidth * 0.7 && r.height < 180) chrome.add(node);
       }
@@ -58,7 +57,7 @@ export function initializeDeckScrollChrome() {
         // Keep geometry stable: translate instead of collapsing layout height.
         if (!hidden) {
           const r = node.getBoundingClientRect();
-          node.style.setProperty("--rodx-chrome-rise", Math.max(220, r.bottom + 20) + "px");
+          node.style.setProperty("--rodx-chrome-rise", Math.max(220, r.bottom + 20) + "px", "important");
         }
       }
       const colors = [
@@ -73,8 +72,8 @@ export function initializeDeckScrollChrome() {
       const background =
         colors.find((c) => c && c !== "transparent" && !/rgba\([^)]*,\s*0\s*\)$/.test(c)) ||
         (light ? "#000" : "#fff");
-      document.documentElement.style.setProperty("--rodx-bar-bg", background);
-      document.documentElement.style.setProperty("--rodx-bar-fg", foreground);
+      document.documentElement.style.setProperty("--rodx-bar-bg", background, "important");
+      document.documentElement.style.setProperty("--rodx-bar-fg", foreground, "important");
     }
     function offset() {
       let bottom = 0;
@@ -97,7 +96,7 @@ export function initializeDeckScrollChrome() {
         if (article.hidden || getComputedStyle(article).display === "none") continue;
         const r = article.getBoundingClientRect();
         if (r.top <= top + 2 && r.bottom > top + 44) {
-          candidate = article.querySelector(CSS_SELECTORS.tweetTopbar);
+          candidate = article.querySelector(RODX_SELECTORS.tweetTopbar);
           if (candidate) break;
         }
       }
@@ -111,7 +110,7 @@ export function initializeDeckScrollChrome() {
         portal.className = "rodx-tweet-topbar";
         portal.setAttribute("aria-label", "Autor e ações do tweet atual");
         portal.addEventListener("click", (event) => {
-          const target = event.target.closest(CSS_SELECTORS.tweetTopbarControls);
+          const target = event.target.closest(RODX_SELECTORS.tweetTopbarControls);
           if (!target || !active) return;
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -136,11 +135,11 @@ export function initializeDeckScrollChrome() {
         portal.innerHTML = markup;
         portal.dataset.markup = markup;
       }
-      let context = portal.querySelector(CSS_SELECTORS.tweetContextLabel);
+      let context = portal.querySelector(RODX_SELECTORS.tweetContextLabel);
       if (!context) {
         context = document.createElement("small");
         context.dataset.rodxContext = "1";
-        context.style.cssText = cssDeclarations(inlineCSS1);
+        applyComponentStyle(context, "rx-chrome-context", false);
         portal.prepend(context);
       }
       context.textContent = contextLabel;
@@ -150,17 +149,21 @@ export function initializeDeckScrollChrome() {
       portal.style.setProperty("padding-top", contextLabel ? "15px" : "3px", "important");
       candidate.classList.add("rodx-topbar-floating-source");
       portal.hidden = false;
-      const rect = candidate.closest(CSS_SELECTORS.articles).getBoundingClientRect();
-      portal.style.left = Math.max(0, rect.left) + "px";
-      portal.style.width = Math.min(innerWidth - Math.max(0, rect.left), rect.width) + "px";
-      portal.style.top = top + "px";
+      const rect = candidate.closest(DOM_SELECTORS.articles).getBoundingClientRect();
+      portal.style.setProperty("left", Math.max(0, rect.left) + "px", "important");
+      portal.style.setProperty(
+        "width",
+        Math.min(innerWidth - Math.max(0, rect.left), rect.width) + "px",
+        "important",
+      );
+      portal.style.setProperty("top", top + "px", "important");
     }
     function update() {
       raf = 0;
       const y = Math.max(0, scrollY),
         delta = y - previousY;
       previousY = y;
-      const editing = document.activeElement?.matches(CSS_SELECTORS.editableFields);
+      const editing = document.activeElement?.matches(DOM_SELECTORS.editableFields);
       if (y < 30 || editing) setHidden(false);
       else if (Math.abs(delta) > 0.5) {
         const next = delta > 0 ? 1 : -1;
@@ -172,7 +175,7 @@ export function initializeDeckScrollChrome() {
         if (travel > 18) setHidden(direction === 1);
       }
       const top = offset();
-      document.documentElement.style.setProperty("--rodx-chrome-offset", top + "px");
+      document.documentElement.style.setProperty("--rodx-chrome-offset", top + "px", "important");
       pin(top);
     }
     let settleTimer;
@@ -181,7 +184,7 @@ export function initializeDeckScrollChrome() {
         !state.visual.snap ||
         document.visibilityState !== "visible" ||
         window.getSelection()?.toString() ||
-        document.activeElement?.matches(CSS_SELECTORS.editableFields)
+        document.activeElement?.matches(DOM_SELECTORS.editableFields)
       )
         return;
       const top = offset();

@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 export function discoverListNames(document, href, clean) {
   const result = new Map(),
     url = new URL(href);
@@ -38,12 +38,12 @@ export function discoverListNames(document, href, clean) {
     if (id && label && !result.has(id))
       result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
   }
-  for (const anchor of document.querySelectorAll(CSS_SELECTORS.listLinks)) {
-    if (anchor.closest(CSS_SELECTORS.articleUserCellsOrOwnedRoot(own))) continue;
+  for (const anchor of document.querySelectorAll(NATIVE_X_SELECTORS.listLinks)) {
+    if (anchor.closest(NATIVE_X_SELECTORS.articleUserCellsOrOwnedRoot(own))) continue;
     const id = idOf(anchor.getAttribute("href"));
     if (!id) continue;
-    const heading = anchor.querySelector(CSS_SELECTORS.listCardHeadings);
-    const leaves = [...anchor.querySelectorAll(CSS_SELECTORS.autoDirectionText)].filter(
+    const heading = anchor.querySelector(NATIVE_X_SELECTORS.listCardHeadings);
+    const leaves = [...anchor.querySelectorAll(DOM_SELECTORS.autoDirectionText)].filter(
       (el) => !el.children.length,
     );
     const candidates = [
@@ -61,18 +61,18 @@ export function discoverListNames(document, href, clean) {
   const routeId = idOf(url.href);
   if (routeId && !/\/(members|followers)\/?$/.test(url.pathname)) {
     const primary =
-      document.querySelector(CSS_SELECTORS.primaryColumn) ||
-      document.querySelector(CSS_SELECTORS.mainElement);
-    const headings = [...(primary?.querySelectorAll(CSS_SELECTORS.listPageHeadings) || [])].filter(
-      (el) => !el.closest(CSS_SELECTORS.articleOrOwnedRoot(own)) && !el.closest(CSS_SELECTORS.listLinks),
+      document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+      document.querySelector(DOM_SELECTORS.mainElement);
+    const headings = [...(primary?.querySelectorAll(NATIVE_X_SELECTORS.listPageHeadings) || [])].filter(
+      (el) => !el.closest(DOM_SELECTORS.articleOrOwnedRoot(own)) && !el.closest(NATIVE_X_SELECTORS.listLinks),
     );
     const heading = headings.map((el) => name(el.textContent)).find(Boolean) || "";
-    const canonical = document.querySelector(CSS_SELECTORS.canonicalLink)?.href;
-    const metaUrl = document.querySelector(CSS_SELECTORS.openGraphUrl)?.content;
+    const canonical = document.querySelector(DOM_SELECTORS.canonicalLink)?.href;
+    const metaUrl = document.querySelector(DOM_SELECTORS.openGraphUrl)?.content;
     const bound = idOf(canonical || metaUrl || "") === routeId;
     const titles = [
-      document.querySelector(CSS_SELECTORS.openGraphTitle)?.content,
-      document.querySelector(CSS_SELECTORS.twitterTitle)?.content,
+      document.querySelector(DOM_SELECTORS.openGraphTitle)?.content,
+      document.querySelector(DOM_SELECTORS.twitterTitle)?.content,
       document.title,
     ]
       .map((v) => name(v, true))

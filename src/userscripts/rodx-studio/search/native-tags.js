@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { nativeSearch } from "../feeds/local-limits.js";
 import { QueryEngine } from "./query-compiler.js";
 import { ResultEnhancer } from "../tweets/enhancer.js";
@@ -9,7 +9,7 @@ export let NativeQueryTags;
 export function initializeDeckNativeQueryTags() {
   NativeQueryTags = (() => {
     const pending = [];
-    const input = () => document.querySelector(CSS_SELECTORS.nestedNativeSearchInput);
+    const input = () => document.querySelector(NATIVE_X_SELECTORS.nestedNativeSearchInput);
     const current = () => input()?.value || nativeSearch()?.query || "";
     const set = (value) => {
       const field = input();
@@ -40,7 +40,7 @@ export function initializeDeckNativeQueryTags() {
       return true;
     };
     const route = () => {
-      const nav = document.querySelector(CSS_SELECTORS.exploreSidebarLinks);
+      const nav = document.querySelector(NATIVE_X_SELECTORS.exploreSidebarLinks);
       if (nav) nav.click();
       else showRodxToast("Abra a busca do X para editar as hashtags.", "info");
     };

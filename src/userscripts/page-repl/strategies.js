@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../selectors.js";
+import { DOM_SELECTORS } from "../../selectors.js";
 export class Unavailable extends Error {
   constructor(message) {
     super(message);
@@ -10,7 +10,7 @@ export function createStrategies(host = window) {
   let trustedPolicy;
   const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : null;
   const parent = () => host.document.head || host.document.documentElement;
-  const nonce = () => host.document.querySelector(CSS_SELECTORS.nonceScript)?.nonce || "";
+  const nonce = () => host.document.querySelector(DOM_SELECTORS.nonceScript)?.nonce || "";
   const requirePage = () => {
     if (!page) throw new Unavailable("unsafeWindow não disponível");
     return page;

@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
 export let ForeignTags;
@@ -65,14 +65,14 @@ export function initializeDeckForeignTags() {
     };
     const apply = (key) => {
       const value = cache.get(key);
-      for (const item of document.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
+      for (const item of document.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         if (
           String(item.dataset.tag || "")
             .replace(/^#/, "")
             .toLocaleLowerCase() !== key
         )
           continue;
-        item.querySelector(CSS_SELECTORS.tagTranslation)?.remove();
+        item.querySelector(RODX_SELECTORS.tagTranslation)?.remove();
         // All hashtag actions live in OUR tray. Keep original tags visible here;
         // only add parenthesized translation for languages outside PT/ES/EN.
         item.hidden = false;
@@ -87,7 +87,7 @@ export function initializeDeckForeignTags() {
     };
     function scan(tray) {
       if (!state.visual.translateForeignTags) return;
-      for (const item of tray.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
+      for (const item of tray.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         const key = String(item.dataset.tag || "")
           .replace(/^#/, "")
           .toLocaleLowerCase();

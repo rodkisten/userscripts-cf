@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { state } from "../state/deck.js";
 
@@ -23,7 +23,10 @@ export function initializeDeckViewportPlayback() {
       return possible ? Math.min(1, (x * y) / possible) : 0;
     }
     function isFeed(video) {
-      return Boolean(video.closest(CSS_SELECTORS.mainTweets)) && !video.closest(CSS_SELECTORS.xOverlayLayers);
+      return (
+        Boolean(video.closest(NATIVE_X_SELECTORS.mainTweets)) &&
+        !video.closest(NATIVE_X_SELECTORS.xOverlayLayers)
+      );
     }
     function update() {
       raf = 0;
@@ -114,7 +117,7 @@ export function initializeDeckViewportPlayback() {
         document.addEventListener(
           "click",
           (event) => {
-            const button = event.target.closest?.(CSS_SELECTORS.interactiveButtons);
+            const button = event.target.closest?.(DOM_SELECTORS.interactiveButtons);
             if (
               !button ||
               !/^(?:play|pause|reproduzir|pausar)$/i.test(
@@ -122,8 +125,8 @@ export function initializeDeckViewportPlayback() {
               )
             )
               return;
-            const card = button.closest(CSS_SELECTORS.nativeTweets);
-            const video = card?.querySelector(CSS_SELECTORS.videos);
+            const card = button.closest(NATIVE_X_SELECTORS.nativeTweets);
+            const video = card?.querySelector(DOM_SELECTORS.videos);
             const item = video && info.get(video);
             if (item && !video.paused) item.manuallyPausedUntil = performance.now() + 30000;
           },

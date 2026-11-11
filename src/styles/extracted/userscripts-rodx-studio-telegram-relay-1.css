@@ -1,95 +1,94 @@
 button.rodx-tg-action {
-  appearance: none !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: rgb(113, 118, 123) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  min-height: 34px !important;
-  min-width: 34px !important;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--rodx-ds-color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rodx-ds-space-4);
+  min-height: 34px;
+  min-width: 34px;
   font:
-    400 12px/1.2 system-ui,
-    -apple-system,
-    sans-serif !important;
-  border-radius: 999px !important;
-  padding: 5px 9px !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  touch-action: manipulation !important;
+    400 var(--rodx-ds-text-12)/1.2 system-ui,
+    var(--rodx-ds-font-sans);
+  border-radius: var(--rodx-ds-radius-24);
+  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
+  cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
   transition:
     color 0.12s,
-    background 0.12s !important;
+    background 0.12s;
 }
 button.rodx-tg-action:hover,
 button.rodx-tg-action:focus-visible {
-  color: rgb(29, 155, 240) !important;
-  background: rgba(29, 155, 240, 0.1) !important;
+  color: rgb(29, 155, 240);
+  background: rgba(29, 155, 240, 0.1);
 }
 button.rodx-tg-action[data-relay-state="sent"] {
-  color: rgb(0, 186, 124) !important;
+  color: rgb(0, 186, 124);
 }
 button.rodx-tg-action[data-relay-state="partial"] {
-  color: rgb(255, 173, 59) !important;
+  color: rgb(255, 173, 59);
 }
 button.rodx-tg-action[data-relay-state="sending"],
 button.rodx-tg-action[data-relay-state="checking"] {
-  opacity: 0.6 !important;
+  opacity: 0.6;
 }
 button.rodx-tg-action:disabled {
-  cursor: progress !important;
+  cursor: progress;
 }
 button.rodx-tg-action.rodx-tg-immersive {
-  position: fixed !important;
-  right: max(131px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  padding: 9px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  z-index: 2147481101 !important;
+  position: fixed;
+  right: max(131px, env(safe-area-inset-right));
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  min-width: var(--rodx-ds-control-touch);
+  min-height: var(--rodx-ds-control-touch);
+  padding: var(--rodx-ds-space-8);
+  border-radius: var(--rodx-ds-radius-24);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: var(--rodx-ds-color-white);
+  background: rgba(15, 20, 25, 0.88);
+  z-index: 2147481101;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 button.rodx-tg-immersive[data-relay-state="sent"] {
-  color: #00ba7c !important;
+  color: #00ba7c;
 }
 button.rodx-tg-immersive[data-relay-state="partial"] {
-  color: #ffad3b !important;
+  color: #ffad3b;
 }
 button.rodx-tg-action.rodx-tg-video-overlay {
-  position: absolute !important;
-  top: 7px !important;
-  right: 7px !important;
-  z-index: 91 !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 6px !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.7) !important;
-  opacity: 0.8 !important;
-  border: 1px solid rgba(255, 255, 255, 0.17) !important;
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 91;
+  min-width: var(--rodx-ds-control-size);
+  min-height: var(--rodx-ds-control-size);
+  width: var(--rodx-ds-control-size);
+  height: var(--rodx-ds-control-size);
+  padding: var(--rodx-ds-space-6);
+  color: var(--rodx-ds-color-white);
+  background: rgba(15, 20, 25, 0.7);
+  opacity: 0.8;
+  border: 1px solid rgba(255, 255, 255, 0.17);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
 }
 button.rodx-tg-video-overlay:is(:hover, :focus-visible) {
-  opacity: 1 !important;
+  opacity: 1;
 }
 button.rodx-tg-video-overlay[data-relay-state="sent"] {
-  color: #00ba7c !important;
+  color: #00ba7c;
 }
 button.rodx-tg-video-overlay[data-relay-state="partial"] {
-  color: #ffad3b !important;
+  color: #ffad3b;
 }
 @media (max-width: 500px) {
   button.rodx-tg-action {
-    padding: 5px !important;
-    gap: 3px !important;
+    padding: var(--rodx-ds-space-4);
+    gap: var(--rodx-ds-space-4);
   }
 }

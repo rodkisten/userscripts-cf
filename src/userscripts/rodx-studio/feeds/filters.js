@@ -1,5 +1,4 @@
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-feeds-filters-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { RODX_SELECTORS, DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { currentFullQuery, visibleLimit } from "./local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "./local-rules.js";
@@ -85,7 +84,7 @@ export function initializeDeckFeedFilters() {
     function local() {
       // Restore any stale cosmetic flags. Do not resize virtualized tweet cells.
       document
-        .querySelectorAll(CSS_SELECTORS.filteredFeedElements)
+        .querySelectorAll(RODX_SELECTORS.filteredFeedElements)
         .forEach((el) =>
           el.classList.remove("rodx-feed-filtered", "rodx-feed-filtered-cell", "rodx-who-to-follow"),
         );
@@ -101,7 +100,7 @@ export function initializeDeckFeedFilters() {
           }[config.media] || "Imagens e vídeos";
       shadow.innerHTML =
         "<style>" + inlineCSS1 + "</style>" + '<button type="button" data-filter-menu></button>';
-      const button = shadow.querySelector(CSS_SELECTORS.buttons);
+      const button = shadow.querySelector(DOM_SELECTORS.buttons);
       button.textContent =
         "⚙ " +
         summary +
@@ -171,8 +170,8 @@ export function initializeDeckFeedFilters() {
         return;
       }
       const main =
-        document.querySelector(CSS_SELECTORS.primaryColumn) ||
-        document.querySelector(CSS_SELECTORS.mainContent);
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainContent);
       if (!main) return;
       host?.remove();
       host = document.createElement("div");
@@ -185,14 +184,14 @@ export function initializeDeckFeedFilters() {
         (e) => void change(e).catch((error) => showRodxToast(error.message, "error")),
       );
       shadow.addEventListener("click", (e) => {
-        if (e.target.closest(CSS_SELECTORS.feedRefreshControls)) location.reload();
-        if (e.target.closest(CSS_SELECTORS.feedFilterMenu)) {
+        if (e.target.closest(RODX_SELECTORS.feedRefreshControls)) location.reload();
+        if (e.target.closest(RODX_SELECTORS.feedFilterMenu)) {
           expanded = !expanded;
           render();
         }
       });
-      const tabs = main.querySelector(CSS_SELECTORS.tabLists);
-      const block = tabs?.closest(CSS_SELECTORS.scrollSnapList) || tabs;
+      const tabs = main.querySelector(DOM_SELECTORS.tabLists);
+      const block = tabs?.closest(NATIVE_X_SELECTORS.scrollSnapList) || tabs;
       if (block?.parentElement) block.after(host);
       else main.prepend(host);
       key = current;

@@ -1,6 +1,6 @@
 .dock {
-  flex-wrap: wrap !important;
-  overflow-x: clip !important;
+  flex-wrap: wrap;
+  overflow-x: clip;
   max-height: 76px;
   overflow-y: auto;
   min-width: 0;

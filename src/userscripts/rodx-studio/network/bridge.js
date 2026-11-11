@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { DOM_SELECTORS } from "../../../selectors.js";
 import { studioPageBridge } from "./page-bridge.js";
 
 export function connectStudioNetwork(Studio) {
@@ -121,7 +121,7 @@ export function connectStudioNetwork(Studio) {
     }
     const root = document.documentElement;
     if (!root) return;
-    const nonce = document.querySelector(CSS_SELECTORS.nonceScript)?.nonce || "";
+    const nonce = document.querySelector(DOM_SELECTORS.nonceScript)?.nonce || "";
     if (tried.has(nonce)) return;
     tried.add(nonce);
     try {

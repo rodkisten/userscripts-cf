@@ -1,8 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-render-1.css?inline";
-import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-lists-render-2.css?inline";
-import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-lists-render-3.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { attachMemberPickers, captureMembers, captureVisibleLists, drawHomeBar } from "./dom-capture.js";
 import { refreshListName, scheduleNameRefresh, showListNameDialog, tryAutoRead } from "./graphql.js";
@@ -895,7 +892,7 @@ export function initializeRodX_lists_115() {
     ["xls-quick-follow", "quickAddFollow"],
     ["xls-quick-reposts", "quickAddDisableReposts"],
   ]) {
-    qs(CSS_SELECTORS.elementById(id), shadow).addEventListener("change", (ev) => {
+    qs(DOM_SELECTORS.elementById(id), shadow).addEventListener("change", (ev) => {
       settings[key] = ev.target.checked;
       saveSettings();
     });
@@ -904,7 +901,7 @@ export function initializeRodX_lists_115() {
 
 export function initializeRodX_lists_116() {
   quickOptions.addEventListener("click", async (event) => {
-    const row = event.target.closest(CSS_SELECTORS.quickPickerListOptions);
+    const row = event.target.closest(RODX_SELECTORS.quickPickerListOptions);
     if (!row || !quickUser) return;
     const id = row.dataset.quickListId;
     const user = {
@@ -944,7 +941,7 @@ export function initializeRodX_lists_116() {
       closeQuickPicker();
       quickToast(`@${user.username} → ${name}: adicionado`);
     } catch (error) {
-      qs(CSS_SELECTORS.quickPickerStatus, shadow).textContent = error.message || String(error);
+      qs(RODX_SELECTORS.quickPickerStatus, shadow).textContent = error.message || String(error);
     }
   });
 }
@@ -987,7 +984,7 @@ export function render() {
     fila: renderQueue,
   };
   body.innerHTML = `${noteHTML()}${sections[state.tab]?.() || ""}`;
-  qs(CSS_SELECTORS.listsFooter, shadow).textContent =
+  qs(RODX_SELECTORS.listsFooter, shadow).textContent =
     `${state.lists.length} listas locais · ${state.scan ? "coletando membros…" : "sincronização ao navegar"} · X Lists Studio`;
 }
 
@@ -1017,7 +1014,7 @@ export function renderLists() {
             <button class="btn mini" data-action="refresh-name" data-id="${esc(l.id)}">↻ Nome</button>
             <button class="btn mini" data-action="rename-list" data-id="${esc(l.id)}">✎ Alias</button>
             <button class="btn mini" data-action="goto-list" data-id="${esc(l.id)}">↗</button></div></div>
-        <div class="grp" style="${cssDeclarations(inlineCSS1)}"><button class="btn mini ${pinned.includes(l.id) ? "primary" : ""}" data-action="toggle-home-pin" data-id="${esc(l.id)}">${pinned.includes(l.id) ? "★ Favorita" : "☆ Favoritar"}</button>
+        <div class="grp rx-render-grp" ><button class="btn mini ${pinned.includes(l.id) ? "primary" : ""}" data-action="toggle-home-pin" data-id="${esc(l.id)}">${pinned.includes(l.id) ? "★ Favorita" : "☆ Favoritar"}</button>
           ${pinned.includes(l.id) ? `<button class="btn mini" data-action="pin-left" data-id="${esc(l.id)}">←</button><button class="btn mini" data-action="pin-right" data-id="${esc(l.id)}">→</button>` : ""}
           <span class="pill">${l.scanComplete ? "varredura concluída*" : "membros não verificados"}</span></div>
         </div>`,
@@ -1118,7 +1115,7 @@ export function renderBackup() {
       <p>Salve a base local de listas e membros em JSON. Você também pode importar um arquivo anterior ou um CSV com <code>list_id,username,name</code>.</p>
       <div class="grp"><button class="btn primary" data-action="export-json">↓ Exportar backup JSON</button>
         <button class="btn" data-action="import-file">↑ Importar JSON/CSV</button></div>
-      <input id="xls-file" type="file" accept=".json,.csv,application/json,text/csv" style="${cssDeclarations(inlineCSS2)}">
+      <input id="xls-file" type="file" accept=".json,.csv,application/json,text/csv" class="rx-render-input">
       <div class="card"><strong>Importação segura</strong>
         <p class="small">Mescla pelo ID da lista e pelo @usuário, sem apagar os registros existentes. Não importa senhas, cookies nem tokens. O backup não altera as listas no servidor automaticamente.</p></div>
       <div class="card"><strong>Estado do banco</strong>
@@ -1193,7 +1190,7 @@ export function drawListToolbar() {
   if (!listToolbar) {
     listToolbar = document.createElement("div");
     listToolbar.id = "xls-list-toolbar";
-    listToolbar.style.cssText = cssDeclarations(inlineCSS3);
+    applyComponentStyle(listToolbar, "rx-render-listToolbar", false);
     const exit = document.createElement("button");
     exit.textContent = "Voltar à timeline nativa";
     exit.onclick = () => {

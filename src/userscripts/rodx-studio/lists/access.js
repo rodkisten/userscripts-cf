@@ -1,9 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-access-1.css?inline";
-import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-lists-access-2.css?inline";
-import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-lists-access-3.css?inline";
-import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-lists-access-4.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import { studioListIndex } from "./routes.js";
 
 export function createListAccess(Studio, navigateSearch) {
@@ -120,16 +116,16 @@ export function createListAccess(Studio, navigateSearch) {
         void open().catch((error) => console.warn("[RodX] Listas:", error));
       };
     }
-    const home = document.querySelector(CSS_SELECTORS.homeTabLink);
+    const home = document.querySelector(NATIVE_X_SELECTORS.homeTabLink);
     let row = home?.parentElement;
-    while (row && row !== document.body && !row.querySelector(CSS_SELECTORS.exploreTabLink))
+    while (row && row !== document.body && !row.querySelector(NATIVE_X_SELECTORS.exploreTabLink))
       row = row.parentElement;
     if (innerWidth < 800 && row && row !== document.body) {
-      footerButton.style.cssText = cssDeclarations(inlineCSS1);
+      applyComponentStyle(footerButton, "rx-list-shortcut-tab", false);
       if (footerButton.parentElement !== row) row.append(footerButton);
     } else {
       // A compact fallback keeps access available when X temporarily unmounts its bottom navigation.
-      footerButton.style.cssText = cssDeclarations(inlineCSS2);
+      applyComponentStyle(footerButton, "rx-list-shortcut-floating", false);
       if (footerButton.parentElement !== document.body) document.body.append(footerButton);
     }
   }
@@ -143,18 +139,18 @@ export function createListAccess(Studio, navigateSearch) {
       return;
     }
     const main =
-      document.querySelector(CSS_SELECTORS.primaryColumn) ||
-      document.querySelector(CSS_SELECTORS.mainElement);
-    const identity = main?.querySelector(CSS_SELECTORS.profileIdentityOrUserName);
-    if (!identity || identity.closest(CSS_SELECTORS.articles)) return;
+      document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+      document.querySelector(DOM_SELECTORS.mainElement);
+    const identity = main?.querySelector(COMPOSITE_SELECTORS.profileIdentityOrUserName);
+    if (!identity || identity.closest(DOM_SELECTORS.articles)) return;
     if (!profileHost) {
       profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";
-      profileHost.style.cssText = cssDeclarations(inlineCSS3);
+      applyComponentStyle(profileHost, "rx-access-profileHost", false);
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "＋ Adicionar à lista";
-      button.style.cssText = cssDeclarations(inlineCSS4);
+      applyComponentStyle(button, "rx-profile-add-to-list", false);
       button.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();

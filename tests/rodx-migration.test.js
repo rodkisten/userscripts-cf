@@ -58,7 +58,10 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
           parser: "css",
           printWidth: 110,
         });
-        assert.equal(createHash("sha256").update(css).digest("hex"), record.formattedSha256);
+        assert.equal(
+          createHash("sha256").update(css).digest("hex"),
+          refactored["style:" + record.styleFile] || record.formattedSha256,
+        );
         continue;
       }
       if (record.kind === "class") node = { ...node, type: "ClassDeclaration" };

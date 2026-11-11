@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-root-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { IDENT } from "../config/search.js";
 import { tray } from "../search/block-editing.js";
 import { state } from "../state/deck.js";
@@ -10,7 +9,7 @@ import { addChips, renderBlockEditor, renderRoot, renderTags } from "./search-wo
 export function initializeRoot() {
   const host = document.createElement("div");
   host.id = `${IDENT}-root`;
-  host.style.cssText = cssDeclarations(inlineCSS1);
+  applyComponentStyle(host, "rx-root-host", false);
   const shadow = host.attachShadow({
     mode: "open",
   });
@@ -20,7 +19,7 @@ export function initializeRoot() {
   shadow.addEventListener("change", onFileChange);
   shadow.addEventListener("toggle", onGroupToggle, true);
   shadow.addEventListener("keydown", (event) => {
-    const input = event.target.closest?.(CSS_SELECTORS.chipInput);
+    const input = event.target.closest?.(RODX_SELECTORS.chipInput);
     if (!input) return;
     if (event.key === "Enter" || event.key === "Tab") {
       if (input.value.trim()) {
@@ -43,7 +42,7 @@ export function initializeRoot() {
     }
   });
   shadow.addEventListener("focusout", (event) => {
-    const input = event.target.closest?.(CSS_SELECTORS.chipInput);
+    const input = event.target.closest?.(RODX_SELECTORS.chipInput);
     if (input?.value?.trim()) {
       try {
         addChips(input.value, false);
@@ -58,7 +57,7 @@ export function initializeRoot() {
   shadow.addEventListener(
     "touchstart",
     (event) => {
-      yStart = event.target.closest?.(CSS_SELECTORS.workspaceHeadRow) ? event.touches[0]?.clientY : null;
+      yStart = event.target.closest?.(RODX_SELECTORS.workspaceHeadRow) ? event.touches[0]?.clientY : null;
     },
     {
       passive: true,

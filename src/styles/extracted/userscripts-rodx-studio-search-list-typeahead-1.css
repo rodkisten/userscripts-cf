@@ -1,21 +1,21 @@
 :host {
-  color: CanvasText;
+  color: var(--rodx-ds-color-text);
   font:
-    14px Arial,
+    var(--rodx-ds-text-14) Arial,
     sans-serif;
 }
 div {
-  background: Canvas;
+  background: var(--rodx-ds-color-surface);
   border: 1px solid #71767b66;
-  border-radius: 12px;
+  border-radius: var(--rodx-ds-radius-12);
   max-height: 35dvh;
   overflow: auto;
-  padding: 4px;
+  padding: var(--rodx-ds-space-4);
 }
 button {
   display: block;
   width: 100%;
-  padding: 10px;
+  padding: var(--rodx-ds-space-12);
   text-align: left;
   border: 0;
   background: none;
@@ -23,7 +23,7 @@ button {
   font: inherit;
 }
 button[aria-selected="true"] {
-  background: #1d9bf033;
+  background: var(--rodx-ds-color-accent) 33;
 }
 [hidden] {
   display: none;

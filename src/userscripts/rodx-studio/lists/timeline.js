@@ -1,6 +1,4 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-timeline-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-1.css?inline";
 import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-2.css?inline";
 import { Studio } from "../core/studio.js";
@@ -242,7 +240,7 @@ export function postHTML(post) {
 export function renderTimelineCards(panel = false) {
   const shown = clientFilterPosts(timeline.items);
   const canMore = Boolean(timeline.hasMore && !timeline.loading);
-  const actions = `<div class="grp" style="${cssDeclarations(inlineCSS1)}"><button class="btn mini" data-action="timeline-refresh" ${timeline.loading ? "disabled" : ""}>↻ Atualizar</button>
+  const actions = `<div class="grp rx-timeline-grp" ><button class="btn mini" data-action="timeline-refresh" ${timeline.loading ? "disabled" : ""}>↻ Atualizar</button>
       <button class="btn mini primary" data-action="timeline-more" ${!canMore ? "disabled" : ""}>Mais posts ↓</button></div>`;
   const label = timeline.mode === "search" ? "Busca interna filtrada" : "Timeline da lista + filtros locais";
   const status = `<div class="xls-feed-status">${esc(label)} · ${shown.length} visíveis / ${timeline.items.length} recebidos${timeline.updatedAt ? " · " + esc(timeText(timeline.updatedAt)) : ""}
@@ -368,7 +366,7 @@ export function refreshTimelineView() {
     }
   }
   if (state.visible && state.tab === "busca") {
-    const preview = qs(CSS_SELECTORS.listsSearchPreview, shadow);
+    const preview = qs(RODX_SELECTORS.listsSearchPreview, shadow);
     if (preview && timeline.listId === state.listId && timeline.query === buildQuery(state.listId))
       preview.innerHTML = renderTimelineCards(true);
   }
@@ -518,7 +516,7 @@ export function ensureEmbeddedTimeline() {
     markup.innerHTML = `<div class="head"><div><span class="tag">X LISTS STUDIO</span><div><strong>Timeline personalizada</strong></div></div><div class="grp"><button class="btn" data-action="edit-filters">Filtros ⚙</button><button class="btn" data-action="timeline-close">Voltar ao X</button></div></div><div id="xls-feed-root"></div>`;
     root.append(markup);
     root.addEventListener("click", (event) => {
-      const action = event.target.closest(CSS_SELECTORS.dataActions)?.dataset.action;
+      const action = event.target.closest(RODX_SELECTORS.dataActions)?.dataset.action;
       if (action === "timeline-close") {
         listPresets[routeListId()] = {
           ...listPresets[routeListId()],

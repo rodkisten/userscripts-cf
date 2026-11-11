@@ -1,10 +1,9 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-1.css?inline";
-import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-2.css?inline";
-import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-3.css?inline";
-import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-4.css?inline";
-import inlineCSS5 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-5.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import {
+  RODX_SELECTORS,
+  NATIVE_X_SELECTORS,
+  DOM_SELECTORS,
+  COMPOSITE_SELECTORS,
+} from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-telegram-relay-1.css?inline";
 import { PREFIX } from "../config/search.js";
 import { identityLabel } from "../identity/account.js";
@@ -91,9 +90,9 @@ export function initializeDeckRelay() {
       const isOn = settings.enabled;
       return `<div class="stack" id="rodx-relay-settings">
         ${!gmAvailable ? '<div class="banner">Sem GM Storage, as configurações personalizadas não podem ser persistidas com segurança. Os padrões incorporados ao script continuam disponíveis.</div>' : ""}
-        <div class="banner" style="${cssDeclarations(inlineCSS1)}">✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
+        <div class="banner rx-relay-banner" >✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
           · Destino padrão ${clean(settings.channels || DEFAULTS.channels)}.
-          <details style="${cssDeclarations(inlineCSS2)}"><summary style="${cssDeclarations(inlineCSS3)}">Sobre segurança e confirmação</summary>
+          <details class="rx-relay-details"><summary class="rx-relay-summary">Sobre segurança e confirmação</summary>
             O Worker/D1 confirma os envios; o script nunca marca um post como enviado
             só por ter sido clicado. O token não entra nos backups das buscas.
           </details></div>
@@ -120,7 +119,7 @@ export function initializeDeckRelay() {
         <div class="row">
           <button class="btn" data-act="relay-refresh">↻ Rever status dos posts visíveis</button>
         </div>
-        <details class="section" style="${cssDeclarations(inlineCSS4)}">
+        <details class="section rx-relay-section" >
           <summary>ℹ Como funciona e segurança</summary>
           <div class="section-body">
             <p class="muted">Em buscas, hashtags, Home, bookmarks e perfis, o botão Telegram
@@ -137,7 +136,7 @@ export function initializeDeckRelay() {
     }
     function getForm() {
       const root = state.rootShadow;
-      const field = (name) => root?.querySelector(CSS_SELECTORS.relayFieldByName(name));
+      const field = (name) => root?.querySelector(RODX_SELECTORS.relayFieldByName(name));
       return {
         enabled: Boolean(field("enabled")?.checked),
         url: String(field("url")?.value || ""),
@@ -354,12 +353,14 @@ export function initializeDeckRelay() {
     function containsVideo(article) {
       // Keep images, GIF previews represented only as images, and link cards
       // free of the Telegram button. Retest as lazy-loaded video mounts.
-      return Boolean(article.querySelector(CSS_SELECTORS.videoAndPlayerContainers()));
+      return Boolean(article.querySelector(NATIVE_X_SELECTORS.videoAndPlayerContainers()));
     }
     function parsePost(article) {
       if (!(article instanceof Element)) return null;
-      const timeLink = article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks);
-      const links = [timeLink, ...article.querySelectorAll(CSS_SELECTORS.statusLinks)].filter(Boolean);
+      const timeLink = article
+        .querySelector(DOM_SELECTORS.timestamps)
+        ?.closest(NATIVE_X_SELECTORS.statusLinks);
+      const links = [timeLink, ...article.querySelectorAll(NATIVE_X_SELECTORS.statusLinks)].filter(Boolean);
       for (const a of links) {
         try {
           const parsed = new URL(a.href, location.origin);
@@ -367,7 +368,7 @@ export function initializeDeckRelay() {
           if (!match) continue;
           const id = match[1];
           const owner = parsed.pathname.match(/^\/([^/]+)\/status\//)?.[1] || "";
-          const text = article.querySelector(CSS_SELECTORS.nativeTweetText)?.innerText || "";
+          const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText)?.innerText || "";
           return {
             id,
             key: `twitter:${id}`,
@@ -587,7 +588,7 @@ export function initializeDeckRelay() {
     }
     function notice(message, kind = "info") {
       if (!state.rootShadow) return;
-      let node = state.rootShadow.querySelector(CSS_SELECTORS.relayNotice);
+      let node = state.rootShadow.querySelector(RODX_SELECTORS.relayNotice);
       if (!node) {
         node = document.createElement("div");
         node.id = "rodx-relay-notice";
@@ -601,7 +602,7 @@ export function initializeDeckRelay() {
       toastTimer = setTimeout(() => node.remove(), 4400);
     }
     function removeConfirm() {
-      state.rootShadow?.querySelector(CSS_SELECTORS.relayConfirm)?.remove();
+      state.rootShadow?.querySelector(RODX_SELECTORS.relayConfirm)?.remove();
     }
     function showConfirm({ post, destinations, title, onAccept }) {
       removeConfirm();
@@ -618,13 +619,13 @@ export function initializeDeckRelay() {
           <p>${destinations.length} destino(s) já confirmado(s) pelo D1.<br>
             Reenviar <b>${html(post.url)}</b> apenas para esses destinos?</p>
           <p class="muted">${html(destinations.join(", "))}</p>
-          <div class="row" style="${cssDeclarations(inlineCSS5)}">
+          <div class="row rx-relay-row" >
             <button class="btn" data-act="relay-cancel">Cancelar</button>
             <button class="btn primary" data-act="relay-force">Reenviar</button>
           </div>
         </section>`;
       state.rootShadow?.append(wrapper);
-      wrapper.querySelector(CSS_SELECTORS.relayForceAction)?.focus();
+      wrapper.querySelector(RODX_SELECTORS.relayForceAction)?.focus();
     }
     function handleConfirm(action) {
       const pending = confirmState;
@@ -827,8 +828,8 @@ export function initializeDeckRelay() {
       }
       if (previous) previous.button?.remove();
       const action =
-        article.querySelector(CSS_SELECTORS.replyButton)?.closest(CSS_SELECTORS.actionGroups) ||
-        article.querySelector(CSS_SELECTORS.actionGroups);
+        article.querySelector(COMPOSITE_SELECTORS.replyButton)?.closest(DOM_SELECTORS.actionGroups) ||
+        article.querySelector(DOM_SELECTORS.actionGroups);
       const container = action || article;
       const button = document.createElement("button");
       button.type = "button";
@@ -852,9 +853,9 @@ export function initializeDeckRelay() {
       observe(card);
     }
     function addVideoOverlay(article, post) {
-      const video = article.querySelector(CSS_SELECTORS.videos);
+      const video = article.querySelector(DOM_SELECTORS.videos);
       if (!video) return;
-      const wrapper = video.closest(CSS_SELECTORS.tweetVideoContainers) || video.parentElement;
+      const wrapper = video.closest(NATIVE_X_SELECTORS.tweetVideoContainers) || video.parentElement;
       if (!wrapper) return;
       let card = videoOverlays.get(post.key);
       if (card && (card.wrapper !== wrapper || !card.button.isConnected)) {
@@ -863,7 +864,8 @@ export function initializeDeckRelay() {
         card = null;
       }
       if (!card) {
-        if (getComputedStyle(wrapper).position === "static") wrapper.style.position = "relative";
+        if (getComputedStyle(wrapper).position === "static")
+          wrapper.style.setProperty("position", "relative", "important");
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rodx-tg-action rodx-tg-video-overlay";
@@ -901,7 +903,7 @@ export function initializeDeckRelay() {
       if (!force && now - lastScan < 450) return;
       lastScan = now;
       ensureStyle();
-      const articles = document.querySelectorAll(CSS_SELECTORS.tweetArticleContainers);
+      const articles = document.querySelectorAll(NATIVE_X_SELECTORS.tweetArticleContainers);
       let count = 0;
       for (const article of articles) {
         if (count++ >= 220) break;
@@ -923,7 +925,7 @@ export function initializeDeckRelay() {
         if (
           !overlay.button.isConnected ||
           !overlay.wrapper.isConnected ||
-          overlay.wrapper.closest(CSS_SELECTORS.nativeTweets)?.dataset.rodxRelayId !== overlay.post.id
+          overlay.wrapper.closest(NATIVE_X_SELECTORS.nativeTweets)?.dataset.rodxRelayId !== overlay.post.id
         ) {
           overlay.button.remove();
           videoOverlays.delete(key);
@@ -969,7 +971,7 @@ export function initializeDeckRelay() {
         key: `twitter:${viewer.id}`,
         url: viewer.url,
         author: viewer.url.match(/x\.com\/([^/]+)\/status/)?.[1] || "",
-        text: viewer.layer.querySelector(CSS_SELECTORS.nativeTweetText)?.innerText?.slice(0, 1800) || "",
+        text: viewer.layer.querySelector(NATIVE_X_SELECTORS.nativeTweetText)?.innerText?.slice(0, 1800) || "",
         isVideo: true,
       };
       if (

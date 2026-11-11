@@ -1,33 +1,32 @@
 #rodx-immersive-download {
-  position: fixed !important;
-  right: max(14px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  z-index: 2147481100 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  border-radius: 999px !important;
-  padding: 10px 15px !important;
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 2147481100;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  background: rgba(15, 20, 25, 0.88);
+  color: var(--rodx-ds-color-white);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--rodx-ds-radius-24);
+  padding: var(--rodx-ds-space-12) var(--rodx-ds-space-16);
   font:
-    700 14px/1.2 TwitterChirp,
-    -apple-system,
-    sans-serif !important;
-  cursor: pointer !important;
+    700 var(--rodx-ds-text-14)/1.2 TwitterChirp,
+    var(--rodx-ds-font-sans);
+  cursor: pointer;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  min-height: 44px !important;
-  touch-action: manipulation !important;
+  min-height: var(--rodx-ds-control-touch);
+  touch-action: manipulation;
   box-shadow: 0 3px 13px rgba(0, 0, 0, 0.2);
 }
 #rodx-immersive-download:hover {
-  background: rgba(29, 155, 240, 0.95) !important;
+  background: rgba(29, 155, 240, 0.95);
 }
 #rodx-immersive-download:disabled {
-  opacity: 0.7 !important;
-  cursor: progress !important;
+  opacity: 0.7;
+  cursor: progress;
 }
 #rodx-immersive-download svg {
   flex: none;

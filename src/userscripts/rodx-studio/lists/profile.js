@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-profile-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline";
 import { VERSION } from "../config/search.js";
 import { Studio } from "../core/studio.js";
@@ -86,13 +85,13 @@ export function initializeDeckProfileLists() {
       if (Studio.services.lists) return Studio.services.lists.picker(handle, host);
       const expected = handle;
       const primary =
-        document.querySelector(CSS_SELECTORS.primaryColumn) ||
-        document.querySelector(CSS_SELECTORS.mainContent);
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainContent);
       const trigger =
-        primary?.querySelector(CSS_SELECTORS.userActions) ||
-        [...(primary?.querySelectorAll(CSS_SELECTORS.interactiveButtons) || [])].find(
+        primary?.querySelector(NATIVE_X_SELECTORS.userActions) ||
+        [...(primary?.querySelectorAll(DOM_SELECTORS.interactiveButtons) || [])].find(
           (el) =>
-            !el.closest(CSS_SELECTORS.articles) &&
+            !el.closest(DOM_SELECTORS.articles) &&
             /^(?:more|mais|más|plus|more options|mais opções)$/i.test(el.getAttribute("aria-label") || ""),
         );
       if (!trigger) {
@@ -107,7 +106,7 @@ export function initializeDeckProfileLists() {
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         if (profile() !== expected) return;
-        const action = [...document.querySelectorAll(CSS_SELECTORS.menuItems)].find((el) =>
+        const action = [...document.querySelectorAll(DOM_SELECTORS.menuItems)].find((el) =>
           label.test(el.textContent || ""),
         );
         if (!action) continue;
@@ -145,7 +144,7 @@ export function initializeDeckProfileLists() {
     }
     function render() {
       if (!shadow) return;
-      let row = shadow.querySelector(CSS_SELECTORS.listRows);
+      let row = shadow.querySelector(RODX_SELECTORS.listRows);
       if (!row) {
         const style = document.createElement("style");
         style.textContent = extractedCSS1;
@@ -154,7 +153,7 @@ export function initializeDeckProfileLists() {
         row.setAttribute("aria-label", "Listas deste perfil");
         shadow.append(style, row);
       }
-      const oldScroll = row.querySelector(CSS_SELECTORS.listStrip)?.scrollLeft || 0;
+      const oldScroll = row.querySelector(RODX_SELECTORS.listStrip)?.scrollLeft || 0;
       row.replaceChildren();
       const title = button("Listas" + (items.length ? " · " + items.length : ""), showAll);
       title.title = "RodX " + VERSION + " — listas deste perfil";
@@ -177,12 +176,12 @@ export function initializeDeckProfileLists() {
       const native = document.createElement("a");
       native.href = membershipURL();
       native.textContent = "Ver no X";
-      native.style.whiteSpace = "nowrap";
+      native.style.setProperty("white-space", "nowrap", "important");
       row.append(strip, native, button("＋", addToLists));
       row.lastChild.title = "Adicionar/remover das minhas listas";
       row.lastChild.setAttribute("aria-label", "Adicionar/remover das minhas listas");
       strip.scrollLeft = oldScroll;
-      const body = modal?.querySelector(CSS_SELECTORS.allListItems);
+      const body = modal?.querySelector(RODX_SELECTORS.allListItems);
       if (body && items.length) {
         body.replaceChildren();
         items.forEach((item) => body.append(listLink(item)));
@@ -236,39 +235,39 @@ export function initializeDeckProfileLists() {
     }
     function mountPoint(current) {
       const main =
-        document.querySelector(CSS_SELECTORS.primaryColumn) ||
-        document.querySelector(CSS_SELECTORS.mainElement) ||
-        document.querySelector(CSS_SELECTORS.mainRoleContainers);
+        document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
+        document.querySelector(DOM_SELECTORS.mainElement) ||
+        document.querySelector(DOM_SELECTORS.mainRoleContainers);
       if (!main) return null;
-      const tabs = main.querySelector(CSS_SELECTORS.tabLists);
+      const tabs = main.querySelector(DOM_SELECTORS.tabLists);
       if (tabs) {
-        const block = tabs.closest(CSS_SELECTORS.scrollSnapList) || tabs;
+        const block = tabs.closest(NATIVE_X_SELECTORS.scrollSnapList) || tabs;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
       // Mobile X does not consistently expose the desktop column/tab roles.
-      const reply = [...main.querySelectorAll(CSS_SELECTORS.linksWithHref)].find(
+      const reply = [...main.querySelectorAll(DOM_SELECTORS.linksWithHref)].find(
         (a) =>
           a.getAttribute("href")?.replace(/\/$/, "").toLowerCase() ===
           "/" + current.toLowerCase() + "/with_replies",
       );
       if (reply) {
-        const block = reply.closest(CSS_SELECTORS.listNavigation) || reply.parentElement;
+        const block = reply.closest(NATIVE_X_SELECTORS.listNavigation) || reply.parentElement;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
-      const bio = main.querySelector(CSS_SELECTORS.profileDescription);
+      const bio = main.querySelector(NATIVE_X_SELECTORS.profileDescription);
       if (bio)
         return {
           parent: bio.parentElement,
           before: bio.nextSibling,
         };
-      const name = main.querySelector(CSS_SELECTORS.profileHeaderIdentity);
-      if (name && !name.closest(CSS_SELECTORS.articles))
+      const name = main.querySelector(NATIVE_X_SELECTORS.profileHeaderIdentity);
+      if (name && !name.closest(DOM_SELECTORS.articles))
         return {
           parent: name.parentElement,
           before: name.nextSibling,
@@ -288,14 +287,14 @@ export function initializeDeckProfileLists() {
       if (!current) return;
       if (host?.isConnected) return;
       const point = mountPoint(current);
-      if (!point?.parent || point.parent.closest(CSS_SELECTORS.articles)) return;
+      if (!point?.parent || point.parent.closest(DOM_SELECTORS.articles)) return;
       stop();
       host?.remove();
       handle = current;
       account = state.account;
       host = document.createElement("div");
       host.id = "rodx-profile-lists";
-      host.style.cssText = cssDeclarations(inlineCSS1);
+      applyComponentStyle(host, "rx-profile-host", false);
       host.dataset.rodxVersion = VERSION;
       shadow = host.attachShadow({
         mode: "open",

@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../core/css.js";
-import inlineCSS1 from "../../styles/inline/userscripts-page-repl-index-1.css?inline";
-import { CSS_SELECTORS } from "../../selectors.js";
+import { applyComponentStyle } from "../../core/css.js";
+import { DOM_SELECTORS, RODX_SELECTORS } from "../../selectors.js";
 import { createMarkup } from "./markup.js";
 import css from "./style.css?inline";
 import { compile } from "./compiler.js";
@@ -53,7 +52,7 @@ export default {
     if (ctx.signal.aborted) return;
     const host = document.createElement("div");
     host.id = "rodx-page-repl";
-    host.style.cssText = cssDeclarations(inlineCSS1);
+    applyComponentStyle(host, "rx-repl-host", false);
     const shadow = host.attachShadow({ mode: "open" });
     try {
       const sheet = new CSSStyleSheet();
@@ -61,7 +60,7 @@ export default {
       shadow.adoptedStyleSheets = [sheet];
     } catch {
       const style = document.createElement("style");
-      const nonce = document.querySelector(CSS_SELECTORS.nonceBearingElements)?.nonce;
+      const nonce = document.querySelector(DOM_SELECTORS.nonceBearingElements)?.nonce;
       if (nonce) style.nonce = nonce;
       style.textContent = css;
       shadow.append(style);
@@ -71,33 +70,33 @@ export default {
     shadow.append(container);
     (document.body || document.documentElement).append(host);
     const $ = (selector) => shadow.querySelector(selector);
-    const editor = $(CSS_SELECTORS.textareas),
-      panel = $(CSS_SELECTORS.replPanel),
-      launcher = $(CSS_SELECTORS.replLauncher),
-      output = $(CSS_SELECTORS.replOutput);
+    const editor = $(DOM_SELECTORS.textareas),
+      panel = $(RODX_SELECTORS.replPanel),
+      launcher = $(RODX_SELECTORS.replLauncher),
+      output = $(RODX_SELECTORS.replOutput);
     const rawLabel = document.createElement("label");
     const rawInput = document.createElement("input");
     rawInput.type = "checkbox";
     rawInput.dataset.raw = "";
     rawLabel.append(rawInput, document.createTextNode("Script global (sem wrapper)"));
-    $(CSS_SELECTORS.replOptions).prepend(rawLabel);
+    $(RODX_SELECTORS.replOptions).prepend(rawLabel);
     editor.value = state.code || "";
-    $(CSS_SELECTORS.replTimeout).value = state.timeout || 3000;
+    $(RODX_SELECTORS.replTimeout).value = state.timeout || 3000;
     for (const strategy of strategies) {
       const option = document.createElement("option");
       option.value = strategy.id;
       option.textContent = strategy.label;
-      $(CSS_SELECTORS.replMethod).append(option);
+      $(RODX_SELECTORS.replMethod).append(option);
     }
     for (const name of Object.keys(examples)) {
       const option = document.createElement("option");
       option.value = name;
       option.textContent = name;
-      $(CSS_SELECTORS.replExample).append(option);
+      $(RODX_SELECTORS.replExample).append(option);
     }
     function save() {
       state.code = editor.value;
-      state.timeout = Number($(CSS_SELECTORS.replTimeout).value) || 3000;
+      state.timeout = Number($(RODX_SELECTORS.replTimeout).value) || 3000;
       persist.save(state);
     }
     function print(kind, title, value) {
@@ -142,12 +141,12 @@ export default {
       runner?.dispose();
       runner = createRunner({
         onEvent: event,
-        timeout: Math.min(60000, Math.max(250, Number($(CSS_SELECTORS.replTimeout).value) || 3000)),
+        timeout: Math.min(60000, Math.max(250, Number($(RODX_SELECTORS.replTimeout).value) || 3000)),
       });
     }
     freshRunner();
     function renderMethods() {
-      const list = $(CSS_SELECTORS.replResults);
+      const list = $(RODX_SELECTORS.replResults);
       list.replaceChildren();
       for (const method of strategies) {
         const result = results.get(method.id),
@@ -165,7 +164,7 @@ export default {
         const button = document.createElement("button");
         button.textContent = "Usar no console";
         button.onclick = () => {
-          $(CSS_SELECTORS.replMethod).value = method.id;
+          $(RODX_SELECTORS.replMethod).value = method.id;
           tab("console");
         };
         row.append(title, detail, button);
@@ -173,7 +172,7 @@ export default {
       }
     }
     function renderHistory() {
-      const list = $(CSS_SELECTORS.replHistory);
+      const list = $(RODX_SELECTORS.replHistory);
       list.replaceChildren();
       for (const item of [...state.history].reverse()) {
         const row = document.createElement("div");
@@ -194,29 +193,29 @@ export default {
       }
     }
     function tab(name) {
-      for (const view of shadow.querySelectorAll(CSS_SELECTORS.replView))
+      for (const view of shadow.querySelectorAll(RODX_SELECTORS.replView))
         view.hidden = view.dataset.view !== name;
-      for (const button of shadow.querySelectorAll(CSS_SELECTORS.replTab))
+      for (const button of shadow.querySelectorAll(RODX_SELECTORS.replTab))
         button.setAttribute("aria-selected", String(button.dataset.tab === name));
       if (name === "history") renderHistory();
     }
     function enabledMethods() {
-      return strategies.filter((method) => !method.advanced || $(CSS_SELECTORS.replAdvanced).checked);
+      return strategies.filter((method) => !method.advanced || $(RODX_SELECTORS.replAdvanced).checked);
     }
     async function probe() {
       for (const method of enabledMethods()) {
         if (abort.signal.aborted) break;
-        $(CSS_SELECTORS.replStatus).textContent = "Testando " + method.label;
+        $(RODX_SELECTORS.replStatus).textContent = "Testando " + method.label;
         await runner.run(method, probeCode, { signal: abort.signal, probe: true });
       }
     }
     async function execute(all = false) {
       const text = editor.value;
       if (text.length > 2000000) throw Error("Código maior que 2 MB.");
-      const raw = $(CSS_SELECTORS.replRawMode).checked;
+      const raw = $(RODX_SELECTORS.replRawMode).checked;
       const compiled = raw
         ? { code: text, names: [] }
-        : compile(text, { persist: $(CSS_SELECTORS.replPersist).checked, knownNames: [...knownNames] });
+        : compile(text, { persist: $(RODX_SELECTORS.replPersist).checked, knownNames: [...knownNames] });
       if (!state.history.length || state.history.at(-1).code !== text)
         state.history.push({ code: text, at: new Date().toISOString() });
       let bytes = state.history.reduce((sum, item) => sum + item.code.length, 0);
@@ -232,7 +231,7 @@ export default {
         }
         return;
       }
-      let method = strategies.find((item) => item.id === $(CSS_SELECTORS.replMethod).value);
+      let method = strategies.find((item) => item.id === $(RODX_SELECTORS.replMethod).value);
       if (!method) {
         for (const candidate of automaticCandidates(enabledMethods())) {
           if (abort.signal.aborted) return;
@@ -255,17 +254,17 @@ export default {
     async function locked(action) {
       if (busy) return;
       busy = true;
-      runner.configure($(CSS_SELECTORS.replTimeout).value);
+      runner.configure($(RODX_SELECTORS.replTimeout).value);
       abort = new AbortController();
-      for (const b of shadow.querySelectorAll(CSS_SELECTORS.replExecutionActions)) b.disabled = true;
+      for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) b.disabled = true;
       try {
         await action();
       } catch (error) {
         print("error", error.name, error.message);
       } finally {
         busy = false;
-        for (const b of shadow.querySelectorAll(CSS_SELECTORS.replExecutionActions)) b.disabled = false;
-        $(CSS_SELECTORS.replStatus).textContent = "Pronto · " + results.size + " métodos observados";
+        for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) b.disabled = false;
+        $(RODX_SELECTORS.replStatus).textContent = "Pronto · " + results.size + " métodos observados";
       }
     }
     async function copy(text) {
@@ -297,7 +296,7 @@ export default {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     async function fetchURL() {
-      const url = new URL($(CSS_SELECTORS.replUrl).value);
+      const url = new URL($(RODX_SELECTORS.replUrl).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use uma URL HTTP/HTTPS.");
       if (typeof GM_xmlhttpRequest !== "function") throw Error("GM_xmlhttpRequest indisponível.");
       const text = await new Promise((resolve, reject) =>
@@ -319,10 +318,10 @@ export default {
       print("log", "URL carregada no editor", "Código não executado.");
     }
     function external() {
-      const url = new URL($(CSS_SELECTORS.replUrl).value);
+      const url = new URL($(RODX_SELECTORS.replUrl).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use HTTP/HTTPS.");
       const script = document.createElement("script");
-      if ($(CSS_SELECTORS.replModule).checked) script.type = "module";
+      if ($(RODX_SELECTORS.replModule).checked) script.type = "module";
       script.src = url.href;
       script.onload = () => {
         print(
@@ -375,7 +374,7 @@ export default {
           ...Object.getOwnPropertyNames(window),
         ],
       );
-      const list = $(CSS_SELECTORS.replCompletions);
+      const list = $(RODX_SELECTORS.replCompletions);
       list.replaceChildren();
       for (const name of [...names]
         .filter(
@@ -422,7 +421,7 @@ export default {
       complete: completions,
       "copy-report": async () => {
         await copy(JSON.stringify(report(), null, 2));
-        $(CSS_SELECTORS.replStatus).textContent = "Relatório copiado";
+        $(RODX_SELECTORS.replStatus).textContent = "Relatório copiado";
       },
       export: () => download({ schema: 1, history: state.history, report: report() }),
       import: () => {
@@ -456,7 +455,7 @@ export default {
       external: () => locked(external),
     };
     ctx.listen(shadow, "click", (event) => {
-      const button = event.target.closest(CSS_SELECTORS.replActionsAndTabs);
+      const button = event.target.closest(RODX_SELECTORS.replActionsAndTabs);
       if (!button) return;
       if (button.dataset.tab) {
         tab(button.dataset.tab);
@@ -472,13 +471,13 @@ export default {
       syntaxTimer = setTimeout(() => {
         try {
           compile(editor.value, {
-            persist: $(CSS_SELECTORS.replPersist).checked,
+            persist: $(RODX_SELECTORS.replPersist).checked,
             knownNames: [...knownNames],
           });
-          $(CSS_SELECTORS.replSyntax).textContent =
+          $(RODX_SELECTORS.replSyntax).textContent =
             "Sintaxe válida · Ctrl/Cmd+Enter executa · histórico com Alt+↑/↓ · ctx.vars persiste na sessão";
         } catch (error) {
-          $(CSS_SELECTORS.replSyntax).textContent = error.message;
+          $(RODX_SELECTORS.replSyntax).textContent = error.message;
         }
       }, 300);
     });
@@ -505,7 +504,7 @@ export default {
         editor.value = state.history[historyCursor]?.code || "";
       }
     });
-    ctx.listen($(CSS_SELECTORS.replExample), "change", (event) => {
+    ctx.listen($(RODX_SELECTORS.replExample), "change", (event) => {
       if (examples[event.target.value]) {
         editor.value = examples[event.target.value];
         save();
@@ -515,13 +514,22 @@ export default {
       panel.style.setProperty(
         "--repl-height",
         Math.max(180, (window.visualViewport?.height || innerHeight) - 12) + "px",
+        "important",
       );
     }
     viewport();
     if (window.visualViewport) ctx.listen(window.visualViewport, "resize", viewport);
     function place() {
-      launcher.style.right = Math.max(4, Math.min(innerWidth - 50, state.position?.x || 12)) + "px";
-      launcher.style.bottom = Math.max(4, Math.min(innerHeight - 50, state.position?.y || 90)) + "px";
+      launcher.style.setProperty(
+        "right",
+        Math.max(4, Math.min(innerWidth - 50, state.position?.x || 12)) + "px",
+        "important",
+      );
+      launcher.style.setProperty(
+        "bottom",
+        Math.max(4, Math.min(innerHeight - 50, state.position?.y || 90)) + "px",
+        "important",
+      );
     }
     place();
     ctx.listen(window, "resize", () => {

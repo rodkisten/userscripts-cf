@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-media-seek-preview-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS, MEDIA_COMPONENT_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline";
 export function createSeekPreviews(Studio, getOptions) {
   const entries = new Map(),
@@ -41,17 +40,17 @@ export function createSeekPreviews(Studio, getOptions) {
   }
   function source(item) {
     const video = item.video,
-      article = video.closest(CSS_SELECTORS.articles);
-    const id = [...(article?.querySelectorAll(CSS_SELECTORS.statusLinks) || [])]
+      article = video.closest(DOM_SELECTORS.articles);
+    const id = [...(article?.querySelectorAll(NATIVE_X_SELECTORS.statusLinks) || [])]
       .map((a) => a.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1])
       .find(Boolean);
-    const index = article ? [...article.querySelectorAll(CSS_SELECTORS.videos)].indexOf(video) : 0;
+    const index = article ? [...article.querySelectorAll(DOM_SELECTORS.videos)].indexOf(video) : 0;
     const media = sources.get(id)?.[index] || sources.get(id)?.[0];
     return (
       media?.url ||
       [
         /\.mp4(?:\?|$)/.test(video.currentSrc || "") ? video.currentSrc : "",
-        video.querySelector(CSS_SELECTORS.mp4Sources)?.src,
+        video.querySelector(DOM_SELECTORS.mp4Sources)?.src,
       ].find(Boolean) ||
       ""
     );
@@ -115,7 +114,7 @@ export function createSeekPreviews(Studio, getOptions) {
       decoder.preload = "metadata";
       decoder.setAttribute("aria-hidden", "true");
       decoder.tabIndex = -1;
-      decoder.style.cssText = cssDeclarations(inlineCSS1);
+      applyComponentStyle(decoder, "rx-seek-preview-decoder", false);
       decoder.src = url;
       document.body.append(decoder);
     }
@@ -184,8 +183,8 @@ export function createSeekPreviews(Studio, getOptions) {
     let item = entries.get(video);
     if (item?.skin === skin) return;
     if (item) cleanup(video);
-    const slider = root.querySelector(CSS_SELECTORS.mediaTimeSlider),
-      thumbnail = root.querySelector(CSS_SELECTORS.mediaSliderThumbnail);
+    const slider = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaTimeSlider),
+      thumbnail = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaSliderThumbnail);
     if (!slider || !thumbnail) return;
     const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";

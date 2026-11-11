@@ -12,8 +12,8 @@ export function showRodxToast(message, kind = "info") {
     toast.setAttribute("role", "status");
     document.body.append(toast);
   }
-  toast.style.background = kind === "error" ? "#b4232c" : "#202327";
-  toast.style.color = "#fff";
+  toast.style.setProperty("background", kind === "error" ? "#b4232c" : "#202327", "important");
+  toast.style.setProperty("color", "#fff", "important");
   toast.textContent = String(message || "");
   clearTimeout(rodxToastTimer);
   rodxToastTimer = setTimeout(() => toast.remove(), 2600);

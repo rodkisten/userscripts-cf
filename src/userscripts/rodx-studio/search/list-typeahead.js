@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import dynamicCSS from "../../../styles/dynamic-list-typeahead.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-list-typeahead-1.css?inline";
 export function installListTypeahead(Studio) {
   let host,
@@ -66,17 +65,25 @@ export function installListTypeahead(Studio) {
       document.body.append(host);
     }
     const r = input.getBoundingClientRect();
-    host.style.cssText = cssDeclarations(dynamicCSS);
-    host.style.setProperty("--rodx-value-1", String(Math.max(4, r.left)) + "px");
-    host.style.setProperty("--rodx-value-2", String(Math.min(innerHeight - 100, r.bottom + 4)) + "px");
-    host.style.setProperty("--rodx-value-3", String(Math.min(r.width, innerWidth - 8)) + "px");
+    applyComponentStyle(host, "rx-list-typeahead-host", false);
+    host.style.setProperty("--rodx-anchor-left", String(Math.max(4, r.left)) + "px", "important");
+    host.style.setProperty(
+      "--rodx-anchor-top",
+      String(Math.min(innerHeight - 100, r.bottom + 4)) + "px",
+      "important",
+    );
+    host.style.setProperty(
+      "--rodx-anchor-width",
+      String(Math.min(r.width, innerWidth - 8)) + "px",
+      "important",
+    );
 
     host.hidden = false;
     root.innerHTML = `
         <style>${extractedCSS1}</style>
         <div role="listbox"></div>
       `;
-    const list = root.querySelector(CSS_SELECTORS.divElements);
+    const list = root.querySelector(DOM_SELECTORS.divElements);
     choices.forEach((row, i) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -92,7 +99,7 @@ export function installListTypeahead(Studio) {
     if (!choices.length) list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
   }
   const isSearch = (el) =>
-    el?.matches?.(CSS_SELECTORS.searchQueryFields) && !el.closest?.(CSS_SELECTORS.quickSearchButton);
+    el?.matches?.(NATIVE_X_SELECTORS.searchQueryFields) && !el.closest?.(RODX_SELECTORS.quickSearchButton);
   document.addEventListener(
     "input",
     (e) => {
@@ -124,7 +131,7 @@ export function installListTypeahead(Studio) {
           (index + (e.key === "ArrowDown" ? 1 : -1) + Math.max(1, choices.length)) %
           Math.max(1, choices.length);
         root
-          .querySelectorAll(CSS_SELECTORS.buttons)
+          .querySelectorAll(DOM_SELECTORS.buttons)
           .forEach((b, i) => b.setAttribute("aria-selected", String(i === index)));
       }
       if (e.key === "Enter" && choices.length) {

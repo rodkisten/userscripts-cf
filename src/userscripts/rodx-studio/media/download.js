@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-download-1.css?inline";
 export let ImmersiveDownload;
 
@@ -69,7 +69,7 @@ export function initializeDeckImmersiveDownload() {
     function locate() {
       const layer = document.getElementById("layers");
       if (!layer) return null;
-      const videos = [...layer.querySelectorAll(CSS_SELECTORS.videos)];
+      const videos = [...layer.querySelectorAll(DOM_SELECTORS.videos)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
@@ -84,11 +84,11 @@ export function initializeDeckImmersiveDownload() {
         );
       });
       if (!visible.length) return null;
-      const isViewer = Boolean(layer.querySelector(CSS_SELECTORS.mediaViewerRoots()));
+      const isViewer = Boolean(layer.querySelector(NATIVE_X_SELECTORS.mediaViewerRoots()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
       const nativePlayerInStatus = Boolean(
-        route && layer.querySelector(CSS_SELECTORS.playableVideoContainers()),
+        route && layer.querySelector(NATIVE_X_SELECTORS.playableVideoContainers()),
       );
       if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
       const video = visible.sort((a, b) => {
@@ -96,9 +96,10 @@ export function initializeDeckImmersiveDownload() {
           rb = b.getBoundingClientRect();
         return rb.width * rb.height - ra.width * ra.height;
       })[0];
-      const related = video.closest(CSS_SELECTORS.tweetOrDialogContainers) || layer;
+      const related = video.closest(NATIVE_X_SELECTORS.tweetOrDialogContainers) || layer;
       const link =
-        related.querySelector(CSS_SELECTORS.statusLinks) || layer.querySelector(CSS_SELECTORS.statusLinks);
+        related.querySelector(NATIVE_X_SELECTORS.statusLinks) ||
+        layer.querySelector(NATIVE_X_SELECTORS.statusLinks);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
       if (!id) return null;
       const owner =
@@ -246,7 +247,7 @@ export function initializeDeckImmersiveDownload() {
         const anchor = document.createElement("a");
         anchor.href = objectUrl;
         anchor.download = filename;
-        anchor.style.display = "none";
+        anchor.style.setProperty("display", "none", "important");
         document.body.append(anchor);
         anchor.click();
         anchor.remove();

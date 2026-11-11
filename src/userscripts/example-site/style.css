@@ -5,12 +5,12 @@
   z-index: 1000;
   max-width: calc(100vw - 24px);
   box-sizing: border-box;
-  padding: 10px 14px;
+  padding: var(--rodx-ds-space-12) var(--rodx-ds-space-16);
   border: 1px solid #777;
-  border-radius: 12px;
-  color: #fff;
+  border-radius: var(--rodx-ds-radius-12);
+  color: var(--rodx-ds-color-white);
   background: #171717;
   font:
-    14px/1.4 system-ui,
+    var(--rodx-ds-text-14)/1.4 system-ui,
     sans-serif;
 }

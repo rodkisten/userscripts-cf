@@ -1,4 +1,4 @@
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "./account.js";
 import { SearchHistory } from "../search/history.js";
@@ -21,7 +21,7 @@ export function tick() {
     state.readTimers.clear();
     state.readProgress = new WeakMap();
     document
-      .querySelectorAll(CSS_SELECTORS.observedElements)
+      .querySelectorAll(RODX_SELECTORS.observedElements)
       .forEach((article) => delete article.dataset.rodxObserved);
     state.filterSignature = "";
     repaint();

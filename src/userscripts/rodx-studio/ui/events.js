@@ -1,6 +1,5 @@
-import { cssDeclarations } from "../../../core/css.js";
-import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-events-1.css?inline";
-import { CSS_SELECTORS } from "../../../selectors.js";
+import { applyComponentStyle } from "../../../core/css.js";
+import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { FeedFilters } from "../feeds/filters.js";
 import { extractIdentity } from "../identity/account.js";
@@ -52,13 +51,13 @@ export async function performAction(action, id = "") {
         ...Studio.config.modules,
       };
       root
-        .querySelectorAll(CSS_SELECTORS.studioModuleSetting)
+        .querySelectorAll(RODX_SELECTORS.studioModuleSetting)
         .forEach((input) => (modules[input.dataset.studioModule] = input.checked));
       Studio.configure({
         modules,
-        budgetMs: Number(root.querySelector(CSS_SELECTORS.studioBudgetSetting).value),
-        scanDelayMs: Number(root.querySelector(CSS_SELECTORS.studioDelaySetting).value),
-        frecencyHalfLifeDays: Number(root.querySelector(CSS_SELECTORS.studioHalfLifeSetting).value),
+        budgetMs: Number(root.querySelector(RODX_SELECTORS.studioBudgetSetting).value),
+        scanDelayMs: Number(root.querySelector(RODX_SELECTORS.studioDelaySetting).value),
+        frecencyHalfLifeDays: Number(root.querySelector(RODX_SELECTORS.studioHalfLifeSetting).value),
       });
       location.reload();
       return;
@@ -134,7 +133,7 @@ export async function performAction(action, id = "") {
     case "edit-current-native":
       return editNativeSearch();
     case "set-manual-account": {
-      const raw = state.rootShadow?.querySelector(CSS_SELECTORS.manualAccountField)?.value || "";
+      const raw = state.rootShadow?.querySelector(RODX_SELECTORS.manualAccountField)?.value || "";
       const handle = raw.trim().replace(/^@/, "").toLowerCase();
       if (!/^[a-z0-9_]{1,15}$/.test(handle)) throw new Error("Informe um @usuário válido.");
       state.manualAccount = handle;
@@ -182,7 +181,7 @@ export async function performAction(action, id = "") {
     case "raw-apply":
       return applyRawBlocks();
     case "raw-sync": {
-      const raw = state.rootShadow?.querySelector(CSS_SELECTORS.rawQueryField);
+      const raw = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField);
       if (raw) raw.value = getPreviewQuery();
       state.rawDirty = false;
       state.rawQueryDraft = raw?.value || "";
@@ -190,7 +189,7 @@ export async function performAction(action, id = "") {
       return;
     }
     case "focus-block": {
-      const item = [...(state.rootShadow?.querySelectorAll(CSS_SELECTORS.queryBlockOrChipNodes) || [])].find(
+      const item = [...(state.rootShadow?.querySelectorAll(RODX_SELECTORS.queryBlockOrChipNodes) || [])].find(
         (el) => el.dataset.blockNode === id || el.dataset.chipNode === id,
       );
       item?.scrollIntoView({
@@ -227,7 +226,7 @@ export async function performAction(action, id = "") {
       } catch (_) {
         const ta = document.createElement("textarea");
         ta.value = q;
-        ta.style.cssText = cssDeclarations(inlineCSS1);
+        applyComponentStyle(ta, "rx-clipboard-textarea", false);
         document.body.append(ta);
         ta.select();
         const copied = document.execCommand("copy");
@@ -255,7 +254,7 @@ export async function performAction(action, id = "") {
 }
 
 export function onClick(event) {
-  const selectionButton = event.target.closest?.(CSS_SELECTORS.selectionActions);
+  const selectionButton = event.target.closest?.(RODX_SELECTORS.selectionActions);
   if (selectionButton) {
     event.preventDefault();
     const index = Number(selectionButton.dataset.index),
@@ -276,11 +275,11 @@ export function onClick(event) {
     }
     return;
   }
-  const el = event.target.closest?.(CSS_SELECTORS.deckActions);
+  const el = event.target.closest?.(RODX_SELECTORS.deckActions);
   if (!el) {
-    const issue = event.target.closest?.(CSS_SELECTORS.rawCursorPosition);
+    const issue = event.target.closest?.(RODX_SELECTORS.rawCursorPosition);
     if (issue) {
-      const raw = state.rootShadow?.querySelector(CSS_SELECTORS.rawQueryField);
+      const raw = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField);
       raw?.focus();
       raw?.setSelectionRange(Number(issue.dataset.rawPosition), Number(issue.dataset.rawEnd));
       return;
@@ -309,7 +308,7 @@ export function onClick(event) {
 
 export function onFieldChange(event) {
   const target = event.target;
-  if (target.matches?.(CSS_SELECTORS.visualSettings)) {
+  if (target.matches?.(RODX_SELECTORS.visualSettings)) {
     const name = target.dataset.visual;
     const v =
       name === "playerMode"
@@ -321,7 +320,7 @@ export function onFieldChange(event) {
       ...state.visual,
       [name]: v,
     });
-    const label = state.rootShadow?.querySelector(CSS_SELECTORS.visualValueByName(name));
+    const label = state.rootShadow?.querySelector(RODX_SELECTORS.visualValueByName(name));
     if (label)
       label.textContent =
         name === "font"
@@ -347,17 +346,17 @@ export function onFieldChange(event) {
     return;
   }
   if (!state.draft) return;
-  if (target.matches?.(CSS_SELECTORS.rawQueryField)) {
+  if (target.matches?.(RODX_SELECTORS.rawQueryField)) {
     state.rawDirty = true;
     state.rawQueryDraft = target.value;
     validateRawWorkbench(target.value);
     return;
   }
-  if (target.matches?.(CSS_SELECTORS.presetNameField)) {
+  if (target.matches?.(RODX_SELECTORS.presetNameField)) {
     state.draft.presetName = target.value;
     return;
   }
-  if (target.matches?.(CSS_SELECTORS.chipInput)) {
+  if (target.matches?.(RODX_SELECTORS.chipInput)) {
     const value = target.value;
     if (/[,;\n]/.test(value)) {
       const endsWithSep = /[,;\n]$/.test(value);
@@ -372,8 +371,8 @@ export function onFieldChange(event) {
           renderRoot();
         }
       }
-      state.rootShadow?.querySelector(CSS_SELECTORS.chipInput)?.setAttribute("data-pending", carry || "");
-      const current = state.rootShadow?.querySelector(CSS_SELECTORS.chipInput);
+      state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.setAttribute("data-pending", carry || "");
+      const current = state.rootShadow?.querySelector(RODX_SELECTORS.chipInput);
       if (current) current.value = carry || "";
     }
     return;
@@ -406,7 +405,7 @@ export function onFieldChange(event) {
     displayPreview();
     return;
   }
-  if (!target.matches?.(CSS_SELECTORS.queryFieldsAndMetadata)) return;
+  if (!target.matches?.(RODX_SELECTORS.queryFieldsAndMetadata)) return;
   if (target.dataset.field) {
     state.draft.fields[target.dataset.field] = target.value;
   } else {
@@ -417,15 +416,15 @@ export function onFieldChange(event) {
 
 export function onGroupToggle(event) {
   const node = event.target;
-  if (!node.matches?.(CSS_SELECTORS.settingsGroups)) return;
+  if (!node.matches?.(RODX_SELECTORS.settingsGroups)) return;
   if (node.open) state.openedGroups.add(node.dataset.group);
   else state.openedGroups.delete(node.dataset.group);
 }
 
 export async function onFileChange(event) {
-  if (!event.target.matches?.(CSS_SELECTORS.importFileInput)) return;
+  if (!event.target.matches?.(RODX_SELECTORS.importFileInput)) return;
   const file = event.target.files?.[0];
-  const strategy = state.rootShadow.querySelector(CSS_SELECTORS.importStrategy)?.value || "merge";
+  const strategy = state.rootShadow.querySelector(RODX_SELECTORS.importStrategy)?.value || "merge";
   try {
     await importJSON(file, strategy);
   } catch (err) {
