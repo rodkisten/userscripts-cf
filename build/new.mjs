@@ -27,7 +27,6 @@ console.log(
       {
         id,
         name: id,
-        version: "0.1.0",
         entry: `src/userscripts/${id}/index.js`,
         matches: [url],
         exclude: [],

@@ -14,7 +14,8 @@
     "build:lab:b": "node labs/remote-release/build-worker.mjs B",
     "test:lab": "npm run build:lab && node labs/remote-release/test.mjs",
     "format:check": "prettier --check .",
-    "new": "node build/new.mjs"
+    "new": "node build/new.mjs",
+    "release": "node build/release.mjs"
   },
   "devDependencies": {
     "happy-dom": "21.0.4",
@@ -23,5 +24,6 @@
   },
   "dependencies": {
     "nanoid": "^5.1.6"
-  }
+  },
+  "version": "0.2.0"
 }

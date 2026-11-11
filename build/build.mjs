@@ -5,11 +5,25 @@ import { createHash } from "node:crypto";
 import { build } from "vite";
 import { format } from "prettier";
 import definitions from "../userscripts.config.js";
+import distribution from "../distribution.config.js";
 import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
+const { version } = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error("Use a stable x.y.z release version");
+const baseURL = distribution.baseURL.replace(/\/+$/, "");
+const parsedURL = new URL(baseURL);
+if (
+  parsedURL.protocol !== "https:" ||
+  parsedURL.username ||
+  parsedURL.password ||
+  parsedURL.search ||
+  parsedURL.hash
+) {
+  throw Error("Distribution URL must use HTTPS without credentials, query or hash");
+}
 const ids = new Set();
 for (const definition of definitions) {
   if (!/^[a-z][a-z0-9-]*$/.test(definition.id) || ids.has(definition.id))
@@ -29,16 +43,16 @@ const targets = [
     id: item.id,
     definitions: [item],
     name: item.name,
-    version: item.version,
+    version,
   })),
   {
     id: "unified",
     definitions,
     name: "Userscripts CF · Unificado",
-    version: "0.1.0",
+    version,
   },
 ];
-const manifest = { schema: 1, scripts: [] };
+const manifest = { schema: 1, version, baseURL, scripts: [] };
 for (const target of targets) {
   const virtualID = "\0userscripts-cf-entry";
   const imports = target.definitions.map(
@@ -78,6 +92,8 @@ for (const target of targets) {
     `// @name         ${target.name}`,
     "// @namespace    https://rod.migos.club/userscripts-cf",
     `// @version      ${target.version}`,
+    `// @updateURL    ${baseURL}/${target.id}.meta.js`,
+    `// @downloadURL  ${baseURL}/${target.id}.user.js`,
     "// @description  Vite IIFE; roteamento SPA e storage GM isolado por módulo.",
     ...patterns.map((pattern) => `// @match        ${pattern}`),
     "// @run-at       document-start",
@@ -94,12 +110,24 @@ for (const target of targets) {
   const file = `${target.id}.user.js`;
   const source = `${metadata}\n\n${body}`;
   await fs.writeFile(path.join(out, file), source);
+  const metaFile = `${target.id}.meta.js`;
+  const metaSource = metadata + "\n";
+  await fs.writeFile(path.join(out, metaFile), metaSource);
   manifest.scripts.push({
     id: target.id,
     file,
+    metaFile,
+    metaSha256: createHash("sha256").update(metaSource).digest("hex"),
     matches: patterns,
     sha256: createHash("sha256").update(source).digest("hex"),
   });
   console.log(`Built ${file} (${source.length} bytes)`);
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+
+const sums = [];
+for (const file of (await fs.readdir(out)).sort()) {
+  const code = await fs.readFile(path.join(out, file));
+  sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
+}
+await fs.writeFile(path.join(out, "SHA256SUMS"), sums.join("\n") + "\n");

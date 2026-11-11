@@ -23,7 +23,6 @@ Edite `userscripts.config.js`:
 {
   id: 'meu-script',
   name: 'Meu script',
-  version: '1.0.0',
   entry: 'src/userscripts/meu-script/index.js',
   matches: ['https://site.com/*'],
   exclude: ['https://site.com/settings*'],
@@ -90,3 +89,41 @@ Os instaláveis são autossuficientes. O mecanismo remoto com atualização, sna
 - `npm run build:lab:b`: gera o Worker B localmente; não publica nada.
 
 A release B foi publicada para testar a transição de A para B e o rollback. O resultado no dispositivo ainda precisa comprovar as duas etapas. Não publique dados privados, headers ou credenciais capturados pelo diagnóstico.
+
+## Atualização nativa e GitHub Releases
+
+O build inclui `@updateURL` e `@downloadURL` em todos os instaláveis. A versão de todos vem de `package.json`, para que mudanças no core também atualizem os scripts individuais. Aumente essa versão em cada release; não basta alterar o código mantendo a mesma versão.
+
+A URL base fica em `distribution.config.js` e pode ser sobrescrita por `USERSCRIPTS_BASE_URL` no momento do build. O padrão é:
+
+```text
+https://github.com/rodkisten/userscripts-cf/releases/latest/download
+```
+
+O unificado é distribuído como `unified.meta.js` e `unified.user.js`; os individuais seguem o mesmo padrão com seu ID. O Tampermonkey verifica a versão do `.meta.js` e usa o `.user.js` quando uma atualização está disponível, conforme suas configurações de atualização. A atualização é do instalável completo, não um hot reload de módulos durante a página aberta.
+
+**Este repositório é privado.** Seus assets de Release também exigem acesso ao repositório. Não dependa dessa URL privada para atualizações automáticas sem autenticação. Para isso, configure uma URL pública de distribuição no Cloudflare ou um repositório público dedicado aos bundles. Não inclua tokens na URL nem no userscript; nenhuma alteração de visibilidade foi feita.
+
+### Publicação automática por tag
+
+O workflow `Release userscripts` executa os testes e publica os `.user.js`, `.meta.js`, manifesto e checksums como assets. Ele publica primeiro em draft e só promove a Release depois dos uploads. O tag precisa coincidir com `v` + versão de `package.json`.
+
+```sh
+npm version patch
+git push origin main --follow-tags
+```
+
+Também pode executar o workflow manualmente pela aba Actions, informando um tag correspondente à versão do código selecionado. O workflow usa o token automático do GitHub com permissão `contents: write`; não requer token pessoal salvo no código.
+
+### Publicação local sem GitHub Actions
+
+Com o GitHub CLI instalado e autenticado, dentro de um clone limpo do repositório:
+
+```sh
+gh auth login
+npm ci
+npm test
+npm run release -- v0.2.0
+```
+
+O publicador recusa código não commitado, builds com versão antiga, checksums incorretos e sobrescrita de Releases já publicadas. Pode retomar um draft após uma falha no upload. A execução do GitHub Actions falhou antes de iniciar os steps na última tentativa; o caminho local permite publicar sem depender do runner. Nenhuma Release foi publicada apenas por adicionar esta configuração.
