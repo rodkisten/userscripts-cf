@@ -33,7 +33,7 @@ export function classify(result: DeliveryResult | undefined, channels: string[])
 
 export function retryDelay(attempt: number, count: number, retryAfter?: string | null, random = Math.random) {
   const seconds = Number(retryAfter);
-  const date = Date.parse(retryAfter);
+  const date = Date.parse(retryAfter || "");
   const server = retryAfter && Number.isFinite(seconds) ? seconds * 1000
     : Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0;
   return Math.max(server, Math.min(60000, (900 + count * 120) * 2 ** attempt) + random() * 400);
