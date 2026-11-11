@@ -20,7 +20,7 @@ export function initializeRoot() {
   shadow.addEventListener("change", onFileChange);
   shadow.addEventListener("toggle", onGroupToggle, true);
   shadow.addEventListener("keydown", (event) => {
-    const input = event.target.closest?.(CSS_SELECTORS.s263);
+    const input = event.target.closest?.(CSS_SELECTORS.chipInput);
     if (!input) return;
     if (event.key === "Enter" || event.key === "Tab") {
       if (input.value.trim()) {
@@ -43,7 +43,7 @@ export function initializeRoot() {
     }
   });
   shadow.addEventListener("focusout", (event) => {
-    const input = event.target.closest?.(CSS_SELECTORS.s263);
+    const input = event.target.closest?.(CSS_SELECTORS.chipInput);
     if (input?.value?.trim()) {
       try {
         addChips(input.value, false);
@@ -58,7 +58,7 @@ export function initializeRoot() {
   shadow.addEventListener(
     "touchstart",
     (event) => {
-      yStart = event.target.closest?.(CSS_SELECTORS.s279) ? event.touches[0]?.clientY : null;
+      yStart = event.target.closest?.(CSS_SELECTORS.workspaceHeadRow) ? event.touches[0]?.clientY : null;
     },
     {
       passive: true,

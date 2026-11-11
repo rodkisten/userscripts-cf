@@ -84,8 +84,8 @@ export async function captureVisibleLists() {
       lastListCaptures.set(key, { name: item.name, at });
     }
     const ids = new Set(
-      [...document.querySelectorAll(CSS_SELECTORS.s096)]
-        .filter((a) => !a.closest(CSS_SELECTORS.s097))
+      [...document.querySelectorAll(CSS_SELECTORS.listLinks)]
+        .filter((a) => !a.closest(CSS_SELECTORS.studioOrArticleContainers))
         .map((a) => (a.getAttribute("href") || "").match(LIST_URL_RE)?.[1])
         .filter(validListId),
     );
@@ -114,11 +114,11 @@ export async function captureVisibleLists() {
 }
 
 export function findUserCells(root = document) {
-  return qsa(CSS_SELECTORS.s098, root).filter((el) => !host.contains(el));
+  return qsa(CSS_SELECTORS.userCells, root).filter((el) => !host.contains(el));
 }
 
 export function extractUser(cell) {
-  const anchors = qsa(CSS_SELECTORS.s027, cell);
+  const anchors = qsa(CSS_SELECTORS.linksWithHref, cell);
   // User cells may contain several profile links: prefer the one with the
   // exact @handle, not the name link or a quoted/linked profile.
   let anchor = anchors.find((a) => {
@@ -135,7 +135,11 @@ export function extractUser(cell) {
   if (!anchor) return null;
   const username = anchor.pathname.split("/")[1] || "";
   if (!validHandle(username)) return null;
-  const name = (qs(CSS_SELECTORS.s099, cell)?.textContent || qs(CSS_SELECTORS.s100, cell)?.textContent || "")
+  const name = (
+    qs(CSS_SELECTORS.authorNameSpans, cell)?.textContent ||
+    qs(CSS_SELECTORS.leftToRightSpans, cell)?.textContent ||
+    ""
+  )
     .trim()
     .slice(0, 150);
   return {
@@ -148,11 +152,11 @@ export function getMemberScope() {
   if (!routeListId()) return null;
   // Safari mobile often opens the members modal even with a /members URL.
   // Prefer the visible dialog over an unrelated background column.
-  const dialogs = qsa(CSS_SELECTORS.s101).filter((dialog) => dialog.getClientRects().length);
+  const dialogs = qsa(CSS_SELECTORS.dialogs).filter((dialog) => dialog.getClientRects().length);
   for (const dialog of dialogs) {
     const title = [
       dialog.getAttribute("aria-label"),
-      ...qsa(CSS_SELECTORS.s102, dialog).map((el) => el.textContent),
+      ...qsa(CSS_SELECTORS.headings, dialog).map((el) => el.textContent),
     ]
       .filter(Boolean)
       .join(" ")
@@ -168,7 +172,12 @@ export function getMemberScope() {
   );
   if (candidate) return candidate;
   if (isListMembersPage())
-    return qs(CSS_SELECTORS.s031) || qs(CSS_SELECTORS.s103) || qs(CSS_SELECTORS.s094) || document;
+    return (
+      qs(CSS_SELECTORS.primaryColumn) ||
+      qs(CSS_SELECTORS.mainRoleElement) ||
+      qs(CSS_SELECTORS.mainElement) ||
+      document
+    );
   return null;
 }
 
@@ -197,13 +206,13 @@ export function attachMemberPickers() {
   for (const cell of findUserCells(scope).slice(0, 250)) {
     const user = extractUser(cell);
     if (!user) continue;
-    const existing = cell.querySelector(CSS_SELECTORS.s104);
+    const existing = cell.querySelector(CSS_SELECTORS.inlineListPicker);
     if (existing) {
       if (existing.dataset.username === user.username) continue;
       existing.remove();
     }
-    const follow = cell.querySelector(CSS_SELECTORS.s105);
-    const actions = follow?.parentElement || cell.querySelector(CSS_SELECTORS.s074)?.parentElement;
+    const follow = cell.querySelector(CSS_SELECTORS.nativeFollowButtons);
+    const actions = follow?.parentElement || cell.querySelector(CSS_SELECTORS.userActions)?.parentElement;
     if (actions) {
       const b = quickButton({
         ...user,

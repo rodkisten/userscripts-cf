@@ -22,7 +22,7 @@ export function initializeDeckQuickUI() {
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
       if (!identity) return "";
-      const link = [...identity.querySelectorAll(CSS_SELECTORS.s268)].find((anchor) =>
+      const link = [...identity.querySelectorAll(CSS_SELECTORS.relativeLinks)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
       return link?.getAttribute("href")?.match(/^\/([A-Za-z0-9_]{1,15})\/?$/)?.[1] || "";
@@ -52,11 +52,11 @@ export function initializeDeckQuickUI() {
               <button type="submit" data-rxq="submit">Pesquisar</button>
             </div>
           `;
-      const input = form.querySelector(CSS_SELECTORS.s269);
-      const syntax = form.querySelector(CSS_SELECTORS.s270);
-      const message = form.querySelector(CSS_SELECTORS.s271);
-      const submit = form.querySelector(CSS_SELECTORS.s272);
-      const suggestionBox = form.querySelector(CSS_SELECTORS.s273);
+      const input = form.querySelector(CSS_SELECTORS.queryWorkbenchInput);
+      const syntax = form.querySelector(CSS_SELECTORS.queryWorkbenchSyntax);
+      const message = form.querySelector(CSS_SELECTORS.queryWorkbenchMessage);
+      const submit = form.querySelector(CSS_SELECTORS.queryWorkbenchSubmit);
+      const suggestionBox = form.querySelector(CSS_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
       let rows = [];
@@ -358,7 +358,7 @@ export function initializeDeckQuickUI() {
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
           renderSuggestions();
-          suggestionBox.querySelector(CSS_SELECTORS.s274)?.scrollIntoView({ block: "nearest" });
+          suggestionBox.querySelector(CSS_SELECTORS.selectedItems)?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
           event.preventDefault();
           event.stopPropagation();
@@ -374,7 +374,7 @@ export function initializeDeckQuickUI() {
         }
       });
       form.addEventListener("click", async (event) => {
-        const action = event.target.closest(CSS_SELECTORS.s275)?.dataset.rxqAction;
+        const action = event.target.closest(CSS_SELECTORS.queryWorkbenchActions)?.dataset.rxqAction;
         if (!action) return;
         event.preventDefault();
         if (action === "copy") {
@@ -536,9 +536,9 @@ export function initializeDeckQuickUI() {
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        const bar = article.querySelector(CSS_SELECTORS.s048);
+        const bar = article.querySelector(CSS_SELECTORS.tweetTopbar);
         if (!bar) continue;
-        let button = bar.querySelector(CSS_SELECTORS.s276);
+        let button = bar.querySelector(CSS_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -560,7 +560,9 @@ export function initializeDeckQuickUI() {
         listInfo?.remove();
         listInfo = null;
       } else {
-        const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
+        const main =
+          document.querySelector(CSS_SELECTORS.primaryColumn) ||
+          document.querySelector(CSS_SELECTORS.mainElement);
         if (main && (!listInfo || listInfo.dataset.id !== id)) {
           listInfo?.remove();
           listInfo = document.createElement("div");
@@ -605,11 +607,11 @@ export function initializeDeckQuickUI() {
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector(CSS_SELECTORS.s277);
+        const currentName = listInfo.querySelector(CSS_SELECTORS.liveListName);
         if (currentName && currentName.textContent !== name) currentName.textContent = name;
       }
-      for (const a of document.querySelectorAll(CSS_SELECTORS.s096)) {
-        if (a.closest(CSS_SELECTORS.s278)) continue;
+      for (const a of document.querySelectorAll(CSS_SELECTORS.listLinks)) {
+        if (a.closest(CSS_SELECTORS.ownedTimelineContainers)) continue;
         const id = a.pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&

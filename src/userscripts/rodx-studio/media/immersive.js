@@ -26,7 +26,7 @@ export function initializeDeckImmersiveSwipe() {
       const rect = viewer.video.getBoundingClientRect();
       const point = target.getBoundingClientRect?.();
       if (point && rect.height && point.top >= rect.bottom - Math.min(54, rect.height * 0.32)) return null;
-      const player = viewer.video.closest(CSS_SELECTORS.s154);
+      const player = viewer.video.closest(CSS_SELECTORS.nativeVideoPlayerContainer);
       if (target === viewer.video || viewer.video.contains(target) || player?.contains(target)) return viewer;
       return null;
     };
@@ -70,7 +70,7 @@ export function initializeDeckImmersiveSwipe() {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       const layer = viewer.layer;
-      const close = [...layer.querySelectorAll(CSS_SELECTORS.s116)].find((el) => {
+      const close = [...layer.querySelectorAll(CSS_SELECTORS.interactiveButtons)].find((el) => {
         const label = [el.getAttribute("aria-label"), el.getAttribute("title"), el.dataset.testid]
           .filter(Boolean)
           .join(" ");

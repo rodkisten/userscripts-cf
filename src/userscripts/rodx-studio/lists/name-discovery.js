@@ -38,12 +38,14 @@ export function discoverListNames(document, href, clean) {
     if (id && label && !result.has(id))
       result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
   }
-  for (const anchor of document.querySelectorAll(CSS_SELECTORS.s096)) {
-    if (anchor.closest(CSS_SELECTORS.s298(own))) continue;
+  for (const anchor of document.querySelectorAll(CSS_SELECTORS.listLinks)) {
+    if (anchor.closest(CSS_SELECTORS.articleUserCellsOrOwnedRoot(own))) continue;
     const id = idOf(anchor.getAttribute("href"));
     if (!id) continue;
-    const heading = anchor.querySelector(CSS_SELECTORS.s109);
-    const leaves = [...anchor.querySelectorAll(CSS_SELECTORS.s110)].filter((el) => !el.children.length);
+    const heading = anchor.querySelector(CSS_SELECTORS.listCardHeadings);
+    const leaves = [...anchor.querySelectorAll(CSS_SELECTORS.autoDirectionText)].filter(
+      (el) => !el.children.length,
+    );
     const candidates = [
       heading?.textContent,
       anchor.getAttribute("title"),
@@ -58,17 +60,19 @@ export function discoverListNames(document, href, clean) {
   }
   const routeId = idOf(url.href);
   if (routeId && !/\/(members|followers)\/?$/.test(url.pathname)) {
-    const primary = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
-    const headings = [...(primary?.querySelectorAll(CSS_SELECTORS.s111) || [])].filter(
-      (el) => !el.closest(CSS_SELECTORS.s299(own)) && !el.closest(CSS_SELECTORS.s096),
+    const primary =
+      document.querySelector(CSS_SELECTORS.primaryColumn) ||
+      document.querySelector(CSS_SELECTORS.mainElement);
+    const headings = [...(primary?.querySelectorAll(CSS_SELECTORS.listPageHeadings) || [])].filter(
+      (el) => !el.closest(CSS_SELECTORS.articleOrOwnedRoot(own)) && !el.closest(CSS_SELECTORS.listLinks),
     );
     const heading = headings.map((el) => name(el.textContent)).find(Boolean) || "";
-    const canonical = document.querySelector(CSS_SELECTORS.s112)?.href;
-    const metaUrl = document.querySelector(CSS_SELECTORS.s113)?.content;
+    const canonical = document.querySelector(CSS_SELECTORS.canonicalLink)?.href;
+    const metaUrl = document.querySelector(CSS_SELECTORS.openGraphUrl)?.content;
     const bound = idOf(canonical || metaUrl || "") === routeId;
     const titles = [
-      document.querySelector(CSS_SELECTORS.s114)?.content,
-      document.querySelector(CSS_SELECTORS.s115)?.content,
+      document.querySelector(CSS_SELECTORS.openGraphTitle)?.content,
+      document.querySelector(CSS_SELECTORS.twitterTitle)?.content,
       document.title,
     ]
       .map((v) => name(v, true))

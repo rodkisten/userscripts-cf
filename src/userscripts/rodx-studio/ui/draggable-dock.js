@@ -16,7 +16,7 @@ export function initializeDeckDragDock() {
       clearTimeout(active.timer);
       const shadow = active.shadow;
       shadow
-        .querySelectorAll(CSS_SELECTORS.s248)
+        .querySelectorAll(CSS_SELECTORS.dragStateItems)
         .forEach((el) => el.classList.remove("dragging", "drop-before", "drop-after"));
       active.ghost?.remove();
       active = null;
@@ -39,10 +39,10 @@ export function initializeDeckDragDock() {
     }
     function closestTarget(x, y) {
       if (!active) return null;
-      const elements = [...active.shadow.querySelectorAll(CSS_SELECTORS.s249)].filter(
+      const elements = [...active.shadow.querySelectorAll(CSS_SELECTORS.draggableItems)].filter(
         (el) => el.dataset.dragId !== active.id,
       );
-      const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.(CSS_SELECTORS.s249);
+      const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.(CSS_SELECTORS.draggableItems);
       if (direct && direct.dataset.dragId !== active.id) return direct;
       // A touch can land between tabs or outside the dock; use nearest center.
       return (
@@ -61,7 +61,7 @@ export function initializeDeckDragDock() {
     function setDrop(x, y) {
       if (!active?.started) return;
       const shadow = active.shadow;
-      const nav = shadow.querySelector(CSS_SELECTORS.s250);
+      const nav = shadow.querySelector(CSS_SELECTORS.searchDock);
       if (nav) {
         const r = nav.getBoundingClientRect();
         if (x > r.right - 34) nav.scrollLeft += 15;
@@ -69,7 +69,7 @@ export function initializeDeckDragDock() {
       }
       const item = closestTarget(x, y);
       shadow
-        .querySelectorAll(CSS_SELECTORS.s251)
+        .querySelectorAll(CSS_SELECTORS.dropIndicators)
         .forEach((el) => el.classList.remove("drop-before", "drop-after"));
       if (item) {
         const r = item.getBoundingClientRect();
@@ -87,7 +87,7 @@ export function initializeDeckDragDock() {
     function start(x, y) {
       if (!active || active.started) return;
       active.started = true;
-      active.handle.closest(CSS_SELECTORS.s249)?.classList.add("dragging");
+      active.handle.closest(CSS_SELECTORS.draggableItems)?.classList.add("dragging");
       const ghost = document.createElement("div");
       ghost.textContent = active.label;
       ghost.className = "rodx-drag-ghost";
@@ -99,28 +99,28 @@ export function initializeDeckDragDock() {
       shadow.addEventListener(
         "dragstart",
         (e) => {
-          if (e.target.closest(CSS_SELECTORS.s249)) e.preventDefault();
+          if (e.target.closest(CSS_SELECTORS.draggableItems)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "selectstart",
         (e) => {
-          if (e.target.closest(CSS_SELECTORS.s252)) e.preventDefault();
+          if (e.target.closest(CSS_SELECTORS.dragHandles)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "contextmenu",
         (e) => {
-          if (e.target.closest(CSS_SELECTORS.s252)) e.preventDefault();
+          if (e.target.closest(CSS_SELECTORS.dragHandles)) e.preventDefault();
         },
         true,
       );
       shadow.addEventListener(
         "click",
         (e) => {
-          if (Date.now() < swallowUntil && e.target.closest(CSS_SELECTORS.s249)) {
+          if (Date.now() < swallowUntil && e.target.closest(CSS_SELECTORS.draggableItems)) {
             e.stopImmediatePropagation();
             e.preventDefault();
           }
@@ -128,7 +128,7 @@ export function initializeDeckDragDock() {
         true,
       );
       const down = (e) => {
-        const h = e.target.closest?.(CSS_SELECTORS.s252);
+        const h = e.target.closest?.(CSS_SELECTORS.dragHandles);
         if (!h) return;
         if (active) reset();
         const p = point(e),

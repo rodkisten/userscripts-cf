@@ -368,7 +368,7 @@ export function refreshTimelineView() {
     }
   }
   if (state.visible && state.tab === "busca") {
-    const preview = qs(CSS_SELECTORS.s142, shadow);
+    const preview = qs(CSS_SELECTORS.listsSearchPreview, shadow);
     if (preview && timeline.listId === state.listId && timeline.query === buildQuery(state.listId))
       preview.innerHTML = renderTimelineCards(true);
   }
@@ -518,7 +518,7 @@ export function ensureEmbeddedTimeline() {
     markup.innerHTML = `<div class="head"><div><span class="tag">X LISTS STUDIO</span><div><strong>Timeline personalizada</strong></div></div><div class="grp"><button class="btn" data-action="edit-filters">Filtros ⚙</button><button class="btn" data-action="timeline-close">Voltar ao X</button></div></div><div id="xls-feed-root"></div>`;
     root.append(markup);
     root.addEventListener("click", (event) => {
-      const action = event.target.closest(CSS_SELECTORS.s106)?.dataset.action;
+      const action = event.target.closest(CSS_SELECTORS.dataActions)?.dataset.action;
       if (action === "timeline-close") {
         listPresets[routeListId()] = {
           ...listPresets[routeListId()],

@@ -20,7 +20,7 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
     }
     code = code.replace(/^import[^;]+;\s*/gm, "");
     // These fixtures evaluate individual declarations. Resolve their imported data explicitly.
-    code = code.replace(/CSS_SELECTORS\.(s\d+)/g, (_, key) => {
+    code = code.replace(/CSS_SELECTORS\.([A-Za-z][A-Za-z0-9]*)/g, (_, key) => {
       const value = CSS_SELECTORS[key];
       return typeof value === "function" ? "(" + value.toString() + ")" : JSON.stringify(value);
     });

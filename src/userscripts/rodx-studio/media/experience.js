@@ -11,7 +11,7 @@ export function initializeDeckVideoExperience() {
     const MUTE_LABEL =
       /(?:^|\W)(?:mute|unmute|volume|sound|som|áudio|audio|silenciar|ativar som|desativar som)(?:\W|$)/i;
     function allowNativeVolume(event) {
-      const control = event.target?.closest?.(CSS_SELECTORS.s145);
+      const control = event.target?.closest?.(CSS_SELECTORS.volumeControlCandidates);
       if (!control) return;
       const label = [
         control.getAttribute("aria-label"),
@@ -21,8 +21,10 @@ export function initializeDeckVideoExperience() {
         .filter(Boolean)
         .join(" ");
       if (!MUTE_LABEL.test(label)) return;
-      const video = control.closest(CSS_SELECTORS.s146)?.querySelector(CSS_SELECTORS.s143);
-      if (video && !control.closest(CSS_SELECTORS.s147)) {
+      const video = control
+        .closest(CSS_SELECTORS.videoOverlayContainers)
+        ?.querySelector(CSS_SELECTORS.videos);
+      if (video && !control.closest(CSS_SELECTORS.videoTransport)) {
         soundEnabled.add(video);
         video.dataset.rodxUserUnmuted = "1";
       }
@@ -32,7 +34,7 @@ export function initializeDeckVideoExperience() {
     function scan() {
       // Quality UI intentionally disabled: the X-managed HLS/MSE player must
       // own its adaptive resolution and progress timeline.
-      document.querySelectorAll(CSS_SELECTORS.s148).forEach((select) => select.remove());
+      document.querySelectorAll(CSS_SELECTORS.videoQualityControl).forEach((select) => select.remove());
       for (const video of Studio.dom.nodes("video")) {
         if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) video.muted = true;
         if (initialized.has(video)) continue;

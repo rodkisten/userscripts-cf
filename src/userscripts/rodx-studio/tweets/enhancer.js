@@ -21,8 +21,8 @@ export function initializeDeckResultEnhancer() {
     const actionClass = "rodx-result-actions";
     function postId(article) {
       const link =
-        article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052) ||
-        article.querySelector(CSS_SELECTORS.s052);
+        article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
+        article.querySelector(CSS_SELECTORS.statusLinks);
       return link?.getAttribute("href")?.match(UID_RE)?.[1] || "";
     }
     function ensureStyle() {
@@ -47,7 +47,7 @@ export function initializeDeckResultEnhancer() {
       return rules;
     }
     function seenButtonText(article, id) {
-      const btn = article.querySelector(CSS_SELECTORS.s306(actionClass));
+      const btn = article.querySelector(CSS_SELECTORS.resultReadButtonByActionClass(actionClass));
       if (btn) {
         const read = state.seen.has(id);
         btn.textContent = read ? "✓" : "◦";
@@ -63,7 +63,7 @@ export function initializeDeckResultEnhancer() {
         .toLocaleLowerCase();
     }
     function nativeQueryInput() {
-      return document.querySelector(CSS_SELECTORS.s203);
+      return document.querySelector(CSS_SELECTORS.nestedNativeSearchInput);
     }
     function nativeQueryText() {
       const input = nativeQueryInput();
@@ -86,16 +86,16 @@ export function initializeDeckResultEnhancer() {
       NativeQueryTags.flush();
     }
     function findActions(article) {
-      const reply = article.querySelector(CSS_SELECTORS.s211);
-      const retweet = article.querySelector(CSS_SELECTORS.s216);
-      const share = article.querySelector(CSS_SELECTORS.s217);
-      return (reply || retweet || share)?.closest(CSS_SELECTORS.s083) || null;
+      const reply = article.querySelector(CSS_SELECTORS.replyButton);
+      const retweet = article.querySelector(CSS_SELECTORS.retweetToggleButtons);
+      const share = article.querySelector(CSS_SELECTORS.shareButton);
+      return (reply || retweet || share)?.closest(CSS_SELECTORS.actionGroups) || null;
     }
     function collectHashtags(article) {
-      const text = article.querySelector(CSS_SELECTORS.s207);
+      const text = article.querySelector(CSS_SELECTORS.nativeTweetText);
       if (!text) return [];
       const found = new Map();
-      for (const anchor of text.querySelectorAll(CSS_SELECTORS.s218)) {
+      for (const anchor of text.querySelectorAll(CSS_SELECTORS.encodedHashtagLinks)) {
         const t = (anchor.textContent || "").trim().match(/#[\p{L}\p{N}_]+/u)?.[0];
         if (t && !found.has(normalizedTag(t)))
           found.set(normalizedTag(t), {
@@ -115,30 +115,30 @@ export function initializeDeckResultEnhancer() {
       return [...found.values()];
     }
     function removeOldInlineButtons(article) {
-      for (const old of article.querySelectorAll(CSS_SELECTORS.s219)) old.remove();
+      for (const old of article.querySelectorAll(CSS_SELECTORS.externalTagAddButtons)) old.remove();
     }
     function refreshAllHashtagStates() {
       const { positive, negative } = queryHashtags();
-      for (const item of document.querySelectorAll(CSS_SELECTORS.s213)) {
+      for (const item of document.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
         const id = normalizedTag(item.dataset.tag);
         const yes = positive.has(id),
           no = negative.has(id);
         item.dataset.selected = yes ? "1" : "0";
         item.dataset.excluded = no ? "1" : "0";
         item.dataset.color = state.visual.colorfulTags && !yes && !no ? "1" : "0";
-        const add = item.querySelector(CSS_SELECTORS.s220);
+        const add = item.querySelector(CSS_SELECTORS.tagAddButton);
         if (add) add.hidden = yes;
-        const remove = item.querySelector(CSS_SELECTORS.s221);
+        const remove = item.querySelector(CSS_SELECTORS.tagExcludeButton);
         if (remove) remove.hidden = no;
       }
     }
     function suppressNativeHashtagList(article, tags) {
-      const text = article.querySelector(CSS_SELECTORS.s207);
+      const text = article.querySelector(CSS_SELECTORS.nativeTweetText);
       if (!text) return;
       // No destructive textContent/innerHTML edits on React-controlled X nodes.
       // Recompute on each scan so recycled posts don't keep stale CSS classes.
       text.classList.remove("rodx-native-only-tags");
-      for (const node of text.querySelectorAll(CSS_SELECTORS.s222)) {
+      for (const node of text.querySelectorAll(CSS_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove("rodx-native-tag-tail", "rodx-native-tag-source");
       }
       if (tags.length < 2) return;
@@ -153,10 +153,10 @@ export function initializeDeckResultEnhancer() {
 
       // Hide discrete hashtag-only DOM subtrees first (including when X wraps
       // several tags in a single span). An inline hashtag between words remains.
-      const candidates = [...text.querySelectorAll(CSS_SELECTORS.s223)].reverse();
+      const candidates = [...text.querySelectorAll(CSS_SELECTORS.textContainers)].reverse();
       for (const node of candidates) {
         if (node.classList.contains("rodx-native-tag-source")) continue;
-        if (node.closest(CSS_SELECTORS.s224)) continue;
+        if (node.closest(CSS_SELECTORS.nativeTagSource)) continue;
         const value = (node.innerText || node.textContent || "").trim();
         if (!value || !onlyTags.test(value) || !multi.test(value)) continue;
         const parent = node.parentElement;
@@ -174,8 +174,8 @@ export function initializeDeckResultEnhancer() {
           .flatMap((line) => line.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
           .map((tag) => tag.normalize("NFKC").toLocaleLowerCase()),
       );
-      for (const anchor of text.querySelectorAll(CSS_SELECTORS.s225)) {
-        if (anchor.closest(CSS_SELECTORS.s224)) continue;
+      for (const anchor of text.querySelectorAll(CSS_SELECTORS.hashtagLinks)) {
+        if (anchor.closest(CSS_SELECTORS.nativeTagSource)) continue;
         const tag = anchor.textContent.trim().normalize("NFKC").toLocaleLowerCase();
         if (!wanted.has(tag)) continue;
         // A parent containing regular text marks a sentence; never hide it.
@@ -186,8 +186,8 @@ export function initializeDeckResultEnhancer() {
       }
       // Remove visible line breaks directly before a trailing tag-only block.
       // This prevents the empty two-line gap seen on iOS when hashes moved.
-      const breaks = [...text.querySelectorAll(CSS_SELECTORS.s226)];
-      for (const source of text.querySelectorAll(CSS_SELECTORS.s224)) {
+      const breaks = [...text.querySelectorAll(CSS_SELECTORS.lineBreaks)];
+      for (const source of text.querySelectorAll(CSS_SELECTORS.nativeTagSource)) {
         let previous = source.previousSibling;
         let steps = 0;
         while (previous && steps++ < 5) {
@@ -211,7 +211,7 @@ export function initializeDeckResultEnhancer() {
     function addHashtagBtns(article) {
       removeOldInlineButtons(article);
       const tags = collectHashtags(article);
-      let tray = article.querySelector(CSS_SELECTORS.s227);
+      let tray = article.querySelector(CSS_SELECTORS.scopedHashtagContainer);
       if (!tags.length) {
         tray?.remove();
         return;
@@ -267,9 +267,9 @@ export function initializeDeckResultEnhancer() {
       }
       if (state.visual.translateForeignTags) ForeignTags.scan(tray);
       else
-        for (const item of tray.querySelectorAll(CSS_SELECTORS.s213)) {
+        for (const item of tray.querySelectorAll(CSS_SELECTORS.hashtagItems)) {
           item.hidden = false;
-          item.querySelector(CSS_SELECTORS.s214)?.remove();
+          item.querySelector(CSS_SELECTORS.tagTranslation)?.remove();
         }
       suppressNativeHashtagList(article, tags);
       refreshAllHashtagStates();
@@ -279,10 +279,10 @@ export function initializeDeckResultEnhancer() {
     function ensureBookmark(article) {
       const group = findActions(article);
       if (!group) return;
-      const native = group.querySelector(CSS_SELECTORS.s228);
+      const native = group.querySelector(CSS_SELECTORS.bookmarkToggleButtons);
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
-      const existing = group.querySelector(CSS_SELECTORS.s229);
+      const existing = group.querySelector(CSS_SELECTORS.bookmarkButton);
       if (visibleNative) {
         existing?.remove();
         return;
@@ -299,7 +299,8 @@ export function initializeDeckResultEnhancer() {
         event.preventDefault();
         event.stopPropagation();
         const menuButton =
-          article.querySelector(CSS_SELECTORS.s230) || article.querySelector(CSS_SELECTORS.s231);
+          article.querySelector(CSS_SELECTORS.tweetCaret) ||
+          article.querySelector(CSS_SELECTORS.localizedMoreButtons);
         if (!menuButton) {
           btn.title = "O X não mostrou o menu deste post";
           return;
@@ -313,7 +314,7 @@ export function initializeDeckResultEnhancer() {
         };
         const choose = () => {
           if (committed) return;
-          const options = [...document.querySelectorAll(CSS_SELECTORS.s232)].filter(
+          const options = [...document.querySelectorAll(CSS_SELECTORS.bookmarkMenuItems)].filter(
             (el) => !article.contains(el) && el.getClientRects().length > 0,
           );
           const target =
@@ -336,7 +337,7 @@ export function initializeDeckResultEnhancer() {
         menuButton.click();
         setTimeout(choose, 0);
       });
-      const share = group.querySelector(CSS_SELECTORS.s217);
+      const share = group.querySelector(CSS_SELECTORS.shareButton);
       if (share?.parentElement?.parentElement === group) share.parentElement.before(btn);
       else group.append(btn);
     }
@@ -370,7 +371,7 @@ export function initializeDeckResultEnhancer() {
           article.isConnected &&
           document.visibilityState === "visible" &&
           document.body.classList.contains("rodx-search-page") &&
-          article.closest(CSS_SELECTORS.s233)?.style.display !== "none"
+          article.closest(CSS_SELECTORS.timelineCells)?.style.display !== "none"
         );
       }
       state.readObserver = new IntersectionObserver(
@@ -453,7 +454,7 @@ export function initializeDeckResultEnhancer() {
           state.readObserver?.disconnect();
           state.readObserver = null;
           state.readProgress = new WeakMap();
-          document.querySelectorAll(CSS_SELECTORS.s043).forEach((article) => {
+          document.querySelectorAll(CSS_SELECTORS.observedElements).forEach((article) => {
             delete article.dataset.rodxObserved;
           });
         });
@@ -482,13 +483,13 @@ export function initializeDeckResultEnhancer() {
       ensureStyle();
       setupReader();
       const local = currentRules();
-      const main = document.querySelector(CSS_SELECTORS.s031);
+      const main = document.querySelector(CSS_SELECTORS.primaryColumn);
       if (!main) return;
-      const matches = main.querySelectorAll(CSS_SELECTORS.s168);
+      const matches = main.querySelectorAll(CSS_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
         if (!id) continue;
-        const cell = article.closest(CSS_SELECTORS.s233) || article;
+        const cell = article.closest(CSS_SELECTORS.timelineCells) || article;
         // Query patterns, seen filters and limits run before X renders the response.
         if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
           cell.style.removeProperty("display");
@@ -500,7 +501,7 @@ export function initializeDeckResultEnhancer() {
         setSeen(article, id);
         addHashtagBtns(article);
         ensureBookmark(article);
-        let actions = article.querySelector(CSS_SELECTORS.s307(actionClass));
+        let actions = article.querySelector(CSS_SELECTORS.resultActionsByClass(actionClass));
         if (!actions) {
           actions = document.createElement("div");
           actions.className = actionClass;
@@ -515,8 +516,8 @@ export function initializeDeckResultEnhancer() {
             event.preventDefault();
             event.stopImmediatePropagation();
             const anchor =
-              article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052) ||
-              article.querySelector(CSS_SELECTORS.s052);
+              article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
+              article.querySelector(CSS_SELECTORS.statusLinks);
             if (!anchor) {
               showRodxToast("Não foi possível localizar o link nativo deste post.", "error");
               return;
@@ -547,7 +548,7 @@ export function initializeDeckResultEnhancer() {
           actions.hidden = false;
           targetActions.append(actions);
         }
-        const exp = actions.querySelector(CSS_SELECTORS.s234);
+        const exp = actions.querySelector(CSS_SELECTORS.expandAction);
         if (exp) {
           exp.textContent = "↗";
           exp.title = "Expandir e abrir tweet";

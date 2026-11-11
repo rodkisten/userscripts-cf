@@ -76,7 +76,7 @@ export function installListTypeahead(Studio) {
         <style>${extractedCSS1}</style>
         <div role="listbox"></div>
       `;
-    const list = root.querySelector(CSS_SELECTORS.s200);
+    const list = root.querySelector(CSS_SELECTORS.divElements);
     choices.forEach((row, i) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -91,7 +91,8 @@ export function installListTypeahead(Studio) {
     });
     if (!choices.length) list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
   }
-  const isSearch = (el) => el?.matches?.(CSS_SELECTORS.s201) && !el.closest?.(CSS_SELECTORS.s202);
+  const isSearch = (el) =>
+    el?.matches?.(CSS_SELECTORS.searchQueryFields) && !el.closest?.(CSS_SELECTORS.quickSearchButton);
   document.addEventListener(
     "input",
     (e) => {
@@ -123,7 +124,7 @@ export function installListTypeahead(Studio) {
           (index + (e.key === "ArrowDown" ? 1 : -1) + Math.max(1, choices.length)) %
           Math.max(1, choices.length);
         root
-          .querySelectorAll(CSS_SELECTORS.s030)
+          .querySelectorAll(CSS_SELECTORS.buttons)
           .forEach((b, i) => b.setAttribute("aria-selected", String(i === index)));
       }
       if (e.key === "Enter" && choices.length) {

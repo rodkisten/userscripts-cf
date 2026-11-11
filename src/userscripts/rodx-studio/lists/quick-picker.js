@@ -74,27 +74,27 @@ export function initializeRodX_lists_84() {
 export let overlay;
 
 export function initializeListsOverlay() {
-  overlay = qs(CSS_SELECTORS.s124, shadow);
+  overlay = qs(CSS_SELECTORS.listsOverlay, shadow);
 }
 
 export let body;
 
 export function initializeListsBody() {
-  body = qs(CSS_SELECTORS.s125, shadow);
+  body = qs(CSS_SELECTORS.listsBody, shadow);
 }
 
 export let tabArea;
 
 export function initializeListsTabArea() {
-  tabArea = qs(CSS_SELECTORS.s126, shadow);
+  tabArea = qs(CSS_SELECTORS.listsTabs, shadow);
 }
 
 export function initializeRodX_lists_88() {
-  qs(CSS_SELECTORS.s127, shadow).remove();
+  qs(CSS_SELECTORS.listsFloatingButton, shadow).remove();
 }
 
 export function initializeRodX_lists_89() {
-  qs(CSS_SELECTORS.s124, shadow).addEventListener("click", (event) => {
+  qs(CSS_SELECTORS.listsOverlay, shadow).addEventListener("click", (event) => {
     if (event.target === overlay) toggle(false);
   });
 }
@@ -192,29 +192,29 @@ export function initializeListsQuickToastTimer() {
 export let quickBackdrop;
 
 export function initializeListsQuickBackdrop() {
-  quickBackdrop = qs(CSS_SELECTORS.s128, shadow);
+  quickBackdrop = qs(CSS_SELECTORS.quickPickerBackdrop, shadow);
 }
 
 export let quickPicker;
 
 export function initializeListsQuickPicker() {
-  quickPicker = qs(CSS_SELECTORS.s129, shadow);
+  quickPicker = qs(CSS_SELECTORS.quickPicker, shadow);
 }
 
 export let quickSearch;
 
 export function initializeListsQuickSearch() {
-  quickSearch = qs(CSS_SELECTORS.s130, shadow);
+  quickSearch = qs(CSS_SELECTORS.quickPickerSearch, shadow);
 }
 
 export let quickOptions;
 
 export function initializeListsQuickOptions() {
-  quickOptions = qs(CSS_SELECTORS.s131, shadow);
+  quickOptions = qs(CSS_SELECTORS.quickPickerOptions, shadow);
 }
 
 export function quickToast(message) {
-  const el = qs(CSS_SELECTORS.s132, shadow);
+  const el = qs(CSS_SELECTORS.quickPickerToast, shadow);
   if (!el) return;
   el.textContent = message;
   el.classList.add("show");
@@ -271,7 +271,7 @@ export function renderQuickOptions() {
       })
       .join("") ||
     `<div style="${cssDeclarations(inlineCSS3)}">${term ? "Nenhuma lista corresponde à busca." : "Nenhuma lista salva. Abra a aba Listas e sincronize suas listas."}</div>`;
-  qs(CSS_SELECTORS.s133, shadow).textContent =
+  qs(CSS_SELECTORS.quickPickerStatus, shadow).textContent =
     `${state.lists.length} listas locais · Adição imediata · ${state.bridgeStatus}`;
 }
 
@@ -294,10 +294,10 @@ export async function openQuickPicker(user, anchor) {
   quickOrder = orderedQuickLists().map((row) => String(row.id));
   quickSearchValue = "";
   quickSearch.value = "";
-  qs(CSS_SELECTORS.s134, shadow).textContent = `@${quickUser.username}`;
-  qs(CSS_SELECTORS.s135, shadow).textContent = "Adição individual imediata, confirmada pelo X";
-  qs(CSS_SELECTORS.s136, shadow).checked = Boolean(settings.quickAddFollow);
-  qs(CSS_SELECTORS.s137, shadow).checked = Boolean(settings.quickAddDisableReposts);
+  qs(CSS_SELECTORS.quickPickerTitle, shadow).textContent = `@${quickUser.username}`;
+  qs(CSS_SELECTORS.quickPickerSubtitle, shadow).textContent = "Adição individual imediata, confirmada pelo X";
+  qs(CSS_SELECTORS.quickPickerFollow, shadow).checked = Boolean(settings.quickAddFollow);
+  qs(CSS_SELECTORS.quickPickerReposts, shadow).checked = Boolean(settings.quickAddDisableReposts);
   quickBackdrop.classList.add("open");
   quickPicker.classList.add("open");
   renderQuickOptions();
@@ -309,7 +309,7 @@ export function initializeRodX_lists_112() {
 }
 
 export function initializeRodX_lists_113() {
-  qs(CSS_SELECTORS.s138, shadow).addEventListener("click", closeQuickPicker);
+  qs(CSS_SELECTORS.quickPickerClose, shadow).addEventListener("click", closeQuickPicker);
 }
 
 export function initializeRodX_lists_114() {

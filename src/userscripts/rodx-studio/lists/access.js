@@ -120,9 +120,10 @@ export function createListAccess(Studio, navigateSearch) {
         void open().catch((error) => console.warn("[RodX] Listas:", error));
       };
     }
-    const home = document.querySelector(CSS_SELECTORS.s092);
+    const home = document.querySelector(CSS_SELECTORS.homeTabLink);
     let row = home?.parentElement;
-    while (row && row !== document.body && !row.querySelector(CSS_SELECTORS.s093)) row = row.parentElement;
+    while (row && row !== document.body && !row.querySelector(CSS_SELECTORS.exploreTabLink))
+      row = row.parentElement;
     if (innerWidth < 800 && row && row !== document.body) {
       footerButton.style.cssText = cssDeclarations(inlineCSS1);
       if (footerButton.parentElement !== row) row.append(footerButton);
@@ -141,9 +142,11 @@ export function createListAccess(Studio, navigateSearch) {
       profileHost?.remove();
       return;
     }
-    const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
-    const identity = main?.querySelector(CSS_SELECTORS.s095);
-    if (!identity || identity.closest(CSS_SELECTORS.s041)) return;
+    const main =
+      document.querySelector(CSS_SELECTORS.primaryColumn) ||
+      document.querySelector(CSS_SELECTORS.mainElement);
+    const identity = main?.querySelector(CSS_SELECTORS.profileIdentityOrUserName);
+    if (!identity || identity.closest(CSS_SELECTORS.articles)) return;
     if (!profileHost) {
       profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";

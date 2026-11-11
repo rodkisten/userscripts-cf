@@ -69,7 +69,7 @@ export function initializeDeckImmersiveDownload() {
     function locate() {
       const layer = document.getElementById("layers");
       if (!layer) return null;
-      const videos = [...layer.querySelectorAll(CSS_SELECTORS.s143)];
+      const videos = [...layer.querySelectorAll(CSS_SELECTORS.videos)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
@@ -84,18 +84,21 @@ export function initializeDeckImmersiveDownload() {
         );
       });
       if (!visible.length) return null;
-      const isViewer = Boolean(layer.querySelector(CSS_SELECTORS.s301()));
+      const isViewer = Boolean(layer.querySelector(CSS_SELECTORS.mediaViewerRoots()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
-      const nativePlayerInStatus = Boolean(route && layer.querySelector(CSS_SELECTORS.s302()));
+      const nativePlayerInStatus = Boolean(
+        route && layer.querySelector(CSS_SELECTORS.playableVideoContainers()),
+      );
       if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
       const video = visible.sort((a, b) => {
         const ra = a.getBoundingClientRect(),
           rb = b.getBoundingClientRect();
         return rb.width * rb.height - ra.width * ra.height;
       })[0];
-      const related = video.closest(CSS_SELECTORS.s144) || layer;
-      const link = related.querySelector(CSS_SELECTORS.s052) || layer.querySelector(CSS_SELECTORS.s052);
+      const related = video.closest(CSS_SELECTORS.tweetOrDialogContainers) || layer;
+      const link =
+        related.querySelector(CSS_SELECTORS.statusLinks) || layer.querySelector(CSS_SELECTORS.statusLinks);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
       if (!id) return null;
       const owner =

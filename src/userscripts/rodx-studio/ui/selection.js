@@ -38,8 +38,8 @@ export function initializeDeckSelectionPopover() {
       if (!selection || selection.isCollapsed) return close();
       const ancestor = selection.anchorNode?.parentElement;
       const focus = selection.focusNode?.parentElement;
-      const firstText = ancestor?.closest(CSS_SELECTORS.s207);
-      const lastText = focus?.closest(CSS_SELECTORS.s207);
+      const firstText = ancestor?.closest(CSS_SELECTORS.nativeTweetText);
+      const lastText = focus?.closest(CSS_SELECTORS.nativeTweetText);
       const firstTweet = firstText?.closest(XDOM.tweet);
       if (!firstTweet || firstTweet !== lastText?.closest(XDOM.tweet)) {
         return close();
@@ -94,7 +94,7 @@ export function initializeDeckSelectionPopover() {
               showRodxToast(error.message, "error");
               return;
             }
-            const native = document.querySelector(CSS_SELECTORS.s188);
+            const native = document.querySelector(CSS_SELECTORS.nativeSearchInput);
             if (native) NativeQueryTags.write(QueryEngine.normalized(changed));
             else showRodxToast("Abra a busca para adicionar a palavra.");
           }

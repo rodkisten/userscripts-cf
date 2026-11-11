@@ -61,8 +61,8 @@ export function initializeDeckSearchAnchors() {
       if (!searchPage() || !q || dismissed === q || Date.now() < captureBlockedUntil) return;
       const article = [...Studio.dom.nodes(XDOM.tweet)].find((a) => a.getBoundingClientRect().bottom > 65);
       const status =
-        article?.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052) ||
-        article?.querySelector(CSS_SELECTORS.s052);
+        article?.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
+        article?.querySelector(CSS_SELECTORS.statusLinks);
       const saved = state.searches?.find((item) => item.query === q);
       origin = {
         account: state.account,
@@ -83,21 +83,24 @@ export function initializeDeckSearchAnchors() {
         location.origin,
       );
       const matches = () => location.pathname === "/search" && query() === q;
-      const existing = [...document.querySelectorAll(CSS_SELECTORS.s027)].find(
-        (a) => a.pathname === wanted.pathname && a.search === wanted.search && !a.closest(CSS_SELECTORS.s187),
+      const existing = [...document.querySelectorAll(CSS_SELECTORS.linksWithHref)].find(
+        (a) =>
+          a.pathname === wanted.pathname &&
+          a.search === wanted.search &&
+          !a.closest(CSS_SELECTORS.navigationStrip),
       );
       if (existing) {
         existing.click();
         return;
       }
-      let field = document.querySelector(CSS_SELECTORS.s188);
+      let field = document.querySelector(CSS_SELECTORS.nativeSearchInput);
       if (!field) {
-        const explore = document.querySelector(CSS_SELECTORS.s189);
+        const explore = document.querySelector(CSS_SELECTORS.exploreNavigationLinks);
         if (explore) {
           explore.click();
           for (let i = 0; i < 20 && !field; i++) {
             await new Promise((r) => setTimeout(r, 80));
-            field = document.querySelector(CSS_SELECTORS.s188);
+            field = document.querySelector(CSS_SELECTORS.nativeSearchInput);
           }
         }
       }
@@ -114,7 +117,7 @@ export function initializeDeckSearchAnchors() {
           }),
         );
         await new Promise((r) => setTimeout(r, 40));
-        const form = field.closest(CSS_SELECTORS.s190);
+        const form = field.closest(CSS_SELECTORS.forms);
         if (form) form.requestSubmit();
         else
           field.dispatchEvent(
@@ -155,7 +158,7 @@ export function initializeDeckSearchAnchors() {
         const target =
           entry.tweet &&
           [...Studio.dom.nodes(XDOM.tweet)].find((a) =>
-            [...a.querySelectorAll(CSS_SELECTORS.s052)].some((link) =>
+            [...a.querySelectorAll(CSS_SELECTORS.statusLinks)].some((link) =>
               link.getAttribute("href")?.includes("/status/" + entry.tweet),
             ),
           );
@@ -196,17 +199,19 @@ export function initializeDeckSearchAnchors() {
         await nativeSearch(entry.query, entry.href);
       } catch (error) {
         cancelRestore?.();
-        shadow.querySelector(CSS_SELECTORS.s191).textContent = String(error.message || error);
+        shadow.querySelector(CSS_SELECTORS.navigationStatus).textContent = String(error.message || error);
       } finally {
         pending = false;
         render();
       }
     }
     function mount() {
-      const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
+      const main =
+        document.querySelector(CSS_SELECTORS.primaryColumn) ||
+        document.querySelector(CSS_SELECTORS.mainContent);
       if (!main) return false;
       if (!host) {
-        document.querySelectorAll(CSS_SELECTORS.s192).forEach((el) => el.remove());
+        document.querySelectorAll(CSS_SELECTORS.searchAnchors).forEach((el) => el.remove());
         host = document.createElement("section");
         host.id = "rodx-navigation-strip";
         host.style.cssText = cssDeclarations(inlineCSS1);
@@ -220,8 +225,8 @@ export function initializeDeckSearchAnchors() {
   <button type="button" data-dismiss aria-label="Fechar retorno à pesquisa">×</button>
 </div>
 <small data-nav-status role="status"></small>`;
-        shadow.querySelector(CSS_SELECTORS.s193).onclick = () => void returnToSearch();
-        shadow.querySelector(CSS_SELECTORS.s194).onclick = () => {
+        shadow.querySelector(CSS_SELECTORS.searchReturnAction).onclick = () => void returnToSearch();
+        shadow.querySelector(CSS_SELECTORS.searchDismissAction).onclick = () => {
           dismissed = origin?.query || "";
           clear();
         };
@@ -258,9 +263,9 @@ export function initializeDeckSearchAnchors() {
     let listNameCheck = "";
     function render() {
       if (!mount()) return;
-      const native = document.querySelector(CSS_SELECTORS.s188);
+      const native = document.querySelector(CSS_SELECTORS.nativeSearchInput);
       const positiveIds = searchPage() ? positiveListIds(query()) : [];
-      const listContext = shadow.querySelector(CSS_SELECTORS.s195);
+      const listContext = shadow.querySelector(CSS_SELECTORS.searchListContext);
       listContext.hidden = positiveIds.length === 0;
       if (positiveIds.length) {
         const rows = Studio.services.lists?.all() || [];
@@ -299,9 +304,9 @@ export function initializeDeckSearchAnchors() {
         !searchPage() &&
         !globalPage() &&
         dismissed !== origin.query;
-      const row = shadow.querySelector(CSS_SELECTORS.s196);
+      const row = shadow.querySelector(CSS_SELECTORS.searchReturnButton);
       row.hidden = !show;
-      const button = shadow.querySelector(CSS_SELECTORS.s193);
+      const button = shadow.querySelector(CSS_SELECTORS.searchReturnAction);
       button.textContent = "↩ Voltar para a pesquisa " + (origin?.label || "");
       button.title = origin?.query || "";
       button.disabled = pending;
@@ -316,7 +321,7 @@ export function initializeDeckSearchAnchors() {
     document.addEventListener(
       "click",
       (event) => {
-        const link = event.target.closest?.(CSS_SELECTORS.s027);
+        const link = event.target.closest?.(CSS_SELECTORS.linksWithHref);
         if (!link) return;
         const testid = link.getAttribute("data-testid") || "";
         if (
@@ -363,7 +368,7 @@ export function initializeDeckSearchAnchors() {
           dismissed = "";
           persist();
         }
-        shadow?.querySelector(CSS_SELECTORS.s191)?.replaceChildren();
+        shadow?.querySelector(CSS_SELECTORS.navigationStatus)?.replaceChildren();
       }
       render();
     }

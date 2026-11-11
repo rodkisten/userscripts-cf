@@ -29,8 +29,8 @@ export function initializeDeckPlayerPreference() {
     }
     function configureGestures(entry) {
       const container =
-        entry.skin.shadowRoot?.querySelector(CSS_SELECTORS.s155) ||
-        entry.skin.querySelector(CSS_SELECTORS.s155);
+        entry.skin.shadowRoot?.querySelector(CSS_SELECTORS.mediaContainer) ||
+        entry.skin.querySelector(CSS_SELECTORS.mediaContainer);
       SeekPreviews.attach(entry.video, entry);
       if (!container || entry.gestureContainer === container) return;
       const specs = [
@@ -59,7 +59,7 @@ export function initializeDeckPlayerPreference() {
         },
       ];
       for (const spec of specs) {
-        const matches = [...container.querySelectorAll(CSS_SELECTORS.s156)].filter(
+        const matches = [...container.querySelectorAll(CSS_SELECTORS.mediaGesture)].filter(
           (el) =>
             el.getAttribute("type") === spec.type &&
             el.getAttribute("region") === spec.region &&
@@ -92,8 +92,8 @@ export function initializeDeckPlayerPreference() {
         )
           return;
         const path = event.composedPath();
-        const play = path.some((el) => el?.matches?.(CSS_SELECTORS.s157));
-        const interactive = path.some((el) => el?.matches?.(CSS_SELECTORS.s158));
+        const play = path.some((el) => el?.matches?.(CSS_SELECTORS.mediaPlayButton));
+        const interactive = path.some((el) => el?.matches?.(CSS_SELECTORS.playerInteractiveControls));
         if (!play) {
           if (interactive || event.pointerType !== "mouse") return;
           const rect = video.getBoundingClientRect();
@@ -181,10 +181,10 @@ export function initializeDeckPlayerPreference() {
         if (!video.isConnected || mode !== "videojs") restore(video, entry);
         else configureGestures(entry);
       }
-      for (const video of document.querySelectorAll(CSS_SELECTORS.s159)) {
-        const wrapper = video.closest(CSS_SELECTORS.s160) || video.parentElement;
+      for (const video of document.querySelectorAll(CSS_SELECTORS.visiblePageVideos)) {
+        const wrapper = video.closest(CSS_SELECTORS.videoComponentWrappers) || video.parentElement;
         if (!wrapper) continue;
-        wrapper.querySelectorAll(CSS_SELECTORS.s147).forEach((bar) => {
+        wrapper.querySelectorAll(CSS_SELECTORS.videoTransport).forEach((bar) => {
           bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
         });
         if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) continue;
@@ -227,7 +227,7 @@ export function initializeDeckPlayerPreference() {
         root.addEventListener(
           "pointerdown",
           (event) => {
-            if (event.composedPath().some((el) => el?.matches?.(CSS_SELECTORS.s161))) {
+            if (event.composedPath().some((el) => el?.matches?.(CSS_SELECTORS.mediaAudioControls))) {
               requestedAudio = video.muted || video.volume === 0;
               if (requestedAudio) VideoExperience.enableAudio(video, true);
             }
@@ -235,7 +235,7 @@ export function initializeDeckPlayerPreference() {
           true,
         );
         root.addEventListener("click", (event) => {
-          const control = event.composedPath().find((el) => el?.matches?.(CSS_SELECTORS.s161));
+          const control = event.composedPath().find((el) => el?.matches?.(CSS_SELECTORS.mediaAudioControls));
           if (control) {
             const audible = requestedAudio ?? (video.muted || video.volume === 0);
             requestedAudio = undefined;

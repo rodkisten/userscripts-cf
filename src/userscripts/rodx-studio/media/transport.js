@@ -24,8 +24,12 @@ export function initializeDeckVideoTransport() {
     };
     function attach(video) {
       if (installed.has(video)) return;
-      const wrapper = video.closest(CSS_SELECTORS.s165) || video.parentElement;
-      if (!wrapper || wrapper.closest(CSS_SELECTORS.s147) || wrapper.querySelector(CSS_SELECTORS.s166))
+      const wrapper = video.closest(CSS_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
+      if (
+        !wrapper ||
+        wrapper.closest(CSS_SELECTORS.videoTransport) ||
+        wrapper.querySelector(CSS_SELECTORS.directVideoTransport)
+      )
         return;
       const parentRect = wrapper.getBoundingClientRect();
       if (parentRect.width && (parentRect.width < 135 || parentRect.height < 90)) return;
@@ -152,8 +156,8 @@ export function initializeDeckVideoTransport() {
       update();
     }
     function scan() {
-      for (const video of document.querySelectorAll(CSS_SELECTORS.s159)) {
-        if (video.closest(CSS_SELECTORS.s147)) continue;
+      for (const video of document.querySelectorAll(CSS_SELECTORS.visiblePageVideos)) {
+        if (video.closest(CSS_SELECTORS.videoTransport)) continue;
         attach(video);
         clocks.get(video)?.();
       }

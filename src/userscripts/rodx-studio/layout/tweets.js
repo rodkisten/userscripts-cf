@@ -50,7 +50,7 @@ export function initializeDeckCompactLayout() {
         for (const name of [...el.classList])
           if (name.startsWith("rodx-profile-") || name === "rodx-detail-open") el.classList.remove(name);
       }
-      document.querySelectorAll(CSS_SELECTORS.s059).forEach((el) => el.remove());
+      document.querySelectorAll(CSS_SELECTORS.profileIdentityControls).forEach((el) => el.remove());
     }
     function profile() {
       const handle = profilePath();
@@ -60,12 +60,13 @@ export function initializeDeckCompactLayout() {
       }
       if (!handle) return;
       const primary =
-        document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
+        document.querySelector(CSS_SELECTORS.primaryColumn) ||
+        document.querySelector(CSS_SELECTORS.mainContent);
       if (!primary) return;
-      const name = primary.querySelector(CSS_SELECTORS.s060);
-      if (!name || name.closest(CSS_SELECTORS.s041)) return;
+      const name = primary.querySelector(CSS_SELECTORS.profileUserName);
+      if (!name || name.closest(CSS_SELECTORS.articles)) return;
       add(name, "rodx-profile-name");
-      let identity = primary.querySelector(CSS_SELECTORS.s061);
+      let identity = primary.querySelector(CSS_SELECTORS.profileIdentity);
       if (!identity) {
         identity = document.createElement("div");
         identity.className = "rodx-profile-identity";
@@ -84,7 +85,7 @@ export function initializeDeckCompactLayout() {
         const at = document.createElement("span");
         at.textContent = "@" + handle;
         identity.append(title, at);
-        const badge = name.querySelector(CSS_SELECTORS.s062);
+        const badge = name.querySelector(CSS_SELECTORS.svgIcons);
         if (badge) {
           const clone = badge.cloneNode(true);
           clone.style.cssText = cssDeclarations(inlineCSS1);
@@ -92,28 +93,29 @@ export function initializeDeckCompactLayout() {
         }
       }
       add(name, "rodx-profile-identity-source");
-      const handleNode = [...name.querySelectorAll(CSS_SELECTORS.s063)]
+      const handleNode = [...name.querySelectorAll(CSS_SELECTORS.textSpansAndDivs)]
         .filter((el) => el.textContent.trim().toLowerCase() === "@" + handle.toLowerCase())
         .sort(
           (a, b) =>
-            a.querySelectorAll(CSS_SELECTORS.s064).length - b.querySelectorAll(CSS_SELECTORS.s064).length,
+            a.querySelectorAll(CSS_SELECTORS.allElements).length -
+            b.querySelectorAll(CSS_SELECTORS.allElements).length,
         )[0];
       if (handleNode) {
         let branch = handleNode;
         while (branch.parentElement && branch.parentElement !== name) branch = branch.parentElement;
         add(branch, "rodx-profile-handle");
       }
-      const details = [...primary.querySelectorAll(CSS_SELECTORS.s065)].filter(
-        (el) => !el.closest(CSS_SELECTORS.s041),
+      const details = [...primary.querySelectorAll(CSS_SELECTORS.profileSocialDetails)].filter(
+        (el) => !el.closest(CSS_SELECTORS.articles),
       );
-      for (const link of primary.querySelectorAll(CSS_SELECTORS.s066)) {
-        if (!link.closest(CSS_SELECTORS.s041)) details.push(link);
+      for (const link of primary.querySelectorAll(CSS_SELECTORS.mutualFollowerLinks)) {
+        if (!link.closest(CSS_SELECTORS.articles)) details.push(link);
       }
-      for (const link of primary.querySelectorAll(CSS_SELECTORS.s067)) {
-        if (!link.closest(CSS_SELECTORS.s041)) details.push(link);
+      for (const link of primary.querySelectorAll(CSS_SELECTORS.profileFollowLinks)) {
+        if (!link.closest(CSS_SELECTORS.articles)) details.push(link);
       }
-      for (const el of primary.querySelectorAll(CSS_SELECTORS.s068)) {
-        if (el.closest(CSS_SELECTORS.s041) || el.childElementCount > 2) continue;
+      for (const el of primary.querySelectorAll(CSS_SELECTORS.textDivsAndSpans)) {
+        if (el.closest(CSS_SELECTORS.articles) || el.childElementCount > 2) continue;
         if (
           /^(?:não é seguido por ninguém que você segue|not followed by anyone you.re following)$/i.test(
             el.textContent.trim(),
@@ -121,16 +123,21 @@ export function initializeDeckCompactLayout() {
         )
           details.push(el);
       }
-      const following = primary.querySelector(CSS_SELECTORS.s069),
-        followers = primary.querySelector(CSS_SELECTORS.s070);
+      const following = primary.querySelector(CSS_SELECTORS.followingLinks),
+        followers = primary.querySelector(CSS_SELECTORS.followerLinks);
       if (following && followers) {
         let row = following.parentElement;
         while (row && row !== primary && !row.contains(followers)) row = row.parentElement;
-        if (row && row !== primary && !row.contains(name) && !row.querySelector(CSS_SELECTORS.s071))
+        if (
+          row &&
+          row !== primary &&
+          !row.contains(name) &&
+          !row.querySelector(CSS_SELECTORS.profileDescription)
+        )
           details.push(row);
       }
       for (const el of details) add(el, "rodx-profile-detail");
-      let toggle = primary.querySelector(CSS_SELECTORS.s072);
+      let toggle = primary.querySelector(CSS_SELECTORS.profileMoreButton);
       if (!toggle && details.length) {
         toggle = document.createElement("button");
         toggle.className = "rodx-profile-more";
@@ -144,7 +151,7 @@ export function initializeDeckCompactLayout() {
           toggle.setAttribute("aria-expanded", String(open));
           toggle.textContent = open ? "Ver menos" : "Ver mais";
           primary
-            .querySelectorAll(CSS_SELECTORS.s073)
+            .querySelectorAll(CSS_SELECTORS.profileDetail)
             .forEach((el) => el.classList.toggle("rodx-detail-open", open));
         };
         name.after(toggle);
@@ -152,9 +159,11 @@ export function initializeDeckCompactLayout() {
       if (toggle) toggle.style.cssText = cssDeclarations(inlineCSS2);
       const open = toggle?.getAttribute("aria-expanded") === "true";
       details.forEach((el) => el.classList.toggle("rodx-detail-open", open));
-      const avatar = primary.querySelector(CSS_SELECTORS.s295(handle));
-      const cover = primary.querySelector(CSS_SELECTORS.s296(handle));
-      const action = primary.querySelector(CSS_SELECTORS.s074) || primary.querySelector(CSS_SELECTORS.s075);
+      const avatar = primary.querySelector(CSS_SELECTORS.profilePhotoLinkByHandle(handle));
+      const cover = primary.querySelector(CSS_SELECTORS.profileCoverLinkByHandle(handle));
+      const action =
+        primary.querySelector(CSS_SELECTORS.userActions) ||
+        primary.querySelector(CSS_SELECTORS.followToggleButtons);
       if (!avatar || !cover || !action) return;
       let row = avatar.parentElement;
       while (row && row !== primary && !row.contains(action)) row = row.parentElement;
@@ -167,8 +176,8 @@ export function initializeDeckCompactLayout() {
       add(actionSlot, "rodx-profile-action-slot");
     }
     function author(article) {
-      const user = article.querySelector(CSS_SELECTORS.s076);
-      const link = [...(user?.querySelectorAll(CSS_SELECTORS.s027) || [])].find((a) =>
+      const user = article.querySelector(CSS_SELECTORS.tweetAuthorName);
+      const link = [...(user?.querySelectorAll(CSS_SELECTORS.linksWithHref) || [])].find((a) =>
         /^\/[A-Za-z0-9_]{1,15}$/.test(a.getAttribute("href") || ""),
       );
       return {
@@ -181,26 +190,26 @@ export function initializeDeckCompactLayout() {
       let previous = "";
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (
-          article.parentElement?.closest(CSS_SELECTORS.s041) ||
+          article.parentElement?.closest(CSS_SELECTORS.articles) ||
           article.hidden ||
           getComputedStyle(article).display === "none"
         )
           continue;
         const { user, link, key } = author(article);
-        const context = article.querySelector(CSS_SELECTORS.s077)?.textContent || "";
+        const context = article.querySelector(CSS_SELECTORS.socialContext)?.textContent || "";
         const identity = key ? key + ":" + context : "";
         article.dataset.rodxRepeat = identity && identity === previous ? "1" : "0";
         previous = identity;
         article.dataset.rodxLong = article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
         article
-          .querySelectorAll(CSS_SELECTORS.s078)
+          .querySelectorAll(CSS_SELECTORS.repeatedAuthor)
           .forEach((el) => el.classList.remove("rodx-repeat-author"));
         if (user)
-          for (const a of user.querySelectorAll(CSS_SELECTORS.s027))
+          for (const a of user.querySelectorAll(CSS_SELECTORS.linksWithHref))
             if (a.getAttribute("href")?.toLowerCase() === key) a.classList.add("rodx-repeat-author");
         const avatar =
-          article.querySelector(CSS_SELECTORS.s079) ||
-          article.querySelector(CSS_SELECTORS.s081)?.closest(CSS_SELECTORS.s080);
+          article.querySelector(CSS_SELECTORS.tweetAvatarContainers) ||
+          article.querySelector(CSS_SELECTORS.profileImages)?.closest(CSS_SELECTORS.anchors);
         if (avatar && user) {
           let row = avatar.parentElement;
           while (row && row !== article && !row.contains(user)) row = row.parentElement;
@@ -213,27 +222,29 @@ export function initializeDeckCompactLayout() {
             }
           }
         }
-        const like = article.querySelector(CSS_SELECTORS.s082);
-        const bar = like?.closest(CSS_SELECTORS.s083);
-        if (!bar || bar.closest(CSS_SELECTORS.s041) !== article) continue;
+        const like = article.querySelector(CSS_SELECTORS.likeToggleButtons);
+        const bar = like?.closest(CSS_SELECTORS.actionGroups);
+        if (!bar || bar.closest(CSS_SELECTORS.articles) !== article) continue;
         bar.classList.remove("rodx-glass-actions");
-        bar.querySelectorAll(CSS_SELECTORS.s084).forEach((el) => el.remove());
+        bar.querySelectorAll(CSS_SELECTORS.miniAvatar).forEach((el) => el.remove());
         // The tweet itself can be a horizontal React flex row. A full-width
         // sibling placed there consumes the content width. Mount inside the
         // existing column containing both author and native action group.
         let column = user?.parentElement;
         while (column && column !== article && !column.contains(bar)) column = column.parentElement;
         if (!column || column === article) continue;
-        let top = article.querySelector(CSS_SELECTORS.s048);
+        let top = article.querySelector(CSS_SELECTORS.tweetTopbar);
         if (!top) {
           top = document.createElement("div");
           top.className = "rodx-tweet-topbar rodx-glass-actions";
         }
         if (top.parentElement !== column) column.prepend(top);
-        const image = avatar?.querySelector(CSS_SELECTORS.s085);
+        const image = avatar?.querySelector(CSS_SELECTORS.imageOrBackgroundImage);
         const sourceURL =
-          avatar?.closest(CSS_SELECTORS.s027)?.getAttribute("href") || link?.getAttribute("href") || key;
-        let mini = top.querySelector(CSS_SELECTORS.s084);
+          avatar?.closest(CSS_SELECTORS.linksWithHref)?.getAttribute("href") ||
+          link?.getAttribute("href") ||
+          key;
+        let mini = top.querySelector(CSS_SELECTORS.miniAvatar);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
           mini = document.createElement("a");
@@ -244,7 +255,7 @@ export function initializeDeckCompactLayout() {
           mini.onclick = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = [...article.querySelectorAll(CSS_SELECTORS.s086)].find(
+            const native = [...article.querySelectorAll(CSS_SELECTORS.authorProfileLinks)].find(
               (a) => a.getAttribute("href")?.toLowerCase() === key,
             );
             if (native) native.click();
@@ -265,11 +276,11 @@ export function initializeDeckCompactLayout() {
           } else mini.textContent = "●";
           top.prepend(mini);
         }
-        let authorLink = top.querySelector(CSS_SELECTORS.s087);
+        let authorLink = top.querySelector(CSS_SELECTORS.topbarAuthor);
         if (!authorLink) {
           authorLink = document.createElement("a");
           authorLink.className = "rodx-topbar-author";
-          top.insertBefore(authorLink, top.querySelector(CSS_SELECTORS.s088));
+          top.insertBefore(authorLink, top.querySelector(CSS_SELECTORS.proxyActions));
         }
         if (key) {
           authorLink.href = key;
@@ -288,7 +299,7 @@ export function initializeDeckCompactLayout() {
           authorLink.onclick = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = [...article.querySelectorAll(CSS_SELECTORS.s086)].find(
+            const native = [...article.querySelectorAll(CSS_SELECTORS.authorProfileLinks)].find(
               (a) => a.getAttribute("href")?.toLowerCase() === key,
             );
             if (native) native.click();
@@ -306,7 +317,7 @@ export function initializeDeckCompactLayout() {
           ],
           ["telegram", "Enviar ao Telegram", "button.rodx-tg-action:not(.rodx-tg-video-overlay)"],
         ]) {
-          let proxy = top.querySelector(CSS_SELECTORS.s297(action));
+          let proxy = top.querySelector(CSS_SELECTORS.proxyActionByName(action));
           if (!proxy) {
             proxy = document.createElement("button");
             proxy.type = "button";
@@ -324,7 +335,7 @@ export function initializeDeckCompactLayout() {
           const native = [...article.querySelectorAll(selector)].find((el) => !top.contains(el));
           proxy.hidden = !native;
           if (native) {
-            const svg = native.querySelector(CSS_SELECTORS.s062);
+            const svg = native.querySelector(CSS_SELECTORS.svgIcons);
             const icon = svg
               ? svg.outerHTML
               : {

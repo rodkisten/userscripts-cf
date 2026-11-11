@@ -69,9 +69,9 @@ export function initializeDeckXRepost() {
       let origin = "";
       if (looksLikeMarkup) {
         const parsed = new DOMParser().parseFromString(raw, "text/html");
-        for (const br of parsed.body.querySelectorAll(CSS_SELECTORS.s226)) br.replaceWith("\n");
-        for (const block of parsed.body.querySelectorAll(CSS_SELECTORS.s235)) block.append("\n");
-        for (const anchor of parsed.body.querySelectorAll(CSS_SELECTORS.s027)) {
+        for (const br of parsed.body.querySelectorAll(CSS_SELECTORS.lineBreaks)) br.replaceWith("\n");
+        for (const block of parsed.body.querySelectorAll(CSS_SELECTORS.paragraphs)) block.append("\n");
+        for (const anchor of parsed.body.querySelectorAll(CSS_SELECTORS.linksWithHref)) {
           const label = String(anchor.textContent || "").trim();
           const href = safeSource(anchor.getAttribute("href"));
           if (href && /^(?:abrir (?:no|o) x|open (?:in|on) x|ver (?:no )?x)$/i.test(label)) {
@@ -201,11 +201,11 @@ export function initializeDeckXRepost() {
     async function savePreferences() {
       if (!gmAvailable || !account) throw Error("Identifique sua conta e habilite GM Storage.");
       const shadow = state.rootShadow;
-      const modeField = shadow?.querySelector(CSS_SELECTORS.s236);
-      const destinationField = shadow?.querySelector(CSS_SELECTORS.s237);
-      const queueField = shadow?.querySelector(CSS_SELECTORS.s238);
-      const copyField = shadow?.querySelector(CSS_SELECTORS.s239);
-      const urlField = shadow?.querySelector(CSS_SELECTORS.s240);
+      const modeField = shadow?.querySelector(CSS_SELECTORS.repostShareMode);
+      const destinationField = shadow?.querySelector(CSS_SELECTORS.repostDestination);
+      const queueField = shadow?.querySelector(CSS_SELECTORS.repostEnqueueAfterTelegram);
+      const copyField = shadow?.querySelector(CSS_SELECTORS.repostCopyCaption);
+      const urlField = shadow?.querySelector(CSS_SELECTORS.repostIncludeSourceUrl);
       preferences = {
         shareMode: ["direct", "review", "off"].includes(modeField?.value)
           ? modeField.value
@@ -730,13 +730,13 @@ export function initializeDeckXRepost() {
               }
             </p>
           `;
-      const textArea = panel.querySelector(CSS_SELECTORS.s241);
-      const statusElement = panel.querySelector(CSS_SELECTORS.s242);
-      const nativeButton = panel.querySelector(CSS_SELECTORS.s243);
-      const saveButton = panel.querySelector(CSS_SELECTORS.s244);
+      const textArea = panel.querySelector(CSS_SELECTORS.shareCaption);
+      const statusElement = panel.querySelector(CSS_SELECTORS.shareStatus);
+      const nativeButton = panel.querySelector(CSS_SELECTORS.shareNativeAction);
+      const saveButton = panel.querySelector(CSS_SELECTORS.shareSaveAction);
       textArea.value = caption;
       const source = safeSource(item.source_url);
-      if (!source) panel.querySelector(CSS_SELECTORS.s245).disabled = true;
+      if (!source) panel.querySelector(CSS_SELECTORS.shareSourceAction).disabled = true;
 
       function status(message, isError = false) {
         statusElement.textContent = message;
@@ -745,7 +745,7 @@ export function initializeDeckXRepost() {
       // No user-activation-consuming API is called before navigator.share() during the click.
       // Download is asynchronous and must finish BEFORE the user taps this button on Safari.
       panel.addEventListener("click", (event) => {
-        const button = event.target.closest(CSS_SELECTORS.s246);
+        const button = event.target.closest(CSS_SELECTORS.shareActions);
         if (!button || !panel.contains(button) || button.disabled) return;
         const actionName = button.dataset.shareAction;
         const text = normalizeCaption(textArea.value);

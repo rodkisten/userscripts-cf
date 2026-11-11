@@ -64,7 +64,7 @@ export function currentSearch() {
 
 export function displayPreview() {
   if (!state.rootShadow || !state.draft) return;
-  const el = state.rootShadow.querySelector(CSS_SELECTORS.s280);
+  const el = state.rootShadow.querySelector(CSS_SELECTORS.queryPreview);
   if (!el) return;
   const issues = analyzeDraft(state.draft);
   let query = "";
@@ -80,16 +80,16 @@ export function displayPreview() {
   );
   el.innerHTML = highlightQuery(query);
   const ids = new Set(issues.filter((i) => i.level === "error").flatMap((i) => i.ids));
-  for (const node of state.rootShadow.querySelectorAll(CSS_SELECTORS.s258)) {
+  for (const node of state.rootShadow.querySelectorAll(CSS_SELECTORS.queryBlockOrChipNodes)) {
     node.classList.toggle(
-      node.matches(CSS_SELECTORS.s281) ? "bad" : "block-node-bad",
+      node.matches(CSS_SELECTORS.chipNodes) ? "bad" : "block-node-bad",
       ids.has(node.dataset.blockNode || node.dataset.chipNode),
     );
   }
-  const summary = state.rootShadow.querySelector(CSS_SELECTORS.s282);
+  const summary = state.rootShadow.querySelector(CSS_SELECTORS.analyzerSummary);
   const errors = issues.filter((i) => i.level === "error");
   if (summary) summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
-  const pane = state.rootShadow.querySelector(CSS_SELECTORS.s283);
+  const pane = state.rootShadow.querySelector(CSS_SELECTORS.queryDiagnostics);
   if (pane)
     pane.innerHTML = issues.length
       ? issues
@@ -103,19 +103,19 @@ export function displayPreview() {
           )
           .join("")
       : '<div class="issue" data-level="ok">✓ Query compilada sem conflitos detectados. A disponibilidade dos operadores depende do X.</div>';
-  const raw = state.rootShadow.querySelector(CSS_SELECTORS.s206);
+  const raw = state.rootShadow.querySelector(CSS_SELECTORS.rawQueryField);
   if (raw && !state.rawDirty) {
     state.rawQueryDraft = query.startsWith("Adicione hashtags,") ? "" : query;
     raw.value = state.rawQueryDraft;
   }
-  const colored = state.rootShadow.querySelector(CSS_SELECTORS.s284);
+  const colored = state.rootShadow.querySelector(CSS_SELECTORS.rawHighlight);
   if (colored) colored.innerHTML = highlightQuery(raw?.value || "");
 }
 
 export function validateRawWorkbench(text) {
-  const target = state.rootShadow?.querySelector(CSS_SELECTORS.s285);
-  const colored = state.rootShadow?.querySelector(CSS_SELECTORS.s284);
-  const list = state.rootShadow?.querySelector(CSS_SELECTORS.s286);
+  const target = state.rootShadow?.querySelector(CSS_SELECTORS.rawStatus);
+  const colored = state.rootShadow?.querySelector(CSS_SELECTORS.rawHighlight);
+  const list = state.rootShadow?.querySelector(CSS_SELECTORS.rawIssues);
   const issues = diagnosticSpans(text);
   if (colored) colored.innerHTML = highlightWithIssues(text, issues);
   let semantic = [];
@@ -214,7 +214,7 @@ export function tagTrayHTML() {
 }
 
 export function renderTags() {
-  const container = state.rootShadow?.querySelector(CSS_SELECTORS.s287);
+  const container = state.rootShadow?.querySelector(CSS_SELECTORS.tagTray);
   if (container && state.draft) container.innerHTML = tagTrayHTML();
 }
 
@@ -245,7 +245,7 @@ export function addChips(value, focus = true) {
   state.autoFixSummary = removed ? `${removed} duplicata(s) eliminada(s) automaticamente.` : "";
   renderTags();
   renderBlockEditor();
-  if (focus) state.rootShadow?.querySelector(CSS_SELECTORS.s263)?.focus();
+  if (focus) state.rootShadow?.querySelector(CSS_SELECTORS.chipInput)?.focus();
 }
 
 export function selectionHTML() {
@@ -419,7 +419,7 @@ export function builderHTML() {
 
 export function renderBlockEditor() {
   const root = state.rootShadow;
-  const container = root?.querySelector(CSS_SELECTORS.s288);
+  const container = root?.querySelector(CSS_SELECTORS.blocksContainer);
   if (container && state.draft) container.innerHTML = blockHTML(state.draft.blocks, 0, true);
   displayPreview();
 }
@@ -752,7 +752,9 @@ export function applyXTheme(host) {
   // X's own primary column gets the reliable text color, and the palette
   // follows that setting even if Safari uses another OS appearance.
   const element =
-    document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094) || document.body;
+    document.querySelector(CSS_SELECTORS.primaryColumn) ||
+    document.querySelector(CSS_SELECTORS.mainElement) ||
+    document.body;
   const color = getComputedStyle(element).color || getComputedStyle(document.body).color;
   const rgb =
     color
@@ -777,8 +779,8 @@ export function applyXTheme(host) {
 export function renderRoot() {
   if (!state.rootShadow) return;
   applyXTheme(state.rootHost);
-  const oldBody = state.rootShadow.querySelector(CSS_SELECTORS.s289);
-  const oldView = state.rootShadow.querySelector(CSS_SELECTORS.s003)?.dataset.view;
+  const oldBody = state.rootShadow.querySelector(CSS_SELECTORS.workspaceScrollArea);
+  const oldView = state.rootShadow.querySelector(CSS_SELECTORS.replPanel)?.dataset.view;
   const restoreScroll = Boolean(state.open && oldBody && oldView === state.view);
   const scrollTop = restoreScroll ? oldBody.scrollTop : 0;
   state.rootShadow.innerHTML = `<style>${CSS}${CUSTOM_CSS}${workbenchOverrides2}</style>
@@ -788,12 +790,12 @@ export function renderRoot() {
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
   } else Studio.menu.close("workspace");
   if (restoreScroll) {
-    const body = state.rootShadow.querySelector(CSS_SELECTORS.s289);
+    const body = state.rootShadow.querySelector(CSS_SELECTORS.workspaceScrollArea);
     if (body) body.scrollTop = scrollTop;
   }
   if (state.open && state.view === "editor") {
     displayPreview();
-    validateRawWorkbench(state.rootShadow.querySelector(CSS_SELECTORS.s206)?.value || "");
+    validateRawWorkbench(state.rootShadow.querySelector(CSS_SELECTORS.rawQueryField)?.value || "");
   }
 }
 
@@ -804,7 +806,7 @@ export function renderDock() {
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
   const onSearch = /^\/(?:search(?:\/|$)|hashtag\/)/.test(location.pathname);
-  const horizontalScroll = dock.querySelector(CSS_SELECTORS.s250)?.scrollLeft || 0;
+  const horizontalScroll = dock.querySelector(CSS_SELECTORS.searchDock)?.scrollLeft || 0;
   dock.innerHTML = `<style>
 ${CSS}${CUSTOM_CSS}${workbenchOverrides1}</style><nav class="dock" data-route="${onSearch ? "search" : "home"}" aria-label="Timelines personalizadas">
       <span class="dock-caption">${onSearch ? "Pesquisas" : "Minha Home"}</span>
@@ -824,12 +826,12 @@ ${CSS}${CUSTOM_CSS}${workbenchOverrides1}</style><nav class="dock" data-route="$
       <button data-act="open" title="Organizar pesquisas">⚙</button>
     </nav>`;
   dock
-    .querySelectorAll(CSS_SELECTORS.s290)
+    .querySelectorAll(CSS_SELECTORS.studioListButtons)
     .forEach(
       (button) =>
         (button.onclick = () => Studio.navigate(studioListIndex(Studio) + "/" + button.dataset.studioList)),
     );
-  const nav = dock.querySelector(CSS_SELECTORS.s250);
+  const nav = dock.querySelector(CSS_SELECTORS.searchDock);
   if (nav) nav.scrollLeft = horizontalScroll;
 }
 
@@ -881,7 +883,7 @@ export function inspectNativeQuery(query) {
 }
 
 export function liveNativeQuery() {
-  const input = document.querySelector(CSS_SELECTORS.s188);
+  const input = document.querySelector(CSS_SELECTORS.nativeSearchInput);
   return input?.value?.trim() || nativeSearch()?.query || "";
 }
 

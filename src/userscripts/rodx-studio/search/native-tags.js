@@ -9,7 +9,7 @@ export let NativeQueryTags;
 export function initializeDeckNativeQueryTags() {
   NativeQueryTags = (() => {
     const pending = [];
-    const input = () => document.querySelector(CSS_SELECTORS.s203);
+    const input = () => document.querySelector(CSS_SELECTORS.nestedNativeSearchInput);
     const current = () => input()?.value || nativeSearch()?.query || "";
     const set = (value) => {
       const field = input();
@@ -40,7 +40,7 @@ export function initializeDeckNativeQueryTags() {
       return true;
     };
     const route = () => {
-      const nav = document.querySelector(CSS_SELECTORS.s204);
+      const nav = document.querySelector(CSS_SELECTORS.exploreSidebarLinks);
       if (nav) nav.click();
       else showRodxToast("Abra a busca do X para editar as hashtags.", "info");
     };

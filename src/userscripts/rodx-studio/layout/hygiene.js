@@ -33,8 +33,8 @@ export function initializeDeckXInterfaceHygiene() {
       event.stopImmediatePropagation();
       // Use React's existing click handler on the status permalink.
       const anchor =
-        article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052) ||
-        article.querySelector(CSS_SELECTORS.s052);
+        article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks) ||
+        article.querySelector(CSS_SELECTORS.statusLinks);
       if (!anchor) {
         showRodxToast("Link nativo do tweet não encontrado.", "error");
         return;
@@ -64,10 +64,10 @@ export function initializeDeckXInterfaceHygiene() {
       return button;
     }
     function replaceTweetGrok(article) {
-      const controls = [...article.querySelectorAll(CSS_SELECTORS.s294())].filter(
-        (el) => !el.closest(CSS_SELECTORS.s054),
+      const controls = [...article.querySelectorAll(CSS_SELECTORS.grokActionCandidates())].filter(
+        (el) => !el.closest(CSS_SELECTORS.tweetTextOrReplacement),
       );
-      let replacement = article.querySelector(CSS_SELECTORS.s055);
+      let replacement = article.querySelector(CSS_SELECTORS.grokReplacement);
       if (controls.length) {
         const original = controls[0];
         if (!replacement) replacement = createOpenButton(article);
@@ -76,7 +76,7 @@ export function initializeDeckXInterfaceHygiene() {
       } else if (replacement) {
         replacement.remove();
       }
-      const oldOpen = article.querySelector(CSS_SELECTORS.s056);
+      const oldOpen = article.querySelector(CSS_SELECTORS.expandResultAction);
       if (oldOpen) oldOpen.hidden = Boolean(controls.length);
     }
     function hideGrok(root = document) {
@@ -84,10 +84,10 @@ export function initializeDeckXInterfaceHygiene() {
         replaceTweetGrok(article);
       }
       for (const el of root.querySelectorAll(grokSelectors)) {
-        if (el.closest(CSS_SELECTORS.s055)) continue;
+        if (el.closest(CSS_SELECTORS.grokReplacement)) continue;
         el.classList.add("rodx-native-grok-hidden");
       }
-      for (const element of root.querySelectorAll(CSS_SELECTORS.s057)) {
+      for (const element of root.querySelectorAll(CSS_SELECTORS.dropdownOptions)) {
         if (
           grokText.test(element.innerText || element.textContent || "") ||
           grokText.test(element.getAttribute("aria-label") || "")
@@ -106,9 +106,9 @@ export function initializeDeckXInterfaceHygiene() {
       for (const control of root.querySelectorAll(selectors)) {
         if (expanded.has(control)) continue;
         if (!inlineMore.test((control.textContent || "").trim())) continue;
-        const link = control.closest(CSS_SELECTORS.s027);
+        const link = control.closest(CSS_SELECTORS.linksWithHref);
         if (link && !/^#?$/.test(link.getAttribute("href") || "")) continue;
-        if (control.closest(CSS_SELECTORS.s058)) continue;
+        if (control.closest(CSS_SELECTORS.tweetActionMenuItems)) continue;
         expanded.add(control);
         control.click();
       }

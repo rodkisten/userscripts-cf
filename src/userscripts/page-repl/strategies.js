@@ -10,7 +10,7 @@ export function createStrategies(host = window) {
   let trustedPolicy;
   const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : null;
   const parent = () => host.document.head || host.document.documentElement;
-  const nonce = () => host.document.querySelector(CSS_SELECTORS.s024)?.nonce || "";
+  const nonce = () => host.document.querySelector(CSS_SELECTORS.nonceScript)?.nonce || "";
   const requirePage = () => {
     if (!page) throw new Unavailable("unsafeWindow não disponível");
     return page;

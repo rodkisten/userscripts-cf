@@ -86,12 +86,13 @@ export function initializeDeckProfileLists() {
       if (Studio.services.lists) return Studio.services.lists.picker(handle, host);
       const expected = handle;
       const primary =
-        document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
+        document.querySelector(CSS_SELECTORS.primaryColumn) ||
+        document.querySelector(CSS_SELECTORS.mainContent);
       const trigger =
-        primary?.querySelector(CSS_SELECTORS.s074) ||
-        [...(primary?.querySelectorAll(CSS_SELECTORS.s116) || [])].find(
+        primary?.querySelector(CSS_SELECTORS.userActions) ||
+        [...(primary?.querySelectorAll(CSS_SELECTORS.interactiveButtons) || [])].find(
           (el) =>
-            !el.closest(CSS_SELECTORS.s041) &&
+            !el.closest(CSS_SELECTORS.articles) &&
             /^(?:more|mais|más|plus|more options|mais opções)$/i.test(el.getAttribute("aria-label") || ""),
         );
       if (!trigger) {
@@ -106,7 +107,7 @@ export function initializeDeckProfileLists() {
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         if (profile() !== expected) return;
-        const action = [...document.querySelectorAll(CSS_SELECTORS.s117)].find((el) =>
+        const action = [...document.querySelectorAll(CSS_SELECTORS.menuItems)].find((el) =>
           label.test(el.textContent || ""),
         );
         if (!action) continue;
@@ -144,7 +145,7 @@ export function initializeDeckProfileLists() {
     }
     function render() {
       if (!shadow) return;
-      let row = shadow.querySelector(CSS_SELECTORS.s118);
+      let row = shadow.querySelector(CSS_SELECTORS.listRows);
       if (!row) {
         const style = document.createElement("style");
         style.textContent = extractedCSS1;
@@ -153,7 +154,7 @@ export function initializeDeckProfileLists() {
         row.setAttribute("aria-label", "Listas deste perfil");
         shadow.append(style, row);
       }
-      const oldScroll = row.querySelector(CSS_SELECTORS.s119)?.scrollLeft || 0;
+      const oldScroll = row.querySelector(CSS_SELECTORS.listStrip)?.scrollLeft || 0;
       row.replaceChildren();
       const title = button("Listas" + (items.length ? " · " + items.length : ""), showAll);
       title.title = "RodX " + VERSION + " — listas deste perfil";
@@ -181,7 +182,7 @@ export function initializeDeckProfileLists() {
       row.lastChild.title = "Adicionar/remover das minhas listas";
       row.lastChild.setAttribute("aria-label", "Adicionar/remover das minhas listas");
       strip.scrollLeft = oldScroll;
-      const body = modal?.querySelector(CSS_SELECTORS.s120);
+      const body = modal?.querySelector(CSS_SELECTORS.allListItems);
       if (body && items.length) {
         body.replaceChildren();
         items.forEach((item) => body.append(listLink(item)));
@@ -235,39 +236,39 @@ export function initializeDeckProfileLists() {
     }
     function mountPoint(current) {
       const main =
-        document.querySelector(CSS_SELECTORS.s031) ||
-        document.querySelector(CSS_SELECTORS.s094) ||
-        document.querySelector(CSS_SELECTORS.s121);
+        document.querySelector(CSS_SELECTORS.primaryColumn) ||
+        document.querySelector(CSS_SELECTORS.mainElement) ||
+        document.querySelector(CSS_SELECTORS.mainRoleContainers);
       if (!main) return null;
-      const tabs = main.querySelector(CSS_SELECTORS.s035);
+      const tabs = main.querySelector(CSS_SELECTORS.tabLists);
       if (tabs) {
-        const block = tabs.closest(CSS_SELECTORS.s036) || tabs;
+        const block = tabs.closest(CSS_SELECTORS.scrollSnapList) || tabs;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
       // Mobile X does not consistently expose the desktop column/tab roles.
-      const reply = [...main.querySelectorAll(CSS_SELECTORS.s027)].find(
+      const reply = [...main.querySelectorAll(CSS_SELECTORS.linksWithHref)].find(
         (a) =>
           a.getAttribute("href")?.replace(/\/$/, "").toLowerCase() ===
           "/" + current.toLowerCase() + "/with_replies",
       );
       if (reply) {
-        const block = reply.closest(CSS_SELECTORS.s122) || reply.parentElement;
+        const block = reply.closest(CSS_SELECTORS.listNavigation) || reply.parentElement;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
-      const bio = main.querySelector(CSS_SELECTORS.s071);
+      const bio = main.querySelector(CSS_SELECTORS.profileDescription);
       if (bio)
         return {
           parent: bio.parentElement,
           before: bio.nextSibling,
         };
-      const name = main.querySelector(CSS_SELECTORS.s123);
-      if (name && !name.closest(CSS_SELECTORS.s041))
+      const name = main.querySelector(CSS_SELECTORS.profileHeaderIdentity);
+      if (name && !name.closest(CSS_SELECTORS.articles))
         return {
           parent: name.parentElement,
           before: name.nextSibling,
@@ -287,7 +288,7 @@ export function initializeDeckProfileLists() {
       if (!current) return;
       if (host?.isConnected) return;
       const point = mountPoint(current);
-      if (!point?.parent || point.parent.closest(CSS_SELECTORS.s041)) return;
+      if (!point?.parent || point.parent.closest(CSS_SELECTORS.articles)) return;
       stop();
       host?.remove();
       handle = current;

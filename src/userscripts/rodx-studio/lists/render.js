@@ -895,7 +895,7 @@ export function initializeRodX_lists_115() {
     ["xls-quick-follow", "quickAddFollow"],
     ["xls-quick-reposts", "quickAddDisableReposts"],
   ]) {
-    qs(CSS_SELECTORS.s300(id), shadow).addEventListener("change", (ev) => {
+    qs(CSS_SELECTORS.elementById(id), shadow).addEventListener("change", (ev) => {
       settings[key] = ev.target.checked;
       saveSettings();
     });
@@ -904,7 +904,7 @@ export function initializeRodX_lists_115() {
 
 export function initializeRodX_lists_116() {
   quickOptions.addEventListener("click", async (event) => {
-    const row = event.target.closest(CSS_SELECTORS.s139);
+    const row = event.target.closest(CSS_SELECTORS.quickPickerListOptions);
     if (!row || !quickUser) return;
     const id = row.dataset.quickListId;
     const user = {
@@ -944,7 +944,7 @@ export function initializeRodX_lists_116() {
       closeQuickPicker();
       quickToast(`@${user.username} → ${name}: adicionado`);
     } catch (error) {
-      qs(CSS_SELECTORS.s133, shadow).textContent = error.message || String(error);
+      qs(CSS_SELECTORS.quickPickerStatus, shadow).textContent = error.message || String(error);
     }
   });
 }
@@ -987,7 +987,7 @@ export function render() {
     fila: renderQueue,
   };
   body.innerHTML = `${noteHTML()}${sections[state.tab]?.() || ""}`;
-  qs(CSS_SELECTORS.s140, shadow).textContent =
+  qs(CSS_SELECTORS.listsFooter, shadow).textContent =
     `${state.lists.length} listas locais · ${state.scan ? "coletando membros…" : "sincronização ao navegar"} · X Lists Studio`;
 }
 

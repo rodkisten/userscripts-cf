@@ -72,7 +72,7 @@ export function initializeDeckDirectLinks() {
     }
     function scan() {
       if (++scans % 3 !== 0) return;
-      const anchors = [...document.querySelectorAll(CSS_SELECTORS.s089)].filter((a) =>
+      const anchors = [...document.querySelectorAll(CSS_SELECTORS.tweetContentLinks)].filter((a) =>
         SHORT.test(a.getAttribute("href") || ""),
       );
       let count = 0;

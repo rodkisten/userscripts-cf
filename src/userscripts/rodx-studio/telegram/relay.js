@@ -137,7 +137,7 @@ export function initializeDeckRelay() {
     }
     function getForm() {
       const root = state.rootShadow;
-      const field = (name) => root?.querySelector(CSS_SELECTORS.s291(name));
+      const field = (name) => root?.querySelector(CSS_SELECTORS.relayFieldByName(name));
       return {
         enabled: Boolean(field("enabled")?.checked),
         url: String(field("url")?.value || ""),
@@ -354,12 +354,12 @@ export function initializeDeckRelay() {
     function containsVideo(article) {
       // Keep images, GIF previews represented only as images, and link cards
       // free of the Telegram button. Retest as lazy-loaded video mounts.
-      return Boolean(article.querySelector(CSS_SELECTORS.s305()));
+      return Boolean(article.querySelector(CSS_SELECTORS.videoAndPlayerContainers()));
     }
     function parsePost(article) {
       if (!(article instanceof Element)) return null;
-      const timeLink = article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052);
-      const links = [timeLink, ...article.querySelectorAll(CSS_SELECTORS.s052)].filter(Boolean);
+      const timeLink = article.querySelector(CSS_SELECTORS.timestamps)?.closest(CSS_SELECTORS.statusLinks);
+      const links = [timeLink, ...article.querySelectorAll(CSS_SELECTORS.statusLinks)].filter(Boolean);
       for (const a of links) {
         try {
           const parsed = new URL(a.href, location.origin);
@@ -367,7 +367,7 @@ export function initializeDeckRelay() {
           if (!match) continue;
           const id = match[1];
           const owner = parsed.pathname.match(/^\/([^/]+)\/status\//)?.[1] || "";
-          const text = article.querySelector(CSS_SELECTORS.s207)?.innerText || "";
+          const text = article.querySelector(CSS_SELECTORS.nativeTweetText)?.innerText || "";
           return {
             id,
             key: `twitter:${id}`,
@@ -587,7 +587,7 @@ export function initializeDeckRelay() {
     }
     function notice(message, kind = "info") {
       if (!state.rootShadow) return;
-      let node = state.rootShadow.querySelector(CSS_SELECTORS.s208);
+      let node = state.rootShadow.querySelector(CSS_SELECTORS.relayNotice);
       if (!node) {
         node = document.createElement("div");
         node.id = "rodx-relay-notice";
@@ -601,7 +601,7 @@ export function initializeDeckRelay() {
       toastTimer = setTimeout(() => node.remove(), 4400);
     }
     function removeConfirm() {
-      state.rootShadow?.querySelector(CSS_SELECTORS.s209)?.remove();
+      state.rootShadow?.querySelector(CSS_SELECTORS.relayConfirm)?.remove();
     }
     function showConfirm({ post, destinations, title, onAccept }) {
       removeConfirm();
@@ -624,7 +624,7 @@ export function initializeDeckRelay() {
           </div>
         </section>`;
       state.rootShadow?.append(wrapper);
-      wrapper.querySelector(CSS_SELECTORS.s210)?.focus();
+      wrapper.querySelector(CSS_SELECTORS.relayForceAction)?.focus();
     }
     function handleConfirm(action) {
       const pending = confirmState;
@@ -827,8 +827,8 @@ export function initializeDeckRelay() {
       }
       if (previous) previous.button?.remove();
       const action =
-        article.querySelector(CSS_SELECTORS.s211)?.closest(CSS_SELECTORS.s083) ||
-        article.querySelector(CSS_SELECTORS.s083);
+        article.querySelector(CSS_SELECTORS.replyButton)?.closest(CSS_SELECTORS.actionGroups) ||
+        article.querySelector(CSS_SELECTORS.actionGroups);
       const container = action || article;
       const button = document.createElement("button");
       button.type = "button";
@@ -852,9 +852,9 @@ export function initializeDeckRelay() {
       observe(card);
     }
     function addVideoOverlay(article, post) {
-      const video = article.querySelector(CSS_SELECTORS.s143);
+      const video = article.querySelector(CSS_SELECTORS.videos);
       if (!video) return;
-      const wrapper = video.closest(CSS_SELECTORS.s212) || video.parentElement;
+      const wrapper = video.closest(CSS_SELECTORS.tweetVideoContainers) || video.parentElement;
       if (!wrapper) return;
       let card = videoOverlays.get(post.key);
       if (card && (card.wrapper !== wrapper || !card.button.isConnected)) {
@@ -901,7 +901,7 @@ export function initializeDeckRelay() {
       if (!force && now - lastScan < 450) return;
       lastScan = now;
       ensureStyle();
-      const articles = document.querySelectorAll(CSS_SELECTORS.s150);
+      const articles = document.querySelectorAll(CSS_SELECTORS.tweetArticleContainers);
       let count = 0;
       for (const article of articles) {
         if (count++ >= 220) break;
@@ -923,7 +923,7 @@ export function initializeDeckRelay() {
         if (
           !overlay.button.isConnected ||
           !overlay.wrapper.isConnected ||
-          overlay.wrapper.closest(CSS_SELECTORS.s168)?.dataset.rodxRelayId !== overlay.post.id
+          overlay.wrapper.closest(CSS_SELECTORS.nativeTweets)?.dataset.rodxRelayId !== overlay.post.id
         ) {
           overlay.button.remove();
           videoOverlays.delete(key);
@@ -969,7 +969,7 @@ export function initializeDeckRelay() {
         key: `twitter:${viewer.id}`,
         url: viewer.url,
         author: viewer.url.match(/x\.com\/([^/]+)\/status/)?.[1] || "",
-        text: viewer.layer.querySelector(CSS_SELECTORS.s207)?.innerText?.slice(0, 1800) || "",
+        text: viewer.layer.querySelector(CSS_SELECTORS.nativeTweetText)?.innerText?.slice(0, 1800) || "",
         isVideo: true,
       };
       if (

@@ -23,7 +23,7 @@ export function initializeDeckViewportPlayback() {
       return possible ? Math.min(1, (x * y) / possible) : 0;
     }
     function isFeed(video) {
-      return Boolean(video.closest(CSS_SELECTORS.s167)) && !video.closest(CSS_SELECTORS.s026);
+      return Boolean(video.closest(CSS_SELECTORS.mainTweets)) && !video.closest(CSS_SELECTORS.xOverlayLayers);
     }
     function update() {
       raf = 0;
@@ -114,7 +114,7 @@ export function initializeDeckViewportPlayback() {
         document.addEventListener(
           "click",
           (event) => {
-            const button = event.target.closest?.(CSS_SELECTORS.s116);
+            const button = event.target.closest?.(CSS_SELECTORS.interactiveButtons);
             if (
               !button ||
               !/^(?:play|pause|reproduzir|pausar)$/i.test(
@@ -122,8 +122,8 @@ export function initializeDeckViewportPlayback() {
               )
             )
               return;
-            const card = button.closest(CSS_SELECTORS.s168);
-            const video = card?.querySelector(CSS_SELECTORS.s143);
+            const card = button.closest(CSS_SELECTORS.nativeTweets);
+            const video = card?.querySelector(CSS_SELECTORS.videos);
             const item = video && info.get(video);
             if (item && !video.paused) item.manuallyPausedUntil = performance.now() + 30000;
           },

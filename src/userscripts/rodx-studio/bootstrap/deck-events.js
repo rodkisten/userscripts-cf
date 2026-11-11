@@ -42,7 +42,7 @@ export function initializeRodX_deck_164() {
     "click",
     (event) => {
       const el = event.target instanceof Element ? event.target : null;
-      if (!el || el.closest(CSS_SELECTORS.s025)) return;
+      if (!el || el.closest(CSS_SELECTORS.studioSelectionRoots)) return;
       if (
         !state.visual.blockTweetOpen ||
         event.defaultPrevented ||
@@ -55,8 +55,8 @@ export function initializeRodX_deck_164() {
       )
         return;
       const article = el.closest(XDOM.tweet);
-      if (!article || article.closest(CSS_SELECTORS.s026)) return;
-      if (el.closest(CSS_SELECTORS.s293())) return;
+      if (!article || article.closest(CSS_SELECTORS.xOverlayLayers)) return;
+      if (el.closest(CSS_SELECTORS.tweetInteractiveElements())) return;
       if (window.getSelection()?.toString().trim()) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -124,8 +124,11 @@ export function initializeRodX_deck_175() {
 export function initializeRodX_deck_176() {
   Studio.navigate = (href) => {
     const target = new URL(href, location.origin);
-    const anchor = [...document.querySelectorAll(CSS_SELECTORS.s027)].find(
-      (a) => a.pathname === target.pathname && a.search === target.search && !a.closest(CSS_SELECTORS.s028),
+    const anchor = [...document.querySelectorAll(CSS_SELECTORS.linksWithHref)].find(
+      (a) =>
+        a.pathname === target.pathname &&
+        a.search === target.search &&
+        !a.closest(CSS_SELECTORS.studioOwnedElements),
     );
     if (anchor) anchor.click();
     else location.assign(target.href);

@@ -258,14 +258,14 @@ export async function importFile(file) {
 
 export function initializeRodX_lists_227() {
   shadow.addEventListener("click", async (event) => {
-    const tab = event.target.closest(CSS_SELECTORS.s013);
+    const tab = event.target.closest(CSS_SELECTORS.replTab);
     if (tab) {
       state.tab = tab.dataset.tab;
       state.message = "";
       render();
       return;
     }
-    const button = event.target.closest(CSS_SELECTORS.s106);
+    const button = event.target.closest(CSS_SELECTORS.dataActions);
     if (!button) return;
     const action = button.dataset.action,
       id = button.dataset.id;
@@ -440,7 +440,7 @@ export function initializeRodX_lists_227() {
         return;
       }
       if (action === "import-file") {
-        qs(CSS_SELECTORS.s107, shadow)?.click();
+        qs(CSS_SELECTORS.listsImportFile, shadow)?.click();
         return;
       }
       if (action === "pause-queue") {
@@ -577,7 +577,7 @@ export function initializeRodX_lists_229() {
           : event.target.value;
       saveSettings();
       if (PER_LIST_FIELDS.includes(key)) saveListPreset();
-      const preview = qs(CSS_SELECTORS.s108, shadow);
+      const preview = qs(CSS_SELECTORS.listsQueryInput, shadow);
       if (preview) preview.textContent = buildQuery();
     }
   });

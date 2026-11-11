@@ -61,7 +61,7 @@ export default {
       shadow.adoptedStyleSheets = [sheet];
     } catch {
       const style = document.createElement("style");
-      const nonce = document.querySelector(CSS_SELECTORS.s001)?.nonce;
+      const nonce = document.querySelector(CSS_SELECTORS.nonceBearingElements)?.nonce;
       if (nonce) style.nonce = nonce;
       style.textContent = css;
       shadow.append(style);
@@ -71,33 +71,33 @@ export default {
     shadow.append(container);
     (document.body || document.documentElement).append(host);
     const $ = (selector) => shadow.querySelector(selector);
-    const editor = $(CSS_SELECTORS.s002),
-      panel = $(CSS_SELECTORS.s003),
-      launcher = $(CSS_SELECTORS.s004),
-      output = $(CSS_SELECTORS.s005);
+    const editor = $(CSS_SELECTORS.textareas),
+      panel = $(CSS_SELECTORS.replPanel),
+      launcher = $(CSS_SELECTORS.replLauncher),
+      output = $(CSS_SELECTORS.replOutput);
     const rawLabel = document.createElement("label");
     const rawInput = document.createElement("input");
     rawInput.type = "checkbox";
     rawInput.dataset.raw = "";
     rawLabel.append(rawInput, document.createTextNode("Script global (sem wrapper)"));
-    $(CSS_SELECTORS.s006).prepend(rawLabel);
+    $(CSS_SELECTORS.replOptions).prepend(rawLabel);
     editor.value = state.code || "";
-    $(CSS_SELECTORS.s007).value = state.timeout || 3000;
+    $(CSS_SELECTORS.replTimeout).value = state.timeout || 3000;
     for (const strategy of strategies) {
       const option = document.createElement("option");
       option.value = strategy.id;
       option.textContent = strategy.label;
-      $(CSS_SELECTORS.s008).append(option);
+      $(CSS_SELECTORS.replMethod).append(option);
     }
     for (const name of Object.keys(examples)) {
       const option = document.createElement("option");
       option.value = name;
       option.textContent = name;
-      $(CSS_SELECTORS.s009).append(option);
+      $(CSS_SELECTORS.replExample).append(option);
     }
     function save() {
       state.code = editor.value;
-      state.timeout = Number($(CSS_SELECTORS.s007).value) || 3000;
+      state.timeout = Number($(CSS_SELECTORS.replTimeout).value) || 3000;
       persist.save(state);
     }
     function print(kind, title, value) {
@@ -142,12 +142,12 @@ export default {
       runner?.dispose();
       runner = createRunner({
         onEvent: event,
-        timeout: Math.min(60000, Math.max(250, Number($(CSS_SELECTORS.s007).value) || 3000)),
+        timeout: Math.min(60000, Math.max(250, Number($(CSS_SELECTORS.replTimeout).value) || 3000)),
       });
     }
     freshRunner();
     function renderMethods() {
-      const list = $(CSS_SELECTORS.s010);
+      const list = $(CSS_SELECTORS.replResults);
       list.replaceChildren();
       for (const method of strategies) {
         const result = results.get(method.id),
@@ -165,7 +165,7 @@ export default {
         const button = document.createElement("button");
         button.textContent = "Usar no console";
         button.onclick = () => {
-          $(CSS_SELECTORS.s008).value = method.id;
+          $(CSS_SELECTORS.replMethod).value = method.id;
           tab("console");
         };
         row.append(title, detail, button);
@@ -173,7 +173,7 @@ export default {
       }
     }
     function renderHistory() {
-      const list = $(CSS_SELECTORS.s011);
+      const list = $(CSS_SELECTORS.replHistory);
       list.replaceChildren();
       for (const item of [...state.history].reverse()) {
         const row = document.createElement("div");
@@ -194,29 +194,29 @@ export default {
       }
     }
     function tab(name) {
-      for (const view of shadow.querySelectorAll(CSS_SELECTORS.s012))
+      for (const view of shadow.querySelectorAll(CSS_SELECTORS.replView))
         view.hidden = view.dataset.view !== name;
-      for (const button of shadow.querySelectorAll(CSS_SELECTORS.s013))
+      for (const button of shadow.querySelectorAll(CSS_SELECTORS.replTab))
         button.setAttribute("aria-selected", String(button.dataset.tab === name));
       if (name === "history") renderHistory();
     }
     function enabledMethods() {
-      return strategies.filter((method) => !method.advanced || $(CSS_SELECTORS.s014).checked);
+      return strategies.filter((method) => !method.advanced || $(CSS_SELECTORS.replAdvanced).checked);
     }
     async function probe() {
       for (const method of enabledMethods()) {
         if (abort.signal.aborted) break;
-        $(CSS_SELECTORS.s015).textContent = "Testando " + method.label;
+        $(CSS_SELECTORS.replStatus).textContent = "Testando " + method.label;
         await runner.run(method, probeCode, { signal: abort.signal, probe: true });
       }
     }
     async function execute(all = false) {
       const text = editor.value;
       if (text.length > 2000000) throw Error("Código maior que 2 MB.");
-      const raw = $(CSS_SELECTORS.s016).checked;
+      const raw = $(CSS_SELECTORS.replRawMode).checked;
       const compiled = raw
         ? { code: text, names: [] }
-        : compile(text, { persist: $(CSS_SELECTORS.s017).checked, knownNames: [...knownNames] });
+        : compile(text, { persist: $(CSS_SELECTORS.replPersist).checked, knownNames: [...knownNames] });
       if (!state.history.length || state.history.at(-1).code !== text)
         state.history.push({ code: text, at: new Date().toISOString() });
       let bytes = state.history.reduce((sum, item) => sum + item.code.length, 0);
@@ -232,7 +232,7 @@ export default {
         }
         return;
       }
-      let method = strategies.find((item) => item.id === $(CSS_SELECTORS.s008).value);
+      let method = strategies.find((item) => item.id === $(CSS_SELECTORS.replMethod).value);
       if (!method) {
         for (const candidate of automaticCandidates(enabledMethods())) {
           if (abort.signal.aborted) return;
@@ -255,17 +255,17 @@ export default {
     async function locked(action) {
       if (busy) return;
       busy = true;
-      runner.configure($(CSS_SELECTORS.s007).value);
+      runner.configure($(CSS_SELECTORS.replTimeout).value);
       abort = new AbortController();
-      for (const b of shadow.querySelectorAll(CSS_SELECTORS.s018)) b.disabled = true;
+      for (const b of shadow.querySelectorAll(CSS_SELECTORS.replExecutionActions)) b.disabled = true;
       try {
         await action();
       } catch (error) {
         print("error", error.name, error.message);
       } finally {
         busy = false;
-        for (const b of shadow.querySelectorAll(CSS_SELECTORS.s018)) b.disabled = false;
-        $(CSS_SELECTORS.s015).textContent = "Pronto · " + results.size + " métodos observados";
+        for (const b of shadow.querySelectorAll(CSS_SELECTORS.replExecutionActions)) b.disabled = false;
+        $(CSS_SELECTORS.replStatus).textContent = "Pronto · " + results.size + " métodos observados";
       }
     }
     async function copy(text) {
@@ -297,7 +297,7 @@ export default {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     async function fetchURL() {
-      const url = new URL($(CSS_SELECTORS.s019).value);
+      const url = new URL($(CSS_SELECTORS.replUrl).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use uma URL HTTP/HTTPS.");
       if (typeof GM_xmlhttpRequest !== "function") throw Error("GM_xmlhttpRequest indisponível.");
       const text = await new Promise((resolve, reject) =>
@@ -319,10 +319,10 @@ export default {
       print("log", "URL carregada no editor", "Código não executado.");
     }
     function external() {
-      const url = new URL($(CSS_SELECTORS.s019).value);
+      const url = new URL($(CSS_SELECTORS.replUrl).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use HTTP/HTTPS.");
       const script = document.createElement("script");
-      if ($(CSS_SELECTORS.s020).checked) script.type = "module";
+      if ($(CSS_SELECTORS.replModule).checked) script.type = "module";
       script.src = url.href;
       script.onload = () => {
         print(
@@ -375,7 +375,7 @@ export default {
           ...Object.getOwnPropertyNames(window),
         ],
       );
-      const list = $(CSS_SELECTORS.s021);
+      const list = $(CSS_SELECTORS.replCompletions);
       list.replaceChildren();
       for (const name of [...names]
         .filter(
@@ -422,7 +422,7 @@ export default {
       complete: completions,
       "copy-report": async () => {
         await copy(JSON.stringify(report(), null, 2));
-        $(CSS_SELECTORS.s015).textContent = "Relatório copiado";
+        $(CSS_SELECTORS.replStatus).textContent = "Relatório copiado";
       },
       export: () => download({ schema: 1, history: state.history, report: report() }),
       import: () => {
@@ -456,7 +456,7 @@ export default {
       external: () => locked(external),
     };
     ctx.listen(shadow, "click", (event) => {
-      const button = event.target.closest(CSS_SELECTORS.s022);
+      const button = event.target.closest(CSS_SELECTORS.replActionsAndTabs);
       if (!button) return;
       if (button.dataset.tab) {
         tab(button.dataset.tab);
@@ -471,11 +471,14 @@ export default {
       clearTimeout(syntaxTimer);
       syntaxTimer = setTimeout(() => {
         try {
-          compile(editor.value, { persist: $(CSS_SELECTORS.s017).checked, knownNames: [...knownNames] });
-          $(CSS_SELECTORS.s023).textContent =
+          compile(editor.value, {
+            persist: $(CSS_SELECTORS.replPersist).checked,
+            knownNames: [...knownNames],
+          });
+          $(CSS_SELECTORS.replSyntax).textContent =
             "Sintaxe válida · Ctrl/Cmd+Enter executa · histórico com Alt+↑/↓ · ctx.vars persiste na sessão";
         } catch (error) {
-          $(CSS_SELECTORS.s023).textContent = error.message;
+          $(CSS_SELECTORS.replSyntax).textContent = error.message;
         }
       }, 300);
     });
@@ -502,7 +505,7 @@ export default {
         editor.value = state.history[historyCursor]?.code || "";
       }
     });
-    ctx.listen($(CSS_SELECTORS.s009), "change", (event) => {
+    ctx.listen($(CSS_SELECTORS.replExample), "change", (event) => {
       if (examples[event.target.value]) {
         editor.value = examples[event.target.value];
         save();

@@ -59,7 +59,7 @@ export function extractHandle() {
       if (name) return name;
     }
   }
-  const switcher = document.querySelector(CSS_SELECTORS.s042);
+  const switcher = document.querySelector(CSS_SELECTORS.accountSwitcher);
   if (switcher) {
     const labels = [
       switcher.innerText,
@@ -71,7 +71,7 @@ export function extractHandle() {
       const match = label.match(/(?:^|[^\w])@([A-Za-z0-9_]{1,15})(?!\w)/);
       if (match) return match[1].toLowerCase();
     }
-    for (const link of switcher.querySelectorAll(CSS_SELECTORS.s027)) {
+    for (const link of switcher.querySelectorAll(CSS_SELECTORS.linksWithHref)) {
       const name = handleFromHref(link.getAttribute("href"));
       if (name) return name;
     }

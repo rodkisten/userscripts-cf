@@ -69,7 +69,7 @@ export function visibleLimit() {
 }
 
 export function applyPostLimit() {
-  document.querySelectorAll(CSS_SELECTORS.s037).forEach((cell) => {
+  document.querySelectorAll(CSS_SELECTORS.limitedOrUnmatchedPosts).forEach((cell) => {
     cell.style.removeProperty("display");
     delete cell.dataset.rodxLimited;
     delete cell.dataset.rodxUnmatched;

@@ -41,17 +41,17 @@ export function createSeekPreviews(Studio, getOptions) {
   }
   function source(item) {
     const video = item.video,
-      article = video.closest(CSS_SELECTORS.s041);
-    const id = [...(article?.querySelectorAll(CSS_SELECTORS.s052) || [])]
+      article = video.closest(CSS_SELECTORS.articles);
+    const id = [...(article?.querySelectorAll(CSS_SELECTORS.statusLinks) || [])]
       .map((a) => a.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1])
       .find(Boolean);
-    const index = article ? [...article.querySelectorAll(CSS_SELECTORS.s143)].indexOf(video) : 0;
+    const index = article ? [...article.querySelectorAll(CSS_SELECTORS.videos)].indexOf(video) : 0;
     const media = sources.get(id)?.[index] || sources.get(id)?.[0];
     return (
       media?.url ||
       [
         /\.mp4(?:\?|$)/.test(video.currentSrc || "") ? video.currentSrc : "",
-        video.querySelector(CSS_SELECTORS.s162)?.src,
+        video.querySelector(CSS_SELECTORS.mp4Sources)?.src,
       ].find(Boolean) ||
       ""
     );
@@ -184,8 +184,8 @@ export function createSeekPreviews(Studio, getOptions) {
     let item = entries.get(video);
     if (item?.skin === skin) return;
     if (item) cleanup(video);
-    const slider = root.querySelector(CSS_SELECTORS.s163),
-      thumbnail = root.querySelector(CSS_SELECTORS.s164);
+    const slider = root.querySelector(CSS_SELECTORS.mediaTimeSlider),
+      thumbnail = root.querySelector(CSS_SELECTORS.mediaSliderThumbnail);
     if (!slider || !thumbnail) return;
     const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";

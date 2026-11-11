@@ -209,11 +209,11 @@ export function createNetworkInspector(Studio) {
       .reverse()
       .map((id) => records.get(id))
       .filter((x) => x && match(x));
-    $(CSS_SELECTORS.s169).textContent =
+    $(CSS_SELECTORS.inspectorStats).textContent =
       `${order.length} registros · ${(state.bytes / 1048576).toFixed(1)} MiB · ` +
       `${state.countDropped} descartados por limite/TTL · ${state.capture ? "capturando" : "pausado"}`;
-    $(CSS_SELECTORS.s170).textContent = state.capture ? "Pausar" : "Retomar";
-    const box = $(CSS_SELECTORS.s171);
+    $(CSS_SELECTORS.inspectorPause).textContent = state.capture ? "Pausar" : "Retomar";
+    const box = $(CSS_SELECTORS.inspectorRequestList);
     const previousScroll = box.scrollTop;
     box.innerHTML =
       rows
@@ -236,7 +236,7 @@ export function createNetworkInspector(Studio) {
         )
         .join("") || '<p class="rx-warning">Nenhum request corresponde ao filtro.</p>';
     box.scrollTop = previousScroll;
-    $(CSS_SELECTORS.s172).hidden = rows.length <= state.visible;
+    $(CSS_SELECTORS.inspectorLoadMore).hidden = rows.length <= state.visible;
   }
   function textValue(item) {
     if (state.tab === "Headers")
@@ -288,7 +288,7 @@ export function createNetworkInspector(Studio) {
           fragment.append(child);
         }
         offset += 70;
-        wrap.querySelector(CSS_SELECTORS.s173)?.remove();
+        wrap.querySelector(CSS_SELECTORS.inspectorPages)?.remove();
         wrap.append(fragment);
         if (offset < keys.length) {
           const more = document.createElement("button");
@@ -305,7 +305,7 @@ export function createNetworkInspector(Studio) {
   }
   function renderDetail() {
     const item = records.get(state.active);
-    const target = $(CSS_SELECTORS.s174);
+    const target = $(CSS_SELECTORS.inspectorDetail);
     if (!item) {
       target.textContent = "Selecione um request para inspecionar Headers, Payload e Response.";
       return;
@@ -349,7 +349,7 @@ export function createNetworkInspector(Studio) {
         </div>
         <div data-rx="body"></div>
       `;
-    const body = $(CSS_SELECTORS.s175);
+    const body = $(CSS_SELECTORS.inspectorBody);
     if (state.raw) {
       const pre = document.createElement("pre");
       pre.textContent = state.reveal ? String(raw) : String(redact(String(raw)));
@@ -400,21 +400,21 @@ export function createNetworkInspector(Studio) {
     setTimeout(() => URL.revokeObjectURL(href), 10000);
   }
   root.addEventListener("input", (event) => {
-    if (event.target.matches(CSS_SELECTORS.s176)) {
+    if (event.target.matches(CSS_SELECTORS.inspectorFilter)) {
       state.search = event.target.value;
       state.visible = 75;
       renderRows();
     }
-    if (event.target.matches(CSS_SELECTORS.s177)) {
+    if (event.target.matches(CSS_SELECTORS.inspectorBodySearch)) {
       const text = event.target.value.trim().toLocaleLowerCase("pt-BR");
-      for (const node of root.querySelectorAll(CSS_SELECTORS.s178)) {
+      for (const node of root.querySelectorAll(CSS_SELECTORS.inspectorTreeRows)) {
         node.style.background =
           text && node.textContent.toLocaleLowerCase("pt-BR").includes(text) ? "#faca3766" : "";
       }
     }
   });
   root.addEventListener("change", (event) => {
-    if (event.target.matches(CSS_SELECTORS.s179)) {
+    if (event.target.matches(CSS_SELECTORS.inspectorRetentionFields)) {
       const field = event.target.dataset.rxRetain;
       const limits = {
         maxItems: [20, 1000, 1],
@@ -431,17 +431,17 @@ export function createNetworkInspector(Studio) {
       renderRows();
       renderDetail();
     }
-    if (event.target.matches(CSS_SELECTORS.s180)) {
+    if (event.target.matches(CSS_SELECTORS.inspectorStatus)) {
       state.status = event.target.value;
       renderRows();
     }
-    if (event.target.matches(CSS_SELECTORS.s181)) {
+    if (event.target.matches(CSS_SELECTORS.inspectorSelection)) {
       if (event.target.checked) selected.add(event.target.dataset.rxSelect);
       else selected.delete(event.target.dataset.rxSelect);
     }
   });
   root.addEventListener("click", async (event) => {
-    const open = event.target.closest(CSS_SELECTORS.s182);
+    const open = event.target.closest(CSS_SELECTORS.inspectorOpenActions);
     if (open) {
       state.active = open.dataset.rxOpen;
       state.reveal = false;
@@ -450,14 +450,14 @@ export function createNetworkInspector(Studio) {
       renderDetail();
       return;
     }
-    const tab = event.target.closest(CSS_SELECTORS.s183);
+    const tab = event.target.closest(CSS_SELECTORS.inspectorTabs);
     if (tab) {
       state.tab = tab.dataset.rxTab;
       state.raw = false;
       renderDetail();
       return;
     }
-    const action = event.target.closest(CSS_SELECTORS.s184)?.dataset.rx;
+    const action = event.target.closest(CSS_SELECTORS.inspectorControls)?.dataset.rx;
     switch (action) {
       case "pause":
         state.capture = !state.capture;
@@ -522,13 +522,15 @@ export function createNetworkInspector(Studio) {
         let prefix = "$";
         for (const key of ["", ...keys]) {
           if (key) prefix += "." + key;
-          const branch = [...root.querySelectorAll(CSS_SELECTORS.s185)].find(
+          const branch = [...root.querySelectorAll(CSS_SELECTORS.inspectorTreeDetails)].find(
             (el) => el.dataset.path === prefix,
           );
           if (branch) branch.open = true;
           await Promise.resolve();
         }
-        root.querySelector(CSS_SELECTORS.s303(CSS.escape(prefix)))?.scrollIntoView({ block: "nearest" });
+        root
+          .querySelector(CSS_SELECTORS.inspectorTreePath(CSS.escape(prefix)))
+          ?.scrollIntoView({ block: "nearest" });
         break;
       }
     }
@@ -540,13 +542,15 @@ export function createNetworkInspector(Studio) {
       ["ttlMs", 60000],
       ["bodyLimit", 1048576],
     ]) {
-      root.querySelector(CSS_SELECTORS.s304(field)).value = String(settings[field] / scale);
+      root.querySelector(CSS_SELECTORS.inspectorRetentionField(field)).value = String(
+        settings[field] / scale,
+      );
     }
     if (state.open) return;
     state.open = true;
     root.style.display = "block";
     const diagnostic = Studio.diagnostics().selectors;
-    $(CSS_SELECTORS.s186).textContent =
+    $(CSS_SELECTORS.inspectorSelectors).textContent =
       `X nesta tela: ${diagnostic.tweets} tweets · ${diagnostic.userCells} células de usuário · ` +
       `coluna ${diagnostic.primaryColumnFound ? "encontrada" : "não encontrada"} · ` +
       `busca ${diagnostic.nativeSearchFound ? "encontrada" : "não encontrada"}. ` +

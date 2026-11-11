@@ -10,8 +10,8 @@ export function initializeDeckQuickRepost() {
         // Only actual taps on X's native repost action, never programmatic clicks,
         // quotes, menu actions or interactions with RodX controls.
         if (!event.isTrusted || active) return;
-        const button = event.target.closest?.(CSS_SELECTORS.s216);
-        if (!button || button.closest(CSS_SELECTORS.s247)) return;
+        const button = event.target.closest?.(CSS_SELECTORS.retweetToggleButtons);
+        if (!button || button.closest(CSS_SELECTORS.retweetConfirmButtons)) return;
         const undo = button.getAttribute("data-testid") === "unretweet";
         const selector = undo ? '[data-testid="unretweetConfirm"]' : '[data-testid="retweetConfirm"]';
         let observer = null;

@@ -121,7 +121,7 @@ export function connectStudioNetwork(Studio) {
     }
     const root = document.documentElement;
     if (!root) return;
-    const nonce = document.querySelector(CSS_SELECTORS.s024)?.nonce || "";
+    const nonce = document.querySelector(CSS_SELECTORS.nonceScript)?.nonce || "";
     if (tried.has(nonce)) return;
     tried.add(nonce);
     try {

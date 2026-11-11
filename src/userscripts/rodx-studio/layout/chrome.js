@@ -25,11 +25,13 @@ export function initializeDeckScrollChrome() {
       document.documentElement.classList.toggle("rodx-chrome-hidden", value);
     }
     function discover() {
-      const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
+      const main =
+        document.querySelector(CSS_SELECTORS.primaryColumn) ||
+        document.querySelector(CSS_SELECTORS.mainContent);
       if (!main) return;
-      for (const seed of main.querySelectorAll(CSS_SELECTORS.s044)) {
-        if (seed.closest(CSS_SELECTORS.s041)) continue;
-        if (seed.matches(CSS_SELECTORS.s045)) chrome.add(seed);
+      for (const seed of main.querySelectorAll(CSS_SELECTORS.stickyChromeCandidates)) {
+        if (seed.closest(CSS_SELECTORS.articles)) continue;
+        if (seed.matches(CSS_SELECTORS.topNavigationBars)) chrome.add(seed);
         let node = seed;
         while (node && node !== main) {
           const pos = getComputedStyle(node).position;
@@ -40,9 +42,9 @@ export function initializeDeckScrollChrome() {
           node = node.parentElement;
         }
       }
-      for (const node of document.querySelectorAll(CSS_SELECTORS.s046)) chrome.add(node);
+      for (const node of document.querySelectorAll(CSS_SELECTORS.studioNavigationRoots)) chrome.add(node);
       // Mobile X sometimes places its main toolbar outside the primary column.
-      for (const node of document.querySelectorAll(CSS_SELECTORS.s047)) {
+      for (const node of document.querySelectorAll(CSS_SELECTORS.bannerHeader)) {
         const r = node.getBoundingClientRect();
         if (innerWidth < 800 && r.width > innerWidth * 0.7 && r.height < 180) chrome.add(node);
       }
@@ -95,7 +97,7 @@ export function initializeDeckScrollChrome() {
         if (article.hidden || getComputedStyle(article).display === "none") continue;
         const r = article.getBoundingClientRect();
         if (r.top <= top + 2 && r.bottom > top + 44) {
-          candidate = article.querySelector(CSS_SELECTORS.s048);
+          candidate = article.querySelector(CSS_SELECTORS.tweetTopbar);
           if (candidate) break;
         }
       }
@@ -109,7 +111,7 @@ export function initializeDeckScrollChrome() {
         portal.className = "rodx-tweet-topbar";
         portal.setAttribute("aria-label", "Autor e ações do tweet atual");
         portal.addEventListener("click", (event) => {
-          const target = event.target.closest(CSS_SELECTORS.s049);
+          const target = event.target.closest(CSS_SELECTORS.tweetTopbarControls);
           if (!target || !active) return;
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -134,7 +136,7 @@ export function initializeDeckScrollChrome() {
         portal.innerHTML = markup;
         portal.dataset.markup = markup;
       }
-      let context = portal.querySelector(CSS_SELECTORS.s050);
+      let context = portal.querySelector(CSS_SELECTORS.tweetContextLabel);
       if (!context) {
         context = document.createElement("small");
         context.dataset.rodxContext = "1";
@@ -148,7 +150,7 @@ export function initializeDeckScrollChrome() {
       portal.style.setProperty("padding-top", contextLabel ? "15px" : "3px", "important");
       candidate.classList.add("rodx-topbar-floating-source");
       portal.hidden = false;
-      const rect = candidate.closest(CSS_SELECTORS.s041).getBoundingClientRect();
+      const rect = candidate.closest(CSS_SELECTORS.articles).getBoundingClientRect();
       portal.style.left = Math.max(0, rect.left) + "px";
       portal.style.width = Math.min(innerWidth - Math.max(0, rect.left), rect.width) + "px";
       portal.style.top = top + "px";
@@ -158,7 +160,7 @@ export function initializeDeckScrollChrome() {
       const y = Math.max(0, scrollY),
         delta = y - previousY;
       previousY = y;
-      const editing = document.activeElement?.matches(CSS_SELECTORS.s051);
+      const editing = document.activeElement?.matches(CSS_SELECTORS.editableFields);
       if (y < 30 || editing) setHidden(false);
       else if (Math.abs(delta) > 0.5) {
         const next = delta > 0 ? 1 : -1;
@@ -179,7 +181,7 @@ export function initializeDeckScrollChrome() {
         !state.visual.snap ||
         document.visibilityState !== "visible" ||
         window.getSelection()?.toString() ||
-        document.activeElement?.matches(CSS_SELECTORS.s051)
+        document.activeElement?.matches(CSS_SELECTORS.editableFields)
       )
         return;
       const top = offset();

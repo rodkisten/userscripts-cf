@@ -128,14 +128,14 @@ export function initializeDeckSearchHistory() {
     }
     function onSubmit(event) {
       const form = event.target;
-      if (!(form instanceof Element) || !form.querySelector(CSS_SELECTORS.s188)) return;
-      const input = form.querySelector(CSS_SELECTORS.s188);
+      if (!(form instanceof Element) || !form.querySelector(CSS_SELECTORS.nativeSearchInput)) return;
+      const input = form.querySelector(CSS_SELECTORS.nativeSearchInput);
       void record(input.value, "submit", "live");
     }
     function onKeydown(event) {
       if (event.key !== "Enter" || event.isComposing) return;
       const input = event.target;
-      if (input instanceof HTMLInputElement && input.matches(CSS_SELECTORS.s197)) {
+      if (input instanceof HTMLInputElement && input.matches(CSS_SELECTORS.nativeSearchBox)) {
         void record(input.value, "submit", "live");
       }
     }
@@ -280,7 +280,7 @@ export function initializeDeckSearchHistory() {
       if (!dialog) return;
       const generation = ++renderGeneration;
       const account = accountKey();
-      const target = dialog.querySelector(CSS_SELECTORS.s198);
+      const target = dialog.querySelector(CSS_SELECTORS.recentHistoryRows);
       try {
         const { rows, more } = await page(account, 0, visible, searchTerm);
         if (generation !== renderGeneration || !dialog || account !== accountKey()) return;
@@ -359,7 +359,7 @@ export function initializeDeckSearchHistory() {
       }
     }
     function ensureLauncher() {
-      const input = document.querySelector(CSS_SELECTORS.s188);
+      const input = document.querySelector(CSS_SELECTORS.nativeSearchInput);
       if (!input?.isConnected) {
         launch?.remove();
         launch = null;
@@ -398,7 +398,8 @@ export function initializeDeckSearchHistory() {
       // Fixed/portal placement means the X header keeps its exact flex tree.
       // Show one button on narrow screens; Query Lab remains in its menu.
       const rect =
-        input.closest(CSS_SELECTORS.s199)?.getBoundingClientRect() || input.getBoundingClientRect();
+        input.closest(CSS_SELECTORS.searchLandmarks)?.getBoundingClientRect() ||
+        input.getBoundingClientRect();
       const spaceRight = window.innerWidth - rect.right;
       const spaceLeft = rect.left;
       let x;
@@ -414,7 +415,7 @@ export function initializeDeckSearchHistory() {
       // drawing over that native control or forcing the header to wrap.
       const centerY = rect.top + Math.max(0, rect.height / 2);
       const occupied = document.elementFromPoint(x + 19, centerY);
-      const competing = occupied?.closest?.(CSS_SELECTORS.s116);
+      const competing = occupied?.closest?.(CSS_SELECTORS.interactiveButtons);
       const collide = competing && !launch.contains(competing) && !input.contains(competing);
       if (collide) {
         two = false;

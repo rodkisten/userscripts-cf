@@ -63,8 +63,8 @@ export function initializeDeckVideoTapGuard() {
     }
     function mediaContext(target) {
       const el = target?.nodeType === 1 ? target : target?.parentElement;
-      if (!el?.closest || el.closest(CSS_SELECTORS.s149)) return null;
-      const article = el.closest(CSS_SELECTORS.s150);
+      if (!el?.closest || el.closest(CSS_SELECTORS.immersiveActionRoots)) return null;
+      const article = el.closest(CSS_SELECTORS.tweetArticleContainers);
       if (!article) return null;
       const hit = el.closest(PLAYER);
       if (!hit || !article.contains(hit)) return null;
@@ -76,7 +76,7 @@ export function initializeDeckVideoTapGuard() {
       const control = el.closest(CONTROL);
       if (control) {
         const isPlayerSurface =
-          control.matches(CSS_SELECTORS.s151) &&
+          control.matches(CSS_SELECTORS.buttonRolesOrButtons) &&
           (control.matches(VIDEO) || Boolean(control.querySelector(VIDEO)));
         const label = [
           control.getAttribute("aria-label"),
@@ -89,7 +89,7 @@ export function initializeDeckVideoTapGuard() {
       }
       // The player can expose an unlabelled draggable timeline. Do not
       // interpret horizontal scrubbing as a request to open the viewer.
-      const named = el.closest(CSS_SELECTORS.s152);
+      const named = el.closest(CSS_SELECTORS.accessibleLabelCandidates);
       if (
         named &&
         CONTROL_LABEL.test(
@@ -100,11 +100,11 @@ export function initializeDeckVideoTapGuard() {
       )
         return null;
       const player =
-        el.closest(CSS_SELECTORS.s153) ||
-        (hit.matches(CSS_SELECTORS.s143) ? hit : hit.querySelector(CSS_SELECTORS.s143)) ||
+        el.closest(CSS_SELECTORS.videoPlayerWrappers) ||
+        (hit.matches(CSS_SELECTORS.videos) ? hit : hit.querySelector(CSS_SELECTORS.videos)) ||
         hit;
       const status = article
-        .querySelector(CSS_SELECTORS.s052)
+        .querySelector(CSS_SELECTORS.statusLinks)
         ?.getAttribute("href")
         ?.match(/\/status\/(\d{6,25})/)?.[1];
       const key = `${status || identity(article)}:${identity(player)}`;
@@ -123,9 +123,9 @@ export function initializeDeckVideoTapGuard() {
     }
     function onSeekStrip(event, context) {
       if (!context || !event) return false;
-      const video = context.player.matches?.(CSS_SELECTORS.s143)
+      const video = context.player.matches?.(CSS_SELECTORS.videos)
         ? context.player
-        : context.player.querySelector?.(CSS_SELECTORS.s143);
+        : context.player.querySelector?.(CSS_SELECTORS.videos);
       if (!video) return false;
       const rect = video.getBoundingClientRect();
       if (!rect.width || !rect.height) return false;

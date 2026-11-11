@@ -20,7 +20,9 @@ export function tick() {
     state.readTimers.forEach(clearTimeout);
     state.readTimers.clear();
     state.readProgress = new WeakMap();
-    document.querySelectorAll(CSS_SELECTORS.s043).forEach((article) => delete article.dataset.rodxObserved);
+    document
+      .querySelectorAll(CSS_SELECTORS.observedElements)
+      .forEach((article) => delete article.dataset.rodxObserved);
     state.filterSignature = "";
     repaint();
   }

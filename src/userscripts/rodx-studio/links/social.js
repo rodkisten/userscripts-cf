@@ -58,8 +58,8 @@ export function initializeDeckSocialAppLinks() {
     }
     function decorate(anchor, app) {
       if (!app) return;
-      if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(CSS_SELECTORS.s090)) {
-        anchor.querySelector(CSS_SELECTORS.s090)?.remove();
+      if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(CSS_SELECTORS.appLinkIcon)) {
+        anchor.querySelector(CSS_SELECTORS.appLinkIcon)?.remove();
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("viewBox", "0 0 24 24");
         icon.setAttribute("aria-hidden", "true");
@@ -90,7 +90,7 @@ export function initializeDeckSocialAppLinks() {
       if (!document.body) return;
       ensureStyle();
       let inspected = 0;
-      for (const anchor of document.querySelectorAll(CSS_SELECTORS.s091)) {
+      for (const anchor of document.querySelectorAll(CSS_SELECTORS.tweetSocialLinks)) {
         if (++inspected > 320) break;
         let app = identify(
           anchor.dataset.rodxExpanded || anchor.getAttribute("data-expanded-url") || anchor.href,
