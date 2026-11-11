@@ -18,10 +18,12 @@
     "new": "node build/new.mjs",
     "release": "node build/release.mjs",
     "build:hosting": "npm run build && node build/hosting.mjs",
-    "ci:cloudflare": "npm run format:check && npm test && node build/hosting.mjs",
+    "ci:cloudflare": "npm run format:check && npm run lint && npm test && node build/hosting.mjs",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
-    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json"
+    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json",
+    "lint": "eslint src build",
+    "lint:fix": "eslint src build --fix"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
@@ -35,7 +37,9 @@
     "svgo": "^4.1.0",
     "typescript": "7.0.2",
     "vite": "8.3.8",
-    "@solidjs/compiler": "2.0.0-rc.21"
+    "@solidjs/compiler": "2.0.0-rc.21",
+    "eslint": "^9.39.1",
+    "@typescript-eslint/parser": "^8.46.4"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
