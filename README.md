@@ -74,11 +74,31 @@ Os módulos executam no contexto da página por injeção de script clássico. A
 
 Os módulos `x-foundation` e `example-site` são demonstrações. No X, a base apenas registra uma ativação e mostra uma mensagem no console; em `example.com`, a demonstração mostra um pequeno indicador e importa `nanoid` do npm. **O RodX gigante ainda não foi migrado.**
 
-## CI e hospedagem
+## Build e publicação no Cloudflare
 
-O workflow valida cada push/PR e oferece `dist/` e o Worker do laboratório como artefatos. O `run-name` identifica branch/referência. Ele não faz deploy automático: a integração com Cloudflare continua pendente.
+O Worker `userscripts-cf` está conectado à branch `main` deste repositório pelo **Cloudflare Workers Builds**. O código-fonte continua privado. Cada push na `main` executa:
 
-Os instaláveis são autossuficientes. O mecanismo remoto com atualização, snapshot e rollback continua isolado em `labs/remote-release/`; conectar esse mecanismo aos módulos reais é uma etapa posterior, depois da validação da infraestrutura. Não existe atualização remota automática escondida nestes novos instaláveis.
+1. `npm run ci:cloudflare`: formatação, testes, Vite e preparação do Worker com os instaláveis.
+2. `npm run deploy:cloudflare`: publica o Worker pela API usando o build token do Cloudflare.
+3. `npm run publish:github`: espelho opcional dos arquivos em uma Release do GitHub, quando `GH_TOKEN` estiver configurado.
+
+Distribuição pública:
+
+- https://userscripts-cf.kisten.workers.dev/unified.user.js
+- https://userscripts-cf.kisten.workers.dev/unified.meta.js
+- https://userscripts-cf.kisten.workers.dev/manifest.json
+
+A publicação em Cloudflare não precisa de token do GitHub no código. A integração Git autorizada permite ao serviço clonar o repositório. O deploy usa um build token já cadastrado no Cloudflare; nenhum novo serviço de armazenamento ou plano pago foi ativado. O Worker serve somente os arquivos empacotados, sem acesso ao repositório em tempo de execução.
+
+Os instaláveis usam essas URLs públicas em `@updateURL` e `@downloadURL`. Aumente a versão no `package.json` antes de publicar uma atualização; o Tampermonkey não detecta alterações de código com a mesma versão.
+
+Os workflows do GitHub Actions ficaram apenas manuais e opcionais. O fluxo normal não depende deles.
+
+### Espelhar também em GitHub Releases
+
+No Cloudflare, abra **userscripts-cf → Settings → Builds → Variables and secrets** e adicione **GH_TOKEN** como **secret**. Use um token fine-grained do GitHub limitado ao repositório `userscripts-cf`, com **Contents: Read and write**. Não coloque o valor no repositório nem nas URLs. O `GITHUB_TOKEN` automático do Actions não existe no ambiente do Cloudflare.
+
+Sem esse secret, o espelho é ignorado explicitamente no log e a distribuição pública pelo Cloudflare funciona normalmente. Com ele, o build cria um draft, envia os `.js`, metadados e checksums e só então publica a Release. Uma Release já publicada com arquivos diferentes exige incremento de versão. Releases neste repositório privado continuam privadas; o Tampermonkey usa o Cloudflare para atualização pública.
 
 ## Laboratório remoto preservado
 
@@ -97,20 +117,22 @@ O build inclui `@updateURL` e `@downloadURL` em todos os instaláveis. A versão
 A URL base fica em `distribution.config.js` e pode ser sobrescrita por `USERSCRIPTS_BASE_URL` no momento do build. O padrão é:
 
 ```text
-https://github.com/rodkisten/userscripts-cf/releases/latest/download
+https://userscripts-cf.kisten.workers.dev
 ```
 
 O unificado é distribuído como `unified.meta.js` e `unified.user.js`; os individuais seguem o mesmo padrão com seu ID. O Tampermonkey verifica a versão do `.meta.js` e usa o `.user.js` quando uma atualização está disponível, conforme suas configurações de atualização. A atualização é do instalável completo, não um hot reload de módulos durante a página aberta.
 
-**Este repositório é privado.** Seus assets de Release também exigem acesso ao repositório. Não dependa dessa URL privada para atualizações automáticas sem autenticação. Para isso, configure uma URL pública de distribuição no Cloudflare ou um repositório público dedicado aos bundles. Não inclua tokens na URL nem no userscript; nenhuma alteração de visibilidade foi feita.
+**Este repositório é privado.** Seus assets de Release exigem acesso ao repositório. A distribuição pública pelo Cloudflare já está configurada, preservando a privacidade do fonte. Não inclua tokens na URL nem no userscript.
 
-### Publicação automática por tag
+### Workflow opcional no GitHub Actions (manual)
 
-O workflow `Release userscripts` executa os testes e publica os `.user.js`, `.meta.js`, manifesto e checksums como assets. Ele publica primeiro em draft e só promove a Release depois dos uploads. O tag precisa coincidir com `v` + versão de `package.json`.
+O workflow manual `Release userscripts` permanece disponível como alternativa e exige runner do GitHub. O fluxo normal usa Cloudflare Builds. O tag informado ao workflow manual precisa coincidir com `v` + versão de `package.json`.
 
 ```sh
-npm version patch
-git push origin main --follow-tags
+npm version patch --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "Release userscripts"
+git push origin main
 ```
 
 Também pode executar o workflow manualmente pela aba Actions, informando um tag correspondente à versão do código selecionado. O workflow usa o token automático do GitHub com permissão `contents: write`; não requer token pessoal salvo no código.

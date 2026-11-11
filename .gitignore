@@ -2,3 +2,4 @@ node_modules/
 .cf/
 labs/remote-release/worker.mjs
 dist/
+hosting/worker.mjs
