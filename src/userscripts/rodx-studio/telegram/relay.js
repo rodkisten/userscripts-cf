@@ -1,3 +1,11 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-2.css?inline";
+import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-3.css?inline";
+import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-4.css?inline";
+import inlineCSS5 from "../../../styles/inline/userscripts-rodx-studio-telegram-relay-5.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-telegram-relay-1.css?inline";
 import { PREFIX } from "../config/search.js";
 import { identityLabel } from "../identity/account.js";
 import { ImmersiveDownload } from "../media/download.js";
@@ -83,9 +91,9 @@ export function initializeDeckRelay() {
       const isOn = settings.enabled;
       return `<div class="stack" id="rodx-relay-settings">
         ${!gmAvailable ? '<div class="banner">Sem GM Storage, as configurações personalizadas não podem ser persistidas com segurança. Os padrões incorporados ao script continuam disponíveis.</div>' : ""}
-        <div class="banner" style="margin-bottom:6px">✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
+        <div class="banner" style="${cssDeclarations(inlineCSS1)}">✈ <b>${isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
           · Destino padrão ${clean(settings.channels || DEFAULTS.channels)}.
-          <details style="margin-top:6px"><summary style="cursor:pointer">Sobre segurança e confirmação</summary>
+          <details style="${cssDeclarations(inlineCSS2)}"><summary style="${cssDeclarations(inlineCSS3)}">Sobre segurança e confirmação</summary>
             O Worker/D1 confirma os envios; o script nunca marca um post como enviado
             só por ter sido clicado. O token não entra nos backups das buscas.
           </details></div>
@@ -112,7 +120,7 @@ export function initializeDeckRelay() {
         <div class="row">
           <button class="btn" data-act="relay-refresh">↻ Rever status dos posts visíveis</button>
         </div>
-        <details class="section" style="margin-top:4px">
+        <details class="section" style="${cssDeclarations(inlineCSS4)}">
           <summary>ℹ Como funciona e segurança</summary>
           <div class="section-body">
             <p class="muted">Em buscas, hashtags, Home, bookmarks e perfis, o botão Telegram
@@ -129,7 +137,7 @@ export function initializeDeckRelay() {
     }
     function getForm() {
       const root = state.rootShadow;
-      const field = (name) => root?.querySelector(`[data-relay="${name}"]`);
+      const field = (name) => root?.querySelector(CSS_SELECTORS.s291(name));
       return {
         enabled: Boolean(field("enabled")?.checked),
         url: String(field("url")?.value || ""),
@@ -346,18 +354,12 @@ export function initializeDeckRelay() {
     function containsVideo(article) {
       // Keep images, GIF previews represented only as images, and link cards
       // free of the Telegram button. Retest as lazy-loaded video mounts.
-      return Boolean(
-        article.querySelector(
-          'video, [data-testid="videoPlayer"], [data-testid="videoComponent"], ' +
-            '[data-testid="video-player"], [data-testid="videoPlayerContainer"], ' +
-            '[data-testid="videoComponent"], [data-testid="videoPlayerDiv"]',
-        ),
-      );
+      return Boolean(article.querySelector(CSS_SELECTORS.s305()));
     }
     function parsePost(article) {
       if (!(article instanceof Element)) return null;
-      const timeLink = article.querySelector("time")?.closest('a[href*="/status/"]');
-      const links = [timeLink, ...article.querySelectorAll('a[href*="/status/"]')].filter(Boolean);
+      const timeLink = article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052);
+      const links = [timeLink, ...article.querySelectorAll(CSS_SELECTORS.s052)].filter(Boolean);
       for (const a of links) {
         try {
           const parsed = new URL(a.href, location.origin);
@@ -365,7 +367,7 @@ export function initializeDeckRelay() {
           if (!match) continue;
           const id = match[1];
           const owner = parsed.pathname.match(/^\/([^/]+)\/status\//)?.[1] || "";
-          const text = article.querySelector('[data-testid="tweetText"]')?.innerText || "";
+          const text = article.querySelector(CSS_SELECTORS.s207)?.innerText || "";
           return {
             id,
             key: `twitter:${id}`,
@@ -585,7 +587,7 @@ export function initializeDeckRelay() {
     }
     function notice(message, kind = "info") {
       if (!state.rootShadow) return;
-      let node = state.rootShadow.querySelector("#rodx-relay-notice");
+      let node = state.rootShadow.querySelector(CSS_SELECTORS.s208);
       if (!node) {
         node = document.createElement("div");
         node.id = "rodx-relay-notice";
@@ -599,7 +601,7 @@ export function initializeDeckRelay() {
       toastTimer = setTimeout(() => node.remove(), 4400);
     }
     function removeConfirm() {
-      state.rootShadow?.querySelector("#rodx-relay-confirm")?.remove();
+      state.rootShadow?.querySelector(CSS_SELECTORS.s209)?.remove();
     }
     function showConfirm({ post, destinations, title, onAccept }) {
       removeConfirm();
@@ -616,13 +618,13 @@ export function initializeDeckRelay() {
           <p>${destinations.length} destino(s) já confirmado(s) pelo D1.<br>
             Reenviar <b>${html(post.url)}</b> apenas para esses destinos?</p>
           <p class="muted">${html(destinations.join(", "))}</p>
-          <div class="row" style="justify-content:flex-end">
+          <div class="row" style="${cssDeclarations(inlineCSS5)}">
             <button class="btn" data-act="relay-cancel">Cancelar</button>
             <button class="btn primary" data-act="relay-force">Reenviar</button>
           </div>
         </section>`;
       state.rootShadow?.append(wrapper);
-      wrapper.querySelector('[data-act="relay-force"]')?.focus();
+      wrapper.querySelector(CSS_SELECTORS.s210)?.focus();
     }
     function handleConfirm(action) {
       const pending = confirmState;
@@ -785,103 +787,7 @@ export function initializeDeckRelay() {
       if (styleAdded) return;
       const css = document.createElement("style");
       css.id = "rodx-relay-native-css";
-      css.textContent = `
-button.rodx-tg-action {
-  appearance: none !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: rgb(113, 118, 123) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  min-height: 34px !important;
-  min-width: 34px !important;
-  font:
-    400 12px/1.2 system-ui,
-    -apple-system,
-    sans-serif !important;
-  border-radius: 999px !important;
-  padding: 5px 9px !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  touch-action: manipulation !important;
-  transition:
-    color 0.12s,
-    background 0.12s !important;
-}
-button.rodx-tg-action:hover,
-button.rodx-tg-action:focus-visible {
-  color: rgb(29, 155, 240) !important;
-  background: rgba(29, 155, 240, 0.1) !important;
-}
-button.rodx-tg-action[data-relay-state="sent"] {
-  color: rgb(0, 186, 124) !important;
-}
-button.rodx-tg-action[data-relay-state="partial"] {
-  color: rgb(255, 173, 59) !important;
-}
-button.rodx-tg-action[data-relay-state="sending"],
-button.rodx-tg-action[data-relay-state="checking"] {
-  opacity: 0.6 !important;
-}
-button.rodx-tg-action:disabled {
-  cursor: progress !important;
-}
-button.rodx-tg-action.rodx-tg-immersive {
-  position: fixed !important;
-  right: max(131px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  padding: 9px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  z-index: 2147481101 !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-}
-button.rodx-tg-immersive[data-relay-state="sent"] {
-  color: #00ba7c !important;
-}
-button.rodx-tg-immersive[data-relay-state="partial"] {
-  color: #ffad3b !important;
-}
-button.rodx-tg-action.rodx-tg-video-overlay {
-  position: absolute !important;
-  top: 7px !important;
-  right: 7px !important;
-  z-index: 91 !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 6px !important;
-  color: #fff !important;
-  background: rgba(15, 20, 25, 0.7) !important;
-  opacity: 0.8 !important;
-  border: 1px solid rgba(255, 255, 255, 0.17) !important;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-button.rodx-tg-video-overlay:is(:hover, :focus-visible) {
-  opacity: 1 !important;
-}
-button.rodx-tg-video-overlay[data-relay-state="sent"] {
-  color: #00ba7c !important;
-}
-button.rodx-tg-video-overlay[data-relay-state="partial"] {
-  color: #ffad3b !important;
-}
-@media (max-width: 500px) {
-  button.rodx-tg-action {
-    padding: 5px !important;
-    gap: 3px !important;
-  }
-}
-`;
+      css.textContent = extractedCSS1;
       document.head.append(css);
       styleAdded = true;
     }
@@ -921,8 +827,8 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
       }
       if (previous) previous.button?.remove();
       const action =
-        article.querySelector('[data-testid="reply"]')?.closest('[role="group"]') ||
-        article.querySelector('[role="group"]');
+        article.querySelector(CSS_SELECTORS.s211)?.closest(CSS_SELECTORS.s083) ||
+        article.querySelector(CSS_SELECTORS.s083);
       const container = action || article;
       const button = document.createElement("button");
       button.type = "button";
@@ -946,12 +852,9 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
       observe(card);
     }
     function addVideoOverlay(article, post) {
-      const video = article.querySelector("video");
+      const video = article.querySelector(CSS_SELECTORS.s143);
       if (!video) return;
-      const wrapper =
-        video.closest(
-          '[data-testid="videoPlayerContainer"], [data-testid="videoPlayer"], [data-testid="videoComponent"]',
-        ) || video.parentElement;
+      const wrapper = video.closest(CSS_SELECTORS.s212) || video.parentElement;
       if (!wrapper) return;
       let card = videoOverlays.get(post.key);
       if (card && (card.wrapper !== wrapper || !card.button.isConnected)) {
@@ -998,9 +901,7 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
       if (!force && now - lastScan < 450) return;
       lastScan = now;
       ensureStyle();
-      const articles = document.querySelectorAll(
-        ':is(article,[role="article"])[data-testid="tweet"], article',
-      );
+      const articles = document.querySelectorAll(CSS_SELECTORS.s150);
       let count = 0;
       for (const article of articles) {
         if (count++ >= 220) break;
@@ -1022,8 +923,7 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         if (
           !overlay.button.isConnected ||
           !overlay.wrapper.isConnected ||
-          overlay.wrapper.closest(':is(article,[role="article"])[data-testid="tweet"]')?.dataset
-            .rodxRelayId !== overlay.post.id
+          overlay.wrapper.closest(CSS_SELECTORS.s168)?.dataset.rodxRelayId !== overlay.post.id
         ) {
           overlay.button.remove();
           videoOverlays.delete(key);
@@ -1069,7 +969,7 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
         key: `twitter:${viewer.id}`,
         url: viewer.url,
         author: viewer.url.match(/x\.com\/([^/]+)\/status/)?.[1] || "",
-        text: viewer.layer.querySelector('[data-testid="tweetText"]')?.innerText?.slice(0, 1800) || "",
+        text: viewer.layer.querySelector(CSS_SELECTORS.s207)?.innerText?.slice(0, 1800) || "",
         isVideo: true,
       };
       if (

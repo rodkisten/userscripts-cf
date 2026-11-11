@@ -1,3 +1,9 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-access-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-lists-access-2.css?inline";
+import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-lists-access-3.css?inline";
+import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-lists-access-4.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { studioListIndex } from "./routes.js";
 
 export function createListAccess(Studio, navigateSearch) {
@@ -114,18 +120,15 @@ export function createListAccess(Studio, navigateSearch) {
         void open().catch((error) => console.warn("[RodX] Listas:", error));
       };
     }
-    const home = document.querySelector('a[data-testid="AppTabBar_Home_Link"]');
+    const home = document.querySelector(CSS_SELECTORS.s092);
     let row = home?.parentElement;
-    while (row && row !== document.body && !row.querySelector('a[data-testid="AppTabBar_Explore_Link"]'))
-      row = row.parentElement;
+    while (row && row !== document.body && !row.querySelector(CSS_SELECTORS.s093)) row = row.parentElement;
     if (innerWidth < 800 && row && row !== document.body) {
-      footerButton.style.cssText =
-        "display:flex;flex-direction:column;gap:1px;font:10px Arial;align-items:center;justify-content:center;flex:0 0 44px;width:44px;min-height:44px;padding:0;border:0;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation";
+      footerButton.style.cssText = cssDeclarations(inlineCSS1);
       if (footerButton.parentElement !== row) row.append(footerButton);
     } else {
       // A compact fallback keeps access available when X temporarily unmounts its bottom navigation.
-      footerButton.style.cssText =
-        "position:fixed;left:12px;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:1400;width:42px;height:42px;display:flex;flex-direction:column;gap:1px;font:10px Arial;align-items:center;justify-content:center;border:1px solid #71767b66;border-radius:50%;background:var(--rodx-bar-bg,Canvas);color:var(--rodx-bar-fg,CanvasText);cursor:pointer;touch-action:manipulation";
+      footerButton.style.cssText = cssDeclarations(inlineCSS2);
       if (footerButton.parentElement !== document.body) document.body.append(footerButton);
     }
   }
@@ -138,18 +141,17 @@ export function createListAccess(Studio, navigateSearch) {
       profileHost?.remove();
       return;
     }
-    const main = document.querySelector('[data-testid="primaryColumn"]') || document.querySelector("main");
-    const identity = main?.querySelector('.rodx-profile-identity,[data-testid="UserName"]');
-    if (!identity || identity.closest("article")) return;
+    const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
+    const identity = main?.querySelector(CSS_SELECTORS.s095);
+    if (!identity || identity.closest(CSS_SELECTORS.s041)) return;
     if (!profileHost) {
       profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";
-      profileHost.style.cssText = "display:block;position:relative;max-width:100%;min-width:0;margin:4px 0;";
+      profileHost.style.cssText = cssDeclarations(inlineCSS3);
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "＋ Adicionar à lista";
-      button.style.cssText =
-        "font:500 13px TwitterChirp,Arial,sans-serif;min-height:36px;padding:5px 11px;border:1px solid #71767b66;border-radius:18px;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation";
+      button.style.cssText = cssDeclarations(inlineCSS4);
       button.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();

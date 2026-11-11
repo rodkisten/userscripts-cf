@@ -1,3 +1,5 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-gestures-1.css?inline";
 export let VideoTapGuard;
 
 export function initializeDeckVideoTapGuard() {
@@ -61,12 +63,8 @@ export function initializeDeckVideoTapGuard() {
     }
     function mediaContext(target) {
       const el = target?.nodeType === 1 ? target : target?.parentElement;
-      if (
-        !el?.closest ||
-        el.closest("#layers, #rodx-search-deck-root, .rodx-tg-action, #rodx-immersive-download")
-      )
-        return null;
-      const article = el.closest(':is(article,[role="article"])[data-testid="tweet"], article');
+      if (!el?.closest || el.closest(CSS_SELECTORS.s149)) return null;
+      const article = el.closest(CSS_SELECTORS.s150);
       if (!article) return null;
       const hit = el.closest(PLAYER);
       if (!hit || !article.contains(hit)) return null;
@@ -78,7 +76,7 @@ export function initializeDeckVideoTapGuard() {
       const control = el.closest(CONTROL);
       if (control) {
         const isPlayerSurface =
-          control.matches('[role="button"],button') &&
+          control.matches(CSS_SELECTORS.s151) &&
           (control.matches(VIDEO) || Boolean(control.querySelector(VIDEO)));
         const label = [
           control.getAttribute("aria-label"),
@@ -91,7 +89,7 @@ export function initializeDeckVideoTapGuard() {
       }
       // The player can expose an unlabelled draggable timeline. Do not
       // interpret horizontal scrubbing as a request to open the viewer.
-      const named = el.closest("[aria-label], [title], [data-testid]");
+      const named = el.closest(CSS_SELECTORS.s152);
       if (
         named &&
         CONTROL_LABEL.test(
@@ -102,13 +100,11 @@ export function initializeDeckVideoTapGuard() {
       )
         return null;
       const player =
-        el.closest(
-          '[data-testid="videoPlayerContainer"], [data-testid="videoPlayer"], [data-testid="videoComponent"], [data-testid="videoPlayerDiv"], [data-testid="video-player"]',
-        ) ||
-        (hit.matches("video") ? hit : hit.querySelector("video")) ||
+        el.closest(CSS_SELECTORS.s153) ||
+        (hit.matches(CSS_SELECTORS.s143) ? hit : hit.querySelector(CSS_SELECTORS.s143)) ||
         hit;
       const status = article
-        .querySelector('a[href*="/status/"]')
+        .querySelector(CSS_SELECTORS.s052)
         ?.getAttribute("href")
         ?.match(/\/status\/(\d{6,25})/)?.[1];
       const key = `${status || identity(article)}:${identity(player)}`;
@@ -127,9 +123,9 @@ export function initializeDeckVideoTapGuard() {
     }
     function onSeekStrip(event, context) {
       if (!context || !event) return false;
-      const video = context.player.matches?.("video")
+      const video = context.player.matches?.(CSS_SELECTORS.s143)
         ? context.player
-        : context.player.querySelector?.("video");
+        : context.player.querySelector?.(CSS_SELECTORS.s143);
       if (!video) return false;
       const rect = video.getBoundingClientRect();
       if (!rect.width || !rect.height) return false;
@@ -274,14 +270,7 @@ export function initializeDeckVideoTapGuard() {
       // but preserves pinch-to-zoom and vertical scrolling elsewhere.
       const css = document.createElement("style");
       css.id = "rodx-video-tap-guard-css";
-      css.textContent = `
-:is(article,[role="article"])[data-testid="tweet"] video,
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoPlayer"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoPlayerContainer"],
-:is(article,[role="article"])[data-testid="tweet"] [data-testid="videoComponent"] {
-  touch-action: manipulation;
-}
-`;
+      css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
       document.addEventListener("touchstart", onTouchStart, {
         capture: true,

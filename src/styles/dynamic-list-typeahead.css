@@ -1,0 +1,7 @@
+.declarations {
+  position: fixed;
+  z-index: 2147483645;
+  left: var(--rodx-value-1);
+  top: var(--rodx-value-2);
+  width: var(--rodx-value-3);
+}

@@ -1,3 +1,7 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-media-seek-preview-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline";
 export function createSeekPreviews(Studio, getOptions) {
   const entries = new Map(),
     sources = Studio.state.mediaSources || (Studio.state.mediaSources = new Map());
@@ -37,17 +41,17 @@ export function createSeekPreviews(Studio, getOptions) {
   }
   function source(item) {
     const video = item.video,
-      article = video.closest("article");
-    const id = [...(article?.querySelectorAll('a[href*="/status/"]') || [])]
+      article = video.closest(CSS_SELECTORS.s041);
+    const id = [...(article?.querySelectorAll(CSS_SELECTORS.s052) || [])]
       .map((a) => a.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1])
       .find(Boolean);
-    const index = article ? [...article.querySelectorAll("video")].indexOf(video) : 0;
+    const index = article ? [...article.querySelectorAll(CSS_SELECTORS.s143)].indexOf(video) : 0;
     const media = sources.get(id)?.[index] || sources.get(id)?.[0];
     return (
       media?.url ||
       [
         /\.mp4(?:\?|$)/.test(video.currentSrc || "") ? video.currentSrc : "",
-        video.querySelector('source[type="video/mp4"]')?.src,
+        video.querySelector(CSS_SELECTORS.s162)?.src,
       ].find(Boolean) ||
       ""
     );
@@ -111,8 +115,7 @@ export function createSeekPreviews(Studio, getOptions) {
       decoder.preload = "metadata";
       decoder.setAttribute("aria-hidden", "true");
       decoder.tabIndex = -1;
-      decoder.style.cssText =
-        "position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0;pointer-events:none";
+      decoder.style.cssText = cssDeclarations(inlineCSS1);
       decoder.src = url;
       document.body.append(decoder);
     }
@@ -181,29 +184,12 @@ export function createSeekPreviews(Studio, getOptions) {
     let item = entries.get(video);
     if (item?.skin === skin) return;
     if (item) cleanup(video);
-    const slider = root.querySelector("media-time-slider"),
-      thumbnail = root.querySelector("media-slider-thumbnail");
+    const slider = root.querySelector(CSS_SELECTORS.s163),
+      thumbnail = root.querySelector(CSS_SELECTORS.s164);
     if (!slider || !thumbnail) return;
     const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";
-    style.textContent = `
-:host([data-rodx-no-dim]) {
-  --media-controls-gradient: transparent !important;
-}
-:host([data-rodx-no-dim]) media-controls-backdrop.video-controls-backdrop {
-  background: transparent !important;
-  background-image: none !important;
-  opacity: 0 !important;
-}
-media-slider-thumbnail {
-  min-width: 160px;
-  max-width: 240px;
-  min-height: 90px;
-}
-media-slider-thumbnail[data-rodx-preview="unavailable"] {
-  display: none !important;
-}
-`;
+    style.textContent = extractedCSS1;
     skin.toggleAttribute("data-rodx-no-dim", getOptions().videoPauseDim !== true);
     root.append(style);
     const abort = new AbortController();

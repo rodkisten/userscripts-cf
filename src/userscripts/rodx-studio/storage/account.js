@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { normalizeBlockTree } from "../search/blocks.js";
@@ -58,7 +59,7 @@ export async function loadAccount(identity) {
   state.readTimers.forEach(clearTimeout);
   state.readTimers.clear();
   state.readProgress = new WeakMap();
-  document.querySelectorAll("[data-rodx-observed]").forEach((article) => delete article.dataset.rodxObserved);
+  document.querySelectorAll(CSS_SELECTORS.s043).forEach((article) => delete article.dataset.rodxObserved);
   state.presetEditingId = null;
   state.editingId = null;
   state.draft = null;

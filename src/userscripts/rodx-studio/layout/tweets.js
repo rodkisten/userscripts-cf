@@ -1,3 +1,8 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-layout-tweets-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-layout-tweets-2.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 
@@ -33,492 +38,7 @@ export function initializeDeckCompactLayout() {
       if (document.getElementById("rodx-compact-layout-css")) return;
       const node = document.createElement("style");
       node.id = "rodx-compact-layout-css";
-      node.textContent = `
-html.rodx-snap-enabled {
-  scroll-snap-type: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] {
-  padding-inline: 6px !important;
-  margin-inline: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  scroll-snap-align: none !important;
-  scroll-margin-top: 60px;
-  scroll-snap-stop: normal;
-}
-:is(article,[role="article"])[data-testid="tweet"][data-rodx-long="1"] {
-  scroll-snap-align: none;
-}
-:is(article,[role="article"])[data-testid="tweet"] > div {
-  padding-inline: 0 !important;
-  margin-inline: 0 !important;
-}
-.rodx-edge-content {
-  margin-inline: 0 !important;
-  padding-inline: 0 !important;
-  min-width: 0 !important;
-  flex: 1 !important;
-  max-width: 100% !important;
-}
-.rodx-avatar-gutter {
-  display: none !important;
-}
-.rodx-glass-actions {
-  background: rgba(100, 110, 120, 0.1) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.7);
-  backdrop-filter: blur(18px) saturate(1.7);
-  border: 1px solid #8e99a32b !important;
-  border-radius: 18px !important;
-  box-shadow: inset 0 1px 0 #ffffff16;
-  display: flex !important;
-  align-items: center !important;
-  gap: 2px !important;
-  margin: 4px 4px 2px !important;
-  padding: 3px 5px !important;
-  min-height: 34px;
-  box-sizing: border-box;
-  isolation: isolate;
-}
-.rodx-glass-actions > div {
-  min-width: 0 !important;
-  flex-shrink: 1 !important;
-}
-.rodx-mini-avatar {
-  display: flex !important;
-  flex: 0 0 26px !important;
-  width: 26px !important;
-  height: 26px !important;
-  overflow: hidden;
-  border-radius: 50%;
-  margin: 0 3px 0 0 !important;
-}
-.rodx-mini-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-article[data-rodx-repeat="1"] .rodx-mini-avatar,
-article[data-rodx-repeat="1"] .rodx-repeat-author {
-  display: none !important;
-}
-.rodx-profile-name {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap !important;
-  align-items: baseline !important;
-  gap: 2px 8px !important;
-  margin-block: 5px !important;
-}
-.rodx-profile-name > div {
-  margin: 0 !important;
-  min-width: 0 !important;
-  flex-shrink: 1 !important;
-}
-.rodx-profile-detail:not(.rodx-detail-open) {
-  display: none !important;
-}
-.rodx-profile-more {
-  font:
-    500 12px TwitterChirp,
-    Arial,
-    sans-serif;
-  color: inherit;
-  background: transparent;
-  border: 1px solid #71767b55;
-  border-radius: 15px;
-  padding: 5px 10px;
-  margin: 4px 0 7px;
-  cursor: pointer;
-}
-.rodx-profile-overlay-row {
-  position: relative !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
-  display: block !important;
-  z-index: 3;
-}
-.rodx-profile-avatar-slot {
-  position: absolute !important;
-  left: 8px !important;
-  bottom: 12px !important;
-  width: 68px !important;
-  height: 68px !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  z-index: 2;
-}
-.rodx-profile-avatar-slot > a {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-}
-.rodx-profile-avatar-slot img {
-  object-fit: cover;
-}
-.rodx-profile-action-slot {
-  position: absolute !important;
-  right: 6px !important;
-  bottom: 12px !important;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 4px !important;
-  max-width: calc(100% - 88px) !important;
-  margin: 0 !important;
-  padding: 4px !important;
-  border-radius: 24px;
-  background: rgba(24, 28, 34, 0.32) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  backdrop-filter: blur(20px) saturate(1.8);
-  box-shadow:
-    inset 0 1px 0 #ffffff45,
-    0 3px 14px #0003;
-  color: #fff !important;
-  border: 1px solid #ffffff38;
-}
-.rodx-profile-action-slot button,
-.rodx-profile-action-slot [role="button"] {
-  min-height: 32px !important;
-  margin: 0 !important;
-  border-color: #ffffff50 !important;
-  background: transparent !important;
-  color: #fff !important;
-}
-
-.rodx-feed-filtered,
-.rodx-who-to-follow {
-  display: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] {
-  position: relative !important;
-  overflow: visible !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-tweet-topbar {
-  position: sticky !important;
-  top: 58px !important;
-  z-index: 12;
-  justify-content: flex-end !important;
-  min-height: 38px !important;
-  margin: 3px 0 5px !important;
-  padding: 3px 6px !important;
-  flex: none !important;
-  width: 100% !important;
-  max-width: 100% !important;
-}
-.rodx-tweet-topbar .rodx-mini-avatar {
-  display: flex !important;
-  margin-right: auto !important;
-  width: 30px !important;
-  height: 30px !important;
-  min-width: 30px !important;
-  flex: 0 0 30px !important;
-  pointer-events: auto !important;
-  text-decoration: none;
-  color: inherit;
-}
-article[data-rodx-repeat="1"] .rodx-tweet-topbar .rodx-mini-avatar {
-  display: flex !important;
-}
-.rodx-tweet-topbar button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 30px;
-  padding: 4px;
-  border: 0;
-  border-radius: 16px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.rodx-tweet-topbar button[hidden] {
-  display: none !important;
-}
-.rodx-tweet-topbar svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-  pointer-events: none;
-}
-.rodx-tweet-topbar button[aria-pressed="true"] {
-  color: #f91880;
-}
-.rodx-profile-identity-source {
-  display: none !important;
-}
-.rodx-profile-identity {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 3px 0;
-  margin: 0;
-  min-width: 0;
-}
-.rodx-profile-identity strong {
-  font-size: 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  min-width: 0;
-}
-.rodx-profile-identity span {
-  font-size: 13px;
-  color: #71767b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rodx-profile-name {
-  gap: 4px !important;
-  flex-wrap: nowrap !important;
-}
-.rodx-profile-name > div {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: baseline !important;
-  gap: 5px !important;
-  flex-wrap: wrap !important;
-}
-.rodx-profile-handle {
-  font-size: 13px !important;
-  opacity: 0.65;
-  white-space: nowrap !important;
-}
-.rodx-profile-name > div > div {
-  margin: 0 !important;
-}
-.rodx-profile-name {
-  margin-bottom: 2px !important;
-}
-
-html,
-body {
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  overscroll-behavior-x: none;
-}
-@supports (overflow: clip) {
-  html,
-  body {
-    overflow-x: clip !important;
-  }
-}
-main,
-[role="main"],
-[data-testid="primaryColumn"] {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
-}
-:is(article,[role="article"])[data-testid="tweet"] {
-  scroll-margin-top: calc(var(--rodx-chrome-offset, 0px) + 4px) !important;
-}
-html.rodx-snap-enabled {
-  scroll-padding-top: calc(var(--rodx-chrome-offset, 0px) + 4px) !important;
-}
-.rodx-tweet-topbar,
-#rodx-active-tweetbar {
-  background: var(--rodx-bar-bg, #000) !important;
-  color: var(--rodx-bar-fg, inherit) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 0 !important;
-  border-bottom: 1px solid #71767b35 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  isolation: auto !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-tweet-topbar {
-  position: relative !important;
-  top: auto !important;
-  z-index: 2 !important;
-  margin: 0 0 4px !important;
-  padding: 3px 1px !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  justify-content: flex-start !important;
-}
-.rodx-tweet-topbar .rodx-mini-avatar {
-  margin: 0 !important;
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  flex: 0 0 28px !important;
-  border-radius: 50% !important;
-}
-.rodx-topbar-author {
-  display: flex !important;
-  align-items: baseline !important;
-  gap: 4px;
-  min-width: 0 !important;
-  flex: 1 1 auto !important;
-  color: inherit;
-  text-decoration: none;
-  overflow: hidden;
-  white-space: nowrap;
-}
-.rodx-topbar-author strong {
-  font:
-    700 13px TwitterChirp,
-    Arial,
-    sans-serif;
-  min-width: 0;
-  max-width: 66%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rodx-topbar-author span {
-  font:
-    12px TwitterChirp,
-    Arial,
-    sans-serif;
-  color: #71767b;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rodx-tweet-topbar button {
-  flex: 0 0 28px !important;
-  min-width: 28px !important;
-  width: 28px !important;
-  height: 32px !important;
-  border-radius: 4px !important;
-  padding: 4px !important;
-}
-article.rodx-author-in-topbar [data-testid="User-Name"] {
-  display: none !important;
-}
-#rodx-active-tweetbar {
-  position: fixed !important;
-  z-index: 1500 !important;
-  padding: 3px 7px !important;
-  margin: 0 !important;
-}
-#rodx-active-tweetbar[hidden] {
-  display: none !important;
-}
-.rodx-topbar-floating-source {
-  visibility: hidden !important;
-}
-[data-rodx-chrome="1"] {
-  transition:
-    translate 0.16s ease,
-    opacity 0.16s ease;
-}
-html.rodx-chrome-hidden [data-rodx-chrome="1"] {
-  translate: 0 calc(-1 * var(--rodx-chrome-rise, 300px)) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-#rodx-search-anchors {
-  max-width: 100vw !important;
-  box-sizing: border-box;
-  overflow-x: auto;
-}
-#rodx-feed-filters,
-#rodx-search-deck-dock {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-rodx-chrome="1"] {
-    transition: none;
-  }
-}
-
-.rodx-tweet-topbar,
-#rodx-active-tweetbar {
-  background-color: var(--rodx-bar-bg, #000) !important;
-  background-image: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  contain: paint !important;
-}
-.rodx-tweet-topbar .rodx-mini-avatar {
-  position: relative !important;
-  inset: auto !important;
-  display: block !important;
-  overflow: hidden !important;
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  max-width: 28px !important;
-  max-height: 28px !important;
-  flex: 0 0 28px !important;
-  contain: paint !important;
-}
-.rodx-tweet-topbar .rodx-mini-avatar img {
-  position: static !important;
-  inset: auto !important;
-  display: block !important;
-  width: 28px !important;
-  height: 28px !important;
-  max-width: 28px !important;
-  max-height: 28px !important;
-  object-fit: cover !important;
-  transform: none !important;
-  filter: none !important;
-}
-.rodx-tweet-topbar::before,
-.rodx-tweet-topbar::after {
-  content: none !important;
-}
-[data-testid="cellInnerDiv"].rodx-feed-filtered-cell {
-  display: none !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-html,
-html.rodx-snap-enabled,
-body {
-  scroll-snap-type: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-tweet-topbar {
-  flex: 0 0 auto !important;
-  align-self: stretch !important;
-  min-width: 0 !important;
-  width: auto !important;
-  max-width: 100% !important;
-}
-.rodx-tweet-topbar .rodx-topbar-author {
-  flex-basis: 0 !important;
-  min-width: 0 !important;
-}
-@media (prefers-reduced-transparency: reduce) {
-  .rodx-glass-actions {
-    background: Canvas !important;
-  }
-  .rodx-profile-action-slot {
-    background: #20252e !important;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-snap-type: none;
-  }
-}
-`;
+      node.textContent = extractedCSS1;
       document.head.append(node);
     }
     function resetProfile() {
@@ -530,7 +50,7 @@ body {
         for (const name of [...el.classList])
           if (name.startsWith("rodx-profile-") || name === "rodx-detail-open") el.classList.remove(name);
       }
-      document.querySelectorAll(".rodx-profile-more,.rodx-profile-identity").forEach((el) => el.remove());
+      document.querySelectorAll(CSS_SELECTORS.s059).forEach((el) => el.remove());
     }
     function profile() {
       const handle = profilePath();
@@ -540,13 +60,12 @@ body {
       }
       if (!handle) return;
       const primary =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('main,[role="main"]');
+        document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
       if (!primary) return;
-      const name = primary.querySelector('[data-testid="UserName"]');
-      if (!name || name.closest("article")) return;
+      const name = primary.querySelector(CSS_SELECTORS.s060);
+      if (!name || name.closest(CSS_SELECTORS.s041)) return;
       add(name, "rodx-profile-name");
-      let identity = primary.querySelector(".rodx-profile-identity");
+      let identity = primary.querySelector(CSS_SELECTORS.s061);
       if (!identity) {
         identity = document.createElement("div");
         identity.className = "rodx-profile-identity";
@@ -565,37 +84,36 @@ body {
         const at = document.createElement("span");
         at.textContent = "@" + handle;
         identity.append(title, at);
-        const badge = name.querySelector("svg");
+        const badge = name.querySelector(CSS_SELECTORS.s062);
         if (badge) {
           const clone = badge.cloneNode(true);
-          clone.style.cssText = "width:18px;height:18px;fill:#1d9bf0";
+          clone.style.cssText = cssDeclarations(inlineCSS1);
           title.append(clone);
         }
       }
       add(name, "rodx-profile-identity-source");
-      const handleNode = [...name.querySelectorAll("span,div")]
+      const handleNode = [...name.querySelectorAll(CSS_SELECTORS.s063)]
         .filter((el) => el.textContent.trim().toLowerCase() === "@" + handle.toLowerCase())
-        .sort((a, b) => a.querySelectorAll("*").length - b.querySelectorAll("*").length)[0];
+        .sort(
+          (a, b) =>
+            a.querySelectorAll(CSS_SELECTORS.s064).length - b.querySelectorAll(CSS_SELECTORS.s064).length,
+        )[0];
       if (handleNode) {
         let branch = handleNode;
         while (branch.parentElement && branch.parentElement !== name) branch = branch.parentElement;
         add(branch, "rodx-profile-handle");
       }
-      const details = [
-        ...primary.querySelectorAll(
-          '[data-testid="UserProfileHeader_Items"],[data-testid="UserFacepile"],[data-testid="UserSocialContext"]',
-        ),
-      ].filter((el) => !el.closest("article"));
-      for (const link of primary.querySelectorAll('a[href$="/followers_you_follow"]')) {
-        if (!link.closest("article")) details.push(link);
+      const details = [...primary.querySelectorAll(CSS_SELECTORS.s065)].filter(
+        (el) => !el.closest(CSS_SELECTORS.s041),
+      );
+      for (const link of primary.querySelectorAll(CSS_SELECTORS.s066)) {
+        if (!link.closest(CSS_SELECTORS.s041)) details.push(link);
       }
-      for (const link of primary.querySelectorAll(
-        'a[href$="/following"],a[href$="/verified_followers"],a[href$="/followers"]',
-      )) {
-        if (!link.closest("article")) details.push(link);
+      for (const link of primary.querySelectorAll(CSS_SELECTORS.s067)) {
+        if (!link.closest(CSS_SELECTORS.s041)) details.push(link);
       }
-      for (const el of primary.querySelectorAll("div,span")) {
-        if (el.closest("article") || el.childElementCount > 2) continue;
+      for (const el of primary.querySelectorAll(CSS_SELECTORS.s068)) {
+        if (el.closest(CSS_SELECTORS.s041) || el.childElementCount > 2) continue;
         if (
           /^(?:não é seguido por ninguém que você segue|not followed by anyone you.re following)$/i.test(
             el.textContent.trim(),
@@ -603,21 +121,16 @@ body {
         )
           details.push(el);
       }
-      const following = primary.querySelector('a[href$="/following"]'),
-        followers = primary.querySelector('a[href$="/verified_followers"],a[href$="/followers"]');
+      const following = primary.querySelector(CSS_SELECTORS.s069),
+        followers = primary.querySelector(CSS_SELECTORS.s070);
       if (following && followers) {
         let row = following.parentElement;
         while (row && row !== primary && !row.contains(followers)) row = row.parentElement;
-        if (
-          row &&
-          row !== primary &&
-          !row.contains(name) &&
-          !row.querySelector('[data-testid="UserDescription"]')
-        )
+        if (row && row !== primary && !row.contains(name) && !row.querySelector(CSS_SELECTORS.s071))
           details.push(row);
       }
       for (const el of details) add(el, "rodx-profile-detail");
-      let toggle = primary.querySelector(".rodx-profile-more");
+      let toggle = primary.querySelector(CSS_SELECTORS.s072);
       if (!toggle && details.length) {
         toggle = document.createElement("button");
         toggle.className = "rodx-profile-more";
@@ -631,21 +144,17 @@ body {
           toggle.setAttribute("aria-expanded", String(open));
           toggle.textContent = open ? "Ver menos" : "Ver mais";
           primary
-            .querySelectorAll(".rodx-profile-detail")
+            .querySelectorAll(CSS_SELECTORS.s073)
             .forEach((el) => el.classList.toggle("rodx-detail-open", open));
         };
         name.after(toggle);
       }
-      if (toggle)
-        toggle.style.cssText =
-          "align-self:flex-start!important;width:auto!important;max-width:max-content!important;display:inline-flex!important;padding:3px 9px!important;margin:2px 0!important";
+      if (toggle) toggle.style.cssText = cssDeclarations(inlineCSS2);
       const open = toggle?.getAttribute("aria-expanded") === "true";
       details.forEach((el) => el.classList.toggle("rodx-detail-open", open));
-      const avatar = primary.querySelector('a[href="/' + handle + '/photo"]');
-      const cover = primary.querySelector('a[href="/' + handle + '/header_photo"]');
-      const action =
-        primary.querySelector('[data-testid="userActions"]') ||
-        primary.querySelector('[data-testid$="-follow"],[data-testid$="-unfollow"]');
+      const avatar = primary.querySelector(CSS_SELECTORS.s295(handle));
+      const cover = primary.querySelector(CSS_SELECTORS.s296(handle));
+      const action = primary.querySelector(CSS_SELECTORS.s074) || primary.querySelector(CSS_SELECTORS.s075);
       if (!avatar || !cover || !action) return;
       let row = avatar.parentElement;
       while (row && row !== primary && !row.contains(action)) row = row.parentElement;
@@ -658,8 +167,8 @@ body {
       add(actionSlot, "rodx-profile-action-slot");
     }
     function author(article) {
-      const user = article.querySelector('[data-testid="User-Name"]');
-      const link = [...(user?.querySelectorAll("a[href]") || [])].find((a) =>
+      const user = article.querySelector(CSS_SELECTORS.s076);
+      const link = [...(user?.querySelectorAll(CSS_SELECTORS.s027) || [])].find((a) =>
         /^\/[A-Za-z0-9_]{1,15}$/.test(a.getAttribute("href") || ""),
       );
       return {
@@ -672,26 +181,26 @@ body {
       let previous = "";
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (
-          article.parentElement?.closest("article") ||
+          article.parentElement?.closest(CSS_SELECTORS.s041) ||
           article.hidden ||
           getComputedStyle(article).display === "none"
         )
           continue;
         const { user, link, key } = author(article);
-        const context = article.querySelector('[data-testid="socialContext"]')?.textContent || "";
+        const context = article.querySelector(CSS_SELECTORS.s077)?.textContent || "";
         const identity = key ? key + ":" + context : "";
         article.dataset.rodxRepeat = identity && identity === previous ? "1" : "0";
         previous = identity;
         article.dataset.rodxLong = article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
         article
-          .querySelectorAll(".rodx-repeat-author")
+          .querySelectorAll(CSS_SELECTORS.s078)
           .forEach((el) => el.classList.remove("rodx-repeat-author"));
         if (user)
-          for (const a of user.querySelectorAll("a[href]"))
+          for (const a of user.querySelectorAll(CSS_SELECTORS.s027))
             if (a.getAttribute("href")?.toLowerCase() === key) a.classList.add("rodx-repeat-author");
         const avatar =
-          article.querySelector('[data-testid^="UserAvatar-Container-"],[data-testid="Tweet-User-Avatar"]') ||
-          article.querySelector('img[src*="profile_images"]')?.closest("a");
+          article.querySelector(CSS_SELECTORS.s079) ||
+          article.querySelector(CSS_SELECTORS.s081)?.closest(CSS_SELECTORS.s080);
         if (avatar && user) {
           let row = avatar.parentElement;
           while (row && row !== article && !row.contains(user)) row = row.parentElement;
@@ -704,27 +213,27 @@ body {
             }
           }
         }
-        const like = article.querySelector('[data-testid="like"],[data-testid="unlike"]');
-        const bar = like?.closest('[role="group"]');
-        if (!bar || bar.closest("article") !== article) continue;
+        const like = article.querySelector(CSS_SELECTORS.s082);
+        const bar = like?.closest(CSS_SELECTORS.s083);
+        if (!bar || bar.closest(CSS_SELECTORS.s041) !== article) continue;
         bar.classList.remove("rodx-glass-actions");
-        bar.querySelectorAll(".rodx-mini-avatar").forEach((el) => el.remove());
+        bar.querySelectorAll(CSS_SELECTORS.s084).forEach((el) => el.remove());
         // The tweet itself can be a horizontal React flex row. A full-width
         // sibling placed there consumes the content width. Mount inside the
         // existing column containing both author and native action group.
         let column = user?.parentElement;
         while (column && column !== article && !column.contains(bar)) column = column.parentElement;
         if (!column || column === article) continue;
-        let top = article.querySelector(".rodx-tweet-topbar");
+        let top = article.querySelector(CSS_SELECTORS.s048);
         if (!top) {
           top = document.createElement("div");
           top.className = "rodx-tweet-topbar rodx-glass-actions";
         }
         if (top.parentElement !== column) column.prepend(top);
-        const image = avatar?.querySelector('img,div[style*="background-image"]');
+        const image = avatar?.querySelector(CSS_SELECTORS.s085);
         const sourceURL =
-          avatar?.closest("a[href]")?.getAttribute("href") || link?.getAttribute("href") || key;
-        let mini = top.querySelector(".rodx-mini-avatar");
+          avatar?.closest(CSS_SELECTORS.s027)?.getAttribute("href") || link?.getAttribute("href") || key;
+        let mini = top.querySelector(CSS_SELECTORS.s084);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
           mini = document.createElement("a");
@@ -735,11 +244,9 @@ body {
           mini.onclick = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = [
-              ...article.querySelectorAll(
-                '[data-testid="User-Name"] a[href],[data-testid="UserName"] a[href]',
-              ),
-            ].find((a) => a.getAttribute("href")?.toLowerCase() === key);
+            const native = [...article.querySelectorAll(CSS_SELECTORS.s086)].find(
+              (a) => a.getAttribute("href")?.toLowerCase() === key,
+            );
             if (native) native.click();
             else location.assign(mini.href);
           };
@@ -758,11 +265,11 @@ body {
           } else mini.textContent = "●";
           top.prepend(mini);
         }
-        let authorLink = top.querySelector(".rodx-topbar-author");
+        let authorLink = top.querySelector(CSS_SELECTORS.s087);
         if (!authorLink) {
           authorLink = document.createElement("a");
           authorLink.className = "rodx-topbar-author";
-          top.insertBefore(authorLink, top.querySelector("[data-proxy]"));
+          top.insertBefore(authorLink, top.querySelector(CSS_SELECTORS.s088));
         }
         if (key) {
           authorLink.href = key;
@@ -781,11 +288,9 @@ body {
           authorLink.onclick = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = [
-              ...article.querySelectorAll(
-                '[data-testid="User-Name"] a[href],[data-testid="UserName"] a[href]',
-              ),
-            ].find((a) => a.getAttribute("href")?.toLowerCase() === key);
+            const native = [...article.querySelectorAll(CSS_SELECTORS.s086)].find(
+              (a) => a.getAttribute("href")?.toLowerCase() === key,
+            );
             if (native) native.click();
             else location.assign(authorLink.href);
           };
@@ -801,7 +306,7 @@ body {
           ],
           ["telegram", "Enviar ao Telegram", "button.rodx-tg-action:not(.rodx-tg-video-overlay)"],
         ]) {
-          let proxy = top.querySelector('[data-proxy="' + action + '"]');
+          let proxy = top.querySelector(CSS_SELECTORS.s297(action));
           if (!proxy) {
             proxy = document.createElement("button");
             proxy.type = "button";
@@ -819,7 +324,7 @@ body {
           const native = [...article.querySelectorAll(selector)].find((el) => !top.contains(el));
           proxy.hidden = !native;
           if (native) {
-            const svg = native.querySelector("svg");
+            const svg = native.querySelector(CSS_SELECTORS.s062);
             const icon = svg
               ? svg.outerHTML
               : {

@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { state } from "../state/deck.js";
@@ -19,7 +20,7 @@ export function initializeDeckNativeTranslation() {
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const r = article.getBoundingClientRect();
         if (r.bottom < 0 || r.top > innerHeight + 160) continue;
-        for (const el of article.querySelectorAll('button,[role="button"],a')) {
+        for (const el of article.querySelectorAll(CSS_SELECTORS.s215)) {
           if (
             attempted.has(el) ||
             !LABEL.test((el.innerText || el.textContent || "").trim().replace(/\s+/g, " "))

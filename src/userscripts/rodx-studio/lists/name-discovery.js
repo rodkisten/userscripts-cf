@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 export function discoverListNames(document, href, clean) {
   const result = new Map(),
     url = new URL(href);
@@ -37,14 +38,12 @@ export function discoverListNames(document, href, clean) {
     if (id && label && !result.has(id))
       result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
   }
-  for (const anchor of document.querySelectorAll('a[href*="/lists/"]')) {
-    if (anchor.closest('article,[data-testid="UserCell"],' + own)) continue;
+  for (const anchor of document.querySelectorAll(CSS_SELECTORS.s096)) {
+    if (anchor.closest(CSS_SELECTORS.s298(own))) continue;
     const id = idOf(anchor.getAttribute("href"));
     if (!id) continue;
-    const heading = anchor.querySelector(
-      '[data-testid="listName"],[data-testid="ListName"],h2,h3,[role="heading"]',
-    );
-    const leaves = [...anchor.querySelectorAll('[dir="auto"],span')].filter((el) => !el.children.length);
+    const heading = anchor.querySelector(CSS_SELECTORS.s109);
+    const leaves = [...anchor.querySelectorAll(CSS_SELECTORS.s110)].filter((el) => !el.children.length);
     const candidates = [
       heading?.textContent,
       anchor.getAttribute("title"),
@@ -59,19 +58,17 @@ export function discoverListNames(document, href, clean) {
   }
   const routeId = idOf(url.href);
   if (routeId && !/\/(members|followers)\/?$/.test(url.pathname)) {
-    const primary = document.querySelector('[data-testid="primaryColumn"]') || document.querySelector("main");
-    const headings = [
-      ...(primary?.querySelectorAll(
-        '[data-testid="listName"],[data-testid="ListName"],h1,h2,[role="heading"]',
-      ) || []),
-    ].filter((el) => !el.closest("article," + own) && !el.closest('a[href*="/lists/"]'));
+    const primary = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
+    const headings = [...(primary?.querySelectorAll(CSS_SELECTORS.s111) || [])].filter(
+      (el) => !el.closest(CSS_SELECTORS.s299(own)) && !el.closest(CSS_SELECTORS.s096),
+    );
     const heading = headings.map((el) => name(el.textContent)).find(Boolean) || "";
-    const canonical = document.querySelector('link[rel="canonical"]')?.href;
-    const metaUrl = document.querySelector('meta[property="og:url"]')?.content;
+    const canonical = document.querySelector(CSS_SELECTORS.s112)?.href;
+    const metaUrl = document.querySelector(CSS_SELECTORS.s113)?.content;
     const bound = idOf(canonical || metaUrl || "") === routeId;
     const titles = [
-      document.querySelector('meta[property="og:title"]')?.content,
-      document.querySelector('meta[name="twitter:title"]')?.content,
+      document.querySelector(CSS_SELECTORS.s114)?.content,
+      document.querySelector(CSS_SELECTORS.s115)?.content,
       document.title,
     ]
       .map((v) => name(v, true))

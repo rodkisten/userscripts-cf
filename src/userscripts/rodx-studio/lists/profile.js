@@ -1,3 +1,7 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-profile-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline";
 import { VERSION } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { XClientLists } from "./client.js";
@@ -82,13 +86,12 @@ export function initializeDeckProfileLists() {
       if (Studio.services.lists) return Studio.services.lists.picker(handle, host);
       const expected = handle;
       const primary =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('main,[role="main"]');
+        document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
       const trigger =
-        primary?.querySelector('[data-testid="userActions"]') ||
-        [...(primary?.querySelectorAll('button,[role="button"]') || [])].find(
+        primary?.querySelector(CSS_SELECTORS.s074) ||
+        [...(primary?.querySelectorAll(CSS_SELECTORS.s116) || [])].find(
           (el) =>
-            !el.closest("article") &&
+            !el.closest(CSS_SELECTORS.s041) &&
             /^(?:more|mais|más|plus|more options|mais opções)$/i.test(el.getAttribute("aria-label") || ""),
         );
       if (!trigger) {
@@ -103,7 +106,7 @@ export function initializeDeckProfileLists() {
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         if (profile() !== expected) return;
-        const action = [...document.querySelectorAll('[role="menuitem"]')].find((el) =>
+        const action = [...document.querySelectorAll(CSS_SELECTORS.s117)].find((el) =>
           label.test(el.textContent || ""),
         );
         if (!action) continue;
@@ -141,110 +144,16 @@ export function initializeDeckProfileLists() {
     }
     function render() {
       if (!shadow) return;
-      let row = shadow.querySelector(".row");
+      let row = shadow.querySelector(CSS_SELECTORS.s118);
       if (!row) {
         const style = document.createElement("style");
-        style.textContent = `
-:host {
-  display: block;
-  min-width: 0;
-  color: inherit;
-  font:
-    13px TwitterChirp,
-    Arial,
-    sans-serif;
-}
-* {
-  box-sizing: border-box;
-}
-button,
-a {
-  font: inherit;
-  color: inherit;
-}
-button {
-  cursor: pointer;
-}
-.row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 16px;
-  border-bottom: 1px solid #71767b33;
-  min-width: 0;
-}
-.strip {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  min-width: 0;
-  flex: 1;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-button,
-.strip a {
-  background: transparent;
-  border: 1px solid #71767b55;
-  border-radius: 18px;
-  padding: 6px 10px;
-  white-space: nowrap;
-  text-decoration: none;
-  flex: none;
-}
-button:hover,
-a:hover {
-  background: #71767b22;
-}
-.status {
-  opacity: 0.7;
-  white-space: nowrap;
-  font-size: 12px;
-}
-.all {
-  width: min(520px, 92vw);
-  max-height: 80dvh;
-  border: 1px solid #71767b66;
-  border-radius: 16px;
-  background: #15202b;
-  color: #e7e9ea;
-  padding: 16px;
-}
-.all::backdrop {
-  background: #0008;
-}
-.all header,
-.all footer {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-.all-items {
-  display: grid;
-  gap: 8px;
-  overflow: auto;
-  max-height: 50dvh;
-  padding: 16px 0;
-}
-.all-items a {
-  display: block;
-  padding: 10px;
-  border-radius: 10px;
-  text-decoration: none;
-}
-.all footer a {
-  font-size: 12px;
-}
-`;
+        style.textContent = extractedCSS1;
         row = document.createElement("section");
         row.className = "row";
         row.setAttribute("aria-label", "Listas deste perfil");
         shadow.append(style, row);
       }
-      const oldScroll = row.querySelector(".strip")?.scrollLeft || 0;
+      const oldScroll = row.querySelector(CSS_SELECTORS.s119)?.scrollLeft || 0;
       row.replaceChildren();
       const title = button("Listas" + (items.length ? " · " + items.length : ""), showAll);
       title.title = "RodX " + VERSION + " — listas deste perfil";
@@ -272,7 +181,7 @@ a:hover {
       row.lastChild.title = "Adicionar/remover das minhas listas";
       row.lastChild.setAttribute("aria-label", "Adicionar/remover das minhas listas");
       strip.scrollLeft = oldScroll;
-      const body = modal?.querySelector(".all-items");
+      const body = modal?.querySelector(CSS_SELECTORS.s120);
       if (body && items.length) {
         body.replaceChildren();
         items.forEach((item) => body.append(listLink(item)));
@@ -326,40 +235,39 @@ a:hover {
     }
     function mountPoint(current) {
       const main =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector("main") ||
-        document.querySelector('[role="main"]');
+        document.querySelector(CSS_SELECTORS.s031) ||
+        document.querySelector(CSS_SELECTORS.s094) ||
+        document.querySelector(CSS_SELECTORS.s121);
       if (!main) return null;
-      const tabs = main.querySelector('[role="tablist"]');
+      const tabs = main.querySelector(CSS_SELECTORS.s035);
       if (tabs) {
-        const block = tabs.closest('[data-testid="ScrollSnap-List"]') || tabs;
+        const block = tabs.closest(CSS_SELECTORS.s036) || tabs;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
       // Mobile X does not consistently expose the desktop column/tab roles.
-      const reply = [...main.querySelectorAll("a[href]")].find(
+      const reply = [...main.querySelectorAll(CSS_SELECTORS.s027)].find(
         (a) =>
           a.getAttribute("href")?.replace(/\/$/, "").toLowerCase() ===
           "/" + current.toLowerCase() + "/with_replies",
       );
       if (reply) {
-        const block =
-          reply.closest('[data-testid="ScrollSnap-List"],nav,[role="navigation"]') || reply.parentElement;
+        const block = reply.closest(CSS_SELECTORS.s122) || reply.parentElement;
         return {
           parent: block.parentElement,
           before: block,
         };
       }
-      const bio = main.querySelector('[data-testid="UserDescription"]');
+      const bio = main.querySelector(CSS_SELECTORS.s071);
       if (bio)
         return {
           parent: bio.parentElement,
           before: bio.nextSibling,
         };
-      const name = main.querySelector('[data-testid="UserName"],[data-testid="UserProfileHeader_Items"]');
-      if (name && !name.closest("article"))
+      const name = main.querySelector(CSS_SELECTORS.s123);
+      if (name && !name.closest(CSS_SELECTORS.s041))
         return {
           parent: name.parentElement,
           before: name.nextSibling,
@@ -379,15 +287,14 @@ a:hover {
       if (!current) return;
       if (host?.isConnected) return;
       const point = mountPoint(current);
-      if (!point?.parent || point.parent.closest("article")) return;
+      if (!point?.parent || point.parent.closest(CSS_SELECTORS.s041)) return;
       stop();
       host?.remove();
       handle = current;
       account = state.account;
       host = document.createElement("div");
       host.id = "rodx-profile-lists";
-      host.style.cssText =
-        "display:block!important;position:relative!important;width:100%!important;min-height:44px!important;flex:0 0 100%!important;clear:both;color:inherit;";
+      host.style.cssText = cssDeclarations(inlineCSS1);
       host.dataset.rodxVersion = VERSION;
       shadow = host.attachShadow({
         mode: "open",

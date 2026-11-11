@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "./account.js";
 import { SearchHistory } from "../search/history.js";
@@ -19,9 +20,7 @@ export function tick() {
     state.readTimers.forEach(clearTimeout);
     state.readTimers.clear();
     state.readProgress = new WeakMap();
-    document
-      .querySelectorAll("[data-rodx-observed]")
-      .forEach((article) => delete article.dataset.rodxObserved);
+    document.querySelectorAll(CSS_SELECTORS.s043).forEach((article) => delete article.dataset.rodxObserved);
     state.filterSignature = "";
     repaint();
   }

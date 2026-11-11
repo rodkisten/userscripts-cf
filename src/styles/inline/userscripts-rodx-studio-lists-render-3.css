@@ -1,0 +1,8 @@
+.declarations {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+}

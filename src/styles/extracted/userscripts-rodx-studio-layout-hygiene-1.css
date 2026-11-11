@@ -1,0 +1,37 @@
+a[href="/i/grok"],
+a[href^="/i/grok/"],
+a[href*="/i/grok-redirect"],
+[data-testid="AppTabBar_Grok_Link"],
+[data-testid="SideNav_Grok_Link"],
+[data-testid="GrokDrawer"],
+[data-testid="grokButton"],
+[data-testid="grok"],
+button[aria-label*="grok" i],
+button[data-testid*="grok" i],
+.rodx-native-grok-hidden {
+  display: none !important;
+}
+:is(article, [role="article"])[data-testid="tweet"] .rodx-grok-replacement {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgb(113, 118, 123);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+:is(article, [role="article"])[data-testid="tweet"] .rodx-grok-replacement:is(:hover, :focus-visible) {
+  background: rgba(29, 155, 240, 0.12);
+  color: rgb(29, 155, 240);
+}
+:is(article, [role="article"])[data-testid="tweet"] .rodx-result-actions [data-rodx-expand][hidden] {
+  display: none !important;
+}

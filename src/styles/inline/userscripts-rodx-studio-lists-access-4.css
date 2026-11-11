@@ -1,0 +1,14 @@
+.declarations {
+  font:
+    500 13px TwitterChirp,
+    Arial,
+    sans-serif;
+  min-height: 36px;
+  padding: 5px 11px;
+  border: 1px solid #71767b66;
+  border-radius: 18px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}

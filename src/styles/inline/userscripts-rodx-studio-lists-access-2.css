@@ -1,0 +1,20 @@
+.declarations {
+  position: fixed;
+  left: 12px;
+  bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+  z-index: 1400;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: 10px Arial;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #71767b66;
+  border-radius: 50%;
+  background: var(--rodx-bar-bg, Canvas);
+  color: var(--rodx-bar-fg, CanvasText);
+  cursor: pointer;
+  touch-action: manipulation;
+}

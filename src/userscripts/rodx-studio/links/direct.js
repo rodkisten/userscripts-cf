@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 export let DirectLinks;
 
 export function initializeDeckDirectLinks() {
@@ -71,9 +72,9 @@ export function initializeDeckDirectLinks() {
     }
     function scan() {
       if (++scans % 3 !== 0) return;
-      const anchors = [
-        ...document.querySelectorAll('article a[href], [data-testid="tweetText"] a[href]'),
-      ].filter((a) => SHORT.test(a.getAttribute("href") || ""));
+      const anchors = [...document.querySelectorAll(CSS_SELECTORS.s089)].filter((a) =>
+        SHORT.test(a.getAttribute("href") || ""),
+      );
       let count = 0;
       for (const anchor of anchors) {
         if (++count > 75) break;

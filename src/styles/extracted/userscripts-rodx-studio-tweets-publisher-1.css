@@ -1,0 +1,38 @@
+.rodx-xrepost {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+.rodx-xrepost .xr-choices {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 3px 0;
+}
+.rodx-xrepost .xr-choices button {
+  white-space: nowrap;
+}
+.rodx-xrepost .xr-item {
+  border: 1px solid #71767b55;
+  border-radius: 15px;
+  padding: 12px;
+}
+.rodx-xrepost .xr-caption {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rodx-xrepost .xr-meta {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 6px 0;
+}
+.rodx-xrepost .xr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 9px;
+}
+.rodx-xrepost button {
+  min-height: 36px;
+  touch-action: manipulation;
+}

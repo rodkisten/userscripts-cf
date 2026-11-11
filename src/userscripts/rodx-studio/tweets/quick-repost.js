@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 export let QuickRepost;
 
 export function initializeDeckQuickRepost() {
@@ -9,9 +10,8 @@ export function initializeDeckQuickRepost() {
         // Only actual taps on X's native repost action, never programmatic clicks,
         // quotes, menu actions or interactions with RodX controls.
         if (!event.isTrusted || active) return;
-        const button = event.target.closest?.('[data-testid="retweet"], [data-testid="unretweet"]');
-        if (!button || button.closest('[data-testid="retweetConfirm"], [data-testid="unretweetConfirm"]'))
-          return;
+        const button = event.target.closest?.(CSS_SELECTORS.s216);
+        if (!button || button.closest(CSS_SELECTORS.s247)) return;
         const undo = button.getAttribute("data-testid") === "unretweet";
         const selector = undo ? '[data-testid="unretweetConfirm"]' : '[data-testid="retweetConfirm"]';
         let observer = null;

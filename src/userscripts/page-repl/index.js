@@ -1,3 +1,6 @@
+import { cssDeclarations } from "../../core/css.js";
+import inlineCSS1 from "../../styles/inline/userscripts-page-repl-index-1.css?inline";
+import { CSS_SELECTORS } from "../../selectors.js";
 import { createMarkup } from "./markup.js";
 import css from "./style.css?inline";
 import { compile } from "./compiler.js";
@@ -50,7 +53,7 @@ export default {
     if (ctx.signal.aborted) return;
     const host = document.createElement("div");
     host.id = "rodx-page-repl";
-    host.style.cssText = "all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647";
+    host.style.cssText = cssDeclarations(inlineCSS1);
     const shadow = host.attachShadow({ mode: "open" });
     try {
       const sheet = new CSSStyleSheet();
@@ -58,7 +61,7 @@ export default {
       shadow.adoptedStyleSheets = [sheet];
     } catch {
       const style = document.createElement("style");
-      const nonce = document.querySelector("style[nonce],script[nonce]")?.nonce;
+      const nonce = document.querySelector(CSS_SELECTORS.s001)?.nonce;
       if (nonce) style.nonce = nonce;
       style.textContent = css;
       shadow.append(style);
@@ -68,33 +71,33 @@ export default {
     shadow.append(container);
     (document.body || document.documentElement).append(host);
     const $ = (selector) => shadow.querySelector(selector);
-    const editor = $("textarea"),
-      panel = $(".panel"),
-      launcher = $(".launcher"),
-      output = $(".output");
+    const editor = $(CSS_SELECTORS.s002),
+      panel = $(CSS_SELECTORS.s003),
+      launcher = $(CSS_SELECTORS.s004),
+      output = $(CSS_SELECTORS.s005);
     const rawLabel = document.createElement("label");
     const rawInput = document.createElement("input");
     rawInput.type = "checkbox";
     rawInput.dataset.raw = "";
     rawLabel.append(rawInput, document.createTextNode("Script global (sem wrapper)"));
-    $(".options").prepend(rawLabel);
+    $(CSS_SELECTORS.s006).prepend(rawLabel);
     editor.value = state.code || "";
-    $("[data-timeout]").value = state.timeout || 3000;
+    $(CSS_SELECTORS.s007).value = state.timeout || 3000;
     for (const strategy of strategies) {
       const option = document.createElement("option");
       option.value = strategy.id;
       option.textContent = strategy.label;
-      $("[data-method]").append(option);
+      $(CSS_SELECTORS.s008).append(option);
     }
     for (const name of Object.keys(examples)) {
       const option = document.createElement("option");
       option.value = name;
       option.textContent = name;
-      $("[data-example]").append(option);
+      $(CSS_SELECTORS.s009).append(option);
     }
     function save() {
       state.code = editor.value;
-      state.timeout = Number($("[data-timeout]").value) || 3000;
+      state.timeout = Number($(CSS_SELECTORS.s007).value) || 3000;
       persist.save(state);
     }
     function print(kind, title, value) {
@@ -139,12 +142,12 @@ export default {
       runner?.dispose();
       runner = createRunner({
         onEvent: event,
-        timeout: Math.min(60000, Math.max(250, Number($("[data-timeout]").value) || 3000)),
+        timeout: Math.min(60000, Math.max(250, Number($(CSS_SELECTORS.s007).value) || 3000)),
       });
     }
     freshRunner();
     function renderMethods() {
-      const list = $(".results");
+      const list = $(CSS_SELECTORS.s010);
       list.replaceChildren();
       for (const method of strategies) {
         const result = results.get(method.id),
@@ -162,7 +165,7 @@ export default {
         const button = document.createElement("button");
         button.textContent = "Usar no console";
         button.onclick = () => {
-          $("[data-method]").value = method.id;
+          $(CSS_SELECTORS.s008).value = method.id;
           tab("console");
         };
         row.append(title, detail, button);
@@ -170,7 +173,7 @@ export default {
       }
     }
     function renderHistory() {
-      const list = $("[data-history]");
+      const list = $(CSS_SELECTORS.s011);
       list.replaceChildren();
       for (const item of [...state.history].reverse()) {
         const row = document.createElement("div");
@@ -191,28 +194,29 @@ export default {
       }
     }
     function tab(name) {
-      for (const view of shadow.querySelectorAll("[data-view]")) view.hidden = view.dataset.view !== name;
-      for (const button of shadow.querySelectorAll("[data-tab]"))
+      for (const view of shadow.querySelectorAll(CSS_SELECTORS.s012))
+        view.hidden = view.dataset.view !== name;
+      for (const button of shadow.querySelectorAll(CSS_SELECTORS.s013))
         button.setAttribute("aria-selected", String(button.dataset.tab === name));
       if (name === "history") renderHistory();
     }
     function enabledMethods() {
-      return strategies.filter((method) => !method.advanced || $("[data-advanced]").checked);
+      return strategies.filter((method) => !method.advanced || $(CSS_SELECTORS.s014).checked);
     }
     async function probe() {
       for (const method of enabledMethods()) {
         if (abort.signal.aborted) break;
-        $(".status").textContent = "Testando " + method.label;
+        $(CSS_SELECTORS.s015).textContent = "Testando " + method.label;
         await runner.run(method, probeCode, { signal: abort.signal, probe: true });
       }
     }
     async function execute(all = false) {
       const text = editor.value;
       if (text.length > 2000000) throw Error("Código maior que 2 MB.");
-      const raw = $("[data-raw]").checked;
+      const raw = $(CSS_SELECTORS.s016).checked;
       const compiled = raw
         ? { code: text, names: [] }
-        : compile(text, { persist: $("[data-persist]").checked, knownNames: [...knownNames] });
+        : compile(text, { persist: $(CSS_SELECTORS.s017).checked, knownNames: [...knownNames] });
       if (!state.history.length || state.history.at(-1).code !== text)
         state.history.push({ code: text, at: new Date().toISOString() });
       let bytes = state.history.reduce((sum, item) => sum + item.code.length, 0);
@@ -228,7 +232,7 @@ export default {
         }
         return;
       }
-      let method = strategies.find((item) => item.id === $("[data-method]").value);
+      let method = strategies.find((item) => item.id === $(CSS_SELECTORS.s008).value);
       if (!method) {
         for (const candidate of automaticCandidates(enabledMethods())) {
           if (abort.signal.aborted) return;
@@ -251,21 +255,17 @@ export default {
     async function locked(action) {
       if (busy) return;
       busy = true;
-      runner.configure($("[data-timeout]").value);
+      runner.configure($(CSS_SELECTORS.s007).value);
       abort = new AbortController();
-      for (const b of shadow.querySelectorAll("[data-action=run],[data-action=probe],[data-action=run-all]"))
-        b.disabled = true;
+      for (const b of shadow.querySelectorAll(CSS_SELECTORS.s018)) b.disabled = true;
       try {
         await action();
       } catch (error) {
         print("error", error.name, error.message);
       } finally {
         busy = false;
-        for (const b of shadow.querySelectorAll(
-          "[data-action=run],[data-action=probe],[data-action=run-all]",
-        ))
-          b.disabled = false;
-        $(".status").textContent = "Pronto · " + results.size + " métodos observados";
+        for (const b of shadow.querySelectorAll(CSS_SELECTORS.s018)) b.disabled = false;
+        $(CSS_SELECTORS.s015).textContent = "Pronto · " + results.size + " métodos observados";
       }
     }
     async function copy(text) {
@@ -297,7 +297,7 @@ export default {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     async function fetchURL() {
-      const url = new URL($("[data-url]").value);
+      const url = new URL($(CSS_SELECTORS.s019).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use uma URL HTTP/HTTPS.");
       if (typeof GM_xmlhttpRequest !== "function") throw Error("GM_xmlhttpRequest indisponível.");
       const text = await new Promise((resolve, reject) =>
@@ -319,10 +319,10 @@ export default {
       print("log", "URL carregada no editor", "Código não executado.");
     }
     function external() {
-      const url = new URL($("[data-url]").value);
+      const url = new URL($(CSS_SELECTORS.s019).value);
       if (!/^https?:$/.test(url.protocol)) throw Error("Use HTTP/HTTPS.");
       const script = document.createElement("script");
-      if ($("[data-module]").checked) script.type = "module";
+      if ($(CSS_SELECTORS.s020).checked) script.type = "module";
       script.src = url.href;
       script.onload = () => {
         print(
@@ -375,7 +375,7 @@ export default {
           ...Object.getOwnPropertyNames(window),
         ],
       );
-      const list = $(".completions");
+      const list = $(CSS_SELECTORS.s021);
       list.replaceChildren();
       for (const name of [...names]
         .filter(
@@ -422,7 +422,7 @@ export default {
       complete: completions,
       "copy-report": async () => {
         await copy(JSON.stringify(report(), null, 2));
-        $(".status").textContent = "Relatório copiado";
+        $(CSS_SELECTORS.s015).textContent = "Relatório copiado";
       },
       export: () => download({ schema: 1, history: state.history, report: report() }),
       import: () => {
@@ -456,7 +456,7 @@ export default {
       external: () => locked(external),
     };
     ctx.listen(shadow, "click", (event) => {
-      const button = event.target.closest("[data-action],[data-tab]");
+      const button = event.target.closest(CSS_SELECTORS.s022);
       if (!button) return;
       if (button.dataset.tab) {
         tab(button.dataset.tab);
@@ -471,11 +471,11 @@ export default {
       clearTimeout(syntaxTimer);
       syntaxTimer = setTimeout(() => {
         try {
-          compile(editor.value, { persist: $("[data-persist]").checked, knownNames: [...knownNames] });
-          $("[data-syntax]").textContent =
+          compile(editor.value, { persist: $(CSS_SELECTORS.s017).checked, knownNames: [...knownNames] });
+          $(CSS_SELECTORS.s023).textContent =
             "Sintaxe válida · Ctrl/Cmd+Enter executa · histórico com Alt+↑/↓ · ctx.vars persiste na sessão";
         } catch (error) {
-          $("[data-syntax]").textContent = error.message;
+          $(CSS_SELECTORS.s023).textContent = error.message;
         }
       }, 300);
     });
@@ -502,7 +502,7 @@ export default {
         editor.value = state.history[historyCursor]?.code || "";
       }
     });
-    ctx.listen($("[data-example]"), "change", (event) => {
+    ctx.listen($(CSS_SELECTORS.s009), "change", (event) => {
       if (examples[event.target.value]) {
         editor.value = examples[event.target.value];
         save();

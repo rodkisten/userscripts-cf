@@ -1,3 +1,5 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-download-1.css?inline";
 export let ImmersiveDownload;
 
 export function initializeDeckImmersiveDownload() {
@@ -67,7 +69,7 @@ export function initializeDeckImmersiveDownload() {
     function locate() {
       const layer = document.getElementById("layers");
       if (!layer) return null;
-      const videos = [...layer.querySelectorAll("video")];
+      const videos = [...layer.querySelectorAll(CSS_SELECTORS.s143)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
@@ -82,30 +84,18 @@ export function initializeDeckImmersiveDownload() {
         );
       });
       if (!visible.length) return null;
-      const isViewer = Boolean(
-        layer.querySelector(
-          '[data-testid="media-viewer"], [data-testid="mediaViewer"], ' +
-            '[data-testid="mediaViewerContainer"], [data-testid="swipe-to-dismiss"], ' +
-            '[aria-modal="true"], [role="dialog"]',
-        ),
-      );
+      const isViewer = Boolean(layer.querySelector(CSS_SELECTORS.s301()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
-      const nativePlayerInStatus = Boolean(
-        route &&
-        layer.querySelector(
-          '[data-testid="videoPlayer"], [data-testid="videoComponent"], ' +
-            '[data-testid="video-player"], [data-testid="videoPlayerContainer"]',
-        ),
-      );
+      const nativePlayerInStatus = Boolean(route && layer.querySelector(CSS_SELECTORS.s302()));
       if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
       const video = visible.sort((a, b) => {
         const ra = a.getBoundingClientRect(),
           rb = b.getBoundingClientRect();
         return rb.width * rb.height - ra.width * ra.height;
       })[0];
-      const related = video.closest('article, [data-testid="tweet"], [role="dialog"]') || layer;
-      const link = related.querySelector('a[href*="/status/"]') || layer.querySelector('a[href*="/status/"]');
+      const related = video.closest(CSS_SELECTORS.s144) || layer;
+      const link = related.querySelector(CSS_SELECTORS.s052) || layer.querySelector(CSS_SELECTORS.s052);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
       if (!id) return null;
       const owner =
@@ -134,42 +124,7 @@ export function initializeDeckImmersiveDownload() {
       if (styleAdded) return;
       const css = document.createElement("style");
       css.id = "rodx-immersive-download-css";
-      css.textContent = `
-#rodx-immersive-download {
-  position: fixed !important;
-  right: max(14px, env(safe-area-inset-right)) !important;
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  z-index: 2147481100 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-  background: rgba(15, 20, 25, 0.88) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  border-radius: 999px !important;
-  padding: 10px 15px !important;
-  font:
-    700 14px/1.2 TwitterChirp,
-    -apple-system,
-    sans-serif !important;
-  cursor: pointer !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  min-height: 44px !important;
-  touch-action: manipulation !important;
-  box-shadow: 0 3px 13px rgba(0, 0, 0, 0.2);
-}
-#rodx-immersive-download:hover {
-  background: rgba(29, 155, 240, 0.95) !important;
-}
-#rodx-immersive-download:disabled {
-  opacity: 0.7 !important;
-  cursor: progress !important;
-}
-#rodx-immersive-download svg {
-  flex: none;
-}
-`;
+      css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
       styleAdded = true;
     }

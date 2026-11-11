@@ -1,3 +1,24 @@
+import workbenchOverrides2 from "../../../styles/workbench-overrides-2.css?inline";
+import workbenchOverrides1 from "../../../styles/workbench-overrides-1.css?inline";
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-2.css?inline";
+import inlineCSS3 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-3.css?inline";
+import inlineCSS4 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-4.css?inline";
+import inlineCSS5 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-5.css?inline";
+import inlineCSS6 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-6.css?inline";
+import inlineCSS7 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-7.css?inline";
+import inlineCSS8 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-8.css?inline";
+import inlineCSS9 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-9.css?inline";
+import inlineCSS10 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-10.css?inline";
+import inlineCSS11 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-11.css?inline";
+import inlineCSS12 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-12.css?inline";
+import inlineCSS13 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-13.css?inline";
+import inlineCSS14 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-14.css?inline";
+import inlineCSS15 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-15.css?inline";
+import inlineCSS16 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-16.css?inline";
+import inlineCSS17 from "../../../styles/inline/userscripts-rodx-studio-ui-search-workbench-17.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import {
   BLOCK_MEDIA,
   BLOCK_TYPES,
@@ -43,7 +64,7 @@ export function currentSearch() {
 
 export function displayPreview() {
   if (!state.rootShadow || !state.draft) return;
-  const el = state.rootShadow.querySelector("[data-query-preview]");
+  const el = state.rootShadow.querySelector(CSS_SELECTORS.s280);
   if (!el) return;
   const issues = analyzeDraft(state.draft);
   let query = "";
@@ -59,16 +80,16 @@ export function displayPreview() {
   );
   el.innerHTML = highlightQuery(query);
   const ids = new Set(issues.filter((i) => i.level === "error").flatMap((i) => i.ids));
-  for (const node of state.rootShadow.querySelectorAll("[data-block-node], [data-chip-node]")) {
+  for (const node of state.rootShadow.querySelectorAll(CSS_SELECTORS.s258)) {
     node.classList.toggle(
-      node.matches("[data-chip-node]") ? "bad" : "block-node-bad",
+      node.matches(CSS_SELECTORS.s281) ? "bad" : "block-node-bad",
       ids.has(node.dataset.blockNode || node.dataset.chipNode),
     );
   }
-  const summary = state.rootShadow.querySelector("[data-analyzer-summary]");
+  const summary = state.rootShadow.querySelector(CSS_SELECTORS.s282);
   const errors = issues.filter((i) => i.level === "error");
   if (summary) summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
-  const pane = state.rootShadow.querySelector("[data-query-diagnostics]");
+  const pane = state.rootShadow.querySelector(CSS_SELECTORS.s283);
   if (pane)
     pane.innerHTML = issues.length
       ? issues
@@ -82,19 +103,19 @@ export function displayPreview() {
           )
           .join("")
       : '<div class="issue" data-level="ok">✓ Query compilada sem conflitos detectados. A disponibilidade dos operadores depende do X.</div>';
-  const raw = state.rootShadow.querySelector("[data-raw-query]");
+  const raw = state.rootShadow.querySelector(CSS_SELECTORS.s206);
   if (raw && !state.rawDirty) {
     state.rawQueryDraft = query.startsWith("Adicione hashtags,") ? "" : query;
     raw.value = state.rawQueryDraft;
   }
-  const colored = state.rootShadow.querySelector("[data-raw-highlight]");
+  const colored = state.rootShadow.querySelector(CSS_SELECTORS.s284);
   if (colored) colored.innerHTML = highlightQuery(raw?.value || "");
 }
 
 export function validateRawWorkbench(text) {
-  const target = state.rootShadow?.querySelector("[data-raw-status]");
-  const colored = state.rootShadow?.querySelector("[data-raw-highlight]");
-  const list = state.rootShadow?.querySelector("[data-raw-issues]");
+  const target = state.rootShadow?.querySelector(CSS_SELECTORS.s285);
+  const colored = state.rootShadow?.querySelector(CSS_SELECTORS.s284);
+  const list = state.rootShadow?.querySelector(CSS_SELECTORS.s286);
   const issues = diagnosticSpans(text);
   if (colored) colored.innerHTML = highlightWithIssues(text, issues);
   let semantic = [];
@@ -170,7 +191,7 @@ export function tagTrayHTML() {
     phrase: "“”",
   };
   return `<section class="chip-tray" aria-label="Editor de hashtags e termos">
-      <div class="row" style="justify-content:space-between">
+      <div class="row" style="${cssDeclarations(inlineCSS1)}">
         <h2 class="hero-title">＃ Hashtags e palavras</h2>
         <button class="op-pill" data-act="toggle-tray" title="Alternar entre E e OU">${target.op === "OR" ? "OU (OR)" : "E (AND)"} ⇄</button>
       </div>
@@ -188,12 +209,12 @@ export function tagTrayHTML() {
         <input data-chip-input aria-label="Adicionar hashtags separadas por vírgulas"
           placeholder="#hashtag, outra, palavra…" autocomplete="off" spellcheck="false" />
       </div>
-      <div class="row" style="margin-top:7px"><span class="inline-label">${target.children.length} termo(s) · toque no operador para mudar a combinação</span></div>
+      <div class="row" style="${cssDeclarations(inlineCSS2)}"><span class="inline-label">${target.children.length} termo(s) · toque no operador para mudar a combinação</span></div>
     </section>`;
 }
 
 export function renderTags() {
-  const container = state.rootShadow?.querySelector("[data-tag-tray]");
+  const container = state.rootShadow?.querySelector(CSS_SELECTORS.s287);
   if (container && state.draft) container.innerHTML = tagTrayHTML();
 }
 
@@ -224,19 +245,19 @@ export function addChips(value, focus = true) {
   state.autoFixSummary = removed ? `${removed} duplicata(s) eliminada(s) automaticamente.` : "";
   renderTags();
   renderBlockEditor();
-  if (focus) state.rootShadow?.querySelector("[data-chip-input]")?.focus();
+  if (focus) state.rootShadow?.querySelector(CSS_SELECTORS.s263)?.focus();
 }
 
 export function selectionHTML() {
-  return `<section class="rodx-selection-list" style="margin:8px 0 15px">
-      <div class="row" style="align-items:center"><strong>Seleções guardadas</strong>
-        <span class="muted" style="font-size:12px">(${state.selectionList.length})</span></div>
+  return `<section class="rodx-selection-list" style="${cssDeclarations(inlineCSS3)}">
+      <div class="row" style="${cssDeclarations(inlineCSS4)}"><strong>Seleções guardadas</strong>
+        <span class="muted" style="${cssDeclarations(inlineCSS5)}">(${state.selectionList.length})</span></div>
       <p class="muted">Selecione uma palavra no post ou {uma frase inteira}, e guarde aqui para reutilizar.</p>
-      <div class="row" style="flex-wrap:wrap;gap:7px">${
+      <div class="row" style="${cssDeclarations(inlineCSS6)}">${
         state.selectionList
           .map(
             (term, index) => `
-        <span class="chip" style="display:inline-flex;align-items:center;gap:5px;max-width:100%">
+        <span class="chip" style="${cssDeclarations(inlineCSS7)}">
           <span>${html(term)}</span>
           <button class="btn mini" title="Adicionar à pesquisa" data-act="selection-use" data-index="${index}">+</button>
           <button class="btn mini" title="Excluir da pesquisa" data-act="selection-exclude" data-index="${index}">−</button>
@@ -278,8 +299,8 @@ export function presetShelfHTML() {
   return `<section class="preset-shelf">
       <h3>✦ Inserir presets</h3>
       <div class="preset-list">${state.presets.map((p) => `<button class="btn smol" data-act="preset-insert" data-id="${html(p.id)}">＋ ${html(p.name)}</button>`).join("") || '<span class="muted">Salve uma base abaixo para reutilizá-la depois.</span>'}</div>
-      <div class="row" style="margin-top:11px">
-        <input class="ctrl" style="flex:1; min-width:135px" maxlength="100" data-preset-name
+      <div class="row" style="${cssDeclarations(inlineCSS8)}">
+        <input class="ctrl" style="${cssDeclarations(inlineCSS9)}" maxlength="100" data-preset-name
           value="${html(state.draft.presetName || "")}" placeholder="Nome da base · Ex.: Mídia + hashtags" />
         <button class="btn primary" data-act="preset-save">${state.presetEditingId ? "Atualizar preset" : "Salvar preset"}</button>
         ${state.presetEditingId ? '<button class="btn" data-act="preset-save-new">Salvar como novo</button>' : ""}
@@ -367,7 +388,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
               .join("")
           : '<div class="block-empty">Adicione abaixo palavras, mídia e grupos, ou use o campo de hashtags acima.</div>'
       }</div>
-      <div class="builder-buttons" style="margin-top:9px">
+      <div class="builder-buttons" style="${cssDeclarations(inlineCSS10)}">
         <button class="btn mini quick-add" data-act="block-add-tag" data-id="${html(block.id)}">＋ Hashtag</button>
         <button class="btn mini" data-act="block-add-keyword" data-id="${html(block.id)}">＋ Palavra</button>
         <button class="btn mini" data-act="block-add-media" data-id="${html(block.id)}">＋ Mídia</button>
@@ -381,9 +402,9 @@ export function builderHTML() {
   return `<section class="builder" aria-label="Construtor de busca por blocos">
       <div class="builder-header">
         <div><h3 class="hero-title">🧩 Montar query com blocos</h3>
-          <p class="hero-sub" style="margin-bottom:0">Combine hashtags, palavras e mídia usando E, OU, NÃO e parênteses.</p></div>
+          <p class="hero-sub" style="${cssDeclarations(inlineCSS11)}">Combine hashtags, palavras e mídia usando E, OU, NÃO e parênteses.</p></div>
       </div>
-      <div class="builder-buttons" style="margin-bottom:10px">
+      <div class="builder-buttons" style="${cssDeclarations(inlineCSS12)}">
         <button class="btn mini quick-add" data-act="template-tag-or-word">＃ Hashtag OU palavra</button>
         <button class="btn mini" data-act="template-tag-and-group">＃ E (＃ OU palavra)</button>
         <button class="btn mini" data-act="template-media-or">📷 Fotos OU vídeos</button>
@@ -398,7 +419,7 @@ export function builderHTML() {
 
 export function renderBlockEditor() {
   const root = state.rootShadow;
-  const container = root?.querySelector("[data-blocks-container]");
+  const container = root?.querySelector(CSS_SELECTORS.s288);
   if (container && state.draft) container.innerHTML = blockHTML(state.draft.blocks, 0, true);
   displayPreview();
 }
@@ -516,17 +537,17 @@ export function editorHTML() {
     <p class="muted hint">O campo livre aceita qualquer operador do buscador web do X.
       Alguns filtros experimentais podem depender de alterações da plataforma.
       A data final é tratada como inclusiva.</p>
-    <button class="btn" data-act="block-fix" style="width:100%">✦ Corrigir duplicatas e filtros redundantes com segurança</button>`;
+    <button class="btn" data-act="block-fix" style="${cssDeclarations(inlineCSS13)}">✦ Corrigir duplicatas e filtros redundantes com segurança</button>`;
 }
 
 export function savedHTML() {
   if (!state.searches.length) {
     return `<div class="empty">Ainda não há pesquisas salvas.<br />
         <span class="muted">Crie uma busca avançada ou importe uma pesquisa que já esteja aberta.</span><br />
-        <button class="btn primary" style="margin-top:14px" data-act="new">Criar primeira pesquisa</button>
+        <button class="btn primary" style="${cssDeclarations(inlineCSS14)}" data-act="new">Criar primeira pesquisa</button>
       </div>`;
   }
-  return `${selectionHTML()}<div class="row" style="margin-bottom:15px">
+  return `${selectionHTML()}<div class="row" style="${cssDeclarations(inlineCSS15)}">
       <button class="btn primary" data-act="new">+ Nova pesquisa</button>
       <button class="btn" data-act="capture" ${currentSearch() ? "" : "disabled"}>Salvar busca atual</button>
     </div>
@@ -590,7 +611,7 @@ export function dataHTML() {
         Identificação de conta é feita pelo perfil do usuário logado visível na interface.
         Se o identificador de sessão não estiver acessível, o script usa o perfil conectado.</p>
       <div class="field"><label>Conta manual (fallback para iPhone / layout sem perfil)</label>
-        <div class="row"><input class="ctrl" style="flex:1" data-manual-account
+        <div class="row"><input class="ctrl" style="${cssDeclarations(inlineCSS16)}" data-manual-account
           placeholder="@meuusuario" maxlength="16" />
           <button class="btn" data-act="set-manual-account">Usar conta</button></div>
         <p class="muted">Use apenas se a detecção automática falhar. Ao trocar de conta,
@@ -731,9 +752,7 @@ export function applyXTheme(host) {
   // X's own primary column gets the reliable text color, and the palette
   // follows that setting even if Safari uses another OS appearance.
   const element =
-    document.querySelector('[data-testid="primaryColumn"]') ||
-    document.querySelector("main") ||
-    document.body;
+    document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094) || document.body;
   const color = getComputedStyle(element).color || getComputedStyle(document.body).color;
   const rgb =
     color
@@ -758,44 +777,23 @@ export function applyXTheme(host) {
 export function renderRoot() {
   if (!state.rootShadow) return;
   applyXTheme(state.rootHost);
-  const oldBody = state.rootShadow.querySelector("[data-scroll-area]");
-  const oldView = state.rootShadow.querySelector(".panel")?.dataset.view;
+  const oldBody = state.rootShadow.querySelector(CSS_SELECTORS.s289);
+  const oldView = state.rootShadow.querySelector(CSS_SELECTORS.s003)?.dataset.view;
   const restoreScroll = Boolean(state.open && oldBody && oldView === state.view);
   const scrollTop = restoreScroll ? oldBody.scrollTop : 0;
-  state.rootShadow.innerHTML = `<style>
-${CSS}${CUSTOM_CSS}.scrim {
-  display: none !important;
-}
-.panel {
-  position: relative !important;
-  inset: auto !important;
-  width: 100% !important;
-  height: auto !important;
-  max-height: none !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-.body {
-  overflow: visible !important;
-}
-.head-row {
-  display: none !important;
-}
-</style>
+  state.rootShadow.innerHTML = `<style>${CSS}${CUSTOM_CSS}${workbenchOverrides2}</style>
       ${state.open ? panelHTML() : ""}`;
   if (state.open) {
-    state.rootHost.style.cssText =
-      "display:block;position:relative;width:100%;min-width:0;pointer-events:auto";
+    state.rootHost.style.cssText = cssDeclarations(inlineCSS17);
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
   } else Studio.menu.close("workspace");
   if (restoreScroll) {
-    const body = state.rootShadow.querySelector("[data-scroll-area]");
+    const body = state.rootShadow.querySelector(CSS_SELECTORS.s289);
     if (body) body.scrollTop = scrollTop;
   }
   if (state.open && state.view === "editor") {
     displayPreview();
-    validateRawWorkbench(state.rootShadow.querySelector("[data-raw-query]")?.value || "");
+    validateRawWorkbench(state.rootShadow.querySelector(CSS_SELECTORS.s206)?.value || "");
   }
 }
 
@@ -806,22 +804,9 @@ export function renderDock() {
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
   const onSearch = /^\/(?:search(?:\/|$)|hashtag\/)/.test(location.pathname);
-  const horizontalScroll = dock.querySelector(".dock")?.scrollLeft || 0;
+  const horizontalScroll = dock.querySelector(CSS_SELECTORS.s250)?.scrollLeft || 0;
   dock.innerHTML = `<style>
-${CSS}${CUSTOM_CSS}.dock {
-  flex-wrap: wrap !important;
-  overflow-x: clip !important;
-  max-height: 76px;
-  overflow-y: auto;
-  min-width: 0;
-  max-width: 100%;
-}
-.dock button {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-</style><nav class="dock" data-route="${onSearch ? "search" : "home"}" aria-label="Timelines personalizadas">
+${CSS}${CUSTOM_CSS}${workbenchOverrides1}</style><nav class="dock" data-route="${onSearch ? "search" : "home"}" aria-label="Timelines personalizadas">
       <span class="dock-caption">${onSearch ? "Pesquisas" : "Minha Home"}</span>
       <button data-act="home" class="${location.pathname === "/home" ? "active" : ""}">⌂ Início</button>
       ${pinned
@@ -839,12 +824,12 @@ ${CSS}${CUSTOM_CSS}.dock {
       <button data-act="open" title="Organizar pesquisas">⚙</button>
     </nav>`;
   dock
-    .querySelectorAll("[data-studio-list]")
+    .querySelectorAll(CSS_SELECTORS.s290)
     .forEach(
       (button) =>
         (button.onclick = () => Studio.navigate(studioListIndex(Studio) + "/" + button.dataset.studioList)),
     );
-  const nav = dock.querySelector(".dock");
+  const nav = dock.querySelector(CSS_SELECTORS.s250);
   if (nav) nav.scrollLeft = horizontalScroll;
 }
 
@@ -896,7 +881,7 @@ export function inspectNativeQuery(query) {
 }
 
 export function liveNativeQuery() {
-  const input = document.querySelector('input[data-testid="SearchBox_Search_Input"]');
+  const input = document.querySelector(CSS_SELECTORS.s188);
   return input?.value?.trim() || nativeSearch()?.query || "";
 }
 

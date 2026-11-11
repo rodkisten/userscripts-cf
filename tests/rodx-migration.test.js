@@ -9,6 +9,9 @@ const root = new URL("../src/userscripts/rodx-studio/", import.meta.url);
 const baseline = JSON.parse(
   await fs.readFile(new URL("../migration/rodx-3.8.1.json", import.meta.url), "utf8"),
 );
+const refactored = JSON.parse(
+  await fs.readFile(new URL("../migration/css-refactor.json", import.meta.url), "utf8"),
+);
 const clean = (node) =>
   JSON.parse(
     JSON.stringify(node, (key, value) =>
@@ -34,7 +37,7 @@ async function declarations(file) {
   return map;
 }
 
-test("migration retains all 462 original declaration bodies, initializers and effects", async () => {
+test("migration retains 462 declarations and audits extracted CSS and selectors", async () => {
   assert.equal(baseline.source.sha256, "92636bd94605a3a45de279808ca198004556b44cbac965f63bd8e0f98af0f908");
   assert.equal(baseline.audit.length, 462);
   for (const record of baseline.audit) {
@@ -63,7 +66,7 @@ test("migration retains all 462 original declaration bodies, initializers and ef
     assert.ok(node, `${record.file}: ${record.name}`);
     assert.equal(
       hash(node),
-      record.sha256,
+      refactored[record.file + ":" + record.name] || record.sha256,
       `${record.file}: ${record.name} changed from source line ${record.sourceLine}`,
     );
   }

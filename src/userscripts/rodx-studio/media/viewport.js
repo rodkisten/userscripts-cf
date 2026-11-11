@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { state } from "../state/deck.js";
 
@@ -22,10 +23,7 @@ export function initializeDeckViewportPlayback() {
       return possible ? Math.min(1, (x * y) / possible) : 0;
     }
     function isFeed(video) {
-      return (
-        Boolean(video.closest('main :is(article,[role="article"])[data-testid="tweet"]')) &&
-        !video.closest("#layers")
-      );
+      return Boolean(video.closest(CSS_SELECTORS.s167)) && !video.closest(CSS_SELECTORS.s026);
     }
     function update() {
       raf = 0;
@@ -116,7 +114,7 @@ export function initializeDeckViewportPlayback() {
         document.addEventListener(
           "click",
           (event) => {
-            const button = event.target.closest?.('button,[role="button"]');
+            const button = event.target.closest?.(CSS_SELECTORS.s116);
             if (
               !button ||
               !/^(?:play|pause|reproduzir|pausar)$/i.test(
@@ -124,8 +122,8 @@ export function initializeDeckViewportPlayback() {
               )
             )
               return;
-            const card = button.closest(':is(article,[role="article"])[data-testid="tweet"]');
-            const video = card?.querySelector("video");
+            const card = button.closest(CSS_SELECTORS.s168);
+            const video = card?.querySelector(CSS_SELECTORS.s143);
             const item = video && info.get(video);
             if (item && !video.paused) item.manuallyPausedUntil = performance.now() + 30000;
           },

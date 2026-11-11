@@ -1,3 +1,5 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { showRodxToast } from "../ui/toast.js";
@@ -31,8 +33,8 @@ export function initializeDeckXInterfaceHygiene() {
       event.stopImmediatePropagation();
       // Use React's existing click handler on the status permalink.
       const anchor =
-        article.querySelector("time")?.closest('a[href*="/status/"]') ||
-        article.querySelector('a[href*="/status/"]');
+        article.querySelector(CSS_SELECTORS.s053)?.closest(CSS_SELECTORS.s052) ||
+        article.querySelector(CSS_SELECTORS.s052);
       if (!anchor) {
         showRodxToast("Link nativo do tweet não encontrado.", "error");
         return;
@@ -62,13 +64,10 @@ export function initializeDeckXInterfaceHygiene() {
       return button;
     }
     function replaceTweetGrok(article) {
-      const controls = [
-        ...article.querySelectorAll(
-          'button[aria-label*="grok" i], [role="button"][aria-label*="grok" i], ' +
-            'button[data-testid*="grok" i], a[href*="/i/grok-redirect"]',
-        ),
-      ].filter((el) => !el.closest('[data-testid="tweetText"], .rodx-grok-replacement'));
-      let replacement = article.querySelector(".rodx-grok-replacement");
+      const controls = [...article.querySelectorAll(CSS_SELECTORS.s294())].filter(
+        (el) => !el.closest(CSS_SELECTORS.s054),
+      );
+      let replacement = article.querySelector(CSS_SELECTORS.s055);
       if (controls.length) {
         const original = controls[0];
         if (!replacement) replacement = createOpenButton(article);
@@ -77,7 +76,7 @@ export function initializeDeckXInterfaceHygiene() {
       } else if (replacement) {
         replacement.remove();
       }
-      const oldOpen = article.querySelector(".rodx-result-actions [data-rodx-expand]");
+      const oldOpen = article.querySelector(CSS_SELECTORS.s056);
       if (oldOpen) oldOpen.hidden = Boolean(controls.length);
     }
     function hideGrok(root = document) {
@@ -85,12 +84,10 @@ export function initializeDeckXInterfaceHygiene() {
         replaceTweetGrok(article);
       }
       for (const el of root.querySelectorAll(grokSelectors)) {
-        if (el.closest(".rodx-grok-replacement")) continue;
+        if (el.closest(CSS_SELECTORS.s055)) continue;
         el.classList.add("rodx-native-grok-hidden");
       }
-      for (const element of root.querySelectorAll(
-        '[role="menuitem"], [role="option"], [data-testid="Dropdown"] button',
-      )) {
+      for (const element of root.querySelectorAll(CSS_SELECTORS.s057)) {
         if (
           grokText.test(element.innerText || element.textContent || "") ||
           grokText.test(element.getAttribute("aria-label") || "")
@@ -109,9 +106,9 @@ export function initializeDeckXInterfaceHygiene() {
       for (const control of root.querySelectorAll(selectors)) {
         if (expanded.has(control)) continue;
         if (!inlineMore.test((control.textContent || "").trim())) continue;
-        const link = control.closest("a[href]");
+        const link = control.closest(CSS_SELECTORS.s027);
         if (link && !/^#?$/.test(link.getAttribute("href") || "")) continue;
-        if (control.closest('button[data-testid="tweet-actions"], [role="menuitem"]')) continue;
+        if (control.closest(CSS_SELECTORS.s058)) continue;
         expanded.add(control);
         control.click();
       }
@@ -129,45 +126,7 @@ export function initializeDeckXInterfaceHygiene() {
     function install() {
       const style = document.createElement("style");
       style.id = "rodx-x-hygiene-css";
-      style.textContent = `
-a[href="/i/grok"],
-a[href^="/i/grok/"],
-a[href*="/i/grok-redirect"],
-[data-testid="AppTabBar_Grok_Link"],
-[data-testid="SideNav_Grok_Link"],
-[data-testid="GrokDrawer"],
-[data-testid="grokButton"],
-[data-testid="grok"],
-button[aria-label*="grok" i],
-button[data-testid*="grok" i],
-.rodx-native-grok-hidden {
-  display: none !important;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-grok-replacement {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 32px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: rgb(113, 118, 123);
-  cursor: pointer;
-  touch-action: manipulation;
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-grok-replacement:is(:hover, :focus-visible) {
-  background: rgba(29, 155, 240, 0.12);
-  color: rgb(29, 155, 240);
-}
-:is(article,[role="article"])[data-testid="tweet"] .rodx-result-actions [data-rodx-expand][hidden] {
-  display: none !important;
-}
-`;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
       Studio.register("interface.hygiene", scan, {
         group: "hygiene",

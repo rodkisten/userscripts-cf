@@ -1,3 +1,10 @@
+import dynamicCSS from "../../../styles/dynamic-quick-actions.css?inline";
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
+import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "../identity/account.js";
 import { XDOM } from "../platform/selectors.js";
@@ -15,7 +22,7 @@ export function initializeDeckQuickUI() {
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
       if (!identity) return "";
-      const link = [...identity.querySelectorAll('a[href^="/"]')].find((anchor) =>
+      const link = [...identity.querySelectorAll(CSS_SELECTORS.s268)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
       return link?.getAttribute("href")?.match(/^\/([A-Za-z0-9_]{1,15})\/?$/)?.[1] || "";
@@ -26,171 +33,7 @@ export function initializeDeckQuickUI() {
       const form = document.createElement("form");
       form.className = "rodx-quick-search";
       form.innerHTML = `
-            <style>
-              .rodx-quick-search {
-                display: grid;
-                gap: 10px;
-                min-width: 0;
-                font: 13px/1.5 TwitterChirp, -apple-system, system-ui, sans-serif;
-              }
-              .rodx-quick-search * {
-                box-sizing: border-box;
-              }
-              .rxq-editor {
-                position: relative;
-                isolation: isolate;
-                min-height: 112px;
-                border: 1px solid #71767b77;
-                border-radius: 14px;
-                background: color-mix(in srgb, Canvas 94%, #1d9bf0 6%);
-                overflow: hidden;
-              }
-              .rxq-editor:focus-within {
-                border-color: #1d9bf0;
-                outline: 1px solid #1d9bf066;
-              }
-              .rxq-syntax,
-              .rxq-input {
-                margin: 0;
-                padding: 12px;
-                display: block;
-                width: 100%;
-                min-height: 112px;
-                max-height: min(40dvh, 330px);
-                border: 0;
-                font: 15px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
-                letter-spacing: 0;
-                tab-size: 2;
-                white-space: pre-wrap;
-                overflow-wrap: anywhere;
-                word-break: break-word;
-              }
-              .rxq-syntax {
-                position: absolute;
-                inset: 0;
-                z-index: 1;
-                pointer-events: none;
-                overflow: hidden;
-                color: CanvasText;
-              }
-              .rxq-input {
-                position: relative;
-                z-index: 2;
-                display: block;
-                resize: none;
-                background: transparent;
-                color: transparent;
-                -webkit-text-fill-color: transparent;
-                caret-color: #1d9bf0;
-                -webkit-appearance: none;
-                appearance: none;
-                outline: 0;
-              }
-              .rxq-input::placeholder {
-                color: #71767b;
-                -webkit-text-fill-color: #71767b;
-              }
-              .rxq-input::selection {
-                background: #1d9bf055;
-              }
-              .rxq-syntax .syn-negative {
-                color: #f04458;
-              }
-              .rxq-syntax .syn-filter {
-                color: #169de4;
-              }
-              .rxq-syntax .syn-tag {
-                color: #a47bff;
-              }
-              .rxq-syntax .syn-bool,
-              .rxq-syntax .syn-paren {
-                color: #e8a33d;
-                font-weight: 700;
-              }
-              .rxq-syntax .syn-phrase {
-                color: #22af80;
-              }
-              .rxq-syntax .rodx-syntax-error {
-                text-decoration: underline wavy #f04458;
-              }
-              .rxq-syntax .rodx-syntax-warning {
-                text-decoration: underline dotted #e8a33d;
-              }
-              .rxq-message {
-                min-height: 16px;
-                color: #71767b;
-              }
-              .rxq-message[data-level="error"] {
-                color: #f04458;
-              }
-              .rxq-suggestions {
-                display: grid;
-                gap: 2px;
-                max-height: min(34dvh, 300px);
-                overflow-y: auto;
-                overscroll-behavior: contain;
-                border: 1px solid #71767b44;
-                border-radius: 14px;
-                padding: 4px;
-              }
-              .rxq-suggestions[hidden] {
-                display: none;
-              }
-              .rxq-option {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                width: 100%;
-                padding: 9px 10px;
-                gap: 1px;
-                border: 0;
-                border-radius: 9px;
-                background: transparent;
-                color: inherit;
-                text-align: left;
-                font: inherit;
-                cursor: pointer;
-                touch-action: manipulation;
-              }
-              .rxq-option[aria-selected="true"] {
-                background: #1d9bf024;
-              }
-              .rxq-option small {
-                display: block;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                opacity: 0.75;
-                font-size: 11px;
-                line-height: 1.4;
-              }
-              .rxq-tools {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                align-items: center;
-              }
-              .rxq-tools button {
-                padding: 7px 10px;
-                border: 1px solid #71767b55;
-                border-radius: 18px;
-                background: transparent;
-                color: inherit;
-                font: inherit;
-                cursor: pointer;
-                touch-action: manipulation;
-              }
-              .rxq-tools [type="submit"] {
-                margin-left: auto;
-                background: #1d9bf0;
-                color: white;
-                border-color: #1d9bf0;
-                font-weight: 700;
-              }
-              .rxq-tools [type="submit"]:disabled {
-                opacity: 0.45;
-              }
-            </style>
+            <style>${extractedCSS1}</style>
             <div class="rxq-editor">
               <pre class="rxq-syntax" data-rxq="syntax" aria-hidden="true"></pre>
               <textarea class="rxq-input" data-rxq="input" name="q" spellcheck="false"
@@ -209,11 +52,11 @@ export function initializeDeckQuickUI() {
               <button type="submit" data-rxq="submit">Pesquisar</button>
             </div>
           `;
-      const input = form.querySelector('[data-rxq="input"]');
-      const syntax = form.querySelector('[data-rxq="syntax"]');
-      const message = form.querySelector('[data-rxq="message"]');
-      const submit = form.querySelector('[data-rxq="submit"]');
-      const suggestionBox = form.querySelector('[data-rxq="suggestions"]');
+      const input = form.querySelector(CSS_SELECTORS.s269);
+      const syntax = form.querySelector(CSS_SELECTORS.s270);
+      const message = form.querySelector(CSS_SELECTORS.s271);
+      const submit = form.querySelector(CSS_SELECTORS.s272);
+      const suggestionBox = form.querySelector(CSS_SELECTORS.s273);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
       let rows = [];
@@ -515,7 +358,7 @@ export function initializeDeckQuickUI() {
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
           renderSuggestions();
-          suggestionBox.querySelector(`[aria-selected="true"]`)?.scrollIntoView({ block: "nearest" });
+          suggestionBox.querySelector(CSS_SELECTORS.s274)?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
           event.preventDefault();
           event.stopPropagation();
@@ -531,7 +374,7 @@ export function initializeDeckQuickUI() {
         }
       });
       form.addEventListener("click", async (event) => {
-        const action = event.target.closest("[data-rxq-action]")?.dataset.rxqAction;
+        const action = event.target.closest(CSS_SELECTORS.s275)?.dataset.rxqAction;
         if (!action) return;
         event.preventDefault();
         if (action === "copy") {
@@ -630,23 +473,11 @@ export function initializeDeckQuickUI() {
       const margin = 8;
       const left = Math.max(margin, Math.min(innerWidth - size - margin, Number(c.x ?? 12)));
       const top = Math.max(60, Math.min(availableHeight - size - 76, Number(c.y ?? availableHeight - 170)));
-      floating.style.cssText = `
-            position: fixed;
-            z-index: 1400;
-            -webkit-user-select: none;
-            user-select: none;
-            left: ${left}px;
-            top: ${top}px;
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
-            border: 1px solid #71767b66;
-            background: Canvas;
-            color: CanvasText;
-            font: 24px Arial, sans-serif;
-            touch-action: none;
-            cursor: pointer;
-          `;
+      floating.style.cssText = cssDeclarations(dynamicCSS);
+      floating.style.setProperty("--rodx-value-1", String(left) + "px");
+      floating.style.setProperty("--rodx-value-2", String(top) + "px");
+      floating.style.setProperty("--rodx-value-3", String(size) + "px");
+      floating.style.setProperty("--rodx-value-4", String(size) + "px");
     }
     function scan() {
       if (!floating) {
@@ -698,17 +529,16 @@ export function initializeDeckQuickUI() {
         document.body.append(floating);
         position();
         const style = document.createElement("style");
-        style.textContent =
-          '[data-testid="FloatingActionButton_Tweet"],[data-testid="SideNav_NewTweet_Button"]{display:none!important}';
+        style.textContent = extractedCSS2;
         document.head.append(style);
         window.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        const bar = article.querySelector(".rodx-tweet-topbar");
+        const bar = article.querySelector(CSS_SELECTORS.s048);
         if (!bar) continue;
-        let button = bar.querySelector("[data-rodx-add-list]");
+        let button = bar.querySelector(CSS_SELECTORS.s276);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -730,15 +560,13 @@ export function initializeDeckQuickUI() {
         listInfo?.remove();
         listInfo = null;
       } else {
-        const main =
-          document.querySelector('[data-testid="primaryColumn"]') || document.querySelector("main");
+        const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s094);
         if (main && (!listInfo || listInfo.dataset.id !== id)) {
           listInfo?.remove();
           listInfo = document.createElement("div");
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
-          listInfo.style.cssText =
-            "display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:12px Arial;padding:5px 8px";
+          listInfo.style.cssText = cssDeclarations(inlineCSS1);
           const text = document.createElement("span");
           text.textContent = "ID: " + id;
           const name = document.createElement("strong");
@@ -777,11 +605,11 @@ export function initializeDeckQuickUI() {
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector("[data-rodx-live-name]");
+        const currentName = listInfo.querySelector(CSS_SELECTORS.s277);
         if (currentName && currentName.textContent !== name) currentName.textContent = name;
       }
-      for (const a of document.querySelectorAll('a[href*="/lists/"]')) {
-        if (a.closest('article,[id^="rodx-"],#x-lists-studio-root')) continue;
+      for (const a of document.querySelectorAll(CSS_SELECTORS.s096)) {
+        if (a.closest(CSS_SELECTORS.s278)) continue;
         const id = a.pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&
@@ -793,8 +621,7 @@ export function initializeDeckQuickUI() {
         b.type = "button";
         b.textContent = "▷ Vídeos";
         b.dataset.rodxListVideo = id;
-        b.style.cssText =
-          "font:12px Arial;padding:4px 8px;border:1px solid #71767b55;border-radius:12px;background:transparent;color:inherit";
+        b.style.cssText = cssDeclarations(inlineCSS2);
         b.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();

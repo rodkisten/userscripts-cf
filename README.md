@@ -159,3 +159,11 @@ O publicador recusa código não commitado, builds com versão antiga, checksums
 O instalável independente [page-repl.user.js](https://userscripts-cf.kisten.workers.dev/page-repl.user.js) abre um painel com 27 estratégias de execução, diagnóstico de contexto/CSP, await, console, sessão persistente, autocompletar, histórico e importação/exportação. Fica fora do RodX unificado para não carregar um console de desenvolvimento em todas as páginas automaticamente.
 
 Use **Testar compatibilidade** para sondas inofensivas e **Executar** para seu código. O modo automático sonda antes de escolher um método e não repete seu código depois de erro/timeout. **Executar em todos** repete efeitos. O modo **Script global** insere código sem a função async do REPL, preservando o escopo nativo do método escolhido. Veja [a documentação](src/userscripts/page-repl/README.md) para as diferenças entre contextos, limites de cancelamento e semântica de variáveis.
+
+### Seletores e estilos
+
+Os seletores usados pelas consultas DOM ficam em `src/selectors.js`, compartilhados pelos userscripts. Os seletores dinâmicos são funções que recebem os valores do módulo; os aliases da plataforma X continuam disponíveis em `platform/selectors.js`.
+
+As folhas de estilo ficam em `src/styles/` e nos arquivos `.css` dos módulos. Importe CSS com `?inline`: o Vite usa Lightning CSS para transformar e minificar com alvo Safari 15 e embute a string no JavaScript. Isso preserva os escopos de Shadow DOM e os loaders sandbox/página, sem requisições adicionais de CSS. Blocos `styles/inline/` são regras de declarações usadas por `cssDeclarations()` para preservar estilos inline; posicionamento e dimensões calculados continuam no JavaScript, com variáveis CSS.
+
+Não use `?raw` para CSS de produção: essa opção ignora o processamento. Os arquivos em `diagnostics/` e `labs/` são ferramentas independentes, mantidas separadas dos módulos de produção. Funções serializadas entre contextos continuam autossuficientes.

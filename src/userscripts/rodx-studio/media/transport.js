@@ -1,3 +1,5 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
 import { VideoExperience } from "./experience.js";
 
 export let VideoTransport;
@@ -12,65 +14,7 @@ export function initializeDeckVideoTransport() {
       styled = true;
       const css = document.createElement("style");
       css.id = "rodx-video-transport-css";
-      css.textContent = `
-.rodx-video-transport {
-  position: absolute !important;
-  bottom: 4px;
-  left: 5px;
-  right: 5px;
-  z-index: 15;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-sizing: border-box;
-  padding: 3px 7px;
-  border-radius: 9px;
-  font:
-    11px TwitterChirp,
-    system-ui,
-    sans-serif;
-  color: white;
-  background: rgba(15, 20, 25, 0.78);
-  backdrop-filter: blur(6px);
-  pointer-events: auto !important;
-  touch-action: pan-y;
-}
-.rodx-video-transport button {
-  flex: none;
-  border: 0;
-  background: none;
-  color: white;
-  min-width: 29px;
-  min-height: 29px;
-  padding: 0 3px;
-  cursor: pointer;
-  font:
-    17px TwitterChirp,
-    system-ui;
-  touch-action: manipulation;
-}
-.rodx-video-transport .rodx-transport-seek {
-  flex: 1;
-  min-width: 28px;
-  width: 100%;
-  margin: 0;
-  accent-color: #1d9bf0;
-  cursor: pointer;
-  touch-action: none !important;
-}
-.rodx-video-transport time {
-  font:
-    10px TwitterChirp,
-    system-ui;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  min-width: 36px;
-}
-.rodx-video-transport:focus-within {
-  outline: 1px solid rgba(29, 155, 240, 0.7);
-}
-`;
+      css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
     }
     const format = (n) => {
@@ -80,15 +24,8 @@ export function initializeDeckVideoTransport() {
     };
     function attach(video) {
       if (installed.has(video)) return;
-      const wrapper =
-        video.closest(
-          '[data-testid="videoPlayerContainer"], [data-testid="videoPlayer"], [data-testid="videoComponent"], [data-testid="videoPlayerDiv"]',
-        ) || video.parentElement;
-      if (
-        !wrapper ||
-        wrapper.closest(".rodx-video-transport") ||
-        wrapper.querySelector(":scope > .rodx-video-transport")
-      )
+      const wrapper = video.closest(CSS_SELECTORS.s165) || video.parentElement;
+      if (!wrapper || wrapper.closest(CSS_SELECTORS.s147) || wrapper.querySelector(CSS_SELECTORS.s166))
         return;
       const parentRect = wrapper.getBoundingClientRect();
       if (parentRect.width && (parentRect.width < 135 || parentRect.height < 90)) return;
@@ -215,8 +152,8 @@ export function initializeDeckVideoTransport() {
       update();
     }
     function scan() {
-      for (const video of document.querySelectorAll("main video, #layers video")) {
-        if (video.closest(".rodx-video-transport")) continue;
+      for (const video of document.querySelectorAll(CSS_SELECTORS.s159)) {
+        if (video.closest(CSS_SELECTORS.s147)) continue;
         attach(video);
         clocks.get(video)?.();
       }

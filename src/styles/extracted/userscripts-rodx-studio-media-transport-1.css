@@ -1,0 +1,57 @@
+.rodx-video-transport {
+  position: absolute !important;
+  bottom: 4px;
+  left: 5px;
+  right: 5px;
+  z-index: 15;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  padding: 3px 7px;
+  border-radius: 9px;
+  font:
+    11px TwitterChirp,
+    system-ui,
+    sans-serif;
+  color: white;
+  background: rgba(15, 20, 25, 0.78);
+  backdrop-filter: blur(6px);
+  pointer-events: auto !important;
+  touch-action: pan-y;
+}
+.rodx-video-transport button {
+  flex: none;
+  border: 0;
+  background: none;
+  color: white;
+  min-width: 29px;
+  min-height: 29px;
+  padding: 0 3px;
+  cursor: pointer;
+  font:
+    17px TwitterChirp,
+    system-ui;
+  touch-action: manipulation;
+}
+.rodx-video-transport .rodx-transport-seek {
+  flex: 1;
+  min-width: 28px;
+  width: 100%;
+  margin: 0;
+  accent-color: #1d9bf0;
+  cursor: pointer;
+  touch-action: none !important;
+}
+.rodx-video-transport time {
+  font:
+    10px TwitterChirp,
+    system-ui;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+}
+.rodx-video-transport:focus-within {
+  outline: 1px solid rgba(29, 155, 240, 0.7);
+}

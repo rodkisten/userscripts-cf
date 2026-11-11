@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { MAX_VISIBLE, PREFIX, SORTS } from "../config/search.js";
 import { parseLocalDirectives } from "./local-rules.js";
 import { state } from "../state/deck.js";
@@ -68,7 +69,7 @@ export function visibleLimit() {
 }
 
 export function applyPostLimit() {
-  document.querySelectorAll('[data-rodx-limited="1"],[data-rodx-unmatched="1"]').forEach((cell) => {
+  document.querySelectorAll(CSS_SELECTORS.s037).forEach((cell) => {
     cell.style.removeProperty("display");
     delete cell.dataset.rodxLimited;
     delete cell.dataset.rodxUnmatched;

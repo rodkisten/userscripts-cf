@@ -1,0 +1,8 @@
+.declarations {
+  align-self: flex-start !important;
+  width: auto !important;
+  max-width: max-content !important;
+  display: inline-flex !important;
+  padding: 3px 9px !important;
+  margin: 2px 0 !important;
+}

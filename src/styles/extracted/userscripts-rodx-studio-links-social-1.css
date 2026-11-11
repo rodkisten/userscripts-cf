@@ -1,0 +1,38 @@
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link {
+  display: inline !important;
+  width: auto !important;
+  max-width: 100%;
+  padding: 1px 4px !important;
+  margin: 0 1px 0 0 !important;
+  border-radius: 5px !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: #1d9bf0 !important;
+  text-decoration: none !important;
+  font-family:
+    TwitterChirp,
+    Chirp,
+    -apple-system,
+    system-ui,
+    sans-serif !important;
+  overflow-wrap: anywhere;
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="telegram"] {
+  background: rgba(34, 158, 217, 0.17) !important;
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="whatsapp"] {
+  background: rgba(37, 211, 102, 0.17) !important;
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="instagram"] {
+  background: rgba(225, 48, 108, 0.15) !important;
+}
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link .rodx-app-icon {
+  display: inline-block !important;
+  vertical-align: -2px !important;
+  width: 15px;
+  height: 15px;
+  margin: 0 4px 0 0 !important;
+  fill: currentColor;
+  stroke-linejoin: round;
+  pointer-events: none !important;
+}

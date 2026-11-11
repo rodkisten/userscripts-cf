@@ -1,3 +1,5 @@
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-feeds-filters-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { currentFullQuery, visibleLimit } from "./local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "./local-rules.js";
@@ -83,7 +85,7 @@ export function initializeDeckFeedFilters() {
     function local() {
       // Restore any stale cosmetic flags. Do not resize virtualized tweet cells.
       document
-        .querySelectorAll(".rodx-feed-filtered,.rodx-feed-filtered-cell,.rodx-who-to-follow")
+        .querySelectorAll(CSS_SELECTORS.s029)
         .forEach((el) =>
           el.classList.remove("rodx-feed-filtered", "rodx-feed-filtered-cell", "rodx-who-to-follow"),
         );
@@ -98,8 +100,8 @@ export function initializeDeckFeedFilters() {
             all: "Todos",
           }[config.media] || "Imagens e vídeos";
       shadow.innerHTML =
-        '<style>:host{display:block;min-width:0;font:12px Arial;color:inherit}button{border:1px solid #71767b44;border-radius:14px;background:transparent;color:inherit;padding:5px 10px;max-width:100%;font:inherit;cursor:pointer}</style><button type="button" data-filter-menu></button>';
-      const button = shadow.querySelector("button");
+        "<style>" + inlineCSS1 + "</style>" + '<button type="button" data-filter-menu></button>';
+      const button = shadow.querySelector(CSS_SELECTORS.s030);
       button.textContent =
         "⚙ " +
         summary +
@@ -168,9 +170,7 @@ export function initializeDeckFeedFilters() {
         }
         return;
       }
-      const main =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('main,[role="main"]');
+      const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
       if (!main) return;
       host?.remove();
       host = document.createElement("div");
@@ -183,14 +183,14 @@ export function initializeDeckFeedFilters() {
         (e) => void change(e).catch((error) => showRodxToast(error.message, "error")),
       );
       shadow.addEventListener("click", (e) => {
-        if (e.target.closest("[data-refresh]")) location.reload();
-        if (e.target.closest("[data-filter-menu]")) {
+        if (e.target.closest(CSS_SELECTORS.s033)) location.reload();
+        if (e.target.closest(CSS_SELECTORS.s034)) {
           expanded = !expanded;
           render();
         }
       });
-      const tabs = main.querySelector('[role="tablist"]');
-      const block = tabs?.closest('[data-testid="ScrollSnap-List"]') || tabs;
+      const tabs = main.querySelector(CSS_SELECTORS.s035);
+      const block = tabs?.closest(CSS_SELECTORS.s036) || tabs;
       if (block?.parentElement) block.after(host);
       else main.prepend(host);
       key = current;

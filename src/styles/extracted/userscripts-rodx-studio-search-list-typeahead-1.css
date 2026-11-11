@@ -1,0 +1,30 @@
+:host {
+  color: CanvasText;
+  font:
+    14px Arial,
+    sans-serif;
+}
+div {
+  background: Canvas;
+  border: 1px solid #71767b66;
+  border-radius: 12px;
+  max-height: 35dvh;
+  overflow: auto;
+  padding: 4px;
+}
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+button[aria-selected="true"] {
+  background: #1d9bf033;
+}
+[hidden] {
+  display: none;
+}

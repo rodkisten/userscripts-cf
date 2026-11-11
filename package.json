@@ -25,6 +25,7 @@
     "@babel/parser": "8.1.0",
     "fake-indexeddb": "6.2.8",
     "happy-dom": "21.0.4",
+    "lightningcss": "^1.33.0",
     "prettier": "3.9.10",
     "vite": "8.3.8"
   },

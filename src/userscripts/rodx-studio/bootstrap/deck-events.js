@@ -1,3 +1,4 @@
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { createListsModule } from "../lists/index.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
@@ -41,7 +42,7 @@ export function initializeRodX_deck_164() {
     "click",
     (event) => {
       const el = event.target instanceof Element ? event.target : null;
-      if (!el || el.closest("#rodx-search-deck-root,#rodx-selection-popover")) return;
+      if (!el || el.closest(CSS_SELECTORS.s025)) return;
       if (
         !state.visual.blockTweetOpen ||
         event.defaultPrevented ||
@@ -54,15 +55,8 @@ export function initializeRodX_deck_164() {
       )
         return;
       const article = el.closest(XDOM.tweet);
-      if (!article || article.closest("#layers")) return;
-      if (
-        el.closest(
-          'a,button,input,textarea,select,video,[role="button"],[role="link"],' +
-            '[data-testid="tweetPhoto"],[data-testid="videoPlayerContainer"],' +
-            ".rodx-hashtags,.rodx-result-actions",
-        )
-      )
-        return;
+      if (!article || article.closest(CSS_SELECTORS.s026)) return;
+      if (el.closest(CSS_SELECTORS.s293())) return;
       if (window.getSelection()?.toString().trim()) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -130,8 +124,8 @@ export function initializeRodX_deck_175() {
 export function initializeRodX_deck_176() {
   Studio.navigate = (href) => {
     const target = new URL(href, location.origin);
-    const anchor = [...document.querySelectorAll("a[href]")].find(
-      (a) => a.pathname === target.pathname && a.search === target.search && !a.closest('[id^="rodx-"]'),
+    const anchor = [...document.querySelectorAll(CSS_SELECTORS.s027)].find(
+      (a) => a.pathname === target.pathname && a.search === target.search && !a.closest(CSS_SELECTORS.s028),
     );
     if (anchor) anchor.click();
     else location.assign(target.href);

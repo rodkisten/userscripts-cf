@@ -1,3 +1,7 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-dom-capture-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-lists-dom-capture-2.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { scheduleNameRefresh, syncListMembersApi } from "./graphql.js";
 import { discoverListNames } from "./name-discovery.js";
@@ -80,8 +84,8 @@ export async function captureVisibleLists() {
       lastListCaptures.set(key, { name: item.name, at });
     }
     const ids = new Set(
-      [...document.querySelectorAll('a[href*="/lists/"]')]
-        .filter((a) => !a.closest('[id^="rodx-"],#x-lists-studio-root,article'))
+      [...document.querySelectorAll(CSS_SELECTORS.s096)]
+        .filter((a) => !a.closest(CSS_SELECTORS.s097))
         .map((a) => (a.getAttribute("href") || "").match(LIST_URL_RE)?.[1])
         .filter(validListId),
     );
@@ -110,11 +114,11 @@ export async function captureVisibleLists() {
 }
 
 export function findUserCells(root = document) {
-  return qsa('[data-testid="UserCell"]', root).filter((el) => !host.contains(el));
+  return qsa(CSS_SELECTORS.s098, root).filter((el) => !host.contains(el));
 }
 
 export function extractUser(cell) {
-  const anchors = qsa("a[href]", cell);
+  const anchors = qsa(CSS_SELECTORS.s027, cell);
   // User cells may contain several profile links: prefer the one with the
   // exact @handle, not the name link or a quoted/linked profile.
   let anchor = anchors.find((a) => {
@@ -131,11 +135,7 @@ export function extractUser(cell) {
   if (!anchor) return null;
   const username = anchor.pathname.split("/")[1] || "";
   if (!validHandle(username)) return null;
-  const name = (
-    qs('[data-testid="User-Name"] span', cell)?.textContent ||
-    qs('[dir="ltr"] span', cell)?.textContent ||
-    ""
-  )
+  const name = (qs(CSS_SELECTORS.s099, cell)?.textContent || qs(CSS_SELECTORS.s100, cell)?.textContent || "")
     .trim()
     .slice(0, 150);
   return {
@@ -148,11 +148,11 @@ export function getMemberScope() {
   if (!routeListId()) return null;
   // Safari mobile often opens the members modal even with a /members URL.
   // Prefer the visible dialog over an unrelated background column.
-  const dialogs = qsa('[role="dialog"]').filter((dialog) => dialog.getClientRects().length);
+  const dialogs = qsa(CSS_SELECTORS.s101).filter((dialog) => dialog.getClientRects().length);
   for (const dialog of dialogs) {
     const title = [
       dialog.getAttribute("aria-label"),
-      ...qsa('h1,h2,h3,[role="heading"]', dialog).map((el) => el.textContent),
+      ...qsa(CSS_SELECTORS.s102, dialog).map((el) => el.textContent),
     ]
       .filter(Boolean)
       .join(" ")
@@ -168,7 +168,7 @@ export function getMemberScope() {
   );
   if (candidate) return candidate;
   if (isListMembersPage())
-    return qs('[data-testid="primaryColumn"]') || qs('main[role="main"]') || qs("main") || document;
+    return qs(CSS_SELECTORS.s031) || qs(CSS_SELECTORS.s103) || qs(CSS_SELECTORS.s094) || document;
   return null;
 }
 
@@ -178,8 +178,7 @@ export function quickButton(user) {
   b.className = "xls-inline-list-picker";
   b.textContent = "☷ Listas ▾";
   b.setAttribute("aria-label", `Adicionar @${user.username} a uma lista`);
-  b.style.cssText =
-    "flex:0 0 auto;min-height:36px;min-width:86px;padding:6px 9px;border:1px solid #52606f;border-radius:999px;background:#23272d;color:#fff;font:600 12px -apple-system,system-ui;white-space:nowrap;touch-action:manipulation;position:relative;z-index:1;";
+  b.style.cssText = cssDeclarations(inlineCSS1);
   b.dataset.username = user.username;
   b.addEventListener("pointerdown", (e) => e.stopPropagation());
   b.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -198,15 +197,13 @@ export function attachMemberPickers() {
   for (const cell of findUserCells(scope).slice(0, 250)) {
     const user = extractUser(cell);
     if (!user) continue;
-    const existing = cell.querySelector(".xls-inline-list-picker");
+    const existing = cell.querySelector(CSS_SELECTORS.s104);
     if (existing) {
       if (existing.dataset.username === user.username) continue;
       existing.remove();
     }
-    const follow = cell.querySelector(
-      '[data-testid$="-follow"], [data-testid$="-unfollow"], [data-testid="follow"], [data-testid="unfollow"]',
-    );
-    const actions = follow?.parentElement || cell.querySelector('[data-testid="userActions"]')?.parentElement;
+    const follow = cell.querySelector(CSS_SELECTORS.s105);
+    const actions = follow?.parentElement || cell.querySelector(CSS_SELECTORS.s074)?.parentElement;
     if (actions) {
       const b = quickButton({
         ...user,
@@ -220,7 +217,7 @@ export function attachMemberPickers() {
         ...user,
         sourceId,
       });
-      b.style.cssText += ";align-self:flex-start;margin:5px 0 0 45px;";
+      b.style.cssText += ";" + cssDeclarations(inlineCSS2);
       cell.appendChild(b);
     }
   }

@@ -1,3 +1,6 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-layout-chrome-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { state } from "../state/deck.js";
@@ -22,15 +25,11 @@ export function initializeDeckScrollChrome() {
       document.documentElement.classList.toggle("rodx-chrome-hidden", value);
     }
     function discover() {
-      const main =
-        document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('main,[role="main"]');
+      const main = document.querySelector(CSS_SELECTORS.s031) || document.querySelector(CSS_SELECTORS.s032);
       if (!main) return;
-      for (const seed of main.querySelectorAll(
-        'h2,[role="tablist"],[role="tab"],[data-testid="ScrollSnap-List"],[data-testid="TopNavBar"],input[data-testid="SearchBox_Search_Input"]',
-      )) {
-        if (seed.closest("article")) continue;
-        if (seed.matches('[data-testid="ScrollSnap-List"],[data-testid="TopNavBar"]')) chrome.add(seed);
+      for (const seed of main.querySelectorAll(CSS_SELECTORS.s044)) {
+        if (seed.closest(CSS_SELECTORS.s041)) continue;
+        if (seed.matches(CSS_SELECTORS.s045)) chrome.add(seed);
         let node = seed;
         while (node && node !== main) {
           const pos = getComputedStyle(node).position;
@@ -41,12 +40,9 @@ export function initializeDeckScrollChrome() {
           node = node.parentElement;
         }
       }
-      for (const node of document.querySelectorAll(
-        "#rodx-search-deck-dock,#rodx-feed-filters,#rodx-search-anchors",
-      ))
-        chrome.add(node);
+      for (const node of document.querySelectorAll(CSS_SELECTORS.s046)) chrome.add(node);
       // Mobile X sometimes places its main toolbar outside the primary column.
-      for (const node of document.querySelectorAll('header[role="banner"]')) {
+      for (const node of document.querySelectorAll(CSS_SELECTORS.s047)) {
         const r = node.getBoundingClientRect();
         if (innerWidth < 800 && r.width > innerWidth * 0.7 && r.height < 180) chrome.add(node);
       }
@@ -99,7 +95,7 @@ export function initializeDeckScrollChrome() {
         if (article.hidden || getComputedStyle(article).display === "none") continue;
         const r = article.getBoundingClientRect();
         if (r.top <= top + 2 && r.bottom > top + 44) {
-          candidate = article.querySelector(".rodx-tweet-topbar");
+          candidate = article.querySelector(CSS_SELECTORS.s048);
           if (candidate) break;
         }
       }
@@ -113,9 +109,7 @@ export function initializeDeckScrollChrome() {
         portal.className = "rodx-tweet-topbar";
         portal.setAttribute("aria-label", "Autor e ações do tweet atual");
         portal.addEventListener("click", (event) => {
-          const target = event.target.closest(
-            "[data-rodx-add-list],[data-proxy],.rodx-mini-avatar,.rodx-topbar-author",
-          );
+          const target = event.target.closest(CSS_SELECTORS.s049);
           if (!target || !active) return;
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -140,12 +134,11 @@ export function initializeDeckScrollChrome() {
         portal.innerHTML = markup;
         portal.dataset.markup = markup;
       }
-      let context = portal.querySelector("[data-rodx-context]");
+      let context = portal.querySelector(CSS_SELECTORS.s050);
       if (!context) {
         context = document.createElement("small");
         context.dataset.rodxContext = "1";
-        context.style.cssText =
-          "display:block;position:absolute;left:6px;right:6px;top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:10px Arial;opacity:.75;pointer-events:none";
+        context.style.cssText = cssDeclarations(inlineCSS1);
         portal.prepend(context);
       }
       context.textContent = contextLabel;
@@ -155,7 +148,7 @@ export function initializeDeckScrollChrome() {
       portal.style.setProperty("padding-top", contextLabel ? "15px" : "3px", "important");
       candidate.classList.add("rodx-topbar-floating-source");
       portal.hidden = false;
-      const rect = candidate.closest("article").getBoundingClientRect();
+      const rect = candidate.closest(CSS_SELECTORS.s041).getBoundingClientRect();
       portal.style.left = Math.max(0, rect.left) + "px";
       portal.style.width = Math.min(innerWidth - Math.max(0, rect.left), rect.width) + "px";
       portal.style.top = top + "px";
@@ -165,7 +158,7 @@ export function initializeDeckScrollChrome() {
       const y = Math.max(0, scrollY),
         delta = y - previousY;
       previousY = y;
-      const editing = document.activeElement?.matches('input,textarea,[contenteditable="true"]');
+      const editing = document.activeElement?.matches(CSS_SELECTORS.s051);
       if (y < 30 || editing) setHidden(false);
       else if (Math.abs(delta) > 0.5) {
         const next = delta > 0 ? 1 : -1;
@@ -186,7 +179,7 @@ export function initializeDeckScrollChrome() {
         !state.visual.snap ||
         document.visibilityState !== "visible" ||
         window.getSelection()?.toString() ||
-        document.activeElement?.matches('input,textarea,[contenteditable="true"]')
+        document.activeElement?.matches(CSS_SELECTORS.s051)
       )
         return;
       const top = offset();

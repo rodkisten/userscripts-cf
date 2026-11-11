@@ -1,0 +1,137 @@
+#rodx-search-tools {
+  position: fixed;
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 88px;
+  pointer-events: auto;
+  box-sizing: border-box;
+  font-family: TwitterChirp, Chirp, system-ui, sans-serif;
+}
+#rodx-search-tools > button {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font:
+    500 21px/1 TwitterChirp,
+    Chirp,
+    system-ui;
+  touch-action: manipulation;
+}
+#rodx-search-tools > button:is(:hover, :focus-visible) {
+  background: rgba(29, 155, 240, 0.13);
+  color: #1d9bf0;
+}
+#rodx-search-tools > button[hidden] {
+  display: none !important;
+}
+#rodx-recent-panel {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 10011;
+  width: min(380px, calc(100vw - 20px));
+  max-height: min(66dvh, 540px);
+  overflow: auto;
+  background: rgb(0, 0, 0);
+  color: rgb(231, 233, 234);
+  border: 1px solid rgb(47, 51, 54);
+  border-radius: 16px;
+  box-shadow: 0 9px 36px #0008;
+  font:
+    14px/1.4 TwitterChirp,
+    Chirp,
+    -apple-system,
+    system-ui;
+  -webkit-overflow-scrolling: touch;
+}
+#rodx-recent-panel .rh-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: inherit;
+  border-bottom: 1px solid #2f3336;
+}
+#rodx-recent-panel button {
+  font: inherit;
+  cursor: pointer;
+}
+#rodx-recent-panel .rh-icon {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 50%;
+  min-width: 32px;
+  min-height: 32px;
+}
+#rodx-recent-panel input {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 9px 12px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 99px;
+  background: #16181c;
+  border: 1px solid #2f3336;
+  color: inherit;
+  outline: none;
+  font: inherit;
+}
+#rodx-recent-panel .rh-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-bottom: 1px solid #22262a;
+  min-height: 46px;
+}
+#rodx-recent-panel .rh-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  overflow-wrap: anywhere;
+}
+#rodx-recent-panel .rh-row:is(:hover, :focus-within) {
+  background: #16181c;
+}
+#rodx-recent-panel .rh-query {
+  display: block;
+  max-height: 42px;
+  overflow: hidden;
+}
+#rodx-recent-panel small {
+  display: block;
+  color: #71767b;
+  font-size: 11px;
+}
+#rodx-recent-panel .rh-more {
+  display: block;
+  padding: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #1d9bf0;
+}
+#rodx-recent-panel .rh-empty {
+  padding: 16px;
+  color: #71767b;
+  text-align: center;
+}

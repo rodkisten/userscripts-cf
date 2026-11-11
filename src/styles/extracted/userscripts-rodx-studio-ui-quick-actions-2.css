@@ -1,0 +1,4 @@
+[data-testid="FloatingActionButton_Tweet"],
+[data-testid="SideNav_NewTweet_Button"] {
+  display: none !important;
+}

@@ -1,3 +1,6 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-ui-dock-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { IDENT } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { applyPostLimit } from "../feeds/local-limits.js";
@@ -13,7 +16,7 @@ export function ensureDock() {
   const path = location.pathname;
   const onHome = path === "/home";
   const onSearch = /^\/(?:search(?:\/|$)|hashtag\/)/.test(path);
-  const primary = onHome || onSearch ? document.querySelector('[data-testid="primaryColumn"]') : null;
+  const primary = onHome || onSearch ? document.querySelector(CSS_SELECTORS.s031) : null;
   if (!primary) {
     state.dockHost?.remove();
     state.dockHost = null;
@@ -35,13 +38,11 @@ export function ensureDock() {
   // Locate the entire navigation/header block and insert AFTER it, never
   // between its flex children. Prefer the sibling immediately following the
   // tablist wrapper. If unavailable, insert before the first timeline cell.
-  const tabs = primary.querySelector('[role="tablist"]');
+  const tabs = primary.querySelector(CSS_SELECTORS.s035);
   const header =
-    tabs?.closest('[data-testid="ScrollSnap-List"]')?.parentElement ||
-    tabs?.parentElement?.parentElement ||
-    null;
-  const cells = [...primary.querySelectorAll('[data-testid="cellInnerDiv"]')];
-  const firstCell = cells.find((el) => el.closest('[data-testid="primaryColumn"]') === primary);
+    tabs?.closest(CSS_SELECTORS.s036)?.parentElement || tabs?.parentElement?.parentElement || null;
+  const cells = [...primary.querySelectorAll(CSS_SELECTORS.s233)];
+  const firstCell = cells.find((el) => el.closest(CSS_SELECTORS.s031) === primary);
   let target = firstCell;
   while (target && target.parentElement !== primary) target = target.parentElement;
   if (onSearch && header) {
@@ -50,8 +51,7 @@ export function ensureDock() {
     if (block.parentElement === primary) target = block.nextSibling;
   }
   const host = state.dockHost;
-  host.style.cssText =
-    "display:block;position:relative;z-index:1;min-width:0;max-width:100%;contain:layout style;";
+  host.style.cssText = cssDeclarations(inlineCSS1);
   // Mount once per primary column; virtualized cells must never move the dock.
   if (host.parentNode !== primary) primary.insertBefore(host, target);
   const routeName = onSearch ? "search" : "home";

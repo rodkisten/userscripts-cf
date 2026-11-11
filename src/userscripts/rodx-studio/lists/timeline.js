@@ -1,3 +1,8 @@
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-lists-timeline-1.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
+import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-1.css?inline";
+import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-2.css?inline";
 import { Studio } from "../core/studio.js";
 import {
   bottomCursor,
@@ -237,7 +242,7 @@ export function postHTML(post) {
 export function renderTimelineCards(panel = false) {
   const shown = clientFilterPosts(timeline.items);
   const canMore = Boolean(timeline.hasMore && !timeline.loading);
-  const actions = `<div class="grp" style="margin-top:8px"><button class="btn mini" data-action="timeline-refresh" ${timeline.loading ? "disabled" : ""}>↻ Atualizar</button>
+  const actions = `<div class="grp" style="${cssDeclarations(inlineCSS1)}"><button class="btn mini" data-action="timeline-refresh" ${timeline.loading ? "disabled" : ""}>↻ Atualizar</button>
       <button class="btn mini primary" data-action="timeline-more" ${!canMore ? "disabled" : ""}>Mais posts ↓</button></div>`;
   const label = timeline.mode === "search" ? "Busca interna filtrada" : "Timeline da lista + filtros locais";
   const status = `<div class="xls-feed-status">${esc(label)} · ${shown.length} visíveis / ${timeline.items.length} recebidos${timeline.updatedAt ? " · " + esc(timeText(timeline.updatedAt)) : ""}
@@ -363,7 +368,7 @@ export function refreshTimelineView() {
     }
   }
   if (state.visible && state.tab === "busca") {
-    const preview = qs("#xls-search-preview", shadow);
+    const preview = qs(CSS_SELECTORS.s142, shadow);
     if (preview && timeline.listId === state.listId && timeline.query === buildQuery(state.listId))
       preview.innerHTML = renderTimelineCards(true);
   }
@@ -507,140 +512,13 @@ export function ensureEmbeddedTimeline() {
       mode: "open",
     });
     const styles = document.createElement("style");
-    styles.textContent = `
-:host {
-  display: block;
-  background: #101115;
-  color: #f5f5f5;
-  padding: 14px 12px 28px;
-  font:
-    14px -apple-system,
-    system-ui,
-    sans-serif;
-  min-width: 0;
-}
-* {
-  box-sizing: border-box;
-}
-button {
-  cursor: pointer;
-  font:
-    600 13px -apple-system,
-    system-ui,
-    sans-serif;
-  min-height: 36px;
-}
-.btn {
-  background: #25272b;
-  border: 1px solid #45484e;
-  padding: 8px 12px;
-  border-radius: 12px;
-  color: white;
-}
-.btn.primary {
-  background: #f97346;
-  color: #161616;
-  border-color: #f97346;
-}
-button:disabled {
-  opacity: 0.35;
-}
-.grp {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.small,
-.muted {
-  color: #979ba5;
-  font-size: 12px;
-}
-.xls-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  margin-top: 10px;
-}
-.xls-feed-status {
-  font-size: 12px;
-  color: #b7bac2;
-  line-height: 1.45;
-}
-.xls-post {
-  display: flex;
-  gap: 10px;
-  border: 1px solid #32343b;
-  border-radius: 14px;
-  padding: 12px;
-  background: #191b21;
-  min-width: 0;
-}
-.xls-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #555;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-.xls-post-body {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.xls-post a {
-  color: inherit;
-  text-decoration: none;
-}
-.xls-post-date {
-  color: #979ba5;
-  font-size: 11px;
-}
-.xls-post-text {
-  white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 8px 0;
-}
-.xls-media {
-  width: 100%;
-  max-height: 460px;
-  object-fit: contain;
-  background: #08090b;
-  border-radius: 12px;
-  margin-top: 5px;
-}
-.notice {
-  padding: 10px;
-  border: 1px solid #733e43;
-  background: #372024;
-  color: #ffb9c2;
-  border-radius: 9px;
-  font-size: 12px;
-}
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.head strong {
-  font-size: 17px;
-}
-.tag {
-  color: #f99c74;
-  font-size: 11px;
-  font-weight: 800;
-}
-`;
+    styles.textContent = extractedCSS1;
     root.append(styles);
     const markup = document.createElement("div");
     markup.innerHTML = `<div class="head"><div><span class="tag">X LISTS STUDIO</span><div><strong>Timeline personalizada</strong></div></div><div class="grp"><button class="btn" data-action="edit-filters">Filtros ⚙</button><button class="btn" data-action="timeline-close">Voltar ao X</button></div></div><div id="xls-feed-root"></div>`;
     root.append(markup);
     root.addEventListener("click", (event) => {
-      const action = event.target.closest("[data-action]")?.dataset.action;
+      const action = event.target.closest(CSS_SELECTORS.s106)?.dataset.action;
       if (action === "timeline-close") {
         listPresets[routeListId()] = {
           ...listPresets[routeListId()],
@@ -669,8 +547,7 @@ button:disabled {
   if (!document.getElementById("xls-custom-feed-style")) {
     const style = document.createElement("style");
     style.id = "xls-custom-feed-style";
-    style.textContent =
-      'html.xls-custom-timeline [data-testid="primaryColumn"] [data-testid="cellInnerDiv"]{display:none !important}';
+    style.textContent = extractedCSS2;
     document.head?.append(style);
   }
   document.documentElement.classList.add("xls-custom-timeline");

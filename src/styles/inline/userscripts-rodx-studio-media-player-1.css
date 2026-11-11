@@ -1,0 +1,8 @@
+.declarations {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  z-index: 20;
+  pointer-events: auto;
+}

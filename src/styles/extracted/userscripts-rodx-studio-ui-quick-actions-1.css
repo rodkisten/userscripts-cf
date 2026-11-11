@@ -1,0 +1,171 @@
+.rodx-quick-search {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  font:
+    13px/1.5 TwitterChirp,
+    -apple-system,
+    system-ui,
+    sans-serif;
+}
+.rodx-quick-search * {
+  box-sizing: border-box;
+}
+.rxq-editor {
+  position: relative;
+  isolation: isolate;
+  min-height: 112px;
+  border: 1px solid #71767b77;
+  border-radius: 14px;
+  background: color-mix(in srgb, Canvas 94%, #1d9bf0 6%);
+  overflow: hidden;
+}
+.rxq-editor:focus-within {
+  border-color: #1d9bf0;
+  outline: 1px solid #1d9bf066;
+}
+.rxq-syntax,
+.rxq-input {
+  margin: 0;
+  padding: 12px;
+  display: block;
+  width: 100%;
+  min-height: 112px;
+  max-height: min(40dvh, 330px);
+  border: 0;
+  font:
+    15px/1.55 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.rxq-syntax {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  color: CanvasText;
+}
+.rxq-input {
+  position: relative;
+  z-index: 2;
+  display: block;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #1d9bf0;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: 0;
+}
+.rxq-input::placeholder {
+  color: #71767b;
+  -webkit-text-fill-color: #71767b;
+}
+.rxq-input::selection {
+  background: #1d9bf055;
+}
+.rxq-syntax .syn-negative {
+  color: #f04458;
+}
+.rxq-syntax .syn-filter {
+  color: #169de4;
+}
+.rxq-syntax .syn-tag {
+  color: #a47bff;
+}
+.rxq-syntax .syn-bool,
+.rxq-syntax .syn-paren {
+  color: #e8a33d;
+  font-weight: 700;
+}
+.rxq-syntax .syn-phrase {
+  color: #22af80;
+}
+.rxq-syntax .rodx-syntax-error {
+  text-decoration: underline wavy #f04458;
+}
+.rxq-syntax .rodx-syntax-warning {
+  text-decoration: underline dotted #e8a33d;
+}
+.rxq-message {
+  min-height: 16px;
+  color: #71767b;
+}
+.rxq-message[data-level="error"] {
+  color: #f04458;
+}
+.rxq-suggestions {
+  display: grid;
+  gap: 2px;
+  max-height: min(34dvh, 300px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #71767b44;
+  border-radius: 14px;
+  padding: 4px;
+}
+.rxq-suggestions[hidden] {
+  display: none;
+}
+.rxq-option {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: 9px 10px;
+  gap: 1px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.rxq-option[aria-selected="true"] {
+  background: #1d9bf024;
+}
+.rxq-option small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.rxq-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.rxq-tools button {
+  padding: 7px 10px;
+  border: 1px solid #71767b55;
+  border-radius: 18px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.rxq-tools [type="submit"] {
+  margin-left: auto;
+  background: #1d9bf0;
+  color: white;
+  border-color: #1d9bf0;
+  font-weight: 700;
+}
+.rxq-tools [type="submit"]:disabled {
+  opacity: 0.45;
+}

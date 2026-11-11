@@ -1,11 +1,41 @@
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { parse } from "@babel/parser";
+import { CSS_SELECTORS, X_SELECTORS } from "../src/selectors.js";
 import { Window } from "happy-dom";
 const directory = new URL("../src/userscripts/rodx-studio/", import.meta.url);
 const sourceFiles = [];
 for (const entry of fs.readdirSync(directory, { recursive: true }))
-  if (entry.endsWith(".js")) sourceFiles.push(fs.readFileSync(new URL(entry, directory), "utf8"));
+  if (entry.endsWith(".js")) {
+    let code = fs.readFileSync(new URL(entry, directory), "utf8");
+    const ast = parse(code, { sourceType: "module" });
+    const values = { CSS_SELECTORS, X_SELECTORS };
+    for (const node of ast.program.body) {
+      if (node.type !== "ImportDeclaration" || !node.source.value.endsWith(".css?inline")) continue;
+      const css = fs.readFileSync(
+        new URL(node.source.value.replace("?inline", ""), new URL(entry, directory)),
+        "utf8",
+      );
+      values[node.specifiers[0].local.name] = css;
+    }
+    code = code.replace(/^import[^;]+;\s*/gm, "");
+    // These fixtures evaluate individual declarations. Resolve their imported data explicitly.
+    code = code.replace(/CSS_SELECTORS\.(s\d+)/g, (_, key) => {
+      const value = CSS_SELECTORS[key];
+      return typeof value === "function" ? "(" + value.toString() + ")" : JSON.stringify(value);
+    });
+    for (const [name, value] of Object.entries(values)) {
+      if (typeof value !== "string") continue;
+      code = code.replace(new RegExp("\\b" + name + "\\b", "g"), () => JSON.stringify(value));
+    }
+    code = code.replace(
+      /cssDeclarations\(/g,
+      '(css => css.slice(css.indexOf("{") + 1, css.lastIndexOf("}")))(',
+    );
+    // Import declarations are not evaluated by this isolated-function harness.
+    code = code.replace(/^import[^;]+;\s*/gm, "");
+    sourceFiles.push(code);
+  }
 const source = sourceFiles.join("\n");
 const functions = new Map();
 function walk(n, code) {

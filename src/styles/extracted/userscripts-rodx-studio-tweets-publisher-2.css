@@ -1,0 +1,42 @@
+.rodx-direct-share .rdx-ds-status {
+  border: 1px solid #71767b55;
+  border-radius: 12px;
+  padding: 12px;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rodx-direct-share .rdx-ds-caption {
+  background: transparent;
+  border: 1px solid #71767b88;
+  border-radius: 12px;
+  box-sizing: border-box;
+  color: inherit;
+  font: inherit;
+  line-height: 1.45;
+  width: 100%;
+  min-height: 74px;
+  max-height: 24vh;
+  padding: 10px;
+  resize: vertical;
+}
+.rodx-direct-share button {
+  min-height: 44px;
+  touch-action: manipulation;
+  border-radius: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.rodx-direct-share .rdx-ds-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.rodx-direct-share .rdx-ds-buttons [data-share-action="native"] {
+  grid-column: 1/-1;
+}
+.rodx-direct-share .rdx-ds-note {
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.45;
+}

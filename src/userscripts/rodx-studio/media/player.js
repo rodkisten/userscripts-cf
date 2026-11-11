@@ -1,3 +1,8 @@
+import skinCSS from "../../../styles/player-skin.css?inline";
+import { cssDeclarations } from "../../../core/css.js";
+import inlineCSS1 from "../../../styles/inline/userscripts-rodx-studio-media-player-1.css?inline";
+import inlineCSS2 from "../../../styles/inline/userscripts-rodx-studio-media-player-2.css?inline";
+import { CSS_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { VideoExperience } from "./experience.js";
 import { SeekPreviews } from "./previews.js";
@@ -24,8 +29,8 @@ export function initializeDeckPlayerPreference() {
     }
     function configureGestures(entry) {
       const container =
-        entry.skin.shadowRoot?.querySelector("media-container") ||
-        entry.skin.querySelector("media-container");
+        entry.skin.shadowRoot?.querySelector(CSS_SELECTORS.s155) ||
+        entry.skin.querySelector(CSS_SELECTORS.s155);
       SeekPreviews.attach(entry.video, entry);
       if (!container || entry.gestureContainer === container) return;
       const specs = [
@@ -54,7 +59,7 @@ export function initializeDeckPlayerPreference() {
         },
       ];
       for (const spec of specs) {
-        const matches = [...container.querySelectorAll("media-gesture")].filter(
+        const matches = [...container.querySelectorAll(CSS_SELECTORS.s156)].filter(
           (el) =>
             el.getAttribute("type") === spec.type &&
             el.getAttribute("region") === spec.region &&
@@ -87,10 +92,8 @@ export function initializeDeckPlayerPreference() {
         )
           return;
         const path = event.composedPath();
-        const play = path.some((el) => el?.matches?.("media-play-button"));
-        const interactive = path.some((el) =>
-          el?.matches?.('button,a,input,select,[role="slider"],[role="button"],[data-interactive]'),
-        );
+        const play = path.some((el) => el?.matches?.(CSS_SELECTORS.s157));
+        const interactive = path.some((el) => el?.matches?.(CSS_SELECTORS.s158));
         if (!play) {
           if (interactive || event.pointerType !== "mouse") return;
           const rect = video.getBoundingClientRect();
@@ -178,20 +181,17 @@ export function initializeDeckPlayerPreference() {
         if (!video.isConnected || mode !== "videojs") restore(video, entry);
         else configureGestures(entry);
       }
-      for (const video of document.querySelectorAll("main video, #layers video")) {
-        const wrapper =
-          video.closest('[data-testid="videoPlayerContainer"], [data-testid="videoComponent"]') ||
-          video.parentElement;
+      for (const video of document.querySelectorAll(CSS_SELECTORS.s159)) {
+        const wrapper = video.closest(CSS_SELECTORS.s160) || video.parentElement;
         if (!wrapper) continue;
-        wrapper.querySelectorAll(".rodx-video-transport").forEach((bar) => {
+        wrapper.querySelectorAll(CSS_SELECTORS.s147).forEach((bar) => {
           bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
         });
         if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) continue;
         const root = document.createElement("video-player");
         const skin = document.createElement("video-skin");
         root.dataset.rodxPlayerControl = "1";
-        root.style.cssText =
-          "display:block;position:relative;width:100%;min-width:0;z-index:20;pointer-events:auto";
+        root.style.cssText = cssDeclarations(inlineCSS1);
         const rect = video.getBoundingClientRect();
         const ratio =
           video.videoWidth && video.videoHeight
@@ -199,7 +199,8 @@ export function initializeDeckPlayerPreference() {
             : rect.width && rect.height
               ? rect.width / rect.height
               : 16 / 9;
-        skin.style.cssText = "display:block;width:100%;aspect-ratio:" + ratio;
+        skin.style.cssText = cssDeclarations(skinCSS);
+        skin.style.aspectRatio = String(ratio);
         video.addEventListener("loadedmetadata", () => {
           if (video.videoWidth && video.videoHeight)
             skin.style.aspectRatio = String(video.videoWidth / video.videoHeight);
@@ -215,8 +216,7 @@ export function initializeDeckPlayerPreference() {
         root.append(skin);
         skin.append(video);
         video.controls = false;
-        video.style.cssText +=
-          ";position:relative!important;width:100%!important;height:100%!important;object-fit:contain";
+        video.style.cssText += ";" + cssDeclarations(inlineCSS2);
         mounted.set(video, entry);
         configureGestures(entry);
         void Promise.resolve(skin.updateComplete).then(() => {
@@ -227,7 +227,7 @@ export function initializeDeckPlayerPreference() {
         root.addEventListener(
           "pointerdown",
           (event) => {
-            if (event.composedPath().some((el) => el?.matches?.("media-mute-button,media-volume-slider"))) {
+            if (event.composedPath().some((el) => el?.matches?.(CSS_SELECTORS.s161))) {
               requestedAudio = video.muted || video.volume === 0;
               if (requestedAudio) VideoExperience.enableAudio(video, true);
             }
@@ -235,9 +235,7 @@ export function initializeDeckPlayerPreference() {
           true,
         );
         root.addEventListener("click", (event) => {
-          const control = event
-            .composedPath()
-            .find((el) => el?.matches?.("media-mute-button,media-volume-slider"));
+          const control = event.composedPath().find((el) => el?.matches?.(CSS_SELECTORS.s161));
           if (control) {
             const audible = requestedAudio ?? (video.muted || video.volume === 0);
             requestedAudio = undefined;

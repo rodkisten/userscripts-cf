@@ -1,0 +1,9 @@
+.declarations {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  flex: 0 0 100% !important;
+  clear: both;
+  color: inherit;
+}

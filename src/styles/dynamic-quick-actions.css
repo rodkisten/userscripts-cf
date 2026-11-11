@@ -1,0 +1,19 @@
+.declarations {
+  position: fixed;
+  z-index: 1400;
+  -webkit-user-select: none;
+  user-select: none;
+  left: var(--rodx-value-1);
+  top: var(--rodx-value-2);
+  width: var(--rodx-value-3);
+  height: var(--rodx-value-4);
+  border-radius: 50%;
+  border: 1px solid #71767b66;
+  background: Canvas;
+  color: CanvasText;
+  font:
+    24px Arial,
+    sans-serif;
+  touch-action: none;
+  cursor: pointer;
+}
