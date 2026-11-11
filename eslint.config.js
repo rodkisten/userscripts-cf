@@ -19,7 +19,13 @@ const blankLineAfterBlocks = {
       }
 
       const next = source.getTokenAfter(node);
-      if (!next || next.value === "}" || next.value === "else" || next.value === "catch" || next.value === "finally") {
+      if (
+        !next ||
+        next.value === "}" ||
+        next.value === "else" ||
+        next.value === "catch" ||
+        next.value === "finally"
+      ) {
         return;
       }
 
