@@ -204,28 +204,45 @@
   /* ==================== errors/errors.ts ==================== */
   class StorageError extends Error {
     override name = "StorageError";
-    constructor(message: string, readonly cause?: unknown) {
+    constructor(
+      message: string,
+      readonly cause?: unknown,
+    ) {
       super(message);
     }
   }
 
-  class StorageUnavailableError extends StorageError { override name = "StorageUnavailableError"; }
-  class StorageQuotaError extends StorageError { override name = "StorageQuotaError"; }
-  class StorageSerializationError extends StorageError { override name = "StorageSerializationError"; }
-  class StorageMigrationError extends StorageError { override name = "StorageMigrationError"; }
-  class StorageValidationError extends StorageError { override name = "StorageValidationError"; }
-  class StorageTransactionError extends StorageError { override name = "StorageTransactionError"; }
+  class StorageUnavailableError extends StorageError {
+    override name = "StorageUnavailableError";
+  }
+  class StorageQuotaError extends StorageError {
+    override name = "StorageQuotaError";
+  }
+  class StorageSerializationError extends StorageError {
+    override name = "StorageSerializationError";
+  }
+  class StorageMigrationError extends StorageError {
+    override name = "StorageMigrationError";
+  }
+  class StorageValidationError extends StorageError {
+    override name = "StorageValidationError";
+  }
+  class StorageTransactionError extends StorageError {
+    override name = "StorageTransactionError";
+  }
 
   function normalizeStorageError(error: unknown): StorageError {
     if (error instanceof StorageError) return error;
-    if (error instanceof DOMException && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")) {
+    if (
+      error instanceof DOMException &&
+      (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+    ) {
       return new StorageQuotaError(error.message, error);
     }
     if (error instanceof Error) return new StorageError(error.message, error);
     return new StorageError(String(error), error);
   }
   /* ==================== serialization/structured.ts ==================== */
-
 
   const TYPE = "__rodStorageType";
   type Tagged = Record<string, unknown> & { [TYPE]: string };
@@ -241,16 +258,41 @@
     if (value instanceof Date) return { [TYPE]: "Date", value: value.toISOString() };
     if (value instanceof RegExp) return { [TYPE]: "RegExp", source: value.source, flags: value.flags };
     if (value instanceof URL) return { [TYPE]: "URL", value: value.href };
-    if (value instanceof Map) return { [TYPE]: "Map", value: await Promise.all([...value.entries()].map(async ([k, v]) => [await encodeSpecial(k), await encodeSpecial(v)])) };
-    if (value instanceof Set) return { [TYPE]: "Set", value: await Promise.all([...value].map(encodeSpecial)) };
-    if (value instanceof Error) return { [TYPE]: "Error", name: value.name, message: value.message, ...(value.stack === undefined ? {} : { stack: value.stack }) };
+    if (value instanceof Map)
+      return {
+        [TYPE]: "Map",
+        value: await Promise.all(
+          [...value.entries()].map(async ([k, v]) => [await encodeSpecial(k), await encodeSpecial(v)]),
+        ),
+      };
+    if (value instanceof Set)
+      return { [TYPE]: "Set", value: await Promise.all([...value].map(encodeSpecial)) };
+    if (value instanceof Error)
+      return {
+        [TYPE]: "Error",
+        name: value.name,
+        message: value.message,
+        ...(value.stack === undefined ? {} : { stack: value.stack }),
+      };
     if (typeof Blob !== "undefined" && value instanceof Blob) {
-      return { [TYPE]: "Blob", mime: value.type, value: Array.from(new Uint8Array(await value.arrayBuffer())) };
+      return {
+        [TYPE]: "Blob",
+        mime: value.type,
+        value: Array.from(new Uint8Array(await value.arrayBuffer())),
+      };
     }
-    if (value instanceof ArrayBuffer) return { [TYPE]: "ArrayBuffer", value: Array.from(new Uint8Array(value)) };
-    if (value instanceof DataView) return { [TYPE]: "DataView", value: Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)) };
+    if (value instanceof ArrayBuffer)
+      return { [TYPE]: "ArrayBuffer", value: Array.from(new Uint8Array(value)) };
+    if (value instanceof DataView)
+      return {
+        [TYPE]: "DataView",
+        value: Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)),
+      };
     if (ArrayBuffer.isView(value)) {
-      return { [TYPE]: value.constructor.name, value: Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)) };
+      return {
+        [TYPE]: value.constructor.name,
+        value: Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)),
+      };
     }
     if (Array.isArray(value)) return Promise.all(value.map(encodeSpecial));
     if (value && typeof value === "object") {
@@ -268,30 +310,47 @@
     const tag = tagged[TYPE];
     if (typeof tag === "string") {
       switch (tag) {
-        case "Undefined": return undefined;
-        case "NaN": return NaN;
-        case "Infinity": return Infinity;
-        case "-Infinity": return -Infinity;
-        case "BigInt": return BigInt(String(tagged.value));
-        case "Date": return new Date(String(tagged.value));
-        case "URL": return new URL(String(tagged.value));
-        case "RegExp": return new RegExp(String(tagged.source), String(tagged.flags ?? ""));
-        case "Map": return new Map((tagged.value as unknown[][]).map(([k, v]) => [decodeSpecial(k), decodeSpecial(v)]));
-        case "Set": return new Set((tagged.value as unknown[]).map(decodeSpecial));
+        case "Undefined":
+          return undefined;
+        case "NaN":
+          return NaN;
+        case "Infinity":
+          return Infinity;
+        case "-Infinity":
+          return -Infinity;
+        case "BigInt":
+          return BigInt(String(tagged.value));
+        case "Date":
+          return new Date(String(tagged.value));
+        case "URL":
+          return new URL(String(tagged.value));
+        case "RegExp":
+          return new RegExp(String(tagged.source), String(tagged.flags ?? ""));
+        case "Map":
+          return new Map((tagged.value as unknown[][]).map(([k, v]) => [decodeSpecial(k), decodeSpecial(v)]));
+        case "Set":
+          return new Set((tagged.value as unknown[]).map(decodeSpecial));
         case "Error": {
           const error = new Error(String(tagged.message ?? ""));
           error.name = String(tagged.name ?? "Error");
           if (typeof tagged.stack === "string") error.stack = tagged.stack;
           return error;
         }
-        case "Blob": return new Blob([new Uint8Array(tagged.value as number[])], { type: String(tagged.mime ?? "") });
-        case "ArrayBuffer": return new Uint8Array(tagged.value as number[]).buffer;
-        case "DataView": return new DataView(new Uint8Array(tagged.value as number[]).buffer);
+        case "Blob":
+          return new Blob([new Uint8Array(tagged.value as number[])], { type: String(tagged.mime ?? "") });
+        case "ArrayBuffer":
+          return new Uint8Array(tagged.value as number[]).buffer;
+        case "DataView":
+          return new DataView(new Uint8Array(tagged.value as number[]).buffer);
         default: {
           const ctor = (globalThis as unknown as Record<string, unknown>)[tag];
           if (typeof ctor === "function" && /Array$/.test(tag)) {
             const bytes = new Uint8Array(tagged.value as number[]);
-            try { return new (ctor as new (buffer: ArrayBuffer) => unknown)(bytes.buffer); } catch { return bytes; }
+            try {
+              return new (ctor as new (buffer: ArrayBuffer) => unknown)(bytes.buffer);
+            } catch {
+              return bytes;
+            }
           }
         }
       }
@@ -303,21 +362,27 @@
 
   const structuredSerializer: Serializer = {
     async encode(value) {
-      try { return await encodeSpecial(value); }
-      catch (error) { throw new StorageSerializationError("Failed to serialize value", error); }
+      try {
+        return await encodeSpecial(value);
+      } catch (error) {
+        throw new StorageSerializationError("Failed to serialize value", error);
+      }
     },
     async decode(value) {
-      try { return decodeSpecial(value); }
-      catch (error) { throw new StorageSerializationError("Failed to deserialize value", error); }
+      try {
+        return decodeSpecial(value);
+      } catch (error) {
+        throw new StorageSerializationError("Failed to deserialize value", error);
+      }
     },
   };
   /* ==================== transforms/builtins.ts ==================== */
 
-
   function bytesToBase64(bytes: Uint8Array): string {
     let binary = "";
     const step = 0x8000;
-    for (let i = 0; i < bytes.length; i += step) binary += String.fromCharCode(...bytes.subarray(i, i + step));
+    for (let i = 0; i < bytes.length; i += step)
+      binary += String.fromCharCode(...bytes.subarray(i, i + step));
     return btoa(binary);
   }
 
@@ -336,7 +401,8 @@
     return {
       name: `compression:${format}`,
       async write(value) {
-        if (!("CompressionStream" in globalThis)) throw new StorageUnavailableError("CompressionStream is unavailable");
+        if (!("CompressionStream" in globalThis))
+          throw new StorageUnavailableError("CompressionStream is unavailable");
         const json = JSON.stringify(value);
         const input = new Blob([json]).stream().pipeThrough(new CompressionStream(format));
         return { __rodTransform: "compression", format, data: bytesToBase64(await streamBytes(input)) };
@@ -344,8 +410,11 @@
       async read(value) {
         const payload = value as { __rodTransform?: string; format?: CompressionFormat; data?: string };
         if (payload?.__rodTransform !== "compression" || !payload.data) return value;
-        if (!("DecompressionStream" in globalThis)) throw new StorageUnavailableError("DecompressionStream is unavailable");
-        const input = new Blob([base64ToBytes(payload.data)]).stream().pipeThrough(new DecompressionStream(payload.format ?? format));
+        if (!("DecompressionStream" in globalThis))
+          throw new StorageUnavailableError("DecompressionStream is unavailable");
+        const input = new Blob([base64ToBytes(payload.data)])
+          .stream()
+          .pipeThrough(new DecompressionStream(payload.format ?? format));
         return JSON.parse(new TextDecoder().decode(await streamBytes(input)));
       },
     };
@@ -357,11 +426,17 @@
     salt?: string;
   }
 
-  async function deriveKey(input: CryptoKey | Uint8Array | string, iterations: number, salt: string): Promise<CryptoKey> {
+  async function deriveKey(
+    input: CryptoKey | Uint8Array | string,
+    iterations: number,
+    salt: string,
+  ): Promise<CryptoKey> {
     if (typeof CryptoKey !== "undefined" && input instanceof CryptoKey) return input;
     if (!crypto?.subtle) throw new StorageUnavailableError("Web Crypto is unavailable");
     const material = typeof input === "string" ? new TextEncoder().encode(input) : input;
-    const base = await crypto.subtle.importKey("raw", material as BufferSource, "PBKDF2", false, ["deriveKey"]);
+    const base = await crypto.subtle.importKey("raw", material as BufferSource, "PBKDF2", false, [
+      "deriveKey",
+    ]);
     return crypto.subtle.deriveKey(
       { name: "PBKDF2", salt: new TextEncoder().encode(salt), iterations, hash: "SHA-256" },
       base,
@@ -375,7 +450,7 @@
     const iterations = options.iterations ?? 150_000;
     const salt = options.salt ?? "RodStorage:v1";
     let keyPromise: Promise<CryptoKey> | undefined;
-    const key = () => keyPromise ??= deriveKey(options.key, iterations, salt);
+    const key = () => (keyPromise ??= deriveKey(options.key, iterations, salt));
     return {
       name: "encryption:aes-gcm",
       async write(value) {
@@ -383,8 +458,14 @@
           const iv = crypto.getRandomValues(new Uint8Array(12));
           const plaintext = new TextEncoder().encode(JSON.stringify(value));
           const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await key(), plaintext);
-          return { __rodTransform: "aes-gcm", iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(encrypted)) };
-        } catch (error) { throw new StorageSerializationError("Encryption transform failed", error); }
+          return {
+            __rodTransform: "aes-gcm",
+            iv: bytesToBase64(iv),
+            data: bytesToBase64(new Uint8Array(encrypted)),
+          };
+        } catch (error) {
+          throw new StorageSerializationError("Encryption transform failed", error);
+        }
       },
       async read(value) {
         const payload = value as { __rodTransform?: string; iv?: string; data?: string };
@@ -396,14 +477,18 @@
             base64ToBytes(payload.data),
           );
           return JSON.parse(new TextDecoder().decode(decrypted));
-        } catch (error) { throw new StorageSerializationError("Decryption transform failed", error); }
+        } catch (error) {
+          throw new StorageSerializationError("Decryption transform failed", error);
+        }
       },
     };
   }
   /* ==================== adapters/indexed-db.ts ==================== */
 
-
-  interface RecordRow { id: string; value: unknown; }
+  interface RecordRow {
+    id: string;
+    value: unknown;
+  }
 
   class IndexedDBAdapter implements StorageAdapter {
     readonly name = "indexeddb" as const;
@@ -436,59 +521,92 @@
       });
     }
 
-    async get(key: string) { return (await this.request(this.store("readonly").get(key)) as RecordRow | undefined)?.value; }
-    async set(key: string, value: unknown) { await this.request(this.store("readwrite").put({ id: key, value } satisfies RecordRow)); }
-    async delete(key: string) { await this.request(this.store("readwrite").delete(key)); }
-    async has(key: string) { return (await this.request(this.store("readonly").count(key))) > 0; }
+    async get(key: string) {
+      return ((await this.request(this.store("readonly").get(key))) as RecordRow | undefined)?.value;
+    }
+    async set(key: string, value: unknown) {
+      await this.request(this.store("readwrite").put({ id: key, value } satisfies RecordRow));
+    }
+    async delete(key: string) {
+      await this.request(this.store("readwrite").delete(key));
+    }
+    async has(key: string) {
+      return (await this.request(this.store("readonly").count(key))) > 0;
+    }
     async keys(prefix = "") {
       const keys = await this.request(this.store("readonly").getAllKeys());
-      return keys.map(String).filter(k => k.startsWith(prefix));
+      return keys.map(String).filter((k) => k.startsWith(prefix));
     }
     async clear(prefix = "") {
-      if (!prefix) { await this.request(this.store("readwrite").clear()); return; }
+      if (!prefix) {
+        await this.request(this.store("readwrite").clear());
+        return;
+      }
       for (const key of await this.keys(prefix)) await this.delete(key);
     }
     async entries(prefix = "") {
-      const rows = await this.request(this.store("readonly").getAll()) as RecordRow[];
-      return rows.filter(row => row.id.startsWith(prefix)).map(row => [row.id, row.value] as [string, unknown]);
+      const rows = (await this.request(this.store("readonly").getAll())) as RecordRow[];
+      return rows
+        .filter((row) => row.id.startsWith(prefix))
+        .map((row) => [row.id, row.value] as [string, unknown]);
     }
     async transaction<T>(fn: () => Promise<T>) {
-      try { return await fn(); }
-      catch (error) { throw new StorageTransactionError("IndexedDB transaction failed", error); }
+      try {
+        return await fn();
+      } catch (error) {
+        throw new StorageTransactionError("IndexedDB transaction failed", error);
+      }
     }
     async estimate() {
       if (!navigator.storage?.estimate) return {};
       const estimate = await navigator.storage.estimate();
-      return { ...(estimate.usage === undefined ? {} : { usage: estimate.usage }), ...(estimate.quota === undefined ? {} : { quota: estimate.quota }) };
+      return {
+        ...(estimate.usage === undefined ? {} : { usage: estimate.usage }),
+        ...(estimate.quota === undefined ? {} : { quota: estimate.quota }),
+      };
     }
-    close() { this.db?.close(); }
+    close() {
+      this.db?.close();
+    }
   }
   /* ==================== adapters/local-storage.ts ==================== */
-
 
   class LocalStorageAdapter implements StorageAdapter {
     readonly name = "localstorage" as const;
     constructor(private readonly prefix = "__rod_storage__:") {}
-    private key(key: string) { return `${this.prefix}${key}`; }
+    private key(key: string) {
+      return `${this.prefix}${key}`;
+    }
     async init() {
       try {
         const probe = this.key(`probe:${Math.random()}`);
         localStorage.setItem(probe, "1");
         localStorage.removeItem(probe);
-      } catch (error) { throw new StorageUnavailableError("localStorage is unavailable", error); }
+      } catch (error) {
+        throw new StorageUnavailableError("localStorage is unavailable", error);
+      }
     }
     async get(key: string) {
       try {
         const raw = localStorage.getItem(this.key(key));
         return raw === null ? undefined : JSON.parse(raw);
-      } catch (error) { throw normalizeStorageError(error); }
+      } catch (error) {
+        throw normalizeStorageError(error);
+      }
     }
     async set(key: string, value: unknown) {
-      try { localStorage.setItem(this.key(key), JSON.stringify(value)); }
-      catch (error) { throw normalizeStorageError(error); }
+      try {
+        localStorage.setItem(this.key(key), JSON.stringify(value));
+      } catch (error) {
+        throw normalizeStorageError(error);
+      }
     }
-    async delete(key: string) { localStorage.removeItem(this.key(key)); }
-    async has(key: string) { return localStorage.getItem(this.key(key)) !== null; }
+    async delete(key: string) {
+      localStorage.removeItem(this.key(key));
+    }
+    async has(key: string) {
+      return localStorage.getItem(this.key(key)) !== null;
+    }
     async keys(prefix = "") {
       const match = this.key(prefix);
       const out: string[] = [];
@@ -498,7 +616,9 @@
       }
       return out;
     }
-    async clear(prefix = "") { for (const key of await this.keys(prefix)) localStorage.removeItem(this.key(key)); }
+    async clear(prefix = "") {
+      for (const key of await this.keys(prefix)) localStorage.removeItem(this.key(key));
+    }
     async entries(prefix = "") {
       const out: Array<[string, unknown]> = [];
       for (const key of await this.keys(prefix)) out.push([key, await this.get(key)]);
@@ -506,7 +626,6 @@
     }
   }
   /* ==================== adapters/gm.ts ==================== */
-
 
   class GMAdapter implements StorageAdapter {
     readonly name = "gm" as const;
@@ -516,12 +635,24 @@
         throw new StorageUnavailableError("GM storage API is incomplete");
       }
     }
-    async get(key: string) { return this.api.getValue!(key); }
-    async set(key: string, value: unknown) { await this.api.setValue!(key, value); }
-    async delete(key: string) { await this.api.deleteValue!(key); }
-    async has(key: string) { return (await this.api.listValues!()).includes(key); }
-    async keys(prefix = "") { return (await this.api.listValues!()).filter(k => k.startsWith(prefix)); }
-    async clear(prefix = "") { for (const key of await this.keys(prefix)) await this.delete(key); }
+    async get(key: string) {
+      return this.api.getValue!(key);
+    }
+    async set(key: string, value: unknown) {
+      await this.api.setValue!(key, value);
+    }
+    async delete(key: string) {
+      await this.api.deleteValue!(key);
+    }
+    async has(key: string) {
+      return (await this.api.listValues!()).includes(key);
+    }
+    async keys(prefix = "") {
+      return (await this.api.listValues!()).filter((k) => k.startsWith(prefix));
+    }
+    async clear(prefix = "") {
+      for (const key of await this.keys(prefix)) await this.delete(key);
+    }
     async entries(prefix = "") {
       const out: Array<[string, unknown]> = [];
       for (const key of await this.keys(prefix)) out.push([key, await this.get(key)]);
@@ -534,14 +665,30 @@
     readonly name = "memory" as const;
     private readonly map = new Map<string, unknown>();
     async init(): Promise<void> {}
-    async get(key: string) { return this.map.get(key); }
-    async set(key: string, value: unknown) { this.map.set(key, value); }
-    async delete(key: string) { this.map.delete(key); }
-    async has(key: string) { return this.map.has(key); }
-    async keys(prefix = "") { return [...this.map.keys()].filter(k => k.startsWith(prefix)); }
-    async clear(prefix = "") { for (const key of await this.keys(prefix)) this.map.delete(key); }
-    async entries(prefix = "") { return [...this.map.entries()].filter(([k]) => k.startsWith(prefix)); }
-    async transaction<T>(fn: () => Promise<T>) { return fn(); }
+    async get(key: string) {
+      return this.map.get(key);
+    }
+    async set(key: string, value: unknown) {
+      this.map.set(key, value);
+    }
+    async delete(key: string) {
+      this.map.delete(key);
+    }
+    async has(key: string) {
+      return this.map.has(key);
+    }
+    async keys(prefix = "") {
+      return [...this.map.keys()].filter((k) => k.startsWith(prefix));
+    }
+    async clear(prefix = "") {
+      for (const key of await this.keys(prefix)) this.map.delete(key);
+    }
+    async entries(prefix = "") {
+      return [...this.map.entries()].filter(([k]) => k.startsWith(prefix));
+    }
+    async transaction<T>(fn: () => Promise<T>) {
+      return fn();
+    }
   }
   /* ==================== sync/channel.ts ==================== */
 
@@ -549,16 +696,29 @@
     private channel?: BroadcastChannel;
     private listeners = new Set<(event: StorageChangeEvent) => void>();
 
-    constructor(private readonly name: string, enabled: boolean) {
+    constructor(
+      private readonly name: string,
+      enabled: boolean,
+    ) {
       if (enabled && "BroadcastChannel" in globalThis) {
         this.channel = new BroadcastChannel(name);
-        this.channel.onmessage = event => this.emitLocal(event.data as StorageChangeEvent);
+        this.channel.onmessage = (event) => this.emitLocal(event.data as StorageChangeEvent);
       }
     }
-    publish(event: StorageChangeEvent) { this.channel?.postMessage(event); }
-    subscribe(listener: (event: StorageChangeEvent) => void) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
-    private emitLocal(event: StorageChangeEvent) { for (const listener of this.listeners) listener({ ...event, source: "external" }); }
-    close() { this.channel?.close(); this.listeners.clear(); }
+    publish(event: StorageChangeEvent) {
+      this.channel?.postMessage(event);
+    }
+    subscribe(listener: (event: StorageChangeEvent) => void) {
+      this.listeners.add(listener);
+      return () => this.listeners.delete(listener);
+    }
+    private emitLocal(event: StorageChangeEvent) {
+      for (const listener of this.listeners) listener({ ...event, source: "external" });
+    }
+    close() {
+      this.channel?.close();
+      this.listeners.clear();
+    }
   }
   /* ==================== sync/locks.ts ==================== */
   const localLocks = new Map<string, Promise<void>>();
@@ -569,19 +729,20 @@
 
     const previous = localLocks.get(name) ?? Promise.resolve();
     let release!: () => void;
-    const current = new Promise<void>(resolve => { release = resolve; });
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     const chained = previous.then(() => current);
     localLocks.set(name, chained);
     await previous;
-    try { return await fn(); }
-    finally {
+    try {
+      return await fn();
+    } finally {
       release();
       if (localLocks.get(name) === chained) localLocks.delete(name);
     }
   }
   /* ==================== store.ts ==================== */
-
-
 
   class RodStore<TSchema extends Record<string, unknown>, K extends Extract<keyof TSchema, string>> {
     constructor(
@@ -594,9 +755,10 @@
       const value = await this.storage.get(this.key, this.options.transforms);
       if (value !== undefined) return this.validate(value);
       if (this.options.default !== undefined) {
-        const resolved = typeof this.options.default === "function"
-          ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
-          : this.options.default;
+        const resolved =
+          typeof this.options.default === "function"
+            ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
+            : this.options.default;
         await this.set(resolved);
         return resolved;
       }
@@ -610,51 +772,77 @@
     }
 
     async update(updater: (value: TSchema[K]) => TSchema[K] | Promise<TSchema[K]>) {
-      return this.storage.atomic(this.key, async current => {
-        let base = current;
-        if (base === undefined && this.options.default !== undefined) {
-          base = typeof this.options.default === "function"
-            ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
-            : this.options.default;
-        }
-        return updater(base as TSchema[K]);
-      }, {}, this.options.transforms);
+      return this.storage.atomic(
+        this.key,
+        async (current) => {
+          let base = current;
+          if (base === undefined && this.options.default !== undefined) {
+            base =
+              typeof this.options.default === "function"
+                ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
+                : this.options.default;
+          }
+          return updater(base as TSchema[K]);
+        },
+        {},
+        this.options.transforms,
+      );
     }
 
     async patch(patch: TSchema[K] extends object ? Partial<TSchema[K]> : never) {
-      return this.update(value => ({ ...(value as object), ...(patch as object) } as TSchema[K]));
+      return this.update((value) => ({ ...(value as object), ...(patch as object) }) as TSchema[K]);
     }
 
-    async delete() { return this.storage.delete(this.key); }
+    async delete() {
+      return this.storage.delete(this.key);
+    }
     async reset() {
       if (this.options.default === undefined) return this.delete();
-      const value = typeof this.options.default === "function"
-        ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
-        : this.options.default;
-      await this.storage.set(this.key, value, this.options.ttl === undefined ? {} : { ttl: this.options.ttl }, this.options.transforms, "reset");
+      const value =
+        typeof this.options.default === "function"
+          ? await (this.options.default as () => TSchema[K] | Promise<TSchema[K]>)()
+          : this.options.default;
+      await this.storage.set(
+        this.key,
+        value,
+        this.options.ttl === undefined ? {} : { ttl: this.options.ttl },
+        this.options.transforms,
+        "reset",
+      );
       return value;
     }
 
-    subscribe(listener: (value: TSchema[K], event: StorageChangeEvent<TSchema[K]>) => void, immediate = false) {
-      const unsubscribe = this.storage.subscribe(this.key, async event => {
-        if (event.value !== undefined) listener(this.validate(event.value), event as StorageChangeEvent<TSchema[K]>);
+    subscribe(
+      listener: (value: TSchema[K], event: StorageChangeEvent<TSchema[K]>) => void,
+      immediate = false,
+    ) {
+      const unsubscribe = this.storage.subscribe(this.key, async (event) => {
+        if (event.value !== undefined)
+          listener(this.validate(event.value), event as StorageChangeEvent<TSchema[K]>);
       });
-      if (immediate) void this.get().then(value => listener(value, {
-        namespace: this.storage.namespaceName,
-        key: this.key,
-        operation: "set",
-        value,
-        source: "local",
-        timestamp: Date.now(),
-      }));
+      if (immediate)
+        void this.get().then((value) =>
+          listener(value, {
+            namespace: this.storage.namespaceName,
+            key: this.key,
+            operation: "set",
+            value,
+            source: "local",
+            timestamp: Date.now(),
+          }),
+        );
       return unsubscribe;
     }
 
-    select<S>(selector: (value: TSchema[K]) => S, listener: (selected: S, value: TSchema[K]) => void, options: StoreSubscriptionOptions<TSchema[K], S> = {}) {
+    select<S>(
+      selector: (value: TSchema[K]) => S,
+      listener: (selected: S, value: TSchema[K]) => void,
+      options: StoreSubscriptionOptions<TSchema[K], S> = {},
+    ) {
       const equals = options.equals ?? Object.is;
       let initialized = false;
       let previous: S;
-      return this.subscribe(value => {
+      return this.subscribe((value) => {
         const next = selector(value);
         if (!initialized || !equals(previous!, next)) {
           initialized = true;
@@ -665,27 +853,22 @@
     }
 
     private validate(value: unknown): TSchema[K] {
-      if (this.options.validate && !this.options.validate(value)) throw new StorageValidationError(`Validation failed for store ${this.key}`);
+      if (this.options.validate && !this.options.validate(value))
+        throw new StorageValidationError(`Validation failed for store ${this.key}`);
       return value as TSchema[K];
     }
   }
   /* ==================== storage.ts ==================== */
 
-
-
-
-
-
-
-
-
-
-
   const META_KEY = "__meta__";
   const INTERNAL_PREFIX = "__rod_internal__/";
 
   function estimateBytes(value: unknown): number {
-    try { return new Blob([JSON.stringify(value)]).size; } catch { return 0; }
+    try {
+      return new Blob([JSON.stringify(value)]).size;
+    } catch {
+      return 0;
+    }
   }
 
   class RodStorageInstance<TSchema extends Record<string, unknown>> {
@@ -713,15 +896,19 @@
       this.cacheEnabled = cache.enabled ?? true;
       this.cacheMaxEntries = cache.maxEntries ?? 500;
       this.channel = new StorageSyncChannel(`rod-storage:${this.namespaceName}`, options.sync ?? true);
-      this.channel.subscribe(event => {
+      this.channel.subscribe((event) => {
         this.cache.delete(event.key);
         this.dispatch(event);
       });
       this.readyPromise = this.initialize();
     }
 
-    ready(): Promise<this> { return this.readyPromise; }
-    get backend() { return { name: this.adapter?.name }; }
+    ready(): Promise<this> {
+      return this.readyPromise;
+    }
+    get backend() {
+      return { name: this.adapter?.name };
+    }
 
     private async initialize(): Promise<this> {
       this.adapter = await this.selectAdapter();
@@ -737,15 +924,17 @@
       const backend = this.options.backend ?? "auto";
       const defaults: StorageBackendName[] = ["indexeddb", "gm", "localstorage", "memory"];
       if (backend === "auto") return defaults;
-      if (typeof backend === "string") return [backend, ...defaults.filter(x => x !== backend)];
+      if (typeof backend === "string") return [backend, ...defaults.filter((x) => x !== backend)];
       const preferred = backend.preferred ?? "indexeddb";
-      return [preferred, ...(backend.fallbacks ?? defaults).filter(x => x !== preferred)];
+      return [preferred, ...(backend.fallbacks ?? defaults).filter((x) => x !== preferred)];
     }
 
     private makeAdapter(name: StorageBackendName): StorageAdapter {
       switch (name) {
-        case "indexeddb": return new IndexedDBAdapter(this.options.databaseName ?? "rod-storage");
-        case "localstorage": return new LocalStorageAdapter(this.options.localStoragePrefix ?? "__rod_storage__:");
+        case "indexeddb":
+          return new IndexedDBAdapter(this.options.databaseName ?? "rod-storage");
+        case "localstorage":
+          return new LocalStorageAdapter(this.options.localStoragePrefix ?? "__rod_storage__:");
         case "gm": {
           const globalGM = (globalThis as any).GM;
           const legacy = globalThis as any;
@@ -757,7 +946,8 @@
           };
           return new GMAdapter(api as any);
         }
-        case "memory": return new MemoryAdapter();
+        case "memory":
+          return new MemoryAdapter();
       }
     }
 
@@ -765,21 +955,34 @@
       const errors: unknown[] = [];
       for (const name of [...new Set(this.candidateNames())]) {
         const adapter = this.makeAdapter(name);
-        try { await adapter.init(); return adapter; }
-        catch (error) { errors.push(error); this.options.onError?.(error); }
+        try {
+          await adapter.init();
+          return adapter;
+        } catch (error) {
+          errors.push(error);
+          this.options.onError?.(error);
+        }
       }
       throw new StorageUnavailableError(`No storage backend available: ${errors.map(String).join(" | ")}`);
     }
 
-    private physicalKey(key: string) { return `${this.namespaceName}/${key}`; }
+    private physicalKey(key: string) {
+      return `${this.namespaceName}/${key}`;
+    }
 
-    private async readRaw(key: string): Promise<unknown | undefined> { return this.adapter.get(this.physicalKey(key)); }
-    private async writeRaw(key: string, value: unknown): Promise<void> { await this.adapter.set(this.physicalKey(key), value); }
-    private async deleteRaw(key: string): Promise<void> { await this.adapter.delete(this.physicalKey(key)); }
+    private async readRaw(key: string): Promise<unknown | undefined> {
+      return this.adapter.get(this.physicalKey(key));
+    }
+    private async writeRaw(key: string, value: unknown): Promise<void> {
+      await this.adapter.set(this.physicalKey(key), value);
+    }
+    private async deleteRaw(key: string): Promise<void> {
+      await this.adapter.delete(this.physicalKey(key));
+    }
 
     private async initializeMetadataAndMigrate() {
       const now = Date.now();
-      const raw = await this.readRaw(META_KEY) as StorageMetadata | undefined;
+      const raw = (await this.readRaw(META_KEY)) as StorageMetadata | undefined;
       this.metadata = raw ?? {
         format: "RodStorage",
         formatVersion: 1,
@@ -790,7 +993,9 @@
       };
       const target = Math.max(0, this.options.version ?? 1);
       if (this.metadata.schemaVersion > target) {
-        throw new StorageMigrationError(`Stored schema v${this.metadata.schemaVersion} is newer than requested v${target}`);
+        throw new StorageMigrationError(
+          `Stored schema v${this.metadata.schemaVersion} is newer than requested v${target}`,
+        );
       }
       for (let version = this.metadata.schemaVersion + 1; version <= target; version++) {
         const migration = this.options.migrations?.[version];
@@ -813,25 +1018,35 @@
 
     private migrationContext(fromVersion: number, toVersion: number): MigrationContext<TSchema> {
       const rawGet = async <K extends StorageKey<TSchema>>(key: K): Promise<TSchema[K] | undefined> => {
-        const raw = await this.readRaw(key) as StoredEnvelope | undefined;
+        const raw = (await this.readRaw(key)) as StoredEnvelope | undefined;
         if (!raw) return undefined;
-        if (raw.expiresAt !== undefined && raw.expiresAt <= Date.now()) { await this.deleteRaw(key); return undefined; }
+        if (raw.expiresAt !== undefined && raw.expiresAt <= Date.now()) {
+          await this.deleteRaw(key);
+          return undefined;
+        }
         return this.decodeValue(key, raw.value) as Promise<TSchema[K]>;
       };
       const rawSet = async <K extends StorageKey<TSchema>>(key: K, value: TSchema[K]) => {
         const now = Date.now();
-        const existing = await this.readRaw(key) as StoredEnvelope | undefined;
-        await this.writeRaw(key, { value: await this.encodeValue(key, value), createdAt: existing?.createdAt ?? now, updatedAt: now } satisfies StoredEnvelope);
+        const existing = (await this.readRaw(key)) as StoredEnvelope | undefined;
+        await this.writeRaw(key, {
+          value: await this.encodeValue(key, value),
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        } satisfies StoredEnvelope);
       };
       return {
-        fromVersion, toVersion,
+        fromVersion,
+        toVersion,
         get: rawGet,
         set: rawSet,
-        delete: key => this.deleteRaw(key),
-        has: async key => (await rawGet(key)) !== undefined,
+        delete: (key) => this.deleteRaw(key),
+        has: async (key) => (await rawGet(key)) !== undefined,
         keys: async () => {
           const prefix = this.physicalKey("");
-          return (await this.adapter.keys(prefix)).map(k => k.slice(prefix.length)).filter(k => k !== META_KEY && !k.startsWith(INTERNAL_PREFIX));
+          return (await this.adapter.keys(prefix))
+            .map((k) => k.slice(prefix.length))
+            .filter((k) => k !== META_KEY && !k.startsWith(INTERNAL_PREFIX));
         },
       };
     }
@@ -856,17 +1071,22 @@
 
     private async encodeValue(key: string, value: unknown, transforms: StorageTransform[] = []) {
       let current = await this.serializer.encode(value);
-      for (const transform of [...this.transforms, ...transforms]) current = await transform.write(current, { namespace: this.namespaceName, key });
+      for (const transform of [...this.transforms, ...transforms])
+        current = await transform.write(current, { namespace: this.namespaceName, key });
       return current;
     }
 
     private async decodeValue(key: string, value: unknown, transforms: StorageTransform[] = []) {
       let current = value;
-      for (const transform of [...this.transforms, ...transforms].reverse()) current = await transform.read(current, { namespace: this.namespaceName, key });
+      for (const transform of [...this.transforms, ...transforms].reverse())
+        current = await transform.read(current, { namespace: this.namespaceName, key });
       return this.serializer.decode(current);
     }
 
-    async get<K extends StorageKey<TSchema>>(key: K, transforms: StorageTransform[] = []): Promise<TSchema[K] | undefined> {
+    async get<K extends StorageKey<TSchema>>(
+      key: K,
+      transforms: StorageTransform[] = [],
+    ): Promise<TSchema[K] | undefined> {
       await this.readyPromise;
       if (this.cacheEnabled && this.cache.has(key)) {
         const cached = this.cache.get(key)!;
@@ -877,24 +1097,40 @@
         this.cache.delete(key);
       }
       this.cacheMisses++;
-      const raw = await this.readRaw(key) as StoredEnvelope | undefined;
+      const raw = (await this.readRaw(key)) as StoredEnvelope | undefined;
       if (!raw) return undefined;
       if (raw.expiresAt !== undefined && raw.expiresAt <= Date.now()) {
         let previousValue: TSchema[K] | undefined;
-        try { previousValue = await this.decodeValue(key, raw.value, transforms) as TSchema[K]; } catch {}
+        try {
+          previousValue = (await this.decodeValue(key, raw.value, transforms)) as TSchema[K];
+        } catch {}
         await this.deleteRaw(key);
         this.cache.delete(key);
-        this.emit({ namespace: this.namespaceName, key, operation: "expire", ...(previousValue === undefined ? {} : { previousValue }), source: "local", timestamp: Date.now() });
+        this.emit({
+          namespace: this.namespaceName,
+          key,
+          operation: "expire",
+          ...(previousValue === undefined ? {} : { previousValue }),
+          source: "local",
+          timestamp: Date.now(),
+        });
         return undefined;
       }
-      const value = await this.decodeValue(key, raw.value, transforms) as TSchema[K];
+      const value = (await this.decodeValue(key, raw.value, transforms)) as TSchema[K];
       this.touchCache(key, value, raw.expiresAt);
       return value;
     }
 
-    private async setUnlocked<K extends StorageKey<TSchema>>(key: K, value: TSchema[K], options: SetOptions = {}, transforms: StorageTransform[] = [], operation: StorageOperation = "set", previousValue?: TSchema[K]) {
+    private async setUnlocked<K extends StorageKey<TSchema>>(
+      key: K,
+      value: TSchema[K],
+      options: SetOptions = {},
+      transforms: StorageTransform[] = [],
+      operation: StorageOperation = "set",
+      previousValue?: TSchema[K],
+    ) {
       const now = Date.now();
-      const existing = await this.readRaw(key) as StoredEnvelope | undefined;
+      const existing = (await this.readRaw(key)) as StoredEnvelope | undefined;
       const ttlMs = durationToMs(options.ttl);
       const envelope: StoredEnvelope = {
         value: await this.encodeValue(key, value, transforms),
@@ -902,16 +1138,33 @@
         updatedAt: now,
         ...(ttlMs === undefined ? {} : { expiresAt: now + ttlMs }),
       };
-      try { await this.writeRaw(key, envelope); }
-      catch (error) { throw normalizeStorageError(error); }
+      try {
+        await this.writeRaw(key, envelope);
+      } catch (error) {
+        throw normalizeStorageError(error);
+      }
       this.metadata.updatedAt = now;
       await this.writeRaw(META_KEY, this.metadata);
       this.touchCache(key, value, envelope.expiresAt);
-      this.emit({ namespace: this.namespaceName, key, operation, ...(previousValue === undefined ? {} : { previousValue }), value, source: "local", timestamp: now });
+      this.emit({
+        namespace: this.namespaceName,
+        key,
+        operation,
+        ...(previousValue === undefined ? {} : { previousValue }),
+        value,
+        source: "local",
+        timestamp: now,
+      });
       return value;
     }
 
-    async set<K extends StorageKey<TSchema>>(key: K, value: TSchema[K], options: SetOptions = {}, transforms: StorageTransform[] = [], operation: StorageOperation = "set"): Promise<TSchema[K]> {
+    async set<K extends StorageKey<TSchema>>(
+      key: K,
+      value: TSchema[K],
+      options: SetOptions = {},
+      transforms: StorageTransform[] = [],
+      operation: StorageOperation = "set",
+    ): Promise<TSchema[K]> {
       await this.readyPromise;
       return withLock(`rod-storage:${this.namespaceName}:${key}`, async () => {
         const previousValue = await this.get(key, transforms);
@@ -919,11 +1172,21 @@
       });
     }
 
-    async update<K extends StorageKey<TSchema>>(key: K, updater: (current: TSchema[K] | undefined) => TSchema[K] | Promise<TSchema[K]>, options: SetOptions = {}, transforms: StorageTransform[] = []) {
+    async update<K extends StorageKey<TSchema>>(
+      key: K,
+      updater: (current: TSchema[K] | undefined) => TSchema[K] | Promise<TSchema[K]>,
+      options: SetOptions = {},
+      transforms: StorageTransform[] = [],
+    ) {
       return this.atomic(key, updater, options, transforms);
     }
 
-    async atomic<K extends StorageKey<TSchema>>(key: K, updater: (current: TSchema[K] | undefined) => TSchema[K] | Promise<TSchema[K]>, options: SetOptions = {}, transforms: StorageTransform[] = []) {
+    async atomic<K extends StorageKey<TSchema>>(
+      key: K,
+      updater: (current: TSchema[K] | undefined) => TSchema[K] | Promise<TSchema[K]>,
+      options: SetOptions = {},
+      transforms: StorageTransform[] = [],
+    ) {
       await this.readyPromise;
       return withLock(`rod-storage:${this.namespaceName}:${key}`, async () => {
         const current = await this.get(key, transforms);
@@ -937,40 +1200,67 @@
       const previousValue = await this.get(key);
       await this.deleteRaw(key);
       this.cache.delete(key);
-      this.emit({ namespace: this.namespaceName, key, operation, previousValue, source: "local", timestamp: Date.now() });
+      this.emit({
+        namespace: this.namespaceName,
+        key,
+        operation,
+        previousValue,
+        source: "local",
+        timestamp: Date.now(),
+      });
     }
 
     async has<K extends StorageKey<TSchema>>(key: K) {
       await this.readyPromise;
-      const raw = await this.readRaw(key) as StoredEnvelope | undefined;
+      const raw = (await this.readRaw(key)) as StoredEnvelope | undefined;
       if (!raw) return false;
-      if (raw.expiresAt !== undefined && raw.expiresAt <= Date.now()) { await this.deleteRaw(key); this.cache.delete(key); return false; }
+      if (raw.expiresAt !== undefined && raw.expiresAt <= Date.now()) {
+        await this.deleteRaw(key);
+        this.cache.delete(key);
+        return false;
+      }
       return true;
     }
     async keys(): Promise<Array<StorageKey<TSchema>>> {
       await this.readyPromise;
       const prefix = this.physicalKey("");
       const keys = await this.adapter.keys(prefix);
-      return keys.map(k => k.slice(prefix.length)).filter(k => k !== META_KEY && !k.startsWith(INTERNAL_PREFIX)) as Array<StorageKey<TSchema>>;
+      return keys
+        .map((k) => k.slice(prefix.length))
+        .filter((k) => k !== META_KEY && !k.startsWith(INTERNAL_PREFIX)) as Array<StorageKey<TSchema>>;
     }
     async clear() {
       await this.readyPromise;
       const keys = await this.keys();
       for (const key of keys) await this.delete(key);
-      this.emit({ namespace: this.namespaceName, key: "*", operation: "clear", source: "local", timestamp: Date.now() });
+      this.emit({
+        namespace: this.namespaceName,
+        key: "*",
+        operation: "clear",
+        source: "local",
+        timestamp: Date.now(),
+      });
     }
 
     async cleanup() {
       await this.readyPromise;
       let removed = 0;
       for (const key of await this.keys()) {
-        const raw = await this.readRaw(key) as StoredEnvelope | undefined;
-        if (raw?.expiresAt !== undefined && raw.expiresAt <= Date.now()) { await this.delete(key, "expire"); removed++; }
+        const raw = (await this.readRaw(key)) as StoredEnvelope | undefined;
+        if (raw?.expiresAt !== undefined && raw.expiresAt <= Date.now()) {
+          await this.delete(key, "expire");
+          removed++;
+        }
       }
       return removed;
     }
 
-    subscribe<K extends StorageKey<TSchema> | "*">(key: K, listener: (event: StorageChangeEvent<K extends "*" ? unknown : TSchema[Extract<K, StorageKey<TSchema>>]>) => void) {
+    subscribe<K extends StorageKey<TSchema> | "*">(
+      key: K,
+      listener: (
+        event: StorageChangeEvent<K extends "*" ? unknown : TSchema[Extract<K, StorageKey<TSchema>>]>,
+      ) => void,
+    ) {
       const bucket = this.listeners.get(key) ?? new Set();
       bucket.add(listener as (event: StorageChangeEvent) => void);
       this.listeners.set(key, bucket);
@@ -981,7 +1271,10 @@
       for (const listener of this.listeners.get(event.key) ?? []) listener(event);
       for (const listener of this.listeners.get("*") ?? []) listener(event);
     }
-    private emit(event: StorageChangeEvent) { this.dispatch(event); this.channel.publish(event); }
+    private emit(event: StorageChangeEvent) {
+      this.dispatch(event);
+      this.channel.publish(event);
+    }
 
     async transaction<T>(fn: () => Promise<T>): Promise<T> {
       const prefix = this.physicalKey("");
@@ -1001,27 +1294,46 @@
         }
       });
     }
-    async lock<T>(name: string, fn: () => Promise<T>) { return withLock(`rod-storage:${this.namespaceName}:${name}`, fn); }
+    async lock<T>(name: string, fn: () => Promise<T>) {
+      return withLock(`rod-storage:${this.namespaceName}:${name}`, fn);
+    }
 
-    store<K extends StorageKey<TSchema>>(key: K, options: StoreOptions<TSchema[K]> = {}) { return new RodStore(this, key, options); }
-    namespace<ChildSchema extends Record<string, unknown> = TSchema>(child: string, options: Omit<RodStorageOptions<ChildSchema>, "namespace"> = {}) {
-      return new RodStorageInstance<ChildSchema>({ ...((this.options as unknown) as RodStorageOptions<ChildSchema>), ...(options as RodStorageOptions<ChildSchema>), namespace: `${this.namespaceName}/${child}` });
+    store<K extends StorageKey<TSchema>>(key: K, options: StoreOptions<TSchema[K]> = {}) {
+      return new RodStore(this, key, options);
+    }
+    namespace<ChildSchema extends Record<string, unknown> = TSchema>(
+      child: string,
+      options: Omit<RodStorageOptions<ChildSchema>, "namespace"> = {},
+    ) {
+      return new RodStorageInstance<ChildSchema>({
+        ...(this.options as unknown as RodStorageOptions<ChildSchema>),
+        ...(options as RodStorageOptions<ChildSchema>),
+        namespace: `${this.namespaceName}/${child}`,
+      });
     }
 
     async export(): Promise<ExportPayload> {
       await this.readyPromise;
       const records: Record<string, unknown> = {};
       for (const key of await this.keys()) records[key] = await this.get(key);
-      return { format: "RodStorage", formatVersion: 1, namespace: this.namespaceName, schemaVersion: this.metadata.schemaVersion, exportedAt: Date.now(), records };
+      return {
+        format: "RodStorage",
+        formatVersion: 1,
+        namespace: this.namespaceName,
+        schemaVersion: this.metadata.schemaVersion,
+        exportedAt: Date.now(),
+        records,
+      };
     }
 
     async import(payload: ExportPayload, options: ImportOptions = {}) {
       await this.readyPromise;
-      if (payload.format !== "RodStorage" || payload.formatVersion !== 1) throw new TypeError("Invalid RodStorage export");
+      if (payload.format !== "RodStorage" || payload.formatVersion !== 1)
+        throw new TypeError("Invalid RodStorage export");
       const strategy = options.strategy ?? "merge";
       if (strategy === "overwrite") await this.clear();
       for (const [key, value] of Object.entries(payload.records)) {
-        if (strategy === "skip-existing" && await this.has(key as StorageKey<TSchema>)) continue;
+        if (strategy === "skip-existing" && (await this.has(key as StorageKey<TSchema>))) continue;
         await this.set(key as StorageKey<TSchema>, value as TSchema[StorageKey<TSchema>], {}, [], "import");
       }
     }
@@ -1036,8 +1348,16 @@
         schemaVersion: this.metadata.schemaVersion,
         entries: Object.keys(exported.records).length,
         estimatedBytes: estimateBytes(exported.records),
-        cache: { enabled: this.cacheEnabled, size: this.cache.size, hits: this.cacheHits, misses: this.cacheMisses },
-        migrations: { applied: [...this.metadata.migrationHistory], ...(this.metadata.lastMigrationError ? { lastError: this.metadata.lastMigrationError } : {}) },
+        cache: {
+          enabled: this.cacheEnabled,
+          size: this.cache.size,
+          hits: this.cacheHits,
+          misses: this.cacheMisses,
+        },
+        migrations: {
+          applied: [...this.metadata.migrationHistory],
+          ...(this.metadata.lastMigrationError ? { lastError: this.metadata.lastMigrationError } : {}),
+        },
         ...(quota ? { quota } : {}),
       };
     }
@@ -1054,7 +1374,12 @@
         if (JSON.stringify(read) !== JSON.stringify(value)) throw new Error("Healthcheck read mismatch");
         return { ok: true, backend: this.adapter.name, durationMs: performance.now() - started };
       } catch (error) {
-        return { ok: false, backend: this.adapter.name, durationMs: performance.now() - started, error: error instanceof Error ? error.message : String(error) };
+        return {
+          ok: false,
+          backend: this.adapter.name,
+          durationMs: performance.now() - started,
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
     }
 
@@ -1101,5 +1426,4 @@
 
   type RodStorageGlobal = typeof RodStorage;
   (globalThis as typeof globalThis & { RodStorage?: RodStorageGlobal }).RodStorage = RodStorage;
-
 })();

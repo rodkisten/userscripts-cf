@@ -181,10 +181,7 @@
   };
 
   function createSvgIcon(documentRef, name, size = 18) {
-    const svg = documentRef.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "svg",
-    );
+    const svg = documentRef.createElementNS("http://www.w3.org/2000/svg", "svg");
 
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("width", String(size));
@@ -209,8 +206,7 @@
     duration: 15_000,
     debugDuration: 0,
     shouldDebug: true,
-    downloadFallback:
-      globalWindow.console?.debug || globalWindow.console?.log || null,
+    downloadFallback: globalWindow.console?.debug || globalWindow.console?.log || null,
     maxToasts: 20,
     dedupe: true,
     dedupeWindow: 1000,
@@ -402,10 +398,7 @@
       return false;
     }
 
-    const prototype = safeCall(
-      () => Object.getPrototypeOf(value),
-      null,
-    );
+    const prototype = safeCall(() => Object.getPrototypeOf(value), null);
 
     return prototype === Object.prototype || prototype === null;
   }
@@ -416,10 +409,7 @@
     }
 
     return Reflect.ownKeys(value).some((key) => {
-      return (
-        typeof key === "string" &&
-        LOADING_DESCRIPTOR_KEYS.has(key)
-      );
+      return typeof key === "string" && LOADING_DESCRIPTOR_KEYS.has(key);
     });
   }
 
@@ -440,12 +430,7 @@
   }
 
   function normalizeLoadingAnimation(value) {
-    const allowed = new Set([
-      "spinner",
-      "pulse",
-      "progress",
-      "none",
-    ]);
+    const allowed = new Set(["spinner", "pulse", "progress", "none"]);
 
     return allowed.has(value) ? value : "spinner";
   }
@@ -500,10 +485,7 @@
   }
 
   function getExistingToaster(hostWindow) {
-    return (
-      safeCall(() => hostWindow[TOAST_GLOBAL], null) ||
-      safeCall(() => globalWindow[TOAST_GLOBAL], null)
-    );
+    return safeCall(() => hostWindow[TOAST_GLOBAL], null) || safeCall(() => globalWindow[TOAST_GLOBAL], null);
   }
 
   const initialHostWindow = getHighestAccessibleWindow(globalWindow);
@@ -570,10 +552,7 @@
   }
 
   function getObjectId(value) {
-    if (
-      value === null ||
-      (typeof value !== "object" && typeof value !== "function")
-    ) {
+    if (value === null || (typeof value !== "object" && typeof value !== "function")) {
       return null;
     }
 
@@ -594,10 +573,7 @@
       return `Array(${value.length})`;
     }
 
-    const tag = safeCall(
-      () => Object.prototype.toString.call(value),
-      "[object Object]",
-    );
+    const tag = safeCall(() => Object.prototype.toString.call(value), "[object Object]");
 
     if (tag === "[object Map]") {
       return `Map(${safeCall(() => value.size, "?")})`;
@@ -616,29 +592,16 @@
     }
 
     if (/Error\]$/.test(tag)) {
-      return safeCall(
-        () => `${value.name || "Error"}: ${value.message || ""}`,
-        "Error",
-      );
+      return safeCall(() => `${value.name || "Error"}: ${value.message || ""}`, "Error");
     }
 
-    if (
-      safeCall(
-        () =>
-          value?.nodeType === 1 &&
-          typeof value?.tagName === "string",
-        false,
-      )
-    ) {
+    if (safeCall(() => value?.nodeType === 1 && typeof value?.tagName === "string", false)) {
       const tagName = safeCall(() => value.tagName.toLowerCase(), "element");
       const id = safeCall(() => (value.id ? `#${value.id}` : ""), "");
       return `<${tagName}${id}>`;
     }
 
-    const constructorName = safeCall(
-      () => value?.constructor?.name || "Object",
-      "Object",
-    );
+    const constructorName = safeCall(() => value?.constructor?.name || "Object", "Object");
 
     return `${constructorName} {…}`;
   }
@@ -1964,10 +1927,7 @@
       }
     }
 
-    const explicitGlobal = safeCall(
-      () => globalWindow.ROD_OBJECT_INSPECTOR_SRC,
-      null,
-    );
+    const explicitGlobal = safeCall(() => globalWindow.ROD_OBJECT_INSPECTOR_SRC, null);
 
     if (typeof explicitGlobal === "string" && explicitGlobal.trim()) {
       return explicitGlobal.trim();
@@ -1990,10 +1950,7 @@
           continue;
         }
 
-        return src.replace(
-          /toaster(?:\.min)?\.js([?#].*)?$/i,
-          "object-inspector.js$1",
-        );
+        return src.replace(/toaster(?:\.min)?\.js([?#].*)?$/i, "object-inspector.js$1");
       }
     }
 
@@ -2003,11 +1960,7 @@
   }
 
   function getObjectInspectorApi() {
-    const candidates = [
-      state.hostWindow,
-      initialHostWindow,
-      globalWindow,
-    ];
+    const candidates = [state.hostWindow, initialHostWindow, globalWindow];
 
     for (const candidate of candidates) {
       const api = safeCall(() => candidate?.[INSPECTOR_GLOBAL], null);
@@ -2183,10 +2136,7 @@
       timestamp: Date.now(),
       ...payload,
     };
-    const listeners = [
-      ...(state.listeners.get(eventName) || []),
-      ...(state.listeners.get("*") || []),
-    ];
+    const listeners = [...(state.listeners.get(eventName) || []), ...(state.listeners.get("*") || [])];
 
     for (const listener of listeners) {
       safeCall(() => listener(event), undefined);
@@ -2220,18 +2170,14 @@
 
   function hasActiveLoadingRecords() {
     return getActiveToastRecords().some((record) => {
-      return (
-        record.options.loading &&
-        record.options.loadingState === "loading"
-      );
+      return record.options.loading && record.options.loadingState === "loading";
     });
   }
 
   function setManagerMinimized(minimized) {
     const activeRecords = getActiveToastRecords();
 
-    state.managerMinimized =
-      Boolean(minimized) && activeRecords.length > 0;
+    state.managerMinimized = Boolean(minimized) && activeRecords.length > 0;
 
     syncStackLayout();
 
@@ -2269,13 +2215,9 @@
       state.stackExpanded = false;
     }
 
-    const stackVisible = Math.min(
-      3,
-      Math.max(1, Number(state.config.stackVisible) || 1),
-    );
+    const stackVisible = Math.min(3, Math.max(1, Number(state.config.stackVisible) || 1));
     const stackDepth = Math.min(count, stackVisible);
-    const effectiveExpanded =
-      !state.config.stacked || state.stackExpanded || count <= 1;
+    const effectiveExpanded = !state.config.stacked || state.stackExpanded || count <= 1;
     const viewportRatio = clamp(
       Number(state.config.stackViewportRatio) || DEFAULT_CONFIG.stackViewportRatio,
       0.2,
@@ -2283,9 +2225,7 @@
     );
 
     state.container.dataset.stacked = String(Boolean(state.config.stacked));
-    state.container.dataset.managerMinimized = String(
-      Boolean(state.managerMinimized),
-    );
+    state.container.dataset.managerMinimized = String(Boolean(state.managerMinimized));
     state.container.dataset.expanded = String(effectiveExpanded);
     state.container.dataset.stackDepth = String(stackDepth);
     state.container.dataset.count = String(count);
@@ -2348,14 +2288,10 @@
     state.stackExpanded = Boolean(expanded);
 
     if (state.stackExpanded) {
-      const alreadyExpanded = activeRecords.some(
-        (record) => record.node.dataset.itemExpanded === "true",
-      );
+      const alreadyExpanded = activeRecords.some((record) => record.node.dataset.itemExpanded === "true");
 
       if (!alreadyExpanded) {
-        const newest = [...activeRecords].sort(
-          (left, right) => right.createdAt - left.createdAt,
-        )[0];
+        const newest = [...activeRecords].sort((left, right) => right.createdAt - left.createdAt)[0];
 
         if (newest) {
           setExpandedToast(newest, true);
@@ -2375,16 +2311,11 @@
     "[contenteditable='true'], [role='button']";
 
   function eventHasInteractiveTarget(event) {
-    const path =
-      typeof event.composedPath === "function"
-        ? event.composedPath()
-        : [event.target];
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [event.target];
 
     return path.some((candidate) => {
       return Boolean(
-        candidate &&
-          typeof candidate.matches === "function" &&
-          candidate.matches(INTERACTIVE_SELECTOR),
+        candidate && typeof candidate.matches === "function" && candidate.matches(INTERACTIVE_SELECTOR),
       );
     });
   }
@@ -2403,9 +2334,7 @@
     }
 
     for (const candidate of getActiveToastRecords()) {
-      candidate.node.dataset.itemExpanded = String(
-        candidate === record ? Boolean(expanded) : false,
-      );
+      candidate.node.dataset.itemExpanded = String(candidate === record ? Boolean(expanded) : false);
     }
 
     if (expanded) {
@@ -2426,8 +2355,7 @@
       return;
     }
 
-    const shouldExpand =
-      record.node.dataset.itemExpanded !== "true";
+    const shouldExpand = record.node.dataset.itemExpanded !== "true";
 
     setExpandedToast(record, shouldExpand);
   }
@@ -2437,15 +2365,9 @@
       return;
     }
 
-    const toastNode =
-      typeof event.target?.closest === "function"
-        ? event.target.closest(".rod-toast")
-        : null;
+    const toastNode = typeof event.target?.closest === "function" ? event.target.closest(".rod-toast") : null;
 
-    if (
-      !toastNode ||
-      toastNode.dataset.suppressStackClick === "true"
-    ) {
+    if (!toastNode || toastNode.dataset.suppressStackClick === "true") {
       return;
     }
 
@@ -2456,10 +2378,7 @@
     }
 
     if (!state.stackExpanded) {
-      if (
-        getActiveToastRecords().length <= 1 ||
-        toastNode.dataset.stackIndex !== "0"
-      ) {
+      if (getActiveToastRecords().length <= 1 || toastNode.dataset.stackIndex !== "0") {
         return;
       }
 
@@ -2473,21 +2392,14 @@
 
   function removeHostInteractionListeners() {
     if (state.hostDocument && state.outsidePointerDownHandler) {
-      state.hostDocument.removeEventListener(
-        "pointerdown",
-        state.outsidePointerDownHandler,
-        true,
-      );
+      state.hostDocument.removeEventListener("pointerdown", state.outsidePointerDownHandler, true);
     }
 
     state.outsidePointerDownHandler = null;
   }
 
   function scheduleHostRepair() {
-    if (
-      !state.config.persistAcrossSpaNavigation ||
-      state.hostRepairFrame !== null
-    ) {
+    if (!state.config.persistAcrossSpaNavigation || state.hostRepairFrame !== null) {
       return;
     }
 
@@ -2509,20 +2421,14 @@
   }
 
   function installSpaPersistence(hostWindow, hostDocument) {
-    if (
-      !state.config.persistAcrossSpaNavigation ||
-      state.spaCleanup
-    ) {
+    if (!state.config.persistAcrossSpaNavigation || state.spaCleanup) {
       return;
     }
 
     const callbacks = [];
 
     const navigationHandler = () => {
-      if (
-        state.config.minimizeOnSpaNavigation &&
-        hasActiveLoadingRecords()
-      ) {
+      if (state.config.minimizeOnSpaNavigation && hasActiveLoadingRecords()) {
         setManagerMinimized(true);
       }
 
@@ -2531,23 +2437,15 @@
 
     hostWindow.addEventListener("popstate", navigationHandler);
     hostWindow.addEventListener("hashchange", navigationHandler);
-    hostWindow.addEventListener(
-      "rod:toaster:navigation",
-      navigationHandler,
-    );
+    hostWindow.addEventListener("rod:toaster:navigation", navigationHandler);
 
     callbacks.push(() => {
       hostWindow.removeEventListener("popstate", navigationHandler);
       hostWindow.removeEventListener("hashchange", navigationHandler);
-      hostWindow.removeEventListener(
-        "rod:toaster:navigation",
-        navigationHandler,
-      );
+      hostWindow.removeEventListener("rod:toaster:navigation", navigationHandler);
     });
 
-    const historyPatchSymbol = Symbol.for(
-      "rod.super-toaster.history-navigation-patch",
-    );
+    const historyPatchSymbol = Symbol.for("rod.super-toaster.history-navigation-patch");
 
     if (!safeCall(() => hostWindow[historyPatchSymbol], false)) {
       const history = hostWindow.history;
@@ -2564,12 +2462,7 @@
             const result = Reflect.apply(original, this, args);
 
             safeCall(
-              () =>
-                hostWindow.dispatchEvent(
-                  new hostWindow.CustomEvent(
-                    "rod:toaster:navigation",
-                  ),
-                ),
+              () => hostWindow.dispatchEvent(new hostWindow.CustomEvent("rod:toaster:navigation")),
               undefined,
             );
 
@@ -2579,39 +2472,25 @@
 
         safeCall(
           () =>
-            Object.defineProperty(
-              hostWindow,
-              historyPatchSymbol,
-              {
-                value: true,
-                configurable: true,
-              },
-            ),
+            Object.defineProperty(hostWindow, historyPatchSymbol, {
+              value: true,
+              configurable: true,
+            }),
           undefined,
         );
       }
     }
 
-    if (
-      typeof hostWindow.MutationObserver === "function" &&
-      hostDocument.documentElement
-    ) {
+    if (typeof hostWindow.MutationObserver === "function" && hostDocument.documentElement) {
       state.spaObserver = new hostWindow.MutationObserver(() => {
-        if (
-          getActiveToastRecords().length &&
-          state.hostElement &&
-          !state.hostElement.isConnected
-        ) {
+        if (getActiveToastRecords().length && state.hostElement && !state.hostElement.isConnected) {
           scheduleHostRepair();
         }
       });
 
-      state.spaObserver.observe(
-        hostDocument.documentElement,
-        {
-          childList: true,
-        },
-      );
+      state.spaObserver.observe(hostDocument.documentElement, {
+        childList: true,
+      });
 
       callbacks.push(() => {
         state.spaObserver?.disconnect();
@@ -2740,16 +2619,10 @@
     if (!renderRoot) {
       renderRoot = hostElement;
       hostMode = "light-dom";
-      hostElement.setAttribute(
-        "data-rod-toaster-fallback",
-        "light-dom",
-      );
+      hostElement.setAttribute("data-rod-toaster-fallback", "light-dom");
     }
 
-    hostElement.setAttribute(
-      "data-rod-toaster-host-mode",
-      hostMode,
-    );
+    hostElement.setAttribute("data-rod-toaster-host-mode", hostMode);
 
     const container = hostDocument.createElement("div");
     const managerButton = hostDocument.createElement("button");
@@ -2766,23 +2639,16 @@
     container.dataset.position = state.config.position;
     container.dataset.expanded = "true";
     container.dataset.stackDepth = "0";
-    container.dataset.managerMinimized = String(
-      Boolean(state.managerMinimized),
-    );
+    container.dataset.managerMinimized = String(Boolean(state.managerMinimized));
 
     managerButton.type = "button";
     managerButton.className = "rod-toast-stack__manager";
-    managerButton.appendChild(
-      createSvgIcon(hostDocument, "loader-circle", 19),
-    );
+    managerButton.appendChild(createSvgIcon(hostDocument, "loader-circle", 19));
     managerCount.className = "rod-toast-stack__manager-count";
     managerCount.textContent = "0";
     managerCount.dataset.visible = "false";
     managerButton.appendChild(managerCount);
-    managerButton.setAttribute(
-      "aria-label",
-      "Restore active toast tasks",
-    );
+    managerButton.setAttribute("aria-label", "Restore active toast tasks");
     managerButton.title = "Restore active tasks";
 
     managerButton.addEventListener("click", (event) => {
@@ -2801,24 +2667,17 @@
 
     minimizeButton.type = "button";
     minimizeButton.className = "rod-toast-stack__toolbar-button";
-    minimizeButton.appendChild(
-      createSvgIcon(hostDocument, "chevron-down", 14),
-    );
+    minimizeButton.appendChild(createSvgIcon(hostDocument, "chevron-down", 14));
     minimizeButton.appendChild(
       Object.assign(hostDocument.createElement("span"), {
         textContent: "Minimize",
       }),
     );
-    minimizeButton.setAttribute(
-      "aria-label",
-      "Minimize active toast tasks",
-    );
+    minimizeButton.setAttribute("aria-label", "Minimize active toast tasks");
 
     collapseButton.type = "button";
     collapseButton.className = "rod-toast-stack__toolbar-button";
-    collapseButton.appendChild(
-      createSvgIcon(hostDocument, "chevrons-up", 14),
-    );
+    collapseButton.appendChild(createSvgIcon(hostDocument, "chevrons-up", 14));
     collapseButton.appendChild(
       Object.assign(hostDocument.createElement("span"), {
         textContent: "Collapse",
@@ -2828,9 +2687,7 @@
 
     clearButton.type = "button";
     clearButton.className = "rod-toast-stack__toolbar-button";
-    clearButton.appendChild(
-      createSvgIcon(hostDocument, "x-circle", 14),
-    );
+    clearButton.appendChild(createSvgIcon(hostDocument, "x-circle", 14));
     clearButton.appendChild(
       Object.assign(hostDocument.createElement("span"), {
         textContent: "Close all",
@@ -2930,8 +2787,7 @@
         return;
       }
 
-      const path =
-        typeof event.composedPath === "function" ? event.composedPath() : [];
+      const path = typeof event.composedPath === "function" ? event.composedPath() : [];
 
       if (path.includes(hostElement)) {
         return;
@@ -2940,11 +2796,7 @@
       setStackExpanded(false);
     };
 
-    hostDocument.addEventListener(
-      "pointerdown",
-      state.outsidePointerDownHandler,
-      true,
-    );
+    hostDocument.addEventListener("pointerdown", state.outsidePointerDownHandler, true);
 
     syncStackLayout();
 
@@ -2981,11 +2833,7 @@
       className = "rod-token--function";
     }
 
-    return createTextNode(
-      documentRef,
-      safePrimitiveText(value, options.quoteStrings !== false),
-      className,
-    );
+    return createTextNode(documentRef, safePrimitiveText(value, options.quoteStrings !== false), className);
   }
 
   function renderToastValue(value, documentRef, options) {
@@ -3048,9 +2896,7 @@
       return true;
     }
 
-    return Reflect.ownKeys(value).some(
-      (key) => typeof key === "string" && OPTION_KEYS.has(key),
-    );
+    return Reflect.ownKeys(value).some((key) => typeof key === "string" && OPTION_KEYS.has(key));
   }
 
   function parseArguments(inputArgs, forcedType) {
@@ -3074,9 +2920,7 @@
   }
 
   function normalizeToastOptions(options) {
-    const type = hasOwn(TOAST_COLORS, options.type)
-      ? options.type
-      : "default";
+    const type = hasOwn(TOAST_COLORS, options.type) ? options.type : "default";
     const loading = Boolean(options.loading);
     const defaultDuration = loading
       ? state.config.loadingDuration
@@ -3084,39 +2928,28 @@
         ? state.config.debugDuration
         : state.config.duration;
     const loadingAnimation = normalizeLoadingAnimation(
-      options.animation ??
-        options.loadingAnimation ??
-        state.config.loadingAnimation,
+      options.animation ?? options.loadingAnimation ?? state.config.loadingAnimation,
     );
     const progress = normalizeProgress(options.progress);
     const icon =
       options.icon === false || options.icon === null
         ? false
-        : options.icon ||
-          (loading
-            ? state.config.loadingIcon
-            : TOAST_COLORS[type].icon);
+        : options.icon || (loading ? state.config.loadingIcon : TOAST_COLORS[type].icon);
 
     return {
       type,
       id: options.id == null ? null : String(options.id),
-      duration: Number.isFinite(options.duration)
-        ? Number(options.duration)
-        : defaultDuration,
+      duration: Number.isFinite(options.duration) ? Number(options.duration) : defaultDuration,
       dedupe: options.dedupe ?? state.config.dedupe,
       dedupeWindow: Number.isFinite(options.dedupeWindow)
         ? Number(options.dedupeWindow)
         : state.config.dedupeWindow,
-      pauseOnInteraction:
-        options.pauseOnInteraction ?? state.config.pauseOnInteraction,
+      pauseOnInteraction: options.pauseOnInteraction ?? state.config.pauseOnInteraction,
       dismissible: options.dismissible !== false,
-      closeButton:
-        options.dismissible !== false &&
-        (options.closeButton ?? state.config.closeButton),
+      closeButton: options.dismissible !== false && (options.closeButton ?? state.config.closeButton),
       role: options.role || (type === "error" ? "alert" : "status"),
       swipeToDismiss:
-        options.dismissible !== false &&
-        (options.swipeToDismiss ?? state.config.swipeToDismiss),
+        options.dismissible !== false && (options.swipeToDismiss ?? state.config.swipeToDismiss),
       swipeThreshold: Number.isFinite(options.swipeThreshold)
         ? Math.max(24, Number(options.swipeThreshold))
         : state.config.swipeThreshold,
@@ -3133,12 +2966,9 @@
         ? Math.max(0, Number(options.previewItems))
         : state.config.previewItems,
       showPrototype: options.showPrototype ?? state.config.showPrototype,
-      showNonEnumerable:
-        options.showNonEnumerable ?? state.config.showNonEnumerable,
-      showObjectLength:
-        options.showObjectLength ?? state.config.showObjectLength,
-      virtualizeInspector:
-        options.virtualizeInspector ?? state.config.virtualizeInspector,
+      showNonEnumerable: options.showNonEnumerable ?? state.config.showNonEnumerable,
+      showObjectLength: options.showObjectLength ?? state.config.showObjectLength,
+      virtualizeInspector: options.virtualizeInspector ?? state.config.virtualizeInspector,
       virtualizeAfter: Number.isFinite(options.virtualizeAfter)
         ? Math.max(1, Number(options.virtualizeAfter))
         : state.config.virtualizeAfter,
@@ -3152,42 +2982,22 @@
         ? Math.max(120, Number(options.virtualMaxHeight))
         : state.config.virtualMaxHeight,
       unmountInspectorOnCollapse:
-        options.unmountInspectorOnCollapse ??
-        state.config.unmountInspectorOnCollapse,
+        options.unmountInspectorOnCollapse ?? state.config.unmountInspectorOnCollapse,
       loading,
-      loadingState:
-        options.loadingState === "settled"
-          ? "settled"
-          : "loading",
-      title:
-        options.title === undefined || options.title === null
-          ? ""
-          : String(options.title),
+      loadingState: options.loadingState === "settled" ? "settled" : "loading",
+      title: options.title === undefined || options.title === null ? "" : String(options.title),
       description:
-        options.description === undefined ||
-        options.description === null
-          ? ""
-          : String(options.description),
+        options.description === undefined || options.description === null ? "" : String(options.description),
       icon,
       animation: loadingAnimation,
       progress,
       progressLabel:
-        options.progressLabel === undefined ||
-        options.progressLabel === null
+        options.progressLabel === undefined || options.progressLabel === null
           ? null
           : String(options.progressLabel),
-      scope:
-        options.scope === undefined || options.scope === null
-          ? null
-          : String(options.scope),
-      metadata:
-        options.metadata && typeof options.metadata === "object"
-          ? options.metadata
-          : null,
-      onDismiss:
-        typeof options.onDismiss === "function"
-          ? options.onDismiss
-          : null,
+      scope: options.scope === undefined || options.scope === null ? null : String(options.scope),
+      metadata: options.metadata && typeof options.metadata === "object" ? options.metadata : null,
+      onDismiss: typeof options.onDismiss === "function" ? options.onDismiss : null,
     };
   }
 
@@ -3195,10 +3005,7 @@
     const setting = state.config.shouldDebug;
 
     if (typeof setting === "function") {
-      return safeCall(
-        () => Boolean(Reflect.apply(setting, undefined, args)),
-        false,
-      );
+      return safeCall(() => Boolean(Reflect.apply(setting, undefined, args)), false);
     }
 
     return Boolean(setting);
@@ -3211,10 +3018,7 @@
       return null;
     }
 
-    return safeCall(
-      () => Reflect.apply(fallback, globalWindow.console || null, args),
-      null,
-    );
+    return safeCall(() => Reflect.apply(fallback, globalWindow.console || null, args), null);
   }
 
   function createDedupeKey(args, options) {
@@ -3244,17 +3048,11 @@
       state.toasts.splice(index, 1);
     }
 
-    if (
-      record.options.id &&
-      state.recordsById.get(record.options.id) === record
-    ) {
+    if (record.options.id && state.recordsById.get(record.options.id) === record) {
       state.recordsById.delete(record.options.id);
     }
 
-    if (
-      record.dedupeKey &&
-      state.dedupeRecords.get(record.dedupeKey) === record
-    ) {
+    if (record.dedupeKey && state.dedupeRecords.get(record.dedupeKey) === record) {
       state.dedupeRecords.delete(record.dedupeKey);
     }
   }
@@ -3294,9 +3092,7 @@
 
     button.type = "button";
     button.className = "rod-toast__minimize";
-    button.appendChild(
-      createSvgIcon(documentRef, "chevron-down", 16),
-    );
+    button.appendChild(createSvgIcon(documentRef, "chevron-down", 16));
     button.setAttribute("aria-label", "Minimize active toast tasks");
     button.title = "Minimize";
 
@@ -3314,9 +3110,7 @@
 
     button.type = "button";
     button.className = "rod-toast__expand";
-    button.appendChild(
-      createSvgIcon(documentRef, "chevron-down", 16),
-    );
+    button.appendChild(createSvgIcon(documentRef, "chevron-down", 16));
     button.setAttribute("aria-label", "Expand toast");
     button.title = "Expand or collapse";
 
@@ -3358,8 +3152,7 @@
 
     function snapBack() {
       node.dataset.swiping = "false";
-      node.style.transition =
-        "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease";
+      node.style.transition = "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease";
       node.style.transform = "translate3d(0, 0, 0) scale(1)";
       node.style.opacity = "1";
 
@@ -3396,8 +3189,7 @@
       const shouldDismiss =
         !cancelled &&
         mode === "swipe" &&
-        (distance >= threshold ||
-          (distance >= 24 && speed >= velocityThreshold));
+        (distance >= threshold || (distance >= 24 && speed >= velocityThreshold));
 
       if (moved) {
         suppressNextStackClick();
@@ -3476,27 +3268,19 @@
       }
 
       if (mode === "pending") {
-        const maxScrollTop = Math.max(
-          0,
-          scrollOwner.scrollHeight - scrollOwner.clientHeight,
-        );
+        const maxScrollTop = Math.max(0, scrollOwner.scrollHeight - scrollOwner.clientHeight);
         const verticalDominant = Math.abs(dy) > Math.abs(dx) * 1.25;
         const canScrollTowardTop = dy > 0 && startScrollTop > 0;
         const canScrollTowardBottom = dy < 0 && startScrollTop < maxScrollTop;
 
         mode =
-          maxScrollTop > 1 &&
-          verticalDominant &&
-          (canScrollTowardTop || canScrollTowardBottom)
+          maxScrollTop > 1 && verticalDominant && (canScrollTowardTop || canScrollTowardBottom)
             ? "scroll"
             : "swipe";
       }
 
       if (mode === "scroll") {
-        const maxScrollTop = Math.max(
-          0,
-          scrollOwner.scrollHeight - scrollOwner.clientHeight,
-        );
+        const maxScrollTop = Math.max(0, scrollOwner.scrollHeight - scrollOwner.clientHeight);
         scrollOwner.scrollTop = clamp(startScrollTop - dy, 0, maxScrollTop);
         return;
       }
@@ -3505,12 +3289,10 @@
       moved = moved || distance > 8;
 
       const threshold = record.options.swipeThreshold;
-      const opacity =
-        1 - Math.min(0.78, distance / Math.max(threshold * 2.25, 1));
+      const opacity = 1 - Math.min(0.78, distance / Math.max(threshold * 2.25, 1));
       const rotation = clamp(dx / 28, -7, 7);
 
-      node.style.transform =
-        `translate3d(${dx}px, ${dy}px, 0) rotate(${rotation}deg)`;
+      node.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${rotation}deg)`;
       node.style.opacity = String(opacity);
     });
 
@@ -3530,27 +3312,14 @@
       return false;
     }
 
-    if (
-      iconValue &&
-      typeof iconValue === "object" &&
-      typeof iconValue.cloneNode === "function"
-    ) {
+    if (iconValue && typeof iconValue === "object" && typeof iconValue.cloneNode === "function") {
       node.appendChild(iconValue.cloneNode(true));
       return true;
     }
 
-    const iconName =
-      typeof iconValue === "string" && SVG_ICONS[iconValue]
-        ? iconValue
-        : fallbackName;
+    const iconName = typeof iconValue === "string" && SVG_ICONS[iconValue] ? iconValue : fallbackName;
 
-    node.appendChild(
-      createSvgIcon(
-        documentRef,
-        iconName || "loader-circle",
-        17,
-      ),
-    );
+    node.appendChild(createSvgIcon(documentRef, iconName || "loader-circle", 17));
 
     return true;
   }
@@ -3559,10 +3328,7 @@
     const host = ensureHost();
 
     if (!host) {
-      safeCall(
-        () => console.log(`[${rawOptions.type || "toast"}]`, ...args),
-        undefined,
-      );
+      safeCall(() => console.log(`[${rawOptions.type || "toast"}]`, ...args), undefined);
       return null;
     }
 
@@ -3591,12 +3357,7 @@
     node.style.setProperty("--rod-toast-accent", palette.accent);
 
     icon.className = "rod-toast__icon";
-    setToastIcon(
-      icon,
-      host.document,
-      options.icon,
-      palette.icon,
-    );
+    setToastIcon(icon, host.document, options.icon, palette.icon);
     icon.setAttribute("aria-hidden", "true");
 
     content.className = "rod-toast__content";
@@ -3641,12 +3402,8 @@
     const renderLoading = (nextOptions = options) => {
       const hasTitle = Boolean(nextOptions.title);
       const hasDescription = Boolean(nextOptions.description);
-      const hasProgress =
-        nextOptions.animation === "progress";
-      const contentEmpty =
-        !hasTitle &&
-        !hasDescription &&
-        !hasProgress;
+      const hasProgress = nextOptions.animation === "progress";
+      const contentEmpty = !hasTitle && !hasDescription && !hasProgress;
       const hasIcon = setToastIcon(
         icon,
         host.document,
@@ -3661,17 +3418,13 @@
       node.dataset.loadingAnimation = nextOptions.animation;
       node.dataset.loadingIcon = String(hasIcon);
       node.dataset.loadingContentEmpty = String(contentEmpty);
-      node.dataset.loadingIndeterminate = String(
-        hasProgress && nextOptions.progress === null,
-      );
+      node.dataset.loadingIndeterminate = String(hasProgress && nextOptions.progress === null);
 
       icon.dataset.loadingSpinner = String(
-        nextOptions.loadingState === "loading" &&
-        nextOptions.animation === "spinner",
+        nextOptions.loadingState === "loading" && nextOptions.animation === "spinner",
       );
       icon.dataset.loadingPulse = String(
-        nextOptions.loadingState === "loading" &&
-        nextOptions.animation === "pulse",
+        nextOptions.loadingState === "loading" && nextOptions.animation === "pulse",
       );
 
       loadingTitle.textContent = nextOptions.title;
@@ -3681,15 +3434,9 @@
       loadingDescription.hidden = !hasDescription;
 
       const normalizedProgress = nextOptions.progress;
-      const progressPercent =
-        normalizedProgress === null
-          ? 0
-          : Math.round(normalizedProgress * 100);
+      const progressPercent = normalizedProgress === null ? 0 : Math.round(normalizedProgress * 100);
 
-      node.style.setProperty(
-        "--rod-loading-progress",
-        `${progressPercent}%`,
-      );
+      node.style.setProperty("--rod-loading-progress", `${progressPercent}%`);
 
       if (nextOptions.progressLabel !== null) {
         progressMeta.textContent = nextOptions.progressLabel;
@@ -3699,9 +3446,7 @@
         progressMeta.textContent = "";
       }
 
-      progressMeta.hidden =
-        !progressMeta.textContent ||
-        nextOptions.animation !== "progress";
+      progressMeta.hidden = !progressMeta.textContent || nextOptions.animation !== "progress";
 
       content.replaceChildren(loadingCopy);
     };
@@ -3721,12 +3466,7 @@
       icon.dataset.loadingSpinner = "false";
       icon.dataset.loadingPulse = "false";
 
-      setToastIcon(
-        icon,
-        host.document,
-        nextOptions.icon,
-        TOAST_COLORS[nextOptions.type].icon,
-      );
+      setToastIcon(icon, host.document, nextOptions.icon, TOAST_COLORS[nextOptions.type].icon);
 
       content.replaceChildren();
 
@@ -3771,22 +3511,13 @@
     };
 
     const playSuccessExit = () => {
-      if (
-        completing ||
-        removed ||
-        !node.isConnected
-      ) {
+      if (completing || removed || !node.isConnected) {
         return;
       }
 
       completing = true;
       clearTimer();
-      setToastIcon(
-        icon,
-        host.document,
-        "check",
-        "check",
-      );
+      setToastIcon(icon, host.document, "check", "check");
       node.dataset.swiping = "false";
 
       const requestFrame =
@@ -3802,33 +3533,23 @@
 
         node.dataset.completing = "true";
 
-        host.window.setTimeout(() => {
-          if (!node.isConnected) {
-            cleanup();
-            return;
-          }
+        host.window.setTimeout(
+          () => {
+            if (!node.isConnected) {
+              cleanup();
+              return;
+            }
 
-          node.dataset.successExit = "true";
+            node.dataset.successExit = "true";
 
-          host.window.setTimeout(
-            cleanup,
-            Math.max(
-              80,
-              Number(state.config.successExitDuration) || 220,
-            ),
-          );
-        }, Math.max(
-          120,
-          Number(state.config.successCollapseDuration) || 360,
-        ));
+            host.window.setTimeout(cleanup, Math.max(80, Number(state.config.successExitDuration) || 220));
+          },
+          Math.max(120, Number(state.config.successCollapseDuration) || 360),
+        );
       });
     };
 
-    const dismiss = (
-      immediate = false,
-      swipe = null,
-      reason = "programmatic",
-    ) => {
+    const dismiss = (immediate = false, swipe = null, reason = "programmatic") => {
       dismissReason = reason || "programmatic";
 
       if (removed || !node.isConnected) {
@@ -3843,11 +3564,7 @@
         return;
       }
 
-      if (
-        !swipe &&
-        options.type === "success" &&
-        state.config.successExitAnimation
-      ) {
+      if (!swipe && options.type === "success" && state.config.successExitAnimation) {
         playSuccessExit();
         return;
       }
@@ -3857,19 +3574,14 @@
         const rawY = Number(swipe.dy) || Number(swipe.velocityY) || 0;
         const length = Math.hypot(rawX, rawY) || 1;
         const viewportDistance =
-          Math.hypot(
-            host.window.innerWidth || 1000,
-            host.window.innerHeight || 1000,
-          ) * 1.2;
+          Math.hypot(host.window.innerWidth || 1000, host.window.innerHeight || 1000) * 1.2;
         const targetX = (rawX / length) * viewportDistance;
         const targetY = (rawY / length) * viewportDistance;
         const rotation = clamp(targetX / 90, -16, 16);
 
         node.dataset.swiping = "false";
-        node.style.transition =
-          "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease";
-        node.style.transform =
-          `translate3d(${targetX}px, ${targetY}px, 0) rotate(${rotation}deg)`;
+        node.style.transition = "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease";
+        node.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) rotate(${rotation}deg)`;
         node.style.opacity = "0";
         host.window.setTimeout(cleanup, 240);
         return;
@@ -3883,37 +3595,21 @@
     const scheduleTimer = () => {
       clearTimer();
 
-      if (
-        removed ||
-        paused ||
-        !Number.isFinite(remainingDuration) ||
-        remainingDuration <= 0
-      ) {
+      if (removed || paused || !Number.isFinite(remainingDuration) || remainingDuration <= 0) {
         return;
       }
 
       timerStartedAt = Date.now();
-      removalTimer = host.window.setTimeout(
-        () => dismiss(false, null, "timeout"),
-        remainingDuration,
-      );
+      removalTimer = host.window.setTimeout(() => dismiss(false, null, "timeout"), remainingDuration);
     };
 
     const pauseTimer = () => {
-      if (
-        paused ||
-        removalTimer === null ||
-        !Number.isFinite(remainingDuration) ||
-        remainingDuration <= 0
-      ) {
+      if (paused || removalTimer === null || !Number.isFinite(remainingDuration) || remainingDuration <= 0) {
         return;
       }
 
       paused = true;
-      remainingDuration = Math.max(
-        0,
-        remainingDuration - (Date.now() - timerStartedAt),
-      );
+      remainingDuration = Math.max(0, remainingDuration - (Date.now() - timerStartedAt));
       clearTimer();
     };
 
@@ -3965,10 +3661,7 @@
         ...options,
         ...parsed,
         loading: true,
-        loadingState:
-          parsed.loadingState ||
-          options.loadingState ||
-          "loading",
+        loadingState: parsed.loadingState || options.loadingState || "loading",
       };
 
       return update([], nextOptions);
@@ -3982,10 +3675,7 @@
         info: state.config.loadingInfoDuration,
         warning: state.config.loadingWarningDuration,
       };
-      const semanticIcon =
-        parsed.icon !== undefined
-          ? parsed.icon
-          : TOAST_COLORS[type].icon;
+      const semanticIcon = parsed.icon !== undefined ? parsed.icon : TOAST_COLORS[type].icon;
       const nextOptions = {
         ...options,
         ...parsed,
@@ -3994,13 +3684,10 @@
         loadingState: "settled",
         animation: "none",
         icon: semanticIcon,
-        progress:
-          type === "success"
-            ? 1
-            : parsed.progress ?? options.progress,
+        progress: type === "success" ? 1 : (parsed.progress ?? options.progress),
         duration: Number.isFinite(parsed.duration)
           ? Number(parsed.duration)
-          : durationByType[type] ?? state.config.duration,
+          : (durationByType[type] ?? state.config.duration),
       };
 
       return update([], nextOptions);
@@ -4042,9 +3729,7 @@
         return options.progress;
       },
       get state() {
-        return options.loading
-          ? options.loadingState
-          : options.type;
+        return options.loading ? options.loadingState : options.type;
       },
       update(...inputArgs) {
         if (options.loading) {
@@ -4059,10 +3744,7 @@
           {
             ...next,
             progress: value,
-            animation:
-              next.animation ||
-              options.animation ||
-              "progress",
+            animation: next.animation || options.animation || "progress",
           },
         ]);
       },
@@ -4088,21 +3770,12 @@
       },
     };
 
-    actions.appendChild(
-      createMinimizeButton(host.document),
-    );
+    actions.appendChild(createMinimizeButton(host.document));
 
-    actions.appendChild(
-      createExpandButton(host.document, record),
-    );
+    actions.appendChild(createExpandButton(host.document, record));
 
     if (options.closeButton) {
-      actions.appendChild(
-        createCloseButton(
-          host.document,
-          () => dismiss(false, null, "close"),
-        ),
-      );
+      actions.appendChild(createCloseButton(host.document, () => dismiss(false, null, "close")));
     }
 
     if (options.pauseOnInteraction) {
@@ -4189,36 +3862,23 @@
       }
     }
 
-    const dedupeKey = options.dedupe
-      ? createDedupeKey(parsed.args, options)
-      : null;
+    const dedupeKey = options.dedupe ? createDedupeKey(parsed.args, options) : null;
 
     if (dedupeKey && !options.id) {
       const existing = state.dedupeRecords.get(dedupeKey);
       const now = Date.now();
 
       const isPersistentDuplicate =
-        Boolean(state.config.coalescePersistent) &&
-        options.duration <= 0 &&
-        existing?.options?.duration <= 0;
-      const isInsideDedupeWindow =
-        existing &&
-        now - existing.lastSeenAt <= options.dedupeWindow;
+        Boolean(state.config.coalescePersistent) && options.duration <= 0 && existing?.options?.duration <= 0;
+      const isInsideDedupeWindow = existing && now - existing.lastSeenAt <= options.dedupeWindow;
 
-      if (
-        existing &&
-        !existing.removed &&
-        (isPersistentDuplicate || isInsideDedupeWindow)
-      ) {
+      if (existing && !existing.removed && (isPersistentDuplicate || isInsideDedupeWindow)) {
         existing.lastSeenAt = now;
         return existing.bumpDuplicate();
       }
     }
 
-    const created = createToastRecord(
-      parsed.args,
-      parsed.options,
-    );
+    const created = createToastRecord(parsed.args, parsed.options);
 
     if (!created) {
       return null;
@@ -4238,9 +3898,7 @@
   }
 
   function showToast(inputArgs, forcedType) {
-    return showParsedToast(
-      parseArguments(inputArgs, forcedType),
-    );
+    return showParsedToast(parseArguments(inputArgs, forcedType));
   }
 
   function showLoadingToast(inputArgs) {
@@ -4250,20 +3908,12 @@
       type: descriptor.type || "default",
       loading: true,
       loadingState: "loading",
-      animation:
-        descriptor.animation ||
-        state.config.loadingAnimation,
-      icon:
-        descriptor.icon === undefined
-          ? state.config.loadingIcon
-          : descriptor.icon,
+      animation: descriptor.animation || state.config.loadingAnimation,
+      icon: descriptor.icon === undefined ? state.config.loadingIcon : descriptor.icon,
       duration: Number.isFinite(descriptor.duration)
         ? Number(descriptor.duration)
         : state.config.loadingDuration,
-      dedupe:
-        descriptor.dedupe === undefined
-          ? false
-          : descriptor.dedupe,
+      dedupe: descriptor.dedupe === undefined ? false : descriptor.dedupe,
     };
 
     return showParsedToast({
@@ -4272,20 +3922,13 @@
     });
   }
 
-
-
   function normalizeActionDescriptors(actions, fallbackActions = []) {
-    const source = Array.isArray(actions) && actions.length
-      ? actions
-      : fallbackActions;
+    const source = Array.isArray(actions) && actions.length ? actions : fallbackActions;
 
     return source
       .filter((action) => action && typeof action === "object")
       .map((action, index) => ({
-        id:
-          action.id === undefined || action.id === null
-            ? `action-${index + 1}`
-            : String(action.id),
+        id: action.id === undefined || action.id === null ? `action-${index + 1}` : String(action.id),
         label:
           action.label === undefined || action.label === null
             ? String(action.id || `Action ${index + 1}`)
@@ -4302,29 +3945,18 @@
           action.successLabel === undefined || action.successLabel === null
             ? null
             : String(action.successLabel),
-        icon:
-          action.icon === false || action.icon === null
-            ? false
-            : action.icon || null,
-        variant: ["primary", "secondary", "danger", "ghost"].includes(
-          action.variant,
-        )
+        icon: action.icon === false || action.icon === null ? false : action.icon || null,
+        variant: ["primary", "secondary", "danger", "ghost"].includes(action.variant)
           ? action.variant
           : "secondary",
         disabled: Boolean(action.disabled),
         disabledUntilCountdown: Boolean(action.disabledUntilCountdown),
         close: action.close !== false && action.keepOpen !== true,
         keepOpen: action.keepOpen === true || action.close === false,
-        handle:
-          typeof action.handle === "function"
-            ? action.handle
-            : null,
+        handle: typeof action.handle === "function" ? action.handle : null,
         hasValue: hasOwn(action, "value"),
         value: action.value,
-        shortcut:
-          action.shortcut === undefined || action.shortcut === null
-            ? null
-            : String(action.shortcut),
+        shortcut: action.shortcut === undefined || action.shortcut === null ? null : String(action.shortcut),
         raw: action,
       }));
   }
@@ -4382,9 +4014,7 @@
     if (typeof details === "string") {
       body.textContent = details;
     } else {
-      body.appendChild(
-        renderToastValue(details, documentRef, state.config),
-      );
+      body.appendChild(renderToastValue(details, documentRef, state.config));
     }
 
     root.appendChild(summary);
@@ -4414,11 +4044,7 @@
   }
 
   function buildCheckboxes(documentRef, checkbox) {
-    const source = Array.isArray(checkbox)
-      ? checkbox
-      : checkbox
-        ? [checkbox]
-        : [];
+    const source = Array.isArray(checkbox) ? checkbox : checkbox ? [checkbox] : [];
 
     if (!source.length) {
       return {
@@ -4432,9 +4058,7 @@
     root.className = "rod-toast__checkboxes";
 
     source.forEach((item, index) => {
-      const descriptor = typeof item === "string"
-        ? { id: `checkbox-${index + 1}`, label: item }
-        : item || {};
+      const descriptor = typeof item === "string" ? { id: `checkbox-${index + 1}`, label: item } : item || {};
       const id = String(descriptor.id || `checkbox-${index + 1}`);
       const label = documentRef.createElement("label");
       const input = documentRef.createElement("input");
@@ -4455,9 +4079,7 @@
     return {
       node: root,
       getValue() {
-        return Object.fromEntries(
-          [...inputs.entries()].map(([id, input]) => [id, input.checked]),
-        );
+        return Object.fromEntries([...inputs.entries()].map(([id, input]) => [id, input.checked]));
       },
     };
   }
@@ -4481,9 +4103,7 @@
   }
 
   function showActionDialog(descriptor = {}, settings = {}) {
-    const options = isPlainObject(descriptor)
-      ? descriptor
-      : { title: String(descriptor ?? "") };
+    const options = isPlainObject(descriptor) ? descriptor : { title: String(descriptor ?? "") };
     const fallbackActions = settings.fallbackActions || [
       {
         id: "cancel",
@@ -4503,7 +4123,7 @@
     const actions = normalizeActionDescriptors(options.actions, fallbackActions);
     const dismissValue = hasOwn(options, "dismissValue")
       ? options.dismissValue
-      : settings.dismissValue ?? false;
+      : (settings.dismissValue ?? false);
 
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -4530,28 +4150,19 @@
       };
 
       created = createToastRecord([], {
-        type: hasOwn(TOAST_COLORS, options.type)
-          ? options.type
-          : settings.type || "default",
+        type: hasOwn(TOAST_COLORS, options.type) ? options.type : settings.type || "default",
         title: options.title,
         description: options.description,
-        icon:
-          options.icon === undefined
-            ? settings.icon || "circle"
-            : options.icon,
-        duration: Number.isFinite(options.duration)
-          ? Number(options.duration)
-          : settings.duration ?? 0,
+        icon: options.icon === undefined ? settings.icon || "circle" : options.icon,
+        duration: Number.isFinite(options.duration) ? Number(options.duration) : (settings.duration ?? 0),
         id: options.id,
         scope: options.scope,
         metadata: options.metadata,
         dedupe: false,
         pauseOnInteraction: options.pauseOnInteraction ?? true,
         dismissible: options.dismissible !== false,
-        closeButton:
-          options.dismissible !== false && (options.closeButton ?? true),
-        swipeToDismiss:
-          options.dismissible !== false && (options.swipeToDismiss ?? true),
+        closeButton: options.dismissible !== false && (options.closeButton ?? true),
+        swipeToDismiss: options.dismissible !== false && (options.swipeToDismiss ?? true),
         role: options.role || "alertdialog",
         onDismiss: settleDismissed,
       });
@@ -4620,13 +4231,14 @@
         body.appendChild(checkboxApi.node);
       }
 
-      const bodyApi = settings.buildBody?.({
-        document: documentRef,
-        body,
-        node,
-        controller,
-        options,
-      }) || {};
+      const bodyApi =
+        settings.buildBody?.({
+          document: documentRef,
+          body,
+          node,
+          controller,
+          options,
+        }) || {};
 
       settings.getValues = () => ({
         ...(bodyApi.getValues?.() || {}),
@@ -4685,8 +4297,7 @@
       const setButtonsBusy = (activeButton, action, busy) => {
         buttons.forEach((button) => {
           const descriptor = button.__rodAction;
-          const lockedByCountdown =
-            descriptor.disabledUntilCountdown && remainingSeconds > 0;
+          const lockedByCountdown = descriptor.disabledUntilCountdown && remainingSeconds > 0;
           button.disabled = busy || descriptor.disabled || lockedByCountdown;
           button.dataset.busy = String(busy && button === activeButton);
         });
@@ -4694,9 +4305,7 @@
         if (activeButton) {
           const label = activeButton.querySelector("span");
           if (label) {
-            label.textContent = busy && action.loadingLabel
-              ? action.loadingLabel
-              : action.label;
+            label.textContent = busy && action.loadingLabel ? action.loadingLabel : action.label;
           }
         }
       };
@@ -4725,15 +4334,9 @@
         setButtonsBusy(button, action, true);
 
         if (button.querySelector("svg")) {
-          button.replaceChild(
-            createSvgIcon(documentRef, "loader-circle", 15),
-            button.querySelector("svg"),
-          );
+          button.replaceChild(createSvgIcon(documentRef, "loader-circle", 15), button.querySelector("svg"));
         } else {
-          button.insertBefore(
-            createSvgIcon(documentRef, "loader-circle", 15),
-            labelNode,
-          );
+          button.insertBefore(createSvgIcon(documentRef, "loader-circle", 15), labelNode);
         }
 
         let closedByContext = false;
@@ -4862,9 +4465,8 @@
         buttonByActionId.set(action.id, button);
       });
 
-      const countdownValue = typeof options.countdown === "object"
-        ? options.countdown.seconds
-        : options.countdown;
+      const countdownValue =
+        typeof options.countdown === "object" ? options.countdown.seconds : options.countdown;
       initialSeconds = Math.max(0, Math.ceil(Number(countdownValue) || 0));
       remainingSeconds = initialSeconds;
 
@@ -4872,26 +4474,16 @@
         countdown.dataset.visible = String(initialSeconds > 0);
         if (!initialSeconds) return;
         const progress = clamp(remainingSeconds / initialSeconds, 0, 1);
-        countdown.style.setProperty(
-          "--rod-countdown-progress",
-          `${Math.round(progress * 100)}%`,
-        );
-        countdownLabel.textContent = remainingSeconds > 0
-          ? `${remainingSeconds}s remaining`
-          : "Ready";
+        countdown.style.setProperty("--rod-countdown-progress", `${Math.round(progress * 100)}%`);
+        countdownLabel.textContent = remainingSeconds > 0 ? `${remainingSeconds}s remaining` : "Ready";
 
         buttons.forEach((button) => {
           const action = button.__rodAction;
           const label = button.querySelector("span");
           if (label && button.dataset.busy !== "true") {
-            label.textContent = action.labelTemplate.replace(
-              /\{seconds\}/g,
-              String(remainingSeconds),
-            );
+            label.textContent = action.labelTemplate.replace(/\{seconds\}/g, String(remainingSeconds));
           }
-          button.disabled =
-            action.disabled ||
-            (action.disabledUntilCountdown && remainingSeconds > 0);
+          button.disabled = action.disabled || (action.disabledUntilCountdown && remainingSeconds > 0);
         });
       };
 
@@ -4904,9 +4496,7 @@
           if (remainingSeconds <= 0) {
             (state.hostWindow || initialHostWindow).clearInterval(countdownTimer);
             countdownTimer = null;
-            const autoActionId = typeof options.countdown === "object"
-              ? options.countdown.autoAction
-              : null;
+            const autoActionId = typeof options.countdown === "object" ? options.countdown.autoAction : null;
             if (autoActionId && buttonByActionId.has(String(autoActionId))) {
               buttonByActionId.get(String(autoActionId)).click();
             }
@@ -4951,13 +4541,15 @@
       setManagerMinimized(false);
       syncStackLayout();
 
-      const preferredButton = buttons.find((button) => {
-        return !button.disabled && button.dataset.variant === "primary";
-      }) || buttons.find((button) => !button.disabled);
+      const preferredButton =
+        buttons.find((button) => {
+          return !button.disabled && button.dataset.variant === "primary";
+        }) || buttons.find((button) => !button.disabled);
       const hostWindow = state.hostWindow || initialHostWindow;
-      const requestFrame = typeof hostWindow.requestAnimationFrame === "function"
-        ? hostWindow.requestAnimationFrame.bind(hostWindow)
-        : (callback) => hostWindow.setTimeout(callback, 0);
+      const requestFrame =
+        typeof hostWindow.requestAnimationFrame === "function"
+          ? hostWindow.requestAnimationFrame.bind(hostWindow)
+          : (callback) => hostWindow.setTimeout(callback, 0);
 
       requestFrame(() => {
         bodyApi.focus?.();
@@ -4970,9 +4562,7 @@
   }
 
   function showConfirmToast(descriptor = {}) {
-    const options = isPlainObject(descriptor)
-      ? { ...descriptor }
-      : { title: String(descriptor ?? "") };
+    const options = isPlainObject(descriptor) ? { ...descriptor } : { title: String(descriptor ?? "") };
     options.shortcuts ||= {
       Escape: "cancel",
       Enter: "confirm",
@@ -5001,9 +4591,7 @@
   }
 
   function showPromptToast(descriptor = {}) {
-    const options = isPlainObject(descriptor)
-      ? { ...descriptor }
-      : { title: String(descriptor ?? "") };
+    const options = isPlainObject(descriptor) ? { ...descriptor } : { title: String(descriptor ?? "") };
     options.shortcuts ||= options.multiline
       ? {
           Escape: "cancel",
@@ -5018,9 +4606,7 @@
 
     return showActionDialog(options, {
       kind: "prompt",
-      dismissValue: hasOwn(options, "dismissValue")
-        ? options.dismissValue
-        : null,
+      dismissValue: hasOwn(options, "dismissValue") ? options.dismissValue : null,
       fallbackActions: [
         {
           id: "cancel",
@@ -5044,13 +4630,9 @@
         label.className = "rod-toast__field-label";
         label.textContent = String(options.inputLabel || "Value");
         label.hidden = !options.inputLabel;
-        input.className = options.multiline
-          ? "rod-toast__textarea"
-          : "rod-toast__input";
+        input.className = options.multiline ? "rod-toast__textarea" : "rod-toast__input";
         if (!options.multiline) input.type = options.inputType || "text";
-        input.value = options.value === undefined || options.value === null
-          ? ""
-          : String(options.value);
+        input.value = options.value === undefined || options.value === null ? "" : String(options.value);
         input.placeholder = String(options.placeholder || "");
         input.autocomplete = options.autocomplete || "off";
         input.spellcheck = options.spellcheck !== false;
@@ -5101,9 +4683,7 @@
 
     return showActionDialog(options, {
       kind: "select",
-      dismissValue: hasOwn(options, "dismissValue")
-        ? options.dismissValue
-        : null,
+      dismissValue: hasOwn(options, "dismissValue") ? options.dismissValue : null,
       fallbackActions: [
         {
           id: "cancel",
@@ -5131,9 +4711,7 @@
         select.multiple = Boolean(options.multiple);
 
         choices.forEach((choice, index) => {
-          const descriptor = typeof choice === "object"
-            ? choice
-            : { value: choice, label: choice };
+          const descriptor = typeof choice === "object" ? choice : { value: choice, label: choice };
           const option = document.createElement("option");
           option.value = String(descriptor.value ?? index);
           option.textContent = String(descriptor.label ?? descriptor.value ?? index);
@@ -5154,13 +4732,16 @@
           },
           getValues() {
             const selected = [...select.selectedOptions].map((option) => option.value);
-            return { selection: options.multiple ? selected : selected[0] ?? null };
+            return { selection: options.multiple ? selected : (selected[0] ?? null) };
           },
         };
       },
       async validate({ action, values }) {
         if (action.id === "cancel") return true;
-        if (options.required && (values.selection === null || values.selection === undefined || values.selection.length === 0)) {
+        if (
+          options.required &&
+          (values.selection === null || values.selection === undefined || values.selection.length === 0)
+        ) {
           return options.requiredMessage || "Choose an option.";
         }
         if (typeof options.validate === "function") {
@@ -5178,20 +4759,14 @@
   }
 
   function isRichDescriptor(value) {
-    return isPlainObject(value) && [
-      "title",
-      "description",
-      "details",
-      "actions",
-      "error",
-      "copyError",
-    ].some((key) => hasOwn(value, key));
+    return (
+      isPlainObject(value) &&
+      ["title", "description", "details", "actions", "error", "copyError"].some((key) => hasOwn(value, key))
+    );
   }
 
   function showRichToast(descriptor = {}, forcedType = null) {
-    const options = isPlainObject(descriptor)
-      ? { ...descriptor }
-      : { title: String(descriptor ?? "") };
+    const options = isPlainObject(descriptor) ? { ...descriptor } : { title: String(descriptor ?? "") };
     const type = forcedType || options.type || "default";
     const created = createToastRecord([], {
       ...options,
@@ -5236,23 +4811,23 @@
 
       const actions = normalizeActionDescriptors(next.actions, []);
       if (next.copyError !== false && next.error) {
-        actions.push(normalizeActionDescriptors([
-          {
-            id: "copy-error",
-            label: next.copyLabel || "Copy error",
-            icon: "copy",
-            variant: "secondary",
-            close: false,
-            successLabel: "Copied",
-            async handle() {
-              return copyText(
-                next.error instanceof Error
-                  ? next.error.stack || next.error.message
-                  : next.error,
-              );
+        actions.push(
+          normalizeActionDescriptors([
+            {
+              id: "copy-error",
+              label: next.copyLabel || "Copy error",
+              icon: "copy",
+              variant: "secondary",
+              close: false,
+              successLabel: "Copied",
+              async handle() {
+                return copyText(
+                  next.error instanceof Error ? next.error.stack || next.error.message : next.error,
+                );
+              },
             },
-          },
-        ])[0]);
+          ])[0],
+        );
       }
 
       actions.forEach((action) => {
@@ -5312,11 +4887,14 @@
             showSemanticToast("error", [error]);
           }
           if (!action.close) {
-            (state.hostWindow || initialHostWindow).setTimeout(() => {
-              label.textContent = original;
-              button.disabled = false;
-              button.dataset.busy = "false";
-            }, action.successLabel ? 650 : 0);
+            (state.hostWindow || initialHostWindow).setTimeout(
+              () => {
+                label.textContent = original;
+                button.disabled = false;
+                button.dataset.busy = "false";
+              },
+              action.successLabel ? 650 : 0,
+            );
           }
         });
         actionBar.appendChild(button);
@@ -5344,14 +4922,17 @@
     if (args[0] instanceof Error) {
       const error = args[0];
       const tail = args[1] && isOptionsCandidate(args[1]) ? args[1] : {};
-      return showRichToast({
-        ...tail,
-        title: tail.title || error.message || error.name || "Error",
-        description: tail.description || error.name || "Error",
-        error,
-        icon: tail.icon || "circle-x",
-        copyError: tail.copyError ?? true,
-      }, type);
+      return showRichToast(
+        {
+          ...tail,
+          title: tail.title || error.message || error.name || "Error",
+          description: tail.description || error.name || "Error",
+          error,
+          icon: tail.icon || "circle-x",
+          copyError: tail.copyError ?? true,
+        },
+        type,
+      );
     }
 
     return showToast(args, type);
@@ -5359,9 +4940,7 @@
 
   function getTaskStorage() {
     const hostWindow = state.hostWindow || initialHostWindow;
-    const key = state.config.taskStorage === "localStorage"
-      ? "localStorage"
-      : "sessionStorage";
+    const key = state.config.taskStorage === "localStorage" ? "localStorage" : "sessionStorage";
     return safeCall(() => hostWindow[key], null);
   }
 
@@ -5388,23 +4967,13 @@
   }
 
   function normalizeTaskStatus(value) {
-    return [
-      "queued",
-      "running",
-      "paused",
-      "success",
-      "error",
-      "warning",
-      "cancelled",
-    ].includes(value)
+    return ["queued", "running", "paused", "success", "error", "warning", "cancelled"].includes(value)
       ? value
       : "queued";
   }
 
   function createTaskController(descriptor = {}) {
-    const options = isPlainObject(descriptor)
-      ? { ...descriptor }
-      : { title: String(descriptor ?? "") };
+    const options = isPlainObject(descriptor) ? { ...descriptor } : { title: String(descriptor ?? "") };
     const id = String(options.id || `task-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     const existing = state.tasks.get(id);
     if (existing && !existing.dismissed) return existing;
@@ -5418,9 +4987,7 @@
       status: normalizeTaskStatus(options.status || "queued"),
       progress: normalizeProgress(options.progress),
       progressLabel: options.progressLabel || null,
-      metadata: options.metadata && typeof options.metadata === "object"
-        ? { ...options.metadata }
-        : {},
+      metadata: options.metadata && typeof options.metadata === "object" ? { ...options.metadata } : {},
       scope: options.scope == null ? null : String(options.scope),
       createdAt: Number(options.createdAt) || Date.now(),
       updatedAt: Date.now(),
@@ -5467,28 +5034,30 @@
       },
     };
 
-    const toastController = showLoadingToast([{
-      id: toastId,
-      title: taskState.title,
-      description: taskState.description,
-      icon: taskState.icon,
-      animation: taskState.progress === null ? "spinner" : "progress",
-      progress: taskState.progress,
-      progressLabel: taskState.progressLabel,
-      duration: 0,
-      dedupe: false,
-      scope: taskState.scope,
-      metadata: {
-        ...taskState.metadata,
-        taskId: id,
+    const toastController = showLoadingToast([
+      {
+        id: toastId,
+        title: taskState.title,
+        description: taskState.description,
+        icon: taskState.icon,
+        animation: taskState.progress === null ? "spinner" : "progress",
+        progress: taskState.progress,
+        progressLabel: taskState.progressLabel,
+        duration: 0,
+        dedupe: false,
+        scope: taskState.scope,
+        metadata: {
+          ...taskState.metadata,
+          taskId: id,
+        },
+        onDismiss({ reason } = {}) {
+          dismissed = true;
+          state.tasks.delete(id);
+          persistTaskSnapshots();
+          emitEvent("task:dismiss", { task, reason });
+        },
       },
-      onDismiss({ reason } = {}) {
-        dismissed = true;
-        state.tasks.delete(id);
-        persistTaskSnapshots();
-        emitEvent("task:dismiss", { task, reason });
-      },
-    }]);
+    ]);
 
     if (!toastController) return null;
     const node = toastController.element;
@@ -5558,7 +5127,8 @@
       if (hasOwn(next, "icon")) taskState.icon = next.icon || "circle";
       if (hasOwn(next, "status")) taskState.status = normalizeTaskStatus(next.status);
       if (hasOwn(next, "progress")) taskState.progress = normalizeProgress(next.progress);
-      if (hasOwn(next, "progressLabel")) taskState.progressLabel = next.progressLabel == null ? null : String(next.progressLabel);
+      if (hasOwn(next, "progressLabel"))
+        taskState.progressLabel = next.progressLabel == null ? null : String(next.progressLabel);
       if (next.metadata && typeof next.metadata === "object") {
         taskState.metadata = { ...taskState.metadata, ...next.metadata };
       }
@@ -5567,16 +5137,20 @@
 
       const semantic = {
         queued: { icon: taskState.icon || "clock", animation: "pulse" },
-        running: { icon: taskState.icon || "loader-circle", animation: taskState.progress === null ? "spinner" : "progress" },
+        running: {
+          icon: taskState.icon || "loader-circle",
+          animation: taskState.progress === null ? "spinner" : "progress",
+        },
         paused: { icon: "pause", animation: "none" },
         warning: { icon: "triangle-alert", animation: "none" },
         cancelled: { icon: "square", animation: "none" },
       }[taskState.status] || { icon: taskState.icon, animation: "none" };
 
       if (["success", "error"].includes(taskState.status)) {
-        const settle = taskState.status === "success"
-          ? toastController.success.bind(toastController)
-          : toastController.error.bind(toastController);
+        const settle =
+          taskState.status === "success"
+            ? toastController.success.bind(toastController)
+            : toastController.error.bind(toastController);
         settle({
           title: taskState.title,
           description: taskState.description,
@@ -5712,15 +5286,16 @@
     });
 
     try {
-      const result = typeof input === "function"
-        ? await input({
-            task,
-            signal: task.signal,
-            progress: (value, next = {}) => task.setProgress(value, next),
-            update: (next = {}) => task.update(next),
-            toast,
-          })
-        : await input;
+      const result =
+        typeof input === "function"
+          ? await input({
+              task,
+              signal: task.signal,
+              progress: (value, next = {}) => task.setProgress(value, next),
+              update: (next = {}) => task.update(next),
+              toast,
+            })
+          : await input;
       const success = resolvePhaseDescriptor(options.success, result, {
         title: "Completed",
         description: "The operation completed successfully.",
@@ -5784,10 +5359,13 @@
         const remaining = Math.max(0, milliseconds - (Date.now() - startedAt));
         onTick?.(remaining);
       }, 250);
-      timer = setTimeout(() => {
-        cleanup();
-        resolve();
-      }, Math.max(0, milliseconds));
+      timer = setTimeout(
+        () => {
+          cleanup();
+          resolve();
+        },
+        Math.max(0, milliseconds),
+      );
     });
   }
 
@@ -5830,10 +5408,12 @@
           task,
           progress: (value, next = {}) => task.setProgress(value, next),
         });
-        task.success(resolvePhaseDescriptor(options.success, result, {
-          title: "Completed",
-          description: `Succeeded on attempt ${attempt}.`,
-        }));
+        task.success(
+          resolvePhaseDescriptor(options.success, result, {
+            title: "Completed",
+            description: `Succeeded on attempt ${attempt}.`,
+          }),
+        );
         return result;
       } catch (error) {
         if (abortController.signal.aborted) {
@@ -5841,10 +5421,13 @@
           throw error;
         }
         if (attempt >= maxAttempts) {
-          task.error(error, resolvePhaseDescriptor(options.error, error, {
-            title: "All attempts failed",
-            description: error?.message || String(error),
-          }));
+          task.error(
+            error,
+            resolvePhaseDescriptor(options.error, error, {
+              title: "All attempts failed",
+              description: error?.message || String(error),
+            }),
+          );
           throw error;
         }
 
@@ -5932,9 +5515,14 @@
       children,
       weights,
       task(keyOrDescriptor, maybeDescriptor = {}) {
-        const childOptions = typeof keyOrDescriptor === "string"
-          ? { ...maybeDescriptor, key: maybeDescriptor.key || keyOrDescriptor, title: maybeDescriptor.title || keyOrDescriptor }
-          : { ...(keyOrDescriptor || {}) };
+        const childOptions =
+          typeof keyOrDescriptor === "string"
+            ? {
+                ...maybeDescriptor,
+                key: maybeDescriptor.key || keyOrDescriptor,
+                title: maybeDescriptor.title || keyOrDescriptor,
+              }
+            : { ...(keyOrDescriptor || {}) };
         const key = String(childOptions.key || childOptions.id || `task-${children.size + 1}`);
         if (children.has(key)) return children.get(key);
         const child = createTaskController({
@@ -6032,9 +5620,7 @@
     getPersistedTaskSnapshots().forEach((snapshot) => {
       const terminal = ["success", "error", "cancelled"].includes(snapshot.status);
       if (terminal && now - Number(snapshot.updatedAt || 0) > state.config.taskTerminalRetention) return;
-      const status = ["running", "queued"].includes(snapshot.status)
-        ? "paused"
-        : snapshot.status;
+      const status = ["running", "queued"].includes(snapshot.status) ? "paused" : snapshot.status;
       const description = ["running", "queued"].includes(snapshot.status)
         ? `${snapshot.description || ""}${snapshot.description ? " · " : ""}Restored after reload. Resume manually.`
         : snapshot.description;
@@ -6070,10 +5656,7 @@
         delete trailing[OPTIONS_SYMBOL];
       }
 
-      return [
-        ...args,
-        toast.options({ ...defaults, ...trailing, scope: scopeName }),
-      ];
+      return [...args, toast.options({ ...defaults, ...trailing, scope: scopeName })];
     };
     const semantic = (type, args) => {
       if (args.length === 1 && isRichDescriptor(args[0])) {
@@ -6081,9 +5664,7 @@
       }
 
       if (args[0] instanceof Error) {
-        const trailing = args[1] && isOptionsCandidate(args[1])
-          ? { ...args[1] }
-          : {};
+        const trailing = args[1] && isOptionsCandidate(args[1]) ? { ...args[1] } : {};
         return showSemanticToast(type, [
           args[0],
           toast.options({ ...defaults, ...trailing, scope: scopeName }),
@@ -6142,15 +5723,19 @@
   toast.success = (...args) => showSemanticToast("success", args);
   toast.warning = (...args) => showSemanticToast("warning", args);
   toast.message = (descriptor = {}) => showRichToast(descriptor);
-  toast.copyError = (error, options = {}) => showRichToast({
-    ...options,
-    type: "error",
-    title: options.title || error?.message || "Error",
-    description: options.description || error?.name || "Error",
-    error,
-    copyError: true,
-    icon: options.icon || "circle-x",
-  }, "error");
+  toast.copyError = (error, options = {}) =>
+    showRichToast(
+      {
+        ...options,
+        type: "error",
+        title: options.title || error?.message || "Error",
+        description: options.description || error?.name || "Error",
+        error,
+        copyError: true,
+        icon: options.icon || "circle-x",
+      },
+      "error",
+    );
   toast.loading = (...args) => showLoadingToast(args);
   toast.confirm = (descriptor = {}) => showConfirmToast(descriptor);
   toast.prompt = (descriptor = {}) => showPromptToast(descriptor);
@@ -6208,10 +5793,7 @@
       {
         ...next,
         progress: value,
-        animation:
-          next.animation ||
-          record.options.animation ||
-          "progress",
+        animation: next.animation || record.options.animation || "progress",
       },
     ]);
   };
@@ -6223,19 +5805,9 @@
       return null;
     }
 
-    const normalizedType = [
-      "success",
-      "error",
-      "info",
-      "warning",
-    ].includes(type)
-      ? type
-      : "success";
+    const normalizedType = ["success", "error", "info", "warning"].includes(type) ? type : "success";
 
-    return record.settleLoading(
-      normalizedType,
-      inputArgs,
-    );
+    return record.settleLoading(normalizedType, inputArgs);
   };
 
   toast.dismiss = (target, reason = "programmatic", immediate = false) => {
@@ -6332,28 +5904,13 @@
       }
     }
 
-    state.config.maxToasts = Math.max(
-      1,
-      Number(state.config.maxToasts) || DEFAULT_CONFIG.maxToasts,
-    );
-    state.config.inspectDepth = Math.max(
-      0,
-      Number(state.config.inspectDepth) || 0,
-    );
-    state.config.inspectItems = Math.max(
-      0,
-      Number(state.config.inspectItems) || 0,
-    );
-    state.config.previewItems = Math.max(
-      0,
-      Number(state.config.previewItems) || 0,
-    );
+    state.config.maxToasts = Math.max(1, Number(state.config.maxToasts) || DEFAULT_CONFIG.maxToasts);
+    state.config.inspectDepth = Math.max(0, Number(state.config.inspectDepth) || 0);
+    state.config.inspectItems = Math.max(0, Number(state.config.inspectItems) || 0);
+    state.config.previewItems = Math.max(0, Number(state.config.previewItems) || 0);
     state.config.stackVisible = Math.min(
       3,
-      Math.max(
-        1,
-        Number(state.config.stackVisible) || DEFAULT_CONFIG.stackVisible,
-      ),
+      Math.max(1, Number(state.config.stackVisible) || DEFAULT_CONFIG.stackVisible),
     );
     state.config.stackMaxHeight = Math.max(
       180,
@@ -6374,8 +5931,7 @@
     );
     state.config.objectInspectorLoadTimeout = Math.max(
       1000,
-      Number(state.config.objectInspectorLoadTimeout) ||
-        DEFAULT_CONFIG.objectInspectorLoadTimeout,
+      Number(state.config.objectInspectorLoadTimeout) || DEFAULT_CONFIG.objectInspectorLoadTimeout,
     );
     state.config.virtualizeAfter = Math.max(
       1,
@@ -6395,125 +5951,81 @@
     );
     state.config.stacked = Boolean(state.config.stacked);
     state.config.stackToolbar = Boolean(state.config.stackToolbar);
-    state.config.persistAcrossSpaNavigation = Boolean(
-      state.config.persistAcrossSpaNavigation,
-    );
-    state.config.minimizeOnSpaNavigation = Boolean(
-      state.config.minimizeOnSpaNavigation,
-    );
+    state.config.persistAcrossSpaNavigation = Boolean(state.config.persistAcrossSpaNavigation);
+    state.config.minimizeOnSpaNavigation = Boolean(state.config.minimizeOnSpaNavigation);
     state.config.persistTasks = Boolean(state.config.persistTasks);
     state.config.restoreTasksOnLoad = Boolean(state.config.restoreTasksOnLoad);
-    state.config.taskStorage = state.config.taskStorage === "localStorage"
-      ? "localStorage"
-      : "sessionStorage";
-    state.config.taskStorageKey = String(
-      state.config.taskStorageKey || DEFAULT_CONFIG.taskStorageKey,
-    );
+    state.config.taskStorage =
+      state.config.taskStorage === "localStorage" ? "localStorage" : "sessionStorage";
+    state.config.taskStorageKey = String(state.config.taskStorageKey || DEFAULT_CONFIG.taskStorageKey);
     state.config.maxPersistedTasks = Math.max(
       1,
       Number(state.config.maxPersistedTasks) || DEFAULT_CONFIG.maxPersistedTasks,
     );
-    state.config.taskTerminalRetention = Number.isFinite(
-      Number(state.config.taskTerminalRetention),
-    )
+    state.config.taskTerminalRetention = Number.isFinite(Number(state.config.taskTerminalRetention))
       ? Math.max(0, Number(state.config.taskTerminalRetention))
       : DEFAULT_CONFIG.taskTerminalRetention;
-    state.config.successExitAnimation = Boolean(
-      state.config.successExitAnimation,
-    );
+    state.config.successExitAnimation = Boolean(state.config.successExitAnimation);
     state.config.successCollapseDuration = Math.max(
       120,
-      Number(state.config.successCollapseDuration) ||
-        DEFAULT_CONFIG.successCollapseDuration,
+      Number(state.config.successCollapseDuration) || DEFAULT_CONFIG.successCollapseDuration,
     );
     state.config.successExitDuration = Math.max(
       80,
-      Number(state.config.successExitDuration) ||
-        DEFAULT_CONFIG.successExitDuration,
+      Number(state.config.successExitDuration) || DEFAULT_CONFIG.successExitDuration,
     );
-    state.config.loadingDuration = Number.isFinite(
-      Number(state.config.loadingDuration),
-    )
+    state.config.loadingDuration = Number.isFinite(Number(state.config.loadingDuration))
       ? Number(state.config.loadingDuration)
       : DEFAULT_CONFIG.loadingDuration;
-    state.config.loadingAnimation = normalizeLoadingAnimation(
-      state.config.loadingAnimation,
-    );
+    state.config.loadingAnimation = normalizeLoadingAnimation(state.config.loadingAnimation);
     state.config.loadingIcon =
-      state.config.loadingIcon === false ||
-      state.config.loadingIcon === null
+      state.config.loadingIcon === false || state.config.loadingIcon === null
         ? false
-        : state.config.loadingIcon ||
-          DEFAULT_CONFIG.loadingIcon;
+        : state.config.loadingIcon || DEFAULT_CONFIG.loadingIcon;
     state.config.loadingSuccessDuration = Math.max(
       0,
-      Number(state.config.loadingSuccessDuration) ||
-        DEFAULT_CONFIG.loadingSuccessDuration,
+      Number(state.config.loadingSuccessDuration) || DEFAULT_CONFIG.loadingSuccessDuration,
     );
     state.config.loadingErrorDuration = Math.max(
       0,
-      Number(state.config.loadingErrorDuration) ||
-        DEFAULT_CONFIG.loadingErrorDuration,
+      Number(state.config.loadingErrorDuration) || DEFAULT_CONFIG.loadingErrorDuration,
     );
     state.config.loadingInfoDuration = Math.max(
       0,
-      Number(state.config.loadingInfoDuration) ||
-        DEFAULT_CONFIG.loadingInfoDuration,
+      Number(state.config.loadingInfoDuration) || DEFAULT_CONFIG.loadingInfoDuration,
     );
     state.config.loadingWarningDuration = Math.max(
       0,
-      Number(state.config.loadingWarningDuration) ||
-        DEFAULT_CONFIG.loadingWarningDuration,
+      Number(state.config.loadingWarningDuration) || DEFAULT_CONFIG.loadingWarningDuration,
     );
     state.config.coalescePersistent = Boolean(state.config.coalescePersistent);
     state.config.swipeToDismiss = Boolean(state.config.swipeToDismiss);
     state.config.virtualizeInspector = Boolean(state.config.virtualizeInspector);
-    state.config.unmountInspectorOnCollapse = Boolean(
-      state.config.unmountInspectorOnCollapse,
-    );
+    state.config.unmountInspectorOnCollapse = Boolean(state.config.unmountInspectorOnCollapse);
     state.config.useShadowRoot = Boolean(state.config.useShadowRoot);
-    state.config.fallbackToLightDom = Boolean(
-      state.config.fallbackToLightDom,
-    );
-    state.config.shadowRootMode =
-      state.config.shadowRootMode === "open" ? "open" : "closed";
+    state.config.fallbackToLightDom = Boolean(state.config.fallbackToLightDom);
+    state.config.shadowRootMode = state.config.shadowRootMode === "open" ? "open" : "closed";
 
     if (!allowedPositions.has(state.config.position)) {
       state.config.position = DEFAULT_CONFIG.position;
     }
 
-    if (
-      typeof state.config.shouldDebug !== "boolean" &&
-      typeof state.config.shouldDebug !== "function"
-    ) {
+    if (typeof state.config.shouldDebug !== "boolean" && typeof state.config.shouldDebug !== "function") {
       state.config.shouldDebug = DEFAULT_CONFIG.shouldDebug;
     }
 
-    if (
-      state.config.downloadFallback !== null &&
-      typeof state.config.downloadFallback !== "function"
-    ) {
+    if (state.config.downloadFallback !== null && typeof state.config.downloadFallback !== "function") {
       state.config.downloadFallback = DEFAULT_CONFIG.downloadFallback;
     }
 
-    if (
-      state.config.objectInspectorSrc !== null &&
-      typeof state.config.objectInspectorSrc !== "string"
-    ) {
+    if (state.config.objectInspectorSrc !== null && typeof state.config.objectInspectorSrc !== "string") {
       state.config.objectInspectorSrc = DEFAULT_CONFIG.objectInspectorSrc;
     }
 
     if (!state.config.persistAcrossSpaNavigation && state.spaCleanup) {
       state.spaCleanup();
-    } else if (
-      state.config.persistAcrossSpaNavigation &&
-      state.hostWindow &&
-      state.hostDocument
-    ) {
-      installSpaPersistence(
-        state.hostWindow,
-        state.hostDocument,
-      );
+    } else if (state.config.persistAcrossSpaNavigation && state.hostWindow && state.hostDocument) {
+      installSpaPersistence(state.hostWindow, state.hostDocument);
     }
 
     if (state.container) {

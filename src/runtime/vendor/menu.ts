@@ -22,7 +22,6 @@
  * - resilient dependency loader: page script, GM_addElement, GM XHR, dynamic import and require
  */
 
-
 /*
  * Optional userscript grants for the dependency loader:
  *
@@ -37,12 +36,14 @@
 declare const unsafeWindow: (Window & typeof globalThis) | undefined;
 declare const GM_addElement: ((tag: string, attributes?: Record<string, unknown>) => Element) | undefined;
 declare const GM_xmlhttpRequest: ((options: Record<string, unknown>) => void) | undefined;
-declare const GM: {
-  xmlHttpRequest?: (options: Record<string, unknown>) => Promise<unknown>;
-  getValue?: (key: string, fallback?: unknown) => Promise<unknown>;
-  setValue?: (key: string, value: unknown) => Promise<void>;
-  deleteValue?: (key: string) => Promise<void>;
-} | undefined;
+declare const GM:
+  | {
+      xmlHttpRequest?: (options: Record<string, unknown>) => Promise<unknown>;
+      getValue?: (key: string, fallback?: unknown) => Promise<unknown>;
+      setValue?: (key: string, value: unknown) => Promise<void>;
+      deleteValue?: (key: string) => Promise<void>;
+    }
+  | undefined;
 declare const GM_getValue: ((key: string, fallback?: unknown) => unknown) | undefined;
 declare const GM_setValue: ((key: string, value: unknown) => void) | undefined;
 declare const GM_deleteValue: ((key: string) => void) | undefined;
@@ -95,7 +96,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     persistOn?: PersistTrigger | readonly PersistTrigger[];
     version?: string | number;
     transform?: RodMenuPersistenceTransform<TValues, TStored>;
-    merge?: "persisted-over-initial" | "initial-over-persisted" | ((initial: TValues, persisted: Partial<TValues>) => TValues);
+    merge?:
+      | "persisted-over-initial"
+      | "initial-over-persisted"
+      | ((initial: TValues, persisted: Partial<TValues>) => TValues);
   }
 
   interface RodMenuStoreConfig<TValues extends AnyRecord = AnyRecord> {
@@ -192,7 +196,11 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     attributes?: Record<string, string | number | boolean | null | undefined>;
     visibleWhen?: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean;
     disabledWhen?: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean;
-    validate?: (value: FieldValue, values: Readonly<AnyRecord>, context: RodMenuContext<any>) => Awaitable<string | null | undefined>;
+    validate?: (
+      value: FieldValue,
+      values: Readonly<AnyRecord>,
+      context: RodMenuContext<any>,
+    ) => Awaitable<string | null | undefined>;
     transform?: (value: FieldValue, context: RodMenuContext<any>) => FieldValue;
     onChange?: (value: FieldValue, context: RodMenuContext<any>) => void;
     trailingAction?: RodMenuTrailingAction;
@@ -360,12 +368,14 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
 
   interface ProviderStatusField extends BaseField {
     type: "provider-status";
-    providers: readonly RodMenuProviderItem[] | ((context: RodMenuContext<any>) => readonly RodMenuProviderItem[]);
+    providers:
+      readonly RodMenuProviderItem[] | ((context: RodMenuContext<any>) => readonly RodMenuProviderItem[]);
   }
 
   interface RequestLogField extends BaseField {
     type: "request-log";
-    entries: readonly RodMenuRequestEntry[] | ((context: RodMenuContext<any>) => readonly RodMenuRequestEntry[]);
+    entries:
+      readonly RodMenuRequestEntry[] | ((context: RodMenuContext<any>) => readonly RodMenuRequestEntry[]);
     maxHeight?: number;
     onSelect?: (entry: RodMenuRequestEntry, context: RodMenuContext<any>) => void;
   }
@@ -484,7 +494,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     className?: string;
     submitOnEnter?: boolean;
     errorMode?: ErrorMode;
-    validate?: (values: Readonly<TValues>, context: RodMenuContext<TValues>) => Awaitable<Record<string, string> | string | null | undefined>;
+    validate?: (
+      values: Readonly<TValues>,
+      context: RodMenuContext<TValues>,
+    ) => Awaitable<Record<string, string> | string | null | undefined>;
     onOpen?: (context: RodMenuContext<TValues>) => void;
     onHydrate?: (context: RodMenuContext<TValues>) => void;
     onChange?: (context: RodMenuContext<TValues>) => void;
@@ -557,7 +570,6 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     destroy(): void;
   }
 
-
   interface RodMenuStackConfig {
     enabled: boolean;
     maxVisible: number;
@@ -598,7 +610,9 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     render(name: string, props?: AnyRecord): HTMLElement | null;
   }
 
-  type RodMenuComponentRenderer = (context: RodMenuComponentRenderContext<any>) => HTMLElement | null | undefined;
+  type RodMenuComponentRenderer = (
+    context: RodMenuComponentRenderContext<any>,
+  ) => HTMLElement | null | undefined;
 
   interface RodMenuFieldRenderContext<TValues extends AnyRecord = AnyRecord> {
     readonly type: string;
@@ -653,12 +667,8 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
       "https://rod.migos.club/userscripts/toaster.js?v=4.7.0",
       "https://rod.migos.club/userscripts/toaster.js",
     ],
-    cipo: [
-      "https://rod.migos.club/bundler/cipo.iife.js",
-    ],
-    broto: [
-      "https://rod.migos.club/bundler/broto.iife.js",
-    ],
+    cipo: ["https://rod.migos.club/bundler/cipo.iife.js"],
+    broto: ["https://rod.migos.club/bundler/broto.iife.js"],
   };
 
   const defaultGestureConfig: RodMenuGestureConfig = {
@@ -789,23 +799,25 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
 
   const registeredComponents = new Map<string, RodMenuComponentRenderer>();
   const registeredFieldTypes = new Map<string, RodMenuFieldRenderer>();
-  const docState = new WeakMap<Document, {
-    count: number;
-    overflow: string;
-    paddingRight: string;
-    overscrollBehavior: string;
-    bodyPosition: string;
-    bodyTop: string;
-    bodyLeft: string;
-    bodyRight: string;
-    bodyWidth: string;
-    bodyOverflow: string;
-    bodyTouchAction: string;
-    bodyOverscrollBehavior: string;
-    scrollX: number;
-    scrollY: number;
-  }>();
-
+  const docState = new WeakMap<
+    Document,
+    {
+      count: number;
+      overflow: string;
+      paddingRight: string;
+      overscrollBehavior: string;
+      bodyPosition: string;
+      bodyTop: string;
+      bodyLeft: string;
+      bodyRight: string;
+      bodyWidth: string;
+      bodyOverflow: string;
+      bodyTouchAction: string;
+      bodyOverscrollBehavior: string;
+      scrollX: number;
+      scrollY: number;
+    }
+  >();
 
   type LooseGlobal = Record<string, unknown> & { document?: Document };
 
@@ -881,9 +893,15 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
       else add((globalThis as unknown as Record<string, unknown>)["unsafeWindow"]);
     } catch {}
 
-    try { add(rootWindow.parent); } catch {}
-    try { add(rootWindow.top); } catch {}
-    try { add(rootWindow.opener); } catch {}
+    try {
+      add(rootWindow.parent);
+    } catch {}
+    try {
+      add(rootWindow.top);
+    } catch {}
+    try {
+      add(rootWindow.opener);
+    } catch {}
 
     return candidates;
   }
@@ -917,10 +935,15 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
 
   function resolveToaster(): ToasterLike | null {
     const runtime = readGlobal<ToasterLike>(["RodToaster", "toast"]);
-    return runtime && typeof runtime === "object" || typeof runtime === "function" ? runtime : null;
+    return (runtime && typeof runtime === "object") || typeof runtime === "function" ? runtime : null;
   }
 
-  function markDependency(name: DependencyName, state: DependencyState, source?: string, error?: unknown): void {
+  function markDependency(
+    name: DependencyName,
+    state: DependencyState,
+    source?: string,
+    error?: unknown,
+  ): void {
     runtimeStatus[name] = {
       name,
       state,
@@ -931,10 +954,14 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
 
   function dependencyPresent(name: DependencyName): unknown | null {
     switch (name) {
-      case "elements": return resolveRodElements();
-      case "toaster": return resolveToaster();
-      case "cipo": return resolveCipo();
-      case "broto": return resolveBroto();
+      case "elements":
+        return resolveRodElements();
+      case "toaster":
+        return resolveToaster();
+      case "cipo":
+        return resolveCipo();
+      case "broto":
+        return resolveBroto();
     }
   }
 
@@ -983,9 +1010,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
   }
 
   async function tryGmAddElement(url: string): Promise<boolean> {
-    const gmAdd = typeof GM_addElement === "function"
-      ? GM_addElement
-      : readGlobal<(...args: unknown[]) => unknown>(["GM_addElement"]);
+    const gmAdd =
+      typeof GM_addElement === "function"
+        ? GM_addElement
+        : readGlobal<(...args: unknown[]) => unknown>(["GM_addElement"]);
     if (typeof gmAdd !== "function") return false;
     try {
       gmAdd("script", { src: url, type: "text/javascript" });
@@ -996,9 +1024,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
   }
 
   function requestScriptText(url: string): Promise<string | null> {
-    const direct = typeof GM_xmlhttpRequest === "function"
-      ? GM_xmlhttpRequest
-      : readGlobal<((options: Record<string, unknown>) => void)>(["GM_xmlhttpRequest"]);
+    const direct =
+      typeof GM_xmlhttpRequest === "function"
+        ? GM_xmlhttpRequest
+        : readGlobal<(options: Record<string, unknown>) => void>(["GM_xmlhttpRequest"]);
     if (typeof direct === "function") {
       return new Promise((resolve) => {
         try {
@@ -1019,11 +1048,13 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
       });
     }
 
-    const gm = typeof GM !== "undefined"
-      ? GM
-      : readGlobal<{ xmlHttpRequest?: (options: Record<string, unknown>) => Promise<unknown> }>(["GM"]);
+    const gm =
+      typeof GM !== "undefined"
+        ? GM
+        : readGlobal<{ xmlHttpRequest?: (options: Record<string, unknown>) => Promise<unknown> }>(["GM"]);
     if (gm && typeof gm.xmlHttpRequest === "function") {
-      return gm.xmlHttpRequest({ method: "GET", url, timeout: globalConfig.dependencyTimeoutMs })
+      return gm
+        .xmlHttpRequest({ method: "GET", url, timeout: globalConfig.dependencyTimeoutMs })
         .then((response) => {
           const text = (response as { responseText?: unknown })?.responseText;
           return typeof text === "string" ? text : null;
@@ -1037,9 +1068,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
   function executeScriptText(source: string): boolean {
     const target = (() => {
       try {
-        const unsafe = typeof unsafeWindow !== "undefined"
-          ? unsafeWindow
-          : (globalThis as unknown as Record<string, unknown>)["unsafeWindow"];
+        const unsafe =
+          typeof unsafeWindow !== "undefined"
+            ? unsafeWindow
+            : (globalThis as unknown as Record<string, unknown>)["unsafeWindow"];
         if (unsafe && typeof unsafe === "object") return unsafe as Window & typeof globalThis;
       } catch {}
       return rootWindow;
@@ -1074,9 +1106,8 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
   }
 
   async function tryRequire(url: string): Promise<boolean> {
-    const req = typeof require === "function"
-      ? require
-      : readGlobal<((...args: unknown[]) => unknown)>(["require"]);
+    const req =
+      typeof require === "function" ? require : readGlobal<(...args: unknown[]) => unknown>(["require"]);
     if (typeof req !== "function") return false;
 
     try {
@@ -1087,7 +1118,11 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
 
     try {
       await new Promise<void>((resolve, reject) => {
-        (req as (...args: unknown[]) => unknown)([url], () => resolve(), (error: unknown) => reject(error));
+        (req as (...args: unknown[]) => unknown)(
+          [url],
+          () => resolve(),
+          (error: unknown) => reject(error),
+        );
       });
       return true;
     } catch {
@@ -1114,28 +1149,43 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
         try {
           if (await injectScriptTag(url)) {
             const loaded = await waitForDependency(name, 500);
-            if (loaded) { markDependency(name, "loaded", `script:${url}`); return loaded; }
+            if (loaded) {
+              markDependency(name, "loaded", `script:${url}`);
+              return loaded;
+            }
           }
 
           if (await tryGmAddElement(url)) {
             const loaded = await waitForDependency(name, 700);
-            if (loaded) { markDependency(name, "loaded", `GM_addElement:${url}`); return loaded; }
+            if (loaded) {
+              markDependency(name, "loaded", `GM_addElement:${url}`);
+              return loaded;
+            }
           }
 
           const source = await requestScriptText(url);
           if (source && executeScriptText(source)) {
             const loaded = await waitForDependency(name, 150);
-            if (loaded) { markDependency(name, "loaded", `GM_xhr:${url}`); return loaded; }
+            if (loaded) {
+              markDependency(name, "loaded", `GM_xhr:${url}`);
+              return loaded;
+            }
           }
 
           if (await tryDynamicImport(url)) {
             const loaded = await waitForDependency(name, 250);
-            if (loaded) { markDependency(name, "loaded", `import:${url}`); return loaded; }
+            if (loaded) {
+              markDependency(name, "loaded", `import:${url}`);
+              return loaded;
+            }
           }
 
           if (await tryRequire(url)) {
             const loaded = await waitForDependency(name, 250);
-            if (loaded) { markDependency(name, "loaded", `require:${url}`); return loaded; }
+            if (loaded) {
+              markDependency(name, "loaded", `require:${url}`);
+              return loaded;
+            }
           }
         } catch (error) {
           lastError = error;
@@ -1166,13 +1216,18 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     };
   }
 
-  function createElement<K extends keyof HTMLElementTagNameMap>(doc: Document, tag: K): HTMLElementTagNameMap[K];
+  function createElement<K extends keyof HTMLElementTagNameMap>(
+    doc: Document,
+    tag: K,
+  ): HTMLElementTagNameMap[K];
   function createElement(doc: Document, tag: string): HTMLElement;
   function createElement(doc: Document, tag: string): HTMLElement {
     const elements = resolveRodElements();
     if (elements) {
       try {
-        try { elements.configure?.({ document: doc, cipo: resolveCipo() }); } catch {}
+        try {
+          elements.configure?.({ document: doc, cipo: resolveCipo() });
+        } catch {}
         let facade = elementFacadeByDocument.get(doc);
         if (!facade) {
           facade = elements;
@@ -1258,12 +1313,17 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     let brotoStore: unknown = null;
 
     if (broto?.store) {
-      try { brotoStore = broto.store({ ...snapshot }); } catch {}
+      try {
+        brotoStore = broto.store({ ...snapshot });
+      } catch {}
     }
 
     const run = (fn: () => void) => {
       if (broto?.batch) {
-        try { broto.batch(fn); return; } catch {}
+        try {
+          broto.batch(fn);
+          return;
+        } catch {}
       }
       fn();
     };
@@ -1273,49 +1333,78 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
       snapshot: () => snapshot,
       replace(next: T) {
         snapshot = { ...next } as T;
-        if (brotoStore) run(() => {
-          for (const [name, value] of Object.entries(snapshot)) setBrotoLeaf(brotoStore, name, value);
-        });
+        if (brotoStore)
+          run(() => {
+            for (const [name, value] of Object.entries(snapshot)) setBrotoLeaf(brotoStore, name, value);
+          });
       },
       set(name: string, value: unknown) {
         (snapshot as AnyRecord)[name] = value;
-        if (brotoStore) run(() => { setBrotoLeaf(brotoStore, name, value); });
+        if (brotoStore)
+          run(() => {
+            setBrotoLeaf(brotoStore, name, value);
+          });
       },
       patch(values: Partial<T>) {
         Object.assign(snapshot, values);
-        if (brotoStore) run(() => {
-          for (const [name, value] of Object.entries(values)) setBrotoLeaf(brotoStore, name, value);
-        });
+        if (brotoStore)
+          run(() => {
+            for (const [name, value] of Object.entries(values)) setBrotoLeaf(brotoStore, name, value);
+          });
       },
     };
   }
 
-  function getStorageAdapter(storage: BuiltinStorageName | RodMenuStorageAdapter | undefined, win: Window): RodMenuStorageAdapter | null {
+  function getStorageAdapter(
+    storage: BuiltinStorageName | RodMenuStorageAdapter | undefined,
+    win: Window,
+  ): RodMenuStorageAdapter | null {
     if (storage && typeof storage === "object") return storage;
     const kind = storage || "local";
 
     if (kind === "local" || kind === "session") {
       const nativeStorage = (() => {
-        try { return kind === "local" ? win.localStorage : win.sessionStorage; } catch { return null; }
+        try {
+          return kind === "local" ? win.localStorage : win.sessionStorage;
+        } catch {
+          return null;
+        }
       })();
       if (!nativeStorage) return null;
       return {
         getItem(key) {
-          try { return nativeStorage.getItem(key); } catch { return null; }
+          try {
+            return nativeStorage.getItem(key);
+          } catch {
+            return null;
+          }
         },
         setItem(key, value) {
-          try { nativeStorage.setItem(key, value); } catch {}
+          try {
+            nativeStorage.setItem(key, value);
+          } catch {}
         },
         removeItem(key) {
-          try { nativeStorage.removeItem(key); } catch {}
+          try {
+            nativeStorage.removeItem(key);
+          } catch {}
         },
       };
     }
 
     if (kind === "gm") {
-      const legacyGet = typeof GM_getValue === "function" ? GM_getValue : readGlobal<((key: string, fallback?: unknown) => unknown)>(["GM_getValue"]);
-      const legacySet = typeof GM_setValue === "function" ? GM_setValue : readGlobal<((key: string, value: unknown) => void)>(["GM_setValue"]);
-      const legacyDelete = typeof GM_deleteValue === "function" ? GM_deleteValue : readGlobal<((key: string) => void)>(["GM_deleteValue"]);
+      const legacyGet =
+        typeof GM_getValue === "function"
+          ? GM_getValue
+          : readGlobal<(key: string, fallback?: unknown) => unknown>(["GM_getValue"]);
+      const legacySet =
+        typeof GM_setValue === "function"
+          ? GM_setValue
+          : readGlobal<(key: string, value: unknown) => void>(["GM_setValue"]);
+      const legacyDelete =
+        typeof GM_deleteValue === "function"
+          ? GM_deleteValue
+          : readGlobal<(key: string) => void>(["GM_deleteValue"]);
       const gmApi = typeof GM !== "undefined" ? GM : readGlobal<typeof GM>(["GM"]);
 
       if ((!legacyGet || !legacySet) && (!gmApi?.getValue || !gmApi?.setValue)) return null;
@@ -1324,7 +1413,9 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
           try {
             const value = gmApi?.getValue ? await gmApi.getValue(key, null) : legacyGet?.(key, null);
             return value == null ? null : String(value);
-          } catch { return null; }
+          } catch {
+            return null;
+          }
         },
         async setItem(key, value) {
           try {
@@ -1353,21 +1444,26 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     onError: (error: unknown) => void,
   ): PersistenceManager<T> {
     const raw = storeConfig?.persist;
-    const config: RodMenuPersistenceConfig<T, any> | null = raw === true
-      ? { key: `rod-menu:${id}`, storage: "local", hydrate: true, debounceMs: 120, persistOn: "change" }
-      : raw && typeof raw === "object"
-        ? raw
-        : null;
+    const config: RodMenuPersistenceConfig<T, any> | null =
+      raw === true
+        ? { key: `rod-menu:${id}`, storage: "local", hydrate: true, debounceMs: 120, persistOn: "change" }
+        : raw && typeof raw === "object"
+          ? raw
+          : null;
 
     let persistenceState: RodMenuStoreHandle<T>["persistence"] = config ? "idle" : "disabled";
     let timer = 0;
     let chain = Promise.resolve();
     let started = false;
     let resolveReady!: () => void;
-    const ready = new Promise<void>((resolve) => { resolveReady = resolve; });
+    const ready = new Promise<void>((resolve) => {
+      resolveReady = resolve;
+    });
     const key = config?.key || `rod-menu:${id}`;
     const adapter = config ? getStorageAdapter(config.storage, win) : null;
-    const persistOn = new Set<PersistTrigger>(Array.isArray(config?.persistOn) ? config!.persistOn : [config?.persistOn || "change"]);
+    const persistOn = new Set<PersistTrigger>(
+      Array.isArray(config?.persistOn) ? config!.persistOn : [config?.persistOn || "change"],
+    );
 
     const parseStored = async (rawValue: string): Promise<Partial<T> | null> => {
       if (!config) return null;
@@ -1385,8 +1481,8 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
           stored = parsed;
         }
       }
-      if (transform?.fromStorage) return await transform.fromStorage(stored as any) ?? null;
-      return stored && typeof stored === "object" ? stored as Partial<T> : null;
+      if (transform?.fromStorage) return (await transform.fromStorage(stored as any)) ?? null;
+      return stored && typeof stored === "object" ? (stored as Partial<T>) : null;
     };
 
     const serializeSnapshot = async (): Promise<string> => {
@@ -1463,8 +1559,12 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     };
 
     const handle: RodMenuStoreHandle<T> = {
-      get backend() { return store.backend; },
-      get persistence() { return persistenceState; },
+      get backend() {
+        return store.backend;
+      },
+      get persistence() {
+        return persistenceState;
+      },
       ready,
       snapshot: () => store.snapshot(),
       persist: enqueuePersist,
@@ -1475,8 +1575,13 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
           win.clearTimeout(timer);
           timer = 0;
         }
-        try { await adapter.removeItem(key); persistenceState = "ready"; }
-        catch (error) { persistenceState = "error"; onError(error); }
+        try {
+          await adapter.removeItem(key);
+          persistenceState = "ready";
+        } catch (error) {
+          persistenceState = "error";
+          onError(error);
+        }
       },
     };
 
@@ -1496,7 +1601,11 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     };
   }
 
-  function notifyToaster(kind: "error" | "warning" | "info" | "success", title: string, description?: string): boolean {
+  function notifyToaster(
+    kind: "error" | "warning" | "info" | "success",
+    title: string,
+    description?: string,
+  ): boolean {
     const toaster = resolveToaster();
     const method = toaster?.[kind];
     if (typeof method !== "function") return false;
@@ -1504,7 +1613,10 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
       method.call(toaster, { title, description });
       return true;
     } catch {
-      try { method.call(toaster, title, description); return true; } catch {}
+      try {
+        method.call(toaster, title, description);
+        return true;
+      } catch {}
     }
     return false;
   }
@@ -3001,20 +3113,36 @@ button {
 
   function getSizeWidth(size: SurfaceSize | undefined): string {
     switch (size) {
-      case "sm": return "440px";
-      case "lg": return "760px";
-      case "xl": return "960px";
-      case "fullscreen": return "calc(100vw - 16px)";
-      default: return "640px";
+      case "sm":
+        return "440px";
+      case "lg":
+        return "760px";
+      case "xl":
+        return "960px";
+      case "fullscreen":
+        return "calc(100vw - 16px)";
+      default:
+        return "640px";
     }
   }
 
   function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
-    const parts = shortcut.toLowerCase().split("+").map((part) => part.trim()).filter(Boolean);
+    const parts = shortcut
+      .toLowerCase()
+      .split("+")
+      .map((part) => part.trim())
+      .filter(Boolean);
     if (!parts.length) return false;
     const key = parts[parts.length - 1];
-    const wantsMod = parts.includes("mod") || parts.includes("meta") || parts.includes("cmd") || parts.includes("ctrl");
-    const modOk = !wantsMod || (parts.includes("ctrl") ? event.ctrlKey : parts.includes("meta") || parts.includes("cmd") ? event.metaKey : (event.metaKey || event.ctrlKey));
+    const wantsMod =
+      parts.includes("mod") || parts.includes("meta") || parts.includes("cmd") || parts.includes("ctrl");
+    const modOk =
+      !wantsMod ||
+      (parts.includes("ctrl")
+        ? event.ctrlKey
+        : parts.includes("meta") || parts.includes("cmd")
+          ? event.metaKey
+          : event.metaKey || event.ctrlKey);
     if (!modOk) return false;
     if (parts.includes("shift") !== event.shiftKey) return false;
     if (parts.includes("alt") !== event.altKey) return false;
@@ -3022,7 +3150,11 @@ button {
     return normalizedKey === key || event.code.toLowerCase() === key;
   }
 
-  function normalizePresentation(value: Presentation | undefined, win: Window, hasAnchor = false): Exclude<Presentation, "auto"> {
+  function normalizePresentation(
+    value: Presentation | undefined,
+    win: Window,
+    hasAnchor = false,
+  ): Exclude<Presentation, "auto"> {
     const selected = value ?? globalConfig.defaultPresentation;
     if (selected !== "auto") return selected;
     if (win.matchMedia?.("(max-width: 720px)").matches) return "bottom-sheet";
@@ -3098,33 +3230,87 @@ button {
 
       const controller = this;
       this.context = {
-        get id() { return controller.id; },
-        get values() { return controller.valuesValue; },
-        get errors() { return controller.errorsValue; },
-        get schema() { return controller.schemaValue; },
-        get store() { return controller.storeHandle; },
-        get activeTab() { return controller.activeTabId; },
-        get host() { return controller.host; },
-        get root() { return controller.root; },
-        get surface() { return controller.handle; },
-        get<T = unknown>(name: string) { return controller.valuesValue[name] as T; },
-        set(name: string, value: unknown) { controller.setValue(name, value); },
-        setValues(values: Partial<TValues>) { controller.setValues(values); },
-        reset() { controller.reset(); },
-        validate() { return controller.validate(); },
-        close(data?: unknown) { controller.finish("dismiss", data, "api"); },
-        dismiss(reason?: RodMenuResult["reason"]) { controller.finish("dismiss", undefined, reason ?? "api"); },
-        setLoading(loading: boolean) { controller.setLoading(loading); },
-        setActionLoading(actionId: string, loading: boolean) { controller.setActionLoading(actionId, loading); },
-        setFieldError(name: string, error: string | null) { controller.setFieldError(name, error); },
-        clearErrors() { controller.clearErrors(); },
-        update(patch: Partial<RodMenuSchema<TValues>>) { controller.update(patch); },
-        setActiveTab(tabId: string) { controller.setActiveTab(tabId); },
-        persist() { return controller.storeHandle.persist(); },
-        hydrate() { return controller.storeHandle.hydrate(); },
-        clearPersisted() { return controller.storeHandle.clearPersisted(); },
-        bringToFront() { controller.bringToFront(); },
-        component(name: string, props: AnyRecord = {}) { return controller.renderNamedComponent(name, props); },
+        get id() {
+          return controller.id;
+        },
+        get values() {
+          return controller.valuesValue;
+        },
+        get errors() {
+          return controller.errorsValue;
+        },
+        get schema() {
+          return controller.schemaValue;
+        },
+        get store() {
+          return controller.storeHandle;
+        },
+        get activeTab() {
+          return controller.activeTabId;
+        },
+        get host() {
+          return controller.host;
+        },
+        get root() {
+          return controller.root;
+        },
+        get surface() {
+          return controller.handle;
+        },
+        get<T = unknown>(name: string) {
+          return controller.valuesValue[name] as T;
+        },
+        set(name: string, value: unknown) {
+          controller.setValue(name, value);
+        },
+        setValues(values: Partial<TValues>) {
+          controller.setValues(values);
+        },
+        reset() {
+          controller.reset();
+        },
+        validate() {
+          return controller.validate();
+        },
+        close(data?: unknown) {
+          controller.finish("dismiss", data, "api");
+        },
+        dismiss(reason?: RodMenuResult["reason"]) {
+          controller.finish("dismiss", undefined, reason ?? "api");
+        },
+        setLoading(loading: boolean) {
+          controller.setLoading(loading);
+        },
+        setActionLoading(actionId: string, loading: boolean) {
+          controller.setActionLoading(actionId, loading);
+        },
+        setFieldError(name: string, error: string | null) {
+          controller.setFieldError(name, error);
+        },
+        clearErrors() {
+          controller.clearErrors();
+        },
+        update(patch: Partial<RodMenuSchema<TValues>>) {
+          controller.update(patch);
+        },
+        setActiveTab(tabId: string) {
+          controller.setActiveTab(tabId);
+        },
+        persist() {
+          return controller.storeHandle.persist();
+        },
+        hydrate() {
+          return controller.storeHandle.hydrate();
+        },
+        clearPersisted() {
+          return controller.storeHandle.clearPersisted();
+        },
+        bringToFront() {
+          controller.bringToFront();
+        },
+        component(name: string, props: AnyRecord = {}) {
+          return controller.renderNamedComponent(name, props);
+        },
       };
 
       this.persistenceManager = createPersistenceManager(
@@ -3135,7 +3321,11 @@ button {
         (values) => {
           this.valuesValue = values;
           if (!this.destroyed) this.applyHydratedValues(values);
-          try { this.schemaValue.onHydrate?.(this.context); } catch (error) { this.reportError(error); }
+          try {
+            this.schemaValue.onHydrate?.(this.context);
+          } catch (error) {
+            this.reportError(error);
+          }
         },
         (error) => this.reportError(error),
       );
@@ -3204,9 +3394,20 @@ button {
       root.dataset.stackDepth = String(depth);
       root.dataset.stackCount = String(total);
       root.dataset.hasBehind = String(this.stackActive && total > 1 && visuallyStacked);
-      root.style.setProperty("--rm-stack-y", visuallyStacked && !this.stackActive ? `${-visibleDepth * config.offsetPx}px` : "0px");
-      root.style.setProperty("--rm-stack-scale", visuallyStacked && !this.stackActive ? String(Math.max(0.9, 1 - visibleDepth * config.scaleStep)) : "1");
-      root.style.setProperty("--rm-stack-opacity", hiddenByDepth || (!config.enabled && !this.stackActive) ? "0" : "1");
+      root.style.setProperty(
+        "--rm-stack-y",
+        visuallyStacked && !this.stackActive ? `${-visibleDepth * config.offsetPx}px` : "0px",
+      );
+      root.style.setProperty(
+        "--rm-stack-scale",
+        visuallyStacked && !this.stackActive
+          ? String(Math.max(0.9, 1 - visibleDepth * config.scaleStep))
+          : "1",
+      );
+      root.style.setProperty(
+        "--rm-stack-opacity",
+        hiddenByDepth || (!config.enabled && !this.stackActive) ? "0" : "1",
+      );
       root.style.visibility = hiddenByDepth || (!config.enabled && !this.stackActive) ? "hidden" : "visible";
 
       const shell = root.querySelector<HTMLElement>(".rm-shell");
@@ -3226,7 +3427,10 @@ button {
       this.win.requestAnimationFrame(() => {
         if (this.destroyed || !this.isStackTop()) return;
         if (this.lastFocusedInside?.isConnected) {
-          try { this.lastFocusedInside.focus({ preventScroll: true }); return; } catch {}
+          try {
+            this.lastFocusedInside.focus({ preventScroll: true });
+            return;
+          } catch {}
         }
         this.focusInitial();
       });
@@ -3236,7 +3440,18 @@ button {
       const result: AnyRecord = { ...(schema.initialValues || {}) };
       const fields = this.getAllFields(schema);
       for (const field of fields) {
-        if (["divider", "html", "button", "media-preview", "provider-status", "request-log", "debug-json"].includes(field.type)) continue;
+        if (
+          [
+            "divider",
+            "html",
+            "button",
+            "media-preview",
+            "provider-status",
+            "request-log",
+            "debug-json",
+          ].includes(field.type)
+        )
+          continue;
         if (Object.prototype.hasOwnProperty.call(result, field.name)) continue;
         if (field.value !== undefined) result[field.name] = cloneValue(field.value);
         else if (field.defaultValue !== undefined) result[field.name] = cloneValue(field.defaultValue);
@@ -3248,16 +3463,24 @@ button {
     private defaultForField(field: RodMenuField): unknown {
       switch (field.type) {
         case "checkbox":
-        case "switch": return false;
+        case "switch":
+          return false;
         case "multiselect":
         case "checkbox-group":
-        case "media-picker": return [];
-        case "channel-picker": return field.multiple ? [] : "";
-        case "range": return field.min ?? 0;
-        case "number": return "";
-        case "rating": return field.allowZero === false ? 1 : 0;
-        case "file": return [];
-        default: return "";
+        case "media-picker":
+          return [];
+        case "channel-picker":
+          return field.multiple ? [] : "";
+        case "range":
+          return field.min ?? 0;
+        case "number":
+          return "";
+        case "rating":
+          return field.allowZero === false ? 1 : 0;
+        case "file":
+          return [];
+        default:
+          return "";
       }
     }
 
@@ -3270,10 +3493,11 @@ button {
     private getAllFields(schema: RodMenuSchema<TValues> = this.schemaValue): RodMenuField[] {
       const direct = schema.fields ? Array.from(schema.fields) : [];
       const sectionFields = schema.sections?.flatMap((section) => Array.from(section.fields)) ?? [];
-      const tabFields = schema.tabs?.flatMap((tab) => [
-        ...(tab.fields ? Array.from(tab.fields) : []),
-        ...(tab.sections?.flatMap((section) => Array.from(section.fields)) ?? []),
-      ]) ?? [];
+      const tabFields =
+        schema.tabs?.flatMap((tab) => [
+          ...(tab.fields ? Array.from(tab.fields) : []),
+          ...(tab.sections?.flatMap((section) => Array.from(section.fields)) ?? []),
+        ]) ?? [];
       return [...direct, ...sectionFields, ...tabFields];
     }
 
@@ -3298,7 +3522,11 @@ button {
         const root = this.getRootElement();
         root.dataset.open = "true";
         this.host.setAttribute(ACTIVE_ATTR, "true");
-        try { this.schemaValue.onOpen?.(this.context); } catch (error) { this.reportError(error); }
+        try {
+          this.schemaValue.onOpen?.(this.context);
+        } catch (error) {
+          this.reportError(error);
+        }
 
         // Keep first paint hot: focus and persistence hydration happen after the sheet is visible.
         requestAnimationFrame(() => {
@@ -3311,7 +3539,9 @@ button {
 
     private render(): void {
       for (const off of this.renderListeners.splice(0)) {
-        try { off(); } catch {}
+        try {
+          off();
+        } catch {}
       }
       this.fieldNodes.clear();
       this.inputNodes.clear();
@@ -3322,7 +3552,11 @@ button {
       root.className = `rm-root ${this.schemaValue.className || ""}`.trim();
       root.dataset.open = "false";
       root.dataset.loading = String(this.loading);
-      root.dataset.presentation = normalizePresentation(this.schemaValue.presentation, this.win, !!this.schemaValue.anchor);
+      root.dataset.presentation = normalizePresentation(
+        this.schemaValue.presentation,
+        this.win,
+        !!this.schemaValue.anchor,
+      );
       root.dataset.side = this.schemaValue.drawerSide || "right";
       root.style.setProperty("--rm-z", String(this.schemaValue.zIndex ?? globalConfig.zIndex));
       root.style.setProperty("--rm-width", getSizeWidth(this.schemaValue.size));
@@ -3406,16 +3640,21 @@ button {
     }
 
     private renderActions(): HTMLElement {
-      return this.renderComponent("actions", () => this.renderActionsDefault(), { actions: this.schemaValue.actions || [] });
+      return this.renderComponent("actions", () => this.renderActionsDefault(), {
+        actions: this.schemaValue.actions || [],
+      });
     }
 
     private renderTabsDefault(): HTMLElement {
       const wrapper = createElement(this.doc, "div");
       wrapper.className = "rm-tabs-wrap";
 
-      const visibleTabs = (this.schemaValue.tabs || []).filter((tab) => !tab.visibleWhen || this.safePredicate(tab.visibleWhen));
+      const visibleTabs = (this.schemaValue.tabs || []).filter(
+        (tab) => !tab.visibleWhen || this.safePredicate(tab.visibleWhen),
+      );
       if (!visibleTabs.length) return wrapper;
-      if (!this.activeTabId || !visibleTabs.some((tab) => tab.id === this.activeTabId)) this.activeTabId = visibleTabs[0].id;
+      if (!this.activeTabId || !visibleTabs.some((tab) => tab.id === this.activeTabId))
+        this.activeTabId = visibleTabs[0].id;
 
       const nav = createElement(this.doc, "div");
       nav.className = "rm-tabs";
@@ -3470,9 +3709,10 @@ button {
     private revealActiveTab(nav?: HTMLElement | null, behavior: ScrollBehavior = "smooth"): void {
       const tabs = nav || this.root.querySelector<HTMLElement>(".rm-tabs");
       if (!tabs || !this.activeTabId) return;
-      const escaped = typeof CSS !== "undefined" && typeof CSS.escape === "function"
-        ? CSS.escape(this.activeTabId)
-        : this.activeTabId.replace(/["\\]/g, "\\$&");
+      const escaped =
+        typeof CSS !== "undefined" && typeof CSS.escape === "function"
+          ? CSS.escape(this.activeTabId)
+          : this.activeTabId.replace(/["\\]/g, "\\$&");
       const active = tabs.querySelector<HTMLElement>(`.rm-tab[data-tab-id="${escaped}"]`);
       if (!active) return;
 
@@ -3495,7 +3735,8 @@ button {
         const resolved = typeof anchor === "function" ? anchor() : anchor;
         if (!resolved) return null;
         if (resolved instanceof this.win.Element) return resolved.getBoundingClientRect();
-        if (typeof (resolved as DOMRect).left === "number" && typeof (resolved as DOMRect).top === "number") return resolved as DOMRect;
+        if (typeof (resolved as DOMRect).left === "number" && typeof (resolved as DOMRect).top === "number")
+          return resolved as DOMRect;
       } catch (error) {
         this.reportError(error);
       }
@@ -3519,12 +3760,20 @@ button {
       const left = Math.max(8, Math.min(viewportWidth - 8, preferredX));
       const spaceBelow = viewportHeight - rect.bottom;
       const placeAbove = spaceBelow < 280 && rect.top > spaceBelow;
-      const top = placeAbove ? Math.max(8, rect.top - offset) : Math.min(viewportHeight - 8, rect.bottom + offset);
+      const top = placeAbove
+        ? Math.max(8, rect.top - offset)
+        : Math.min(viewportHeight - 8, rect.bottom + offset);
       root.dataset.popoverAbove = String(placeAbove);
       shell.style.setProperty("--rm-popover-left", `${left}px`);
       shell.style.setProperty("--rm-popover-top", `${top}px`);
-      shell.style.setProperty("--rm-popover-align", align === "start" ? "0%" : align === "end" ? "100%" : "50%");
-      shell.style.setProperty("--rm-popover-shift", align === "start" ? "0%" : align === "end" ? "-100%" : "-50%");
+      shell.style.setProperty(
+        "--rm-popover-align",
+        align === "start" ? "0%" : align === "end" ? "100%" : "50%",
+      );
+      shell.style.setProperty(
+        "--rm-popover-shift",
+        align === "start" ? "0%" : align === "end" ? "-100%" : "-50%",
+      );
     }
 
     private renderHeaderDefault(): HTMLElement {
@@ -3573,7 +3822,8 @@ button {
         close.classList.add("rm-close");
         close.setAttribute("aria-label", close.getAttribute("aria-label") || "Fechar");
         if (!close.childNodes.length) {
-          close.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>';
+          close.innerHTML =
+            '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>';
         }
         close.addEventListener("click", () => this.finish("dismiss", undefined, "api"));
         header.append(close);
@@ -3686,7 +3936,14 @@ button {
         return row;
       }
 
-      if (field.chrome !== "bare" && field.type !== "checkbox" && field.type !== "switch" && field.type !== "hidden" && field.type !== "button" && field.type !== "html") {
+      if (
+        field.chrome !== "bare" &&
+        field.type !== "checkbox" &&
+        field.type !== "switch" &&
+        field.type !== "hidden" &&
+        field.type !== "button" &&
+        field.type !== "html"
+      ) {
         const labelRow = createElement(this.doc, "div");
         labelRow.className = "rm-label-row";
         const label = createElement(this.doc, "label");
@@ -3736,11 +3993,14 @@ button {
           if (action.disabled) return;
           action.disabled = true;
           action.dataset.loading = "true";
-          try { await trailing.handler(this.context); }
-          catch (error) { this.reportError(error); }
-          finally {
+          try {
+            await trailing.handler(this.context);
+          } catch (error) {
+            this.reportError(error);
+          } finally {
             action.dataset.loading = "false";
-            action.disabled = !!trailing.disabled || !!trailing.disabledWhen?.(this.valuesValue, this.context);
+            action.disabled =
+              !!trailing.disabled || !!trailing.disabledWhen?.(this.valuesValue, this.context);
           }
         });
         controlRow.append(action);
@@ -3783,9 +4043,7 @@ button {
       wrap.dataset.disabled = String(!!field.disabled);
 
       const selected = new Set(
-        multiple
-          ? (Array.isArray(value) ? value.map(String) : [])
-          : [String(value ?? "")].filter(Boolean),
+        multiple ? (Array.isArray(value) ? value.map(String) : []) : [String(value ?? "")].filter(Boolean),
       );
       let query = "";
       let open = false;
@@ -4007,7 +4265,9 @@ button {
         }
         if (event.key === "Enter" && open && options.length) {
           event.preventDefault();
-          list.querySelector<HTMLButtonElement>(`.rm-typeahead-option[data-index="${highlightedIndex}"]`)?.click();
+          list
+            .querySelector<HTMLButtonElement>(`.rm-typeahead-option[data-index="${highlightedIndex}"]`)
+            ?.click();
           return;
         }
         if (event.key === "Escape" && open) {
@@ -4056,7 +4316,12 @@ button {
       };
 
       switch (field.type) {
-        case "text": case "email": case "password": case "search": case "url": case "tel": {
+        case "text":
+        case "email":
+        case "password":
+        case "search":
+        case "url":
+        case "tel": {
           const input = baseInput(field.type);
           input.value = String(value ?? "");
           if (field.minLength != null) input.minLength = field.minLength;
@@ -4074,7 +4339,9 @@ button {
           if (field.min != null) input.min = String(field.min);
           if (field.max != null) input.max = String(field.max);
           if (field.step != null) input.step = String(field.step);
-          input.addEventListener("input", () => this.commitField(field, input.value === "" ? "" : input.valueAsNumber));
+          input.addEventListener("input", () =>
+            this.commitField(field, input.value === "" ? "" : input.valueAsNumber),
+          );
           return input;
         }
         case "textarea": {
@@ -4129,7 +4396,7 @@ button {
             button.className = "rm-chip";
             button.textContent = option.label;
             button.disabled = !!option.disabled;
-            const sync = () => button.dataset.selected = String(selected.has(option.value));
+            const sync = () => (button.dataset.selected = String(selected.has(option.value)));
             sync();
             button.addEventListener("click", () => {
               selected.has(option.value) ? selected.delete(option.value) : selected.add(option.value);
@@ -4141,11 +4408,13 @@ button {
           this.inputNodes.set(field.name, box);
           return box;
         }
-        case "radio": case "checkbox-group": {
+        case "radio":
+        case "checkbox-group": {
           const options = createElement(this.doc, "div");
           options.className = "rm-options";
           options.dataset.direction = field.direction || "vertical";
-          const current = field.type === "checkbox-group" ? new Set(Array.isArray(value) ? value.map(String) : []) : null;
+          const current =
+            field.type === "checkbox-group" ? new Set(Array.isArray(value) ? value.map(String) : []) : null;
           for (const option of field.options) {
             const label = createElement(this.doc, "label");
             label.className = "rm-option";
@@ -4154,7 +4423,8 @@ button {
             input.name = field.type === "radio" ? field.name : `${field.name}[]`;
             input.value = option.value;
             input.disabled = !!option.disabled;
-            input.checked = field.type === "radio" ? String(value ?? "") === option.value : current!.has(option.value);
+            input.checked =
+              field.type === "radio" ? String(value ?? "") === option.value : current!.has(option.value);
             input.addEventListener("change", () => {
               if (field.type === "radio") this.commitField(field, option.value);
               else {
@@ -4179,7 +4449,8 @@ button {
           this.inputNodes.set(field.name, options);
           return options;
         }
-        case "checkbox": case "switch": {
+        case "checkbox":
+        case "switch": {
           const wrap = createElement(this.doc, "label");
           wrap.className = "rm-check-row";
           const copy = createElement(this.doc, "span");
@@ -4230,7 +4501,11 @@ button {
           this.inputNodes.set(field.name, input);
           return wrap;
         }
-        case "date": case "datetime-local": case "time": case "month": case "week": {
+        case "date":
+        case "datetime-local":
+        case "time":
+        case "month":
+        case "week": {
           const input = baseInput(field.type);
           input.value = String(value ?? "");
           if (field.min) input.min = field.min;
@@ -4259,7 +4534,10 @@ button {
               swatch.className = "rm-swatch";
               swatch.style.background = color;
               swatch.setAttribute("aria-label", color);
-              swatch.addEventListener("click", () => { input.value = color; this.commitField(field, color); });
+              swatch.addEventListener("click", () => {
+                input.value = color;
+                this.commitField(field, color);
+              });
               presets.append(swatch);
             }
             wrap.append(presets);
@@ -4290,11 +4568,14 @@ button {
             button.className = "rm-segment";
             button.textContent = option.label;
             button.disabled = !!option.disabled;
-            const sync = () => button.dataset.selected = String(String(this.valuesValue[field.name] ?? "") === option.value);
+            const sync = () =>
+              (button.dataset.selected = String(String(this.valuesValue[field.name] ?? "") === option.value));
             sync();
             button.addEventListener("click", () => {
               this.commitField(field, option.value);
-              segmented.querySelectorAll<HTMLElement>(".rm-segment").forEach((node) => node.dataset.selected = String(node === button));
+              segmented
+                .querySelectorAll<HTMLElement>(".rm-segment")
+                .forEach((node) => (node.dataset.selected = String(node === button)));
             });
             segmented.append(button);
           }
@@ -4310,12 +4591,14 @@ button {
             button.type = "button";
             button.className = "rm-star";
             button.textContent = "★";
-            const sync = () => button.dataset.on = String(Number(this.valuesValue[field.name] || 0) >= i);
+            const sync = () => (button.dataset.on = String(Number(this.valuesValue[field.name] || 0) >= i));
             sync();
             button.addEventListener("click", () => {
               const next = field.allowZero !== false && Number(this.valuesValue[field.name]) === i ? 0 : i;
               this.commitField(field, next);
-              stars.querySelectorAll<HTMLElement>(".rm-star").forEach((node, index) => node.dataset.on = String(index < next));
+              stars
+                .querySelectorAll<HTMLElement>(".rm-star")
+                .forEach((node, index) => (node.dataset.on = String(index < next)));
             });
             stars.append(button);
           }
@@ -4329,7 +4612,11 @@ button {
           button.dataset.variant = field.variant || "secondary";
           button.textContent = field.text || field.label || field.name;
           button.addEventListener("click", async () => {
-            try { await field.onPress?.(this.context); } catch (error) { this.reportError(error); }
+            try {
+              await field.onPress?.(this.context);
+            } catch (error) {
+              this.reportError(error);
+            }
           });
           return button;
         }
@@ -4348,7 +4635,8 @@ button {
           } else {
             const placeholder = createElement(this.doc, "div");
             placeholder.className = "rm-media-placeholder";
-            placeholder.textContent = item.type === "video" ? "VIDEO" : item.type === "audio" ? "AUDIO" : "MEDIA";
+            placeholder.textContent =
+              item.type === "video" ? "VIDEO" : item.type === "audio" ? "AUDIO" : "MEDIA";
             card.append(placeholder);
           }
           const copy = createElement(this.doc, "div");
@@ -4367,7 +4655,9 @@ button {
             item.width && item.height ? `${item.width}×${item.height}` : null,
             item.provider,
             field.showSource !== false ? item.source : null,
-          ].filter(Boolean).join(" · ");
+          ]
+            .filter(Boolean)
+            .join(" · ");
           if (meta) {
             const metadata = createElement(this.doc, "small");
             metadata.textContent = meta;
@@ -4402,7 +4692,9 @@ button {
             const toolbar = createElement(this.doc, "div");
             toolbar.className = "rm-picker-toolbar";
             const count = createElement(this.doc, "span");
-            const updateCount = () => { count.textContent = `${selected.size} de ${items.length} selecionados`; };
+            const updateCount = () => {
+              count.textContent = `${selected.size} de ${items.length} selecionados`;
+            };
             updateCount();
             const all = createElement(this.doc, "button");
             all.type = "button";
@@ -4439,7 +4731,14 @@ button {
             const title = createElement(this.doc, "strong");
             title.textContent = item.title || item.quality || item.id;
             detail.append(title);
-            const meta = [item.type, item.quality, item.width && item.height ? `${item.width}×${item.height}` : null, item.provider].filter(Boolean).join(" · ");
+            const meta = [
+              item.type,
+              item.quality,
+              item.width && item.height ? `${item.width}×${item.height}` : null,
+              item.provider,
+            ]
+              .filter(Boolean)
+              .join(" · ");
             if (meta) {
               const small = createElement(this.doc, "small");
               small.textContent = meta;
@@ -4466,7 +4765,8 @@ button {
           return wrap;
         }
         case "provider-status": {
-          const providers = typeof field.providers === "function" ? field.providers(this.context) : field.providers;
+          const providers =
+            typeof field.providers === "function" ? field.providers(this.context) : field.providers;
           const list = createElement(this.doc, "div");
           list.className = "rm-provider-list";
           for (const provider of providers) {
@@ -4507,7 +4807,10 @@ button {
             const statusNode = row.querySelector<HTMLElement>(".rm-request-status");
             if (method) method.textContent = entry.method || "GET";
             if (url) url.textContent = entry.url;
-            if (statusNode) statusNode.textContent = [status, entry.durationMs != null ? `${entry.durationMs}ms` : ""].filter(Boolean).join(" · ");
+            if (statusNode)
+              statusNode.textContent = [status, entry.durationMs != null ? `${entry.durationMs}ms` : ""]
+                .filter(Boolean)
+                .join(" · ");
             if (field.onSelect) row.addEventListener("click", () => field.onSelect?.(entry, this.context));
             list.append(row);
           }
@@ -4526,14 +4829,19 @@ button {
           copy.className = "rm-mini-button";
           copy.textContent = "Copiar";
           const text = (() => {
-            try { return JSON.stringify(data, null, field.pretty === false ? 0 : 2); }
-            catch { return String(data); }
+            try {
+              return JSON.stringify(data, null, field.pretty === false ? 0 : 2);
+            } catch {
+              return String(data);
+            }
           })();
           copy.addEventListener("click", async () => {
             try {
               await this.win.navigator.clipboard?.writeText(text);
               notifyToaster("success", "Copiado", "JSON copiado para a área de transferência.");
-            } catch (error) { this.reportError(error); }
+            } catch (error) {
+              this.reportError(error);
+            }
           });
           toolbar.append(label, copy);
           const pre = createElement(this.doc, "pre");
@@ -4547,7 +4855,13 @@ button {
           wrap.className = "rm-channel-picker";
           const optionsHost = createElement(this.doc, "div");
           optionsHost.className = "rm-channel-options";
-          let selected = new Set(field.multiple ? (Array.isArray(value) ? value.map(String) : []) : [String(value ?? "")].filter(Boolean));
+          let selected = new Set(
+            field.multiple
+              ? Array.isArray(value)
+                ? value.map(String)
+                : []
+              : [String(value ?? "")].filter(Boolean),
+          );
 
           const renderOptions = (query = "") => {
             optionsHost.replaceChildren();
@@ -4623,14 +4937,20 @@ button {
       const footer = createElement(this.doc, "footer");
       footer.className = "rm-actions";
       for (const action of this.schemaValue.actions || []) {
-        const button = this.renderComponent("action", () => {
-          const node = createElement(this.doc, "button");
-          return node;
-        }, { action });
+        const button = this.renderComponent(
+          "action",
+          () => {
+            const node = createElement(this.doc, "button");
+            return node;
+          },
+          { action },
+        );
         button.setAttribute("type", action.role === "submit" ? "submit" : "button");
         button.className = "rm-action";
         button.dataset.action = action.id;
-        button.dataset.variant = action.variant || (action.role === "destructive" ? "danger" : action.role === "cancel" ? "secondary" : "primary");
+        button.dataset.variant =
+          action.variant ||
+          (action.role === "destructive" ? "danger" : action.role === "cancel" ? "secondary" : "primary");
         if (action.ariaLabel) button.setAttribute("aria-label", action.ariaLabel);
         if (action.icon) {
           const icon = createElement(this.doc, "span");
@@ -4669,8 +4989,16 @@ button {
       this.valuesValue = this.stateStore.snapshot();
       this.persistenceManager.trigger("change");
       this.setFieldError(field.name, null);
-      try { field.onChange?.(value, this.context); } catch (error) { this.reportError(error); }
-      try { this.schemaValue.onChange?.(this.context); } catch (error) { this.reportError(error); }
+      try {
+        field.onChange?.(value, this.context);
+      } catch (error) {
+        this.reportError(error);
+      }
+      try {
+        this.schemaValue.onChange?.(this.context);
+      } catch (error) {
+        this.reportError(error);
+      }
       this.refreshDynamicState();
     }
 
@@ -4685,7 +5013,8 @@ button {
       try {
         const data = action.handler ? await action.handler(this.context) : undefined;
         if (action.role === "submit") this.persistenceManager.trigger("submit");
-        const shouldClose = action.close ?? ["submit", "cancel", "destructive"].includes(action.role || "custom");
+        const shouldClose =
+          action.close ?? ["submit", "cancel", "destructive"].includes(action.role || "custom");
         if (shouldClose) this.finish(action.id, data, "action");
       } catch (error) {
         this.reportError(error);
@@ -4694,8 +5023,15 @@ button {
       }
     }
 
-    private safePredicate(fn: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean): boolean {
-      try { return !!fn(this.valuesValue, this.context); } catch (error) { this.reportError(error); return true; }
+    private safePredicate(
+      fn: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean,
+    ): boolean {
+      try {
+        return !!fn(this.valuesValue, this.context);
+      } catch (error) {
+        this.reportError(error);
+        return true;
+      }
     }
 
     private refreshDynamicState(): void {
@@ -4710,11 +5046,17 @@ button {
       }
 
       for (const action of this.schemaValue.actions || []) {
-        const button = this.root.querySelector<HTMLButtonElement>(`.rm-action[data-action="${CSS.escape(action.id)}"]`);
+        const button = this.root.querySelector<HTMLButtonElement>(
+          `.rm-action[data-action="${CSS.escape(action.id)}"]`,
+        );
         if (!button) continue;
         const visible = !action.hidden && (!action.visibleWhen || this.safePredicate(action.visibleWhen));
         button.hidden = !visible;
-        const disabled = this.loading || this.actionLoading.has(action.id) || !!action.disabled || !!(action.disabledWhen && this.safePredicate(action.disabledWhen));
+        const disabled =
+          this.loading ||
+          this.actionLoading.has(action.id) ||
+          !!action.disabled ||
+          !!(action.disabledWhen && this.safePredicate(action.disabledWhen));
         button.disabled = disabled;
         const badge = button.querySelector<HTMLElement>(".rm-action-badge");
         if (badge && action.badge != null) {
@@ -4722,16 +5064,21 @@ button {
             const value = typeof action.badge === "function" ? action.badge(this.context) : action.badge;
             badge.textContent = value == null ? "" : String(value);
             badge.hidden = value == null || value === "";
-          } catch (error) { this.reportError(error); }
+          } catch (error) {
+            this.reportError(error);
+          }
         }
       }
 
       for (const field of this.getAllFields()) {
         const trailing = field.trailingAction;
         if (!trailing) continue;
-        const button = this.root.querySelector<HTMLButtonElement>(`.rm-trailing-action[data-trailing-action="${CSS.escape(trailing.id || field.name)}"]`);
+        const button = this.root.querySelector<HTMLButtonElement>(
+          `.rm-trailing-action[data-trailing-action="${CSS.escape(trailing.id || field.name)}"]`,
+        );
         if (!button || button.dataset.loading === "true") continue;
-        button.disabled = !!trailing.disabled || !!(trailing.disabledWhen && this.safePredicate(trailing.disabledWhen));
+        button.disabled =
+          !!trailing.disabled || !!(trailing.disabledWhen && this.safePredicate(trailing.disabledWhen));
       }
     }
 
@@ -4741,7 +5088,19 @@ button {
       const fields = this.getAllFields();
 
       for (const field of fields) {
-        if (["divider", "html", "button", "hidden", "media-preview", "provider-status", "request-log", "debug-json"].includes(field.type)) continue;
+        if (
+          [
+            "divider",
+            "html",
+            "button",
+            "hidden",
+            "media-preview",
+            "provider-status",
+            "request-log",
+            "debug-json",
+          ].includes(field.type)
+        )
+          continue;
         const row = this.fieldNodes.get(field.name);
         if (row?.dataset.hidden === "true") continue;
         const value = this.readFieldValue(field);
@@ -4752,7 +5111,12 @@ button {
           continue;
         }
 
-        if (field.type === "media-picker" && field.minSelected && Array.isArray(value) && value.length < field.minSelected) {
+        if (
+          field.type === "media-picker" &&
+          field.minSelected &&
+          Array.isArray(value) &&
+          value.length < field.minSelected
+        ) {
           this.setFieldError(field.name, `Selecione pelo menos ${field.minSelected} item(ns).`);
           firstInvalid ||= this.inputNodes.get(field.name) || row || null;
           continue;
@@ -4782,7 +5146,9 @@ button {
             }
           }
         } catch (error) {
-          this.setGlobalError(error instanceof Error ? error.message : "Não foi possível validar o formulário.");
+          this.setGlobalError(
+            error instanceof Error ? error.message : "Não foi possível validar o formulário.",
+          );
         }
       }
 
@@ -4860,7 +5226,11 @@ button {
       this.persistenceManager.trigger("change");
       this.writeValueToControl(name, value);
       this.refreshDynamicState();
-      try { this.schemaValue.onChange?.(this.context); } catch (error) { this.reportError(error); }
+      try {
+        this.schemaValue.onChange?.(this.context);
+      } catch (error) {
+        this.reportError(error);
+      }
     }
 
     private setValues(values: Partial<TValues>): void {
@@ -4871,7 +5241,11 @@ button {
         this.writeValueToControl(name, value);
       }
       this.refreshDynamicState();
-      try { this.schemaValue.onChange?.(this.context); } catch (error) { this.reportError(error); }
+      try {
+        this.schemaValue.onChange?.(this.context);
+      } catch (error) {
+        this.reportError(error);
+      }
     }
 
     private writeValueToControl(name: string, value: unknown, allowRender = true): void {
@@ -4884,12 +5258,21 @@ button {
       }
       const input = this.inputNodes.get(name);
       if (!input) return;
-      if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input instanceof HTMLSelectElement) {
-        if (input instanceof HTMLInputElement && ["checkbox", "radio"].includes(input.type)) input.checked = Boolean(value);
-        else if (!(input instanceof HTMLInputElement && input.type === "file")) input.value = String(value ?? "");
+      if (
+        input instanceof HTMLInputElement ||
+        input instanceof HTMLTextAreaElement ||
+        input instanceof HTMLSelectElement
+      ) {
+        if (input instanceof HTMLInputElement && ["checkbox", "radio"].includes(input.type))
+          input.checked = Boolean(value);
+        else if (!(input instanceof HTMLInputElement && input.type === "file"))
+          input.value = String(value ?? "");
       } else if (allowRender) {
         this.render();
-        requestAnimationFrame(() => { const root = this.getRootElement(); root.dataset.open = "true"; });
+        requestAnimationFrame(() => {
+          const root = this.getRootElement();
+          root.dataset.open = "true";
+        });
       }
     }
 
@@ -4898,7 +5281,9 @@ button {
       this.valuesValue = this.stateStore.snapshot();
       this.persistenceManager.trigger("change");
       this.render();
-      requestAnimationFrame(() => { this.getRootElement().dataset.open = "true"; });
+      requestAnimationFrame(() => {
+        this.getRootElement().dataset.open = "true";
+      });
     }
 
     private setActiveTab(tabId: string): void {
@@ -4971,7 +5356,9 @@ button {
     }
 
     private refreshStyles(): void {
-      const style = this.root.querySelector<HTMLStyleElement>(`style[data-rod-menu-style="${STYLE_VERSION}"]`);
+      const style = this.root.querySelector<HTMLStyleElement>(
+        `style[data-rod-menu-style="${STYLE_VERSION}"]`,
+      );
       if (!style) return;
       const extra = [globalConfig.css, this.schemaValue.css || ""].filter(Boolean).join("\n\n");
       style.textContent = compileStylesheet(extra ? `${css}\n\n${extra}` : css);
@@ -4981,7 +5368,9 @@ button {
       this.schemaValue = { ...this.schemaValue, ...patch };
       this.refreshStyles();
       this.render();
-      requestAnimationFrame(() => { this.getRootElement().dataset.open = "true"; });
+      requestAnimationFrame(() => {
+        this.getRootElement().dataset.open = "true";
+      });
     }
 
     private setLoading(loading: boolean): void {
@@ -4993,7 +5382,9 @@ button {
 
     private setActionLoading(actionId: string, loading: boolean): void {
       loading ? this.actionLoading.add(actionId) : this.actionLoading.delete(actionId);
-      const button = this.root.querySelector<HTMLButtonElement>(`.rm-action[data-action="${CSS.escape(actionId)}"]`);
+      const button = this.root.querySelector<HTMLButtonElement>(
+        `.rm-action[data-action="${CSS.escape(actionId)}"]`,
+      );
       if (!button) return;
       const existing = button.querySelector(".rm-spinner");
       if (loading && !existing) {
@@ -5007,13 +5398,19 @@ button {
     private bindGlobalEvents(): void {
       const keydown = (event: KeyboardEvent) => {
         if (this.destroyed || this.settled || !this.isStackTop()) return;
-        const shortcutAction = this.schemaValue.actions?.find((action) => action.shortcut && matchesShortcut(event, action.shortcut));
+        const shortcutAction = this.schemaValue.actions?.find(
+          (action) => action.shortcut && matchesShortcut(event, action.shortcut),
+        );
         if (shortcutAction) {
           event.preventDefault();
           void this.runAction(shortcutAction);
           return;
         }
-        if (event.key === "Escape" && this.schemaValue.dismissible !== false && this.schemaValue.closeOnEscape !== false) {
+        if (
+          event.key === "Escape" &&
+          this.schemaValue.dismissible !== false &&
+          this.schemaValue.closeOnEscape !== false
+        ) {
           event.preventDefault();
           this.finish("dismiss", undefined, "escape");
           return;
@@ -5031,7 +5428,8 @@ button {
       };
       const focusin = (event: FocusEvent) => {
         const target = event.composedPath()[0];
-        if (target instanceof this.win.HTMLElement && this.root.contains(target)) this.lastFocusedInside = target;
+        if (target instanceof this.win.HTMLElement && this.root.contains(target))
+          this.lastFocusedInside = target;
       };
       this.doc.addEventListener("keydown", keydown, true);
       this.host.addEventListener("focusin", focusin, true);
@@ -5043,16 +5441,28 @@ button {
 
     private handleTab(event: KeyboardEvent): void {
       const focusable = this.getFocusable();
-      if (!focusable.length) { event.preventDefault(); return; }
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const active = this.doc.activeElement;
-      if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     private getFocusable(): HTMLElement[] {
-      return Array.from(this.root.querySelectorAll<HTMLElement>('button:not([disabled]):not([hidden]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter((node) => !node.hidden && node.offsetParent !== null);
+      return Array.from(
+        this.root.querySelectorAll<HTMLElement>(
+          'button:not([disabled]):not([hidden]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((node) => !node.hidden && node.offsetParent !== null);
     }
 
     private getKeyboardConfig(): RodMenuKeyboardConfig {
@@ -5069,8 +5479,19 @@ button {
 
     private isEditableElement(node: Element | null): node is HTMLElement {
       if (!(node instanceof this.win.HTMLElement)) return false;
-      if (node instanceof this.win.HTMLInputElement) return node.type !== "button" && node.type !== "submit" && node.type !== "reset" && node.type !== "checkbox" && node.type !== "radio";
-      return node instanceof this.win.HTMLTextAreaElement || node instanceof this.win.HTMLSelectElement || node.isContentEditable;
+      if (node instanceof this.win.HTMLInputElement)
+        return (
+          node.type !== "button" &&
+          node.type !== "submit" &&
+          node.type !== "reset" &&
+          node.type !== "checkbox" &&
+          node.type !== "radio"
+        );
+      return (
+        node instanceof this.win.HTMLTextAreaElement ||
+        node instanceof this.win.HTMLSelectElement ||
+        node.isContentEditable
+      );
     }
 
     private focusInitial(): void {
@@ -5135,8 +5556,14 @@ button {
       viewport.addEventListener("resize", sync, { passive: true });
       viewport.addEventListener("scroll", sync, { passive: true });
       const onFocusIn = () => {
-        this.win.setTimeout(() => { sync(); this.keepFocusedFieldVisible(); }, 0);
-        this.win.setTimeout(() => { sync(); this.keepFocusedFieldVisible(); }, 180);
+        this.win.setTimeout(() => {
+          sync();
+          this.keepFocusedFieldVisible();
+        }, 0);
+        this.win.setTimeout(() => {
+          sync();
+          this.keepFocusedFieldVisible();
+        }, 180);
       };
       this.host.addEventListener("focusin", onFocusIn);
       this.listeners.push(() => {
@@ -5150,7 +5577,8 @@ button {
     private applyHydratedValues(values: TValues): void {
       const config = this.getKeyboardConfig();
       const active = this.getDeepActiveElement();
-      const preserve = config.preserveFocusOnHydrate && this.isEditableElement(active) && this.root.contains(active);
+      const preserve =
+        config.preserveFocusOnHydrate && this.isEditableElement(active) && this.root.contains(active);
 
       for (const [name, value] of Object.entries(values)) {
         const field = this.getAllFields().find((item) => item.name === name);
@@ -5200,7 +5628,8 @@ button {
           if (!(item instanceof this.win.HTMLElement)) continue;
           const style = this.win.getComputedStyle(item);
           const overflowY = style.overflowY;
-          if ((overflowY === "auto" || overflowY === "scroll") && item.scrollHeight > item.clientHeight + 1) return item;
+          if ((overflowY === "auto" || overflowY === "scroll") && item.scrollHeight > item.clientHeight + 1)
+            return item;
         }
         const body = this.root.querySelector<HTMLElement>(".rm-body");
         return body && body.scrollHeight > body.clientHeight + 1 ? body : null;
@@ -5212,9 +5641,9 @@ button {
         const touch = event.touches[0];
         lastTouchX = touch.clientX;
         lastTouchY = touch.clientY;
-        touchStartedInHorizontalScroller = event.composedPath().some((item) =>
-          item instanceof this.win.Element && !!item.closest?.(".rm-tabs")
-        );
+        touchStartedInHorizontalScroller = event
+          .composedPath()
+          .some((item) => item instanceof this.win.Element && !!item.closest?.(".rm-tabs"));
       };
 
       const onTouchMove = (event: TouchEvent) => {
@@ -5265,7 +5694,10 @@ button {
           return;
         }
         const scrollable = findScrollableFromPath(event);
-        if (!scrollable) { event.preventDefault(); return; }
+        if (!scrollable) {
+          event.preventDefault();
+          return;
+        }
         const atTop = scrollable.scrollTop <= 0;
         const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
         if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) event.preventDefault();
@@ -5311,7 +5743,8 @@ button {
         if (node instanceof this.win.HTMLElement) {
           const style = this.win.getComputedStyle(node);
           const overflowY = style.overflowY;
-          if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+          if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight + 1)
+            return node;
         }
         node = node.parentElement;
       }
@@ -5321,7 +5754,12 @@ button {
 
     private bindBottomSheetGestures(root: HTMLElement, shell: HTMLElement): void {
       const config = this.getGestureConfig();
-      if (!config.preventPullToRefresh && this.schemaValue.draggable === false && this.schemaValue.swipeToDismiss === false) return;
+      if (
+        !config.preventPullToRefresh &&
+        this.schemaValue.draggable === false &&
+        this.schemaValue.swipeToDismiss === false
+      )
+        return;
 
       let tracking = false;
       let dragging = false;
@@ -5405,10 +5843,8 @@ button {
         if (!directionLocked || !verticalGesture) return;
 
         const pullingDown = dy > 0;
-        const canDragFromContent = config.dragFromContent
-          && startedAtTop
-          && !scrollGesture
-          && dy >= config.contentDragActivationPx;
+        const canDragFromContent =
+          config.dragFromContent && startedAtTop && !scrollGesture && dy >= config.contentDragActivationPx;
         const canDrag = this.schemaValue.draggable !== false && (startedOnHandle || canDragFromContent);
 
         // A gesture that started while content was scrolled belongs to scrolling for its whole lifetime.
@@ -5447,11 +5883,13 @@ button {
       const finishGesture = () => {
         if (!tracking) return;
         const enoughDistance = currentY >= dismissDistance();
-        const enoughVelocity = currentY >= config.velocityMinDragPx && recentVelocity >= config.velocityThresholdPxMs;
-        const shouldDismiss = dragging
-          && this.schemaValue.swipeToDismiss !== false
-          && this.schemaValue.dismissible !== false
-          && (enoughDistance || enoughVelocity);
+        const enoughVelocity =
+          currentY >= config.velocityMinDragPx && recentVelocity >= config.velocityThresholdPxMs;
+        const shouldDismiss =
+          dragging &&
+          this.schemaValue.swipeToDismiss !== false &&
+          this.schemaValue.dismissible !== false &&
+          (enoughDistance || enoughVelocity);
 
         if (shouldDismiss) {
           shell.style.transition = "";
@@ -5476,7 +5914,13 @@ button {
       const handle = shell.querySelector<HTMLElement>(".rm-handle-wrap");
 
       const pointerDown = (event: PointerEvent) => {
-        if (!handle || event.pointerType === "touch" || event.button !== 0 || this.schemaValue.draggable === false) return;
+        if (
+          !handle ||
+          event.pointerType === "touch" ||
+          event.button !== 0 ||
+          this.schemaValue.draggable === false
+        )
+          return;
         pointerDragging = true;
         pointerId = event.pointerId;
         pointerStartY = event.clientY;
@@ -5502,9 +5946,14 @@ button {
       const pointerUp = (event: PointerEvent) => {
         if (!pointerDragging || event.pointerId !== pointerId) return;
         const enoughDistance = pointerCurrentY >= dismissDistance();
-        const enoughVelocity = pointerCurrentY >= config.velocityMinDragPx && pointerVelocity >= config.velocityThresholdPxMs;
+        const enoughVelocity =
+          pointerCurrentY >= config.velocityMinDragPx && pointerVelocity >= config.velocityThresholdPxMs;
         pointerDragging = false;
-        if (this.schemaValue.swipeToDismiss !== false && this.schemaValue.dismissible !== false && (enoughDistance || enoughVelocity)) {
+        if (
+          this.schemaValue.swipeToDismiss !== false &&
+          this.schemaValue.dismissible !== false &&
+          (enoughDistance || enoughVelocity)
+        ) {
           shell.style.transition = "";
           this.finish("dismiss", undefined, "swipe");
         } else {
@@ -5549,52 +5998,65 @@ button {
     }
 
     private resolveComponentRenderer(name: string): RodMenuComponentRenderer | undefined {
-      return this.schemaValue.components?.[name] || registeredComponents.get(name) || globalConfig.components[name];
+      return (
+        this.schemaValue.components?.[name] || registeredComponents.get(name) || globalConfig.components[name]
+      );
     }
 
     private resolveFieldTypeRenderer(type: string): RodMenuFieldRenderer | undefined {
-      return this.schemaValue.fieldTypes?.[type] || registeredFieldTypes.get(type) || globalConfig.fieldTypes[type];
+      return (
+        this.schemaValue.fieldTypes?.[type] || registeredFieldTypes.get(type) || globalConfig.fieldTypes[type]
+      );
     }
 
     private renderNamedComponent(name: string, props: AnyRecord = {}): HTMLElement | null {
       const renderer = this.resolveComponentRenderer(name);
       if (!renderer) return null;
-      return renderer({
-        name,
-        document: this.doc,
-        window: this.win,
-        schema: this.schemaValue,
-        context: this.context,
-        props,
-        defaultRender: () => createElement(this.doc, "div"),
-        create: (tag, className) => {
-          const node = createElement(this.doc, tag);
-          if (className) node.className = className;
-          return node;
-        },
-        render: (nestedName, nestedProps = {}) => this.renderNamedComponent(nestedName, nestedProps),
-      }) || null;
+      return (
+        renderer({
+          name,
+          document: this.doc,
+          window: this.win,
+          schema: this.schemaValue,
+          context: this.context,
+          props,
+          defaultRender: () => createElement(this.doc, "div"),
+          create: (tag, className) => {
+            const node = createElement(this.doc, tag);
+            if (className) node.className = className;
+            return node;
+          },
+          render: (nestedName, nestedProps = {}) => this.renderNamedComponent(nestedName, nestedProps),
+        }) || null
+      );
     }
 
-    private renderComponent(name: string, defaultRender: () => HTMLElement, props: AnyRecord = {}): HTMLElement {
+    private renderComponent(
+      name: string,
+      defaultRender: () => HTMLElement,
+      props: AnyRecord = {},
+    ): HTMLElement {
       const renderer = this.resolveComponentRenderer(name);
       if (!renderer) return defaultRender();
-      const renderNested = (nestedName: string, nestedProps: AnyRecord = {}): HTMLElement | null => this.renderNamedComponent(nestedName, nestedProps);
-      return renderer({
-        name,
-        document: this.doc,
-        window: this.win,
-        schema: this.schemaValue,
-        context: this.context,
-        props,
-        defaultRender,
-        create: (tag, className) => {
-          const node = createElement(this.doc, tag);
-          if (className) node.className = className;
-          return node;
-        },
-        render: renderNested,
-      }) || defaultRender();
+      const renderNested = (nestedName: string, nestedProps: AnyRecord = {}): HTMLElement | null =>
+        this.renderNamedComponent(nestedName, nestedProps);
+      return (
+        renderer({
+          name,
+          document: this.doc,
+          window: this.win,
+          schema: this.schemaValue,
+          context: this.context,
+          props,
+          defaultRender,
+          create: (tag, className) => {
+            const node = createElement(this.doc, tag);
+            if (className) node.className = className;
+            return node;
+          },
+          render: renderNested,
+        }) || defaultRender()
+      );
     }
 
     private finish(action: string | "dismiss", data: unknown, reason: RodMenuResult["reason"]): void {
@@ -5611,7 +6073,11 @@ button {
       root.dataset.open = "false";
       this.host.removeAttribute(ACTIVE_ATTR);
       const finalize = () => {
-        try { this.schemaValue.onClose?.(result); } catch (error) { this.reportError(error); }
+        try {
+          this.schemaValue.onClose?.(result);
+        } catch (error) {
+          this.reportError(error);
+        }
         this.resolveResult(result);
         this.destroy(false);
       };
@@ -5622,10 +6088,14 @@ button {
       if (this.destroyed) return;
       this.destroyed = true;
       for (const off of this.renderListeners.splice(0)) {
-        try { off(); } catch {}
+        try {
+          off();
+        } catch {}
       }
       for (const off of this.listeners.splice(0)) {
-        try { off(); } catch {}
+        try {
+          off();
+        } catch {}
       }
       const wasTop = this.isStackTop();
       activeHandles.delete(this.id);
@@ -5636,8 +6106,15 @@ button {
       const remainingStack = getSurfaceStack(this.doc);
       if (wasTop && remainingStack.length) {
         remainingStack[remainingStack.length - 1].focusFromStack();
-      } else if (!remainingStack.length && this.schemaValue.restoreFocus !== false && this.previousFocus instanceof HTMLElement && this.previousFocus.isConnected) {
-        try { this.previousFocus.focus({ preventScroll: true }); } catch {}
+      } else if (
+        !remainingStack.length &&
+        this.schemaValue.restoreFocus !== false &&
+        this.previousFocus instanceof HTMLElement &&
+        this.previousFocus.isConnected
+      ) {
+        try {
+          this.previousFocus.focus({ preventScroll: true });
+        } catch {}
       }
       if (resolveIfNeeded && !this.settled) {
         this.settled = true;
@@ -5652,20 +6129,29 @@ button {
     }
 
     private reportError(error: unknown): void {
-      try { this.schemaValue.onError?.(error, this.context); } catch {}
-      try { globalConfig.onError?.(error); } catch {}
+      try {
+        this.schemaValue.onError?.(error, this.context);
+      } catch {}
+      try {
+        globalConfig.onError?.(error);
+      } catch {}
 
       const message = error instanceof Error ? error.message : String(error);
       const mode = this.schemaValue.errorMode ?? (globalConfig.toasterErrors ? "both" : "inline");
 
       if (mode === "inline" || mode === "both") this.setGlobalError(message);
       if (mode === "toaster" || mode === "both") {
-        if (!notifyToaster("error", this.schemaValue.title || "RodMenu", message) && globalConfig.autoLoadDependencies) {
+        if (
+          !notifyToaster("error", this.schemaValue.title || "RodMenu", message) &&
+          globalConfig.autoLoadDependencies
+        ) {
           void loadDependency("toaster");
         }
       }
 
-      try { console.error("[RodMenu]", error); } catch {}
+      try {
+        console.error("[RodMenu]", error);
+      } catch {}
     }
   }
 
@@ -5720,10 +6206,7 @@ button {
     label: string | ((snapshot: RodMenuSavedSyncSnapshot) => string);
     variant?: ActionVariant;
     disabled?: boolean | ((snapshot: RodMenuSavedSyncSnapshot) => boolean);
-    run: (context: {
-      snapshot: RodMenuSavedSyncSnapshot;
-      refresh: () => void;
-    }) => Awaitable<void>;
+    run: (context: { snapshot: RodMenuSavedSyncSnapshot; refresh: () => void }) => Awaitable<void>;
   }
 
   interface RodMenuSavedSyncOptions {
@@ -5741,7 +6224,9 @@ button {
   }
 
   interface RodMenuPresetApi {
-    media<TValues extends AnyRecord = AnyRecord>(options: RodMenuMediaPresetOptions<TValues>): RodMenuHandle<TValues>;
+    media<TValues extends AnyRecord = AnyRecord>(
+      options: RodMenuMediaPresetOptions<TValues>,
+    ): RodMenuHandle<TValues>;
     settings<TValues extends AnyRecord = AnyRecord>(schema: RodMenuSchema<TValues>): RodMenuHandle<TValues>;
     history<T = unknown>(options: RodMenuHistoryPresetOptions<T>): RodMenuHandle;
     savedSync(options: RodMenuSavedSyncOptions): RodMenuSavedSyncHandle;
@@ -5766,9 +6251,31 @@ button {
     readonly presets: RodMenuPresetApi;
     readonly aio: RodMenuPresetApi;
     open<TValues extends AnyRecord = AnyRecord>(schema: RodMenuSchema<TValues>): RodMenuHandle<TValues>;
-    form<TValues extends AnyRecord = AnyRecord>(schema: Omit<RodMenuSchema<TValues>, "actions"> & { actions?: readonly RodMenuAction[] }): Promise<RodMenuResult<TValues>>;
-    confirm(options: { title: string; description?: string; confirmLabel?: string; cancelLabel?: string; danger?: boolean; presentation?: Presentation }): Promise<boolean>;
-    actions<T extends string = string>(options: { title?: string; description?: string; presentation?: Presentation; anchor?: RodMenuSchema["anchor"]; items: readonly { label: string; value: T; variant?: ActionVariant; icon?: string; badge?: string | number; shortcut?: string }[] }): Promise<T | null>;
+    form<TValues extends AnyRecord = AnyRecord>(
+      schema: Omit<RodMenuSchema<TValues>, "actions"> & { actions?: readonly RodMenuAction[] },
+    ): Promise<RodMenuResult<TValues>>;
+    confirm(options: {
+      title: string;
+      description?: string;
+      confirmLabel?: string;
+      cancelLabel?: string;
+      danger?: boolean;
+      presentation?: Presentation;
+    }): Promise<boolean>;
+    actions<T extends string = string>(options: {
+      title?: string;
+      description?: string;
+      presentation?: Presentation;
+      anchor?: RodMenuSchema["anchor"];
+      items: readonly {
+        label: string;
+        value: T;
+        variant?: ActionVariant;
+        icon?: string;
+        badge?: string | number;
+        shortcut?: string;
+      }[];
+    }): Promise<T | null>;
     configure(config: Partial<RodMenuConfig>): RodMenuPublicApi;
     getConfig(): Readonly<RodMenuConfig>;
     resetConfig(): RodMenuPublicApi;
@@ -5793,15 +6300,19 @@ button {
   }
 
   const previousGlobal = (rootWindow as unknown as Record<string, unknown>)[GLOBAL_NAME];
-  const readyPromise = globalConfig.autoLoadDependencies ? loadDependencies() : Promise.resolve({
-    elements: { ...runtimeStatus.elements },
-    toaster: { ...runtimeStatus.toaster },
-    cipo: { ...runtimeStatus.cipo },
-    broto: { ...runtimeStatus.broto },
-  });
+  const readyPromise = globalConfig.autoLoadDependencies
+    ? loadDependencies()
+    : Promise.resolve({
+        elements: { ...runtimeStatus.elements },
+        toaster: { ...runtimeStatus.toaster },
+        cipo: { ...runtimeStatus.cipo },
+        broto: { ...runtimeStatus.broto },
+      });
 
   const presetApi: RodMenuPresetApi = {
-    media<TValues extends AnyRecord = AnyRecord>(options: RodMenuMediaPresetOptions<TValues>): RodMenuHandle<TValues> {
+    media<TValues extends AnyRecord = AnyRecord>(
+      options: RodMenuMediaPresetOptions<TValues>,
+    ): RodMenuHandle<TValues> {
       const fields: RodMenuField[] = [];
       if (options.source) {
         fields.push({
@@ -5862,9 +6373,18 @@ button {
       return api.open<TValues>({
         ...schema,
         title: schema.title || "Configurações",
-        store: schema.store || { persist: { key: `rod-menu:settings:${schema.id || "default"}`, storage: "local" } },
+        store: schema.store || {
+          persist: { key: `rod-menu:settings:${schema.id || "default"}`, storage: "local" },
+        },
         actions: schema.actions || [
-          { id: "reset", label: "Restaurar", role: "custom", variant: "ghost", close: false, handler: (context) => context.reset() },
+          {
+            id: "reset",
+            label: "Restaurar",
+            role: "custom",
+            variant: "ghost",
+            close: false,
+            handler: (context) => context.reset(),
+          },
           { id: "done", label: "Concluir", role: "submit", variant: "primary" },
         ],
       });
@@ -5875,27 +6395,32 @@ button {
         title: options.title || "Histórico",
         description: options.description,
         presentation: options.presentation || "bottom-sheet",
-        fields: [{
-          type: "custom",
-          name: "history",
-          render(context) {
-            const list = createElement(context.host.ownerDocument, "div");
-            list.className = "rm-history-list";
-            options.items.forEach((item, index) => {
-              const row = createElement(context.host.ownerDocument, "div");
-              row.className = "rm-history-item";
-              const rendered = options.renderItem?.(item, index, context);
-              if (typeof rendered === "string") row.textContent = rendered;
-              else if (rendered) row.append(rendered);
-              else {
-                try { row.textContent = typeof item === "string" ? item : JSON.stringify(item); }
-                catch { row.textContent = String(item); }
-              }
-              list.append(row);
-            });
-            return list;
+        fields: [
+          {
+            type: "custom",
+            name: "history",
+            render(context) {
+              const list = createElement(context.host.ownerDocument, "div");
+              list.className = "rm-history-list";
+              options.items.forEach((item, index) => {
+                const row = createElement(context.host.ownerDocument, "div");
+                row.className = "rm-history-item";
+                const rendered = options.renderItem?.(item, index, context);
+                if (typeof rendered === "string") row.textContent = rendered;
+                else if (rendered) row.append(rendered);
+                else {
+                  try {
+                    row.textContent = typeof item === "string" ? item : JSON.stringify(item);
+                  } catch {
+                    row.textContent = String(item);
+                  }
+                }
+                list.append(row);
+              });
+              return list;
+            },
           },
-        }],
+        ],
         actions: [{ id: "close", label: "Fechar", role: "cancel", variant: "secondary" }],
       });
     },
@@ -5910,152 +6435,160 @@ button {
         presentation: options.presentation || "bottom-sheet",
         size: options.size || "md",
         store: { persist: false },
-        fields: [{
-          type: "custom",
-          name: "savedSync",
-          chrome: "bare",
-          render(context) {
-            const doc = context.host.ownerDocument;
-            const root = createElement(doc, "div");
-            root.className = "rm-saved-sync";
+        fields: [
+          {
+            type: "custom",
+            name: "savedSync",
+            chrome: "bare",
+            render(context) {
+              const doc = context.host.ownerDocument;
+              const root = createElement(doc, "div");
+              root.className = "rm-saved-sync";
 
-            const summary = createElement(doc, "div");
-            summary.className = "rm-saved-sync-summary";
+              const summary = createElement(doc, "div");
+              summary.className = "rm-saved-sync-summary";
 
-            const summaryTitle = createElement(doc, "strong");
-            const summaryDescription = createElement(doc, "small");
-            summary.append(summaryTitle, summaryDescription);
+              const summaryTitle = createElement(doc, "strong");
+              const summaryDescription = createElement(doc, "small");
+              summary.append(summaryTitle, summaryDescription);
 
-            const stats = createElement(doc, "div");
-            stats.className = "rm-saved-sync-stats";
+              const stats = createElement(doc, "div");
+              stats.className = "rm-saved-sync-stats";
 
-            const statNodes = new Map<string, HTMLElement>();
-            const statDefinitions = [
-              ["pending", "Pendentes"],
-              ["selected", "Selecionados"],
-              ["sent", "Enviados"],
-              ["unknown", "Sem check"],
-              ["visible", "Na tela"],
-              ["total", "Vistos"],
-            ] as const;
+              const statNodes = new Map<string, HTMLElement>();
+              const statDefinitions = [
+                ["pending", "Pendentes"],
+                ["selected", "Selecionados"],
+                ["sent", "Enviados"],
+                ["unknown", "Sem check"],
+                ["visible", "Na tela"],
+                ["total", "Vistos"],
+              ] as const;
 
-            for (const [key, label] of statDefinitions) {
-              const card = createElement(doc, "div");
-              card.className = "rm-saved-sync-stat";
+              for (const [key, label] of statDefinitions) {
+                const card = createElement(doc, "div");
+                card.className = "rm-saved-sync-stat";
 
-              const value = createElement(doc, "b");
-              const copy = createElement(doc, "span");
-              copy.textContent = label;
+                const value = createElement(doc, "b");
+                const copy = createElement(doc, "span");
+                copy.textContent = label;
 
-              card.append(value, copy);
-              stats.append(card);
-              statNodes.set(key, value);
-            }
+                card.append(value, copy);
+                stats.append(card);
+                statNodes.set(key, value);
+              }
 
-            const commands = createElement(doc, "div");
-            commands.className = "rm-saved-sync-commands";
+              const commands = createElement(doc, "div");
+              commands.className = "rm-saved-sync-commands";
 
-            const commandButtons = new Map<string, HTMLButtonElement>();
+              const commandButtons = new Map<string, HTMLButtonElement>();
 
-            const reportSavedSyncError = (error: unknown): void => {
-              try { globalConfig.onError?.(error); } catch {}
-              try {
-                notifyToaster(
-                  "error",
-                  options.title || "Saved / Bookmarks",
-                  error instanceof Error ? error.message : String(error),
-                );
-              } catch {}
-            };
-
-            for (const command of options.commands) {
-              const button = createElement(doc, "button") as HTMLButtonElement;
-              button.type = "button";
-              button.className = "rm-field-button rm-action rm-saved-sync-command";
-              button.dataset.variant = command.variant || "secondary";
-              button.dataset.command = command.id;
-
-              button.addEventListener("click", async () => {
-                if (button.disabled || destroyed) return;
-
-                button.dataset.loading = "true";
-                refreshImpl();
-
+              const reportSavedSyncError = (error: unknown): void => {
                 try {
-                  await command.run({
-                    snapshot: options.getSnapshot(),
-                    refresh: refreshImpl,
-                  });
-                } catch (error) {
-                  reportSavedSyncError(error);
-                } finally {
-                  button.dataset.loading = "false";
-                  refreshImpl();
-                }
-              });
-
-              commandButtons.set(command.id, button);
-              commands.append(button);
-            }
-
-            root.append(summary, stats, commands);
-
-            refreshImpl = () => {
-              if (destroyed || !root.isConnected) return;
-
-              let snapshot: RodMenuSavedSyncSnapshot;
-              try {
-                snapshot = options.getSnapshot();
-              } catch (error) {
-                reportSavedSyncError(error);
-                return;
-              }
-
-              const surfaceTitle = (options.title || "Saved / Bookmarks").trim();
-              const snapshotTitle = snapshot.title?.trim() || "";
-              const showSummaryTitle = !!snapshotTitle && snapshotTitle !== surfaceTitle;
-              summaryTitle.hidden = !showSummaryTitle;
-              summaryTitle.textContent = showSummaryTitle ? snapshotTitle : "";
-              summaryDescription.textContent = snapshot.description || options.description || "";
-
-              for (const key of ["pending", "selected", "sent", "unknown", "visible", "total"] as const) {
-                const node = statNodes.get(key);
-                if (node) node.textContent = String(Number(snapshot[key] ?? 0));
-              }
+                  globalConfig.onError?.(error);
+                } catch {}
+                try {
+                  notifyToaster(
+                    "error",
+                    options.title || "Saved / Bookmarks",
+                    error instanceof Error ? error.message : String(error),
+                  );
+                } catch {}
+              };
 
               for (const command of options.commands) {
-                const button = commandButtons.get(command.id);
-                if (!button) continue;
+                const button = createElement(doc, "button") as HTMLButtonElement;
+                button.type = "button";
+                button.className = "rm-field-button rm-action rm-saved-sync-command";
+                button.dataset.variant = command.variant || "secondary";
+                button.dataset.command = command.id;
 
-                button.textContent = typeof command.label === "function"
-                  ? command.label(snapshot)
-                  : command.label;
+                button.addEventListener("click", async () => {
+                  if (button.disabled || destroyed) return;
 
-                const busy = button.dataset.loading === "true";
-                const disabled = typeof command.disabled === "function"
-                  ? command.disabled(snapshot)
-                  : Boolean(command.disabled);
+                  button.dataset.loading = "true";
+                  refreshImpl();
 
-                button.disabled = busy || Boolean(snapshot.syncing) || disabled;
+                  try {
+                    await command.run({
+                      snapshot: options.getSnapshot(),
+                      refresh: refreshImpl,
+                    });
+                  } catch (error) {
+                    reportSavedSyncError(error);
+                  } finally {
+                    button.dataset.loading = "false";
+                    refreshImpl();
+                  }
+                });
+
+                commandButtons.set(command.id, button);
+                commands.append(button);
               }
-            };
 
-            requestAnimationFrame(refreshImpl);
-            return root;
+              root.append(summary, stats, commands);
+
+              refreshImpl = () => {
+                if (destroyed || !root.isConnected) return;
+
+                let snapshot: RodMenuSavedSyncSnapshot;
+                try {
+                  snapshot = options.getSnapshot();
+                } catch (error) {
+                  reportSavedSyncError(error);
+                  return;
+                }
+
+                const surfaceTitle = (options.title || "Saved / Bookmarks").trim();
+                const snapshotTitle = snapshot.title?.trim() || "";
+                const showSummaryTitle = !!snapshotTitle && snapshotTitle !== surfaceTitle;
+                summaryTitle.hidden = !showSummaryTitle;
+                summaryTitle.textContent = showSummaryTitle ? snapshotTitle : "";
+                summaryDescription.textContent = snapshot.description || options.description || "";
+
+                for (const key of ["pending", "selected", "sent", "unknown", "visible", "total"] as const) {
+                  const node = statNodes.get(key);
+                  if (node) node.textContent = String(Number(snapshot[key] ?? 0));
+                }
+
+                for (const command of options.commands) {
+                  const button = commandButtons.get(command.id);
+                  if (!button) continue;
+
+                  button.textContent =
+                    typeof command.label === "function" ? command.label(snapshot) : command.label;
+
+                  const busy = button.dataset.loading === "true";
+                  const disabled =
+                    typeof command.disabled === "function"
+                      ? command.disabled(snapshot)
+                      : Boolean(command.disabled);
+
+                  button.disabled = busy || Boolean(snapshot.syncing) || disabled;
+                }
+              };
+
+              requestAnimationFrame(refreshImpl);
+              return root;
+            },
           },
-        }],
-        actions: [{
-          id: "close",
-          label: "Fechar",
-          role: "cancel",
-          variant: "secondary",
-        }],
+        ],
+        actions: [
+          {
+            id: "close",
+            label: "Fechar",
+            role: "cancel",
+            variant: "secondary",
+          },
+        ],
         onClose(result) {
           destroyed = true;
           try {
             options.onClose?.(result);
           } catch (error) {
-            try { globalConfig.onError?.(error); } catch {}
+            try {
+              globalConfig.onError?.(error);
+            } catch {}
           }
         },
       }) as RodMenuSavedSyncHandle;
@@ -6070,40 +6603,51 @@ button {
 
     debug(options: RodMenuDebugPresetOptions): RodMenuHandle {
       const tabs: RodMenuTab[] = [];
-      if (options.summary !== undefined) tabs.push({
-        id: "summary",
-        label: "Resumo",
-        fields: [{ type: "debug-json", name: "debugSummary", data: options.summary, maxHeight: 360 }],
-      });
-      if (options.media?.length) tabs.push({
-        id: "media",
-        label: "Mídia",
-        badge: options.media.length,
-        fields: [{ type: "media-picker", name: "debugMedia", items: options.media, selectAll: false }],
-      });
-      if (options.providers?.length) tabs.push({
-        id: "providers",
-        label: "Providers",
-        badge: options.providers.length,
-        fields: [{ type: "provider-status", name: "debugProviders", providers: options.providers }],
-      });
-      if (options.requests?.length) tabs.push({
-        id: "requests",
-        label: "Requests",
-        badge: options.requests.length,
-        fields: [{ type: "request-log", name: "debugRequests", entries: options.requests, maxHeight: 420 }],
-      });
-      if (options.relay !== undefined) tabs.push({
-        id: "relay",
-        label: "Relay",
-        fields: [{ type: "debug-json", name: "debugRelay", data: options.relay, maxHeight: 420 }],
-      });
-      if (options.logs !== undefined) tabs.push({
-        id: "logs",
-        label: "Logs",
-        fields: [{ type: "debug-json", name: "debugLogs", data: options.logs, maxHeight: 420 }],
-      });
-      if (!tabs.length) tabs.push({ id: "summary", label: "Resumo", fields: [{ type: "html", name: "empty", html: "<p>Sem dados de debug.</p>" }] });
+      if (options.summary !== undefined)
+        tabs.push({
+          id: "summary",
+          label: "Resumo",
+          fields: [{ type: "debug-json", name: "debugSummary", data: options.summary, maxHeight: 360 }],
+        });
+      if (options.media?.length)
+        tabs.push({
+          id: "media",
+          label: "Mídia",
+          badge: options.media.length,
+          fields: [{ type: "media-picker", name: "debugMedia", items: options.media, selectAll: false }],
+        });
+      if (options.providers?.length)
+        tabs.push({
+          id: "providers",
+          label: "Providers",
+          badge: options.providers.length,
+          fields: [{ type: "provider-status", name: "debugProviders", providers: options.providers }],
+        });
+      if (options.requests?.length)
+        tabs.push({
+          id: "requests",
+          label: "Requests",
+          badge: options.requests.length,
+          fields: [{ type: "request-log", name: "debugRequests", entries: options.requests, maxHeight: 420 }],
+        });
+      if (options.relay !== undefined)
+        tabs.push({
+          id: "relay",
+          label: "Relay",
+          fields: [{ type: "debug-json", name: "debugRelay", data: options.relay, maxHeight: 420 }],
+        });
+      if (options.logs !== undefined)
+        tabs.push({
+          id: "logs",
+          label: "Logs",
+          fields: [{ type: "debug-json", name: "debugLogs", data: options.logs, maxHeight: 420 }],
+        });
+      if (!tabs.length)
+        tabs.push({
+          id: "summary",
+          label: "Resumo",
+          fields: [{ type: "html", name: "empty", html: "<p>Sem dados de debug.</p>" }],
+        });
 
       return api.open({
         title: options.title || "Debug",
@@ -6130,15 +6674,17 @@ button {
         description: options.description,
         presentation: options.presentation || "auto",
         anchor: options.anchor,
-        fields: [{
-          type: "channel-picker",
-          name: "channel",
-          options: options.channels,
-          multiple: options.multiple,
-          searchable: options.searchable,
-          value: options.value,
-          required: true,
-        }],
+        fields: [
+          {
+            type: "channel-picker",
+            name: "channel",
+            options: options.channels,
+            multiple: options.multiple,
+            searchable: options.searchable,
+            value: options.value,
+            required: true,
+          },
+        ],
         actions: [
           { id: "cancel", label: "Cancelar", role: "cancel", variant: "ghost" },
           { id: "select", label: "Selecionar", role: "submit", variant: "primary" },
@@ -6150,7 +6696,9 @@ button {
 
   const api: RodMenuPublicApi = {
     version: VERSION,
-    get config() { return api.getConfig(); },
+    get config() {
+      return api.getConfig();
+    },
     get runtime() {
       return Object.freeze({
         elements: { ...runtimeStatus.elements },
@@ -6165,7 +6713,9 @@ button {
     open<TValues extends AnyRecord = AnyRecord>(schema: RodMenuSchema<TValues>): RodMenuHandle<TValues> {
       return new SurfaceController<TValues>(schema).handle;
     },
-    async form<TValues extends AnyRecord = AnyRecord>(schema: Omit<RodMenuSchema<TValues>, "actions"> & { actions?: readonly RodMenuAction[] }): Promise<RodMenuResult<TValues>> {
+    async form<TValues extends AnyRecord = AnyRecord>(
+      schema: Omit<RodMenuSchema<TValues>, "actions"> & { actions?: readonly RodMenuAction[] },
+    ): Promise<RodMenuResult<TValues>> {
       const actions = schema.actions || [
         { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
         { id: "submit", label: "Continuar", role: "submit", variant: "primary" },
@@ -6181,23 +6731,50 @@ button {
         presentation: options.presentation,
         actions: [
           { id: "cancel", label: options.cancelLabel || "Cancelar", role: "cancel", variant: "secondary" },
-          { id: "confirm", label: options.confirmLabel || "Confirmar", role: options.danger ? "destructive" : "submit", variant: options.danger ? "danger" : "primary" },
+          {
+            id: "confirm",
+            label: options.confirmLabel || "Confirmar",
+            role: options.danger ? "destructive" : "submit",
+            variant: options.danger ? "danger" : "primary",
+          },
         ],
       }).result;
       return result.action === "confirm";
     },
-    async actions<T extends string = string>(options: { title?: string; description?: string; presentation?: Presentation; anchor?: RodMenuSchema["anchor"]; items: readonly { label: string; value: T; variant?: ActionVariant; icon?: string; badge?: string | number; shortcut?: string }[] }): Promise<T | null> {
+    async actions<T extends string = string>(options: {
+      title?: string;
+      description?: string;
+      presentation?: Presentation;
+      anchor?: RodMenuSchema["anchor"];
+      items: readonly {
+        label: string;
+        value: T;
+        variant?: ActionVariant;
+        icon?: string;
+        badge?: string | number;
+        shortcut?: string;
+      }[];
+    }): Promise<T | null> {
       const result = await api.open({
         title: options.title,
         description: options.description,
         presentation: options.presentation,
         anchor: options.anchor,
         actions: [
-          ...options.items.map((item) => ({ id: item.value, label: item.label, icon: item.icon, badge: item.badge, shortcut: item.shortcut, variant: item.variant || "secondary" as ActionVariant, role: "custom" as ActionRole, close: true })),
+          ...options.items.map((item) => ({
+            id: item.value,
+            label: item.label,
+            icon: item.icon,
+            badge: item.badge,
+            shortcut: item.shortcut,
+            variant: item.variant || ("secondary" as ActionVariant),
+            role: "custom" as ActionRole,
+            close: true,
+          })),
           { id: "cancel", label: "Cancelar", variant: "ghost", role: "cancel" },
         ],
       }).result;
-      return result.action === "dismiss" || result.action === "cancel" ? null : result.action as T;
+      return result.action === "dismiss" || result.action === "cancel" ? null : (result.action as T);
     },
     configure(config: Partial<RodMenuConfig>): RodMenuPublicApi {
       globalConfig = {
@@ -6206,21 +6783,13 @@ button {
         dependencyUrls: config.dependencyUrls
           ? { ...globalConfig.dependencyUrls, ...config.dependencyUrls }
           : globalConfig.dependencyUrls,
-        stack: config.stack
-          ? { ...globalConfig.stack, ...config.stack }
-          : globalConfig.stack,
-        gestures: config.gestures
-          ? { ...globalConfig.gestures, ...config.gestures }
-          : globalConfig.gestures,
-        keyboard: config.keyboard
-          ? { ...globalConfig.keyboard, ...config.keyboard }
-          : globalConfig.keyboard,
+        stack: config.stack ? { ...globalConfig.stack, ...config.stack } : globalConfig.stack,
+        gestures: config.gestures ? { ...globalConfig.gestures, ...config.gestures } : globalConfig.gestures,
+        keyboard: config.keyboard ? { ...globalConfig.keyboard, ...config.keyboard } : globalConfig.keyboard,
         defaultSchema: config.defaultSchema
           ? { ...globalConfig.defaultSchema, ...config.defaultSchema }
           : globalConfig.defaultSchema,
-        theme: config.theme
-          ? { ...globalConfig.theme, ...config.theme }
-          : globalConfig.theme,
+        theme: config.theme ? { ...globalConfig.theme, ...config.theme } : globalConfig.theme,
         components: config.components
           ? { ...globalConfig.components, ...config.components }
           : globalConfig.components,
@@ -6264,11 +6833,18 @@ button {
     },
     refreshAll(): void {
       for (const handle of Array.from(activeHandles.values())) {
-        try { handle.update({}); } catch (error) { try { globalConfig.onError?.(error); } catch {} }
+        try {
+          handle.update({});
+        } catch (error) {
+          try {
+            globalConfig.onError?.(error);
+          } catch {}
+        }
       }
     },
     registerComponent(name: string, renderer: RodMenuComponentRenderer): RodMenuPublicApi {
-      if (!name || typeof renderer !== "function") throw new TypeError("registerComponent(name, renderer) requires a name and renderer function.");
+      if (!name || typeof renderer !== "function")
+        throw new TypeError("registerComponent(name, renderer) requires a name and renderer function.");
       registeredComponents.set(name, renderer);
       if (globalConfig.refreshActiveOnConfigure) api.refreshAll();
       return api;
@@ -6282,7 +6858,8 @@ button {
       return registeredComponents.get(name) || globalConfig.components[name];
     },
     registerFieldType(type: string, renderer: RodMenuFieldRenderer): RodMenuPublicApi {
-      if (!type || typeof renderer !== "function") throw new TypeError("registerFieldType(type, renderer) requires a type and renderer function.");
+      if (!type || typeof renderer !== "function")
+        throw new TypeError("registerFieldType(type, renderer) requires a type and renderer function.");
       registeredFieldTypes.set(type, renderer);
       if (globalConfig.refreshActiveOnConfigure) api.refreshAll();
       return api;
@@ -6316,7 +6893,9 @@ button {
       for (const handle of Array.from(activeHandles.values())) handle.dismiss(reason);
     },
     noConflict(): RodMenuPublicApi {
-      try { (rootWindow as unknown as Record<string, unknown>)[GLOBAL_NAME] = previousGlobal; } catch {}
+      try {
+        (rootWindow as unknown as Record<string, unknown>)[GLOBAL_NAME] = previousGlobal;
+      } catch {}
       return api;
     },
   };

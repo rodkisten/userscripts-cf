@@ -16,11 +16,23 @@ for (const [remote, local] of files) {
   await fs.writeFile(path.join(target, local), await response.text());
 }
 for (const name of ["menu", "storage"]) {
-  execFileSync("npx", [
-    "--no-install", "tsc", path.join(target, name + ".ts"),
-    "--target", "ES2022", "--lib", "ES2022,DOM",
-    "--module", "none", "--skipLibCheck",
-    "--outFile", path.join(target, name + ".js"),
-  ], { stdio: "inherit" });
+  execFileSync(
+    "npx",
+    [
+      "--no-install",
+      "tsc",
+      path.join(target, name + ".ts"),
+      "--target",
+      "ES2022",
+      "--lib",
+      "ES2022,DOM",
+      "--module",
+      "none",
+      "--skipLibCheck",
+      "--outFile",
+      path.join(target, name + ".js"),
+    ],
+    { stdio: "inherit" },
+  );
 }
 console.log("RodMenu, RodStorage and RodToaster sources synchronized.");
