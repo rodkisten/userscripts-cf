@@ -1,9 +1,9 @@
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
-import { captureVisibleLists, drawHomeBar, startScan } from "./dom-capture.js";
+import { captureVisibleLists, drawHomeBar, startScan } from "./dom-capture.tsx";
 import { refreshPendingListNames, showListNameDialog, tryAutoRead } from "./graphql.js";
-import { applyRepostFilter, downloadBlob, exportJSON, makeQueue, runQueue } from "./queue.js";
-import { notice, openQuickPicker, toggle } from "./quick-picker.js";
+import { applyRepostFilter, downloadBlob, exportJSON, makeQueue, runQueue } from "./queue.tsx";
+import { notice, openQuickPicker, toggle } from "./quick-picker.tsx";
 import {
   DEFAULTS,
   LIST_PRESETS_KEY,
@@ -37,10 +37,10 @@ import {
   upsertList,
   validHandle,
   validListId,
-} from "./render.js";
+} from "./render.tsx";
 import { studioListIndex } from "./routes.js";
-import { loadTimeline, reportTimelineError, timeline } from "./timeline.js";
-import { shadow } from "./view.js";
+import { loadTimeline, reportTimelineError, timeline } from "./timeline.tsx";
+import { shadow } from "./view.tsx";
 
 export function csvEncode(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;

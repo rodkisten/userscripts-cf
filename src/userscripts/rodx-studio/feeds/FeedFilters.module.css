@@ -1,0 +1,12 @@
+.filter {
+  min-height: var(--rodx-ds-control-touch);
+  max-width: 100%;
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
+  border-radius: var(--rodx-ds-radius-round);
+  color: var(--rx-text);
+  background: var(--rx-surface);
+  border: var(--rodx-ds-border-width) solid var(--rx-border);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}

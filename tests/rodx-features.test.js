@@ -1,3 +1,5 @@
+import { transform as compileSolid } from "@solidjs/compiler";
+import { build, transformWithOxc } from "vite";
 import { DEFAULT_SETTINGS, createDefaults } from "../src/config/defaults.js";
 import { RUNTIME_LIMITS, HTTP_STATUS } from "../src/config/runtime.js";
 import fs from "node:fs";
@@ -14,9 +16,9 @@ import { Window } from "happy-dom";
 const directory = new URL("../src/userscripts/rodx-studio/", import.meta.url);
 const sourceFiles = [];
 for (const entry of fs.readdirSync(directory, { recursive: true }))
-  if (entry.endsWith(".js")) {
+  if (/\.(?:js|tsx)$/.test(entry)) {
     let code = fs.readFileSync(new URL(entry, directory), "utf8");
-    const ast = parse(code, { sourceType: "module" });
+    const ast = parse(code, { sourceType: "module", plugins: ["typescript", "jsx"] });
     const selectorGroups = {
       DOM_SELECTORS,
       NATIVE_X_SELECTORS,
@@ -33,6 +35,14 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
       );
       values[node.specifiers[0].local.name] = css;
     }
+    if (entry.endsWith(".tsx"))
+      code = (
+        await transformWithOxc(
+          compileSolid(code, { filename: entry, generate: "dom", dev: false }).code,
+          entry,
+          { lang: "ts" },
+        )
+      ).code;
     code = code.replace(/^import[^;]+;\s*/gm, "");
     code = code.replace(/createDefaults\("([^"\n]+)"\)/g, (_, section) =>
       JSON.stringify(createDefaults(section)),
@@ -219,7 +229,22 @@ function realm() {
     diagnostics: () => ({ selectors: { tweets: 0, userCells: 0 } }),
   };
   w.Studio = Studio;
-  w.eval(functions.get("createNetworkInspector") + ";createNetworkInspector(Studio);");
+  const fixture = await build({
+    configFile: new URL("../vite.config.js", import.meta.url).pathname,
+    logLevel: "silent",
+    build: {
+      write: false,
+      lib: {
+        entry: new URL("../src/userscripts/rodx-studio/network/inspector.tsx", import.meta.url).pathname,
+        name: "InspectorFixture",
+        formats: ["iife"],
+      },
+    },
+  });
+  const bundle = (Array.isArray(fixture) ? fixture : [fixture])
+    .flatMap((item) => item.output)
+    .find((item) => item.type === "chunk").code;
+  w.eval(bundle + ";InspectorFixture.createNetworkInspector(Studio);");
   const handler = callbacks.get("network:inspect");
   handler({
     phase: "request",

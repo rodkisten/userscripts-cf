@@ -1,0 +1,19 @@
+.transport {
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  touch-action: pan-y;
+  & button {
+    min-width: var(--rodx-ds-control-touch);
+    min-height: var(--rodx-ds-control-touch);
+  }
+}
+.seek {
+  flex: 1;
+  min-width: 0;
+  touch-action: pan-x;
+}
+.clock {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

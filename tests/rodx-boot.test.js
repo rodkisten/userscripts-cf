@@ -25,7 +25,7 @@ async function boot(file, { direct = true } = {}) {
   host.GM_deleteValue = (key) => values.delete(key);
   host.GM_registerMenuCommand = () => {};
   host.fetch = async () => new Response('{"data":{}}', { headers: { "content-type": "application/json" } });
-  host.console.error = (...args) => errors.push(args.map(String).join(" "));
+  host.console.error = (...args) => errors.push(args.map((x) => x?.stack || String(x)).join(" "));
   host.document.body.innerHTML = '<main role="main"><div data-testid="primaryColumn"></div></main>';
   const source = await fs.readFile(new URL("../dist/" + file, import.meta.url), "utf8");
   host.eval(source);

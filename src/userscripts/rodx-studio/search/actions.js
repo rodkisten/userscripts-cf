@@ -8,9 +8,9 @@ import { uid } from "../shared/text.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { normalizedSearch } from "../storage/normalize.js";
-import { repaint } from "../ui/dock.js";
+import { repaint } from "../ui/dock.tsx";
 import { openPanel } from "../ui/preferences.js";
-import { blankDraft, currentSearch, inspectNativeQuery, renderRoot } from "../ui/search-workbench.js";
+import { blankDraft, currentSearch, inspectNativeQuery, renderRoot } from "../ui/search-workbench.tsx";
 
 export function newDraft() {
   state.saveError = "";

@@ -1,6 +1,6 @@
 import { Studio } from "../core/studio.js";
 import { connectStudioNetwork } from "../network/bridge.js";
-import { createNetworkInspector } from "../network/inspector.js";
+import { createNetworkInspector } from "../network/inspector.tsx";
 import { createStudioMenus } from "../ui/menu.js";
 
 export function initializeRodX_outer_13() {

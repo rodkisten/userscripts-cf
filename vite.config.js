@@ -1,3 +1,4 @@
+import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
@@ -7,7 +8,7 @@ import { solidDOMTemplates } from "./build/solid-dom.mjs";
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
-  plugins: [inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
+  plugins: [inlineCSSModules(), inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },

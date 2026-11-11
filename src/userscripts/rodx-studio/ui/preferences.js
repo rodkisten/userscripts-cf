@@ -1,12 +1,12 @@
 import { Studio } from "../core/studio.js";
-import { FeedFilters } from "../feeds/filters.js";
+import { FeedFilters } from "../feeds/filters.tsx";
 import { state } from "../state/deck.js";
 import { normalizeVisual } from "../state/visual.js";
 import { saveState } from "../storage/account.js";
-import { XRepost } from "../tweets/publisher.js";
-import { buildStudioPreferences } from "./preferences-schema.js";
-import { blankDraft, renderRoot } from "./search-workbench.js";
-import { showRodxToast } from "./toast.js";
+import { XRepost } from "../tweets/publisher.tsx";
+import { buildStudioPreferences } from "./preferences-schema.tsx";
+import { blankDraft, renderRoot } from "./search-workbench.tsx";
+import { showRodxToast } from "./toast.tsx";
 
 export let Preferences;
 

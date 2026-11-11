@@ -7,9 +7,9 @@ import { normalizeVisual } from "../state/visual.js";
 import { gmAvailable, recoveryRead, recoveryWrite, storage } from "./gm.js";
 import { normalizedPreset, normalizedSearch } from "./normalize.js";
 import { CloudSync } from "../sync/cloud.js";
-import { Relay } from "../telegram/relay.js";
+import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
-import { repaint } from "../ui/dock.js";
+import { repaint } from "../ui/dock.tsx";
 
 export function freshAccountState(main, recovery) {
   if (!recovery) return main;
