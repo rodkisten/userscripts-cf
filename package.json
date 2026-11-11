@@ -29,7 +29,10 @@
     "vite": "8.3.8"
   },
   "dependencies": {
+    "acorn": "8.19.0",
+    "astring": "1.9.0",
+    "eslint-scope": "9.1.2",
     "nanoid": "^5.1.6"
   },
-  "version": "3.9.0"
+  "version": "3.10.0"
 }

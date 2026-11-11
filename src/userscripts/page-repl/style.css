@@ -1,0 +1,254 @@
+:host {
+  all: initial;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color-scheme: dark;
+  color: #e9edf4;
+  font-size: 13px;
+}
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+  background: #223047;
+  border: 1px solid #435067;
+  border-radius: 9px;
+  padding: 8px 11px;
+  min-height: 36px;
+}
+button:hover {
+  background: #32435e;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+input,
+select,
+textarea {
+  background: #111a28;
+  border: 1px solid #435067;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 0;
+}
+input[type="checkbox"] {
+  accent-color: #82b6ff;
+}
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.launcher {
+  position: fixed;
+  z-index: 2147483646;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  background: #1c385c;
+  color: #ddebff;
+  touch-action: none;
+  font:
+    bold 19px ui-monospace,
+    monospace;
+}
+.panel {
+  position: fixed;
+  z-index: 2147483647;
+  right: 12px;
+  bottom: 12px;
+  width: min(780px, calc(100vw - 24px));
+  height: min(800px, var(--repl-height, 85dvh));
+  max-height: var(--repl-height, 85dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0c1420;
+  border: 1px solid #5a6b84;
+  border-radius: 14px;
+  box-shadow: 0 8px 40px #0008;
+}
+header,
+.toolbar,
+.options,
+.row,
+footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 12px;
+}
+header {
+  background: #182437;
+  border-bottom: 1px solid #35445b;
+}
+header strong {
+  flex: 1;
+  font-size: 15px;
+}
+header button {
+  min-width: 36px;
+}
+.tabs {
+  display: flex;
+  gap: 5px;
+  padding: 8px 12px;
+}
+.tabs button[aria-selected="true"] {
+  background: #315b8e;
+}
+.view {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.editor-wrap {
+  padding: 0 12px;
+}
+textarea {
+  width: 100%;
+  min-height: 180px;
+  max-height: 42dvh;
+  resize: vertical;
+  white-space: pre;
+  tab-size: 2;
+  font:
+    13px/1.55 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+}
+.toolbar select {
+  flex: 1;
+  max-width: 100%;
+}
+.primary {
+  background: #285790;
+  border-color: #7faee5;
+}
+.warning {
+  color: #f3c780;
+}
+.hint,
+.status,
+small {
+  font-size: 12px;
+  color: #a8b7ca;
+}
+.hint {
+  margin: 6px 12px 10px;
+  line-height: 1.5;
+}
+.status {
+  flex: 1;
+  min-width: 100px;
+}
+footer {
+  border-top: 1px solid #35445b;
+}
+pre {
+  margin: 6px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    12px/1.5 ui-monospace,
+    monospace;
+}
+.output {
+  padding: 0 12px 12px;
+}
+.record,
+.history-item {
+  border-top: 1px solid #2c3b51;
+  padding: 8px 0;
+}
+.record[data-kind="error"] {
+  color: #ffaaa9;
+}
+.record[data-kind="result"] {
+  color: #9ee3be;
+}
+.record summary {
+  cursor: pointer;
+}
+.results {
+  padding: 0 12px 12px;
+  display: grid;
+  gap: 8px;
+}
+.result {
+  border: 1px solid #39485f;
+  border-radius: 9px;
+  padding: 9px;
+}
+.result strong {
+  display: block;
+}
+.result[data-status="OK"] {
+  border-color: #38765a;
+}
+.result[data-status="ERRO"],
+.result[data-status="TIMEOUT"] {
+  border-color: #89524f;
+}
+.result button {
+  margin-top: 6px;
+}
+.history-item {
+  margin: 0 12px;
+}
+.history-item button {
+  margin-right: 6px;
+}
+.row input[type="url"] {
+  flex: 1;
+  min-width: 140px;
+}
+.options input[type="number"] {
+  width: 90px;
+}
+.completions {
+  padding: 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+@media (max-width: 600px) {
+  .panel {
+    right: 4px;
+    bottom: 4px;
+    width: calc(100vw - 8px);
+    border-radius: 11px;
+  }
+  textarea {
+    font-size: 16px;
+    min-height: 160px;
+  }
+  .toolbar {
+    gap: 6px;
+  }
+  .toolbar select {
+    flex-basis: 100%;
+  }
+  button {
+    min-height: 40px;
+  }
+}

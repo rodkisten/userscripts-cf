@@ -153,3 +153,9 @@ npm run release -- v3.9.0
 ```
 
 O publicador recusa código não commitado, builds com versão antiga, checksums incorretos e sobrescrita de Releases já publicadas. Pode retomar um draft após uma falha no upload. A execução do GitHub Actions falhou antes de iniciar os steps na última tentativa; o caminho local permite publicar sem depender do runner. Nenhuma Release foi publicada apenas por adicionar esta configuração.
+
+## REPL de execução JavaScript
+
+O instalável independente [page-repl.user.js](https://userscripts-cf.kisten.workers.dev/page-repl.user.js) abre um painel com 27 estratégias de execução, diagnóstico de contexto/CSP, await, console, sessão persistente, autocompletar, histórico e importação/exportação. Fica fora do RodX unificado para não carregar um console de desenvolvimento em todas as páginas automaticamente.
+
+Use **Testar compatibilidade** para sondas inofensivas e **Executar** para seu código. O modo automático sonda antes de escolher um método e não repete seu código depois de erro/timeout. **Executar em todos** repete efeitos. O modo **Script global** insere código sem a função async do REPL, preservando o escopo nativo do método escolhido. Veja [a documentação](src/userscripts/page-repl/README.md) para as diferenças entre contextos, limites de cancelamento e semântica de variáveis.

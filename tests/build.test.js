@@ -26,13 +26,13 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["rodx-studio", "example-site", "unified"],
+    ["rodx-studio", "example-site", "page-repl", "unified"],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
     assert.match(source, /^\/\/ ==UserScript==/);
     assert.match(source, /@run-at\s+document-start/);
-    assert.doesNotMatch(source, /\bimport\s*\(/);
+    if (entry.id !== "page-repl") assert.doesNotMatch(source, /\bimport\s*\(/);
     assert.equal(createHash("sha256").update(source).digest("hex"), entry.sha256);
   }
 });
