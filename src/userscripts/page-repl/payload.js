@@ -6,6 +6,8 @@ export function runPayload(spec, execute) {
     logs = 0,
     sequence = 0;
   function pack(value, depth = 0, seen = new WeakSet()) {
+    if (depth === 0) seen.remaining = 2000;
+    if (seen.remaining-- <= 0) return "[limite total de nós]";
     if (value === undefined) return { type: "undefined" };
     if (typeof value === "bigint") return { type: "bigint", value: String(value) };
     if (typeof value === "function") return { type: "function", value: String(value).slice(0, 1200) };

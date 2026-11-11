@@ -34,5 +34,5 @@
     "eslint-scope": "9.1.2",
     "nanoid": "^5.1.6"
   },
-  "version": "3.10.0"
+  "version": "3.10.1"
 }
