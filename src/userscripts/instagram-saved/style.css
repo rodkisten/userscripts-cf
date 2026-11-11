@@ -1,0 +1,14 @@
+.instagram-saved-toast {
+  position: fixed;
+  z-index: 2147483647;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 85vw;
+  padding: 12px 18px;
+  border-radius: 24px;
+  background: #202124;
+  color: white;
+  font: 14px system-ui, sans-serif;
+  pointer-events: none;
+}

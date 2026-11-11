@@ -1,6 +1,18 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "instagram-saved",
+    name: "Instagram salvos → XTelegram",
+    unified: false,
+    world: "sandbox",
+    entry: "src/userscripts/instagram-saved/index.js",
+    matches: ["https://www.instagram.com/*"],
+    exclude: [],
+    grants: ["GM_getValue", "GM_setValue", "GM.getValue", "GM.setValue", "GM_registerMenuCommand", "GM_unregisterMenuCommand", "GM_xmlhttpRequest", "GM.xmlHttpRequest"],
+    connect: ["xtelegram-cf.migos.club"],
+  },
+
+  {
     id: "rodx-studio",
     name: "RodX Studio — X/Twitter mobile-first",
     namespace: "https://rodx.local/userscripts",
