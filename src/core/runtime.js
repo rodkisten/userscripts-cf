@@ -1,6 +1,10 @@
 import { matchesRoute } from "./match.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 
+//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
+function toast(){}
+function menu(){}
+  
 export function createRuntime(definitions, bridge, host = window) {
   const rod = rodLibraries(host);
   const stores = new Map();
