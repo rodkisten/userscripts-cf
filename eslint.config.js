@@ -1,18 +1,55 @@
 import tsParser from "@typescript-eslint/parser";
 import { defineConfig } from "eslint/config";
 
-const padding = [
-  { blankLine: "always", prev: "type", next: "*" },
-  { blankLine: "always", prev: "interface", next: "*" },
-  { blankLine: "always", prev: "function", next: "*" },
-  { blankLine: "always", prev: "class", next: "*" },
-  { blankLine: "always", prev: "block", next: "*" },
-  { blankLine: "always", prev: "block-like", next: "*" },
-  { blankLine: "any", prev: "*", next: "type" },
-  { blankLine: "any", prev: "*", next: "interface" },
-  { blankLine: "any", prev: "*", next: "function" },
-  { blankLine: "any", prev: "*", next: "class" },
-];
+const blankLineAfterBlocks = {
+  meta: {
+    type: "layout",
+    fixable: "whitespace",
+    schema: [],
+    messages: {
+      blank: "Add a blank line after multiline declarations and control-flow blocks.",
+    },
+  },
+  create(context) {
+    const source = context.sourceCode;
+
+    function check(node) {
+      if (!node.loc || node.loc.start.line === node.loc.end.line) {
+        return;
+      }
+
+      const next = source.getTokenAfter(node);
+      if (!next || next.value === "}" || next.value === "else" || next.value === "catch" || next.value === "finally") {
+        return;
+      }
+
+      if (next.loc.start.line <= node.loc.end.line + 1) {
+        context.report({
+          node,
+          messageId: "blank",
+          fix(fixer) {
+            return fixer.insertTextAfter(node, "\n");
+          },
+        });
+      }
+    }
+
+    return {
+      TSTypeAliasDeclaration: check,
+      TSInterfaceDeclaration: check,
+      FunctionDeclaration: check,
+      ClassDeclaration: check,
+      IfStatement: check,
+      ForStatement: check,
+      ForInStatement: check,
+      ForOfStatement: check,
+      WhileStatement: check,
+      DoWhileStatement: check,
+      SwitchStatement: check,
+      TryStatement: check,
+    };
+  },
+};
 
 export default defineConfig([
   {
@@ -23,10 +60,17 @@ export default defineConfig([
       ecmaVersion: "latest",
       sourceType: "module",
     },
+    plugins: {
+      "rod-style": {
+        rules: {
+          "blank-line-after-blocks": blankLineAfterBlocks,
+        },
+      },
+    },
     rules: {
       curly: ["error", "all"],
       "no-lonely-if": "error",
-      "padding-line-between-statements": ["error", ...padding],
+      "rod-style/blank-line-after-blocks": "error",
     },
   },
 ]);
