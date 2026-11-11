@@ -8,7 +8,6 @@ declare const GM_unregisterMenuCommand: ((id: any) => void) | undefined;
 declare const unsafeWindow: (Window & typeof globalThis & {__XRodSettingsInstagram?: any}) | undefined;
 declare const RodMenu: {open: (options: any) => {result: Promise<any>}; configure?: (options: any) => void} | undefined;
 import { COLLECTION_PATH, retryDelay, syncSaved } from "./core.ts";
-import css from "./style.css?inline";
 
 const DEFAULTS = { enabled: false, collectionIds: [], delayMs: 1500, jitterMs: 500, batchSize: 10, maxItemsPerSession: 100 };
 const RELAY = "https://xtelegram-cf.migos.club/batch";
@@ -26,7 +25,6 @@ export default {
       const timer = setTimeout(() => { abort.removeEventListener("abort", cancelled); resolve(); }, ms);
       abort.addEventListener("abort", cancelled, { once: true });
     });
-    ctx.style(css);
     async function configure() {
       const token = prompt("Token do XTelegram Relay (armazenado no userscript):");
       if (!token) return;
