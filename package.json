@@ -21,7 +21,7 @@
     "ci:cloudflare": "npm run format:check && npm test && node build/hosting.mjs",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
-    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json"
+    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
