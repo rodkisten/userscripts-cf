@@ -1,10 +1,13 @@
 import { matchesRoute } from "./match.js";
+import { rodLibraries } from "../runtime/rod-libraries.js";
 
 //@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
 function toast(){}
 function menu(){}
   
 export function createRuntime(definitions, bridge, host = window) {
+  const rod = rodLibraries(host);
+  const stores = new Map();
   const active = new Map();
   const state = new Map();
   const listeners = new Map();
@@ -29,17 +32,37 @@ export function createRuntime(definitions, bridge, host = window) {
     const abort = new host.AbortController();
     const cleanups = [];
     const onDispose = (callback) => cleanups.push(callback);
+    let store = stores.get(definition.id);
+    if (!store) {
+      store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
+      stores.set(definition.id, store);
+    }
     const storage = Object.freeze({
-      get: (key, fallback) => bridge.call("get", { id: definition.id, key, fallback }),
-      set: (key, value) => bridge.call("set", { id: definition.id, key, value }),
-      delete: (key) => bridge.call("delete", { id: definition.id, key }),
+      async get(key, fallback) {
+        const value = await store.get(key);
+        if (value !== undefined) return value;
+        const legacy = await bridge.call("get", { id: definition.id, key, fallback: undefined });
+        if (legacy !== undefined) {
+          await store.set(key, legacy);
+          return legacy;
+        }
+        return fallback;
+      },
+      async set(key, value) {
+        await store.set(key, value);
+        await bridge.call("set", { id: definition.id, key, value });
+      },
+      async delete(key) {
+        await store.delete(key);
+        await bridge.call("delete", { id: definition.id, key });
+      },
     });
     return {
       id: definition.id,
       signal: abort.signal,
       storage,
-      toast,
-      menu,
+      menu: rod.menu,
+      toaster: rod.toaster,
       get url() {
         return new URL(desiredURL);
       },
@@ -162,6 +185,8 @@ export function createRuntime(definitions, bridge, host = window) {
       failures.clear();
       state.clear();
       listeners.clear();
+      for (const store of stores.values()) store.close?.();
+      stores.clear();
       bridge.dispose?.();
     },
   };
