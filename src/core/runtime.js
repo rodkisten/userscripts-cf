@@ -1,5 +1,9 @@
 import { matchesRoute } from "./match.js";
 
+//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
+function toast(){}
+function menu(){}
+  
 export function createRuntime(definitions, bridge, host = window) {
   const active = new Map();
   const state = new Map();
@@ -34,6 +38,8 @@ export function createRuntime(definitions, bridge, host = window) {
       id: definition.id,
       signal: abort.signal,
       storage,
+      toast,
+      menu,
       get url() {
         return new URL(desiredURL);
       },
