@@ -129,7 +129,9 @@ export function initializeDeckViewportPlayback() {
             const card = button.closest(NATIVE_X_SELECTORS.nativeTweets);
             const video = card?.querySelector(DOM_SELECTORS.videos);
             const item = video && info.get(video);
-            if (item && !video.paused) item.manuallyPausedUntil = performance.now() + 30000;
+            if (item && !video.paused)
+              item.manuallyPausedUntil =
+                performance.now() + RUNTIME_LIMITS.videoPlayback.manualPauseDurationMs;
           },
           true,
         );

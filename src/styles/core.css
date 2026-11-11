@@ -475,3 +475,12 @@ button {
 :is(#rodx-hidden-override, [hidden]) {
   display: none;
 }
+
+.small,
+.muted {
+  color: var(--rodx-ds-color-text-secondary);
+  font-size: var(--rodx-ds-text-12);
+}
+.rx-timeline-sentinel {
+  height: 3px;
+}

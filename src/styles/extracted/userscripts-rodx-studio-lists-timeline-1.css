@@ -30,11 +30,6 @@ button:disabled {
   align-items: center;
   gap: var(--rodx-ds-space-8);
 }
-.small,
-.muted {
-  color: #979ba5;
-  font-size: var(--rodx-ds-text-12);
-}
 .xls-feed {
   display: flex;
   flex-direction: column;

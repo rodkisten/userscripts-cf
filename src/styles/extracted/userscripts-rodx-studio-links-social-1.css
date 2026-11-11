@@ -13,19 +13,19 @@
   overflow-wrap: anywhere;
 }
 :is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="telegram"] {
-  background: rgba(34, 158, 217, 0.17);
+  background: var(--rodx-ds-social-telegram-bg);
 }
 :is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="whatsapp"] {
-  background: rgba(37, 211, 102, 0.17);
+  background: var(--rodx-ds-social-whatsapp-bg);
 }
 :is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link[data-rodx-app="instagram"] {
-  background: rgba(225, 48, 108, 0.15);
+  background: var(--rodx-ds-social-instagram-bg);
 }
 :is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link .rodx-app-icon {
   display: inline-block;
   vertical-align: -2px;
-  width: 15px;
-  height: 15px;
+  width: var(--rodx-ds-icon-size-small);
+  height: var(--rodx-ds-icon-size-small);
   margin: 0 var(--rodx-ds-space-4) 0 0;
   fill: currentColor;
   stroke-linejoin: round;

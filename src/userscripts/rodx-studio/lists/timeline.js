@@ -251,7 +251,7 @@ export function renderTimelineCards(panel = false) {
   return `<div class="xls-feed" data-xls-feed="${panel ? "panel" : "embedded"}">${status}${actions}
       ${shown.map(postHTML).join("") || (!timeline.loading ? '<p class="muted">Nenhum post correspondente entre os resultados carregados.</p>' : "")}
       ${shown.length > 5 ? actions : ""}
-      ${timeline.hasMore ? '<div id="xls-more-sentinel" style="height:3px" aria-hidden="true"></div>' : ""}</div>`;
+      ${timeline.hasMore ? '<div id="xls-more-sentinel" class="rx-timeline-sentinel" aria-hidden="true"></div>' : ""}</div>`;
 }
 
 export async function cachedTimeline(listId, queryKey) {

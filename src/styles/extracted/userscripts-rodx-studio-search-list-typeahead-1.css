@@ -6,7 +6,7 @@
 }
 div {
   background: var(--rodx-ds-color-surface);
-  border: 1px solid #71767b66;
+  border: 1px solid var(--rodx-ds-color-border);
   border-radius: var(--rodx-ds-radius-12);
   max-height: 35dvh;
   overflow: auto;
@@ -23,7 +23,7 @@ button {
   font: inherit;
 }
 button[aria-selected="true"] {
-  background: var(--rodx-ds-color-accent) 33;
+  background: var(--rodx-ds-color-accent-selected);
 }
 [hidden] {
   display: none;

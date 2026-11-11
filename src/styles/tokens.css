@@ -54,4 +54,10 @@
   --rodx-ds-glass-blur: blur(20px) saturate(1.8);
   --rodx-ds-glass-shadow: inset 0 1px 0 #ffffff45, 0 3px 14px #0003;
   --rodx-ds-control-height: 40px;
+  --rodx-ds-social-telegram-bg: rgba(34, 158, 217, 0.17);
+  --rodx-ds-social-whatsapp-bg: rgba(37, 211, 102, 0.17);
+  --rodx-ds-social-instagram-bg: rgba(225, 48, 108, 0.15);
+  --rodx-ds-icon-size-small: 15px;
+  --rodx-ds-color-accent-selected: rgba(29, 155, 240, 0.2);
+  --rodx-ds-color-text-secondary: #979ba5;
 }

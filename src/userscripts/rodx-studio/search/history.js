@@ -1,3 +1,4 @@
+import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-search-history-1.css?inline";
@@ -82,7 +83,7 @@ export function initializeDeckSearchHistory() {
       if (!clean) return Promise.resolve();
       const id = JSON.stringify([account, clean]);
       const previous = lastCapture.get(id) || 0;
-      if (Date.now() - previous < 900) return Promise.resolve();
+      if (Date.now() - previous < RUNTIME_LIMITS.searchHistory.duplicateWindowMs) return Promise.resolve();
       lastCapture.set(id, Date.now());
       const work = async () => {
         const db = await openDB();
@@ -224,7 +225,8 @@ export function initializeDeckSearchHistory() {
         tx.onabort = () => reject(tx.error);
       });
     }
-    const exportPage = (account, offset, limit = 100) => page(account, offset, limit);
+    const exportPage = (account, offset, limit = RUNTIME_LIMITS.searchHistory.exportPageSize) =>
+      page(account, offset, limit);
     function installStyle() {
       if (document.getElementById("rodx-history-style")) return;
       const sheet = document.createElement("style");

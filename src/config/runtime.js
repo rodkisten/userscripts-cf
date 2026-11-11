@@ -19,6 +19,8 @@ export const HTTP_STATUS = Object.freeze({
   serverErrorBoundary: 500,
 });
 export const RUNTIME_LIMITS = freeze({
+  searchHistory: { duplicateWindowMs: 900, exportPageSize: 100 },
+  videoPlayback: { manualPauseDurationMs: 30000 },
   scheduler: { minimumFrameDelayMs: 16 },
   selection: { pointerReleaseDelayMs: 120, touchReleaseDelayMs: 160 },
   navigation: { retryShortDelayMs: 40, retryLongDelayMs: 750 },
