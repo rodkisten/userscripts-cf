@@ -8,7 +8,7 @@
   "scripts": {
     "build": "node build/build.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
-    "test": "npm run build && node --test tests/*.test.js && npm run test:lab",
+    "test": "npm run typecheck && npm run build && node --test tests/*.test.js && npm run test:lab",
     "format": "prettier --write .",
     "build:lab": "node labs/remote-release/build-worker.mjs A",
     "build:lab:b": "node labs/remote-release/build-worker.mjs B",
@@ -19,20 +19,34 @@
     "build:hosting": "npm run build && node build/hosting.mjs",
     "ci:cloudflare": "npm run format:check && npm test && node build/hosting.mjs",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
-    "publish:github": "node build/publish-github.mjs"
+    "publish:github": "node build/publish-github.mjs",
+    "typecheck": "tsc -p tsconfig.repl.json"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
+    "@solidjs/vite-plugin": "3.0.0-next.57",
     "fake-indexeddb": "6.2.8",
     "happy-dom": "21.0.4",
     "prettier": "3.9.10",
+    "typescript": "7.0.2",
     "vite": "8.3.8"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "6.20.4",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-javascript": "6.2.5",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/lint": "6.9.7",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/theme-one-dark": "6.1.3",
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "@solidjs/web": "2.0.0-rc.21",
     "acorn": "8.19.0",
     "astring": "1.9.0",
     "eslint-scope": "9.1.2",
-    "nanoid": "^5.1.6"
+    "nanoid": "^5.1.6",
+    "solid-js": "2.0.0-rc.21"
   },
-  "version": "3.10.3"
+  "version": "3.11.0"
 }

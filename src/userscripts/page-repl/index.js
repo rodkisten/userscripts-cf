@@ -1,4 +1,5 @@
-import { createMarkup } from "./markup.js";
+import { mountPanel } from "./Panel.tsx";
+import { createEditor } from "./editor.ts";
 import css from "./style.css?inline";
 import { compile } from "./compiler.js";
 import { createStrategies, automaticCandidates } from "./strategies.js";
@@ -30,9 +31,7 @@ export default {
     let busy = false,
       abort,
       runner,
-      historyCursor = state.history.length,
-      syntaxTimer,
-      completionRange;
+      historyCursor = state.history.length;
     if (!document.documentElement)
       await new Promise((resolve) => {
         const observer = new MutationObserver(() => {
@@ -64,22 +63,28 @@ export default {
       shadow.append(style);
     }
     const container = document.createElement("div");
-    container.className = "repl-root";
-    container.append(createMarkup(document));
+    const ui = mountPanel(container);
     shadow.append(container);
     (document.body || document.documentElement).append(host);
     const $ = (selector) => shadow.querySelector(selector);
-    const editor = $("textarea"),
-      panel = $(".panel"),
-      launcher = $(".launcher"),
-      output = $(".output");
-    const rawLabel = document.createElement("label");
-    const rawInput = document.createElement("input");
-    rawInput.type = "checkbox";
-    rawInput.dataset.raw = "";
-    rawLabel.append(rawInput, document.createTextNode("Script global (sem wrapper)"));
-    $(".options").prepend(rawLabel);
-    editor.value = state.code || "";
+    const panel = $(".panel"),
+      launcher = $(".launcher");
+    const editor = createEditor($("[data-code-editor]"), {
+      value: state.code || "",
+      page: () => (typeof unsafeWindow !== "undefined" ? unsafeWindow : window),
+      names: () => knownNames,
+      validate: (source) =>
+        compile(source, { persist: $("[data-persist]").checked, knownNames: [...knownNames] }),
+      onChange: save,
+      onValidation: (message) => {
+        $("[data-syntax]").textContent = message;
+      },
+      execute: () => void locked(() => execute()),
+      history: (direction) => {
+        historyCursor = Math.max(0, Math.min(state.history.length, historyCursor + direction));
+        editor.value = state.history[historyCursor]?.code || "";
+      },
+    });
     $("[data-timeout]").value = state.timeout || 3000;
     for (const strategy of strategies) {
       const option = document.createElement("option");
@@ -99,27 +104,14 @@ export default {
       persist.save(state);
     }
     function print(kind, title, value) {
-      const item = document.createElement("details");
-      item.className = "record";
-      item.dataset.kind = kind;
-      const summary = document.createElement("summary");
-      summary.textContent = title;
-      const pre = document.createElement("pre");
-      pre.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-      item.append(summary, pre);
-      output.append(item);
       records.push({ at: new Date().toISOString(), kind, title, value });
-      while (records.length > 150) {
-        records.shift();
-        output.firstElementChild?.remove();
-      }
-      item.open = kind === "error" || kind === "result";
-      item.scrollIntoView?.({ block: "nearest" });
+      if (records.length > 150) records.shift();
+      ui.setRecords([...records]);
     }
     function event(event) {
       if (event.type === "console" && event.value.method === "clear") {
         records.length = 0;
-        output.replaceChildren();
+        ui.setRecords([]);
         return;
       }
       if (event.type === "console")
@@ -145,52 +137,20 @@ export default {
     }
     freshRunner();
     function renderMethods() {
-      const list = $(".results");
-      list.replaceChildren();
-      for (const method of strategies) {
-        const result = results.get(method.id),
-          row = document.createElement("div");
-        row.className = "result";
-        row.dataset.status = result?.status || "";
-        const title = document.createElement("strong");
-        title.textContent = method.label + " · " + (result?.status || "NÃO TESTADO");
-        const detail = document.createElement("details"),
-          summary = document.createElement("summary"),
-          pre = document.createElement("pre");
-        summary.textContent = method.world + (result ? " · " + result.elapsedMs + " ms" : "");
-        pre.textContent = JSON.stringify(result || { expectedWorld: method.world }, null, 2);
-        detail.append(summary, pre);
-        const button = document.createElement("button");
-        button.textContent = "Usar no console";
-        button.onclick = () => {
-          $("[data-method]").value = method.id;
-          tab("console");
-        };
-        row.append(title, detail, button);
-        list.append(row);
-      }
+      ui.setMethods(strategies.map((method) => ({ ...method, result: results.get(method.id) })));
     }
     function renderHistory() {
-      const list = $("[data-history]");
-      list.replaceChildren();
-      for (const item of [...state.history].reverse()) {
-        const row = document.createElement("div");
-        row.className = "history-item";
-        const pre = document.createElement("pre");
-        pre.textContent = item.code.slice(0, 300);
-        const load = document.createElement("button");
-        load.textContent = "Carregar";
-        load.onclick = () => {
-          editor.value = item.code;
-          save();
-          tab("console");
-        };
-        const stamp = document.createElement("small");
-        stamp.textContent = item.at;
-        row.append(stamp, pre, load);
-        list.append(row);
-      }
+      ui.setHistory([...state.history].reverse());
     }
+    ui.callbacks.method = (id) => {
+      $("[data-method]").value = id;
+      tab("console");
+    };
+    ui.callbacks.history = (code) => {
+      editor.value = code;
+      save();
+      tab("console");
+    };
     function tab(name) {
       for (const view of shadow.querySelectorAll("[data-view]")) view.hidden = view.dataset.view !== name;
       for (const button of shadow.querySelectorAll("[data-tab]"))
@@ -341,63 +301,23 @@ export default {
       ctx.onDispose(() => script.remove());
     }
     function completions() {
-      const end = editor.selectionStart,
-        prefix = editor.value.slice(0, end).match(/[A-Za-z_$][\w$]*$/)?.[0] || "";
-      completionRange = { start: end - prefix.length, end };
-      const property = editor.value
-        .slice(0, end)
-        .match(/(window|document|navigator|location|console|ctx\.vars)\.([\w$]*)$/);
-      let propertyNames;
-      if (property) {
-        const objects = { window, document, navigator, location, console };
-        propertyNames = [];
-        if (property[1] === "ctx.vars") propertyNames = [...knownNames];
-        else {
-          let object = objects[property[1]];
-          for (let depth = 0; object && depth < 4; depth++, object = Object.getPrototypeOf(object))
-            propertyNames.push(...Object.getOwnPropertyNames(object));
-        }
-        completionRange = { start: end - property[2].length, end };
-      }
-      const names = new Set(
-        propertyNames || [
-          "ctx",
-          "console",
-          "document",
-          "window",
-          "location",
-          "fetch",
-          "Promise",
-          "$",
-          "$$",
-          "$0",
-          "_",
-          ...knownNames,
-          ...Object.getOwnPropertyNames(window),
-        ],
-      );
-      const list = $(".completions");
-      list.replaceChildren();
-      for (const name of [...names]
-        .filter(
-          (name) =>
-            name.startsWith(property ? property[2] : prefix) && name !== (property ? property[2] : prefix),
-        )
-        .sort()
-        .slice(0, 16)) {
-        const button = document.createElement("button");
-        button.textContent = name;
-        button.onclick = () => {
-          editor.setRangeText(name, completionRange.start, completionRange.end, "end");
-          list.hidden = true;
-          editor.focus();
-          save();
-        };
-        list.append(button);
-      }
-      list.hidden = !list.children.length;
+      editor.complete();
     }
     const actions = {
+      "select-all": () => editor.selectAll(),
+      "copy-code": async () => {
+        await copy(editor.selected());
+        $(".status").textContent = "Código copiado";
+      },
+      "paste-code": async () => {
+        try {
+          editor.insert(await navigator.clipboard.readText());
+        } catch {
+          $(".status").textContent = "Toque no editor e use Colar no menu do iOS ou Ctrl/Cmd+V.";
+          editor.focus();
+        }
+      },
+      validate: () => editor.validate(),
       run: () => locked(() => execute()),
       "run-all": () => locked(() => execute(true)),
       probe: () => locked(probe),
@@ -408,7 +328,7 @@ export default {
       close: () => (panel.hidden = true),
       clear: () => {
         records.length = 0;
-        output.replaceChildren();
+        ui.setRecords([]);
       },
       reset: () => {
         if (busy) return;
@@ -467,42 +387,6 @@ export default {
         .then(() => actions[button.dataset.action]?.())
         .catch((error) => print("error", error.name, error.message));
     });
-    ctx.listen(editor, "input", () => {
-      save();
-      clearTimeout(syntaxTimer);
-      syntaxTimer = setTimeout(() => {
-        try {
-          compile(editor.value, { persist: $("[data-persist]").checked, knownNames: [...knownNames] });
-          $("[data-syntax]").textContent =
-            "Sintaxe válida · Ctrl/Cmd+Enter executa · histórico com Alt+↑/↓ · ctx.vars persiste na sessão";
-        } catch (error) {
-          $("[data-syntax]").textContent = error.message;
-        }
-      }, 300);
-    });
-    ctx.listen(editor, "keydown", (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        event.preventDefault();
-        void locked(() => execute());
-      }
-      if (event.ctrlKey && event.code === "Space") {
-        event.preventDefault();
-        completions();
-      }
-      if (event.key === "Tab") {
-        event.preventDefault();
-        editor.setRangeText("  ", editor.selectionStart, editor.selectionEnd, "end");
-        save();
-      }
-      if (event.altKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
-        event.preventDefault();
-        historyCursor = Math.max(
-          0,
-          Math.min(state.history.length, historyCursor + (event.key === "ArrowUp" ? -1 : 1)),
-        );
-        editor.value = state.history[historyCursor]?.code || "";
-      }
-    });
     ctx.listen($("[data-example]"), "change", (event) => {
       if (examples[event.target.value]) {
         editor.value = examples[event.target.value];
@@ -559,7 +443,10 @@ export default {
       if (drag.moved) save();
       else {
         panel.hidden = !panel.hidden;
-        if (!panel.hidden) editor.focus();
+        if (!panel.hidden) {
+          editor.refresh();
+          editor.focus();
+        }
       }
       drag = null;
     });
@@ -567,7 +454,10 @@ export default {
     ctx.listen(launcher, "click", (event) => {
       if (event.detail === 0) {
         panel.hidden = !panel.hidden;
-        if (!panel.hidden) editor.focus();
+        if (!panel.hidden) {
+          editor.refresh();
+          editor.focus();
+        }
       }
     });
     if (typeof GM_registerMenuCommand === "function")
@@ -576,7 +466,8 @@ export default {
     ctx.onDispose(() => {
       abort?.abort();
       runner.dispose();
-      clearTimeout(syntaxTimer);
+      editor.destroy();
+      ui.dispose();
       persist.dispose();
       host.remove();
     });
