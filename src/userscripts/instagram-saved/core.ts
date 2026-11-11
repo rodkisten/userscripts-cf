@@ -50,7 +50,7 @@ export async function syncSaved({ fetchPage, sendBatch, load, save, channels, pa
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
     if (!Array.isArray(page.items) || page.status === "fail") throw Error("Resposta de salvos inválida");
-    const items = page.items.map(reelPayload).filter(Boolean).filter((item): item is MediaPayload => Boolean(item)).filter((item) => {
+    const items = page.items.map(reelPayload).filter((item): item is MediaPayload => item !== null).filter((item) => {
       if (seen.has(item.mediaId)) return false;
       seen.add(item.mediaId);
       return !done[item.mediaId];
