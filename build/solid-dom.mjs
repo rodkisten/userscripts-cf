@@ -8,7 +8,7 @@ export function solidDOMTemplates() {
     name: "userscripts-solid-dom-templates",
     enforce: "post",
     transform(code, id) {
-      if (!/page-repl\/.*\.tsx(?:\?|$)/.test(id)) return;
+      if (!/\.tsx(?:\?|$)/.test(id)) return;
       const ast = parse(code, { sourceType: "module" });
       const aliases = new Set();
       for (const node of ast.program.body) {

@@ -33,33 +33,33 @@ import {
   initializeDeckRecoveryKey,
 } from "../storage/gm.js";
 import { initializeDeckCloudSync } from "../sync/cloud.js";
-import { initializeDeckImmersiveDownload } from "../media/download.js";
-import { initializeDeckRelay } from "../telegram/relay.js";
-import { initializeDeckXRepost } from "../tweets/publisher.js";
+import { initializeDeckImmersiveDownload } from "../media/download.tsx";
+import { initializeDeckRelay } from "../telegram/relay.tsx";
+import { initializeDeckXRepost } from "../tweets/publisher.tsx";
 import { initializeDeckXClientLists } from "../lists/client.js";
-import { initializeDeckProfileLists } from "../lists/profile.js";
-import { initializeDeckFeedFilters } from "../feeds/filters.js";
-import { initializeDeckScrollChrome } from "../layout/chrome.js";
-import { initializeDeckCompactLayout } from "../layout/tweets.js";
+import { initializeDeckProfileLists } from "../lists/profile.tsx";
+import { initializeDeckFeedFilters } from "../feeds/filters.tsx";
+import { initializeDeckScrollChrome } from "../layout/chrome.tsx";
+import { initializeDeckCompactLayout } from "../layout/tweets.tsx";
 import { initializeDeckPreferences } from "../ui/preferences.js";
 import { initializeDeckDirectLinks } from "../links/direct.js";
-import { initializeDeckSocialAppLinks } from "../links/social.js";
-import { initializeDeckVideoTapGuard } from "../media/gestures.js";
+import { initializeDeckSocialAppLinks } from "../links/social.tsx";
+import { initializeDeckVideoTapGuard } from "../media/gestures.tsx";
 import { initializeDeckQuickRepost } from "../tweets/quick-repost.js";
 import { initializeDeckSeen } from "../tweets/seen.js";
 import { initializeDeckNativeTranslation } from "../translation/native.js";
-import { initializeDeckForeignTags } from "../translation/foreign-tags.js";
+import { initializeDeckForeignTags } from "../translation/foreign-tags.tsx";
 import { initializeDeckVideoExperience } from "../media/experience.js";
 import { initializeDeckSeekPreviews } from "../media/previews.js";
 import { initializeDeckPlayerPreference } from "../media/player.js";
-import { initializeDeckSearchAnchors } from "../search/anchors.js";
-import { initializeDeckVideoTransport } from "../media/transport.js";
+import { initializeDeckSearchAnchors } from "../search/anchors.tsx";
+import { initializeDeckVideoTransport } from "../media/transport.tsx";
 import { initializeDeckViewportPlayback } from "../media/viewport.js";
 import { initializeDeckImmersiveSwipe } from "../media/immersive.js";
 import { initializeDeckNativeQueryTags } from "../search/native-tags.js";
-import { initializeDeckResultEnhancer } from "../tweets/enhancer.js";
-import { initializeDeckRodxToastTimer } from "../ui/toast.js";
-import { initializeDeckDragDock } from "../ui/draggable-dock.js";
+import { initializeDeckResultEnhancer } from "../tweets/enhancer.tsx";
+import { initializeDeckRodxToastTimer } from "../ui/toast.tsx";
+import { initializeDeckDragDock } from "../ui/draggable-dock.tsx";
 import {
   initializeRodX_deck_164,
   initializeRodX_deck_169,
@@ -93,10 +93,10 @@ import {
   initializeRodX_deck_198,
   initializeRodX_deck_199,
 } from "./deck-events.js";
-import { initializeDeckSelectionPopover } from "../ui/selection.js";
-import { initializeDeckXInterfaceHygiene } from "../layout/hygiene.js";
-import { initializeDeckSearchHistory } from "../search/history.js";
-import { initializeDeckQuickUI } from "../ui/quick-actions.js";
+import { initializeDeckSelectionPopover } from "../ui/selection.tsx";
+import { initializeDeckXInterfaceHygiene } from "../layout/hygiene.tsx";
+import { initializeDeckSearchHistory } from "../search/history.tsx";
+import { initializeDeckQuickUI } from "../ui/quick-actions.tsx";
 
 export function initializeDeck() {
   initializeDeckVERSION();

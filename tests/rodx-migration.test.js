@@ -12,6 +12,9 @@ const baseline = JSON.parse(
 const refactored = JSON.parse(
   await fs.readFile(new URL("../migration/css-refactor.json", import.meta.url), "utf8"),
 );
+const solidRefactor = JSON.parse(
+  await fs.readFile(new URL("../migration/solid2-refactor.json", import.meta.url), "utf8"),
+);
 const clean = (node) =>
   JSON.parse(
     JSON.stringify(node, (key, value) =>
@@ -26,8 +29,16 @@ const hash = (node) =>
     .digest("hex");
 const files = new Map();
 async function declarations(file) {
+  try {
+    await fs.access(new URL(file, root));
+  } catch {
+    file = file.replace(/\.js$/, ".tsx");
+  }
   if (files.has(file)) return files.get(file);
-  const ast = parse(await fs.readFile(new URL(file, root), "utf8"), { sourceType: "module" });
+  const ast = parse(await fs.readFile(new URL(file, root), "utf8"), {
+    sourceType: "module",
+    plugins: ["typescript", "jsx"],
+  });
   const map = new Map();
   for (const item of ast.program.body) {
     const node = item.type === "ExportNamedDeclaration" ? item.declaration : item;
@@ -40,7 +51,9 @@ async function declarations(file) {
 test("migration retains 462 declarations and audits extracted CSS and selectors", async () => {
   assert.equal(baseline.source.sha256, "92636bd94605a3a45de279808ca198004556b44cbac965f63bd8e0f98af0f908");
   assert.equal(baseline.audit.length, 462);
-  for (const record of baseline.audit) {
+  for (const originalRecord of baseline.audit) {
+    const migrated = solidRefactor[originalRecord.file + ":" + originalRecord.name];
+    const record = { ...originalRecord, file: migrated.file, name: migrated.name };
     const declarationsMap = await declarations(record.file);
     let node;
     if (record.kind === "function") node = declarationsMap.get(record.name);
@@ -54,10 +67,15 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
       node = assignment.right;
       if (record.style) {
         assert.equal(node.type, "Identifier");
-        const css = await format(await fs.readFile(new URL(record.styleFile, root), "utf8"), {
-          parser: "css",
-          printWidth: 110,
-        });
+        const css = await format(
+          await fs
+            .readFile(new URL(record.styleFile.replace(/\.css$/, ".module.css"), root), "utf8")
+            .catch(() => fs.readFile(new URL(record.styleFile, root), "utf8")),
+          {
+            parser: "css",
+            printWidth: 110,
+          },
+        );
         assert.equal(
           createHash("sha256").update(css).digest("hex"),
           refactored["style:" + record.styleFile] || record.formattedSha256,
@@ -69,7 +87,7 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     assert.ok(node, `${record.file}: ${record.name}`);
     assert.equal(
       hash(node),
-      refactored[record.file + ":" + record.name] || record.sha256,
+      migrated.sha256,
       `${record.file}: ${record.name} changed from source line ${record.sourceLine}`,
     );
   }

@@ -1,7 +1,7 @@
 import { compileLocalRule, parseLocalDirectives } from "../feeds/local-rules.js";
 import { compactBlockTree, signature } from "./block-editing.js";
 import { compileBlockTerm, compileBlockTree, copyFields, emptyBlockTree } from "./blocks.js";
-import { diagnosticSpans } from "./highlight.js";
+import { diagnosticSpans } from "./highlight.tsx";
 import { QueryEngine, compileQuery } from "./query-compiler.js";
 import { parseQueryBlocks } from "./query-parser.js";
 import { state } from "../state/deck.js";

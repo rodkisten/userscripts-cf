@@ -1,6 +1,6 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
-import { ImmersiveDownload } from "./download.js";
+import { ImmersiveDownload } from "./download.tsx";
 import { state } from "../state/deck.js";
 
 export let ImmersiveSwipe;

@@ -64,7 +64,7 @@ import {
   initializeRodX_lists_239,
   initializeRodX_lists_240,
   initializeRodX_lists_241,
-} from "../lists/render.js";
+} from "../lists/render.tsx";
 import {
   initializeListsRefreshScheduled,
   initializeListsHost,
@@ -72,7 +72,7 @@ import {
   initializeListsShadow,
   initializeListsStyle,
   initializeRodX_lists_77,
-} from "../lists/view.js";
+} from "../lists/view.tsx";
 import {
   initializeRodX_lists_78,
   initializeListsShell,
@@ -103,7 +103,7 @@ import {
   initializeRodX_lists_112,
   initializeRodX_lists_113,
   initializeRodX_lists_114,
-} from "../lists/quick-picker.js";
+} from "../lists/quick-picker.tsx";
 import {
   initializeListsCaptureRunning,
   initializeListsLastListCaptures,
@@ -111,7 +111,7 @@ import {
   initializeListsNameRetry,
   initializeListsNON_PROFILE_PATHS,
   initializeListsMemberCaptureRunning,
-} from "../lists/dom-capture.js";
+} from "../lists/dom-capture.tsx";
 import {
   initializeListsRequestTemplates,
   initializeListsSessionAuth,
@@ -138,7 +138,7 @@ import {
   initializeListsLastAutoPageAt,
   initializeListsScrollObserver,
   initializeListsTimelineQueryKey,
-} from "../lists/timeline.js";
+} from "../lists/timeline.tsx";
 import {
   initializeListsMAX_WRITES_HOUR,
   initializeListsMAX_WRITES_DAY,
@@ -146,7 +146,7 @@ import {
   initializeListsQueueWait,
   initializeListsDEFAULT_MUTATION_FEATURES,
   initializeListsQueueRunning,
-} from "../lists/queue.js";
+} from "../lists/queue.tsx";
 import {
   initializeRodX_lists_227,
   initializeRodX_lists_228,

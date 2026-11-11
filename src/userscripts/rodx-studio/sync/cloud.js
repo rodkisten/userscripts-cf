@@ -1,15 +1,15 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
-import { SearchHistory } from "../search/history.js";
+import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { normalizeVisual } from "../state/visual.js";
 import { gmAvailable, recoveryWrite, storage } from "../storage/gm.js";
 import { normalizedPreset, normalizedSearch } from "../storage/normalize.js";
-import { Relay } from "../telegram/relay.js";
+import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
-import { repaint } from "../ui/dock.js";
-import { showRodxToast } from "../ui/toast.js";
+import { repaint } from "../ui/dock.tsx";
+import { showRodxToast } from "../ui/toast.tsx";
 
 export let CloudSync;
 

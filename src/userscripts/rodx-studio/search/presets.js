@@ -11,14 +11,14 @@ import {
   newBlockGroup,
   normalizeBlockTree,
 } from "./blocks.js";
-import { diagnosticSpans } from "./highlight.js";
+import { diagnosticSpans } from "./highlight.tsx";
 import { parseQueryBlocks } from "./query-parser.js";
 import { analyzeDraft, canonicalizeQuery, synchronizeDraftForSave } from "./validation.js";
 import { uid } from "../shared/text.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { normalizedPreset } from "../storage/normalize.js";
-import { blankDraft, renderBlockEditor, renderRoot, renderTags } from "../ui/search-workbench.js";
+import { blankDraft, renderBlockEditor, renderRoot, renderTags } from "../ui/search-workbench.tsx";
 
 export function resolvePreset(id) {
   const found = state.presets.find((p) => p.id === id);

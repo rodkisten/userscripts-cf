@@ -2,11 +2,11 @@ import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { extractIdentity } from "./account.js";
-import { SearchHistory } from "../search/history.js";
+import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { loadAccount } from "../storage/account.js";
-import { ensureDock, repaint } from "../ui/dock.js";
-import { initializeRoot } from "../ui/root.js";
+import { ensureDock, repaint } from "../ui/dock.tsx";
+import { initializeRoot } from "../ui/root.tsx";
 
 export function tick() {
   if (!document.body) return;
