@@ -1,0 +1,25 @@
+RodX — laboratório remoto real, fase A
+
+Publicado: https://rodx-loader-lab.kisten.workers.dev/manifest.json
+Release atual: A. Não publicar B antes da confirmação do iPhone.
+
+Instale RodX-Remote-Release-Lab.user.js, ou cole o TXT no Tampermonkey.
+Desative o diagnóstico anterior e mantenha o RodX gigante desativado durante o teste.
+1. Abra/recarregue x.com.
+2. Toque em Baixar versão publicada. Deve validar A e mostrar Pendente: A.
+3. Toque em Recarregar para ativar. Deve mostrar Ativa: A e Estável GM: A.
+4. Copie o relatório e envie. A inicialização deve indicar pending-from-GM.
+5. Opcional: recarregue novamente. Deve iniciar stable-from-GM sem baixar o módulo.
+6. Opcional: Testar candidato quebrado remoto. A versão estável deve continuar A.
+7. Opcional: preparar teste HTTP 503 e recarregar. O endpoint real retorna 503 e o módulo inicia pelo cache GM.
+
+Após confirmar A, publicar B no mesmo manifesto para testar A → B e rollback para A.
+O botão de rollback só funciona após haver uma versão anterior (depois de ativar B).
+
+Não confundir fallback do carregador com o navegador inteiro offline: o X ainda precisa abrir.
+Este teste não desmembra nem altera o RodX gigante, e não configura builds do GitHub.
+O Worker é isolado, não usa bindings nem recebe dados da conta do X.
+O hash detecta inconsistência do download; não substitui assinatura criptográfica da publicação.
+
+Validação feita: fluxo em DOM/GM/rede simulados e HTTP real do manifesto, módulo, hash e fixture 503.
+A execução real no iPhone e a transição de publicação para B ainda dependem dos relatórios.

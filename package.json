@@ -1,0 +1,18 @@
+{
+  "name": "userscripts-cf",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node labs/remote-release/build-worker.mjs A",
+    "build:b": "node labs/remote-release/build-worker.mjs B",
+    "test": "npm run build && node labs/remote-release/test.mjs",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "happy-dom": "21.0.4",
+    "prettier": "3.9.10"
+  }
+}

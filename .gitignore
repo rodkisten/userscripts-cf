@@ -1,0 +1,3 @@
+node_modules/
+.cf/
+labs/remote-release/worker.mjs
