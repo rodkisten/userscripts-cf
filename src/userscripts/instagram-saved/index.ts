@@ -1,7 +1,7 @@
 import type { MediaPayload, Page } from "./core.ts";
 type Config = { token: string; channels: string[] };
 type Settings = { enabled: boolean; collectionIds: string[]; delayMs: number; jitterMs: number; batchSize: number; maxItemsPerSession: number };
-type RuntimeContext = { signal: AbortSignal; storage: {get: (key: string, fallback: any) => Promise<any>; set: (key: string, value: any) => Promise<void>}; style: (css: string) => void; listen: (target: EventTarget, event: string, callback: () => void) => void; onDispose: (callback: () => void) => void };
+type RuntimeContext = { menu: {open: (options: any) => {result: Promise<any>}; configure?: (options: any) => void}; toaster: ((options: any) => any) & {success?: (options: any) => any}; signal: AbortSignal; storage: {get: (key: string, fallback: any) => Promise<any>; set: (key: string, value: any) => Promise<void>}; style: (css: string) => void; listen: (target: EventTarget, event: string, callback: () => void) => void; onDispose: (callback: () => void) => void };
 declare const GM_xmlhttpRequest: ((options: any) => {abort: () => void}) | undefined;
 declare const GM_registerMenuCommand: ((label: string, callback: () => void) => any) | undefined;
 declare const GM_unregisterMenuCommand: ((id: any) => void) | undefined;
@@ -27,14 +27,6 @@ export default {
       abort.addEventListener("abort", cancelled, { once: true });
     });
     ctx.style(css);
-    function toast(text: string) {
-      const node = document.createElement("div");
-      node.className = "instagram-saved-toast";
-      node.setAttribute("role", "status");
-      node.textContent = text;
-      document.documentElement.append(node);
-      setTimeout(() => node.remove(), 4000);
-    }
     async function configure() {
       const token = prompt("Token do XTelegram Relay (armazenado no userscript):");
       if (!token) return;
@@ -126,7 +118,7 @@ export default {
           });
           }
           await set("lastError", null);
-          if (count > 0) toast(`${count} mídias enviadas`);
+          if (count > 0) ctx.toaster.success?.({ title: `${count} mídias enviadas` });
         });
       } catch (caught) {
         const error = caught as Error;
@@ -145,7 +137,7 @@ export default {
       run: () => run(true),
       async open() {
         const settings = await this.get();
-        const external = typeof RodMenu !== "undefined" ? RodMenu : (globalThis as any).RodMenu;
+        const external = ctx.menu;
         if (!external?.open) throw Error("RodMenu não carregado");
         external.configure?.({ defaultPresentation: "bottom-sheet" });
         const root = document.createElement("div");
