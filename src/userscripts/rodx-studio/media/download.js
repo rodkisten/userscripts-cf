@@ -1,0 +1,367 @@
+export let ImmersiveDownload;
+
+export function initializeDeckImmersiveDownload() {
+  ImmersiveDownload = (() => {
+    const TWR = "https://api.twirrl.app/video";
+    const TWR_VERSION = "ab8222fb13a47e82c36032c4ddcc622dc0d33f0e8f852b5b420085b9fd32c94e";
+    const ICON =
+      '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/>' +
+      '<path d="M4 17v3h16v-3"/></svg>';
+    let button = null;
+    let activeKey = "";
+    let busy = false;
+    let lastScan = 0;
+    let styleAdded = false;
+    const cache = new Map();
+    function request(args) {
+      const gm =
+        typeof GM_xmlhttpRequest === "function"
+          ? GM_xmlhttpRequest
+          : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
+            ? GM.xmlHttpRequest.bind(GM)
+            : null;
+      if (!gm) return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via GM."));
+      return new Promise((resolve, reject) => {
+        let complete = false;
+        const success = (data) => {
+          if (!complete) {
+            complete = true;
+            resolve(data);
+          }
+        };
+        const fail = (why) => {
+          if (!complete) {
+            complete = true;
+            reject(new Error(why));
+          }
+        };
+        try {
+          gm({
+            ...args,
+            onload: (response) =>
+              Number(response.status) >= 200 && Number(response.status) < 300
+                ? success(response)
+                : fail(`Download HTTP ${response.status}.`),
+            onerror: () => fail("A mídia não pôde ser baixada pela rede."),
+            ontimeout: () => fail("Tempo de download excedido."),
+            onabort: () => fail("Download cancelado."),
+          });
+        } catch (error) {
+          fail(error.message || String(error));
+        }
+      });
+    }
+    function mediaUrl(value) {
+      try {
+        const url = new URL(String(value || "").replaceAll("&amp;", "&"));
+        // The resolver is not trusted to return arbitrary off-domain URLs.
+        if (url.protocol !== "https:" || !/^(?:video|pbs)\.twimg\.com$/i.test(url.hostname)) return "";
+        if (!/\.mp4(?:$|\?)/i.test(url.href) && !/\/video\//i.test(url.pathname)) return "";
+        return url.href;
+      } catch {
+        return "";
+      }
+    }
+    function locate() {
+      const layer = document.getElementById("layers");
+      if (!layer) return null;
+      const videos = [...layer.querySelectorAll("video")];
+      const visible = videos.filter((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return (
+          rect.width > 100 &&
+          rect.height > 90 &&
+          style.visibility !== "hidden" &&
+          rect.bottom > 0 &&
+          rect.top < innerHeight &&
+          rect.left < innerWidth &&
+          rect.right > 0
+        );
+      });
+      if (!visible.length) return null;
+      const isViewer = Boolean(
+        layer.querySelector(
+          '[data-testid="media-viewer"], [data-testid="mediaViewer"], ' +
+            '[data-testid="mediaViewerContainer"], [data-testid="swipe-to-dismiss"], ' +
+            '[aria-modal="true"], [role="dialog"]',
+        ),
+      );
+      const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
+      const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
+      const nativePlayerInStatus = Boolean(
+        route &&
+        layer.querySelector(
+          '[data-testid="videoPlayer"], [data-testid="videoComponent"], ' +
+            '[data-testid="video-player"], [data-testid="videoPlayerContainer"]',
+        ),
+      );
+      if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
+      const video = visible.sort((a, b) => {
+        const ra = a.getBoundingClientRect(),
+          rb = b.getBoundingClientRect();
+        return rb.width * rb.height - ra.width * ra.height;
+      })[0];
+      const related = video.closest('article, [data-testid="tweet"], [role="dialog"]') || layer;
+      const link = related.querySelector('a[href*="/status/"]') || layer.querySelector('a[href*="/status/"]');
+      const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
+      if (!id) return null;
+      const owner =
+        link?.getAttribute("href")?.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1] ||
+        location.pathname.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1];
+      const author = owner && !["i", "web"].includes(owner) ? owner : "i";
+      const url = `https://x.com/${author === "i" ? "i" : author}/status/${id}`;
+      const videoIndex = Math.max(0, Number(location.pathname.match(/\/video\/(\d+)/)?.[1] || 1) - 1);
+      return {
+        layer,
+        video,
+        id,
+        url,
+        videoIndex,
+        key: `${id}:${videoIndex}`,
+      };
+    }
+    function setLabel(title) {
+      if (!button) return;
+      button.innerHTML = `${ICON}<span>${title}</span>`;
+      button.title = title;
+      button.setAttribute("aria-label", title);
+      button.disabled = busy;
+    }
+    function style() {
+      if (styleAdded) return;
+      const css = document.createElement("style");
+      css.id = "rodx-immersive-download-css";
+      css.textContent = `
+#rodx-immersive-download {
+  position: fixed !important;
+  right: max(14px, env(safe-area-inset-right)) !important;
+  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  z-index: 2147481100 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  background: rgba(15, 20, 25, 0.88) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 999px !important;
+  padding: 10px 15px !important;
+  font:
+    700 14px/1.2 TwitterChirp,
+    -apple-system,
+    sans-serif !important;
+  cursor: pointer !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  min-height: 44px !important;
+  touch-action: manipulation !important;
+  box-shadow: 0 3px 13px rgba(0, 0, 0, 0.2);
+}
+#rodx-immersive-download:hover {
+  background: rgba(29, 155, 240, 0.95) !important;
+}
+#rodx-immersive-download:disabled {
+  opacity: 0.7 !important;
+  cursor: progress !important;
+}
+#rodx-immersive-download svg {
+  flex: none;
+}
+`;
+      (document.head || document.documentElement).append(css);
+      styleAdded = true;
+    }
+    async function resolveMP4(viewer) {
+      const current = mediaUrl(viewer.video.currentSrc || viewer.video.src);
+      if (current) return current;
+      const cached = cache.get(viewer.key);
+      if (cached && Date.now() - cached.at < 600_000) return cached.url;
+      setLabel("Obtendo vídeo…");
+      // Same public Twitter resolver contract used by AIO Downloader v4.3.9.
+      const response = await request({
+        url: TWR,
+        method: "POST",
+        timeout: 25_000,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({
+          u: viewer.url,
+          o: "iOS",
+          v: TWR_VERSION,
+        }),
+        responseType: "text",
+      });
+      let data;
+      try {
+        data = JSON.parse(String(response.responseText || response.response || "{}"));
+      } catch {
+        throw new Error("Resolver retornou resposta inválida.");
+      }
+      const groups = Array.isArray(data?.d?.i) ? data.d.i : [];
+      const candidates = groups.map((group, index) => ({
+        index,
+        links: Object.values(group || {})
+          .map((item) => mediaUrl(item?.u || ""))
+          .filter(Boolean)
+          .filter((url) => /\.mp4(?:$|\?)/i.test(url)),
+      }));
+      let item = candidates.find((x) => x.index === viewer.videoIndex && x.links.length);
+      if (!item && viewer.videoIndex === 0) item = candidates.find((x) => x.links.length);
+      if (!item) throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
+      const rank = (url) => {
+        const match = url.match(/\/vid\/(\d+)x(\d+)\//i);
+        return match ? Number(match[1]) * Number(match[2]) : 0;
+      };
+      const best = item.links.sort((a, b) => rank(b) - rank(a))[0];
+      cache.set(viewer.key, {
+        url: best,
+        at: Date.now(),
+      });
+      if (cache.size > 100) cache.delete(cache.keys().next().value);
+      return best;
+    }
+    async function download(url, filename) {
+      const gmd =
+        typeof GM_download === "function"
+          ? GM_download
+          : typeof GM !== "undefined" && typeof GM.download === "function"
+            ? GM.download.bind(GM)
+            : null;
+      if (gmd) {
+        try {
+          await new Promise((resolve, reject) => {
+            let settled = false;
+            const okay = () => {
+              if (!settled) {
+                settled = true;
+                resolve();
+              }
+            };
+            const fail = (error) => {
+              if (!settled) {
+                settled = true;
+                reject(new Error(error?.error || error?.message || "GM_download não disponível."));
+              }
+            };
+            const value = gmd({
+              url,
+              name: filename,
+              saveAs: false,
+              onload: okay,
+              onerror: fail,
+              ontimeout: fail,
+            });
+            if (value && typeof value.then === "function") value.then(okay, fail);
+          });
+          return;
+        } catch (error) {
+          console.warn("[RodX Download] GM_download falhou. Tentando blob:", error);
+        }
+      }
+      // Browser-compatible fallback. Mobile Safari may open a video preview
+      // instead of Files; use the Share sheet to save it when that happens.
+      setLabel("Baixando…");
+      try {
+        const response = await request({
+          url,
+          method: "GET",
+          responseType: "blob",
+          timeout: 120_000,
+          onprogress: (e) => {
+            if (e.lengthComputable && e.total) {
+              setLabel(`${Math.max(1, Math.min(99, Math.round((e.loaded / e.total) * 100)))}%`);
+            }
+          },
+        });
+        let blob = response.response;
+        if (!(blob instanceof Blob) && response.response instanceof ArrayBuffer) {
+          blob = new Blob([response.response], {
+            type: "video/mp4",
+          });
+        }
+        if (!(blob instanceof Blob) || !blob.size) throw new Error("Resposta de mídia vazia.");
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        anchor.style.display = "none";
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      } catch (error) {
+        // A visible link lets Safari users save through the iOS Share menu,
+        // rather than pretending the content was downloaded.
+        const choice = window.confirm(`${error.message}\nAbrir MP4 em uma aba para salvar pelo Safari?`);
+        if (choice) {
+          const tab = window.open(url, "_blank", "noopener,noreferrer");
+          if (!tab) throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
+          return "opened";
+        }
+        throw error;
+      }
+    }
+    async function click(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (busy) return;
+      const current = locate();
+      if (!current) return;
+      busy = true;
+      setLabel("Preparando…");
+      try {
+        const url = await resolveMP4(current);
+        const now = locate();
+        if (!now || now.key !== current.key) throw new Error("O vídeo aberto mudou durante a preparação.");
+        const outcome = await download(url, `X-${current.id}-${current.videoIndex + 1}.mp4`);
+        setLabel(outcome === "opened" ? "MP4 aberto" : "Baixado ✓");
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+      } catch (error) {
+        console.warn("[RodX Download]", error);
+        setLabel("Não baixou");
+        window.alert(`RodX Download: ${error.message || error}`);
+      } finally {
+        busy = false;
+        setLabel("Download");
+      }
+    }
+    function scan(force = false) {
+      const now = Date.now();
+      if (!force && now - lastScan < 500) return;
+      lastScan = now;
+      const viewer = locate();
+      if (!viewer) {
+        if (button) {
+          button.remove();
+          button = null;
+        }
+        activeKey = "";
+        return;
+      }
+      style();
+      if (!button || !button.isConnected || button.parentElement !== viewer.layer) {
+        button?.remove();
+        button = document.createElement("button");
+        button.type = "button";
+        button.id = "rodx-immersive-download";
+        button.addEventListener("click", (event) => {
+          void click(event);
+        });
+        viewer.layer.append(button);
+        setLabel("Download");
+      }
+      if (activeKey !== viewer.key) {
+        activeKey = viewer.key;
+        if (!busy) setLabel("Download");
+      }
+    }
+    return Object.freeze({
+      scan,
+      current: locate,
+    });
+  })();
+}

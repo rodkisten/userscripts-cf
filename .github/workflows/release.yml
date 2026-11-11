@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag igual à versão do package.json (ex.: v0.2.0)"
+        description: "Tag igual à versão do package.json (ex.: v3.9.0)"
         required: true
         type: string
 

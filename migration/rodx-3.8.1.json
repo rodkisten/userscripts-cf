@@ -1,0 +1,4767 @@
+{
+  "source": {
+    "name": "RodX-Studio-v3.8.1.user.js",
+    "sha256": "92636bd94605a3a45de279808ca198004556b44cbac965f63bd8e0f98af0f908",
+    "lines": 22796
+  },
+  "modules": 82,
+  "audit": [
+    {
+      "file": "platform/selectors.js",
+      "kind": "initializer",
+      "name": "XDOM",
+      "initFunction": "initializeOuterXDOM",
+      "sha256": "999860f64f4908aedbef4b6654184922f32815723a394920e6c74925cdb5d5e8",
+      "sourceLine": 58,
+      "style": false
+    },
+    {
+      "file": "lists/access.js",
+      "kind": "function",
+      "name": "createListAccess",
+      "sha256": "c04e00303490b0b026447a08bcec88432da28e6a2ca55bd33f011543f246f5c5",
+      "sourceLine": 70
+    },
+    {
+      "file": "lists/name-discovery.js",
+      "kind": "function",
+      "name": "discoverListNames",
+      "sha256": "040eec9503bbbf04f6b3c5465437db0e601051803692f1040ed99e8fcfec157c",
+      "sourceLine": 242
+    },
+    {
+      "file": "lists/routes.js",
+      "kind": "function",
+      "name": "studioListIndex",
+      "sha256": "adf3ae9fa84552150a1d2a035664e6e9e048ca4a36d6be07ce1ed2f968e2acbc",
+      "sourceLine": 344
+    },
+    {
+      "file": "search/list-typeahead.js",
+      "kind": "function",
+      "name": "installListTypeahead",
+      "sha256": "54b3492cabc6275ad3503afa84446c7e6cdca7a21eb064a98adb3d5b30f975db",
+      "sourceLine": 353
+    },
+    {
+      "file": "ui/context-label.js",
+      "kind": "function",
+      "name": "studioContextLabel",
+      "sha256": "90b36450c392061646346f29d7f392e37c77da804b3f49b70fe8edda98290175",
+      "sourceLine": 508
+    },
+    {
+      "file": "feeds/recommendations.js",
+      "kind": "function",
+      "name": "installRecommendationCleanup",
+      "sha256": "7de46b500e09f112d95c8d95e63ea90bcc378801d85d2ed15b1d91d8b143ba22",
+      "sourceLine": 522
+    },
+    {
+      "file": "core/studio-runtime.js",
+      "kind": "function",
+      "name": "createStudioRuntime",
+      "sha256": "ccdd7fbfab5fcda4c60b578d71f576ff9ca13f909b8bd037887444be8d38ccc1",
+      "sourceLine": 543
+    },
+    {
+      "file": "network/page-bridge.js",
+      "kind": "function",
+      "name": "studioPageBridge",
+      "sha256": "c21c4473e23cda7113ca1b3f1239c35685218e98bf58f725cfa8cfac4af0158e",
+      "sourceLine": 845
+    },
+    {
+      "file": "network/bridge.js",
+      "kind": "function",
+      "name": "connectStudioNetwork",
+      "sha256": "0039ae62fe6de7adf0c6d9865209a7980071663313666b4851729e6fc2919ec2",
+      "sourceLine": 1726
+    },
+    {
+      "file": "core/studio.js",
+      "kind": "initializer",
+      "name": "Studio",
+      "initFunction": "initializeOuterStudio",
+      "sha256": "7ceb8aa7657352e20ee48a593eadf5df0295f9bb0e172f5ae25a1677f628f545",
+      "sourceLine": 1875,
+      "style": false
+    },
+    {
+      "file": "bootstrap/start-network.js",
+      "kind": "effect",
+      "name": "initializeRodX_outer_13",
+      "sha256": "9acc59e95762f3b6508a34e40a85e451f827509a1097383b589f66d6e4c2b9d8",
+      "sourceLine": 1876
+    },
+    {
+      "file": "bootstrap/start-network.js",
+      "kind": "effect",
+      "name": "initializeRodX_outer_14",
+      "sha256": "9a2093d199a951bdac196b0a63d913fee434856665f2a8c36f79f9466b85d9bd",
+      "sourceLine": 1878
+    },
+    {
+      "file": "bootstrap/start-network.js",
+      "kind": "effect",
+      "name": "initializeRodX_outer_15",
+      "sha256": "236d151d6a4e55a30f955b8ed0e1ec2a80acc1b713677da0d869b27298ce3cd8",
+      "sourceLine": 1881
+    },
+    {
+      "file": "bootstrap/start-network.js",
+      "kind": "effect",
+      "name": "initializeRodX_outer_16",
+      "sha256": "deea2e02e7effb997c8a37404d04d5660536852d5b910b1fdd93fe49366ef7b9",
+      "sourceLine": 1882
+    },
+    {
+      "file": "network/inspector.js",
+      "kind": "function",
+      "name": "createNetworkInspector",
+      "sha256": "9ac38827d409ead833e253f15a511127d2641b595aaed7688ded50d12011a335",
+      "sourceLine": 1885
+    },
+    {
+      "file": "ui/menu.js",
+      "kind": "function",
+      "name": "createStudioMenus",
+      "sha256": "29aef2a0cd6e2bfca686b3c396ccf5410522121e13eef9e1ac40a6911cfafbb8",
+      "sourceLine": 6884
+    },
+    {
+      "file": "media/seek-preview.js",
+      "kind": "function",
+      "name": "createSeekPreviews",
+      "sha256": "c4a9fd60a2c7783420e0d4f38395670010fe99c1403ac2d4b83400c3806c0f11",
+      "sourceLine": 6958
+    },
+    {
+      "file": "ui/preferences-schema.js",
+      "kind": "function",
+      "name": "buildStudioPreferences",
+      "sha256": "3d68f619ef4d1ee858264ba4617fb42bb6c232933984db452baa31ed8083e75c",
+      "sourceLine": 7233
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "VERSION",
+      "initFunction": "initializeDeckVERSION",
+      "sha256": "0e62cf6d2068c11f34a519dfb0983073cb4ba7cf19d6ab6f36ef90657f0499d8",
+      "sourceLine": 7571,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "PREFIX",
+      "initFunction": "initializeDeckPREFIX",
+      "sha256": "e36714e94e513c5a5b824afb2de67ac299ae2069600d5a6e7448198a947f9417",
+      "sourceLine": 7572,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "IDENT",
+      "initFunction": "initializeDeckIDENT",
+      "sha256": "20473483d63eff98f0324a1e8c99cbd8b529b91193aaa5d7b296eacde24248b0",
+      "sourceLine": 7573,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "MAX_VISIBLE",
+      "initFunction": "initializeDeckMAX_VISIBLE",
+      "sha256": "c087600ae50861cd5666e3346d9bb835280dc7522f425c7422bb27ffba1462b6",
+      "sourceLine": 7574,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "EMPTY_FIELDS",
+      "initFunction": "initializeDeckEMPTY_FIELDS",
+      "sha256": "3c814df5ec85f3856098989d6916df559ab930ea96f8c015018ec8781f8d151e",
+      "sourceLine": 7576,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "LANGUAGE_OPTIONS",
+      "initFunction": "initializeDeckLANGUAGE_OPTIONS",
+      "sha256": "89fb6de8dc6e8199e213e219f9b7cea0821aa91ab4ce97eb3f84485470d44d59",
+      "sourceLine": 7621,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "ANY_ONLY_EXCLUDE",
+      "initFunction": "initializeDeckANY_ONLY_EXCLUDE",
+      "sha256": "3bbfb89f6149f1ee01506704b2ea1ac318ce6f218378b396b1e168ba0d2df62d",
+      "sourceLine": 7639,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "BLOCK_MEDIA",
+      "initFunction": "initializeDeckBLOCK_MEDIA",
+      "sha256": "91dc9f4643accc38dfd0feee6e33b7fcba626b4ec39ca96ffe9d351c9e31a26b",
+      "sourceLine": 7644,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "BLOCK_TYPES",
+      "initFunction": "initializeDeckBLOCK_TYPES",
+      "sha256": "dfa815d735f3d0971ca6d37fb2a4c8f9b7a67f95bec5f77a913c157caaf15b3c",
+      "sourceLine": 7651,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "MAX_BLOCK_NODES",
+      "initFunction": "initializeDeckMAX_BLOCK_NODES",
+      "sha256": "4bc9d64bbc13a76d8adf642f5cb8713572b1bf0d0ce42c607ef99425f85841a3",
+      "sourceLine": 7659,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "MAX_BLOCK_DEPTH",
+      "initFunction": "initializeDeckMAX_BLOCK_DEPTH",
+      "sha256": "5656259d4fd3c7b06cd45a211d8a48045d19f9ba78b29a077fd6048109c3a8bf",
+      "sourceLine": 7660,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "SORTS",
+      "initFunction": "initializeDeckSORTS",
+      "sha256": "ac628a4cb9b699735f4c80c4d0b7d64de5fa1d54c3427beff731e52655f9f2f7",
+      "sourceLine": 7661,
+      "style": false
+    },
+    {
+      "file": "config/search.js",
+      "kind": "initializer",
+      "name": "GROUPS",
+      "initFunction": "initializeDeckGROUPS",
+      "sha256": "befe9069f0a08113df27b8fa106f248e459334fd22a30769bdc658eb2f64b44c",
+      "sourceLine": 7668,
+      "style": false
+    },
+    {
+      "file": "styles/deck.js",
+      "kind": "initializer",
+      "name": "CSS",
+      "initFunction": "initializeDeckCSS",
+      "sha256": "18d5e3828fced07e2c963d5dc724f89fac1490dc46ba1edf8d3162ade934802b",
+      "sourceLine": 7811,
+      "style": true,
+      "styleFile": "styles/search-deck.css",
+      "formattedSha256": "f5098b63548d16f321cbc72e411f691f4d8480932875f6241605e2692c831dcf"
+    },
+    {
+      "file": "styles/deck.js",
+      "kind": "initializer",
+      "name": "CUSTOM_CSS",
+      "initFunction": "initializeDeckCUSTOM_CSS",
+      "sha256": "7aa3b5807aa94deb169cd3eb9ef26f3ff4321954b7cb4a9866550465cb649e7e",
+      "sourceLine": 9051,
+      "style": true,
+      "styleFile": "styles/search-custom.css",
+      "formattedSha256": "7900f331ef28a06a8eed67ac438bc8aa8a8e48f2e4d0eacabf9c8480641ff4bc"
+    },
+    {
+      "file": "state/deck.js",
+      "kind": "initializer",
+      "name": "state",
+      "initFunction": "initializeDeckState",
+      "sha256": "4561d96949d5dde50dce23300940ab10152e8bd16c42db75357964581f087685",
+      "sourceLine": 9221,
+      "style": false
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "initializer",
+      "name": "copyFields",
+      "initFunction": "initializeDeckCopyFields",
+      "sha256": "fc3918ce703b55edfaac4c5a5588ef0e1e286c3d097e01d9d5238f54480d2ca5",
+      "sourceLine": 9291,
+      "style": false
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "newBlock",
+      "sha256": "68d32d03a908fd605730200898e94ba84db86dbb3a658071c7c1d828f8159752",
+      "sourceLine": 9301
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "newBlockGroup",
+      "sha256": "6deff3f0543294aab0c660414fc5cc09d84954cdb17e9b7927c40046566883ee",
+      "sourceLine": 9310
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "emptyBlockTree",
+      "sha256": "facc8e62840c82bca7f3e368f5ac18dbb9f8a4b4e9919acb2c01093364079a31",
+      "sourceLine": 9318
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "normalizeBlockTree",
+      "sha256": "b59bfd0447fef7819036ab3a126e0e8b29b0ea15888bcfb076d1ea92f0d454ef",
+      "sourceLine": 9321
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "compileBlockTerm",
+      "sha256": "b64b16e2bf461bbee9c29a99594e69f43e12c8100cc1e501377ce78b550c3eea",
+      "sourceLine": 9358
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "compileBlockTree",
+      "sha256": "e4e9b639900ee349c2af756198aa605885f9482d722260c3f6812fb24df129d8",
+      "sourceLine": 9391
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "findBlockNode",
+      "sha256": "a5b7b8a9e4ad425ed9161a5cbd79f8ef17b638b4bf8f028bfb1a3a42431071e7",
+      "sourceLine": 9404
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "blockStats",
+      "sha256": "7162da508b18cca2169436c8650df1553dd1557d2dfe45a8cf4a7a0ad114fc3c",
+      "sourceLine": 9418
+    },
+    {
+      "file": "search/blocks.js",
+      "kind": "function",
+      "name": "depthOfNode",
+      "sha256": "8c9dae13799ff620baf9736c6076ce69e80ea780ae65330f6dc3df10ea114cfc",
+      "sourceLine": 9427
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "initializer",
+      "name": "html",
+      "initFunction": "initializeDeckHtml",
+      "sha256": "dac59e4ae74a98d760ac77303bcfa07494c0a1a869bd5b8be9114bd48bba1b07",
+      "sourceLine": 9437,
+      "style": false
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "initializer",
+      "name": "uid",
+      "initFunction": "initializeDeckUid",
+      "sha256": "cadf3880249b1453fd267b02b40fb08fd7c08f308c4fd883f3b4dc4b633d6486",
+      "sourceLine": 9444,
+      "style": false
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "initializer",
+      "name": "tokens",
+      "initFunction": "initializeDeckTokens",
+      "sha256": "de1bd9da54e4629ccab9cc3b40b8b27e7a795aefee6d2bb464d1d7327b3b0158",
+      "sourceLine": 9447,
+      "style": false
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "initializer",
+      "name": "splitAccounts",
+      "initFunction": "initializeDeckSplitAccounts",
+      "sha256": "503149e17939648db463d7c519f3e3a03c359cdf05d5ef6f15562f0e6578fc48",
+      "sourceLine": 9448,
+      "style": false
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "function",
+      "name": "requireAccountTokens",
+      "sha256": "0190ec4b5ea15a381d4e74444a117401512f2d2cb1b021f00f76453c4c457fe8",
+      "sourceLine": 9453
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "function",
+      "name": "dateUTCPlusOne",
+      "sha256": "38e1846e2a7cecb9cb3035eafbfaa9cb39283c6f81fce4ea47f3c697dde55771",
+      "sourceLine": 9466
+    },
+    {
+      "file": "shared/text.js",
+      "kind": "function",
+      "name": "numberFilter",
+      "sha256": "ba2b9ed12a5d5c609e85a8b3dd658d65d0e18bfeb4e6ef0ce56695bf16285d5c",
+      "sourceLine": 9475
+    },
+    {
+      "file": "search/query-compiler.js",
+      "kind": "initializer",
+      "name": "QueryEngine",
+      "initFunction": "initializeDeckQueryEngine",
+      "sha256": "8017612d76f40aa30a53d7ccf9229af6ab2fcdc48571df427c347f5d449dbf10",
+      "sourceLine": 9497,
+      "style": false
+    },
+    {
+      "file": "search/query-compiler.js",
+      "kind": "function",
+      "name": "compileQuery",
+      "sha256": "02a3d63cb4e927ad2510b57942f998d2fc5d4becb40702560bd557f68fb95a29",
+      "sourceLine": 9760
+    },
+    {
+      "file": "search/query-compiler.js",
+      "kind": "function",
+      "name": "hrefFor",
+      "sha256": "974304b0ba961c2e91d3fee77d60b7598878d2d74c548eb25edb7e2b19545a12",
+      "sourceLine": 9864
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "normalizeLimit",
+      "sha256": "8639de96a3a418546dc03b68cd90b8b405e1a6a7c9e08401428945973976ef4c",
+      "sourceLine": 9883
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "nativeSearch",
+      "sha256": "77812cdfa0396a41f55ef2fefae35b16a0a771bd570d6a439783b6a3afbd071c",
+      "sourceLine": 10285
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "activeSearchRecord",
+      "sha256": "ab99d52456912aa87b7c23a545480f25d69e6ce35d53f180a493d2af1b2a26f6",
+      "sourceLine": 10314
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "currentFullQuery",
+      "sha256": "f639c05337521b16b447fc62ff62dbd85af150c8a290576fe18d7b414972b8db",
+      "sourceLine": 10322
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "visibleLimit",
+      "sha256": "f44ef7092fae0625cdb4eebf856211b2a603d4954532286e76ead4b80a88c023",
+      "sourceLine": 10335
+    },
+    {
+      "file": "feeds/local-limits.js",
+      "kind": "function",
+      "name": "applyPostLimit",
+      "sha256": "6f1ea096736aced4b46c77af3ea70e49c732a085c43a77be89d7548ca151a5d8",
+      "sourceLine": 10343
+    },
+    {
+      "file": "identity/account.js",
+      "kind": "function",
+      "name": "readAccountCookie",
+      "sha256": "0ad68d78a459d8da317b9a97a9f512c73dc87d3c8773203a61410f5593675f54",
+      "sourceLine": 9887
+    },
+    {
+      "file": "identity/account.js",
+      "kind": "function",
+      "name": "handleFromHref",
+      "sha256": "acd44eb8d3bd66319103ef05ae4c702edb998123c865a03df98e5d0666e28369",
+      "sourceLine": 9904
+    },
+    {
+      "file": "identity/account.js",
+      "kind": "function",
+      "name": "extractHandle",
+      "sha256": "d12278be823e4c0757b1946a956fdd1c2bf10182824bf735d5b7143997fe16c9",
+      "sourceLine": 9930
+    },
+    {
+      "file": "identity/account.js",
+      "kind": "function",
+      "name": "extractIdentity",
+      "sha256": "1d21931e426c0b96eb123cef048839b62bad8fac1d84e97d0d7075e76938820e",
+      "sourceLine": 9962
+    },
+    {
+      "file": "identity/account.js",
+      "kind": "function",
+      "name": "identityLabel",
+      "sha256": "c33e3cdea59f81c4c4ee27fd2a4be700a928ba820b8464f3d64b8e5fb0aaa276",
+      "sourceLine": 9997
+    },
+    {
+      "file": "search/query-parser.js",
+      "kind": "function",
+      "name": "parseQueryBlocks",
+      "sha256": "54898164dfcfd0e809dc5bd8cf557419aedaefeec649984f4daa6c9a361a439b",
+      "sourceLine": 10004
+    },
+    {
+      "file": "search/query-parser.js",
+      "kind": "function",
+      "name": "importNativeSearch",
+      "sha256": "195eac0d5d0c2c1d0d70d0f6465faa57b67b692d17c7523ad2f5d4e863254774",
+      "sourceLine": 10117
+    },
+    {
+      "file": "search/query-parser.js",
+      "kind": "function",
+      "name": "parseNativeQuery",
+      "sha256": "4cce9cf2ccd16ebdd83f53d4a6b4f1e77509f94c7e97361f0f64658bb6a819d5",
+      "sourceLine": 10150
+    },
+    {
+      "file": "feeds/local-rules.js",
+      "kind": "function",
+      "name": "parseLocalDirectives",
+      "sha256": "a57ed1a13ef8cc73593e664edc34a0dc8051156e584b2becb171001116aba363",
+      "sourceLine": 10187
+    },
+    {
+      "file": "feeds/local-rules.js",
+      "kind": "function",
+      "name": "escapeRegex",
+      "sha256": "5dac24636e81653f52da6cb893231b3e9b50a721b5a8f5411f55d24eb589beb7",
+      "sourceLine": 10209
+    },
+    {
+      "file": "feeds/local-rules.js",
+      "kind": "function",
+      "name": "compileLocalRule",
+      "sha256": "768b80d5b5fdb822030f7e28a83a26c1a5bc40b502be97bbb2e71c89049ebe9d",
+      "sourceLine": 10212
+    },
+    {
+      "file": "state/visual.js",
+      "kind": "function",
+      "name": "normalizeVisual",
+      "sha256": "1745bde8a735ee620b29d2a65a4192a1fe7ca9e045f7807b3c15b318f5116c3d",
+      "sourceLine": 10244
+    },
+    {
+      "file": "storage/normalize.js",
+      "kind": "function",
+      "name": "normalizedSearch",
+      "sha256": "8d713d431f62e28c8305527ff2f91860a2fb874896358de238454f0e49584f31",
+      "sourceLine": 10350
+    },
+    {
+      "file": "storage/normalize.js",
+      "kind": "function",
+      "name": "normalizedPreset",
+      "sha256": "cab54aa8e5871ed51b3f3ceca22bb16534d9de452e33185a43b600a6f9d3ab57",
+      "sourceLine": 10377
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "function",
+      "name": "cloneTree",
+      "sha256": "ea1768c24fe17b454b270659674fd37e87815e98200c44ff5c99a531efcf2ee4",
+      "sourceLine": 10400
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "function",
+      "name": "tray",
+      "sha256": "098996604982bcc3ac2f82e3ff6826a9ee39d3543db147c4b89aaa100473a4d8",
+      "sourceLine": 10410
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "function",
+      "name": "adoptTagGroup",
+      "sha256": "295de839a9d59453709df895342185223d922a630c06f2fe40357f2fa756331e",
+      "sourceLine": 10421
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "function",
+      "name": "migrateLegacyTags",
+      "sha256": "887ad7ad4e9fb25667e3daabbc1bc117be9c403693db941bb6f7e854f713df0f",
+      "sourceLine": 10452
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "initializer",
+      "name": "signature",
+      "initFunction": "initializeDeckSignature",
+      "sha256": "ec70a0db4c80808334eeff023c9d1e5cd7359576775d9efe2320b0e933cfc51b",
+      "sourceLine": 10461,
+      "style": false
+    },
+    {
+      "file": "search/block-editing.js",
+      "kind": "function",
+      "name": "compactBlockTree",
+      "sha256": "3234fc389994aaea793b6640345baba1f3011d9a62503814ac229d0ae406990e",
+      "sourceLine": 10471
+    },
+    {
+      "file": "search/validation.js",
+      "kind": "function",
+      "name": "canonicalizeQuery",
+      "sha256": "007b2382fbd70137f814aff4afbce8d799283748fabf0c3849cdd906b2524f1d",
+      "sourceLine": 10528
+    },
+    {
+      "file": "search/validation.js",
+      "kind": "function",
+      "name": "synchronizeDraftForSave",
+      "sha256": "468ee92e03737731aecd2d8e95df57b486f42a6c5b83f0cc3c3d708af8aa79f3",
+      "sourceLine": 10553
+    },
+    {
+      "file": "search/validation.js",
+      "kind": "function",
+      "name": "analyzeDraft",
+      "sha256": "e522578fc356d41ae072b52b352d40514e066a90ae3051712897616f284c286c",
+      "sourceLine": 10572
+    },
+    {
+      "file": "search/highlight.js",
+      "kind": "function",
+      "name": "diagnosticSpans",
+      "sha256": "3e462e68556f3a1e5b720cd7e426d519b5e42719073777b34ce059b9011d86f8",
+      "sourceLine": 10672
+    },
+    {
+      "file": "search/highlight.js",
+      "kind": "function",
+      "name": "highlightWithIssues",
+      "sha256": "16a48ad1a89dc4710574577679a878dfa88c0a5e3e9bd120f9fbfcf657c4a6d7",
+      "sourceLine": 10796
+    },
+    {
+      "file": "search/highlight.js",
+      "kind": "function",
+      "name": "highlightQuery",
+      "sha256": "a13751adc6a2544214286ae67fa9ca812af1e326b4c08191132fff3973a333e9",
+      "sourceLine": 10810
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "modernGM",
+      "initFunction": "initializeDeckModernGM",
+      "sha256": "9cdace72f845fc4b81233f110cb9ce07ea5e8c6ad6f5ef5a1bfbc4538dc1fcbc",
+      "sourceLine": 10846,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "gmGet",
+      "initFunction": "initializeDeckGmGet",
+      "sha256": "c63d8c95de0212ddd7f0695235d58a51a9da5bd24a6d7501a1196eacc55c19c9",
+      "sourceLine": 10847,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "gmSet",
+      "initFunction": "initializeDeckGmSet",
+      "sha256": "8cd4ae9588d1c050107b3675297af1d9b71ec8278626413434de99572d398d95",
+      "sourceLine": 10853,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "gmAvailable",
+      "initFunction": "initializeDeckGmAvailable",
+      "sha256": "d461d836e457302c3f0c8a230391cd8ade3ed4801f21165e0aaedb042f3e1c4a",
+      "sourceLine": 10859,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "function",
+      "name": "decodeStore",
+      "sha256": "450d047c719495f19e17694d67a544d72d806485657fa9ed3ab8875701e029fc",
+      "sourceLine": 10863
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "storage",
+      "initFunction": "initializeDeckStorage",
+      "sha256": "3404b30491340f64d26772bdcc16f25e36e1579bc77437985f83734d57d856a5",
+      "sourceLine": 10871,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "initializer",
+      "name": "recoveryKey",
+      "initFunction": "initializeDeckRecoveryKey",
+      "sha256": "a77d09990ea0ed2590fbb0e4cf01918ef1aeb535cd17159f7e21db298d9c28f4",
+      "sourceLine": 10885,
+      "style": false
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "function",
+      "name": "recoveryRead",
+      "sha256": "93ccea72314918304f6f458a8777717f07daf36c8a66bb08840f5ec01287b5d2",
+      "sourceLine": 10886
+    },
+    {
+      "file": "storage/gm.js",
+      "kind": "function",
+      "name": "recoveryWrite",
+      "sha256": "2a2584f3a3d9ac7a66322b1b44cf869b6016ef2697d9790b7376310719c97d67",
+      "sourceLine": 10894
+    },
+    {
+      "file": "storage/account.js",
+      "kind": "function",
+      "name": "freshAccountState",
+      "sha256": "31ac0c252e01c0a21e3ff8d5650cec580b04b2172a20394112b84368f735a65c",
+      "sourceLine": 10902
+    },
+    {
+      "file": "storage/account.js",
+      "kind": "function",
+      "name": "verifyStateStored",
+      "sha256": "89d7aa3a8519505a635a528e643370c82ca1b556671f1d36a755a05b3e52c28e",
+      "sourceLine": 10909
+    },
+    {
+      "file": "storage/account.js",
+      "kind": "function",
+      "name": "loadAccount",
+      "sha256": "22710deb5787d47ce56050d9631c1b84a35cef35fc279cf000bf646a076780ee",
+      "sourceLine": 10930
+    },
+    {
+      "file": "storage/account.js",
+      "kind": "function",
+      "name": "saveState",
+      "sha256": "51d83b7e381cb5ba7ef9a8704e2f6806dcdd57706d8dbec93581469aae016218",
+      "sourceLine": 11038
+    },
+    {
+      "file": "sync/cloud.js",
+      "kind": "initializer",
+      "name": "CloudSync",
+      "initFunction": "initializeDeckCloudSync",
+      "sha256": "82b3854b9defbad1f92f2e943b0383936ab64fcc1022a010f48e43671a5f0d6a",
+      "sourceLine": 11090,
+      "style": false
+    },
+    {
+      "file": "media/download.js",
+      "kind": "initializer",
+      "name": "ImmersiveDownload",
+      "initFunction": "initializeDeckImmersiveDownload",
+      "sha256": "43af2910c1acd73063b0f5a510cf03ff8d87e9282694b95e93eacf4e1aee7e53",
+      "sourceLine": 11375,
+      "style": false
+    },
+    {
+      "file": "telegram/relay.js",
+      "kind": "initializer",
+      "name": "Relay",
+      "initFunction": "initializeDeckRelay",
+      "sha256": "73cef8063a97f984bc6ee91d4f541c0a1857a7200db75e60bcb1c4bac4ac534e",
+      "sourceLine": 11740,
+      "style": false
+    },
+    {
+      "file": "tweets/publisher.js",
+      "kind": "initializer",
+      "name": "XRepost",
+      "initFunction": "initializeDeckXRepost",
+      "sha256": "1c5db5c3ebd18a96c6f3bdd822cba4f6424b54af4497fd2dc8f78e1bddf13234",
+      "sourceLine": 12884,
+      "style": false
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "currentSearch",
+      "sha256": "4edc16509433135c2a1538ae61502f7a2e4ed6a6a476c6b95b8d2539af5e3152",
+      "sourceLine": 13769
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "displayPreview",
+      "sha256": "5852e4d4876e11ce4fe3bb3e08c1603532b2e0c4b9e2667ddaa8b19272b37aa6",
+      "sourceLine": 13772
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "validateRawWorkbench",
+      "sha256": "ae20f6bcb44fd3bce5c4f2842bd0bc4b46ab55184ce4e931d0a101e611770377",
+      "sourceLine": 13822
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "renderField",
+      "sha256": "c5de029934686e8f2c17735cb0c7836c9c3627580f87e09b4fbe1907007fd552",
+      "sourceLine": 13873
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "tagTrayHTML",
+      "sha256": "560baa6bc933750ec7ef10daede88e86bdea00b47c35e7a7394b034379931b49",
+      "sourceLine": 13888
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "renderTags",
+      "sha256": "385c39362917a5287c8da6bce2d79fc5ffa490422993cd8704bc5efa0c84cb32",
+      "sourceLine": 13920
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "addChips",
+      "sha256": "6c0d4e10d1ac75b20610e8e4df7f7c8b04372b648e6286425f699434010bde94",
+      "sourceLine": 13924
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "selectionHTML",
+      "sha256": "f1cff273649320b750969743e5dce0b663c5a7376a696de4cfd087005f891061",
+      "sourceLine": 13953
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "presetsHTML",
+      "sha256": "afa7cafad23b2f51dafecb466ee1c380459fd786275b7559716fd15bc7513f2d",
+      "sourceLine": 13973
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "presetShelfHTML",
+      "sha256": "115cf9e7dc1a35d60593cccbb2edd72f30315573d3348aeedd35deae61dc8994",
+      "sourceLine": 13998
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "blockValueHTML",
+      "sha256": "b7b8560e095578a696ed0145fe4a2aea8454191023c44025dc6b18e07e84b8b5",
+      "sourceLine": 14011
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "blockHTML",
+      "sha256": "d1a227e128d80c6b1236fe5fbc40d28c5304ad2e866932e52767154a798ffa73",
+      "sourceLine": 14032
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "builderHTML",
+      "sha256": "2488ab18e4319479416f6771f30fb5b1116b4405c509c7a792277363db0bbf50",
+      "sourceLine": 14098
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "renderBlockEditor",
+      "sha256": "6e6fb53f7b72229e51ca7120376985611b2a9568cb4bb659d0719d32671c0388",
+      "sourceLine": 14116
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "modifyBlocks",
+      "sha256": "6d0457b57518e38bce8fa06fa59a9ec4c8deba5382a70fd78b5203a8f48b11c7",
+      "sourceLine": 14122
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "editorHTML",
+      "sha256": "be1311ee45dbc855a8916b09e8f552c5323b4b9163dc87e63c197b17c702e4da",
+      "sourceLine": 14176
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "savedHTML",
+      "sha256": "befa8e1f4682db8906f3d3cc3d510414a6506dbd45433d623c0346a25a094922",
+      "sourceLine": 14236
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "dataHTML",
+      "sha256": "06c1aa2908ab9538804bb1ddbcd578548b57a0aa38d37afa3a753d9ac8803307",
+      "sourceLine": 14270
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "panelHTML",
+      "sha256": "626819c59cf019297206826f9b342573c1517b9f2647812a199103180c3f26be",
+      "sourceLine": 14314
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "visualHTML",
+      "sha256": "6dae13ac4f042e6ec97aa00a1be35cd820d6c784f85405a509686863ece7baf7",
+      "sourceLine": 14361
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "blankDraft",
+      "sha256": "00c3293a74bdee5d8cdec7e158330ad404b9faabca1cebdc0ab02dfd7c3aa953",
+      "sourceLine": 14426
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "applyXTheme",
+      "sha256": "7351f454f904177540524e18555d199077041c44ebf3570ae62b934e884d48d9",
+      "sourceLine": 14438
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "renderRoot",
+      "sha256": "08a94231c98c6677a2a00ddd9f4e951d4e511fef9c2dda8210520e950c59f6e9",
+      "sourceLine": 14466
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "renderDock",
+      "sha256": "6f04f5f7f811c9ca03cfa6955b07cca396f73bc908905178f705939454127be0",
+      "sourceLine": 14509
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "inspectNativeQuery",
+      "sha256": "f786019b8a19fc4f5fa5e0cac35af683e50bb03e56722740421c6baf7a265641",
+      "sourceLine": 14558
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "liveNativeQuery",
+      "sha256": "220dab9d29ef957a36a0915841fedcd04a38b8d59cf1c5750c4d4835fd1af28b",
+      "sourceLine": 14606
+    },
+    {
+      "file": "ui/search-workbench.js",
+      "kind": "function",
+      "name": "editNativeSearch",
+      "sha256": "e474e290f093d1f405173276a65657484eb5fa712e9bc948c3a37db1fdb5fe38",
+      "sourceLine": 14610
+    },
+    {
+      "file": "lists/client.js",
+      "kind": "initializer",
+      "name": "XClientLists",
+      "initFunction": "initializeDeckXClientLists",
+      "sha256": "d7dbf711ef4e8c3db6641b67edeaf1bc169ac95bb542d5b4104349276a183678",
+      "sourceLine": 14618,
+      "style": false
+    },
+    {
+      "file": "lists/profile.js",
+      "kind": "initializer",
+      "name": "ProfileLists",
+      "initFunction": "initializeDeckProfileLists",
+      "sha256": "1d774477d8b2b6b1cef9df698a46c7ed64ee81881a647e30c1c59db250aea7ad",
+      "sourceLine": 14794,
+      "style": false
+    },
+    {
+      "file": "feeds/filters.js",
+      "kind": "initializer",
+      "name": "FeedFilters",
+      "initFunction": "initializeDeckFeedFilters",
+      "sha256": "1e15a1db79594cc5464a2c55f9224ef780d97cbdfaaeeffa9ff5923b6ca91367",
+      "sourceLine": 15206,
+      "style": false
+    },
+    {
+      "file": "layout/chrome.js",
+      "kind": "initializer",
+      "name": "ScrollChrome",
+      "initFunction": "initializeDeckScrollChrome",
+      "sha256": "ddce4b2902134bd65b571bc6e1e6ed475389077dcb349706e5a1b76c72eb4539",
+      "sourceLine": 15403,
+      "style": false
+    },
+    {
+      "file": "layout/tweets.js",
+      "kind": "initializer",
+      "name": "CompactLayout",
+      "initFunction": "initializeDeckCompactLayout",
+      "sha256": "b869b50477b02b89e7a0d05cdb9cf411b4984415121df44af2548e64908df184",
+      "sourceLine": 15634,
+      "style": false
+    },
+    {
+      "file": "ui/dock.js",
+      "kind": "function",
+      "name": "ensureDock",
+      "sha256": "9a39b418d8ece978b0bcba0fbe75e5a149542df47ec618d3da0af01adc3e844d",
+      "sourceLine": 16482
+    },
+    {
+      "file": "ui/dock.js",
+      "kind": "function",
+      "name": "repaint",
+      "sha256": "3bce448955fb39a83a5461505b07a65c13577d84a58bc2a00bc0763910d8da32",
+      "sourceLine": 16535
+    },
+    {
+      "file": "ui/preferences.js",
+      "kind": "initializer",
+      "name": "Preferences",
+      "initFunction": "initializeDeckPreferences",
+      "sha256": "c40ef051e4be5ae2752b675c6d78ed666bca5912b897bca3867266a57b3a50c8",
+      "sourceLine": 16544,
+      "style": false
+    },
+    {
+      "file": "ui/preferences.js",
+      "kind": "function",
+      "name": "closePanel",
+      "sha256": "7e5e78ca0d867c5589fe21c76ca5ab4721b162bc2becf08cdb293f3f1480762f",
+      "sourceLine": 16553
+    },
+    {
+      "file": "ui/preferences.js",
+      "kind": "function",
+      "name": "openPanel",
+      "sha256": "6f977a07422656f2825135a85d90384da7b2563bafd82b25036e2463aa2fe64e",
+      "sourceLine": 16557
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "newDraft",
+      "sha256": "223a85ac116f1532c045b3b27b460e051761f5c537fa27a527cf66014b25b5c6",
+      "sourceLine": 16573
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "captureCurrent",
+      "sha256": "be5979ea8314066054cd6cd9f9e4a32613ffc8bfff00078cd421ea7bd6ac5bb4",
+      "sourceLine": 16581
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "editSearch",
+      "sha256": "907312f3c11bb08eba7ccc3853ce0b8c0a9fcf5395e51d75f81f18d7865a439c",
+      "sourceLine": 16609
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "getPreviewQuery",
+      "sha256": "6978efdf0262cacdf215b41b50bf3d493586f892197c3f972208d122e4f77a6d",
+      "sourceLine": 16630
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "saveDraft",
+      "sha256": "93598385b266637319a8c54aa883498eee87fef2dc233658e9803a43f2f7e12e",
+      "sourceLine": 16640
+    },
+    {
+      "file": "search/actions.js",
+      "kind": "function",
+      "name": "actionForSearch",
+      "sha256": "f83842ecd3dd25683c19b966ba65e0a9a65b3d5d4f70f60f6a9cbec5518c431e",
+      "sourceLine": 16691
+    },
+    {
+      "file": "storage/backup.js",
+      "kind": "function",
+      "name": "exportJSON",
+      "sha256": "69737b5455d9044906ccd98c972281d724d04536f666920b6f02d47f6d8d7ea7",
+      "sourceLine": 16736
+    },
+    {
+      "file": "storage/backup.js",
+      "kind": "function",
+      "name": "importJSON",
+      "sha256": "8cc3d858f2cc0b4052de8fc0ccf77f11556d13060071f9346fc60f9cd404a0e1",
+      "sourceLine": 16761
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "resolvePreset",
+      "sha256": "e9105d984853fe3091867c181c3c9a08d7aa68ec0114834ea6d336aef39d6300",
+      "sourceLine": 16799
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "savePreset",
+      "sha256": "efbea47631a9dd31d0c7ecc5d07ae7e9965d2eb725dff027e81a8a9c577e9586",
+      "sourceLine": 16804
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "insertPreset",
+      "sha256": "f98ea0c299e9f1d4a6f0bb000ab8f4459c42fcda05c4e29e45a5ed8b56e83b38",
+      "sourceLine": 16839
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "maxDepth",
+      "sha256": "c58aa9205acb81da47c11ac0dde74246f935e6237bde3bac8a02237cb5e44721",
+      "sourceLine": 16881
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "editPreset",
+      "sha256": "77f3ab3d2b938678680dc2b73a81ec7c84477b932dfaf48339e2a33ff7d2aa85",
+      "sourceLine": 16885
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "deletePreset",
+      "sha256": "2ee96672538d4edd45aef7739271b25f04d754fd56c8735a45b1e53f9a841fab",
+      "sourceLine": 16904
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "toggleBlockOperator",
+      "sha256": "8e2c0c320287709433a65f99fac234a692e7743054c37665b5770f568027d19a",
+      "sourceLine": 16921
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "applyRawBlocks",
+      "sha256": "69c82dee2b5ef6778b8de26b9be1d22b47e1e85487d88103466e43224f712894",
+      "sourceLine": 16928
+    },
+    {
+      "file": "search/presets.js",
+      "kind": "function",
+      "name": "chipAction",
+      "sha256": "b380c59bf3958bb48e721167d8dc7999783b0be6f2a5b9e91dbb065913c4dfdc",
+      "sourceLine": 16951
+    },
+    {
+      "file": "ui/events.js",
+      "kind": "function",
+      "name": "performAction",
+      "sha256": "6be214f276337e006a20b303b03a230aab4e2b3b67abd72cedc27c934dbcb7bc",
+      "sourceLine": 16970
+    },
+    {
+      "file": "ui/events.js",
+      "kind": "function",
+      "name": "onClick",
+      "sha256": "9cadfc391e16e1feb75cbea4806ae5219ab7d40ba4faa8eb037a50cc5bbf7c9b",
+      "sourceLine": 17181
+    },
+    {
+      "file": "ui/events.js",
+      "kind": "function",
+      "name": "onFieldChange",
+      "sha256": "fac42c8792a168bf2b9e04354746d856101bcd4346e6ff081db96999b555c2e4",
+      "sourceLine": 17236
+    },
+    {
+      "file": "ui/events.js",
+      "kind": "function",
+      "name": "onGroupToggle",
+      "sha256": "11bc4858de16dfd408f4c7e8cf8becb3448878f5860688cb078d99081a992d13",
+      "sourceLine": 17343
+    },
+    {
+      "file": "ui/events.js",
+      "kind": "function",
+      "name": "onFileChange",
+      "sha256": "d687508f387dd89e0a52b601f8904a19cc9b9af02e496f85e4058f167807a59e",
+      "sourceLine": 17349
+    },
+    {
+      "file": "links/direct.js",
+      "kind": "initializer",
+      "name": "DirectLinks",
+      "initFunction": "initializeDeckDirectLinks",
+      "sha256": "32859617cc17158a9db48728eebb2218bcb59e660edecf905ce585d2cfe42d89",
+      "sourceLine": 17361,
+      "style": false
+    },
+    {
+      "file": "links/social.js",
+      "kind": "initializer",
+      "name": "SocialAppLinks",
+      "initFunction": "initializeDeckSocialAppLinks",
+      "sha256": "5d76febef71ab2a9dc4cc2df2ccb6ce04cc430177ec90b0d64f48192e668befa",
+      "sourceLine": 17464,
+      "style": false
+    },
+    {
+      "file": "media/gestures.js",
+      "kind": "initializer",
+      "name": "VideoTapGuard",
+      "initFunction": "initializeDeckVideoTapGuard",
+      "sha256": "1fed41452ed481fd0098921d61f9a86b30fc96b95986ea6dbf542e648cbb47c7",
+      "sourceLine": 17619,
+      "style": false
+    },
+    {
+      "file": "tweets/quick-repost.js",
+      "kind": "initializer",
+      "name": "QuickRepost",
+      "initFunction": "initializeDeckQuickRepost",
+      "sha256": "3cc909fce896fcb1208358ecef4df0197c51216abec9f7c3c6611589303d34ee",
+      "sourceLine": 17937,
+      "style": false
+    },
+    {
+      "file": "tweets/seen.js",
+      "kind": "initializer",
+      "name": "Seen",
+      "initFunction": "initializeDeckSeen",
+      "sha256": "4ba588c1cc150a8ce40986baff2201f6241f29242ae96c6f78bdecbd329aa5d3",
+      "sourceLine": 17986,
+      "style": false
+    },
+    {
+      "file": "translation/native.js",
+      "kind": "initializer",
+      "name": "NativeTranslation",
+      "initFunction": "initializeDeckNativeTranslation",
+      "sha256": "7a570574b85010a715fee883b1c02fa1c52a6cb6bc216f820ce860f1721704ac",
+      "sourceLine": 18040,
+      "style": false
+    },
+    {
+      "file": "translation/foreign-tags.js",
+      "kind": "initializer",
+      "name": "ForeignTags",
+      "initFunction": "initializeDeckForeignTags",
+      "sha256": "d77d368fc6e970c6ef31a2d6c16625f113a15e220c3ca739a43565a9e12ca99b",
+      "sourceLine": 18079,
+      "style": false
+    },
+    {
+      "file": "media/experience.js",
+      "kind": "initializer",
+      "name": "VideoExperience",
+      "initFunction": "initializeDeckVideoExperience",
+      "sha256": "712dc3a5ac7a206a36f9c1f642953e71a248b50ce09502da6e39a753cad7c7b7",
+      "sourceLine": 18205,
+      "style": false
+    },
+    {
+      "file": "media/previews.js",
+      "kind": "initializer",
+      "name": "SeekPreviews",
+      "initFunction": "initializeDeckSeekPreviews",
+      "sha256": "cc41b79d78d2e161e136599dc27e6c6a669fa2ed294c017b53e52276a0707bf6",
+      "sourceLine": 18275,
+      "style": false
+    },
+    {
+      "file": "media/player.js",
+      "kind": "initializer",
+      "name": "PlayerPreference",
+      "initFunction": "initializeDeckPlayerPreference",
+      "sha256": "6570057f65c2440761d9de034503ba1dae3d0e35e227d96edd4ee709fe04e13f",
+      "sourceLine": 18276,
+      "style": false
+    },
+    {
+      "file": "search/anchors.js",
+      "kind": "initializer",
+      "name": "SearchAnchors",
+      "initFunction": "initializeDeckSearchAnchors",
+      "sha256": "969c85b7006ff169fc153ed38582219561c956ea6178d3dc9821d8a960e49b5e",
+      "sourceLine": 18530,
+      "style": false
+    },
+    {
+      "file": "media/transport.js",
+      "kind": "initializer",
+      "name": "VideoTransport",
+      "initFunction": "initializeDeckVideoTransport",
+      "sha256": "d361279fcc02d0d84ba2a8680a9a0dac0a61a69f22c9d337392e0a3fea3b58c0",
+      "sourceLine": 18965,
+      "style": false
+    },
+    {
+      "file": "media/viewport.js",
+      "kind": "initializer",
+      "name": "ViewportPlayback",
+      "initFunction": "initializeDeckViewportPlayback",
+      "sha256": "62c4e139a9a3c0132b709d10ad0aeacc14afcc43bdd1505453adab9c0208016d",
+      "sourceLine": 19190,
+      "style": false
+    },
+    {
+      "file": "media/immersive.js",
+      "kind": "initializer",
+      "name": "ImmersiveSwipe",
+      "initFunction": "initializeDeckImmersiveSwipe",
+      "sha256": "fdb4e382e744ea9b39506ffe86059584feda843838d3ec9403e605c2868e0f30",
+      "sourceLine": 19338,
+      "style": false
+    },
+    {
+      "file": "search/native-tags.js",
+      "kind": "initializer",
+      "name": "NativeQueryTags",
+      "initFunction": "initializeDeckNativeQueryTags",
+      "sha256": "85ad4286a609f7cb6dd666790fc9cfd8b2712032a5af4dd5f908067f1a2f9e7e",
+      "sourceLine": 19462,
+      "style": false
+    },
+    {
+      "file": "tweets/enhancer.js",
+      "kind": "initializer",
+      "name": "ResultEnhancer",
+      "initFunction": "initializeDeckResultEnhancer",
+      "sha256": "772d80764365c4d940f6beb2f39588fd9a49a273086ef7eb765cec10897b7a5d",
+      "sourceLine": 19561,
+      "style": false
+    },
+    {
+      "file": "ui/toast.js",
+      "kind": "initializer",
+      "name": "rodxToastTimer",
+      "initFunction": "initializeDeckRodxToastTimer",
+      "sha256": "ea310a01327bae01fce7c5c5938e960e73ec142d07e489ee92935b3a1791eeca",
+      "sourceLine": 20496,
+      "style": false
+    },
+    {
+      "file": "ui/toast.js",
+      "kind": "function",
+      "name": "showRodxToast",
+      "sha256": "a1ad730a42b514d994777d64f1c2d22d614132d2d808f192f5ddf832a94b26d7",
+      "sourceLine": 20497
+    },
+    {
+      "file": "ui/draggable-dock.js",
+      "kind": "initializer",
+      "name": "DragDock",
+      "initFunction": "initializeDeckDragDock",
+      "sha256": "d80d318c247b730647bce700a715ccae284910a4cf7d62d10d5e4c2b5d559644",
+      "sourceLine": 20514,
+      "style": false
+    },
+    {
+      "file": "ui/root.js",
+      "kind": "function",
+      "name": "initializeRoot",
+      "sha256": "09a318aa9cdc13dcc817347bc43c64a7d0706afeb684839a4679b6aef12bc117",
+      "sourceLine": 20729
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_164",
+      "sha256": "6c7367a97964d69507b4df9084effee445cdee8fad708ed5592c2d477067f0b5",
+      "sourceLine": 20811
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_169",
+      "sha256": "29e624f687c4d31dd052310d6febd156f2927c118dbdacc5283ea3bb1fcb2588",
+      "sourceLine": 21804
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_170",
+      "sha256": "d6ee06c5a7bd265751121ce71ae5e36f57a7fcdfdaeadc8eaf756e37edf6ee64",
+      "sourceLine": 21818
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_171",
+      "sha256": "cd8b2f7806915e02dbb41ffff06f8777dcd39cb1c41df4acc1dc2f0f691dcb04",
+      "sourceLine": 21827
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_172",
+      "sha256": "948041e69fde8d5db2412b568d9ea82fd75f97b3699f3a78809f156d44a3bc38",
+      "sourceLine": 21832
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_173",
+      "sha256": "cec9385f5881f32c1fd4a04dcc74c9cf0bfbc5058deff14669ab120ce3dfa4d5",
+      "sourceLine": 21833
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_175",
+      "sha256": "013add78de5f317c80f775acc2ee08f685557df562514382058f0d88cd138260",
+      "sourceLine": 22640
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_176",
+      "sha256": "b8de5a32a64c7b726954527c77f45d4f2d75fcfebe788b2c71a8457638fdafc9",
+      "sourceLine": 22644
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_177",
+      "sha256": "ac53732fb24c6f773f16b0b367156ffb4ecfdad90f4f3e33e65fd11c8deb128b",
+      "sourceLine": 22652
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_178",
+      "sha256": "e3f430e069b1cb5bc10e7b7ec808f31a84d9d8846464a867e5d2f34f35374086",
+      "sourceLine": 22653
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_179",
+      "sha256": "c6ded9c87bd546a44f02c97a378b2188701ac4c09b27ad5828120975adeaba50",
+      "sourceLine": 22654
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_180",
+      "sha256": "6796b92852117186002185ae19c196ce64589231cfafa1a0847715c2c747ac1c",
+      "sourceLine": 22655
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_181",
+      "sha256": "8ab0619aebdf6e86587b1ebf2d00196a416e3030ec1964c94fbd4bfa7539bedc",
+      "sourceLine": 22656
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_182",
+      "sha256": "31c76dcb4ae5146c81c57a51fb341c90640cac39765491ca57e94968432c14fc",
+      "sourceLine": 22661
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_183",
+      "sha256": "601fbe1f9d2581b381eeb44fee3c916679821655fc6fb9ebb7b44dcc30b71f5c",
+      "sourceLine": 22682
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "initializer",
+      "name": "databaseSaveTimer",
+      "initFunction": "initializeDeckDatabaseSaveTimerAndRefreshingCloud",
+      "sha256": "2a4fdc78e8bbe70d31d00371e61fa5ef27489850edaedf03482a0738851e77b2",
+      "sourceLine": 22683,
+      "style": false
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "initializer",
+      "name": "refreshingCloud",
+      "initFunction": "initializeDeckDatabaseSaveTimerAndRefreshingCloud",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 22683,
+      "style": false
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_185",
+      "sha256": "ebea638a14f34920635436544db0346a93e29aa2ca8b7718590b41c07b798c45",
+      "sourceLine": 22685
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_186",
+      "sha256": "9b4fc91085168e9a4c1dc0521f18caff7707ddb63cd85c0597fcf4314ae7d76e",
+      "sourceLine": 22692
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_187",
+      "sha256": "a8cc910f8279349b118e7711784ca9b04b276ddd4d658866ae2b8149d8ba59b8",
+      "sourceLine": 22705
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_188",
+      "sha256": "eb5ab8827ce89a1d8cebcece050386d1e5e2e14f1ff90b4ea7b23734c00e21bc",
+      "sourceLine": 22708
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_189",
+      "sha256": "678552fa501ec9d23d2681166b1671f7de891a245492166c6f65741a7719cdc7",
+      "sourceLine": 22711
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_190",
+      "sha256": "b0e9c2259ef0de0bf7b19e3c9596149c33f358002b6e2fb6ac593b9581e82938",
+      "sourceLine": 22722
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_191",
+      "sha256": "9606d26aa227ca97cfb5cd862a55a4bb14af609f475c9813da14acc98d83086a",
+      "sourceLine": 22725
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_192",
+      "sha256": "8e10fbf83c158c8c1c25a751f9789d6a3809487fa23c846cb47fb1045f798444",
+      "sourceLine": 22728
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_193",
+      "sha256": "5cc9fb5a763107b2931a58c84d0517bc55a2e2a3caf4b0032aaff38e42c5b5f0",
+      "sourceLine": 22732
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_194",
+      "sha256": "295326afe690d49c1f8b5c100cb3af6039ee8d2784139c682403a866c8cfd12b",
+      "sourceLine": 22742
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_195",
+      "sha256": "a4ea21c97b69d9692f42bbbf6a6444fbe956e729d7ce5feb3eecf7be66044ec1",
+      "sourceLine": 22756
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_196",
+      "sha256": "5b184b424c5634678e8d672ee153ac1ae144d2b48332d2a534d51e31acbde3e1",
+      "sourceLine": 22760
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_197",
+      "sha256": "de9676aa3ba495104be1d9d1d068ff7d24d7daaaacc4cfa5c3c69184ecb03519",
+      "sourceLine": 22775
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_198",
+      "sha256": "53dff1ced309a2c676a777f258e1e30749ef5246323ae1585f96229d0fd26cc8",
+      "sourceLine": 22786
+    },
+    {
+      "file": "bootstrap/deck-events.js",
+      "kind": "effect",
+      "name": "initializeRodX_deck_199",
+      "sha256": "d5a08a84880584f1be9b9790dbed4d6e04a9a4c86481926753d0fd3a65ab9db1",
+      "sourceLine": 22787
+    },
+    {
+      "file": "ui/selection.js",
+      "kind": "initializer",
+      "name": "SelectionPopover",
+      "initFunction": "initializeDeckSelectionPopover",
+      "sha256": "882e46edfe5738556ad2470827555f7d37bc498e299b27cbd0224ae4f1c86f1f",
+      "sourceLine": 20845,
+      "style": false
+    },
+    {
+      "file": "layout/hygiene.js",
+      "kind": "initializer",
+      "name": "XInterfaceHygiene",
+      "initFunction": "initializeDeckXInterfaceHygiene",
+      "sha256": "4fc4e69f55da3e5d1d39ca4a5568c3b00eff2a211c361248d214edfa748bbacc",
+      "sourceLine": 20982,
+      "style": false
+    },
+    {
+      "file": "search/history.js",
+      "kind": "initializer",
+      "name": "SearchHistory",
+      "initFunction": "initializeDeckSearchHistory",
+      "sha256": "d7afff40b53413e372dfb06e66bc2b1c2f80b2fba25f7e7f08cb26a060736bda",
+      "sourceLine": 21161,
+      "style": false
+    },
+    {
+      "file": "identity/navigation.js",
+      "kind": "function",
+      "name": "tick",
+      "sha256": "dbb60877336b2655cb82d04cbfdac3adfe2f7d7fec5392e494686e03b6b98c11",
+      "sourceLine": 21747
+    },
+    {
+      "file": "ui/quick-actions.js",
+      "kind": "initializer",
+      "name": "QuickUI",
+      "initFunction": "initializeDeckQuickUI",
+      "sha256": "51e74e2be3f89dff6d36f92207d2c950218cc739017978adaad042f445131928",
+      "sourceLine": 21840,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "APP",
+      "initFunction": "initializeListsAPP",
+      "sha256": "9dcffe8c15f843250010af907279a2b5c23c895c451b5d0d0429ffb5c963b4af",
+      "sourceLine": 2522,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "DB_NAME",
+      "initFunction": "initializeListsDB_NAME",
+      "sha256": "90d3de341e34bf5152a00f1382c7f16382ff8cf619c8abb7ab846e7da0dc0701",
+      "sourceLine": 2523,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "SETTINGS_KEY",
+      "initFunction": "initializeListsSETTINGS_KEY",
+      "sha256": "dc4f19412c0785c4a9ee958955998c7582678da89bff49a50618b1ca880eb2e3",
+      "sourceLine": 2524,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "QUEUE_KEY",
+      "initFunction": "initializeListsQUEUE_KEY",
+      "sha256": "c6cbe1a66c2108486715a5c60b1a76f92b1e8f74f0270503d6d000b86a0ddd8d",
+      "sourceLine": 2525,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "AUTO_SCAN_KEY",
+      "initFunction": "initializeListsAUTO_SCAN_KEY",
+      "sha256": "0273881b00db721500ed3c6eaa91950ea2513bf58fd177de5f456f18f8cb5cf2",
+      "sourceLine": 2527,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "API_TEMPLATES_KEY",
+      "initFunction": "initializeListsAPI_TEMPLATES_KEY",
+      "sha256": "383b4895279b1d640f9fad72069f51f2fe3d93d3506d703f3a8ed2ba2b71e180",
+      "sourceLine": 2528,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "WRITE_LEDGER_KEY",
+      "initFunction": "initializeListsWRITE_LEDGER_KEY",
+      "sha256": "1fe8bc71cc40e0b1b72b9e74487e3f1f9fa674fee2447fedcf8435f14c8472ee",
+      "sourceLine": 2529,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "QUEUE_LEASE_KEY",
+      "initFunction": "initializeListsQUEUE_LEASE_KEY",
+      "sha256": "35f5bfab0f96398f1e4ff17347c0b01cbeb1a3fb8610c573fc7d875c4cefb35a",
+      "sourceLine": 2530,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "LIST_PRESETS_KEY",
+      "initFunction": "initializeListsLIST_PRESETS_KEY",
+      "sha256": "05c1186347db832185379ed7f10f4221bc32c3bf7aa1eba79c0a8b5e012d894e",
+      "sourceLine": 2531,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "LIST_USAGE_KEY",
+      "initFunction": "initializeListsLIST_USAGE_KEY",
+      "sha256": "0a8e272a89fb8d7cba4a2411fbc7d11aefc6595664c9893d82cb6801a5cc3907",
+      "sourceLine": 2532,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "NAME_MIGRATION_KEY",
+      "initFunction": "initializeListsNAME_MIGRATION_KEY",
+      "sha256": "1a10897140aa6973c3eb38dca2fa22389abea552e9b1855e6b81f5ed3393ccac",
+      "sourceLine": 2533,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "NAME_REFRESH_LEDGER_KEY",
+      "initFunction": "initializeListsNAME_REFRESH_LEDGER_KEY",
+      "sha256": "78ed36e2356140dacc676592bcced467034e7c3047d8e953127101311641723c",
+      "sourceLine": 2534,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "PER_LIST_FIELDS",
+      "initFunction": "initializeListsPER_LIST_FIELDS",
+      "sha256": "0e43a8906c87358854d413dd01a8b6e5a01dc9be4cddd19da0ba146716872177",
+      "sourceLine": 2535,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "memberCursorKey",
+      "initFunction": "initializeListsMemberCursorKey",
+      "sha256": "d41aed2b6e113c240e20da527bae8b06ecb3fd47060add5508d5f8c5601a4656",
+      "sourceLine": 2536,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "ownTabId",
+      "initFunction": "initializeListsOwnTabId",
+      "sha256": "3fa9bb2347e5d80de2c41f5c80e6328a3927ac27cf9aa7fce02f02e5e1bc2d84",
+      "sourceLine": 2537,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "DEFAULTS",
+      "initFunction": "initializeListsDEFAULTS",
+      "sha256": "d757e158185156e7d0a8231e25206543d874fb9a6eacd60c50c121576144ac3a",
+      "sourceLine": 2538,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "LIST_URL_RE",
+      "initFunction": "initializeListsLIST_URL_RE",
+      "sha256": "8958749c74c72fd2df52050f743320d876e60123b553c0c7eadbdf1e3752c1fc",
+      "sourceLine": 2554,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "HANDLE_RE",
+      "initFunction": "initializeListsHANDLE_RE",
+      "sha256": "9615d05be0fa29e9d091bb37227be79f130595d9611e5095bea196b00e50c2bb",
+      "sourceLine": 2555,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "sleep",
+      "initFunction": "initializeListsSleep",
+      "sha256": "7bda68f5e0ed005fdcbd84cabaa13cfa532556a1c10f9c5a93a56c85214932d9",
+      "sourceLine": 2556,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "qs",
+      "initFunction": "initializeListsQs",
+      "sha256": "294e4cf0d2c3e25a8e4d25d5e9cda9d96e4c9a94a578e9c8cbf7ab00c237d982",
+      "sourceLine": 2557,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "qsa",
+      "initFunction": "initializeListsQsa",
+      "sha256": "cb4b03c66d0fc8d1b0c5e82484cf23e9821e30bbcf3edce3bbed6f4ed91845f3",
+      "sourceLine": 2558,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "esc",
+      "initFunction": "initializeListsEsc",
+      "sha256": "70b8171954874fa1304fc4e024bd6a205ac7d8b49ff37e5ada9090c9676f432c",
+      "sourceLine": 2559,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "normalize",
+      "initFunction": "initializeListsNormalize",
+      "sha256": "ac27d55c036cfb9cb8f44366d89a276923be9e2a1cb7b678a3773b943b24aae7",
+      "sourceLine": 2571,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "timeText",
+      "initFunction": "initializeListsTimeText",
+      "sha256": "d17c68e6b1327f8167cc676329854c6e80e863d2a4a44aea4ce9bd7690e2f520",
+      "sourceLine": 2577,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "now",
+      "initFunction": "initializeListsNow",
+      "sha256": "0ec65c7b035973a44ff6c28157913ea56841ad885dceadc8c47f512ba9a54c6b",
+      "sourceLine": 2578,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "routeListId",
+      "initFunction": "initializeListsRouteListId",
+      "sha256": "25b6d394db7a5e99d4a31dd1be2f40200cc91b42c8ffdfd140769317b6aa3041",
+      "sourceLine": 2579,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "isListMembersPage",
+      "initFunction": "initializeListsIsListMembersPage",
+      "sha256": "dc4feccf0c20aa93f569408aa9a50c31df63c87e83793b0528846f02f5a01d0f",
+      "sourceLine": 2580,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "isListPage",
+      "initFunction": "initializeListsIsListPage",
+      "sha256": "02e32c1e631117942caf0a4a9bbfe6bc3b13aa434cccf0d503955ac0b7d4eee5",
+      "sourceLine": 2581,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "listUrl",
+      "initFunction": "initializeListsListUrl",
+      "sha256": "689dcebff329c33a84690ec9c4773fb11ed8a1d388c839046fac0d4deacfc97d",
+      "sourceLine": 2582,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "validListId",
+      "initFunction": "initializeListsValidListId",
+      "sha256": "751541ddda189561ecd69d01f941684eee3f6765bfc80c52054f51423bef573b",
+      "sourceLine": 2583,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "validHandle",
+      "initFunction": "initializeListsValidHandle",
+      "sha256": "590d3e6bd6dda99130f48bf7396019b6f003f39983d604b4bff31dbaff40da17",
+      "sourceLine": 2584,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "cleanHandle",
+      "initFunction": "initializeListsCleanHandle",
+      "sha256": "93590172a9dcdd84fdcaaf6029893f1a2658802092c63147e23841a5158cd623",
+      "sourceLine": 2585,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "loadJSON",
+      "initFunction": "initializeListsLoadJSON",
+      "sha256": "a1581db5a2354a4989496a7ac6389e6e30a52dc3bb701c1544278c20d6983a7a",
+      "sourceLine": 2589,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "settings",
+      "initFunction": "initializeListsSettings",
+      "sha256": "b01d2f6ed0029e09a263c3e6311105cee7c8832db87bd638d5fa772c97bd919b",
+      "sourceLine": 2596,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "listPresets",
+      "initFunction": "initializeListsListPresets",
+      "sha256": "a8a33566b38ad61aebf95ea48041b0e8d96cffaf412d529dbe8a50456d741dd0",
+      "sourceLine": 2600,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "applyListPreset",
+      "sha256": "e8ed79bae1896dbf67ac182a959fc8d21c49be41f610164ccdb888c618de3174",
+      "sourceLine": 2601
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "saveListPreset",
+      "sha256": "6f697b68837b6f48cdb18684816533c1a5b84c79062e26d31c8cfc8732aebf05",
+      "sourceLine": 2606
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_37",
+      "sha256": "52e306708de9b837d4508eba8c81e62d6f23f0a692ecad53b84d37cd500750d8",
+      "sourceLine": 2614
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "saveSettings",
+      "initFunction": "initializeListsSaveSettings",
+      "sha256": "e85d5705686cc75277267232cddce94c0ef2441d1ba3b9dc9a4b23c685d908b9",
+      "sourceLine": 2615,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "state",
+      "initFunction": "initializeListsState",
+      "sha256": "203847413e84cb4cc06b31acd6c6880401ee4fac98e6783e50af432333ba1c16",
+      "sourceLine": 2624,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "listUsage",
+      "initFunction": "initializeListsListUsage",
+      "sha256": "ed2c33a3d67f72d1458766e3aac1e4e8ba110b180c0c43a1ab4a6e9c68a3dfaf",
+      "sourceLine": 2653,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_41",
+      "sha256": "e5703bb05dba6ae0f938214379307f99ef5620ab01d546774610b742882358e5",
+      "sourceLine": 2657
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_42",
+      "sha256": "43fae8d1acdb4e6aca5187639d248f4dddf12a7963d7ae2dabb0659dddd0e5e1",
+      "sourceLine": 2662
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "halfLifeMs",
+      "sha256": "855d07671afbe47a02642611e88168758743b28b86644e92f4264b0fe1bb2b45",
+      "sourceLine": 2665
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "usageAccount",
+      "sha256": "896763d535179bd925bc283f3832ab52c7b5379182a27169ba1cccc7748f6722",
+      "sourceLine": 2668
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "statsForAccount",
+      "sha256": "0d66f6737745cc69f4bdfd6a6bb1d1984e51d4eb57eabcf899a873e2a47bea6c",
+      "sourceLine": 2671
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "usageStat",
+      "sha256": "ce283d4f64f564807a334c555534072802ca43bfc234d90cd09db0652d645f3e",
+      "sourceLine": 2683
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "scoreAt",
+      "sha256": "a11f40ac3e0714bac2c3c9eedc2b80c6342f40dd504e700ab20169a0cc35ba80",
+      "sourceLine": 2696
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "markListUsed",
+      "sha256": "fb7f91f30aa10496671360aba287f6f434996f4e7347009885b9db646674d478",
+      "sourceLine": 2700
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "mergeUsageAccount",
+      "sha256": "0ccc0c62ca3ba0b2f3f3460b191546e66f320789522f2233e0d2e4cac09d89d7",
+      "sourceLine": 2725
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "orderedQuickLists",
+      "sha256": "b68e56acdaa8e16c94c5a9fb206f64d4dc23f22d7bcebbe6026e0f0c1107bd02",
+      "sourceLine": 2758
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "dbPromise",
+      "initFunction": "initializeListsDbPromise",
+      "sha256": "2a4fdc78e8bbe70d31d00371e61fa5ef27489850edaedf03482a0738851e77b2",
+      "sourceLine": 2773,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "openDB",
+      "sha256": "91cc6976895e45287cce9bf22ed8810ef51b850d6ff15c48d4d286173d82e4dc",
+      "sourceLine": 2774
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "dbOp",
+      "sha256": "f08488901a4332e6e6199ff057092eedef29421307eb099c60936989e66c3055",
+      "sourceLine": 2806
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "getAll",
+      "initFunction": "initializeListsGetAll",
+      "sha256": "39cc98979f33cf606a1ceb60daf08b4d2317589a90d1eb53491439cc167fcab5",
+      "sourceLine": 2826,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "getOne",
+      "initFunction": "initializeListsGetOne",
+      "sha256": "f758c470431b4cece3dbe94bf7f970eb41b34427c332d439a18c2db91dc72283",
+      "sourceLine": 2827,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "put",
+      "initFunction": "initializeListsPut",
+      "sha256": "dc6fec2ef4c0b9f79ebdd5dcace6f0f14f5abdbd0626f84a9d39d250c9b730bd",
+      "sourceLine": 2828,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "putMany",
+      "sha256": "65f313a0806f9ff195fd57033b5618e5f12e6ca0a3f4e033b3160b8bca475ad7",
+      "sourceLine": 2829
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "membersFor",
+      "sha256": "fb97add9e9b57d6b293a6c777158a1f27935cb7ccc21b9b22d39043a63322b0a",
+      "sourceLine": 2844
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "INVALID_LIST_NAMES",
+      "initFunction": "initializeListsINVALID_LIST_NAMES",
+      "sha256": "f438848664f5f653b24bf647b296a3ee9b35540fbabe54c7f2f537a898b9c94e",
+      "sourceLine": 2855,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "cleanListName",
+      "sha256": "38a88b66a29fe1e376adb4df80729cbaa62670ebdf9189370f19b616cc342f03",
+      "sourceLine": 2897
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "NAME_SOURCE_WEIGHT",
+      "initFunction": "initializeListsNAME_SOURCE_WEIGHT",
+      "sha256": "dfb85edd1cc74672fa224e5fb8d0c045b660367913dc418bc9307b4286e4ec72",
+      "sourceLine": 2938,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "displayListName",
+      "initFunction": "initializeListsDisplayListName",
+      "sha256": "4861964615f8a78fed567de7c1585cde7be6a8fffc81e4f1bdd9c049e95714f5",
+      "sourceLine": 2949,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "isPlaceholderName",
+      "sha256": "aed92cd2e249b9c297d50f7bc7ddae18f5a9a4119aebcac18a08a6f3d84c6968",
+      "sourceLine": 2954
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "repairStoredListNames",
+      "sha256": "dddb53d330d85bccd7b66c9b5dccd5f94264e59dcf6783262d693ba6afa16ac2",
+      "sourceLine": 2965
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "migrateManualAliases",
+      "sha256": "cdc8e2427d527d582d7733ab09a69bdf2f8cf39abb773ceee19799ab2ea16087",
+      "sourceLine": 2990
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "listWrites",
+      "initFunction": "initializeListsListWrites",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 3008,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "upsertList",
+      "sha256": "c98bf6cd48944f32daffa358900e77daaf7344c280282d3a9d698dbaddb867c8",
+      "sourceLine": 3009
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "writeListRecord",
+      "sha256": "ea0f4ab37bc76ed99c0cdeff4079718ed8a77f7152b7a6522797352355b9bf38",
+      "sourceLine": 3022
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "upsertMember",
+      "sha256": "b75083fd33b711d3bd6f541ec8688b300a95e5b59b07ebb3a2a67ea515dd8648",
+      "sourceLine": 3101
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "refresh",
+      "sha256": "2b72468daa213538804f627e793ae84c5f3a1f984c5b2873ff93b735c39b0d72",
+      "sourceLine": 3117
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_115",
+      "sha256": "7d05391cdba72a68fb7951e549f169763fb36c996efaf85d91d83ddd9512355b",
+      "sourceLine": 3913
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_116",
+      "sha256": "974805ebc866b032074a49975e93a3b25babc72c558cc585b6235429474682ab",
+      "sourceLine": 3922
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_117",
+      "sha256": "4b2b9f747ec35b28234dc1af4a06d2a0e50bd78875aac073d7020cb4b29c6d80",
+      "sourceLine": 3966
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_118",
+      "sha256": "ff20b35442dc45e89eff463d7106fd4594647f2648d6543eb07d6dc287159cb0",
+      "sourceLine": 3969
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "render",
+      "sha256": "38042570dbbe49efa126a4a709dfeb608d8e304bbf9a7a842ede56088e69fd1f",
+      "sourceLine": 3978
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "renderLists",
+      "sha256": "bd24e0061eb7538eaa02070b94651c31a388f753d4ca5cf84c5d6ea1301bfb14",
+      "sourceLine": 4003
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "renderMembers",
+      "sha256": "25a013beaa5eded1d238230b35dc535c098f5fdd58f0b9ae0a5cc6cf2645eb8f",
+      "sourceLine": 4039
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "buildQuery",
+      "sha256": "3d2a4dc643773a7d3a9a763e9999ee711b9179e4055e4e4261784b09df651e1d",
+      "sourceLine": 4081
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "renderSearch",
+      "sha256": "5017612c56ef440c0ddefbdf8df5f66b7befdf305421115e251b4d8fb9d7f6a2",
+      "sourceLine": 4093
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "renderBackup",
+      "sha256": "7172e96a9e9ee9dd2c46bcdba72b7f610998d22532c1b2aa9318f042cb433f6d",
+      "sourceLine": 4120
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "readQueue",
+      "sha256": "3822f70689e2d7854aa9feafa686b2262a7ba83a5630792461e5d130b2513c06",
+      "sourceLine": 4135
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "saveQueue",
+      "sha256": "9813fd2767cb01cb4206b3b8b2bef1f39305f9a6bf2d326dc52e611a4109395e",
+      "sourceLine": 4140
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "renderQueue",
+      "sha256": "58c8c353533e138ade220c41a7820208b44ccbdcd8dc8a4d1a3d9216fc7141a6",
+      "sourceLine": 4145
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "listToolbar",
+      "initFunction": "initializeListsListToolbar",
+      "sha256": "2a4fdc78e8bbe70d31d00371e61fa5ef27489850edaedf03482a0738851e77b2",
+      "sourceLine": 4175,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "drawListToolbar",
+      "sha256": "407096f5df3c12c12c4b3cad2ad955f633b999604d9eac77310f4437a8873793",
+      "sourceLine": 4176
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_230",
+      "sha256": "7d27af59f87cbe1754404e48089d9dee1f1bd0fe0d6109b1860772daf5e69b25",
+      "sourceLine": 6675
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_231",
+      "sha256": "88a60d4d555f3dd3cba72e9fa86afff8d2434654ab8a6bb663271527436f18a8",
+      "sourceLine": 6685
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "initializer",
+      "name": "lastPath",
+      "initFunction": "initializeListsLastPath",
+      "sha256": "f5a55c657cdc8eca46a559ad74cbcb58dd2f9e74c9796277c9f565d76bb4c4e5",
+      "sourceLine": 6688,
+      "style": false
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "function",
+      "name": "scan",
+      "sha256": "73f85e42dc677cca645dedeafb8add0677091ac870d0c4dfc4bde822bcea4b2b",
+      "sourceLine": 6689
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_234",
+      "sha256": "75c36e83cdd3e11f18ae81c53b449644e90c20d851a6062c64d413ec8757e61a",
+      "sourceLine": 6712
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_235",
+      "sha256": "410f929b92c526e1aea2489c85921ad7a56d8bd3e3c00b34a6d7562dbd59e1c6",
+      "sourceLine": 6716
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_236",
+      "sha256": "4f97c621f75e4d02ed25e619bf806f9768b62492909a161de3af6424761a0556",
+      "sourceLine": 6730
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_237",
+      "sha256": "6946bbc72533f492e5d8c62dbaa80e852f5d33d090c0c8e4b042c9151bbd273e",
+      "sourceLine": 6856
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_238",
+      "sha256": "cc459d8ef8f2839639e706c15804d5db6fc573bb53f1fb732093f47cb638fa5c",
+      "sourceLine": 6864
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_239",
+      "sha256": "04d8f38d03fa387b5562add60024699ff0db8b5cf19eb5a536e44ecd88d784e3",
+      "sourceLine": 6865
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_240",
+      "sha256": "a328f3f13827e98cbbec89fc9b115fffc5c1b9ff8fc7bf6c18870e188fd90ffc",
+      "sourceLine": 6866
+    },
+    {
+      "file": "lists/render.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_241",
+      "sha256": "7365a39b4ab07d0624a02427e6fda38373e7e82e3b3179e96c1c4de7de02b7f8",
+      "sourceLine": 6879
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "initializer",
+      "name": "refreshScheduled",
+      "initFunction": "initializeListsRefreshScheduled",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 3137,
+      "style": false
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "function",
+      "name": "scheduleRefresh",
+      "sha256": "fab678917c88841a2cfb7a48629c9118eb0de0efca0b77dc5ff8d4c076bf383b",
+      "sourceLine": 3138
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "initializer",
+      "name": "host",
+      "initFunction": "initializeListsHost",
+      "sha256": "3a055c133c9f6a8ae9c58266f613b4a169f3601e2d18131f1cb3a303fa195f74",
+      "sourceLine": 3148,
+      "style": false
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_74",
+      "sha256": "7c9de4dcb82a6e8b67fd97eaa9a92345d4a1d5e3b8234f05af6a8f8722c20800",
+      "sourceLine": 3149
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "initializer",
+      "name": "shadow",
+      "initFunction": "initializeListsShadow",
+      "sha256": "0a51d69e6fef91f82e8017de04c2b4478fca8eaa3745f6f6c5f1ad66493df30a",
+      "sourceLine": 3150,
+      "style": false
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "initializer",
+      "name": "style",
+      "initFunction": "initializeListsStyle",
+      "sha256": "46a8b02b8d955f2326c79bf5c268390d57e2e312c6e2ca4ba9818b2a846a8614",
+      "sourceLine": 3153,
+      "style": false
+    },
+    {
+      "file": "lists/view.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_77",
+      "sha256": "22fcd1084313e1bced692492d88e7d06d64e7165769b5d53876f80be7a98e22c",
+      "sourceLine": 3154
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_78",
+      "sha256": "a364740614dc03e8396b6381c60b687440be3a6146839fb17aaabbdc3fc9c99d",
+      "sourceLine": 3745
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "shell",
+      "initFunction": "initializeListsShell",
+      "sha256": "3a055c133c9f6a8ae9c58266f613b4a169f3601e2d18131f1cb3a303fa195f74",
+      "sourceLine": 3746,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_80",
+      "sha256": "c14315e350efe8c8cee2fbcd3c124da63deb54d0661f651f620538778265d4b5",
+      "sourceLine": 3747
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_81",
+      "sha256": "f9b42f5abf6151c1588b5751d18a1ac38434af199f89e3b16cbc2b0a35a2f277",
+      "sourceLine": 3755
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickRoot",
+      "initFunction": "initializeListsQuickRoot",
+      "sha256": "3a055c133c9f6a8ae9c58266f613b4a169f3601e2d18131f1cb3a303fa195f74",
+      "sourceLine": 3756,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_83",
+      "sha256": "27cbc3942578b88532b98124fa3c21a53dc45f94f4bef367ef79670e3b20ded1",
+      "sourceLine": 3757
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_84",
+      "sha256": "7a20fe519e365e334ca433337f005402de4f16b76db44a8c822d1d948194f079",
+      "sourceLine": 3769
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "overlay",
+      "initFunction": "initializeListsOverlay",
+      "sha256": "8630f538e9c2483cee7937c79dc6cff3497257abcb5de566bb6c7ee9be4b1f6d",
+      "sourceLine": 3770,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "body",
+      "initFunction": "initializeListsBody",
+      "sha256": "b906198ec2501e2137d5b6f6c3370c4d677c39b2920290106280e13c62730a74",
+      "sourceLine": 3771,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "tabArea",
+      "initFunction": "initializeListsTabArea",
+      "sha256": "1068bb8b45ac25223bdc9f39ae0cb28ece91dbdb0a908d9539cff0b4756306ee",
+      "sourceLine": 3772,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_88",
+      "sha256": "ce0e79c1727142ca4ef76c7ba40d218f832e8db1a87ddc2229da72009b78d4a2",
+      "sourceLine": 3773
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_89",
+      "sha256": "97cd36e3218ea28cc2aa605ae87de0d433f1d98a5a1075bc05a04c4bea4ed3cf",
+      "sourceLine": 3774
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "toggle",
+      "sha256": "c7f5d0467e735be552cb90921e5e81b5bba680075fc3e69ce4a1c18cce88c359",
+      "sourceLine": 3777
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "notice",
+      "sha256": "36ad0a42543436b4b0f99eaecaa06c2496c801dea0c89816e6c9c60bcf3b6c5c",
+      "sourceLine": 3789
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "noteHTML",
+      "initFunction": "initializeListsNoteHTML",
+      "sha256": "c36e0f3af215972cacc5785c8c3fd6f2554bac69fed46f1e5a518cf03c8b75e6",
+      "sourceLine": 3794,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "optionsHTML",
+      "initFunction": "initializeListsOptionsHTML",
+      "sha256": "4be1d8610c3a8cf604914d4806084fe4ce73d089634094bd4ae9aba57a4a04ed",
+      "sourceLine": 3796,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "listOptions",
+      "initFunction": "initializeListsListOptions",
+      "sha256": "77e3d3ae89108348e15fe1e6221572330cc44315bc3bb946da73f6db3c59126e",
+      "sourceLine": 3803,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "currentList",
+      "initFunction": "initializeListsCurrentList",
+      "sha256": "c5dea0e9ff55a10b0e7355a43ad65106b9b2b79866069c35facea2b4c50b0e78",
+      "sourceLine": 3808,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "memberCount",
+      "initFunction": "initializeListsMemberCount",
+      "sha256": "a6ba827e2680c696447e9ca9f466058281dab78cb3947cb1987bf8c22fca71ef",
+      "sourceLine": 3809,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickOrder",
+      "initFunction": "initializeListsQuickOrder",
+      "sha256": "25a6a8356e97281f10b8c1ccbf6cf28b051a0191aec18d84538da964220d2c2d",
+      "sourceLine": 3813,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickUser",
+      "initFunction": "initializeListsQuickUser",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 3814,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickAnchor",
+      "initFunction": "initializeListsQuickAnchor",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 3815,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickSearchValue",
+      "initFunction": "initializeListsQuickSearchValue",
+      "sha256": "f5a55c657cdc8eca46a559ad74cbcb58dd2f9e74c9796277c9f565d76bb4c4e5",
+      "sourceLine": 3816,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickToastTimer",
+      "initFunction": "initializeListsQuickToastTimer",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 3817,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickBackdrop",
+      "initFunction": "initializeListsQuickBackdrop",
+      "sha256": "edc8344a3d87208301524e35577f88c859353d61ea6945bb1909088914773441",
+      "sourceLine": 3818,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickPicker",
+      "initFunction": "initializeListsQuickPicker",
+      "sha256": "fc13f84627847d48b096760c84b51f0e2a4eef86b35709b8a01aca45bc2e1a51",
+      "sourceLine": 3819,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickSearch",
+      "initFunction": "initializeListsQuickSearch",
+      "sha256": "36f6530c81a8f35801465051b5780eb3701ab87555d23ba194e7f5c368c33f02",
+      "sourceLine": 3820,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "initializer",
+      "name": "quickOptions",
+      "initFunction": "initializeListsQuickOptions",
+      "sha256": "d9cfbeaa1391a035573e2df7eec64ff527db8c677a2908cd3214d84e0422bad3",
+      "sourceLine": 3821,
+      "style": false
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "quickToast",
+      "sha256": "c05c0152698f9ef3c8940ca10d658e3d3fd956a4cb98610d4245d4c79fb418d4",
+      "sourceLine": 3822
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "closeQuickPicker",
+      "sha256": "9028927a8c761970c007e442aabd2eb7feb0c967935b11cabf28b039b78263b5",
+      "sourceLine": 3830
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "positionQuickPicker",
+      "sha256": "b8d34bb981b1fcd4cd043f4795f61143d05ebf28726309883584adf3e9c0e769",
+      "sourceLine": 3837
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "renderQuickOptions",
+      "sha256": "7acb79f3e4b4089aa8b6f9cd79a857b312489e4736617811678f91e52e587afd",
+      "sourceLine": 3851
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "refreshQuickPickerIfOpen",
+      "sha256": "cf9cd79bc279a4dcd45cde6a8d29502330caba752fa1296ae6aa508fa884d438",
+      "sourceLine": 3880
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "function",
+      "name": "openQuickPicker",
+      "sha256": "ed15ad6f67460b860067cee30a019647a824c5e869444f23b270b66b1cdf6059",
+      "sourceLine": 3883
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_112",
+      "sha256": "cdaca510b66272e02e2b3fd64b6b5d88559a39eafbf8cdb71de11dfaa759cb10",
+      "sourceLine": 3907
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_113",
+      "sha256": "9d56fb0b29f529720394955a67ad310dcfa9dc83776081ee12dd80fcda6ded17",
+      "sourceLine": 3908
+    },
+    {
+      "file": "lists/quick-picker.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_114",
+      "sha256": "1e25d7c4537e70123adf9f84f4f01286c8182e3fa0d70ef3127a3d71935dbe25",
+      "sourceLine": 3909
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "drawHomeBar",
+      "sha256": "1ff33e40c5208658a581b5832cb050056d3919ceb1545862d997e93388c800ae",
+      "sourceLine": 4209
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "captureRunning",
+      "initFunction": "initializeListsCaptureRunning",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 4214,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "lastListCaptures",
+      "initFunction": "initializeListsLastListCaptures",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 4215,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "nameObservations",
+      "initFunction": "initializeListsNameObservations",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 4216,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "nameRetry",
+      "initFunction": "initializeListsNameRetry",
+      "sha256": "2a4fdc78e8bbe70d31d00371e61fa5ef27489850edaedf03482a0738851e77b2",
+      "sourceLine": 4217,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "captureVisibleLists",
+      "sha256": "91b9cafa019ca7fc5d4f51e99ec672f3cea1eeceef771eaa21e602de8762f0e0",
+      "sourceLine": 4218
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "findUserCells",
+      "sha256": "c4576e463d73ed759879a1ae8d0e423979db4aefbac53d6a33e8294649758c30",
+      "sourceLine": 4276
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "extractUser",
+      "sha256": "39c760f1250aae73c3e3796298513fa6e73ace053176418636eba831e2d7c34e",
+      "sourceLine": 4279
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "getMemberScope",
+      "sha256": "55f2a130293d14d0b22d3967248ed030a94e4b1876ebcfbd30baf82247715a09",
+      "sourceLine": 4309
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "quickButton",
+      "sha256": "8c97e353a795e7a411fc67c3090ea01f2adb2331e2da20b81e9941c7d34108b4",
+      "sourceLine": 4338
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "attachMemberPickers",
+      "sha256": "d2e583f31aeb2d1d85b411efb17feabdb02e91691da5559b484e66a712903eea",
+      "sourceLine": 4356
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "NON_PROFILE_PATHS",
+      "initFunction": "initializeListsNON_PROFILE_PATHS",
+      "sha256": "3d3a2334d088917891bd8497a5ec69fa4bbc1755214a7dba770b113d813703a7",
+      "sourceLine": 4391,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "initializer",
+      "name": "memberCaptureRunning",
+      "initFunction": "initializeListsMemberCaptureRunning",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 4415,
+      "style": false
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "captureMembers",
+      "sha256": "3021fbfd210217077f9347be924b1d139f2c6c82e4dd65f6c3a95171db45b834",
+      "sourceLine": 4416
+    },
+    {
+      "file": "lists/dom-capture.js",
+      "kind": "function",
+      "name": "startScan",
+      "sha256": "4888f3164bbd7c1a988e5411ee657c22df7e1400343019d802d84f64721d29de",
+      "sourceLine": 4459
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "listOperation",
+      "sha256": "6927416a51d69782aa1042e25519f615507b668d6717d872414c9bccfd2f7557",
+      "sourceLine": 4489
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "responseListId",
+      "sha256": "fa1a5527657a87d97b5ae0c96afabcd25eda217c25f17ee5e7ed742a6b20f522",
+      "sourceLine": 4493
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "parseApiListObject",
+      "sha256": "71fa014e4f070c7be56cbadc7c512e030dd8f3b87f76c25cbca3f9816c3e04d2",
+      "sourceLine": 4513
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "ingestListResponse",
+      "sha256": "ccab9037437299070e44507595a638cf7127a4d1a59385e9db52e4362fdf0abf",
+      "sourceLine": 4557
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "requestTemplates",
+      "initFunction": "initializeListsRequestTemplates",
+      "sha256": "5bb563bb5fa2dcffb80c6846dd03efe23f8c9a4f847837f5b41f0cce3c47e888",
+      "sourceLine": 4631,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "sessionAuth",
+      "initFunction": "initializeListsSessionAuth",
+      "sha256": "a1c8f47623924808a3d25ba83ce5ad4a2d963b676953b174d631d22143905b34",
+      "sourceLine": 4632,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_151",
+      "sha256": "4ffeb8deb068a748d3c45afc0845ae1ac319b4ac54bcd33fa0845802463b7682",
+      "sourceLine": 4639
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "csrfCookie",
+      "sha256": "083ebb8cf49ba7c9e0fc49363b80dc8d4e4982dc261ea871657278aeb99ad925",
+      "sourceLine": 4640
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "operationName",
+      "sha256": "8088886542f9e9b5c7e88984169b25534d46ce2748b59f0bb46732733d0eaf8a",
+      "sourceLine": 4647
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "rememberTemplate",
+      "sha256": "d3ffabcd94b32dd6f9ba07e5cd2151e324f50c89e9972fb9a5cd6a60fa1bd497",
+      "sourceLine": 4654
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "recordObservedRequest",
+      "sha256": "c92a623ad8eb5371aa971596500dbbc403ac38d67ceffc2753ec83a436244291",
+      "sourceLine": 4707
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "ingestQueue",
+      "initFunction": "initializeListsIngestQueue",
+      "sha256": "3e5bd8e6ce4a4794f49347e14367a250585789b7e1f665a17da30b7b34865c90",
+      "sourceLine": 4718,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "bridgeReady",
+      "initFunction": "initializeListsBridgeReady",
+      "sha256": "017030c635a22506478743080ff8c7832642c1c0a688ccede39069ff5ec58a13",
+      "sourceLine": 4719,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_158",
+      "sha256": "ce18447177d258c7c8fa3c2fd8a3b01a354d531c1a61fc91220cf4f1791a3e2c",
+      "sourceLine": 4720
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "bridgeRequest",
+      "initFunction": "initializeListsBridgeRequest",
+      "sha256": "ee7260722e4ef263c60fac4c51a39222db177f576aeded6059c04d59c43b0e8f",
+      "sourceLine": 4727,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_160",
+      "sha256": "2d7d34c3e0dfd561bc8abc58a131dd0d6cd42f481be12d8f912f3f13e98b7c8a",
+      "sourceLine": 4728
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_161",
+      "sha256": "042d3fd9e08b4929054a55abebeb0a2159e0b3f0f034ff29fe7219287f2b693d",
+      "sourceLine": 4729
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_162",
+      "sha256": "e9345f44ed76092f5f3d958c863a9de117980dae11c73bdeda80d3d801d1d90f",
+      "sourceLine": 4730
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "class",
+      "name": "InternalAPIError",
+      "initFunction": "initializeListsInternalAPIError",
+      "sha256": "843ec07b569476e14cf10bd0fb4357b0ba2849d202b95ddc022adef7caad4048",
+      "sourceLine": 4743
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "requestInternal",
+      "sha256": "5be08f676c36ba3e7ab0184c1d9bca7a46275144d53e5f0c7634d85d1714e8b4",
+      "sourceLine": 4750
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "templateRequest",
+      "sha256": "f56a683127915e0f0642e20d2b1579c07c9febca839b58c255a80119fc149b09",
+      "sourceLine": 4805
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "bottomCursor",
+      "sha256": "53d5059558365482aae2e034a11dd2b0aae21f53576b8a8b880ab170c146dd37",
+      "sourceLine": 4828
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "syncListMembersApi",
+      "sha256": "d2e77e5036b88acfcab88e87b8e8947e77e28a479b20b4be980a48cf7bd0e466",
+      "sourceLine": 4845
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "directNameRefreshes",
+      "initFunction": "initializeListsDirectNameRefreshes",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 4901,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "refreshListName",
+      "sha256": "9321aeb710cca759f17ff08906829974ffbda85b8f73a7979b059cc0b1117610",
+      "sourceLine": 4902
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "showListNameDialog",
+      "sha256": "dc2011ccc9d040c9df3d64a0aa2ef36b26991e19da36a1b21c6153e718e7b02e",
+      "sourceLine": 4970
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "nameRefreshTimes",
+      "initFunction": "initializeListsNameRefreshTimes",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 5023,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "nameRefreshTimer",
+      "initFunction": "initializeListsNameRefreshTimer",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 5024,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "nameRefreshBusy",
+      "initFunction": "initializeListsNameRefreshBusy",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 5025,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "scheduleNameRefresh",
+      "sha256": "1d4489b5d2d0dd3f183fe7ca45aef67ac7a9fe976e7f3184dde7b7786a3ae020",
+      "sourceLine": 5026
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "refreshPendingListNames",
+      "sha256": "fe6ce9c51adb6e9f69f1bd1763987affafae1e78cd09c0cd47ca305ce2f15c50",
+      "sourceLine": 5033
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "autoReadTimes",
+      "initFunction": "initializeListsAutoReadTimes",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 5095,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "initializer",
+      "name": "autoSyncBusy",
+      "initFunction": "initializeListsAutoSyncBusy",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 5096,
+      "style": false
+    },
+    {
+      "file": "lists/graphql.js",
+      "kind": "function",
+      "name": "tryAutoRead",
+      "sha256": "df4661c2ec6eae4458d5f6783ba1dc2ea658bf2af4f6dc26403c5450bbb9f984",
+      "sourceLine": 5097
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "timeline",
+      "initFunction": "initializeListsTimeline",
+      "sha256": "a01e5204a1c669efe3586e95e5f1044f47f02672137fbe8061e34c52c1bfd3da",
+      "sourceLine": 5133,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "embeddedTimeline",
+      "initFunction": "initializeListsEmbeddedTimeline",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 5147,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "readThrottle",
+      "initFunction": "initializeListsReadThrottle",
+      "sha256": "aea7fbfe1dbbb4f564e5ad4c207730f4f565b7ba89d516b2f9bbb331e105051a",
+      "sourceLine": 5148,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "lastAutoPageAt",
+      "initFunction": "initializeListsLastAutoPageAt",
+      "sha256": "ea310a01327bae01fce7c5c5938e960e73ec142d07e489ee92935b3a1791eeca",
+      "sourceLine": 5149,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "scrollObserver",
+      "initFunction": "initializeListsScrollObserver",
+      "sha256": "f77413de45d97ef04b0fd64e584e73bfffa57c3ea0f1e7157805e6254a65727a",
+      "sourceLine": 5150,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "attachScrollObserver",
+      "sha256": "b5799636e1165d892b7c5a362495faffbe1031e9c6c5c0ec907326122560f9c4",
+      "sourceLine": 5151
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "hashQuery",
+      "sha256": "5c1f5515d4fe5d76ce7a3b4b549c3de7832479394a24c44ac67a465bab128724",
+      "sourceLine": 5179
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "initializer",
+      "name": "timelineQueryKey",
+      "initFunction": "initializeListsTimelineQueryKey",
+      "sha256": "88e5301169f04f4ff721cad345fb4cedcf85511317942fb9ef6a282141e51b0c",
+      "sourceLine": 5187,
+      "style": false
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "safeMediaURL",
+      "sha256": "0539fc924a67751028dec5136daca45623467284fb6a18b13c18fabd51c7ea30",
+      "sourceLine": 5189
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "extractTimelinePosts",
+      "sha256": "8133abda8f7a31f1a1c40128ca228d74a208f5ee41a42c570d116d37c8c21078",
+      "sourceLine": 5199
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "clientFilterPosts",
+      "sha256": "ee57f2db66c87b4517550afc6b3de3054bbc9593dd05113d358550d35076d734",
+      "sourceLine": 5268
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "formatPostDate",
+      "sha256": "1dc43228f5b7c955e48b3d40bb14841d6eecaf5e73b141e5966456f296abc1a7",
+      "sourceLine": 5280
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "postHTML",
+      "sha256": "b1e4e650c37c79309007da8fc4d121ed0fcce0d71fefb3dfc8fc6bf7d59f6824",
+      "sourceLine": 5289
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "renderTimelineCards",
+      "sha256": "10166dd6fe6a1faebbc00126520a635ef99fa8a1da312a3115ae8c82d3d75602",
+      "sourceLine": 5306
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "cachedTimeline",
+      "sha256": "f5dc58a9c86737f7db88b8680f454c51e9e9f0b86a47ae6288c161341a94442d",
+      "sourceLine": 5323
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "cacheTimeline",
+      "sha256": "1f503709f173f5d1318355ea6f52c3430a9ef4889da7c455698d6c7f8b330568",
+      "sourceLine": 5338
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "timelineRequest",
+      "sha256": "1e5312623e61283ddf09525ee52eea6bb5de1a60b0a70da83d3949104e66101d",
+      "sourceLine": 5367
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "reportTimelineError",
+      "sha256": "d2083437473ced3a035aa0685aaf833a14352ccd2276c7bf995707602506286a",
+      "sourceLine": 5399
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "refreshTimelineView",
+      "sha256": "ad55c5c71dcc38204b90d5d3214f571bbbb10c0c6960932e93fe425bc0aa7342",
+      "sourceLine": 5405
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "loadTimeline",
+      "sha256": "953ab02bb26a50d34eb92e692465d5056b8a7a599108989b80bf33bdc565f564",
+      "sourceLine": 5436
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "ingestObservedTimeline",
+      "sha256": "f0b430204c4b2a86af5d3c08c9e20d7b8f6b5f4a4d15e1851f2a225b0057c53d",
+      "sourceLine": 5516
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "removeEmbeddedTimeline",
+      "sha256": "14ae8cd051cda1668a9c77bda544f369e5fb631b210ab107ad128059058788a4",
+      "sourceLine": 5550
+    },
+    {
+      "file": "lists/timeline.js",
+      "kind": "function",
+      "name": "ensureEmbeddedTimeline",
+      "sha256": "cfa277e409aff4bcf0dc3ffd1f9023e2a390ee0a02a3bdc1495f47eab81a2975",
+      "sourceLine": 5557
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "applyRepostFilter",
+      "sha256": "1f5d78eaba59b080cd48800922be62d86285f6bcc150206302dd066824b40e75",
+      "sourceLine": 5752
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "MAX_WRITES_HOUR",
+      "initFunction": "initializeListsMAX_WRITES_HOUR",
+      "sha256": "25c6143b67aadcacff15ab386bdccda0f84e34470238931dd9c41bf0f907e13b",
+      "sourceLine": 5760,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "MAX_WRITES_DAY",
+      "initFunction": "initializeListsMAX_WRITES_DAY",
+      "sha256": "00b934066bfb963dbb6da42da1c0658696e63bc014ee1c2527155cda00a9f095",
+      "sourceLine": 5761,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "queueDelay",
+      "initFunction": "initializeListsQueueDelay",
+      "sha256": "1d51bcc27d1f2e3affa61bd52de65e98e036e4da5180c30c43b698ae913f73e3",
+      "sourceLine": 5762,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "writeLedger",
+      "sha256": "fb5eacabb27bc1c7cb75dca6e47110c8339b2168baa0ad594b96aceb22ae2b28",
+      "sourceLine": 5763
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "reserveWrite",
+      "sha256": "454d7767e0a21ffd8cd7eab49b73f4f9e71cff6e2f8fc040fd6320a42217d434",
+      "sourceLine": 5767
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "acquireLease",
+      "sha256": "1c702ef3c9b142a15d079da18a5820dbd8f0427f48f42fb0b215d3982b25ef0e",
+      "sourceLine": 5780
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "releaseLease",
+      "sha256": "3c74add70d9fb7fba8e562da10399aa68794a8551b074edb037cfb55e7a690af",
+      "sourceLine": 5793
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "makeQueue",
+      "sha256": "dd4e7e03bcaeb1424b63bf589accaedca1645e3450364bdbf1f0da5d20eae9ef",
+      "sourceLine": 5796
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "enqueueQuickAdd",
+      "sha256": "7e72b12b7b135abeae0e89ab5e9e56eb42881f80d865714851bd2aa252dbd8bd",
+      "sourceLine": 5843
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "queueWait",
+      "initFunction": "initializeListsQueueWait",
+      "sha256": "7e66ef1d4148fd0d06127465cbed9966064940d777304f22fa9f15fc66552590",
+      "sourceLine": 5896,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "resolveUserId",
+      "sha256": "c81b031867e76890c6fd9d772ddda5ccd99349c8c56710408d0d2721c4d758ca",
+      "sourceLine": 5908
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "DEFAULT_MUTATION_FEATURES",
+      "initFunction": "initializeListsDEFAULT_MUTATION_FEATURES",
+      "sha256": "a5eb46bbd68ff5639dedfb2cd6233eae6141fec21ccb4945946819720b363d60",
+      "sourceLine": 5928,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "addMemberInternal",
+      "sha256": "7ad57535cc5b0039829d25dcccf0d866895de6415d0bcec6fa3582c79b4873a7",
+      "sourceLine": 5936
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "followInternal",
+      "sha256": "5d3bb1216db6dcc47b40199da281d02d65efaae4ee2f6350a7d3099428357a96",
+      "sourceLine": 5966
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "disableRepostsInternal",
+      "sha256": "e0f4618016a0e886900a2f9c0548f3200d44e9de72c80e98c22e9ae16f6b0bff",
+      "sourceLine": 5976
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "pauseQueue",
+      "sha256": "98fda3c86d1634bec8db6441ce8e327dad69f83f2a10b3077e1cc2dc5df1e877",
+      "sourceLine": 5987
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "initializer",
+      "name": "queueRunning",
+      "initFunction": "initializeListsQueueRunning",
+      "sha256": "f3f603939df1766650fb81573fbaccb84b76ffded0bdc9cc82538b1b3b5ea1f7",
+      "sourceLine": 6005,
+      "style": false
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "runQueue",
+      "sha256": "71708c588233d5215f5504f57f70371f1eb462a3d665b8729f0ee50828766835",
+      "sourceLine": 6006
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "downloadBlob",
+      "sha256": "5017009fa1eb775e69dd28515d625dfc378647b5347ed900b8f1870b28e31875",
+      "sourceLine": 6095
+    },
+    {
+      "file": "lists/queue.js",
+      "kind": "function",
+      "name": "exportJSON",
+      "sha256": "123302d14d88db536a449ad5dc80ca6271e8d86a8fd03e5f4ec8d4b7fe79aedd",
+      "sourceLine": 6108
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "function",
+      "name": "csvEncode",
+      "sha256": "ed8a0c153a76dddff114e1611aa3cb06df766030aea0aa83277ece9f5e7f1744",
+      "sourceLine": 6132
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "function",
+      "name": "parseCSV",
+      "sha256": "649da0e16e35b41275911d99a4bfe40519986e9ada4f4e28d2290f0965d5bc94",
+      "sourceLine": 6135
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "function",
+      "name": "exportCSV",
+      "sha256": "51cf4d9939e574dd9c33ce78df8e47daee775067f6080bac3096b31afdb5365a",
+      "sourceLine": 6162
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "function",
+      "name": "importFile",
+      "sha256": "478a1cf3671a95849e64b6d393f43bb3a9d0ac5c68de68463dcb03903a7ae083",
+      "sourceLine": 6170
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_227",
+      "sha256": "3c3cd05f10eea49e47765a16a48b7ddb42f4f230dbbc726b41b02666e123188e",
+      "sourceLine": 6355
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_228",
+      "sha256": "15339bfa1d21782e031abff8c7898392725b235f464bd5016a65c13297f65178",
+      "sourceLine": 6604
+    },
+    {
+      "file": "lists/import-export.js",
+      "kind": "effect",
+      "name": "initializeRodX_lists_229",
+      "sha256": "306e95531a3e0844785acb393cd8de3eda3a9f54c59bbc88f92bbd08c0f67845",
+      "sourceLine": 6657
+    }
+  ],
+  "order": {
+    "network": [
+      {
+        "file": "platform/selectors.js",
+        "name": "initializeOuterXDOM",
+        "sourceLine": 58
+      },
+      {
+        "file": "core/studio.js",
+        "name": "initializeOuterStudio",
+        "sourceLine": 1875
+      },
+      {
+        "file": "bootstrap/start-network.js",
+        "name": "initializeRodX_outer_13",
+        "sourceLine": 1876
+      },
+      {
+        "file": "bootstrap/start-network.js",
+        "name": "initializeRodX_outer_14",
+        "sourceLine": 1878
+      },
+      {
+        "file": "bootstrap/start-network.js",
+        "name": "initializeRodX_outer_15",
+        "sourceLine": 1881
+      },
+      {
+        "file": "bootstrap/start-network.js",
+        "name": "initializeRodX_outer_16",
+        "sourceLine": 1882
+      }
+    ],
+    "deck": [
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckVERSION",
+        "sourceLine": 7571
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckPREFIX",
+        "sourceLine": 7572
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckIDENT",
+        "sourceLine": 7573
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckMAX_VISIBLE",
+        "sourceLine": 7574
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckEMPTY_FIELDS",
+        "sourceLine": 7576
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckLANGUAGE_OPTIONS",
+        "sourceLine": 7621
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckANY_ONLY_EXCLUDE",
+        "sourceLine": 7639
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckBLOCK_MEDIA",
+        "sourceLine": 7644
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckBLOCK_TYPES",
+        "sourceLine": 7651
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckMAX_BLOCK_NODES",
+        "sourceLine": 7659
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckMAX_BLOCK_DEPTH",
+        "sourceLine": 7660
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckSORTS",
+        "sourceLine": 7661
+      },
+      {
+        "file": "config/search.js",
+        "name": "initializeDeckGROUPS",
+        "sourceLine": 7668
+      },
+      {
+        "file": "styles/deck.js",
+        "name": "initializeDeckCSS",
+        "sourceLine": 7811
+      },
+      {
+        "file": "styles/deck.js",
+        "name": "initializeDeckCUSTOM_CSS",
+        "sourceLine": 9051
+      },
+      {
+        "file": "state/deck.js",
+        "name": "initializeDeckState",
+        "sourceLine": 9221
+      },
+      {
+        "file": "search/blocks.js",
+        "name": "initializeDeckCopyFields",
+        "sourceLine": 9291
+      },
+      {
+        "file": "shared/text.js",
+        "name": "initializeDeckHtml",
+        "sourceLine": 9437
+      },
+      {
+        "file": "shared/text.js",
+        "name": "initializeDeckUid",
+        "sourceLine": 9444
+      },
+      {
+        "file": "shared/text.js",
+        "name": "initializeDeckTokens",
+        "sourceLine": 9447
+      },
+      {
+        "file": "shared/text.js",
+        "name": "initializeDeckSplitAccounts",
+        "sourceLine": 9448
+      },
+      {
+        "file": "search/query-compiler.js",
+        "name": "initializeDeckQueryEngine",
+        "sourceLine": 9497
+      },
+      {
+        "file": "search/block-editing.js",
+        "name": "initializeDeckSignature",
+        "sourceLine": 10461
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckModernGM",
+        "sourceLine": 10846
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckGmGet",
+        "sourceLine": 10847
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckGmSet",
+        "sourceLine": 10853
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckGmAvailable",
+        "sourceLine": 10859
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckStorage",
+        "sourceLine": 10871
+      },
+      {
+        "file": "storage/gm.js",
+        "name": "initializeDeckRecoveryKey",
+        "sourceLine": 10885
+      },
+      {
+        "file": "sync/cloud.js",
+        "name": "initializeDeckCloudSync",
+        "sourceLine": 11090
+      },
+      {
+        "file": "media/download.js",
+        "name": "initializeDeckImmersiveDownload",
+        "sourceLine": 11375
+      },
+      {
+        "file": "telegram/relay.js",
+        "name": "initializeDeckRelay",
+        "sourceLine": 11740
+      },
+      {
+        "file": "tweets/publisher.js",
+        "name": "initializeDeckXRepost",
+        "sourceLine": 12884
+      },
+      {
+        "file": "lists/client.js",
+        "name": "initializeDeckXClientLists",
+        "sourceLine": 14618
+      },
+      {
+        "file": "lists/profile.js",
+        "name": "initializeDeckProfileLists",
+        "sourceLine": 14794
+      },
+      {
+        "file": "feeds/filters.js",
+        "name": "initializeDeckFeedFilters",
+        "sourceLine": 15206
+      },
+      {
+        "file": "layout/chrome.js",
+        "name": "initializeDeckScrollChrome",
+        "sourceLine": 15403
+      },
+      {
+        "file": "layout/tweets.js",
+        "name": "initializeDeckCompactLayout",
+        "sourceLine": 15634
+      },
+      {
+        "file": "ui/preferences.js",
+        "name": "initializeDeckPreferences",
+        "sourceLine": 16544
+      },
+      {
+        "file": "links/direct.js",
+        "name": "initializeDeckDirectLinks",
+        "sourceLine": 17361
+      },
+      {
+        "file": "links/social.js",
+        "name": "initializeDeckSocialAppLinks",
+        "sourceLine": 17464
+      },
+      {
+        "file": "media/gestures.js",
+        "name": "initializeDeckVideoTapGuard",
+        "sourceLine": 17619
+      },
+      {
+        "file": "tweets/quick-repost.js",
+        "name": "initializeDeckQuickRepost",
+        "sourceLine": 17937
+      },
+      {
+        "file": "tweets/seen.js",
+        "name": "initializeDeckSeen",
+        "sourceLine": 17986
+      },
+      {
+        "file": "translation/native.js",
+        "name": "initializeDeckNativeTranslation",
+        "sourceLine": 18040
+      },
+      {
+        "file": "translation/foreign-tags.js",
+        "name": "initializeDeckForeignTags",
+        "sourceLine": 18079
+      },
+      {
+        "file": "media/experience.js",
+        "name": "initializeDeckVideoExperience",
+        "sourceLine": 18205
+      },
+      {
+        "file": "media/previews.js",
+        "name": "initializeDeckSeekPreviews",
+        "sourceLine": 18275
+      },
+      {
+        "file": "media/player.js",
+        "name": "initializeDeckPlayerPreference",
+        "sourceLine": 18276
+      },
+      {
+        "file": "search/anchors.js",
+        "name": "initializeDeckSearchAnchors",
+        "sourceLine": 18530
+      },
+      {
+        "file": "media/transport.js",
+        "name": "initializeDeckVideoTransport",
+        "sourceLine": 18965
+      },
+      {
+        "file": "media/viewport.js",
+        "name": "initializeDeckViewportPlayback",
+        "sourceLine": 19190
+      },
+      {
+        "file": "media/immersive.js",
+        "name": "initializeDeckImmersiveSwipe",
+        "sourceLine": 19338
+      },
+      {
+        "file": "search/native-tags.js",
+        "name": "initializeDeckNativeQueryTags",
+        "sourceLine": 19462
+      },
+      {
+        "file": "tweets/enhancer.js",
+        "name": "initializeDeckResultEnhancer",
+        "sourceLine": 19561
+      },
+      {
+        "file": "ui/toast.js",
+        "name": "initializeDeckRodxToastTimer",
+        "sourceLine": 20496
+      },
+      {
+        "file": "ui/draggable-dock.js",
+        "name": "initializeDeckDragDock",
+        "sourceLine": 20514
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_164",
+        "sourceLine": 20811
+      },
+      {
+        "file": "ui/selection.js",
+        "name": "initializeDeckSelectionPopover",
+        "sourceLine": 20845
+      },
+      {
+        "file": "layout/hygiene.js",
+        "name": "initializeDeckXInterfaceHygiene",
+        "sourceLine": 20982
+      },
+      {
+        "file": "search/history.js",
+        "name": "initializeDeckSearchHistory",
+        "sourceLine": 21161
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_169",
+        "sourceLine": 21804
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_170",
+        "sourceLine": 21818
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_171",
+        "sourceLine": 21827
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_172",
+        "sourceLine": 21832
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_173",
+        "sourceLine": 21833
+      },
+      {
+        "file": "ui/quick-actions.js",
+        "name": "initializeDeckQuickUI",
+        "sourceLine": 21840
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_175",
+        "sourceLine": 22640
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_176",
+        "sourceLine": 22644
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_177",
+        "sourceLine": 22652
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_178",
+        "sourceLine": 22653
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_179",
+        "sourceLine": 22654
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_180",
+        "sourceLine": 22655
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_181",
+        "sourceLine": 22656
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_182",
+        "sourceLine": 22661
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_183",
+        "sourceLine": 22682
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeDeckDatabaseSaveTimerAndRefreshingCloud",
+        "sourceLine": 22683
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_185",
+        "sourceLine": 22685
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_186",
+        "sourceLine": 22692
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_187",
+        "sourceLine": 22705
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_188",
+        "sourceLine": 22708
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_189",
+        "sourceLine": 22711
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_190",
+        "sourceLine": 22722
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_191",
+        "sourceLine": 22725
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_192",
+        "sourceLine": 22728
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_193",
+        "sourceLine": 22732
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_194",
+        "sourceLine": 22742
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_195",
+        "sourceLine": 22756
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_196",
+        "sourceLine": 22760
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_197",
+        "sourceLine": 22775
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_198",
+        "sourceLine": 22786
+      },
+      {
+        "file": "bootstrap/deck-events.js",
+        "name": "initializeRodX_deck_199",
+        "sourceLine": 22787
+      }
+    ],
+    "lists": [
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsAPP",
+        "sourceLine": 2522
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsDB_NAME",
+        "sourceLine": 2523
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsSETTINGS_KEY",
+        "sourceLine": 2524
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsQUEUE_KEY",
+        "sourceLine": 2525
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsAUTO_SCAN_KEY",
+        "sourceLine": 2527
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsAPI_TEMPLATES_KEY",
+        "sourceLine": 2528
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsWRITE_LEDGER_KEY",
+        "sourceLine": 2529
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsQUEUE_LEASE_KEY",
+        "sourceLine": 2530
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsLIST_PRESETS_KEY",
+        "sourceLine": 2531
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsLIST_USAGE_KEY",
+        "sourceLine": 2532
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsNAME_MIGRATION_KEY",
+        "sourceLine": 2533
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsNAME_REFRESH_LEDGER_KEY",
+        "sourceLine": 2534
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsPER_LIST_FIELDS",
+        "sourceLine": 2535
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsMemberCursorKey",
+        "sourceLine": 2536
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsOwnTabId",
+        "sourceLine": 2537
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsDEFAULTS",
+        "sourceLine": 2538
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsLIST_URL_RE",
+        "sourceLine": 2554
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsHANDLE_RE",
+        "sourceLine": 2555
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsSleep",
+        "sourceLine": 2556
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsQs",
+        "sourceLine": 2557
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsQsa",
+        "sourceLine": 2558
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsEsc",
+        "sourceLine": 2559
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsNormalize",
+        "sourceLine": 2571
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsTimeText",
+        "sourceLine": 2577
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsNow",
+        "sourceLine": 2578
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsRouteListId",
+        "sourceLine": 2579
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsIsListMembersPage",
+        "sourceLine": 2580
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsIsListPage",
+        "sourceLine": 2581
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsListUrl",
+        "sourceLine": 2582
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsValidListId",
+        "sourceLine": 2583
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsValidHandle",
+        "sourceLine": 2584
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsCleanHandle",
+        "sourceLine": 2585
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsLoadJSON",
+        "sourceLine": 2589
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsSettings",
+        "sourceLine": 2596
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsListPresets",
+        "sourceLine": 2600
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_37",
+        "sourceLine": 2614
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsSaveSettings",
+        "sourceLine": 2615
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsState",
+        "sourceLine": 2624
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsListUsage",
+        "sourceLine": 2653
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_41",
+        "sourceLine": 2657
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_42",
+        "sourceLine": 2662
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsDbPromise",
+        "sourceLine": 2773
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsGetAll",
+        "sourceLine": 2826
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsGetOne",
+        "sourceLine": 2827
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsPut",
+        "sourceLine": 2828
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsINVALID_LIST_NAMES",
+        "sourceLine": 2855
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsNAME_SOURCE_WEIGHT",
+        "sourceLine": 2938
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsDisplayListName",
+        "sourceLine": 2949
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsListWrites",
+        "sourceLine": 3008
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeListsRefreshScheduled",
+        "sourceLine": 3137
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeListsHost",
+        "sourceLine": 3148
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeRodX_lists_74",
+        "sourceLine": 3149
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeListsShadow",
+        "sourceLine": 3150
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeListsStyle",
+        "sourceLine": 3153
+      },
+      {
+        "file": "lists/view.js",
+        "name": "initializeRodX_lists_77",
+        "sourceLine": 3154
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_78",
+        "sourceLine": 3745
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsShell",
+        "sourceLine": 3746
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_80",
+        "sourceLine": 3747
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_81",
+        "sourceLine": 3755
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickRoot",
+        "sourceLine": 3756
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_83",
+        "sourceLine": 3757
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_84",
+        "sourceLine": 3769
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsOverlay",
+        "sourceLine": 3770
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsBody",
+        "sourceLine": 3771
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsTabArea",
+        "sourceLine": 3772
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_88",
+        "sourceLine": 3773
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_89",
+        "sourceLine": 3774
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsNoteHTML",
+        "sourceLine": 3794
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsOptionsHTML",
+        "sourceLine": 3796
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsListOptions",
+        "sourceLine": 3803
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsCurrentList",
+        "sourceLine": 3808
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsMemberCount",
+        "sourceLine": 3809
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickOrder",
+        "sourceLine": 3813
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickUser",
+        "sourceLine": 3814
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickAnchor",
+        "sourceLine": 3815
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickSearchValue",
+        "sourceLine": 3816
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickToastTimer",
+        "sourceLine": 3817
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickBackdrop",
+        "sourceLine": 3818
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickPicker",
+        "sourceLine": 3819
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickSearch",
+        "sourceLine": 3820
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeListsQuickOptions",
+        "sourceLine": 3821
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_112",
+        "sourceLine": 3907
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_113",
+        "sourceLine": 3908
+      },
+      {
+        "file": "lists/quick-picker.js",
+        "name": "initializeRodX_lists_114",
+        "sourceLine": 3909
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_115",
+        "sourceLine": 3913
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_116",
+        "sourceLine": 3922
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_117",
+        "sourceLine": 3966
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_118",
+        "sourceLine": 3969
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsListToolbar",
+        "sourceLine": 4175
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsCaptureRunning",
+        "sourceLine": 4214
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsLastListCaptures",
+        "sourceLine": 4215
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsNameObservations",
+        "sourceLine": 4216
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsNameRetry",
+        "sourceLine": 4217
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsNON_PROFILE_PATHS",
+        "sourceLine": 4391
+      },
+      {
+        "file": "lists/dom-capture.js",
+        "name": "initializeListsMemberCaptureRunning",
+        "sourceLine": 4415
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsRequestTemplates",
+        "sourceLine": 4631
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsSessionAuth",
+        "sourceLine": 4632
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeRodX_lists_151",
+        "sourceLine": 4639
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsIngestQueue",
+        "sourceLine": 4718
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsBridgeReady",
+        "sourceLine": 4719
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeRodX_lists_158",
+        "sourceLine": 4720
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsBridgeRequest",
+        "sourceLine": 4727
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeRodX_lists_160",
+        "sourceLine": 4728
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeRodX_lists_161",
+        "sourceLine": 4729
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeRodX_lists_162",
+        "sourceLine": 4730
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsInternalAPIError",
+        "sourceLine": 4743
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsDirectNameRefreshes",
+        "sourceLine": 4901
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsNameRefreshTimes",
+        "sourceLine": 5023
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsNameRefreshTimer",
+        "sourceLine": 5024
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsNameRefreshBusy",
+        "sourceLine": 5025
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsAutoReadTimes",
+        "sourceLine": 5095
+      },
+      {
+        "file": "lists/graphql.js",
+        "name": "initializeListsAutoSyncBusy",
+        "sourceLine": 5096
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsTimeline",
+        "sourceLine": 5133
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsEmbeddedTimeline",
+        "sourceLine": 5147
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsReadThrottle",
+        "sourceLine": 5148
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsLastAutoPageAt",
+        "sourceLine": 5149
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsScrollObserver",
+        "sourceLine": 5150
+      },
+      {
+        "file": "lists/timeline.js",
+        "name": "initializeListsTimelineQueryKey",
+        "sourceLine": 5187
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsMAX_WRITES_HOUR",
+        "sourceLine": 5760
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsMAX_WRITES_DAY",
+        "sourceLine": 5761
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsQueueDelay",
+        "sourceLine": 5762
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsQueueWait",
+        "sourceLine": 5896
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsDEFAULT_MUTATION_FEATURES",
+        "sourceLine": 5928
+      },
+      {
+        "file": "lists/queue.js",
+        "name": "initializeListsQueueRunning",
+        "sourceLine": 6005
+      },
+      {
+        "file": "lists/import-export.js",
+        "name": "initializeRodX_lists_227",
+        "sourceLine": 6355
+      },
+      {
+        "file": "lists/import-export.js",
+        "name": "initializeRodX_lists_228",
+        "sourceLine": 6604
+      },
+      {
+        "file": "lists/import-export.js",
+        "name": "initializeRodX_lists_229",
+        "sourceLine": 6657
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_230",
+        "sourceLine": 6675
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_231",
+        "sourceLine": 6685
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeListsLastPath",
+        "sourceLine": 6688
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_234",
+        "sourceLine": 6712
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_235",
+        "sourceLine": 6716
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_236",
+        "sourceLine": 6730
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_237",
+        "sourceLine": 6856
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_238",
+        "sourceLine": 6864
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_239",
+        "sourceLine": 6865
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_240",
+        "sourceLine": 6866
+      },
+      {
+        "file": "lists/render.js",
+        "name": "initializeRodX_lists_241",
+        "sourceLine": 6879
+      }
+    ]
+  }
+}

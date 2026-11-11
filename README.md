@@ -64,15 +64,19 @@ Use `?inline` no CSS e `ctx.style(css)` para inserir e remover estilos junto com
 | `dist/<id>.user.js`    | Instale um script específico, como alternativa ao unificado.          |
 | `dist/manifest.json`   | Lista dos instaláveis, regras de URL e SHA-256 dos arquivos gerados.  |
 
-O unificado contém os módulos empacotados e ativa somente os que correspondem à URL. Não instale simultaneamente o unificado e uma saída individual para o mesmo módulo. Os dois usam o mesmo namespace GM por módulo para preservar preferências quando você troca de formato.
+O unificado contém os módulos configurados com `unified !== false` e ativa somente os que correspondem à URL. Não instale simultaneamente o unificado e uma saída individual para o mesmo módulo. Os instaláveis do RodX preservam o nome e namespace do original para atualizar a instalação existente. Outros userscripts têm armazenamento GM próprio; namespaces internos de chaves não permitem ler dados de outra instalação automaticamente.
 
 Navegações SPA por `pushState`, `replaceState`, voltar/avançar e hash atualizam o roteamento. Um módulo permanece ativo enquanto sua regra corresponde; ao sair, o core remove estilos, listeners e recursos registrados com `ctx.onDispose`. O core usa estado centralizado em memória e storage GM persistente por módulo. Não há varredura periódica do DOM ou polling de URL.
 
 `ctx.url` retorna a URL atual. `ctx.signal` sinaliza encerramento. Registre recursos externos (observers, timers e players) com `ctx.onDispose`; listeners criados por `ctx.listen` usam cancelamento automático. Para reagir a mudanças dentro de uma rota que continua ativa, o módulo pode observar os eventos de navegação adequados sem reinicializar tudo.
 
-Os módulos executam no contexto da página por injeção de script clássico. A ponte oferece apenas `get`, `set` e `delete` no namespace GM do módulo. Não é uma fronteira de segurança contra a própria página e não deve armazenar segredos. CSPs de outros sites podem bloquear a injeção; validar cada site é necessário. Esse mecanismo foi validado no laboratório do Safari/X, mas este novo build ainda precisa de teste no iPhone.
+Módulos com `world: "sandbox"` executam diretamente no contexto da extensão; os demais executam no contexto da página por injeção de script clássico. A ponte oferece apenas `get`, `set` e `delete` no namespace GM do módulo. Não é uma fronteira de segurança contra a própria página e não deve armazenar segredos. CSPs de outros sites podem bloquear a injeção; validar cada site é necessário. Esse mecanismo foi validado no laboratório do Safari/X, mas este novo build ainda precisa de teste no iPhone.
 
-Os módulos `x-foundation` e `example-site` são demonstrações. No X, a base apenas registra uma ativação e mostra uma mensagem no console; em `example.com`, a demonstração mostra um pequeno indicador e importa `nanoid` do npm. **O RodX gigante ainda não foi migrado.**
+O RodX original 3.8.1 está migrado para `src/userscripts/rodx-studio/`, separado em módulos de rede, listas, buscas, mídia, estado e interface. O build 3.9.0 gera `rodx-studio.user.js` e `unified.user.js` com as funcionalidades do script grande. O exemplo `example-site` continua individualmente instalável e está excluído do unificado (`unified: false`).
+
+O RodX usa `world: "sandbox"` na configuração para manter APIs GM diretas e os `@require` do Video.js/RodMenu. Os módulos sem essa opção continuam usando o contexto de página e a ponte restrita. Grants, requires, connect e identidade do instalável são definidos em `userscripts.config.js`; a identidade do unificado fica em `distribution.config.js`.
+
+Atualize a instalação existente usando uma das URLs do RodX; não a exclua antes de atualizar. Individual e unificado são alternativas com a mesma identidade do RodX. Consulte [a documentação da migração](migration/README.md) para estrutura, sequência de inicialização e verificação de preservação funcional.
 
 ## Build e publicação no Cloudflare
 
@@ -145,7 +149,7 @@ Com o GitHub CLI instalado e autenticado, dentro de um clone limpo do repositór
 gh auth login
 npm ci
 npm test
-npm run release -- v0.2.0
+npm run release -- v3.9.0
 ```
 
 O publicador recusa código não commitado, builds com versão antiga, checksums incorretos e sobrescrita de Releases já publicadas. Pode retomar um draft após uma falha no upload. A execução do GitHub Actions falhou antes de iniciar os steps na última tentativa; o caminho local permite publicar sem depender do runner. Nenhuma Release foi publicada apenas por adicionar esta configuração.

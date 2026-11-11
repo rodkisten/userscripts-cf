@@ -26,7 +26,7 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["x-foundation", "example-site", "unified"],
+    ["rodx-studio", "example-site", "unified"],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
@@ -37,28 +37,28 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   }
 });
 
-test("unified generated userscript executes npm dependency and cleans demo on excluded SPA route", async () => {
-  const host = await run("unified.user.js", "https://example.com/");
-  assert.deepEqual([...host.__userscriptsCF.unified.active], ["example-site"]);
+test("individual generated userscript executes npm dependency and cleans demo on excluded SPA route", async () => {
+  const host = await run("example-site.user.js", "https://example.com/");
+  assert.deepEqual([...host.__userscriptsCF["example-site"].active], ["example-site"]);
   assert.match(host.document.querySelector("aside").textContent, /Vite \+ npm/);
   host.history.pushState({}, "", "/disabled/demo");
-  await host.__userscriptsCF.unified.navigate();
+  await host.__userscriptsCF["example-site"].navigate();
   assert.equal(host.document.querySelector("aside"), null);
   assert.equal(host.document.querySelector("style"), null);
-  await host.__userscriptsCF.unified.dispose();
+  await host.__userscriptsCF["example-site"].dispose();
   await host.happyDOM.abort();
 });
 
-test("standalone and unified share per-module GM storage across fresh realms", async () => {
-  const values = new Map();
-  let host = await run("x-foundation.user.js", "https://x.com/home", values);
-  assert.equal(values.get("userscripts-cf:v1:x-foundation:activations"), 1);
-  await host.__userscriptsCF["x-foundation"].dispose();
-  await host.happyDOM.abort();
-  host = await run("unified.user.js", "https://x.com/home", values);
-  assert.equal(values.get("userscripts-cf:v1:x-foundation:activations"), 2);
-  assert.deepEqual([...host.__userscriptsCF.unified.active], ["x-foundation"]);
-  assert.equal(host.document.querySelector("aside"), null);
-  await host.__userscriptsCF.unified.dispose();
-  await host.happyDOM.abort();
+test("RodX individual and unified preserve original Tampermonkey identity and dependencies", async () => {
+  for (const file of ["rodx-studio.user.js", "unified.user.js"]) {
+    const source = await fs.readFile(new URL(file, dist), "utf8");
+    const header = source.slice(0, source.indexOf("// ==/UserScript=="));
+    assert.match(header, /@name\s+RodX Studio — X\/Twitter mobile-first/);
+    assert.match(header, /@namespace\s+https:\/\/rodx.local\/userscripts/);
+    assert.match(header, /@grant\s+GM_xmlhttpRequest/);
+    assert.match(header, /@grant\s+unsafeWindow/);
+    assert.match(header, /@require\s+https:\/\/rod.migos.club\/menu\/dist\/menu.iife.min.js/);
+    assert.match(header, /@require\s+https:\/\/code.migos.club\/api\/cdn\?package=@videojs/);
+    assert.ok(source.length > 800000);
+  }
 });

@@ -2,12 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { build } from "vite";
 import { format } from "prettier";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
 import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
+import { installSandbox } from "./contexts.js";
+import { bundleRuntime } from "./bundle-runtime.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
@@ -43,54 +44,39 @@ const targets = [
     id: item.id,
     definitions: [item],
     name: item.name,
+    namespace: item.namespace,
     version,
   })),
   {
     id: "unified",
-    definitions,
-    name: "Userscripts CF · Unificado",
+    definitions: definitions.filter((item) => item.unified !== false),
+    name: distribution.unified?.name || "Userscripts CF · Unificado",
+    namespace: distribution.unified?.namespace,
     version,
   },
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 for (const target of targets) {
-  const virtualID = "\0userscripts-cf-entry";
-  const imports = target.definitions.map(
-    (item, index) => `import module${index} from ${JSON.stringify(path.resolve(root, item.entry))};`,
-  );
-  const entries = target.definitions.map(
-    (item, index) => `{...${JSON.stringify(item)}, module: module${index}}`,
-  );
-  const entryCode = `${imports.join("\n")}
-    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
-    export function boot(bridge) { return createRuntime([${entries.join(",")}], bridge); }
-  `;
-  const result = await build({
-    root,
-    configFile: path.join(root, "vite.config.js"),
-    logLevel: "warn",
-    plugins: [
-      {
-        name: "userscripts-cf-entry",
-        resolveId: (id) => (id.endsWith("userscripts-cf-entry") ? virtualID : null),
-        load: (id) => (id === virtualID ? entryCode : null),
-      },
-    ],
-    build: { write: false, lib: { entry: "userscripts-cf-entry" } },
-  });
-  const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
-  const chunks = output.filter((item) => item.type === "chunk");
-  if (chunks.length !== 1 || output.some((item) => item.type === "asset"))
-    throw Error("Use CSS ?inline and bundle all dependencies");
-  const runtime = await format(chunks[0].code, {
-    parser: "babel",
-    printWidth: 110,
-  });
+  const installers = [];
+  for (const world of ["sandbox", "page"]) {
+    const selected = target.definitions.filter((item) => (item.world || "page") === world);
+    if (!selected.length) continue;
+    const runtime = await bundleRuntime(root, selected);
+    if (world === "sandbox") {
+      installers.push(
+        `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
+      );
+    } else {
+      installers.push(
+        `(${install.toString()})(function pageRuntime() { ${runtime}; return UserscriptsCF; }, ${pageBridge.toString()}, ${JSON.stringify(selected.map((item) => item.id))}, ${JSON.stringify(target.id)});`,
+      );
+    }
+  }
   const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
   const metadata = [
     "// ==UserScript==",
     `// @name         ${target.name}`,
-    "// @namespace    https://rod.migos.club/userscripts-cf",
+    `// @namespace    ${target.namespace || "https://rod.migos.club/userscripts-cf"}`,
     `// @version      ${target.version}`,
     `// @updateURL    ${baseURL}/${target.id}.meta.js`,
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
@@ -98,15 +84,23 @@ for (const target of targets) {
     ...patterns.map((pattern) => `// @match        ${pattern}`),
     "// @run-at       document-start",
     "// @noframes",
-    "// @grant        GM_getValue",
-    "// @grant        GM_setValue",
-    "// @grant        GM_deleteValue",
+    ...[
+      ...new Set([
+        "GM_getValue",
+        "GM_setValue",
+        "GM_deleteValue",
+        ...target.definitions.flatMap((item) => item.grants || []),
+      ]),
+    ].map((grant) => `// @grant        ${grant}`),
+    ...[...new Set(target.definitions.flatMap((item) => item.requires || []))].map(
+      (url) => `// @require      ${url}`,
+    ),
+    ...[...new Set(target.definitions.flatMap((item) => item.connect || []))].map(
+      (host) => `// @connect      ${host}`,
+    ),
     "// ==/UserScript==",
   ].join("\n");
-  const body = await format(
-    `(${install.toString()})(function pageRuntime() { ${runtime}; return UserscriptsCF; }, ${pageBridge.toString()}, ${JSON.stringify(target.definitions.map((item) => item.id))}, ${JSON.stringify(target.id)});`,
-    { parser: "babel", printWidth: 110 },
-  );
+  const body = await format(installers.join("\n\n"), { parser: "babel", printWidth: 110 });
   const file = `${target.id}.user.js`;
   const source = `${metadata}\n\n${body}`;
   await fs.writeFile(path.join(out, file), source);
