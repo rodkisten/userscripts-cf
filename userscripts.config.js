@@ -5,7 +5,7 @@ export default [
     name: "Instagram salvos → XTelegram",
     unified: false,
     world: "sandbox",
-    entry: "src/userscripts/instagram-saved/index.js",
+    entry: "src/userscripts/instagram-saved/index.ts",
     matches: ["https://www.instagram.com/*"],
     exclude: [],
     grants: ["unsafeWindow", "GM_getValue", "GM_setValue", "GM.getValue", "GM.setValue", "GM_registerMenuCommand", "GM_unregisterMenuCommand", "GM_xmlhttpRequest", "GM.xmlHttpRequest"],
