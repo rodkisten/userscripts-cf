@@ -145,7 +145,7 @@ export default {
       run: () => run(true),
       async open() {
         const settings = await this.get();
-        const external = typeof RodMenu !== "undefined" ? RodMenu : globalThis.RodMenu;
+        const external = typeof RodMenu !== "undefined" ? RodMenu : (globalThis as any).RodMenu;
         if (!external?.open) throw Error("RodMenu não carregado");
         external.configure?.({ defaultPresentation: "bottom-sheet" });
         const root = document.createElement("div");
