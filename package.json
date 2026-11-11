@@ -3,16 +3,25 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "node labs/remote-release/build-worker.mjs A",
+    "build": "node build/build.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
-    "test": "npm run build && node labs/remote-release/test.mjs",
-    "format": "prettier --write ."
+    "test": "npm run build && node --test tests/*.test.js && npm run test:lab",
+    "format": "prettier --write .",
+    "build:lab": "node labs/remote-release/build-worker.mjs A",
+    "build:lab:b": "node labs/remote-release/build-worker.mjs B",
+    "test:lab": "npm run build:lab && node labs/remote-release/test.mjs",
+    "format:check": "prettier --check .",
+    "new": "node build/new.mjs"
   },
   "devDependencies": {
     "happy-dom": "21.0.4",
-    "prettier": "3.9.10"
+    "prettier": "3.9.10",
+    "vite": "8.3.8"
+  },
+  "dependencies": {
+    "nanoid": "^5.1.6"
   }
 }

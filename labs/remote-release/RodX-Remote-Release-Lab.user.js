@@ -44,16 +44,11 @@
   const save = async (next) => {
     await GM_setValue(KEY, JSON.stringify(next));
     const readback = await GM_getValue(KEY, "");
-    if (readback !== JSON.stringify(next))
-      throw Error("Persistência GM não confirmou o snapshot.");
+    if (readback !== JSON.stringify(next)) throw Error("Persistência GM não confirmou o snapshot.");
     db = next;
   };
   const digest = async (code) =>
-    [
-      ...new Uint8Array(
-        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code)),
-      ),
-    ]
+    [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code)))]
       .map((n) => n.toString(16).padStart(2, "0"))
       .join("");
   async function verify(release) {
@@ -68,8 +63,7 @@
   }
   function request(path, fresh = false) {
     const url = new URL(path, BASE);
-    if (url.origin !== BASE)
-      throw Error("Origem de módulo fora do laboratório.");
+    if (url.origin !== BASE) throw Error("Origem de módulo fora do laboratório.");
     if (fresh) url.searchParams.set("check", crypto.randomUUID());
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
@@ -118,8 +112,7 @@
       throw Error("Versão registrada difere do manifesto.");
     }
     try {
-      if ((await module.init()) !== "core-ok")
-        throw Error("Módulo não confirmou o core.");
+      if ((await module.init()) !== "core-ok") throw Error("Módulo não confirmou o core.");
       return module;
     } catch (error) {
       await module.dispose().catch(() => {});
@@ -243,8 +236,7 @@
       if (call.op === "set") {
         await GM_setValue(temporaryKey, String(call.value).slice(0, 100));
         result.value = true;
-      } else if (call.op === "get")
-        result.value = await GM_getValue(temporaryKey);
+      } else if (call.op === "get") result.value = await GM_getValue(temporaryKey);
       else throw Error("Operação GM não permitida");
     } catch (error) {
       result.error = String(error.message || error);
@@ -311,11 +303,7 @@
       document.addEventListener(channel + ":module-ready", ready);
       timer = setTimeout(() => {
         cleanup();
-        reject(
-          Error(
-            "Sem registro IIFE: possível bloqueio de script/contexto ou código inválido.",
-          ),
-        );
+        reject(Error("Sem registro IIFE: possível bloqueio de script/contexto ou código inválido."));
       }, 2500);
       const script = document.createElement("script");
       const nonce = document.querySelector("script[nonce]")?.nonce;
@@ -343,25 +331,18 @@
   async function stage() {
     const candidate = await download();
     if (candidate.sha256 === db.stable?.sha256) {
-      message =
-        "Versão publicada já é " +
-        candidate.version +
-        ". Aguarde a publicação de B.";
+      message = "Versão publicada já é " + candidate.version + ". Aguarde a publicação de B.";
       log("Manifesto remoto", "OK", message);
       return;
     }
     const probe = await execute(candidate);
     await probe.dispose();
     await save({ ...db, pending: { ...candidate, reason: "remote-update" } });
-    message =
-      "Release " +
-      candidate.version +
-      " validada e salva. Toque em Recarregar para ativar.";
+    message = "Release " + candidate.version + " validada e salva. Toque em Recarregar para ativar.";
     log("Download real + SHA-256 + init/dispose", "OK", message);
   }
   async function broken() {
-    if (!db.stable)
-      throw Error("Ative A antes de testar o candidato quebrado.");
+    if (!db.stable) throw Error("Ative A antes de testar o candidato quebrado.");
     const before = db.stable.sha256;
     const candidate = await download("/manifest-bad.json");
     let rejected = false;
@@ -374,28 +355,20 @@
     }
     if (!rejected) throw Error("Candidato BAD foi aceito.");
     const saved = JSON.parse(await GM_getValue(KEY, "{}"));
-    if (saved.stable?.sha256 !== before)
-      throw Error("Versão estável mudou indevidamente.");
-    log(
-      "Candidato quebrado remoto",
-      "OK",
-      message + "; estável preservada: " + db.stable.version,
-    );
+    if (saved.stable?.sha256 !== before) throw Error("Versão estável mudou indevidamente.");
+    log("Candidato quebrado remoto", "OK", message + "; estável preservada: " + db.stable.version);
   }
   async function rollback() {
-    if (!db.previous)
-      throw Error("Ainda não há versão anterior. Ative B após A primeiro.");
+    if (!db.previous) throw Error("Ainda não há versão anterior. Ative B após A primeiro.");
     await verify(db.previous);
     await save({ ...db, pending: { ...db.previous, reason: "rollback" } });
-    message =
-      "Rollback para " + db.previous.version + " preparado. Recarregue.";
+    message = "Rollback para " + db.previous.version + " preparado. Recarregue.";
     log("Rollback preparado", "OK", message);
   }
   async function failureOnReload() {
     if (!db.stable) throw Error("Primeiro ative A.");
     await save({ ...db, failOnce: true, pending: null });
-    message =
-      "No próximo reload, fará uma consulta HTTP 503 real e tentará iniciar pelo cache GM.";
+    message = "No próximo reload, fará uma consulta HTTP 503 real e tentará iniciar pelo cache GM.";
     log("Falha controlada preparada", "PENDENTE", message);
   }
   async function action(fn) {
@@ -424,8 +397,7 @@
       " · Anterior: " +
       (db?.previous?.version || "nenhuma");
     root.querySelector("pre").textContent = JSON.stringify(report, null, 2);
-    for (const button of root.querySelectorAll("button[data-action]"))
-      button.disabled = busy;
+    for (const button of root.querySelectorAll("button[data-action]")) button.disabled = busy;
   }
   function mount() {
     if (root) {
@@ -434,8 +406,7 @@
     }
     const host = document.createElement("div");
     host.id = "rodx-release-lab";
-    host.style.cssText =
-      "position:fixed;inset:12px;z-index:2147483647;max-width:650px;margin:auto;";
+    host.style.cssText = "position:fixed;inset:12px;z-index:2147483647;max-width:650px;margin:auto;";
     root = host.attachShadow({ mode: "open" });
     root.innerHTML = `
       <style>
@@ -540,10 +511,7 @@
           moduleDownloadAtBoot: false,
           elapsedMs: Math.round(performance.now() - started),
         };
-        message =
-          "Release " +
-          candidate.version +
-          " ativa a partir do código salvo no GM.";
+        message = "Release " + candidate.version + " ativa a partir do código salvo no GM.";
         log("Ativação após reload", "OK", message);
       } catch (error) {
         const fallback = db.pending ? db.stable : db.previous;
@@ -557,10 +525,7 @@
           error: error.message,
           moduleDownloadAtBoot: false,
         };
-        message =
-          "Candidato falhou; versão anterior " +
-          fallback.version +
-          " restaurada.";
+        message = "Candidato falhou; versão anterior " + fallback.version + " restaurada.";
         log("Fallback após reload", "OK", message);
       }
       if (failedRemote)

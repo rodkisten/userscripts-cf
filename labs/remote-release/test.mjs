@@ -3,31 +3,17 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import worker from "./worker.mjs";
 import { Window } from "happy-dom";
-const source = fs.readFileSync(
-  new URL("./RodX-Remote-Release-Lab.user.js", import.meta.url),
-  "utf8",
-);
+const source = fs.readFileSync(new URL("./RodX-Remote-Release-Lab.user.js", import.meta.url), "utf8");
 const response = await worker.fetch(new Request("https://lab/manifest.json"));
 const manifest = await response.json();
 assert.equal(manifest.release, "A");
 assert.equal(response.headers.get("cache-control"), "no-store");
-const mod = await worker.fetch(
-  new Request("https://lab" + manifest.module.path),
-);
+const mod = await worker.fetch(new Request("https://lab" + manifest.module.path));
 const code = await mod.text();
-assert.equal(
-  crypto.createHash("sha256").update(code).digest("hex"),
-  manifest.module.sha256,
-);
+assert.equal(crypto.createHash("sha256").update(code).digest("hex"), manifest.module.sha256);
 assert.match(mod.headers.get("cache-control"), /immutable/);
-assert.equal(
-  (await worker.fetch(new Request("https://lab/manifest-unavailable.json")))
-    .status,
-  503,
-);
-console.log(
-  "PASS published fixture structure, SHA-256, cache headers and controlled HTTP 503",
-);
+assert.equal((await worker.fetch(new Request("https://lab/manifest-unavailable.json"))).status, 503);
+console.log("PASS published fixture structure, SHA-256, cache headers and controlled HTTP 503");
 const store = new Map();
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 async function realm() {
@@ -72,19 +58,11 @@ db = JSON.parse(store.get("rodx:remote-loader-lab:v1"));
 assert.equal(db.stable.version, "A");
 assert.equal(db.pending, null);
 assert.match(panel.querySelector("pre").textContent, /pending-from-GM/);
-console.log(
-  "PASS candidate hash/init tested, snapshot saved, actual new realm activates A from GM",
-);
+console.log("PASS candidate hash/init tested, snapshot saved, actual new realm activates A from GM");
 panel.querySelector('[data-action="broken"]').click();
 await pause(200);
-assert.match(
-  panel.querySelector("pre").textContent,
-  /Candidato quebrado remoto/,
-);
-assert.equal(
-  JSON.parse(store.get("rodx:remote-loader-lab:v1")).stable.version,
-  "A",
-);
+assert.match(panel.querySelector("pre").textContent, /Candidato quebrado remoto/);
+assert.equal(JSON.parse(store.get("rodx:remote-loader-lab:v1")).stable.version, "A");
 console.log("PASS failed candidate keeps stable release");
 panel.querySelector('[data-action="failure"]').click();
 await pause(30);
@@ -93,9 +71,6 @@ w = await realm();
 panel = w.document.getElementById("rodx-release-lab").shadowRoot;
 assert.match(panel.querySelector("pre").textContent, /HTTP 503/);
 assert.match(panel.querySelector("pre").textContent, /stable-from-GM/);
-assert.equal(
-  JSON.parse(store.get("rodx:remote-loader-lab:v1")).stable.version,
-  "A",
-);
+assert.equal(JSON.parse(store.get("rodx:remote-loader-lab:v1")).stable.version, "A");
 console.log("PASS controlled HTTP error on next realm falls back to cached A");
 await w.happyDOM.abort();

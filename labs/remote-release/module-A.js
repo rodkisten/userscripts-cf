@@ -6,8 +6,7 @@
       if (initialized) throw Error("Inicialização duplicada");
       initialized = true;
       await core.set("release-A");
-      if ((await core.get()) !== "release-A")
-        throw Error("Storage GM não confirmado");
+      if ((await core.get()) !== "release-A") throw Error("Storage GM não confirmado");
       return core.ping();
     },
     dispose() {

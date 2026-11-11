@@ -13,14 +13,12 @@ export default {
       "X-Content-Type-Options": "nosniff",
       "Cache-Control": "no-store",
     });
-    if (request.method === "OPTIONS")
-      return new Response(null, { status: 204, headers });
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     let body,
       status = 200;
     headers.set("Content-Type", "application/json; charset=utf-8");
     if (url.pathname === "/manifest.json") body = JSON.stringify(manifest);
-    else if (url.pathname === "/manifest-bad.json")
-      body = JSON.stringify(broken);
+    else if (url.pathname === "/manifest-bad.json") body = JSON.stringify(broken);
     else if (url.pathname === "/manifest-unavailable.json") {
       status = 503;
       body = JSON.stringify({ error: "Controlled network failure fixture" });

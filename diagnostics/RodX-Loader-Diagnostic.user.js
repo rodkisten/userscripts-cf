@@ -26,8 +26,7 @@
   const channel = "rodx-probe-" + crypto.randomUUID();
   const rows = new Map();
   const environment = {
-    handler:
-      typeof GM_info !== "undefined" ? GM_info.scriptHandler : "indisponível",
+    handler: typeof GM_info !== "undefined" ? GM_info.scriptHandler : "indisponível",
     handlerVersion: typeof GM_info !== "undefined" ? GM_info.version : "",
     readyState: document.readyState,
     bootstrapMs: Math.round(started),
@@ -62,12 +61,10 @@
   }
   const captures = new Map();
   let captureTimer;
-  const secretKey =
-    /authorization|cookie|csrf|token|password|secret|api[-_]?key|session|ct0|twid/i;
+  const secretKey = /authorization|cookie|csrf|token|password|secret|api[-_]?key|session|ct0|twid/i;
   function scrub(value, depth = 0) {
     if (depth > 50) return "[Limite de profundidade da visualização]";
-    if (Array.isArray(value))
-      return value.map((item) => scrub(item, depth + 1));
+    if (Array.isArray(value)) return value.map((item) => scrub(item, depth + 1));
     if (value && typeof value === "object")
       return Object.fromEntries(
         Object.entries(value).map(([key, item]) => [
@@ -75,8 +72,7 @@
           secretKey.test(key) ? "[OCULTO]" : scrub(item, depth + 1),
         ]),
       );
-    if (typeof value === "string")
-      return value.replace(/Bearer\s+[\w.\-~+/=]+/gi, "Bearer [OCULTO]");
+    if (typeof value === "string") return value.replace(/Bearer\s+[\w.\-~+/=]+/gi, "Bearer [OCULTO]");
     return value;
   }
   function safeText(value) {
@@ -106,22 +102,15 @@
       const clock = Date.now();
       for (const [id, record] of [...captures].reverse()) {
         size += JSON.stringify(record).length * 2;
-        if (clock - record.startedAt > 600000 || size > 6000000)
-          captures.delete(id);
+        if (clock - record.startedAt > 600000 || size > 6000000) captures.delete(id);
       }
       while (captures.size > 12) captures.delete(captures.keys().next().value);
       const entries = [...captures.values()];
-      const complete = entries.filter((record) =>
-        ["complete", "empty"].includes(record.responseBody?.state),
-      );
-      const requestCount = entries.filter(
-        (record) => record.requestBody?.state === "complete",
-      ).length;
+      const complete = entries.filter((record) => ["complete", "empty"].includes(record.responseBody?.state));
+      const requestCount = entries.filter((record) => record.requestBody?.state === "complete").length;
       const variablesCount = entries.filter((record) => {
         try {
-          return new URL(record.url, location.href).searchParams.has(
-            "variables",
-          );
+          return new URL(record.url, location.href).searchParams.has("variables");
         } catch {
           return false;
         }
@@ -163,8 +152,7 @@
       more.textContent = "Mostrar mais";
       const page = () => {
         more.remove();
-        for (const [key, item] of entries.slice(offset, offset + 70))
-          jsonTree(details, item, key);
+        for (const [key, item] of entries.slice(offset, offset + 70)) jsonTree(details, item, key);
         offset += 70;
         if (offset < entries.length) details.append(more);
       };
@@ -174,10 +162,7 @@
     parent.append(details);
   }
   function viewJSON(parent, raw) {
-    const text =
-      typeof raw === "string"
-        ? safeText(raw)
-        : JSON.stringify(scrub(raw), null, 2);
+    const text = typeof raw === "string" ? safeText(raw) : JSON.stringify(scrub(raw), null, 2);
     try {
       jsonTree(parent, JSON.parse(text));
     } catch {
@@ -189,13 +174,10 @@
   function renderCaptures() {
     const list = shadow?.querySelector("[data-network]");
     if (!list) return;
-    const open = new Set(
-      [...list.children].filter((el) => el.open).map((el) => el.dataset.id),
-    );
+    const open = new Set([...list.children].filter((el) => el.open).map((el) => el.dataset.id));
     list.replaceChildren();
     if (!captures.size) {
-      list.textContent =
-        "Aguardando chamadas GraphQL após a instalação. Navegue no X.";
+      list.textContent = "Aguardando chamadas GraphQL após a instalação. Navegue no X.";
       return;
     }
     for (const record of [...captures.values()].reverse()) {
@@ -231,22 +213,10 @@
               }),
             ),
           ],
-          [
-            "Headers enviados — disponíveis à página",
-            record.requestHeaders || {},
-          ],
-          [
-            "Request body · " + (record.requestBody?.state || "pending"),
-            record.requestBody?.text || "",
-          ],
-          [
-            "Headers recebidos — disponíveis à página",
-            record.responseHeaders || {},
-          ],
-          [
-            "Response body · " + (record.responseBody?.state || "pending"),
-            record.responseBody?.text || "",
-          ],
+          ["Headers enviados — disponíveis à página", record.requestHeaders || {}],
+          ["Request body · " + (record.requestBody?.state || "pending"), record.requestBody?.text || ""],
+          ["Headers recebidos — disponíveis à página", record.responseHeaders || {}],
+          ["Response body · " + (record.responseBody?.state || "pending"), record.responseBody?.text || ""],
         ];
         for (const [label, value] of sections) {
           const section = document.createElement("details"),
@@ -296,10 +266,7 @@
       stopped = false;
     const LIMIT = 1048576;
     const emit = (type, data) => {
-      if (!stopped)
-        doc.dispatchEvent(
-          new CustomEvent(name + ":" + type, { detail: JSON.stringify(data) }),
-        );
+      if (!stopped) doc.dispatchEvent(new CustomEvent(name + ":" + type, { detail: JSON.stringify(data) }));
     };
     const report = () =>
       doc.dispatchEvent(
@@ -321,8 +288,7 @@
       }
     };
     const textBody = (raw) => {
-      if (raw == null || raw === "")
-        return { state: "empty", text: "", bytes: 0 };
+      if (raw == null || raw === "") return { state: "empty", text: "", bytes: 0 };
       if (raw instanceof URLSearchParams) raw = raw.toString();
       if (typeof raw !== "string")
         return {
@@ -335,10 +301,7 @@
         state: bytes.length > LIMIT ? "partial" : "complete",
         bytes: bytes.length,
         text: new TextDecoder().decode(bytes.subarray(0, LIMIT)),
-        note:
-          bytes.length > LIMIT
-            ? "Captura limitada a 1 MiB; original preservado."
-            : "",
+        note: bytes.length > LIMIT ? "Captura limitada a 1 MiB; original preservado." : "",
       };
     };
     async function read(stream) {
@@ -379,11 +342,7 @@
           state: incomplete ? "partial" : total ? "complete" : "empty",
           text: new TextDecoder().decode(bytes),
           bytes: incomplete ? null : total,
-          note: timedOut
-            ? "Captura parcial: timeout de 8s."
-            : incomplete
-              ? "Captura limitada a 1 MiB."
-              : "",
+          note: timedOut ? "Captura parcial: timeout de 8s." : incomplete ? "Captura limitada a 1 MiB." : "",
         };
       } catch (error) {
         return {
@@ -414,25 +373,15 @@
     };
     const wrapper = function (...args) {
       const [input, init] = args;
-      const url =
-        typeof input === "string" || input instanceof URL
-          ? String(input)
-          : input?.url || "";
-      if (!isGraphQL(url) || stopped)
-        return Reflect.apply(original, this, args);
+      const url = typeof input === "string" || input instanceof URL ? String(input) : input?.url || "";
+      if (!isGraphQL(url) || stopped) return Reflect.apply(original, this, args);
       fetchCount++;
       report();
       const method = init?.method || input?.method || "GET";
       let requestClone;
       const requestObjectBody =
-        input instanceof Request &&
-        init?.body == null &&
-        !/^(GET|HEAD)$/i.test(method);
-      if (
-        input instanceof Request &&
-        init?.body == null &&
-        !/^(GET|HEAD)$/i.test(method)
-      ) {
+        input instanceof Request && init?.body == null && !/^(GET|HEAD)$/i.test(method);
+      if (input instanceof Request && init?.body == null && !/^(GET|HEAD)$/i.test(method)) {
         try {
           requestClone = input.clone();
         } catch {
@@ -448,13 +397,7 @@
               note: "Request.body usado ou bloqueado: clone indisponível.",
             }
           : textBody(init?.body);
-      const id = start(
-        "fetch",
-        url,
-        method,
-        headersOf(init?.headers ?? input?.headers),
-        requestBody,
-      );
+      const id = start("fetch", url, method, headersOf(init?.headers ?? input?.headers), requestBody);
       if (requestClone)
         void read(requestClone.body).then((body) =>
           emit("capture", { id, phase: "request-body", requestBody: body }),
@@ -502,9 +445,7 @@
                 responseBody: {
                   state: "unavailable",
                   text: "",
-                  note: cloneError
-                    ? String(cloneError)
-                    : "Stream contínuo/não textual não capturado.",
+                  note: cloneError ? String(cloneError) : "Stream contínuo/não textual não capturado.",
                 },
               });
               return;
@@ -544,25 +485,16 @@
         info = meta.get(this);
       if (info) {
         key = String(key).toLowerCase();
-        info.headers[key] = info.headers[key]
-          ? info.headers[key] + ", " + value
-          : String(value);
+        info.headers[key] = info.headers[key] ? info.headers[key] + ", " + value : String(value);
       }
       return result;
     };
     const sendWrapper = function (...args) {
       const info = meta.get(this);
-      if (!info || !isGraphQL(info.url) || stopped)
-        return Reflect.apply(send, this, args);
+      if (!info || !isGraphQL(info.url) || stopped) return Reflect.apply(send, this, args);
       xhrCount++;
       report();
-      const id = start(
-          "xhr",
-          info.url,
-          info.method,
-          info.headers,
-          textBody(args[0]),
-        ),
+      const id = start("xhr", info.url, info.method, info.headers, textBody(args[0])),
         begin = performance.now();
       const fail = (event) => {
         info.error = event.type;
@@ -571,10 +503,8 @@
         info.cleanup();
         let body;
         try {
-          if (this.responseType === "" || this.responseType === "text")
-            body = textBody(this.responseText);
-          else if (this.responseType === "json")
-            body = textBody(JSON.stringify(this.response));
+          if (this.responseType === "" || this.responseType === "text") body = textBody(this.responseText);
+          else if (this.responseType === "json") body = textBody(JSON.stringify(this.response));
           else
             body = {
               state: "unavailable",
@@ -587,14 +517,9 @@
         if (info.error) body = { ...body, state: "error", note: info.error };
         const headers = {};
         try {
-          for (const line of this.getAllResponseHeaders()
-            .trim()
-            .split(/\r?\n/)) {
+          for (const line of this.getAllResponseHeaders().trim().split(/\r?\n/)) {
             const colon = line.indexOf(":");
-            if (colon > 0)
-              headers[line.slice(0, colon).toLowerCase()] = line
-                .slice(colon + 1)
-                .trim();
+            if (colon > 0) headers[line.slice(0, colon).toLowerCase()] = line.slice(colon + 1).trim();
           }
         } catch {
           /* UA headers not exposed */
@@ -612,12 +537,10 @@
       };
       info.cleanup = () => {
         this.removeEventListener("loadend", finish);
-        for (const type of ["abort", "error", "timeout"])
-          this.removeEventListener(type, fail);
+        for (const type of ["abort", "error", "timeout"]) this.removeEventListener(type, fail);
       };
       this.addEventListener("loadend", finish, { once: true });
-      for (const type of ["abort", "error", "timeout"])
-        this.addEventListener(type, fail, { once: true });
+      for (const type of ["abort", "error", "timeout"]) this.addEventListener(type, fail, { once: true });
       try {
         return Reflect.apply(send, this, args);
       } catch (error) {
@@ -645,8 +568,7 @@
       if (window.fetch === wrapper) window.fetch = original;
       if (proto?.open === openWrapper) proto.open = open;
       if (proto?.send === sendWrapper) proto.send = send;
-      if (proto?.setRequestHeader === setWrapper)
-        proto.setRequestHeader = setHeader;
+      if (proto?.setRequestHeader === setWrapper) proto.setRequestHeader = setHeader;
       stopped = true;
       doc.removeEventListener(name + ":command", command);
       report();
@@ -663,9 +585,7 @@
         mark(
           "Ponte com a página",
           "OK",
-          data.restored
-            ? "Observação encerrada."
-            : "Código executado no contexto da página.",
+          data.restored ? "Observação encerrada." : "Código executado no contexto da página.",
         );
       mark(
         "GraphQL real observado",
@@ -682,8 +602,7 @@
     const script = document.createElement("script");
     const nonce = document.querySelector("script[nonce]")?.nonce;
     if (nonce) script.nonce = nonce;
-    script.textContent =
-      "(" + pageProbe.toString() + ")(" + JSON.stringify(channel) + ");";
+    script.textContent = "(" + pageProbe.toString() + ")(" + JSON.stringify(channel) + ");";
     root.append(script);
     script.remove();
     return true;
@@ -717,29 +636,20 @@
         timeout: 15000,
         nocache: true,
         headers: { "Cache-Control": "no-cache" },
-        onload: (r) =>
-          r.status >= 200 && r.status < 300
-            ? resolve(r)
-            : reject(Error("HTTP " + r.status)),
-        onerror: () =>
-          reject(Error("Request GM falhou: confira domínio/permissões.")),
+        onload: (r) => (r.status >= 200 && r.status < 300 ? resolve(r) : reject(Error("HTTP " + r.status))),
+        onerror: () => reject(Error("Request GM falhou: confira domínio/permissões.")),
         ontimeout: () => reject(Error("Timeout de 15 segundos.")),
       });
     });
   }
   async function load(code) {
-    const url = URL.createObjectURL(
-      new Blob([code], { type: "text/javascript" }),
-    );
+    const url = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
     let timeout;
     try {
       return await Promise.race([
         import(url),
         new Promise((_, reject) => {
-          timeout = setTimeout(
-            () => reject(Error("Import expirou após 8 segundos.")),
-            8000,
-          );
+          timeout = setTimeout(() => reject(Error("Import expirou após 8 segundos.")), 8000);
         }),
       ]);
     } finally {
@@ -862,8 +772,7 @@
       if (call.op === "set") {
         await GM_setValue(temporaryKey, String(call.value).slice(0, 100));
         result.value = true;
-      } else if (call.op === "get")
-        result.value = await GM_getValue(temporaryKey);
+      } else if (call.op === "get") result.value = await GM_getValue(temporaryKey);
       else throw Error("Operação GM não permitida");
     } catch (error) {
       result.error = String(error.message || error);
@@ -930,11 +839,7 @@
       document.addEventListener(channel + ":module-ready", ready);
       timer = setTimeout(() => {
         cleanup();
-        reject(
-          Error(
-            "Sem registro IIFE: possível bloqueio de script/contexto ou código inválido.",
-          ),
-        );
+        reject(Error("Sem registro IIFE: possível bloqueio de script/contexto ou código inválido."));
       }, 2500);
       const script = document.createElement("script");
       const nonce = document.querySelector("script[nonce]")?.nonce;
@@ -975,13 +880,8 @@
         }
       });
       await test("Download remoto GM", async () => {
-        const response = await request(
-          "https://rod.migos.club/menu/dist/menu.iife.min.js",
-        );
-        if (
-          !response.responseText?.length ||
-          /^\s*</.test(response.responseText)
-        )
+        const response = await request("https://rod.migos.club/menu/dist/menu.iife.min.js");
+        if (!response.responseText?.length || /^\s*</.test(response.responseText))
           throw Error("Conteúdo vazio ou HTML.");
         return `${response.responseText.length} caracteres baixados. Não executado. Headers de cache solicitados; ainda não prova atualização entre versões.`;
       });
@@ -1020,8 +920,7 @@
           'register({version:"A",async init(core){await core.set("iife-ok");return await core.get();},dispose(){}});',
         );
         try {
-          if ((await module.init()) !== "iife-ok")
-            throw Error("Round-trip GM não confirmado");
+          if ((await module.init()) !== "iife-ok") throw Error("Round-trip GM não confirmado");
           return "Script clássico executou na página e usou storage GM por RPC. Sem import/Blob/eval.";
         } finally {
           await module.dispose();
@@ -1029,12 +928,8 @@
         }
       });
       await test("IIFE ciclo de vida LOCAL SIMULADO", async () => {
-        const a = await loadIIFE(
-          'register({version:"A",init:core=>core.ping(),dispose(){}});',
-        );
-        const b = await loadIIFE(
-          'register({version:"B",init:core=>core.ping(),dispose(){}});',
-        );
+        const a = await loadIIFE('register({version:"A",init:core=>core.ping(),dispose(){}});');
+        const b = await loadIIFE('register({version:"B",init:core=>core.ping(),dispose(){}});');
         try {
           if ((await a.init()) !== "core-ok" || (await b.init()) !== "core-ok")
             throw Error("Core não confirmado");
@@ -1071,13 +966,8 @@
     const raw = shadow.querySelector("input").value.trim();
     await test("Módulo remoto de teste", async () => {
       const url = new URL(raw);
-      if (
-        url.protocol !== "https:" ||
-        !["rod.migos.club", "code.migos.club"].includes(url.hostname)
-      )
-        throw Error(
-          "Use um módulo próprio HTTPS em rod.migos.club ou code.migos.club.",
-        );
+      if (url.protocol !== "https:" || !["rod.migos.club", "code.migos.club"].includes(url.hostname))
+        throw Error("Use um módulo próprio HTTPS em rod.migos.club ou code.migos.club.");
       const response = await request(url.href);
       const candidate = await loadIIFE(response.responseText);
       if (
@@ -1085,9 +975,7 @@
         typeof candidate.init !== "function" ||
         typeof candidate.dispose !== "function"
       )
-        throw Error(
-          "Contrato esperado: register({version, init(core), dispose()}).",
-        );
+        throw Error("Contrato esperado: register({version, init(core), dispose()}).");
       let result;
       try {
         result = await candidate.init(Object.freeze({ ping: () => "core-ok" }));
@@ -1114,8 +1002,7 @@
       return;
     }
     const host = document.createElement("section");
-    host.style.cssText =
-      "position:fixed;inset:12px;z-index:2147483647;max-width:650px;margin:auto;";
+    host.style.cssText = "position:fixed;inset:12px;z-index:2147483647;max-width:650px;margin:auto;";
     shadow = host.attachShadow({ mode: "open" });
     shadow.innerHTML = `
       <style>
@@ -1188,20 +1075,14 @@
       host.hidden = true;
     };
     shadow.querySelector("[data-stop]").onclick = async () => {
-      document.dispatchEvent(
-        new CustomEvent(channel + ":command", { detail: "stop" }),
-      );
+      document.dispatchEvent(new CustomEvent(channel + ":command", { detail: "stop" }));
       await activeModule?.dispose();
       activeModule = null;
     };
     shadow.querySelector("[data-copy]").onclick = async (event) => {
       try {
         await navigator.clipboard.writeText(
-          JSON.stringify(
-            { environment, tests: Object.fromEntries(rows) },
-            null,
-            2,
-          ),
+          JSON.stringify({ environment, tests: Object.fromEntries(rows) }, null, 2),
         );
         event.target.textContent = "Copiado";
       } catch {
@@ -1212,8 +1093,7 @@
     render();
     renderCaptures();
   }
-  if (typeof GM_registerMenuCommand === "function")
-    GM_registerMenuCommand("RodX · diagnóstico", mount);
+  if (typeof GM_registerMenuCommand === "function") GM_registerMenuCommand("RodX · diagnóstico", mount);
   if (document.body) mount();
   else document.addEventListener("DOMContentLoaded", mount, { once: true });
 })();
