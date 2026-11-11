@@ -1,7 +1,7 @@
 import { createMarkup } from "./markup.js";
 import css from "./style.css?inline";
 import { compile } from "./compiler.js";
-import { createStrategies } from "./strategies.js";
+import { createStrategies, automaticCandidates } from "./strategies.js";
 import { createRunner } from "./runner.js";
 import { createStorage } from "./storage.js";
 
@@ -230,19 +230,9 @@ export default {
       }
       let method = strategies.find((item) => item.id === $("[data-method]").value);
       if (!method) {
-        const order = [
-          "gm-script",
-          "script-nonce",
-          "script-textContent",
-          "page-eval",
-          "page-function",
-          "blob-classic",
-          "data-classic",
-          "module-inline",
-        ];
-        for (const id of order) {
+        for (const candidate of automaticCandidates(enabledMethods())) {
           if (abort.signal.aborted) return;
-          const candidate = strategies.find((item) => item.id === id);
+          const id = candidate.id;
           let result = results.get(id);
           if (!result || !result.probe)
             result = await runner.run(candidate, probeCode, { signal: abort.signal, probe: true });

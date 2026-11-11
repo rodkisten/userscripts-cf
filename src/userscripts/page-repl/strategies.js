@@ -238,3 +238,25 @@ export function createStrategies(host = window) {
     },
   ];
 }
+
+export function automaticCandidates(methods) {
+  const preferred = [
+    "gm-script",
+    "gm-modern-script",
+    "script-nonce",
+    "script-textContent",
+    "script-trusted-types",
+    "page-eval",
+    "page-function",
+    "blob-classic",
+    "data-classic",
+    "module-inline",
+  ];
+  const pageMethods = methods.filter(
+    (method) => method.world.includes("página") || method.id === "page-import-blob",
+  );
+  return pageMethods.sort((a, b) => {
+    const rank = (id) => (preferred.includes(id) ? preferred.indexOf(id) : preferred.length);
+    return rank(a.id) - rank(b.id);
+  });
+}

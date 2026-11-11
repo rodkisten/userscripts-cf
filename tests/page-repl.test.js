@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { compile } from "../src/userscripts/page-repl/compiler.js";
 import { createRunner } from "../src/userscripts/page-repl/runner.js";
-import { createStrategies } from "../src/userscripts/page-repl/strategies.js";
+import { createStrategies, automaticCandidates } from "../src/userscripts/page-repl/strategies.js";
 import { Window } from "happy-dom";
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
@@ -102,4 +102,15 @@ test("raw script mode preserves native global var without REPL declaration rewri
     runner.dispose();
     await host.happyDOM.abort();
   }
+});
+
+test("automatic selection covers every expected page strategy, including Trusted Types", () => {
+  const host = new Window();
+  const methods = createStrategies(host).filter((method) => !method.advanced);
+  const candidates = automaticCandidates(methods);
+  assert.ok(candidates.some((method) => method.id === "script-trusted-types"));
+  assert.ok(candidates.some((method) => method.id === "gm-modern-script"));
+  assert.ok(candidates.some((method) => method.id === "page-import-blob"));
+  assert.ok(!candidates.some((method) => method.id === "sandbox-eval-global"));
+  assert.equal(candidates[0].id, "gm-script");
 });
