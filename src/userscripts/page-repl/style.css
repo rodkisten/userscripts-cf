@@ -1,13 +1,19 @@
-:host {
+/* The host has an inline all:initial reset. Set inherited UI values inside the
+   shadow root, where that host reset cannot override them. */
+.repl-root {
   all: initial;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    sans-serif;
+  display: block;
+  direction: ltr;
   color-scheme: dark;
   color: #e9edf4;
-  font-size: 13px;
+  font:
+    13px/1.45 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  text-align: left;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 * {
   box-sizing: border-box;
@@ -20,10 +26,15 @@ input,
 select,
 textarea {
   font: inherit;
-  color: inherit;
+  color: #e9edf4;
+  letter-spacing: normal;
+  text-transform: none;
 }
 button {
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
+  line-height: 1.25;
   background: #223047;
   border: 1px solid #435067;
   border-radius: 9px;
@@ -45,14 +56,28 @@ textarea {
   border-radius: 8px;
   padding: 8px;
   min-width: 0;
+  max-width: 100%;
+  -webkit-text-fill-color: #e9edf4;
 }
 input[type="checkbox"] {
   accent-color: #82b6ff;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 18px;
 }
 label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #92c3ff;
+  outline-offset: 2px;
 }
 .launcher {
   position: fixed;
@@ -72,7 +97,7 @@ label {
   position: fixed;
   z-index: 2147483647;
   right: 12px;
-  bottom: 12px;
+  bottom: var(--repl-bottom, 12px);
   width: min(780px, calc(100vw - 24px));
   height: min(800px, var(--repl-height, 85dvh));
   max-height: var(--repl-height, 85dvh);
@@ -95,6 +120,11 @@ footer {
   gap: 8px;
   padding: 9px 12px;
 }
+header,
+.tabs,
+footer {
+  flex-shrink: 0;
+}
 header {
   background: #182437;
   border-bottom: 1px solid #35445b;
@@ -115,10 +145,19 @@ header button {
   background: #315b8e;
 }
 .view {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   flex: 1;
   min-height: 0;
   overscroll-behavior: contain;
+}
+.execution-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #0c1420;
+  border-bottom: 1px solid #2c3b51;
+  margin-bottom: 10px;
 }
 .editor-wrap {
   padding: 0 12px;
@@ -127,6 +166,7 @@ textarea {
   width: 100%;
   min-height: 180px;
   max-height: 42dvh;
+  display: block;
   resize: vertical;
   white-space: pre;
   tab-size: 2;
@@ -163,6 +203,8 @@ small {
 }
 footer {
   border-top: 1px solid #35445b;
+  background: #0c1420;
+  overflow-wrap: anywhere;
 }
 pre {
   margin: 6px 0;
@@ -234,13 +276,50 @@ pre {
 @media (max-width: 600px) {
   .panel {
     right: 4px;
-    bottom: 4px;
+    bottom: var(--repl-bottom, 4px);
     width: calc(100vw - 8px);
     border-radius: 11px;
   }
-  textarea {
+  header,
+  .toolbar,
+  .options,
+  .row,
+  footer {
+    padding: 7px 10px;
+    gap: 6px;
+  }
+  .tabs {
+    padding: 6px 10px;
+  }
+  .tabs button {
+    flex: 1;
+  }
+  textarea,
+  input:not([type="checkbox"]),
+  select {
     font-size: 16px;
-    min-height: 160px;
+  }
+  textarea {
+    height: 170px;
+    min-height: 110px;
+    max-height: 34dvh;
+  }
+  .execution-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .execution-toolbar select {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  footer small {
+    display: none;
+  }
+  .options > label:first-child {
+    flex-basis: 100%;
+  }
+  .row input[type="url"] {
+    flex-basis: 100%;
   }
   .toolbar {
     gap: 6px;

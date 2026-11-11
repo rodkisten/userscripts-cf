@@ -64,6 +64,7 @@ export default {
       shadow.append(style);
     }
     const container = document.createElement("div");
+    container.className = "repl-root";
     container.append(createMarkup(document));
     shadow.append(container);
     (document.body || document.documentElement).append(host);
@@ -509,13 +510,17 @@ export default {
       }
     });
     function viewport() {
-      panel.style.setProperty(
-        "--repl-height",
-        Math.max(180, (window.visualViewport?.height || innerHeight) - 12) + "px",
-      );
+      const visual = window.visualViewport;
+      const height = visual?.height || innerHeight;
+      const bottom = Math.max(0, innerHeight - height - (visual?.offsetTop || 0));
+      panel.style.setProperty("--repl-height", Math.max(0, height - 12) + "px");
+      panel.style.setProperty("--repl-bottom", bottom + 6 + "px");
     }
     viewport();
-    if (window.visualViewport) ctx.listen(window.visualViewport, "resize", viewport);
+    if (window.visualViewport) {
+      ctx.listen(window.visualViewport, "resize", viewport);
+      ctx.listen(window.visualViewport, "scroll", viewport);
+    }
     function place() {
       launcher.style.right = Math.max(4, Math.min(innerWidth - 50, state.position?.x || 12)) + "px";
       launcher.style.bottom = Math.max(4, Math.min(innerHeight - 50, state.position?.y || 90)) + "px";

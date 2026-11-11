@@ -9,6 +9,8 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     url: "https://example.com",
     settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true },
   });
+  // Reproduce a page with hostile inherited typography and the host inline reset.
+  host.document.body.style.cssText = "font: 32px Times New Roman; color: black";
   const values = new Map(),
     errors = [];
   host.GM_getValue = (key, fallback) => values.get(key) ?? fallback;
@@ -23,6 +25,11 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     const root = host.document.getElementById("rodx-page-repl").shadowRoot;
     root.querySelector(".launcher").click();
     assert.equal(root.querySelector(".panel").hidden, false);
+    const uiStyle = host.getComputedStyle(root.querySelector(".repl-root"));
+    assert.equal(uiStyle.color, "#e9edf4");
+    assert.match(uiStyle.fontFamily, /apple-system/);
+    assert.equal(host.getComputedStyle(root.querySelector(".execution-toolbar")).position, "sticky");
+    assert.equal(root.querySelector(".execution-toolbar [data-action=run]").textContent, "Executar");
     root.querySelector("[data-method]").value = "sandbox-eval-global";
     root.querySelector("textarea").value =
       'let n=2; function next(){return ++n} console.log("ready"); await Promise.resolve(next())';

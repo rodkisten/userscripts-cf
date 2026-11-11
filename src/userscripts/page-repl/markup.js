@@ -82,7 +82,7 @@ const tree = [
           {
             tag: "div",
             attrs: {
-              class: "toolbar",
+              class: "toolbar execution-toolbar",
             },
             children: [
               {
