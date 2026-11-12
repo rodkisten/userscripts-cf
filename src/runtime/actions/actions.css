@@ -1,0 +1,5 @@
+.rod-actions-panel { color: inherit; min-width: 0; }
+.rod-actions-tabs { display:flex; gap:6px; overflow-x:auto; padding:8px 0 12px; scrollbar-width:none; }
+.rod-actions-tabs button { flex:none; border:1px solid #525252; border-radius:9px; background:#262626; color:#ddd; padding:9px 12px; font:inherit; font-size:13px; }
+.rod-actions-tabs button.rod-actions-tab-active { background:#525252; color:#fff; border-color:#a8a8a8; }
+.rod-actions-content { min-height:110px; padding:8px 0; }
