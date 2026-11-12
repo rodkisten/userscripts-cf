@@ -36,7 +36,7 @@ jobs:
               exit 0
             fi
 
-            git commit -m "style: autoformat source files [skip ci]"
+            git commit -m "[CI Skip] style: autoformat source files"
 
             if [ -z "${CIRCLE_BRANCH:-}" ]; then
               echo "No branch available for safe push."
