@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, For } from "solid-js";
 import { mountView } from "./solid-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
@@ -340,13 +340,13 @@ export function initializeDeckQuickUI() {
       function renderSuggestions() {
         mountView(suggestionBox, () => (
           <>
-            {rows().map((row, index) => (
+            <For each={rows()}>{(row, index) => (
               <button
                 type="button"
                 class="rxq-option"
                 role="option"
-                id={`rodx-rxq-option-${index}`}
-                aria-selected={String(index === selected())}
+                id={`rodx-rxq-option-${index()}`}
+                aria-selected={String(index() === selected())}
                 onPointerDown={(event) => {
                   if (event.pointerType !== "touch") event.preventDefault();
                 }}
@@ -359,7 +359,7 @@ export function initializeDeckQuickUI() {
                 <strong>{row.label}</strong>
                 <small>{row.detail}</small>
               </button>
-            ))}
+            )}</For>
           </>
         ));
       }
