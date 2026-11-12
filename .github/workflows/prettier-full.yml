@@ -1,0 +1,94 @@
+name: Prettier · Format all files
+
+run-name: >-
+  Prettier · ${{ inputs.target_branch || github.ref_name }} ·
+  ${{ inputs.create_pr && 'Create PR' || 'Push changes' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to format (defaults to the selected workflow branch)
+        required: false
+        type: string
+      create_pr:
+        description: Open a pull request instead of pushing to the target branch
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prettier-full-${{ inputs.target_branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  prettier:
+    name: Format repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch || github.ref_name }}
+          persist-credentials: true
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Format all supported files
+        run: npm run format
+
+      - name: Show changes
+        id: changes
+        shell: bash
+        run: |
+          git status --short
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify formatting
+        run: npm run format:check
+
+      - name: Create formatting pull request
+        if: steps.changes.outputs.changed == 'true' && inputs.create_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/prettier-${{ inputs.target_branch || github.ref_name }}
+          delete-branch: true
+          commit-message: 'style: format repository with Prettier'
+          title: 'style: format repository with Prettier'
+          body: |
+            Automated full-repository Prettier formatting.
+
+            Triggered from: ${{ inputs.target_branch || github.ref_name }}
+            Command: `npm run format`
+          base: ${{ inputs.target_branch || github.ref_name }}
+          labels: automated
+
+      - name: Commit directly to selected branch
+        if: steps.changes.outputs.changed == 'true' && !inputs.create_pr
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: format repository with Prettier"
+          git push origin "HEAD:${{ inputs.target_branch || github.ref_name }}"
+
+      - name: No formatting changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "All files are already formatted."
