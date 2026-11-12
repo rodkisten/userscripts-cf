@@ -74,6 +74,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
     if (!elements.length) { event.preventDefault(); return; }
     const first = elements[0];
     const last = elements[elements.length - 1];
+    if (!first || !last) return;
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   };
