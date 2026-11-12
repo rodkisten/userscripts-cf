@@ -7,30 +7,39 @@ export interface ToastItem {
   kind: ToastKind;
   duration: number;
   createdAt: number;
+  detail?: unknown;
+  loading?: boolean;
+  progress?: number;
 }
+type ToastOptions = Partial<Pick<ToastItem, "id" | "kind" | "duration" | "detail" | "loading" | "progress">>;
 const [state, setState] = createStore<{ items: ToastItem[] }>({ items: [] });
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 let nextId = 0;
-
 export const toastState = state;
 export const toastActions = {
-  show(message: string, options: Partial<Pick<ToastItem, "id" | "kind" | "duration">> = {}) {
+  show(message: string, options: ToastOptions = {}) {
     const id = options.id ?? `toast-${++nextId}`;
     const item: ToastItem = {
-      id,
-      message: String(message),
-      kind: options.kind ?? "info",
-      duration: options.duration ?? 4000,
-      createdAt: Date.now(),
+      id, message: String(message), kind: options.kind ?? "info",
+      duration: options.duration ?? (options.loading ? 0 : 4000),
+      createdAt: Date.now(), detail: options.detail, loading: options.loading,
+      progress: options.progress,
     };
     clearTimeout(timers.get(id));
+    timers.delete(id);
     setState("items", (items) => {
       const index = items.findIndex((entry) => entry.id === id);
       if (index < 0) return [...items, item];
-      return items.map((entry) => (entry.id === id ? item : entry));
+      return items.map((entry) => entry.id === id ? item : entry);
     });
     if (item.duration > 0) timers.set(id, setTimeout(() => toastActions.dismiss(id), item.duration));
     return id;
+  },
+  update(id: string, patch: Partial<Omit<ToastItem, "id">>) {
+    const current = state.items.find((item) => item.id === id);
+    if (!current) return false;
+    toastActions.show(patch.message ?? current.message, { ...current, ...patch, id });
+    return true;
   },
   dismiss(id: string) {
     clearTimeout(timers.get(id));
