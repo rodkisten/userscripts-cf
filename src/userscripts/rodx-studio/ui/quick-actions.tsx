@@ -326,6 +326,7 @@ export function initializeDeckQuickUI() {
           ? { list: 11, full: 2, history: 1, token: 2 }
           : { list: 5, full: 5, history: 3, token: 3 };
         const countByKind = { list: 0, full: 0, history: 0, token: 0 };
+        setSelected(-1);
         setRows(
           candidates
             .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
@@ -338,7 +339,6 @@ export function initializeDeckQuickUI() {
             })
             .slice(0, 16),
         );
-        setSelected(-1);
       }
       function renderSuggestions() {
         mountView(suggestionBox, () => (
@@ -463,6 +463,7 @@ export function initializeDeckQuickUI() {
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.focus();
         } else if (action === "lists") {
+          setSelected(-1);
           setRows((Studio.services.lists?.all() || [])
             .map((item) => ({
               kind: "list",
@@ -473,7 +474,6 @@ export function initializeDeckQuickUI() {
               weight: 200,
             }))
             .slice(0, 50));
-          setSelected(-1);
           input.focus();
         }
       });
