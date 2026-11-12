@@ -1,4 +1,4 @@
-import { For, createSignal, onCleanup } from "solid-js";
+import { For, createSignal, createEffect, onCleanup, onMount } from "solid-js";
 import { render } from "solid-js/web";
 
 export type ActionsTab = { id: string; title: string; render: () => HTMLElement };
@@ -45,6 +45,10 @@ export function mountActionsPanel(
       }
     };
 
+    onMount(() => {
+      createEffect(() => show(active()));
+    });
+
     return (
       <section class="rod-actions-panel">
         <nav class="rod-actions-tabs" aria-label="Ferramentas">
@@ -63,11 +67,6 @@ export function mountActionsPanel(
           </For>
         </nav>
         <div class="rod-actions-content" ref={content} role="tabpanel" />
-        {(() => {
-          // Schedule content rendering after the host has mounted.
-          queueMicrotask(() => show(active()));
-          return null;
-        })()}
       </section>
     );
   }, host);
