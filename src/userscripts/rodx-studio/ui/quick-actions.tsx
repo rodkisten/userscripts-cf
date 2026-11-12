@@ -122,7 +122,7 @@ export function initializeDeckQuickUI() {
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
       let rows = [];
-      let selected = -1;
+      const [selected, setSelected] = createSignal(-1);
       let sequence = 0;
       let refreshTimer = 0;
       let closed = false;
@@ -333,13 +333,13 @@ export function initializeDeckQuickUI() {
             return true;
           })
           .slice(0, 16);
-        selected = -1;
+        setSelected(-1);
         renderSuggestions();
       }
       function renderSuggestions() {
         suggestionBox.hidden = rows.length === 0;
         const options = rows.map((row) => row);
-        const active = selected;
+        const active = selected();
         mountView(suggestionBox, () => (
           <>
             {options.map((row, index) => (
@@ -429,15 +429,15 @@ export function initializeDeckQuickUI() {
           if (!rows.length) return;
           event.preventDefault();
           event.stopPropagation();
-          selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
+          setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length);
           renderSuggestions();
           suggestionBox
             .querySelector<HTMLElement>(DOM_SELECTORS.selectedItems)
             ?.scrollIntoView({ block: "nearest" });
-        } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
+        } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows[selected()]) {
           event.preventDefault();
           event.stopPropagation();
-          applySuggestion(rows[selected]);
+          applySuggestion(rows[selected()]);
         } else if (event.key === "Escape" && rows.length) {
           event.preventDefault();
           event.stopPropagation();
@@ -471,7 +471,7 @@ export function initializeDeckQuickUI() {
               weight: 200,
             }))
             .slice(0, 50);
-          selected = -1;
+          setSelected(-1);
           renderSuggestions();
           input.focus();
         }
