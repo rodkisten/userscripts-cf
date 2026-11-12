@@ -1,7 +1,7 @@
 import { applyComponentStyle } from "../../core/css.js";
 import { RUNTIME_LIMITS } from "../../config/runtime.js";
 import { DEFAULT_SETTINGS } from "../../config/defaults.js";
-import { DOM_SELECTORS, RODX_SELECTORS } from "../../selectors.js";
+import { RODX_SELECTORS } from "../../selectors.js";
 import { mountPanel } from "./Panel.tsx";
 import { createEditor } from "./editor.ts";
 import css from "./style.css?inline";
@@ -51,25 +51,14 @@ export default {
         if (ctx.signal.aborted || document.documentElement) finish();
       });
     if (ctx.signal.aborted) return;
-    const host = document.createElement("div");
+    const shadow = ctx.ui.root;
+    const host = ctx.ui.host;
     host.id = "rodx-page-repl";
     applyComponentStyle(host, "rx-repl-host");
-    const shadow = host.attachShadow({ mode: "open" });
-    try {
-      const sheet = new CSSStyleSheet();
-      sheet.replaceSync(css);
-      shadow.adoptedStyleSheets = [sheet];
-    } catch {
-      const style = document.createElement("style");
-      const nonce = document.querySelector(DOM_SELECTORS.nonceBearingElements)?.nonce;
-      if (nonce) style.nonce = nonce;
-      style.textContent = css;
-      shadow.append(style);
-    }
+    ctx.ui.registerStyles(css);
     const container = document.createElement("div");
     const ui = mountPanel(container);
-    shadow.append(container);
-    (document.body || document.documentElement).append(host);
+    ctx.ui.mount(container);
     const $ = (selector) => shadow.querySelector(selector);
     const panel = $(RODX_SELECTORS.replPanel),
       launcher = $(RODX_SELECTORS.replLauncher);
@@ -477,7 +466,6 @@ export default {
       editor.destroy();
       ui.dispose();
       persist.dispose();
-      host.remove();
     });
   },
 };
