@@ -22,7 +22,7 @@ form.append(
     { type: "application/json" },
   ),
 );
-for (const file of ["worker.mjs", "handler.js"]) {
+for (const file of ["worker.mjs", "handler.js", "build-notifications.js"]) {
   const code = await fs.readFile(path.join(root, "hosting", file), "utf8");
   form.append(file, new Blob([code], { type: "application/javascript+module" }), file);
 }
