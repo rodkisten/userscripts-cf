@@ -73,6 +73,7 @@ export function initializeDeckQuickUI() {
               aria-autocomplete={"list"}
               aria-controls={"rodx-quick-suggestions"}
               aria-expanded={String(rows().length > 0)}
+              aria-activedescendant={selected() >= 0 ? `rodx-rxq-option-${selected()}` : undefined}
               placeholder={"Pesquise usando termos, list:, filtros, hashtags, AND/OR…"}
             ></textarea>
             {"\n            "}
@@ -325,7 +326,8 @@ export function initializeDeckQuickUI() {
           ? { list: 11, full: 2, history: 1, token: 2 }
           : { list: 5, full: 5, history: 3, token: 3 };
         const countByKind = { list: 0, full: 0, history: 0, token: 0 };
-        setRows(candidates
+        setRows(
+          candidates
           .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
           .filter((item) => {
             const key = `${item.kind}:${item.query || item.id}`;
@@ -334,7 +336,8 @@ export function initializeDeckQuickUI() {
             countByKind[item.kind]++;
             return true;
           })
-          .slice(0, 16));
+            .slice(0, 16),
+        );
         setSelected(-1);
       }
       function renderSuggestions() {
@@ -468,7 +471,7 @@ export function initializeDeckQuickUI() {
             }))
             .slice(0, 50));
           setSelected(-1);
-            input.focus();
+          input.focus();
         }
       });
       const handle = Studio.menu.open({
