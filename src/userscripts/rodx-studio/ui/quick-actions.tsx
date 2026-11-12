@@ -684,6 +684,8 @@ export function initializeDeckQuickUI() {
                     setRefreshing(true);
                     try {
                       await Studio.services.lists?.editName(listId, true);
+                      const updated = Studio.services.lists?.all().find((item) => item.id === listId);
+                      if (updated) setListName(Studio.services.lists.displayName(updated));
                     } finally {
                       setRefreshing(false);
                     }
