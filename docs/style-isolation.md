@@ -28,3 +28,32 @@ export default {
 the website must use `ctx.pageStyle`. A shadow stylesheet cannot style nodes outside its root.
 
 **Security note:** Shadow DOM isolates CSS selectors, not JavaScript or privileges.
+
+## SolidJS 2 and CSS Modules
+
+The Vite CSS Modules plugin already emits a named `css` export alongside the default class map.
+Use the same compiled stylesheet inside the ShadowRoot:
+
+```tsx
+import styles, { css } from "./Panel.module.css";
+import { mountSolidShadow } from "../runtime/solid-ui/shadow-mount";
+
+function Panel() {
+  return <button class={styles.button}>Open</button>;
+}
+
+const dispose = mountSolidShadow(() => <Panel />, {
+  id: "panel",
+  styles: [css],
+});
+
+// On route cleanup:
+dispose();
+```
+
+No `createEffect` is required for static CSS. Reactive styling belongs in Solid's
+`classList` or inline style bindings. The mount helper reference-counts identical
+stylesheets within each root and disposes the Solid owner and stylesheet registrations.
+
+If a runtime context already provides `ctx.ui.root`, pass `target: ctx.ui.root` to
+share that script's isolated host. Never attach a ShadowRoot to `document.body`.
