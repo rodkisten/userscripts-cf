@@ -29,3 +29,24 @@
 }
 .content { padding: 16px 0; }
 .actions { justify-content: flex-end; }
+
+.sheet[data-presentation="modal"] {
+  align-self: center;
+  border-radius: 18px;
+  max-height: min(85dvh, 850px);
+}
+.sheet[data-presentation="drawer"] {
+  margin-left: auto;
+  width: min(90vw, 420px);
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 18px 0 0 18px;
+}
+.sheet:focus { outline: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .sheet { animation: rod-menu-enter 160ms ease-out; }
+  @keyframes rod-menu-enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
