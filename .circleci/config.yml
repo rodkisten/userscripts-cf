@@ -58,6 +58,15 @@ jobs:
             git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_FORMAT_TOKEN" | base64 -w0)" \
               push origin "HEAD:refs/heads/$CIRCLE_BRANCH"
 
+      - run:
+          name: Notify Telegram on success
+          when: on_success
+          command: node build/notify-circleci.mjs success
+      - run:
+          name: Notify Telegram on failure
+          when: on_fail
+          command: node build/notify-circleci.mjs failed
+
 workflows:
   format-on-push-and-pr:
     jobs:
