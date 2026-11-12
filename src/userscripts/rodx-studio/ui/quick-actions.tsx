@@ -581,9 +581,12 @@ export function initializeDeckQuickUI() {
         };
         document.body.append(floating);
         position();
-        const style = (<style />) as HTMLStyleElement;
-        style.textContent = extractedCSS2;
-        document.head.append(style);
+        if (!document.getElementById("rodx-quick-actions-page-css")) {
+          const style = document.createElement("style");
+          style.id = "rodx-quick-actions-page-css";
+          style.textContent = extractedCSS2;
+          document.head.append(style);
+        }
         window.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
