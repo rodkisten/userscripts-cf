@@ -58,7 +58,9 @@ function MenuDialog(props: { menu: MenuEntry }) {
   let dialog!: HTMLElement;
   let previousFocus: Element | null = null;
   onMount(() => {
-    previousFocus = document.activeElement;
+    previousFocus = dialog.getRootNode() instanceof ShadowRoot
+      ? (dialog.getRootNode() as ShadowRoot).activeElement
+      : document.activeElement;
     dialog.focus();
     onCleanup(() => {
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
@@ -75,8 +77,8 @@ function MenuDialog(props: { menu: MenuEntry }) {
     const first = elements[0];
     const last = elements[elements.length - 1];
     if (!first || !last) return;
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    if (event.shiftKey && (dialog.getRootNode() as Document | ShadowRoot).activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && (dialog.getRootNode() as Document | ShadowRoot).activeElement === last) { event.preventDefault(); first.focus(); }
   };
   return (
     <div class={styles.backdrop} onClick={dismiss}>
