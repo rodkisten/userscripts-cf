@@ -72,7 +72,7 @@ export function initializeDeckQuickUI() {
               aria-label={"Pesquisa com destaque de sintaxe e sugestões"}
               aria-autocomplete={"list"}
               aria-controls={"rodx-quick-suggestions"}
-              aria-expanded={String(rows().length > 0)}
+              aria-expanded={rows().length > 0}
               aria-activedescendant={selected() >= 0 ? `rodx-rxq-option-${selected()}` : undefined}
               placeholder={"Pesquise usando termos, list:, filtros, hashtags, AND/OR…"}
             ></textarea>
@@ -350,7 +350,7 @@ export function initializeDeckQuickUI() {
                 class="rxq-option"
                 role="option"
                 id={`rodx-rxq-option-${index()}`}
-                aria-selected={String(index() === selected())}
+                aria-selected={index() === selected()}
                 onPointerDown={(event) => {
                   if (event.pointerType !== "touch") event.preventDefault();
                 }}
