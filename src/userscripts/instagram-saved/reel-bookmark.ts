@@ -3,7 +3,8 @@ const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from save
 const SAVED = /unsave|remover dos salvos|remove from saved/i;
 
 function reelIsOpen(): boolean {
-  return /^\\/reel\\/[A-Za-z0-9_-]+\\/?$/.test(location.pathname);
+  const segments = location.pathname.split("/").filter(Boolean);
+  return segments.length === 2 && segments[0] === "reel" && /^[A-Za-z0-9_-]+$/.test(segments[1]);
 }
 
 function nativeSave(): HTMLElement | null {
