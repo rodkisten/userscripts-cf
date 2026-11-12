@@ -49,6 +49,7 @@ export function initializeDeckQuickUI() {
       form.className = "rodx-quick-search";
       const [validationMessage, setValidationMessage] = createSignal("");
       const [validationLevel, setValidationLevel] = createSignal("info");
+      const [canSubmit, setCanSubmit] = createSignal(false);
       mountView(form, () => (
         <>
           {"\n            "}
@@ -98,7 +99,7 @@ export function initializeDeckQuickUI() {
               {"Minhas listas"}
             </button>
             {"\n              "}
-            <button type={"submit"} data-rxq={"submit"}>
+            <button type={"submit"} data-rxq={"submit"} disabled={!canSubmit()}>
               {"Pesquisar"}
             </button>
             {"\n            "}
@@ -109,7 +110,6 @@ export function initializeDeckQuickUI() {
       ensureQuickSearchStyles(form);
       const input = form.querySelector<HTMLInputElement>(RODX_SELECTORS.queryWorkbenchInput);
       const syntax = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSyntax);
-      const submit = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSubmit);
       const suggestionBox = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
@@ -379,7 +379,7 @@ export function initializeDeckQuickUI() {
             : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui.")
         );
         setValidationLevel(error ? "error" : "info");
-        (submit as HTMLButtonElement).disabled = Boolean(error || !value.trim());
+        setCanSubmit(Boolean(!error && value.trim()));
       }
       function queueSuggestions() {
         clearTimeout(refreshTimer);
