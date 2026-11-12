@@ -1,7 +1,13 @@
+import { handleBuildNotification } from "./build-notifications.js";
+
 export function createHandler(assets, info) {
   return {
-    async fetch(request) {
+    async fetch(request, env) {
       const url = new URL(request.url);
+      if (url.pathname === "/webhooks/cloudflare/builds") {
+        if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+        return handleBuildNotification(request, env);
+      }
       const headers = new Headers({
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
