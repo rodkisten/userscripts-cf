@@ -22,6 +22,7 @@ export interface MenuAction {
   label: string;
   run?: (values: Readonly<Record<string, MenuValue>>) => void | Promise<void>;
   validate?: boolean;
+  role?: "submit" | "cancel" | "secondary" | "destructive";
 }
 export interface MenuEntry {
   id: string;
@@ -81,9 +82,9 @@ export const menuActions = {
     if (!session || state.busy[id]) return;
     setState("busy", id, true);
     try {
-      if (action.validate !== false && !(await menuActions.validate(id))) return;
+      if (action.role !== "cancel" && action.validate !== false && !(await menuActions.validate(id))) return;
       const values = { ...state.values[id] };
-      await action.run?.(values);
+      if (action.role !== "cancel") await action.run?.(values);
       if (sessions.get(id) !== session) return;
       session.resolve({ reason: "action", action: action.id, values });
       sessions.delete(id);
