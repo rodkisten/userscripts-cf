@@ -1,7 +1,7 @@
 import { For, Show, onCleanup, onMount } from "solid-js";
-import { render } from "solid-js/web";
+import { mountSolidShadow } from "./shadow-mount";
 import { menuActions, menuState, type MenuEntry, type MenuField, type MenuValue } from "./menu-store";
-import styles from "./MenuRoot.module.css";
+import styles, { css } from "./MenuRoot.module.css";
 
 function Field(props: { menuId: string; field: MenuField }) {
   const value = () => menuState.values[props.menuId]?.[props.field.name];
@@ -106,13 +106,12 @@ export function MenuRoot() {
   return <For each={menuState.stack}>{(menu) => <MenuDialog menu={menu} />}</For>;
 }
 let disposeRoot: (() => void) | undefined;
-export function mountMenuRoot(target: HTMLElement = document.body) {
+export function mountMenuRoot(target?: HTMLElement | ShadowRoot) {
   if (!disposeRoot) {
-    const root = document.createElement("div");
-    root.dataset.rodSolidMenu = "";
-    target.append(root);
-    const dispose = render(() => <MenuRoot />, root);
-    disposeRoot = () => { dispose(); root.remove(); disposeRoot = undefined; };
+    const dispose = mountSolidShadow(() => <MenuRoot />, {
+      target, styles: [css], id: "menu",
+    });
+    disposeRoot = () => { dispose(); disposeRoot = undefined; };
   }
   return () => disposeRoot?.();
 }
