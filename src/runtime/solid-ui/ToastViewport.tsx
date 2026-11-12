@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
-import { render } from "solid-js/web";
+import { mountSolidShadow } from "./shadow-mount";
 import { toastActions, toastState } from "./toast-store";
-import styles from "./ToastViewport.module.css";
+import styles, { css } from "./ToastViewport.module.css";
 
 export function ToastViewport() {
   return (
@@ -19,13 +19,12 @@ export function ToastViewport() {
 }
 
 let disposeRoot: (() => void) | undefined;
-export function mountToastViewport(target: HTMLElement = document.body) {
+export function mountToastViewport(target?: HTMLElement | ShadowRoot) {
   if (!disposeRoot) {
-    const root = document.createElement("div");
-    root.dataset.rodSolidToasts = "";
-    target.append(root);
-    const dispose = render(() => <ToastViewport />, root);
-    disposeRoot = () => { dispose(); root.remove(); disposeRoot = undefined; };
+    const dispose = mountSolidShadow(() => <ToastViewport />, {
+      target, styles: [css], id: "toasts",
+    });
+    disposeRoot = () => { dispose(); disposeRoot = undefined; };
   }
   return () => disposeRoot?.();
 }
