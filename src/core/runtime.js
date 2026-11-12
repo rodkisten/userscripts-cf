@@ -1,5 +1,6 @@
 import { matchesRoute } from "./match.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
+import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
 //@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
 function toast(){}
@@ -113,6 +114,19 @@ export function createRuntime(definitions, bridge, host = window) {
         get host() { ensureUIRoot(); return uiHost; },
         mount(node) { ensureUIRoot().append(node); return node; },
         style(css) { return addStyle(css, ensureUIRoot()); },
+        registerStyles(...styles) {
+          const release = registerShadowStyles(ensureUIRoot(), styles.flat());
+          onDispose(release);
+          return release;
+        },
+        mountSolid(component, options = {}) {
+          const release = mountSolidShadow(component, {
+            ...options,
+            target: ensureUIRoot(),
+          });
+          onDispose(release);
+          return release;
+        },
       }),
       // Isolated by default: styles here cannot match page DOM.
       style(css) { return addStyle(css, ensureUIRoot()); },
