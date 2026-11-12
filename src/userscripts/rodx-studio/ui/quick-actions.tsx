@@ -713,16 +713,20 @@ export function initializeDeckQuickUI() {
         )
           a.nextElementSibling.remove();
         if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) continue;
-        const b = (<button />) as HTMLButtonElement;
-        b.type = "button";
-        b.textContent = "▷ Vídeos";
-        b.dataset.rodxListVideo = id;
+        const b = (
+          <button
+            type="button"
+            data-rodx-list-video={id}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
+            }}
+          >
+            ▷ Vídeos
+          </button>
+        ) as HTMLButtonElement;
         applyComponentStyle(b, "rx-quick-actions-b", false);
-        b.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
-        };
         a.after(b);
       }
     }
