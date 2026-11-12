@@ -325,30 +325,33 @@ export function initializeDeckQuickUI() {
         renderSuggestions();
       }
       function renderSuggestions() {
-        suggestionBox.replaceChildren();
         suggestionBox.hidden = rows.length === 0;
-        rows.forEach((row, index) => {
-          const option = (<button />) as HTMLButtonElement;
-          option.type = "button";
-          option.className = "rxq-option";
-          option.setAttribute("role", "option");
-          option.id = `rodx-rxq-option-${index}`;
-          option.setAttribute("aria-selected", String(index === selected));
-          const title = (<strong />) as HTMLElement;
-          const detail = (<small />) as HTMLElement;
-          title.textContent = row.label;
-          detail.textContent = row.detail;
-          option.append(title, detail);
-          option.addEventListener("pointerdown", (event) => {
-            if (event.pointerType !== "touch") event.preventDefault();
-          });
-          option.onclick = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            applySuggestion(row);
-          };
-          suggestionBox.append(option);
-        });
+        const options = rows.map((row) => row);
+        const active = selected;
+        mountView(suggestionBox, () => (
+          <>
+            {options.map((row, index) => (
+              <button
+                type="button"
+                class="rxq-option"
+                role="option"
+                id={`rodx-rxq-option-${index}`}
+                aria-selected={String(index === active)}
+                onPointerDown={(event) => {
+                  if (event.pointerType !== "touch") event.preventDefault();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  applySuggestion(row);
+                }}
+              >
+                <strong>{row.label}</strong>
+                <small>{row.detail}</small>
+              </button>
+            ))}
+          </>
+        ));
         input.setAttribute("aria-expanded", String(Boolean(rows.length)));
       }
       function validate() {
