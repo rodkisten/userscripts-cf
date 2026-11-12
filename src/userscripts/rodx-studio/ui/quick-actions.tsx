@@ -75,7 +75,15 @@ export function initializeDeckQuickUI() {
             {"\n            "}
           </div>
           {"\n            "}
-          <small class={"rxq-message"} data-rxq={"message"} data-level={validationLevel()} role={"status"} aria-live={"polite"}>{validationMessage()}</small>
+          <small
+            class="rxq-message"
+            data-rxq="message"
+            data-level={validationLevel()}
+            role="status"
+            aria-live="polite"
+          >
+            {validationMessage()}
+          </small>
           {"\n            "}
           <div
             class={"rxq-suggestions"}
@@ -374,9 +382,9 @@ export function initializeDeckQuickUI() {
         const error = issue?.message || (diagnostic.level === "error" ? diagnostic.message : "");
         setValidationMessage(
           error ||
-          (value.trim()
-            ? "Sugestões consideram a pesquisa inteira; toque numa lista para inserir seu ID."
-            : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui.")
+            (value.trim()
+              ? "Sugestões consideram a pesquisa inteira; toque numa lista para inserir seu ID."
+              : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui."),
         );
         setValidationLevel(error ? "error" : "info");
         setCanSubmit(Boolean(!error && value.trim()));
