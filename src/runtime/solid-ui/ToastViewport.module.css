@@ -1,0 +1,34 @@
+.viewport {
+  position: fixed;
+  z-index: 2147483647;
+  inset: auto 12px max(12px, env(safe-area-inset-bottom)) 12px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 420px);
+  padding: 12px 14px;
+  border: 1px solid #454545;
+  border-left: 3px solid #a1a1aa;
+  border-radius: 12px;
+  background: #202124;
+  color: #f4f4f5;
+  box-shadow: 0 8px 28px #0006;
+  pointer-events: auto;
+}
+.toast[data-kind="error"] { border-left-color: #f87171; }
+.toast[data-kind="success"] { border-left-color: #4ade80; }
+.toast[data-kind="warning"] { border-left-color: #facc15; }
+.message { flex: 1; overflow-wrap: anywhere; }
+.dismiss {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
