@@ -1986,7 +1986,6 @@ function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") 
 export function renderRoot() {
   if (!state.rootShadow) return;
   applyXTheme(state.rootHost);
-  ensureWorkbenchStyles(state.rootShadow, "workspace");
   const oldBody = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
   const oldView = state.rootShadow.querySelector(RODX_SELECTORS.replPanel)?.dataset.view;
   const restoreScroll = Boolean(state.open && oldBody && oldView === state.view);
@@ -1997,6 +1996,7 @@ export function renderRoot() {
       {state.open ? <Workspace /> : ""}
     </>
   ));
+  ensureWorkbenchStyles(state.rootShadow, "workspace");
   if (state.open) {
     applyComponentStyle(state.rootHost, "rx-search-workbench-rootHost", false);
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
@@ -2015,7 +2015,6 @@ export function renderDock() {
   const dock = state.dockShadow;
   if (!dock) return;
   applyXTheme(state.dockHost);
-  ensureWorkbenchStyles(dock, "dock");
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
   const onSearch = /^\/(?:search(?:\/|$)|hashtag\/)/.test(location.pathname);
@@ -2082,6 +2081,7 @@ export function renderDock() {
       </nav>
     </>
   ));
+  ensureWorkbenchStyles(dock, "dock");
   dock
     .querySelectorAll(RODX_SELECTORS.studioListButtons)
     .forEach(
