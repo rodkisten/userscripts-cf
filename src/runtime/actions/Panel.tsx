@@ -1,5 +1,5 @@
 import { For, createSignal, createEffect, onCleanup, onMount } from "solid-js";
-import { render } from "solid-js/web";
+import { render } from "@solidjs/web";
 
 export type ActionsTab = { id: string; title: string; render: () => HTMLElement };
 export type ActionsModule = { id: string; title: string; tabs: ActionsTab[] };
@@ -62,8 +62,8 @@ export function mountActionsPanel(
             {(tab) => (
               <button
                 type="button"
-                class={{ "rod-actions-tab-active": active() === tab.key }}
-                aria-selected={active() === tab.key}
+                class={active() === tab.key ? "rod-actions-tab-active" : ""}
+                aria-selected={active() === tab.key ? "true" : false}
                 role="tab"
                 onClick={() => setActive(tab.key)}
               >
