@@ -38,18 +38,16 @@ jobs:
 
             git commit -m "style: autoformat source files [skip ci]"
 
-            # PR pipelines commonly check out a detached merge commit.
-            # Only push directly for a trusted branch of this repository.
-            if [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
-              echo "Pull request detected; refusing to push from a detached PR checkout."
-              echo "Run this job on the source branch push to commit formatting."
-              exit 0
-            fi
-
             if [ -z "${CIRCLE_BRANCH:-}" ]; then
               echo "No branch available for safe push."
               exit 0
             fi
+
+            # Only push to a branch belonging to this repository; never to a fork.
+            case "$(git remote get-url origin)" in
+              *github.com/rodkisten/userscripts-cf.git|*github.com:rodkisten/userscripts-cf.git) ;;
+              *) echo "Untrusted fork remote; skipping push."; exit 0 ;;
+            esac
 
             # A repository-scoped bot token is required. Do not expose it to fork PR jobs.
             if [ -z "${GITHUB_FORMAT_TOKEN:-}" ]; then
