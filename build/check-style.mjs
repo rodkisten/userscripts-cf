@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import ts from "typescript";
+import * as ts from "typescript";
 
 const fix = process.argv.includes("--fix");
 const targets = [
@@ -11,7 +11,15 @@ let errors = 0;
 
 for (const filename of targets) {
   const absolute = path.resolve(filename);
-  let content = await fs.readFile(absolute, "utf8");
+  let content;
+  try {
+    content = await fs.readFile(absolute, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      continue;
+    }
+    throw error;
+  }
   const source = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const edits = [];
 
