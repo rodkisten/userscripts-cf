@@ -50,6 +50,8 @@ export function initializeDeckQuickUI() {
       const [validationMessage, setValidationMessage] = createSignal("");
       const [validationLevel, setValidationLevel] = createSignal("info");
       const [canSubmit, setCanSubmit] = createSignal(false);
+      const [rows, setRows] = createSignal<any[]>([]);
+      const [selected, setSelected] = createSignal(-1);
       mountView(form, () => (
         <>
           {"\n            "}
@@ -123,8 +125,6 @@ export function initializeDeckQuickUI() {
       const suggestionBox = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
-      const [rows, setRows] = createSignal<any[]>([]);
-      const [selected, setSelected] = createSignal(-1);
       let sequence = 0;
       let refreshTimer = 0;
       let closed = false;
@@ -498,7 +498,7 @@ export function initializeDeckQuickUI() {
       form.onsubmit = (event) => {
         event.preventDefault();
         validate();
-        if ((submit as HTMLButtonElement).disabled) return;
+        if (!canSubmit()) return;
         const full = input.value.trim();
         handle.close();
         void SearchHistory.record(full, "floating", "live");
