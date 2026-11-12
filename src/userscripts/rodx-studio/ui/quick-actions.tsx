@@ -433,7 +433,7 @@ export function initializeDeckQuickUI() {
           event.preventDefault();
           event.stopPropagation();
           setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows().length) % rows().length);
-            suggestionBox
+          suggestionBox
             .querySelector<HTMLElement>(DOM_SELECTORS.selectedItems)
             ?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows()[selected()]) {
@@ -444,7 +444,8 @@ export function initializeDeckQuickUI() {
           event.preventDefault();
           event.stopPropagation();
           setRows([]);
-          } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          setSelected(-1);
+        } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
           form.requestSubmit();
         }
