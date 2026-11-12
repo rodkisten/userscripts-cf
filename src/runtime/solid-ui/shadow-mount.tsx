@@ -45,7 +45,12 @@ export function registerShadowStyles(root: ShadowRoot, styles: readonly ShadowSt
 }
 
 export function mountSolidShadow(component: () => JSX.Element, options: ShadowMountOptions = {}) {
-  const target = options.target ?? document.body;
+  const host = options.target ? undefined : document.createElement("div");
+  if (host) {
+    host.dataset.userscriptsCfShadow = options.id ?? "";
+    document.body.append(host);
+  }
+  const target = options.target ?? host!;
   const owner = target instanceof ShadowRoot ? target : target.attachShadow
     ? target.shadowRoot ?? target.attachShadow({ mode: "open" }) : null;
   if (!owner) throw new Error("A ShadowRoot is required to mount Solid UI");
@@ -59,6 +64,7 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   } catch (error) {
     container.remove();
     releaseStyles();
+    host?.remove();
     throw error;
   }
   let disposed = false;
@@ -68,5 +74,6 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
     dispose?.();
     container.remove();
     releaseStyles();
+    host?.remove();
   };
 }
