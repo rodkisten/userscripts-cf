@@ -27,6 +27,8 @@ function ensureQuickSearchStyles(form: HTMLFormElement) {
   quickSearchStyles.set(form, style);
 }
 
+const listNameSetters = new WeakMap<HTMLDivElement, (name: string) => void>();
+
 export let QuickUI;
 
 export function initializeDeckQuickUI() {
@@ -651,12 +653,15 @@ export function initializeDeckQuickUI() {
           const listId = id;
           const found = Studio.services.lists?.all().find((item) => item.id === listId);
           const initialName = found ? Studio.services.lists.displayName(found) : `lista ${listId}`;
-          mountView(listInfo, () => {
+          const listContainer = listInfo as HTMLDivElement;
+          mountView(listContainer, () => {
+            const [listName, setListName] = createSignal(initialName);
+            listNameSetters.set(listContainer, setListName);
             const [copyLabel, setCopyLabel] = createSignal("Copiar");
             const [refreshing, setRefreshing] = createSignal(false);
             return (
               <>
-                <strong data-rodx-live-name="1">{initialName}</strong>
+                <strong data-rodx-live-name="1">{listName()}</strong>
                 <span>{"ID: " + listId}</span>
                 <button
                   type="button"
@@ -701,8 +706,7 @@ export function initializeDeckQuickUI() {
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
-        if (currentName && currentName.textContent !== name) currentName.textContent = name;
+        listNameSetters.get(listInfo as HTMLDivElement)?.(name);
       }
       for (const a of document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.listLinks)) {
         if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) continue;
