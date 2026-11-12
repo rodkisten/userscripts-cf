@@ -1,5 +1,5 @@
 import { createSignal, For } from "solid-js";
-import { mountView } from "./solid-mount.tsx";
+import { disposeView, mountView } from "./solid-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
@@ -499,7 +499,10 @@ export function initializeDeckQuickUI() {
         closed = true;
         clearTimeout(refreshTimer);
         ++sequence;
-        setRows([]);
+        // Dispose nested roots before the form root, even when the menu keeps the form cached.
+        disposeView(suggestionBox);
+        disposeView(syntax);
+        disposeView(form);
       });
       form.onsubmit = (event) => {
         event.preventDefault();
