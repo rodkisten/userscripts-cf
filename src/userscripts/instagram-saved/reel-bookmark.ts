@@ -6,7 +6,7 @@ const ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke
 </svg>`;
 
 function reelIsOpen(): boolean {
-  return /\\/reel\\/[A-Za-z0-9_-]+/.test(location.pathname) ||
+  return location.pathname.split("/").includes("reel") ||
     Boolean(document.querySelector('[role="dialog"] a[href*="/reel/"]'));
 }
 
