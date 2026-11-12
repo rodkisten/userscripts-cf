@@ -1,21 +1,51 @@
+import { createSignal } from "solid-js";
+import { mountSolidShadow } from "../../../runtime/solid-ui/shadow-mount";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
-export let rodxToastTimer;
+import styles, { css } from "./toast.module.css";
+
+type ToastKind = "info" | "success" | "warning" | "error";
+type ToastState = { message: string; kind: ToastKind };
+let host: HTMLDivElement | undefined;
+let dispose: (() => void) | undefined;
+let setToast: ((next: ToastState) => void) | undefined;
+export let rodxToastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export function initializeDeckRodxToastTimer() {
-  rodxToastTimer = 0;
+  clearTimeout(rodxToastTimer);
+  rodxToastTimer = undefined;
 }
 
-export function showRodxToast(message, kind = "info") {
-  let toast = document.getElementById("rodx-native-toast");
-  if (!toast) {
-    toast = (<div />) as HTMLDivElement;
-    toast.id = "rodx-native-toast";
-    toast.setAttribute("role", "status");
-    document.body.append(toast);
-  }
-  toast.style.setProperty("background", kind === "error" ? "#b4232c" : "#202327", "important");
-  toast.style.setProperty("color", "#fff", "important");
-  toast.textContent = String(message || "");
+function ensureToast() {
+  if (host?.isConnected && setToast) return;
+  dispose?.();
+  host?.remove();
+  host = document.createElement("div");
+  host.id = "rodx-native-toast";
+  (document.body || document.documentElement).append(host);
+  const [toast, update] = createSignal<ToastState>({ message: "", kind: "info" });
+  setToast = update;
+  dispose = mountSolidShadow(() => (
+    <div
+      class={styles.toast}
+      classList={{ [styles.error]: toast().kind === "error" }}
+      role="status"
+      aria-live={toast().kind === "error" ? "assertive" : "polite"}
+    >
+      {toast().message}
+    </div>
+  ), { target: host, styles: [css], id: "rodx-toast" });
+}
+
+export function showRodxToast(message: unknown, kind: ToastKind = "info") {
+  ensureToast();
+  setToast?.({ message: String(message || ""), kind });
   clearTimeout(rodxToastTimer);
-  rodxToastTimer = setTimeout(() => toast.remove(), RUNTIME_LIMITS.uiToast.showRodxToastDelayMs);
+  rodxToastTimer = setTimeout(() => {
+    dispose?.();
+    dispose = undefined;
+    setToast = undefined;
+    host?.remove();
+    host = undefined;
+    rodxToastTimer = undefined;
+  }, RUNTIME_LIMITS.uiToast.showRodxToastDelayMs);
 }

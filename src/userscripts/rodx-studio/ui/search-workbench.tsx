@@ -1953,6 +1953,36 @@ export function applyXTheme(host) {
   host.style.setProperty("--rx-accent-weak", "rgba(29,155,240,.11)", "important");
 }
 
+const shadowStyleCache = new WeakMap<ShadowRoot, Map<string, HTMLStyleElement>>();
+
+function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [string, string]>) {
+  let registered = shadowStyleCache.get(root);
+  if (!registered) {
+    registered = new Map();
+    shadowStyleCache.set(root, registered);
+  }
+  for (const [key, css] of styles) {
+    if (!css) continue;
+    const existing = registered.get(key);
+    if (existing?.isConnected && existing.textContent === css) continue;
+    existing?.remove();
+    const sheet = root.ownerDocument.createElement("style");
+    sheet.dataset.rodxStylesheet = key;
+    sheet.textContent = css;
+    root.prepend(sheet);
+    registered.set(key, sheet);
+  }
+}
+
+function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") {
+  ensureShadowStyles(root, [
+    ["search-deck.module", CSS],
+    ["search-custom.module", CUSTOM_CSS],
+    [variant === "workspace" ? "workspace-overrides" : "dock-overrides",
+      variant === "workspace" ? workbenchOverrides2 : workbenchOverrides1],
+  ]);
+}
+
 export function renderRoot() {
   if (!state.rootShadow) return;
   applyXTheme(state.rootHost);
@@ -1962,15 +1992,11 @@ export function renderRoot() {
   const scrollTop = restoreScroll ? oldBody.scrollTop : 0;
   mountView(state.rootShadow, () => (
     <>
-      <style
-        textContent={
-          "\n        " + CSS + "\n        " + CUSTOM_CSS + "\n        " + workbenchOverrides2 + "\n      "
-        }
-      />
       {"\n      "}
       {state.open ? <Workspace /> : ""}
     </>
   ));
+  ensureWorkbenchStyles(state.rootShadow, "workspace");
   if (state.open) {
     applyComponentStyle(state.rootHost, "rx-search-workbench-rootHost", false);
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
@@ -1995,19 +2021,6 @@ export function renderDock() {
   const horizontalScroll = dock.querySelector(RODX_SELECTORS.searchDock)?.scrollLeft || 0;
   mountView(dock, () => (
     <>
-      <style
-        textContent={
-          "\n        " +
-          "\n" +
-          "\n        " +
-          CSS +
-          "\n        " +
-          CUSTOM_CSS +
-          "\n        " +
-          workbenchOverrides1 +
-          "\n      "
-        }
-      />
       <nav
         class={cx("dock")}
         data-route={onSearch ? "search" : "home"}
@@ -2068,6 +2081,7 @@ export function renderDock() {
       </nav>
     </>
   ));
+  ensureWorkbenchStyles(dock, "dock");
   dock
     .querySelectorAll(RODX_SELECTORS.studioListButtons)
     .forEach(
