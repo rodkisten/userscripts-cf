@@ -47,6 +47,8 @@ export function initializeDeckQuickUI() {
     function search(query = "") {
       const form = (<form />) as HTMLFormElement;
       form.className = "rodx-quick-search";
+      const [validationMessage, setValidationMessage] = createSignal("");
+      const [validationLevel, setValidationLevel] = createSignal("info");
       mountView(form, () => (
         <>
           {"\n            "}
@@ -72,7 +74,7 @@ export function initializeDeckQuickUI() {
             {"\n            "}
           </div>
           {"\n            "}
-          <small class={"rxq-message"} data-rxq={"message"} role={"status"} aria-live={"polite"}></small>
+          <small class={"rxq-message"} data-rxq={"message"} data-level={validationLevel()} role={"status"} aria-live={"polite"}>{validationMessage()}</small>
           {"\n            "}
           <div
             class={"rxq-suggestions"}
@@ -107,7 +109,6 @@ export function initializeDeckQuickUI() {
       ensureQuickSearchStyles(form);
       const input = form.querySelector<HTMLInputElement>(RODX_SELECTORS.queryWorkbenchInput);
       const syntax = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSyntax);
-      const message = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchMessage);
       const submit = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSubmit);
       const suggestionBox = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
@@ -371,12 +372,13 @@ export function initializeDeckQuickUI() {
         const diagnostic = inspectNativeQuery(value);
         const issue = diagnosticSpans(value).find((item) => item.severity === "error");
         const error = issue?.message || (diagnostic.level === "error" ? diagnostic.message : "");
-        message.textContent =
+        setValidationMessage(
           error ||
           (value.trim()
             ? "Sugestões consideram a pesquisa inteira; toque numa lista para inserir seu ID."
-            : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui.");
-        message.dataset.level = error ? "error" : "info";
+            : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui.")
+        );
+        setValidationLevel(error ? "error" : "info");
         (submit as HTMLButtonElement).disabled = Boolean(error || !value.trim());
       }
       function queueSuggestions() {
