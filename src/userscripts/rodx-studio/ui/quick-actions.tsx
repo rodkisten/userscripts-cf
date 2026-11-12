@@ -121,7 +121,7 @@ export function initializeDeckQuickUI() {
       const suggestionBox = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
-      let rows = [];
+      const [rows, setRows] = createSignal<any[]>([]);
       const [selected, setSelected] = createSignal(-1);
       let sequence = 0;
       let refreshTimer = 0;
@@ -323,7 +323,7 @@ export function initializeDeckQuickUI() {
           ? { list: 11, full: 2, history: 1, token: 2 }
           : { list: 5, full: 5, history: 3, token: 3 };
         const countByKind = { list: 0, full: 0, history: 0, token: 0 };
-        rows = candidates
+        setRows(candidates
           .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
           .filter((item) => {
             const key = `${item.kind}:${item.query || item.id}`;
@@ -332,13 +332,13 @@ export function initializeDeckQuickUI() {
             countByKind[item.kind]++;
             return true;
           })
-          .slice(0, 16);
+          .slice(0, 16));
         setSelected(-1);
         renderSuggestions();
       }
       function renderSuggestions() {
-        suggestionBox.hidden = rows.length === 0;
-        const options = rows.map((row) => row);
+        suggestionBox.hidden = rows().length === 0;
+        const options = rows().map((row) => row);
         const active = selected();
         mountView(suggestionBox, () => (
           <>
@@ -364,7 +364,7 @@ export function initializeDeckQuickUI() {
             ))}
           </>
         ));
-        input.setAttribute("aria-expanded", String(Boolean(rows.length)));
+        input.setAttribute("aria-expanded", String(Boolean(rows().length)));
       }
       function validate() {
         const value = input.value;
@@ -426,22 +426,22 @@ export function initializeDeckQuickUI() {
       input.addEventListener("keydown", (event) => {
         if (event.isComposing) return;
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-          if (!rows.length) return;
+          if (!rows().length) return;
           event.preventDefault();
           event.stopPropagation();
-          setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length);
+          setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows().length) % rows().length);
           renderSuggestions();
           suggestionBox
             .querySelector<HTMLElement>(DOM_SELECTORS.selectedItems)
             ?.scrollIntoView({ block: "nearest" });
-        } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows[selected()]) {
+        } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows()[selected()]) {
           event.preventDefault();
           event.stopPropagation();
-          applySuggestion(rows[selected()]);
-        } else if (event.key === "Escape" && rows.length) {
+          applySuggestion(rows()[selected()]);
+        } else if (event.key === "Escape" && rows().length) {
           event.preventDefault();
           event.stopPropagation();
-          rows = [];
+          setRows([]);
           renderSuggestions();
         } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
@@ -461,7 +461,7 @@ export function initializeDeckQuickUI() {
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.focus();
         } else if (action === "lists") {
-          rows = (Studio.services.lists?.all() || [])
+          setRows((Studio.services.lists?.all() || [])
             .map((item) => ({
               kind: "list",
               id: String(item.id),
@@ -470,7 +470,7 @@ export function initializeDeckQuickUI() {
               detail: `Lista · ID ${item.id} · inserir na pesquisa`,
               weight: 200,
             }))
-            .slice(0, 50);
+            .slice(0, 50));
           setSelected(-1);
           renderSuggestions();
           input.focus();
@@ -498,7 +498,7 @@ export function initializeDeckQuickUI() {
         closed = true;
         clearTimeout(refreshTimer);
         ++sequence;
-        rows = [];
+        setRows([]);
       });
       form.onsubmit = (event) => {
         event.preventDefault();
