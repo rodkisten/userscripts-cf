@@ -1,31 +1,80 @@
-import { For, Show } from "solid-js";
+import { For, Show, onCleanup, onMount } from "solid-js";
 import { render } from "solid-js/web";
-import { menuActions, menuState } from "./menu-store";
+import { menuActions, menuState, type MenuEntry } from "./menu-store";
 import styles from "./MenuRoot.module.css";
 
-export function MenuRoot() {
+function MenuDialog(props: { menu: MenuEntry }) {
+  let dialog!: HTMLElement;
+  let previousFocus: Element | null = null;
+  onMount(() => {
+    previousFocus = document.activeElement;
+    dialog.focus();
+    onCleanup(() => {
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+    });
+  });
+  const dismiss = () => {
+    if (props.menu.dismissible !== false) menuActions.close(props.menu.id, "dismiss");
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      dismiss();
+    }
+    if (event.key !== "Tab") return;
+    const elements = [...dialog.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )];
+    if (!elements.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = elements[0];
+    const last = elements[elements.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
   return (
-    <For each={menuState.stack}>
-      {(menu) => (
-        <div class={styles.backdrop} onClick={() => menuActions.close(menu.id)}>
-          <section class={styles.sheet} role="dialog" aria-modal="true" aria-label={menu.title}
-            onClick={(event) => event.stopPropagation()}>
-            <header class={styles.header}>
-              <h2>{menu.title}</h2>
-              <button type="button" aria-label="Fechar" onClick={() => menuActions.close(menu.id)}>×</button>
-            </header>
-            <Show when={menu.content}><div class={styles.content}>{menu.content}</div></Show>
-            <footer class={styles.actions}>
-              <For each={menu.actions ?? []}>
-                {(action) => <button type="button" onClick={() => void action.run?.()}>{action.label}</button>}
-              </For>
-            </footer>
-          </section>
-        </div>
-      )}
-    </For>
+    <div class={styles.backdrop} onClick={dismiss}>
+      <section
+        ref={dialog}
+        class={styles.sheet}
+        data-presentation={props.menu.presentation ?? "bottom-sheet"}
+        role="dialog"
+        aria-modal="true"
+        aria-label={props.menu.title}
+        tabindex="-1"
+        onKeyDown={onKeyDown}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header class={styles.header}>
+          <h2>{props.menu.title}</h2>
+          <button type="button" aria-label="Fechar" onClick={() => menuActions.close(props.menu.id)}>×</button>
+        </header>
+        <Show when={props.menu.content}><div class={styles.content}>{props.menu.content}</div></Show>
+        <footer class={styles.actions}>
+          <For each={props.menu.actions ?? []}>
+            {(action) => (
+              <button type="button" onClick={() => void menuActions.invoke(props.menu.id, action)}>
+                {action.label}
+              </button>
+            )}
+          </For>
+        </footer>
+      </section>
+    </div>
   );
 }
+
+export function MenuRoot() {
+  return <For each={menuState.stack}>{(menu) => <MenuDialog menu={menu} />}</For>;
+}
+
 let disposeRoot: (() => void) | undefined;
 export function mountMenuRoot(target: HTMLElement = document.body) {
   if (!disposeRoot) {
