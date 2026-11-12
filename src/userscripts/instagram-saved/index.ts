@@ -1,5 +1,6 @@
 import type { MediaPayload, Page } from "./core.ts";
 import { mountReelBookmark } from "./reel-bookmark.ts";
+import { installRodActions } from "../../runtime/actions/index.ts";
 type Config = { token: string; channels: string[] };
 type Settings = {
   enabled: boolean;
@@ -43,6 +44,29 @@ export default {
   init(ctx: RuntimeContext) {
     const abort = ctx.signal;
     mountReelBookmark(abort);
+    const hub = installRodActions(ctx.menu);
+    const unregisterActions = hub.register({
+      id: "instagram-saved",
+      title: "Instagram",
+      tabs: [{
+        id: "saved",
+        title: "Salvos",
+        render() {
+          const panel = document.createElement("div");
+          panel.style.cssText = "display:grid;gap:12px;padding:12px";
+          const description = document.createElement("p");
+          description.textContent = "Gerencie suas coleções salvas e o envio ao Relay.";
+          const settings = document.createElement("button");
+          settings.textContent = "Configurações de salvos";
+          settings.addEventListener("click", () => {
+            void (window as any).__XRodSettingsInstagram?.modules?.saved?.open();
+          });
+          panel.append(description, settings);
+          return panel;
+        },
+      }],
+    });
+    ctx.onDispose(unregisterActions);
     let running = false;
     let lastRun = 0;
     const get = async (key: string, fallback: any) => ctx.storage.get(key, fallback);
