@@ -1,3 +1,4 @@
+import { createSignal } from "solid-js";
 import { mountView } from "./solid-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
@@ -642,38 +643,53 @@ export function initializeDeckQuickUI() {
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
           applyComponentStyle(listInfo, "rx-quick-actions-listInfo", false);
-          const text = (<span />) as HTMLSpanElement;
-          text.textContent = "ID: " + id;
-          const name = (<strong />) as HTMLElement;
-          name.dataset.rodxLiveName = "1";
-          const found = Studio.services.lists?.all().find((item) => item.id === id);
-          name.textContent = found ? Studio.services.lists.displayName(found) : `lista ${id}`;
-          const copy = (<button />) as HTMLButtonElement;
-          copy.textContent = "Copiar";
-          copy.onclick = async () => {
-            try {
-              await navigator.clipboard.writeText(id);
-              copy.textContent = "Copiado";
-            } catch {
-              copy.textContent = "Não foi possível copiar";
-            }
-          };
-          const refreshName = (<button />) as HTMLButtonElement;
-          refreshName.textContent = "↻ Atualizar nome";
-          refreshName.onclick = async () => {
-            refreshName.disabled = true;
-            refreshName.textContent = "Atualizando…";
-            try {
-              await Studio.services.lists?.editName(id, true);
-            } finally {
-              refreshName.disabled = false;
-              refreshName.textContent = "↻ Atualizar nome";
-            }
-          };
-          const videos = (<button />) as HTMLButtonElement;
-          videos.textContent = "Ver vídeos";
-          videos.onclick = () => SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
-          listInfo.append(name, text, copy, refreshName, videos);
+          const listId = id;
+          const found = Studio.services.lists?.all().find((item) => item.id === listId);
+          const initialName = found ? Studio.services.lists.displayName(found) : `lista ${listId}`;
+          mountView(listInfo, () => {
+            const [copyLabel, setCopyLabel] = createSignal("Copiar");
+            const [refreshing, setRefreshing] = createSignal(false);
+            return (
+              <>
+                <strong data-rodx-live-name="1">{initialName}</strong>
+                <span>{"ID: " + listId}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(listId);
+                      setCopyLabel("Copiado");
+                    } catch {
+                      setCopyLabel("Não foi possível copiar");
+                    }
+                  }}
+                >
+                  {copyLabel()}
+                </button>
+                <button
+                  type="button"
+                  disabled={refreshing()}
+                  onClick={async () => {
+                    if (refreshing()) return;
+                    setRefreshing(true);
+                    try {
+                      await Studio.services.lists?.editName(listId, true);
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
+                >
+                  {refreshing() ? "Atualizando…" : "↻ Atualizar nome"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void SearchAnchors.nativeSearch("list:" + listId + " filter:native_video")}
+                >
+                  Ver vídeos
+                </button>
+              </>
+            );
+          });
           main.prepend(listInfo);
         }
       }
