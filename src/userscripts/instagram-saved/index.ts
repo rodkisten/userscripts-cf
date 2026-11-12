@@ -19,6 +19,12 @@ type RuntimeContext = {
     set: (key: string, value: any) => Promise<void>;
   };
   style: (css: string) => void;
+  ui: {
+    root: ShadowRoot;
+    mount: (node: Node) => Node;
+    registerStyles: (...css: string[]) => () => void;
+    mountSolid: (component: () => any, options?: { styles?: string[]; id?: string }) => () => void;
+  };
   listen: (target: EventTarget, event: string, callback: () => void) => void;
   onDispose: (callback: () => void) => void;
 };

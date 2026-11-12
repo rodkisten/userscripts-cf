@@ -1,5 +1,6 @@
 import { matchesRoute } from "./match.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
+import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
 //@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
 function toast(){}
@@ -31,6 +32,29 @@ export function createRuntime(definitions, bridge, host = window) {
   function context(definition) {
     const abort = new host.AbortController();
     const cleanups = [];
+    let uiHost;
+    let uiRoot;
+    function ensureUIRoot() {
+      if (uiRoot?.isConnected) return uiRoot;
+      const parent = host.document.body || host.document.documentElement;
+      if (!parent) throw new Error("Document root is not available");
+      uiHost = host.document.createElement("div");
+      uiHost.dataset.userscriptsCfUi = definition.id;
+      uiHost.style.setProperty("all", "initial");
+      uiHost.style.setProperty("position", "relative");
+      uiHost.style.setProperty("z-index", "2147483000");
+      uiRoot = uiHost.attachShadow({ mode: "open" });
+      parent.append(uiHost);
+      onDispose(() => { uiHost?.remove(); uiHost = undefined; uiRoot = undefined; });
+      return uiRoot;
+    }
+    function addStyle(css, target) {
+      const node = host.document.createElement("style");
+      node.textContent = String(css);
+      target.append(node);
+      onDispose(() => node.remove());
+      return node;
+    }
     const onDispose = (callback) => cleanups.push(callback);
     let store = stores.get(definition.id);
     if (!store) {
@@ -85,12 +109,30 @@ export function createRuntime(definitions, bridge, host = window) {
           signal: abort.signal,
         });
       },
-      style(css) {
-        const node = host.document.createElement("style");
-        node.textContent = css;
-        (host.document.head || host.document.documentElement).append(node);
-        onDispose(() => node.remove());
-        return node;
+      ui: Object.freeze({
+        get root() { return ensureUIRoot(); },
+        get host() { ensureUIRoot(); return uiHost; },
+        mount(node) { ensureUIRoot().append(node); return node; },
+        style(css) { return addStyle(css, ensureUIRoot()); },
+        registerStyles(...styles) {
+          const release = registerShadowStyles(ensureUIRoot(), styles.flat());
+          onDispose(release);
+          return release;
+        },
+        mountSolid(component, options = {}) {
+          const release = mountSolidShadow(component, {
+            ...options,
+            target: ensureUIRoot(),
+          });
+          onDispose(release);
+          return release;
+        },
+      }),
+      // Isolated by default: styles here cannot match page DOM.
+      style(css) { return addStyle(css, ensureUIRoot()); },
+      // Explicit opt-in for scripts that intentionally modify the website.
+      pageStyle(css) {
+        return addStyle(css, host.document.head || host.document.documentElement);
       },
       async dispose() {
         abort.abort();
