@@ -93,10 +93,11 @@ export function mountReelBookmark(signal: AbortSignal): void {
   const observer = new MutationObserver(() => {
     refresh();
   });
-  observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true,
-    attributeFilter: ["aria-label"] });
+  observer.observe(document.documentElement, { subtree: true, childList: true });
+  const refreshTimer = setInterval(refresh, 1000);
   signal.addEventListener("abort", () => {
     observer.disconnect();
+    clearInterval(refreshTimer);
     button.remove();
   }, { once: true });
   refresh();
