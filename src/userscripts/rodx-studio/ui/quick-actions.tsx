@@ -13,6 +13,19 @@ import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { currentSearch, inspectNativeQuery } from "./search-workbench.tsx";
 
+const quickSearchStyles = new WeakMap<HTMLFormElement, HTMLStyleElement>();
+
+/** Keep the editor stylesheet outside the Solid render tree and avoid repeated injection. */
+function ensureQuickSearchStyles(form: HTMLFormElement) {
+  let style = quickSearchStyles.get(form);
+  if (style?.isConnected) return;
+  style = form.ownerDocument.createElement("style");
+  style.dataset.rodxQuickSearch = "true";
+  style.textContent = extractedCSS1;
+  form.prepend(style);
+  quickSearchStyles.set(form, style);
+}
+
 export let QuickUI;
 
 export function initializeDeckQuickUI() {
@@ -34,7 +47,7 @@ export function initializeDeckQuickUI() {
       mountView(form, () => (
         <>
           {"\n            "}
-          <style textContent={extractedCSS1} />
+
           {"\n            "}
           <div class={"rxq-editor"}>
             {"\n              "}
@@ -88,6 +101,7 @@ export function initializeDeckQuickUI() {
           {"\n          "}
         </>
       ));
+      ensureQuickSearchStyles(form);
       const input = form.querySelector<HTMLInputElement>(RODX_SELECTORS.queryWorkbenchInput);
       const syntax = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSyntax);
       const message = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchMessage);
