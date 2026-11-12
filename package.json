@@ -22,8 +22,8 @@
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
     "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json",
-    "lint": "eslint src build",
-    "lint:fix": "eslint src build --fix"
+    "lint": "node build/check-style.mjs",
+    "lint:fix": "node build/check-style.mjs --fix"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
@@ -37,9 +37,7 @@
     "svgo": "^4.1.0",
     "typescript": "7.0.2",
     "vite": "8.3.8",
-    "@solidjs/compiler": "2.0.0-rc.21",
-    "eslint": "^9.39.1",
-    "@typescript-eslint/parser": "^8.46.4"
+    "@solidjs/compiler": "2.0.0-rc.21"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
