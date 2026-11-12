@@ -31,7 +31,7 @@
 // @connect      audioerotica.net
 // ==/UserScript==
 
-(() => {
+function initGoneWild() {
   'use strict';
 
   const bridge = createBridge();
@@ -2241,4 +2241,6 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeSoundgasm, { once:true });
     else initializeSoundgasm();
   }
-})();
+}
+
+export default { init: initGoneWild };
