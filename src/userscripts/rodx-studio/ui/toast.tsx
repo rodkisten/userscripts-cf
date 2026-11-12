@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { render } from "@solidjs/web";
+import { mountSolidShadow } from "../../../runtime/solid-ui/shadow-mount";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import styles, { css } from "./toast.module.css";
 
@@ -21,16 +21,10 @@ function ensureToast() {
   host?.remove();
   host = document.createElement("div");
   host.id = "rodx-native-toast";
-  const shadow = host.attachShadow({ mode: "open" });
-  const sheet = document.createElement("style");
-  sheet.textContent = css;
-  shadow.append(sheet);
-  const container = document.createElement("div");
-  shadow.append(container);
   (document.body || document.documentElement).append(host);
   const [toast, update] = createSignal<ToastState>({ message: "", kind: "info" });
   setToast = update;
-  dispose = render(() => (
+  dispose = mountSolidShadow(() => (
     <div
       class={styles.toast}
       classList={{ [styles.error]: toast().kind === "error" }}
@@ -39,7 +33,7 @@ function ensureToast() {
     >
       {toast().message}
     </div>
-  ), container);
+  ), { target: host, styles: [css], id: "rodx-toast" });
 }
 
 export function showRodxToast(message: unknown, kind: ToastKind = "info") {
