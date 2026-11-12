@@ -85,7 +85,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
         onKeyDown={onKeyDown} onClick={(event) => event.stopPropagation()}>
         <header class={styles.header}>
           <h2>{props.menu.title}</h2>
-          <button type="button" aria-label="Fechar" onClick={dismiss}>×</button>
+          <button type="button" aria-label="Fechar" onClick={dismiss} disabled={props.menu.dismissible === false}>×</button>
         </header>
         <Show when={props.menu.content}><div class={styles.content}>{props.menu.content}</div></Show>
         <For each={props.menu.fields ?? []}>{(field) => <Field menuId={props.menu.id} field={field} />}</For>
