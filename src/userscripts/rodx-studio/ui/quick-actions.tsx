@@ -614,18 +614,23 @@ export function initializeDeckQuickUI() {
         if (!bar) continue;
         let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
-          button = (<button />) as HTMLButtonElement;
-          button.type = "button";
-          button.dataset.rodxAddList = "1";
-          button.textContent = "☷";
-          button.title = "Adicionar autor à lista";
-          button.setAttribute("aria-label", "Adicionar autor à lista");
-          button.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const user = authorOf(article);
-            if (user) void Studio.services.lists?.picker(user, button);
-          };
+          const action = (
+            <button
+              type="button"
+              data-rodx-add-list="1"
+              title="Adicionar autor à lista"
+              aria-label="Adicionar autor à lista"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const user = authorOf(article);
+                if (user) void Studio.services.lists?.picker(user, event.currentTarget);
+              }}
+            >
+              ☷
+            </button>
+          ) as HTMLButtonElement;
+          button = action;
           bar.append(button);
         }
       }
