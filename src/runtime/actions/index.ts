@@ -1,15 +1,8 @@
-export type RodActionsTab = {
-  id: string;
-  title: string;
-  render: () => HTMLElement;
-};
+import { mountActionsPanel, type ActionsModule } from "./Panel.tsx";
+import styles from "./actions.css?inline";
 
-export type RodActionsModule = {
-  id: string;
-  title: string;
-  tabs: RodActionsTab[];
-};
-
+export type RodActionsTab = ActionsModule["tabs"][number];
+export type RodActionsModule = ActionsModule;
 export type RodActionsHub = {
   register: (module: RodActionsModule) => () => void;
   open: (tabId?: string) => void;
@@ -25,90 +18,72 @@ export function installRodActions(menu: {
   open: (options: any) => { result: Promise<any> };
   configure?: (options: any) => void;
 }): RodActionsHub {
-  if (window.__RodActions) {
-    return window.__RodActions;
-  }
+  if (window.__RodActions) return window.__RodActions;
 
   const modules = new Map<string, RodActionsModule>();
+  const listeners = new Set<() => void>();
+  const entries = () => [...modules.values()].flatMap((module) =>
+    module.tabs.map((tab) => ({
+      ...tab,
+      key: `${module.id}:${tab.id}`,
+      label: `${module.title} · ${tab.title}`,
+    })),
+  );
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = "⚙";
   button.setAttribute("aria-label", "Abrir Rod Actions");
   button.title = "Rod Actions";
-  button.style.cssText = [
-    "position:fixed",
-    "right:max(12px,env(safe-area-inset-right))",
-    "bottom:calc(78px + env(safe-area-inset-bottom))",
-    "z-index:2147483000",
-    "width:36px",
-    "height:36px",
-    "border-radius:50%",
-    "border:1px solid rgba(255,255,255,.2)",
-    "background:#252525",
-    "color:#f5f5f5",
-    "font-size:18px",
-    "box-shadow:0 2px 12px rgba(0,0,0,.3)",
-    "display:none",
-  ].join(";");
+  button.style.cssText = "position:fixed;right:max(12px,env(safe-area-inset-right));" +
+    "bottom:calc(78px + env(safe-area-inset-bottom));z-index:2147483000;" +
+    "width:36px;height:36px;border-radius:50%;border:1px solid #525252;" +
+    "background:#262626;color:white;font-size:18px;display:none";
 
-  function updateButton(): void {
+  const notify = () => {
     button.style.display = modules.size ? "block" : "none";
-  }
-
+    for (const listener of listeners) listener();
+  };
   const hub: RodActionsHub = {
     register(module) {
-      if (!module.id || !module.tabs?.length) {
-        throw new Error("Rod Actions: module id and tabs are required");
-      }
+      if (!module.id || !module.tabs?.length) throw Error("Rod Actions requires module id and tabs");
       modules.set(module.id, module);
-      updateButton();
+      notify();
       return () => {
         if (modules.get(module.id) === module) {
           modules.delete(module.id);
-          updateButton();
+          notify();
         }
       };
     },
     open(tabId) {
-      const tabs = [...modules.values()].flatMap((module) =>
-        module.tabs.map((tab) => ({
-          ...tab,
-          key: `${module.id}:${tab.id}`,
-          label: `${module.title} · ${tab.title}`,
-        })),
+      const tabs = entries();
+      if (!tabs.length) return;
+      const root = document.createElement("div");
+      const style = document.createElement("style");
+      style.textContent = styles;
+      root.append(style);
+      const content = document.createElement("div");
+      root.append(content);
+      const dispose = mountActionsPanel(
+        content,
+        entries,
+        tabs.some((tab) => tab.key === tabId) ? tabId! : tabs[0].key,
+        (listener) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
       );
-      if (!tabs.length) {
-        return;
-      }
-      const selected = tabs.find((tab) => tab.key === tabId) || tabs[0];
-      const openTab = (tab: typeof selected): void => {
-        const element = tab.render();
-        menu.configure?.({ defaultPresentation: "bottom-sheet" });
-        menu.open({
-          id: `rod-actions-${tab.key}`,
-          title: tab.label,
-          presentation: "bottom-sheet",
-          fields: [{ type: "custom", name: "content", chrome: "bare", render: () => element }],
-          actions: [
-            ...tabs.filter((item) => item.key !== tab.key).map((item) => ({
-              id: item.key,
-              label: item.label,
-              role: "custom",
-              close: true,
-            })),
-            { id: "close", label: "Fechar", role: "cancel" },
-          ],
-        }).result.then((result) => {
-          const next = tabs.find((item) => item.key === (result?.action || result?.actionId));
-          if (next) {
-            openTab(next);
-          }
-        }).catch((error) => console.error("[Rod Actions]", error));
-      };
-      openTab(selected);
+      menu.configure?.({ defaultPresentation: "bottom-sheet" });
+      const handle = menu.open({
+        id: "rod-actions-hub",
+        title: "Rod Actions",
+        presentation: "bottom-sheet",
+        fields: [{ type: "custom", name: "actions", chrome: "bare", render: () => root }],
+        actions: [{ id: "close", label: "Fechar", role: "cancel" }],
+      });
+      void handle.result.finally(dispose);
     },
   };
-
   button.addEventListener("click", () => hub.open());
   document.documentElement.append(button);
   window.__RodActions = hub;
