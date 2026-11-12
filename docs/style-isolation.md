@@ -57,3 +57,25 @@ stylesheets within each root and disposes the Solid owner and stylesheet registr
 
 If a runtime context already provides `ctx.ui.root`, pass `target: ctx.ui.root` to
 share that script's isolated host. Never attach a ShadowRoot to `document.body`.
+
+## Runtime context shortcut
+
+```tsx
+import styles, { css } from "./Settings.module.css";
+
+export default {
+  init(ctx) {
+    ctx.ui.mountSolid(() => <Settings />, { styles: [css], id: "settings" });
+    // The runtime disposes the Solid tree and CSS when the route is deactivated.
+  },
+};
+```
+
+For existing scripts that already have their own ShadowRoot, pass that root as the
+mount target when using `mountSolidShadow`. For ordinary scripts, prefer
+`ctx.ui.mountSolid` to reuse the runtime's per-script root.
+
+**Current migration status:** the example script uses `ctx.ui.mount`; the page REPL
+already creates its own ShadowRoot; RodX Studio and Instagram still contain legacy
+UI entry points that need component-by-component migration. Page-modification styles
+must remain explicit and must not be silently moved into the UI root.
