@@ -328,14 +328,14 @@ export function initializeDeckQuickUI() {
         const countByKind = { list: 0, full: 0, history: 0, token: 0 };
         setRows(
           candidates
-          .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
-          .filter((item) => {
-            const key = `${item.kind}:${item.query || item.id}`;
-            if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) return false;
-            seen.add(key);
-            countByKind[item.kind]++;
-            return true;
-          })
+            .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
+            .filter((item) => {
+              const key = `${item.kind}:${item.query || item.id}`;
+              if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) return false;
+              seen.add(key);
+              countByKind[item.kind]++;
+              return true;
+            })
             .slice(0, 16),
         );
         setSelected(-1);
@@ -343,8 +343,9 @@ export function initializeDeckQuickUI() {
       function renderSuggestions() {
         mountView(suggestionBox, () => (
           <>
-            <For each={rows()}>{(row, index) => (
-              <button
+            <For each={rows()}>
+              {(row, index) => (
+                <button
                 type="button"
                 class="rxq-option"
                 role="option"
@@ -361,8 +362,9 @@ export function initializeDeckQuickUI() {
               >
                 <strong>{row.label}</strong>
                 <small>{row.detail}</small>
-              </button>
-            )}</For>
+                </button>
+              )}
+            </For>
           </>
         ));
       }
