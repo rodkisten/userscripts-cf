@@ -8,7 +8,7 @@ const mounts = new WeakMap<MountTarget, Mount>();
 const active = new Map<MountTarget, { mount: Mount; connected: boolean }>();
 let observer: MutationObserver;
 function releaseDetachedViews() {
-  for (const [target, record] of active) {
+  for (const [target, record] of [...active]) {
     if (target.isConnected) record.connected = true;
     else if (record.connected) record.mount.dispose();
   }
@@ -23,8 +23,9 @@ function observeMounts() {
 export function mountView(target: MountTarget, read: () => Element) {
   observeMounts();
   // A parent view owns the integration roots mounted inside its old content.
-  for (const [child, record] of active)
+  for (const [child, record] of [...active]) {
     if (child !== target && target.contains(child)) record.mount.dispose();
+  }
   const existing = mounts.get(target);
   if (existing) {
     existing.update({ read });
