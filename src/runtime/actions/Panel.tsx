@@ -14,6 +14,7 @@ export function mountActionsPanel(
   return render(() => {
     const [tabs, setTabs] = createSignal(entries());
     const [active, setActive] = createSignal(initial);
+ 
     let content!: HTMLDivElement;
     let cleanup: (() => void) | undefined;
 
@@ -24,7 +25,9 @@ export function mountActionsPanel(
         setActive(next[0]?.key || "");
       }
     };
+ 
     const unsubscribe = subscribe(refresh);
+
     onCleanup(() => {
       unsubscribe();
       cleanup?.();
@@ -34,8 +37,11 @@ export function mountActionsPanel(
       cleanup?.();
       cleanup = undefined;
       content.replaceChildren();
+     
       const tab = tabs().find((item) => item.key === key);
+  
       if (!tab) return;
+     
       try {
         const node = tab.render();
         content.append(node);
@@ -56,7 +62,7 @@ export function mountActionsPanel(
             {(tab) => (
               <button
                 type="button"
-                classList={{ "rod-actions-tab-active": active() === tab.key }}
+                class={{ "rod-actions-tab-active": active() === tab.key }}
                 aria-selected={active() === tab.key}
                 role="tab"
                 onClick={() => setActive(tab.key)}
