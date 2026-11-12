@@ -70,6 +70,7 @@ export function initializeDeckQuickUI() {
               aria-label={"Pesquisa com destaque de sintaxe e sugestões"}
               aria-autocomplete={"list"}
               aria-controls={"rodx-quick-suggestions"}
+              aria-expanded={String(rows().length > 0)}
               placeholder={"Pesquise usando termos, list:, filtros, hashtags, AND/OR…"}
             ></textarea>
             {"\n            "}
@@ -90,6 +91,7 @@ export function initializeDeckQuickUI() {
             id={"rodx-quick-suggestions"}
             data-rxq={"suggestions"}
             role={"listbox"}
+            hidden={rows().length === 0}
             aria-label={"Sugestões da pesquisa"}
           ></div>
           {"\n            "}
@@ -334,21 +336,17 @@ export function initializeDeckQuickUI() {
           })
           .slice(0, 16));
         setSelected(-1);
-        renderSuggestions();
       }
       function renderSuggestions() {
-        suggestionBox.hidden = rows().length === 0;
-        const options = rows().map((row) => row);
-        const active = selected();
         mountView(suggestionBox, () => (
           <>
-            {options.map((row, index) => (
+            {rows().map((row, index) => (
               <button
                 type="button"
                 class="rxq-option"
                 role="option"
                 id={`rodx-rxq-option-${index}`}
-                aria-selected={String(index === active)}
+                aria-selected={String(index === selected())}
                 onPointerDown={(event) => {
                   if (event.pointerType !== "touch") event.preventDefault();
                 }}
@@ -364,8 +362,8 @@ export function initializeDeckQuickUI() {
             ))}
           </>
         ));
-        input.setAttribute("aria-expanded", String(Boolean(rows().length)));
       }
+      renderSuggestions();
       function validate() {
         const value = input.value;
         input.style.setProperty("height", "auto", "important");
@@ -430,8 +428,7 @@ export function initializeDeckQuickUI() {
           event.preventDefault();
           event.stopPropagation();
           setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows().length) % rows().length);
-          renderSuggestions();
-          suggestionBox
+            suggestionBox
             .querySelector<HTMLElement>(DOM_SELECTORS.selectedItems)
             ?.scrollIntoView({ block: "nearest" });
         } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows()[selected()]) {
@@ -442,8 +439,7 @@ export function initializeDeckQuickUI() {
           event.preventDefault();
           event.stopPropagation();
           setRows([]);
-          renderSuggestions();
-        } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
           form.requestSubmit();
         }
@@ -472,8 +468,7 @@ export function initializeDeckQuickUI() {
             }))
             .slice(0, 50));
           setSelected(-1);
-          renderSuggestions();
-          input.focus();
+            input.focus();
         }
       });
       const handle = Studio.menu.open({
