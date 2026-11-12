@@ -1953,20 +1953,46 @@ export function applyXTheme(host) {
   host.style.setProperty("--rx-accent-weak", "rgba(29,155,240,.11)", "important");
 }
 
+const shadowStyleCache = new WeakMap<ShadowRoot, Map<string, HTMLStyleElement>>();
+
+function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [string, string]>) {
+  let registered = shadowStyleCache.get(root);
+  if (!registered) {
+    registered = new Map();
+    shadowStyleCache.set(root, registered);
+  }
+  for (const [key, css] of styles) {
+    if (!css) continue;
+    const existing = registered.get(key);
+    if (existing?.isConnected && existing.textContent === css) continue;
+    existing?.remove();
+    const sheet = root.ownerDocument.createElement("style");
+    sheet.dataset.rodxStylesheet = key;
+    sheet.textContent = css;
+    root.prepend(sheet);
+    registered.set(key, sheet);
+  }
+}
+
+function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") {
+  ensureShadowStyles(root, [
+    ["search-deck.module", CSS],
+    ["search-custom.module", CUSTOM_CSS],
+    [variant === "workspace" ? "workspace-overrides" : "dock-overrides",
+      variant === "workspace" ? workbenchOverrides2 : workbenchOverrides1],
+  ]);
+}
+
 export function renderRoot() {
   if (!state.rootShadow) return;
   applyXTheme(state.rootHost);
+  ensureWorkbenchStyles(state.rootShadow, "workspace");
   const oldBody = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
   const oldView = state.rootShadow.querySelector(RODX_SELECTORS.replPanel)?.dataset.view;
   const restoreScroll = Boolean(state.open && oldBody && oldView === state.view);
   const scrollTop = restoreScroll ? oldBody.scrollTop : 0;
   mountView(state.rootShadow, () => (
     <>
-      <style
-        textContent={
-          "\n        " + CSS + "\n        " + CUSTOM_CSS + "\n        " + workbenchOverrides2 + "\n      "
-        }
-      />
       {"\n      "}
       {state.open ? <Workspace /> : ""}
     </>
@@ -1989,25 +2015,13 @@ export function renderDock() {
   const dock = state.dockShadow;
   if (!dock) return;
   applyXTheme(state.dockHost);
+  ensureWorkbenchStyles(dock, "dock");
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
   const onSearch = /^\/(?:search(?:\/|$)|hashtag\/)/.test(location.pathname);
   const horizontalScroll = dock.querySelector(RODX_SELECTORS.searchDock)?.scrollLeft || 0;
   mountView(dock, () => (
     <>
-      <style
-        textContent={
-          "\n        " +
-          "\n" +
-          "\n        " +
-          CSS +
-          "\n        " +
-          CUSTOM_CSS +
-          "\n        " +
-          workbenchOverrides1 +
-          "\n      "
-        }
-      />
       <nav
         class={cx("dock")}
         data-route={onSearch ? "search" : "home"}
