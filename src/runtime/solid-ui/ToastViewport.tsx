@@ -1,4 +1,4 @@
-import { For, onCleanup } from "solid-js";
+import { For, Show } from "solid-js";
 import { render } from "solid-js/web";
 import { toastActions, toastState } from "./toast-store";
 import styles from "./ToastViewport.module.css";
@@ -9,7 +9,7 @@ export function ToastViewport() {
       <For each={toastState.items}>
         {(item) => (
           <section class={styles.toast} data-kind={item.kind} role={item.kind === "error" ? "alert" : "status"}>
-            <span class={styles.message}>{item.message}</span>
+            <div class={styles.message}><span>{item.message}</span><Show when={item.progress !== undefined}><progress max="100" value={item.progress} aria-label="Progresso" /></Show><Show when={item.detail !== undefined}><details><summary>Detalhes</summary><pre>{typeof item.detail === "string" ? item.detail : JSON.stringify(item.detail, null, 2)}</pre></details></Show></div>
             <button class={styles.dismiss} type="button" aria-label="Dispensar" onClick={() => toastActions.dismiss(item.id)}>×</button>
           </section>
         )}
