@@ -1,4 +1,5 @@
 import type { MediaPayload, Page } from "./core.ts";
+import { mountReelBookmark } from "./reel-bookmark.ts";
 type Config = { token: string; channels: string[] };
 type Settings = {
   enabled: boolean;
@@ -41,6 +42,7 @@ const RELAY = "https://xtelegram-cf.migos.club/batch";
 export default {
   init(ctx: RuntimeContext) {
     const abort = ctx.signal;
+    mountReelBookmark(abort);
     let running = false;
     let lastRun = 0;
     const get = async (key: string, fallback: any) => ctx.storage.get(key, fallback);
