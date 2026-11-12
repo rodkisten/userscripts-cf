@@ -19,7 +19,7 @@
     "release": "node build/release.mjs",
     "build:hosting": "npm run build && node build/hosting.mjs",
     "ci:cloudflare:old": "npm run format:check && npm run lint && npm test && node build/hosting.mjs",
-    "ci:cloudflare": "node build/hosting.mjs",
+    "ci:cloudflare": "npm run build:hosting",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
     "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json",
