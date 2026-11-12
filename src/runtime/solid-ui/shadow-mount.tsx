@@ -51,7 +51,7 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
     document.body.append(host);
   }
   const target = options.target ?? host!;
-  const owner = target instanceof ShadowRoot ? target : target.attachShadow
+  const owner = typeof ShadowRoot !== "undefined" && target instanceof ShadowRoot ? target : target.attachShadow
     ? target.shadowRoot ?? target.attachShadow({ mode: "open" }) : null;
   if (!owner) throw new Error("A ShadowRoot is required to mount Solid UI");
   const releaseStyles = registerShadowStyles(owner, options.styles ?? []);
