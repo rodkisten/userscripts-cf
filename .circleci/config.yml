@@ -1,0 +1,66 @@
+version: 2.1
+
+jobs:
+  autoformat:
+    docker:
+      - image: cimg/node:22.23
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci --no-audit --no-fund
+      - run:
+          name: Format TypeScript, JavaScript and other source files
+          command: |
+            npm run lint:fix
+            npm run format
+            npm run format:check
+      - run:
+          name: Commit formatting only when files changed
+          command: |
+            set -euo pipefail
+
+            if git diff --quiet; then
+              echo "No formatting changes."
+              exit 0
+            fi
+
+            git config user.name "circleci-format-bot"
+            git config user.email "circleci-format-bot@users.noreply.github.com"
+
+            git add -u
+            git add -- . ':!package-lock.json'
+            if git diff --cached --quiet; then
+              echo "No staged formatting changes."
+              exit 0
+            fi
+
+            git commit -m "style: autoformat source files [skip ci]"
+
+            # PR pipelines commonly check out a detached merge commit.
+            # Only push directly for a trusted branch of this repository.
+            if [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
+              echo "Pull request detected; refusing to push from a detached PR checkout."
+              echo "Run this job on the source branch push to commit formatting."
+              exit 0
+            fi
+
+            if [ -z "${CIRCLE_BRANCH:-}" ]; then
+              echo "No branch available for safe push."
+              exit 0
+            fi
+
+            # A repository-scoped bot token is required. Do not expose it to fork PR jobs.
+            if [ -z "${GITHUB_FORMAT_TOKEN:-}" ]; then
+              echo "GITHUB_FORMAT_TOKEN is not configured; formatted files were not pushed."
+              exit 1
+            fi
+
+            git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_FORMAT_TOKEN" | base64 -w0)" \
+              push origin "HEAD:refs/heads/$CIRCLE_BRANCH"
+
+workflows:
+  format-on-push-and-pr:
+    jobs:
+      - autoformat
