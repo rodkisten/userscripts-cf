@@ -1,0 +1,64 @@
+version: 2.1
+
+jobs:
+  autoformat:
+    docker:
+      - image: cimg/node:22.23
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci --no-audit --no-fund
+      - run:
+          name: Format TypeScript, JavaScript and other source files
+          command: |
+            npm run lint:fix
+            npm run format
+            npm run format:check
+      - run:
+          name: Commit formatting only when files changed
+          command: |
+            set -euo pipefail
+
+            if git diff --quiet; then
+              echo "No formatting changes."
+              exit 0
+            fi
+
+            git config user.name "circleci-format-bot"
+            git config user.email "circleci-format-bot@users.noreply.github.com"
+
+            git add -u
+            git add -- . ':!package-lock.json'
+            if git diff --cached --quiet; then
+              echo "No staged formatting changes."
+              exit 0
+            fi
+
+            git commit -m "style: autoformat source files [skip ci]"
+
+            if [ -z "${CIRCLE_BRANCH:-}" ]; then
+              echo "No branch available for safe push."
+              exit 0
+            fi
+
+            # Only push to a branch belonging to this repository; never to a fork.
+            case "$(git remote get-url origin)" in
+              *github.com/rodkisten/userscripts-cf.git|*github.com:rodkisten/userscripts-cf.git) ;;
+              *) echo "Untrusted fork remote; skipping push."; exit 0 ;;
+            esac
+
+            # A repository-scoped bot token is required. Do not expose it to fork PR jobs.
+            if [ -z "${GITHUB_FORMAT_TOKEN:-}" ]; then
+              echo "GITHUB_FORMAT_TOKEN is not configured; formatted files were not pushed."
+              exit 1
+            fi
+
+            git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_FORMAT_TOKEN" | base64 -w0)" \
+              push origin "HEAD:refs/heads/$CIRCLE_BRANCH"
+
+workflows:
+  format-on-push-and-pr:
+    jobs:
+      - autoformat
