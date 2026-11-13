@@ -144,6 +144,16 @@ export function mountGitHubDashboard(ctx: any) {
     </section>
   ));
   const navigate = () => { void load(); };
+  // The shared GM bridge mirrors this native command into Rod Dock.
+  if (typeof GM_registerMenuCommand === "function") {
+    const menuId = GM_registerMenuCommand("GitHub · Favoritos e Actions", () => {
+      setOpen(true);
+      void load();
+    });
+    ctx.onDispose(() => {
+      if (typeof GM_unregisterMenuCommand === "function") GM_unregisterMenuCommand(menuId);
+    });
+  }
   ctx.listen(window, "popstate", navigate);
   ctx.listen(window, "turbo:load", navigate);
   void load();
