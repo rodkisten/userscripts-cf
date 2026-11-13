@@ -21,6 +21,7 @@ export function mountGitHubDashboard(ctx: any) {
   const [customized, setCustomized] = createSignal(false);
   const [message, setMessage] = createSignal("");
   const [open, setOpen] = createSignal(false);
+  const [activeTab, setActiveTab] = createSignal("favorites");
   const [repo, setRepo] = createSignal("");
   const [sourceRepo, setSourceRepo] = createSignal("");
   const [repoInput, setRepoInput] = createSignal("");
@@ -197,7 +198,7 @@ export function mountGitHubDashboard(ctx: any) {
   const mount = mountPoint(document.body, () => (
     <section class={styles.dashboard} data-ghft-dashboard="" style={{ transform: settings().barPosition ? "translate(" + settings().barPosition!.x + "px," + settings().barPosition!.y + "px)" : undefined }}>
       <nav class={styles.favoriteBar} aria-label="Arquivos e workflows favoritos" onPointerDown={startBarDrag} onPointerMove={moveBarDrag} onPointerUp={endBarDrag} onPointerCancel={endBarDrag}>
-        <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "Favoritos"}</button>
+        <button class={styles.button} onClick={() => { setOpen(!open()); setActiveTab("favorites"); }} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "Favoritos"}</button>
         <For each={settings().files}>{(file, i) =>
           <a class={styles.favorite} href={file.url} draggable="true" data-ghft-favorite-index={i()}
             onDragStart={(e) => { dragIndex = i(); e.dataTransfer?.setData("text/plain", file.url); }}
@@ -216,7 +217,13 @@ export function mountGitHubDashboard(ctx: any) {
       <Show when={!customized() && busy()}><div class={styles.loadingBar} role="status">Carregando arquivos…</div></Show>
       <Show when={open()}>
         <div class={styles.dashboardPanel}>
-          <header><strong>GitHub · {repo()}</strong><button class={styles.button} onClick={() => setOpen(false)}>✕</button></header>
+          <header class={styles.panelHeader}><div class={styles.panelIdentity}><span class={styles.panelMark}>⌘</span><div><strong>Workspace</strong><small>{repo()}</small></div></div><button class={styles.panelClose} aria-label="Fechar painel" onClick={() => setOpen(false)}>×</button></header>
+          <div class={styles.panelTabs} role="tablist" aria-label="Seções">
+            <button role="tab" aria-selected={activeTab() === "favorites"} classList={{ [styles.tabActive]: activeTab() === "favorites" }} onClick={() => setActiveTab("favorites")}>Favoritos</button>
+            <button role="tab" aria-selected={activeTab() === "runs"} classList={{ [styles.tabActive]: activeTab() === "runs" }} onClick={() => setActiveTab("runs")}>Execuções</button>
+            <button role="tab" aria-selected={activeTab() === "settings"} classList={{ [styles.tabActive]: activeTab() === "settings" }} onClick={() => setActiveTab("settings")}>Ajustes</button>
+          </div>
+          <Show when={activeTab() === "settings"}>
           <div class={styles.dashboardControls}>
             <label class={styles.dragSetting}><input type="checkbox" checked={settings().dragMode}
               onChange={event => save({ dragMode: event.currentTarget.checked })}/> Arrastar barra</label>
@@ -243,6 +250,8 @@ export function mountGitHubDashboard(ctx: any) {
             {/* TODO(GITHUB-CROSS-REPO): Integrate global repository storage with
                 typed Rod Dock settings and permission-scoped private repo tests. */}
           </details>
+          </Show>
+          <Show when={activeTab() === "favorites"}>
           <h4>Workflows favoritos</h4>
           <For each={settings().workflows}>{w => <div class={styles.dashboardItem}>
             <a href={"/" + repo() + "/actions/workflows/" + w.path.split("/").pop()}>{w.name}</a>
@@ -270,6 +279,8 @@ export function mountGitHubDashboard(ctx: any) {
               <button class={styles.button} onClick={() => setDispatchWorkflow(null)}>Cancelar</button></div>
             </div>
           }</Show>
+          </Show>
+          <Show when={activeTab() === "runs"}>
           <h4>Execuções recentes</h4>
           <div class={styles.dashboardControls}>
             <input aria-label="Buscar workflows" placeholder="Buscar workflow" value={runSearch()} onInput={e => setRunSearch(e.currentTarget.value)} />
@@ -290,7 +301,8 @@ export function mountGitHubDashboard(ctx: any) {
               <button class={styles.button} disabled={busy() || run.status === "completed"} onClick={() => void runAction(run, "cancel")}>✕</button>
               <button class={styles.button} onClick={() => void navigator.clipboard.writeText(run.html_url).then(() => setMessage("Link copiado")).catch(() => setMessage("Cópia indisponível"))}>⧉</button>
             </div></div>}</For>
-          <p role="status">{busy() ? "Carregando…" : message()}</p>
+          </Show>
+          <Show when={busy() || message()}><p class={styles.panelStatus} role="status">{busy() ? "Carregando…" : message()}</p></Show>
           {/* TODO(GITHUB-DOCK): Expose dashboard preferences as typed Rod Dock settings
               across repositories, with per-repo credentials and secure cross-origin
               permission handling. Complete when remote repos can be selected,
