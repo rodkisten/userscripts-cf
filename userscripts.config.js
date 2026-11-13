@@ -1,6 +1,17 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "mobile-editor-fab",
+    name: "Mobile Editor FAB",
+    entry: "src/userscripts/mobile-editor-fab/index.tsx",
+    world: "sandbox",
+    unified: false,
+    tags: ["productivity", "development"],
+    matches: ["http://*/*", "https://*/*"],
+    grants: ["GM_getValue", "GM_setValue"],
+  },
+
+  {
     id: "github-tools",
     name: "GitHub Native File Tools — Copiar tudo + Ordenar",
     namespace: "https://rod.migos.club/userscripts",
