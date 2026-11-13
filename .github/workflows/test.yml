@@ -1,26 +1,48 @@
-name: Validate userscripts
-run-name: "Userscripts · ${{ github.ref_name }} · ${{ github.event_name }}"
+name: "🧪 Validate userscripts"
+run-name: "🧪 Userscripts · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}"
 
 on:
   workflow_dispatch:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test:
+    name: "🧪 Typecheck, build & Vitest"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-     # - run: npm run format:check
-      - run: npm test
+      - name: "⬆️ Use npm 11 (avoid npm 10 Arborist edgesOut bug)"
+        run: npm install --global npm@11
+      - name: "🔧 Rebuild Vitest lockfile once"
+        if: github.event_name == 'pull_request' && github.head_ref == 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          node build/migrate-vitest.mjs
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          npm ci --legacy-peer-deps
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json tests/
+          if ! git diff --cached --quiet; then
+            git commit -m "test: complete Vitest migration and regenerate npm lockfile"
+            git push origin HEAD:test/migrate-to-vitest
+          fi
+      - name: "📦 Install locked dependencies"
+        if: github.head_ref != 'test/migrate-to-vitest'
+        run: npm ci --legacy-peer-deps
+      - name: "🧪 Run tests"
+        run: npm test
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: userscripts-and-loader-lab
           path: |

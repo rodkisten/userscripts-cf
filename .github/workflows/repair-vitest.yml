@@ -1,0 +1,35 @@
+name: "🔧 Repair Vitest migration"
+run-name: "🔧 Vitest · regenerate lockfile · ${{ github.ref_name }}"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.ref_name == 'test/migrate-to-vitest'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/migrate-to-vitest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: "🧹 Rebuild npm dependency graph from scratch"
+        run: |
+          node build/migrate-vitest.mjs
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci
+      - name: "📋 Commit migration and lockfile"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json tests/
+          if ! git diff --cached --quiet; then
+            git commit -m "test: complete Vitest migration and regenerate npm lockfile"
+            git push origin HEAD:test/migrate-to-vitest
+          fi

@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { reelPayload, classify, retryDelay, syncSaved } from "../src/userscripts/instagram-saved/core.ts";
 

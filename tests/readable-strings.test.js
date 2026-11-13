@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { parseExpression } from "@babel/parser";
 import { readableStrings } from "../build/readable-strings.mjs";

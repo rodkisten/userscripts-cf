@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { boundedAudio } from "../src/userscripts/gonewild/services.ts";
 import { parseTags } from "../src/userscripts/gonewild/domain.ts";
