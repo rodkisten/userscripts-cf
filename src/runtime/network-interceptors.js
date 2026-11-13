@@ -37,8 +37,8 @@ export function createNetworkInterceptors(http, { signal, onError = console.erro
     const initial = { url: String(url), ...options };
     const modified = await apply("requests", initial);
     const response = await registry.original(modified.url, modified);
-    const result = await apply("responses", { url: modified.url, request: modified, response });
-    return result instanceof Response ? result : result?.response instanceof Response ? result.response : response;
+    const result = await apply("responses", response);
+    return result instanceof Response ? result : response;
   };
   const dispose = () => { for (const off of [...owned]) off(); };
   signal?.addEventListener("abort", dispose, { once: true });
