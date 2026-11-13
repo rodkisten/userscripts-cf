@@ -96,3 +96,16 @@ test("does not rewrite shadowed GM bindings", () => {
   assert.match(output, /GM_getValue\("local"\)/);
   assert.match(output, /ctx\.gm\.modern\.getValue\("native"\)/);
 });
+
+test("rewrites GM object destructuring and preserves property names", () => {
+  const output = transform(`function init(ctx) {
+    const { getValue, setValue: write } = GM;
+    const api = GM;
+    const options = { GM_getValue: true };
+    const read = GM_getValue;
+  }`);
+  assert.match(output, /\{ getValue, setValue: write \} = ctx\.gm\.modern/);
+  assert.match(output, /const api = ctx\.gm\.modern/);
+  assert.match(output, /\{ GM_getValue: true \}/);
+  assert.match(output, /const read = ctx\.gm\.legacy\.getValue/);
+});
