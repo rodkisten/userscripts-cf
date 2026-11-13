@@ -58,3 +58,17 @@ test("rewrites inferred element queries without changing unrelated objects", () 
   assert.match(output, /ctx\.dom\.scope\(container\)\.querySelectorAll\("\.item"\)/);
   assert.match(output, /service\.querySelector\("\.custom"\)/);
 });
+
+test("rewrites modern and legacy GM calls but honors @keep", () => {
+  const output = transform(`function init(ctx) {
+    GM.getValue("token");
+    GM_setValue("token", "value");
+    GM.xmlHttpRequest({ url: "/api" });
+    // @keep
+    GM_getValue("native");
+  }`);
+  assert.match(output, /ctx\.gm\.modern\.getValue\("token"\)/);
+  assert.match(output, /ctx\.gm\.legacy\.setValue\("token", "value"\)/);
+  assert.match(output, /ctx\.gm\.modern\.xmlHttpRequest\(/);
+  assert.match(output, /GM_getValue\("native"\)/);
+});
