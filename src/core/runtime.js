@@ -1,4 +1,7 @@
+import { createGMBridge } from "../runtime/gm-bridge.js";
 import { matchesRoute } from "./match.js";
+import { createHttpClient } from "../runtime/http-client.js";
+import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
@@ -65,6 +68,23 @@ export function createRuntime(definitions, bridge, host = window) {
       store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
       stores.set(definition.id, store);
     }
+    // Dedicated IndexedDB stores never silently fall back to localStorage or GM.
+    // Call ctx.db("history") to create a namespaced, lifecycle-managed RodStorage instance.
+    const databases = new Map();
+    function db(name = "default", options = {}) {
+      if (typeof name !== "string" || !name.trim() || name.includes("..")) {
+        throw new TypeError("Database name must be a non-empty namespace segment");
+      }
+      if (databases.has(name)) return databases.get(name);
+      const instance = rod.storage.create({
+        ...options,
+        namespace: "userscripts-cf/" + definition.id + "/db/" + name,
+        backend: { preferred: "indexeddb", fallbacks: [] },
+      });
+      databases.set(name, instance);
+      onDispose(() => instance.close());
+      return instance;
+    }
     const storage = Object.freeze({
       async get(key, fallback) {
         const value = await store.get(key);
@@ -85,8 +105,17 @@ export function createRuntime(definitions, bridge, host = window) {
         await bridge.call("delete", { id: definition.id, key });
       },
     });
+    const gm = createGMBridge(host);
+    const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
+    onDispose(() => http.dispose());
+    const dom = createDomEngine({ root: host.document, signal: abort.signal });
+    onDispose(() => dom.dispose());
     return {
       id: definition.id,
+      http,
+      gm,
+      dom,
+      db,
       signal: abort.signal,
       storage,
       menu: rod.menu,

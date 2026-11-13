@@ -1,4 +1,7 @@
+import { createGMStorage } from "../../../runtime/gm-storage.js";
 import { PREFIX } from "../config/search.js";
+
+const gmStorage = createGMStorage();
 
 export let modernGM;
 
@@ -9,29 +12,19 @@ export function initializeDeckModernGM() {
 export let gmGet;
 
 export function initializeDeckGmGet() {
-  gmGet =
-    typeof GM_getValue === "function"
-      ? GM_getValue
-      : typeof modernGM?.getValue === "function"
-        ? modernGM.getValue.bind(modernGM)
-        : null;
+  gmGet = (key, fallback) => gmStorage.get(key, fallback);
 }
 
 export let gmSet;
 
 export function initializeDeckGmSet() {
-  gmSet =
-    typeof GM_setValue === "function"
-      ? GM_setValue
-      : typeof modernGM?.setValue === "function"
-        ? modernGM.setValue.bind(modernGM)
-        : null;
+  gmSet = (key, value) => gmStorage.set(key, value);
 }
 
 export let gmAvailable;
 
 export function initializeDeckGmAvailable() {
-  gmAvailable = Boolean(gmGet && gmSet);
+  gmAvailable = gmStorage.available;
 }
 
 export function decodeStore(value) {
