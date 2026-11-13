@@ -98,7 +98,17 @@ export function runtimeHelpers() {
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
             replacement = contextName + ".http.fetch";
           }
-          if (ts.isPropertyAccessExpression(callee)) {
+          // Preserve the native EventTarget operation, while tracking lifecycle
+          // only for explicit window/document targets. Unknown receivers remain untouched.
+          if (ts.isPropertyAccessExpression(callee) &&
+              ["addEventListener", "removeEventListener"].includes(callee.name.text) &&
+              ts.isIdentifier(callee.expression) &&
+              ["window", "document"].includes(callee.expression.text) &&
+              !shadowed.has(callee.expression.text)) {
+            const operation = callee.name.text === "addEventListener" ? "add" : "remove";
+            replacement = contextName + ".events.dom." + operation + ".bind(null, " + callee.expression.text + ")";
+          }
+          if (!replacement && ts.isPropertyAccessExpression(callee)) {
             const receiver = callee.expression;
             const method = callee.name.text;
             if (ts.isIdentifier(receiver)) {
