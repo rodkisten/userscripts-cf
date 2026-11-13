@@ -36,7 +36,39 @@ export function createRuntime(definitions, bridge, host = window) {
   function context(definition) {
     const abort = new host.AbortController();
     const cleanups = [];
-    const events = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
+    const eventBus = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
+    const domListeners = new Map();
+    const domEvents = Object.freeze({
+      add(target, type, callback, options) {
+        let types = domListeners.get(target);
+        if (!types) domListeners.set(target, (types = new Map()));
+        let handlers = types.get(type);
+        if (!handlers) types.set(type, (handlers = new Map()));
+        let captures = handlers.get(callback);
+        if (!captures) handlers.set(callback, (captures = new Map()));
+        const capture = typeof options === "boolean" ? options : !!options?.capture;
+        if (captures.has(capture)) return;
+        target.addEventListener(type, callback, options);
+        captures.set(capture, options);
+      },
+      remove(target, type, callback, options) {
+        const capture = typeof options === "boolean" ? options : !!options?.capture;
+        target.removeEventListener(type, callback, options);
+        const handlers = domListeners.get(target)?.get(type);
+        const captures = handlers?.get(callback);
+        captures?.delete(capture);
+        if (captures && !captures.size) handlers.delete(callback);
+      },
+      dispose() {
+        for (const [target, types] of domListeners)
+          for (const [type, handlers] of types)
+            for (const [callback, captures] of handlers)
+              for (const options of captures.values()) target.removeEventListener(type, callback, options);
+        domListeners.clear();
+      },
+    });
+    onDispose(() => domEvents.dispose());
+    const events = Object.freeze({ ...eventBus, dom: domEvents });
     let uiHost;
     let uiRoot;
     function ensureUIRoot() {
