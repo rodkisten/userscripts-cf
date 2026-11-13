@@ -1,6 +1,9 @@
+import { createHttpClient } from "../../../runtime/http-client.js";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
+
+const http = createHttpClient({ ttlMs: 24 * 60 * 60_000 });
 
 export let ForeignTags;
 
@@ -12,39 +15,17 @@ export function initializeDeckForeignTags() {
       started = 0;
     const MAX = RUNTIME_LIMITS.translationForeignTags.max;
     const languageAllowed = new Set(["pt", "es", "en"]);
-    const gmRequest = (args) => {
-      const fn =
-        typeof GM_xmlhttpRequest === "function"
-          ? GM_xmlhttpRequest
-          : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
-            ? GM.xmlHttpRequest.bind(GM)
-            : null;
-      if (!fn) return Promise.reject(new Error("GM HTTP indisponível"));
-      return new Promise<any>((resolve, reject) => {
-        try {
-          fn({
-            ...args,
-            onload: (r) =>
-              r.status >= 200 && r.status < 300 ? resolve(r) : reject(new Error("HTTP " + r.status)),
-            onerror: () => reject(new Error("Rede indisponível")),
-            ontimeout: () => reject(new Error("Timeout")),
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    };
     const translate = async (tag) => {
       const text = tag.replace(/^#/, "").replace(/_/g, " ").trim();
-      const response = await gmRequest({
-        url:
-          "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=" +
+      const json = await http.json(
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=" +
           encodeURIComponent(text),
-        method: "GET",
-        timeout: RUNTIME_LIMITS.translationForeignTags.initializeDeckForeignTagsTimeout,
-        responseType: "text",
-      });
-      const json = JSON.parse(response.responseText || "null");
+        {
+          method: "GET",
+          transport: "gm",
+          timeoutMs: RUNTIME_LIMITS.translationForeignTags.initializeDeckForeignTagsTimeout,
+        },
+      );
       const lang = String(json?.[2] || "")
         .toLowerCase()
         .split("-")[0];
