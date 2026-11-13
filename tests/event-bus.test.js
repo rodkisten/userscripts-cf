@@ -8,7 +8,8 @@ test("events deduplicate identical callbacks and preserve distinct listeners", (
   const values = [];
   const callback = (value) => values.push(value);
   bus.on("change", callback);
-  bus.on("change", callback);
+  const duplicateCleanup = bus.on("change", callback);
+  duplicateCleanup();
   bus.on("change", (value) => values.push(value * 2));
   assert.equal(bus.size, 2);
   assert.equal(diagnostics[0].kind, "duplicate-listener");
