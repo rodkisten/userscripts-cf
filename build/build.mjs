@@ -169,7 +169,7 @@ for (const target of targets) {
       const generated = await findOutput(tempDir);
       if (!generated) throw new Error("Vite did not emit standalone JavaScript");
       const code = await fs.readFile(generated, "utf8");
-      const match = code.match(/\\/\\/# sourceMappingURL=data:application\\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)/);
+      const match = code.match(/\/\/# sourceMappingURL=data:application\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)/);
       if (!match) {
         throw new Error("Vite did not embed a sourcemap in the generated JavaScript");
       }
@@ -177,7 +177,7 @@ for (const target of targets) {
       const mapFile = file + ".map";
       map.file = file;
       await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-      source = `${metadata}\\n\\n${code.replace(match[0], "")}\\n//# sourceMappingURL=${mapFile}\\n`;
+      source = `${metadata}\n\n${code.replace(match[0], "")}\n//# sourceMappingURL=${mapFile}\n`;
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
