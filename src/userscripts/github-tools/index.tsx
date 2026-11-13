@@ -1,4 +1,5 @@
 import { fitGitHubNavigation } from "./navigation.ts";
+import { decorateGitHubFiles } from "./material-icons.ts";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { createStore } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
@@ -431,6 +432,7 @@ function startGitHub(ctx: any) {
   }
 
   const dashboard = mountGitHubDashboard(ctx);
+  decorateGitHubFiles(ctx);
   const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
   function scan() {
