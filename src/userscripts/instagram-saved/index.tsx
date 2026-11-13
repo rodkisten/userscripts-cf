@@ -1,8 +1,8 @@
-import { render } from "@solidjs/web";
-import { SavedPanel, SavedSettings, css } from "./Settings.tsx";
+import { createStore, Show } from "solid-js";
+import { SavedPanel, SettingsDialog, css, type Form } from "./Settings.tsx";
 import type { MediaPayload, Page } from "./core.ts";
 import { mountReelBookmark } from "./reel-bookmark.tsx";
-import { installRodActions } from "../../runtime/actions/index.ts";
+import { installRodActions } from "../../runtime/actions/index.tsx";
 type Config = { token: string; channels: string[] };
 type Settings = {
   enabled: boolean;
@@ -65,14 +65,50 @@ export default {
           id: "saved",
           title: "Salvos",
           render() {
-            return (<SavedPanel onOpen={() => void settingsApi.open()} />) as HTMLElement;
+            return (
+              <SavedPanel
+                onOpen={() => void settingsApi.open()}
+                running={runtime.running}
+                error={runtime.lastError}
+              />
+            );
           },
         },
       ],
     });
     ctx.onDispose(unregisterActions);
-    let running = false;
-    let lastRun = 0;
+    const [runtime, setRuntime] = createStore({
+      running: false,
+      lastRun: 0,
+      lastError: "",
+      open: false,
+      form: { ...DEFAULTS, token: "", channels: [] } as Form,
+    });
+    ctx.ui.mountSolid(
+      () => (
+        <Show when={runtime.open}>
+          <SettingsDialog
+            settings={runtime.form}
+            error={runtime.lastError}
+            close={() =>
+              setRuntime((draft) => {
+                draft.open = false;
+              })
+            }
+            save={async (form) => {
+              const { token, channels, ...settings } = form;
+              await settingsApi.update(settings);
+              await set("config", { token: token.trim(), channels });
+              setRuntime((draft) => {
+                draft.open = false;
+              });
+              void run(true);
+            }}
+          />
+        </Show>
+      ),
+      { styles: [css], id: "instagram-settings" },
+    );
     const get = async (key: string, fallback: any) => ctx.storage.get(key, fallback);
     const set = async (key: string, value: any) => ctx.storage.set(key, value);
     const pause = (ms: number) =>
@@ -156,7 +192,7 @@ export default {
       }
     }
     async function run(manual = false) {
-      if (running || (!manual && (document.hidden || Date.now() - lastRun < 300000))) {
+      if (runtime.running || (!manual && (document.hidden || Date.now() - runtime.lastRun < 300000))) {
         return;
       }
       const config = await get("config", null);
@@ -168,8 +204,10 @@ export default {
       if (!config?.token || !account) {
         return;
       }
-      running = true;
-      lastRun = Date.now();
+      setRuntime((draft) => {
+        draft.running = true;
+        draft.lastRun = Date.now();
+      });
       try {
         if (!navigator.locks) {
           throw Error("Web Locks indisponível; sincronização desativada para evitar concorrência");
@@ -227,6 +265,9 @@ export default {
             });
           }
           await set("lastError", null);
+          setRuntime((draft) => {
+            draft.lastError = "";
+          });
           if (count > 0) {
             ctx.toaster.success?.({ title: `${count} mídias enviadas` });
           }
@@ -235,9 +276,14 @@ export default {
         const error = caught as Error;
         if (!abort.aborted) {
           await set("lastError", { message: error.message, at: Date.now() });
+          setRuntime((draft) => {
+            draft.lastError = error.message;
+          });
         }
       } finally {
-        running = false;
+        setRuntime((draft) => {
+          draft.running = false;
+        });
       }
     }
 
@@ -261,48 +307,16 @@ export default {
       run: () => run(true),
       async open() {
         const settings = await this.get();
-        const external = ctx.menu;
-        if (!external?.open) {
-          throw Error("RodMenu não carregado");
-        }
-        external.configure?.({ defaultPresentation: "bottom-sheet" });
         const config = await get("config", { token: "", channels: [] });
-        let draft = { ...settings, ...config };
-        const root = (<div />) as HTMLDivElement;
-        const dispose = render(
-          () => (
-            <SavedSettings
-              settings={draft}
-              onChange={(next) => {
-                draft = next;
-              }}
-            />
-          ),
-          root,
-        );
-        ctx.onDispose(dispose);
-        const handle = external.open({
-          id: "xrod-instagram-saved-settings",
-          title: "Instagram · Coleções salvas",
-          presentation: "bottom-sheet",
-          fields: [{ type: "custom", name: "settings", chrome: "bare", render: () => root }],
-          actions: [
-            { id: "save", label: "Salvar", role: "submit" },
-            { id: "cancel", label: "Cancelar", role: "cancel" },
-          ],
-        });
-        try {
-          const result = await handle.result;
-          if (!result || (result.action !== "save" && result.actionId !== "save")) {
-            return;
-          }
-          const { token, channels, ...settingsDraft } = draft;
-          await this.update(settingsDraft);
-          await set("config", { token: draft.token.trim(), channels: draft.channels });
-          void run(true);
-        } finally {
-          dispose();
+        const error = await get("lastError", null);
+        if (abort.aborted) {
+          return;
         }
+        setRuntime((draft) => {
+          draft.form = { ...settings, ...config };
+          draft.lastError = error?.message || "";
+          draft.open = true;
+        });
       },
     };
     const page = (typeof unsafeWindow !== "undefined" ? unsafeWindow : window) as Window &
@@ -317,9 +331,10 @@ export default {
       menus.push(
         GM_registerMenuCommand("Instagram salvos · Diagnóstico", async () => {
           const error = await get("lastError", null);
-          alert(
-            error ? `${error.message}\n${new Date(error.at).toLocaleString()}` : "Nenhum erro registrado",
-          );
+          setRuntime((draft) => {
+            draft.lastError = error?.message || "Nenhum erro registrado";
+          });
+          await settingsApi.open();
         }),
       );
     }

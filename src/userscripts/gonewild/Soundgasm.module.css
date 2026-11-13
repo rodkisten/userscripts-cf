@@ -680,3 +680,15 @@ body.gws-sg-enhanced > :not(#gws-sg-root):not(script):not(style) {
     animation: none;
   }
 }
+
+.accent {
+  color: #ef94c1;
+}
+#gws-sg-audio {
+  display: none;
+}
+#gws-sg-audio[controls] {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}

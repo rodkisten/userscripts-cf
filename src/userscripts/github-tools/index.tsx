@@ -1,18 +1,19 @@
-// @ts-nocheck
-import { createSignal } from "solid-js";
-import { render } from "@solidjs/web";
-import { FileToolbar, scanWorkflowSteps, fitGitHubNavigation } from "./ui.tsx";
+import { fitGitHubNavigation } from "./navigation.ts";
+import { createStore } from "solid-js";
+import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { clipboardText } from "../../runtime/solid-ui/clipboard.tsx";
+import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
 import { css } from "./GitHub.module.css";
 
 // File listing extraction, bounded downloads and Markdown fencing preserve v1 behavior.
 export default {
-  init(ctx) {
+  init(ctx: any) {
     const start = () => startGitHub(ctx);
     if (document.readyState === "loading") ctx.listen(document, "DOMContentLoaded", start, { once: true });
     else start();
   },
 };
-function startGitHub(ctx) {
+function startGitHub(ctx: any) {
   const KEY = "gh-native-file-tools:preferences:v1";
   const DEFAULTS = Object.freeze({ sort: "name", direction: "asc", mode: "content" });
   const ROW_SELECTOR = 'tr, [role="row"], .react-directory-row, .js-navigation-item';
@@ -20,9 +21,8 @@ function startGitHub(ctx) {
   const SINGLE_FILE_LIMIT = 3 * 1024 * 1024;
   const RETRY_NAV_EVENTS = ["turbo:load", "turbo:render", "pjax:end", "popstate"];
   const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
-  const panels = new WeakMap();
-  let prefs = readPrefs();
-  const [preferences, setPreferences] = createSignal(prefs);
+  const panels = new WeakMap<Element, any>();
+  const [prefs, setPreferences] = createStore(readPrefs());
   const mounts = new Map<HTMLElement, () => void>();
   let timer;
   let lastUrl = location.href;
@@ -42,15 +42,16 @@ function startGitHub(ctx) {
   }
 
   function savePrefs(changes) {
-    prefs = { ...prefs, ...changes };
-    const value = JSON.stringify(prefs);
-    try {
-      if (typeof GM_setValue === "function") GM_setValue(KEY, value);
-      else localStorage.setItem(KEY, value);
-    } catch (error) {
-      console.warn("[GitHub File Tools] Não foi possível salvar as preferências:", error);
-    }
-    setPreferences(prefs);
+    setPreferences((draft) => {
+      Object.assign(draft, changes);
+      try {
+        const value = JSON.stringify({ ...draft });
+        if (typeof GM_setValue === "function") GM_setValue(KEY, value);
+        else localStorage.setItem(KEY, value);
+      } catch (error) {
+        console.warn("[GitHub File Tools] Não foi possível salvar as preferências:", error);
+      }
+    });
     scheduleScan();
   }
 
@@ -113,7 +114,7 @@ function startGitHub(ctx) {
   function listGroups(repo) {
     const main = document.querySelector("main") || document;
     const groups = new Map();
-    for (const anchor of main.querySelectorAll('a[href*="/blob/"], a[href*="/tree/"]')) {
+    for (const anchor of main.querySelectorAll<HTMLAnchorElement>('a[href*="/blob/"], a[href*="/tree/"]')) {
       if (
         anchor.closest(
           'aside, nav, [role="tree"], [data-ghft-toolbar], .PRIVATE_TreeView, [data-testid="file-tree"]',
@@ -165,41 +166,48 @@ function startGitHub(ctx) {
 
   function attachGroup(group, repo) {
     const previous = panels.get(group.parent);
-    if (previous?.isConnected) return previous;
+    if (previous?.host.isConnected) return previous;
     let listContainer = group.parent;
     if (listContainer.matches('tbody, [role="rowgroup"], .react-directory-list'))
       listContainer = listContainer.closest('table, [role="table"]') || listContainer;
-    const toolbar = (
-      <div data-ghft-toolbar="" aria-label="Ferramentas para arquivos do GitHub" />
-    ) as HTMLDivElement;
-    listContainer.before(toolbar);
-    const dispose = render(
+    const [info, setInfo] = createStore({ hint: "", title: "" });
+    const mount = mountPoint(
+      listContainer.parentNode!,
       () => (
         <FileToolbar
-          preferences={preferences}
+          preferences={prefs}
+          info={info}
           save={savePrefs}
-          copy={(button) => {
+          copy={(progress) => {
             const items = listGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
             const files = items.filter((item) => item.type === "file");
-            if (prefs.mode === "content" && !files.length) {
-              notify("Esta pasta só contém subpastas. Escolha Caminhos.");
-              return;
-            }
+            if (prefs.mode === "content" && !files.length)
+              return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
             if (
               prefs.mode === "content" &&
               files.length > 100 &&
               !confirm(`Copiar ${files.length} arquivos?`)
             )
-              return;
-            copyFiles(items, repo, button);
+              return Promise.resolve();
+            return copyFiles(items, repo, progress);
           }}
         />
       ),
-      toolbar,
+      { before: listContainer },
     );
-    mounts.set(toolbar, dispose);
-    panels.set(group.parent, toolbar);
-    return toolbar;
+    mount.host.dataset.ghftToolbar = "";
+    mounts.set(mount.host, mount.dispose);
+    const record = {
+      host: mount.host,
+      update(hint: string, title: string) {
+        setInfo((draft) => {
+          draft.hint = hint;
+          draft.title = title;
+        });
+      },
+    };
+    panels.set(group.parent, record);
+    return record;
   }
 
   function currentRef() {
@@ -236,7 +244,7 @@ function startGitHub(ctx) {
   }
 
   function downloadText(url) {
-    return new Promise((resolve, reject) => {
+    return new Promise<{ text: string; type: string }>((resolve, reject) => {
       const gmRequest =
         typeof GM_xmlhttpRequest === "function"
           ? GM_xmlhttpRequest
@@ -391,16 +399,7 @@ function startGitHub(ctx) {
     } catch {
       /* fallback para Safari/gerenciadores sem permissão */
     }
-    const input = (<textarea readonly />) as HTMLTextAreaElement;
-    input.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0;";
-    input.value = text;
-    document.body.append(input);
-    input.focus();
-    input.select();
-    input.setSelectionRange(0, text.length);
-    const success = document.execCommand("copy");
-    input.remove();
-    if (!success) throw new Error("O Safari não permitiu a cópia. Autorize a área de transferência.");
+    await clipboardText(text);
   }
 
   function writeClipboardOnGesture(textPromise) {
@@ -423,39 +422,11 @@ function startGitHub(ctx) {
     return textPromise.then(setClipboard);
   }
 
-  function copyFiles(items, repo, targetButton) {
-    if (!items.length) return;
+  function copyFiles(items, repo, progress) {
+    if (!items.length) return Promise.resolve();
     const mode = prefs.mode;
-    const original = targetButton.textContent;
-    targetButton.disabled = true;
-    targetButton.textContent = "Preparando…";
-    const progress = (current, total) => {
-      targetButton.textContent = `Lendo ${current}/${total}…`;
-    };
-    // A chamada abaixo ocorre diretamente no evento de clique.
-    const textPromise = makeCopyText(items, repo, mode, progress);
-    writeClipboardOnGesture(textPromise)
-      .then(() => {
-        const files = items.filter((item) => item.type === "file").length;
-        notify(
-          mode === "paths"
-            ? `${items.length} caminhos copiados.`
-            : `Conteúdo de até ${files} arquivos copiado.`,
-          false,
-        );
-      })
-      .catch((error) => {
-        console.warn("[GitHub File Tools]", error);
-        notify(`Não foi possível copiar: ${error.message}`, true);
-      })
-      .finally(() => {
-        targetButton.disabled = false;
-        targetButton.textContent = original;
-      });
-  }
-
-  function notify(message, error = false) {
-    ctx.toaster({ title: message, variant: error ? "error" : "success" });
+    // The clipboard promise is created synchronously inside the click gesture.
+    return writeClipboardOnGesture(makeCopyText(items, repo, mode, progress));
   }
 
   const fitNavigation = fitGitHubNavigation(ctx);
@@ -478,15 +449,12 @@ function startGitHub(ctx) {
     for (const group of groups) {
       const toolbar = attachGroup(group, repo);
       const missingDates = group.items.filter((item) => item.date === null).length;
-      const hint = toolbar.querySelector("[data-ghft-hint]");
-      hint.textContent =
+      toolbar.update(
         prefs.sort === "modified" && missingDates
           ? `${missingDates} sem data`
-          : `${group.items.length} itens`;
-      hint.title =
-        missingDates && prefs.sort === "modified"
-          ? "Itens sem a data do último commit aparecem por último em cada grupo."
-          : "";
+          : `${group.items.length} itens`,
+        missingDates && prefs.sort === "modified" ? "Itens sem data aparecem por último em cada grupo." : "",
+      );
       sortGroup(group);
     }
   }
@@ -497,14 +465,32 @@ function startGitHub(ctx) {
   }
 
   ctx.pageStyle(css);
+  let tokenDialog: ReturnType<typeof mountPoint> | undefined;
+  let tokenRequest = 0;
   if (typeof GM_registerMenuCommand === "function") {
     const id = GM_registerMenuCommand("GitHub · Token para logs (Actions: read)", async () => {
-      const token = prompt(
-        "Token GitHub com Actions: read (vazio remove o token). Não é enviado a outros hosts.",
+      const request = ++tokenRequest;
+      const token = await ctx.storage.get("actionsToken", "");
+      if (ctx.signal.aborted || request !== tokenRequest) return;
+      tokenDialog?.dispose();
+      tokenDialog = mountPoint(
+        document.body,
+        () => (
+          <GitHubTokenSettings
+            token={token}
+            close={() => tokenDialog?.dispose()}
+            save={async (next) => {
+              await ctx.storage.set("actionsToken", next);
+              tokenDialog?.dispose();
+            }}
+          />
+        ),
+        { shadow: true },
       );
-      if (token !== null) await ctx.storage.set("actionsToken", token.trim());
     });
     ctx.onDispose(() => {
+      tokenRequest++;
+      tokenDialog?.dispose();
       if (typeof GM_unregisterMenuCommand === "function") GM_unregisterMenuCommand(id);
     });
   }
@@ -514,7 +500,7 @@ function startGitHub(ctx) {
       records.every(
         (record) =>
           record.target.nodeType === 1 &&
-          record.target.closest?.("[data-ghft-toolbar], [data-ghft-step-host], #ghft-toast"),
+          (record.target as Element).closest?.("[data-ghft-toolbar], [data-ghft-step-host], #ghft-toast"),
       )
     )
       return;

@@ -141,3 +141,24 @@
 :global(.js-repo-nav):has(.navigation) :global(.UnderlineNav-actions) {
   display: none;
 }
+
+.tokenForm {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+}
+.tokenForm label {
+  display: grid;
+  gap: 8px;
+}
+.tokenForm input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  font: inherit;
+  font-size: 16px;
+  background: #17181a;
+  color: inherit;
+  border: 1px solid #555;
+  border-radius: 8px;
+}

@@ -52,3 +52,16 @@
   cursor: pointer;
   touch-action: manipulation;
 }
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px;
+}
+.actions button {
+  border: 1px solid #666;
+  border-radius: 8px;
+  background: #303134;
+  color: inherit;
+  padding: 10px;
+}
