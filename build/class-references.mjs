@@ -31,6 +31,16 @@ export function analyzeClassReferences(source) {
   };
   const walk = (node) => {
     if (!node || typeof node !== "object") return;
+    if (node.type === "JSXAttribute" && node.name?.name === "classList") {
+      const object = node.value?.expression;
+      if (object?.type !== "ObjectExpression") dynamic.push("jsx-classList");
+      else for (const property of object.properties) {
+        if (property.type !== "ObjectProperty") { dynamic.push("jsx-classList"); continue; }
+        const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
+        if (name === null) dynamic.push("jsx-classList");
+        else addClasses(name);
+      }
+    }
     if (node.type === "JSXAttribute" && ["class", "className"].includes(node.name?.name)) {
       const value = node.value?.type === "JSXExpressionContainer"
         ? literal(node.value.expression)
