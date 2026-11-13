@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 import { build } from "vite";

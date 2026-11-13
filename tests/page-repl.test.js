@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile } from "../src/userscripts/page-repl/compiler.js";
 import { createRunner } from "../src/userscripts/page-repl/runner.js";
