@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { materialIcon } from "./material-icons.ts";
 import styles from "./GitHub.module.css";
@@ -45,6 +45,7 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
 export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
   const [state, setState] = createSignal<"loading" | "ready" | "error">("loading");
   const [nodes, setNodes] = createSignal<Node[]>([]);
+  const [resolvedBranch, setResolvedBranch] = createSignal(branch || "main");
   const [message, setMessage] = createSignal("");
   const controller = new AbortController();
   const base = "/" + repo.owner + "/" + repo.repo;
@@ -62,7 +63,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         </div>
       </Show>
       <Show when={state() === "error"}><div class={styles.treeError}>{message()} <button onClick={() => location.reload()}>Tentar novamente</button></div></Show>
-      <Show when={state() === "ready"}><div role="tree"><For each={nodes()}>{node => <TreeRow node={node} depth={0} base={base} branch={branch || "HEAD"} current={current}/>}</For></div></Show>
+      <Show when={state() === "ready"}><div role="tree"><For each={nodes()}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current}/>}</For></div></Show>
     </section>
   ), { before: container });
   mount.host.dataset.ghftTreeHost = "";
@@ -75,6 +76,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       if (!info.ok) throw Error("GitHub API: " + info.status);
       const details = await info.json();
       const ref = branch || details.default_branch;
+      setResolvedBranch(ref);
       const response = await fetch("https://api.github.com/repos/" + repo.owner + "/" + repo.repo + "/git/trees/" + encodeURIComponent(ref) + "?recursive=1", { headers, signal: controller.signal });
       if (!response.ok) throw Error("Árvore indisponível: HTTP " + response.status);
       const data = await response.json();
