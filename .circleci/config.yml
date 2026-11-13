@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   autoformat:
     docker:
-      - image: cimg/node:22.23
+      - image: cimg/node:22.23.5
     resource_class: small
     steps:
       - checkout
