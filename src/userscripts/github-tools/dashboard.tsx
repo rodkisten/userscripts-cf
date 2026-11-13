@@ -188,7 +188,7 @@ export function mountGitHubDashboard(ctx: any) {
               <button class={styles.button} disabled={i() === 0} onClick={() => { dragIndex = i(); reorder(i() - 1); }} aria-label={"Subir " + file.name}>↑</button>
               <button class={styles.button} disabled={i() === settings().files.length - 1} onClick={() => { dragIndex = i(); reorder(i() + 1); }} aria-label={"Descer " + file.name}>↓</button>
               <button class={styles.button} onClick={() => toggleFile(file.name, file.url)} aria-label={"Remover " + file.name}>✕</button>
-            </div></div>}</For>
+            </div>}</For>
           </details>
           <details><summary>Adicionar workflows</summary>
             <For each={workflows()}>{w => <button class={styles.workflowChoice}
