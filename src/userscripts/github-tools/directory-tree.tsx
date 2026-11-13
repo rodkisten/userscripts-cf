@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, createEffect } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { materialIcon } from "./material-icons.ts";
 import styles from "./GitHub.module.css";
@@ -25,6 +25,16 @@ export function buildTree(entries: Entry[]): Node[] {
   const sort = (nodes: Node[]) => { nodes.sort(compare); nodes.forEach(node => sort(node.children)); };
   sort(root.children);
   return root.children;
+}
+export function filterTree(nodes: Node[], term: string): Node[] {
+  const needle = term.trim().toLocaleLowerCase();
+  if (!needle) return nodes;
+  const visit = (node: Node): Node | null => {
+    if (node.name.toLocaleLowerCase().includes(needle)) return node;
+    const children = node.children.map(visit).filter((value): value is Node => value !== null);
+    return children.length ? { ...node, children } : null;
+  };
+  return nodes.map(visit).filter((value): value is Node => value !== null);
 }
 export function splitTreeLocation(segments: string[], ref: string): { branch: string; current: string } | null {
   const refParts = ref.split("/");
@@ -77,6 +87,9 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
     finally { setLoading(false); }
   };
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
+  createEffect(() => {
+    if (props.current === props.node.path || props.current.startsWith(props.node.path + "/")) setExpanded(true);
+  });
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
   return <>
     <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
@@ -98,6 +111,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const [nodes, setNodes] = createSignal<Node[]>([]);
 
   const [message, setMessage] = createSignal("");
+  const [query, setQuery] = createSignal("");
   const controller = new AbortController();
   const base = "/" + repo.owner + "/" + repo.repo;
   const path = location.pathname;
@@ -116,13 +130,14 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const mount = mountPoint(container.parentNode!, () => (
     <section class={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
       <div class={styles.treeHeader}><span>Arquivos</span><span class={styles.treeCount}>{state() === "loading" ? "Carregando…" : nodes().length + " itens na raiz"}</span></div>
+      <Show when={state() === "ready"}><label class={styles.treeSearch}><span aria-hidden="true">⌕</span><input type="search" aria-label="Filtrar arquivos e pastas" placeholder="Filtrar árvore…" value={query()} onInput={event => setQuery(event.currentTarget.value)} /></label></Show>
       <Show when={state() === "loading"}>
         <div role="status" aria-label="Carregando árvore de arquivos">
           <For each={Array.from({ length: 9 }, (_, i) => i)}>{i => <div class={styles.treeSkeleton} style={{ width: 45 + (i * 17) % 48 + "%" }}/>}</For>
         </div>
       </Show>
       <Show when={state() === "error"}><div class={styles.treeError}>{message()} <button onClick={() => location.reload()}>Tentar novamente</button></div></Show>
-      <Show when={state() === "ready"}><div role="tree"><For each={nodes()}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current()} loadFolder={loadFolder}/>}</For></div></Show>
+      <Show when={state() === "ready"}><div role="tree"><For each={filterTree(nodes(), query())}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current()} loadFolder={loadFolder}/>}</For></div></Show>
     </section>
   ), { before: container });
   mount.host.dataset.ghftTreeHost = "";
