@@ -1,5 +1,16 @@
 # Userscripts CF
 
+## 🌻 Standalone: uma instalação para todos os userscripts
+
+Instale apenas **`standalone.user.js`** no Tampermonkey para receber todos os módulos. O build inclui RodX, Instagram, GitHub, Reddit/Soundgasm, Page REPL e o exemplo. Cada módulo conserva suas regras de `matches`, `exclude` e roteamento SPA definidas em `userscripts.config.js`. As permissões `@grant`, dependências `@require` e hosts `@connect` são a união das configurações de todos os módulos.
+
+> **Importante:** o cabeçalho do standalone contém a união dos `@match`, mas os `exclude` individuais são aplicados **dentro do roteador**. Um `@exclude` global bloquearia indevidamente outros módulos na mesma página. As dependências `@require` e permissões GM são globais à instalação, portanto serão carregadas mesmo quando apenas um módulo for ativado. Para permissões mínimas, instale scripts individuais.
+
+📦 [GitHub Releases](https://github.com/rodkisten/userscripts-cf/releases): baixe `standalone.user.js`, ou `<id>.user.js` para instalação individual. O arquivo `.meta.js` é usado nas atualizações automáticas; `manifest.json` e `SHA256SUMS` permitem auditar a publicação. **Não instale standalone e scripts individuais ao mesmo tempo**, para evitar execução duplicada.
+
+A publicação automática é disparada após push na `main` quando ainda não existe release para a versão do `package.json`. Para publicar novos arquivos, aumente a versão antes do merge; uma release existente não é sobrescrita.
+
+
 Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separados e um instalável unificado com roteamento por URL.
 
 ## Scripts Reddit, GitHub e Instagram
