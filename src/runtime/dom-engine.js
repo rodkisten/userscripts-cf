@@ -67,15 +67,9 @@ export function createDomEngine({ root = document, signal, maxEntries = 256 } = 
     });
   }
   signal?.addEventListener("abort", () => observer?.disconnect(), { once: true });
-  // Match Document.querySelector and querySelectorAll return types and call signatures.
-  // NodeList stays live only for native APIs; snapshots here are static NodeLists.
-  function querySelector(selector) { return one(selector); }
-  function querySelectorAll(selector) {
-    const nodes = all(selector);
-    return Object.freeze(Object.assign(nodes, {
-      item(index) { return nodes[index] ?? null; },
-      forEach(callback, thisArg) { Array.prototype.forEach.call(nodes, callback, thisArg); },
-    }));
-  }
+  // Native aliases preserve DOM return types, including NodeListOf and .item().
+  // The array-returning all() helper remains available for cached snapshots.
+  function querySelector(selector) { return root.querySelector(selector); }
+  function querySelectorAll(selector) { return root.querySelectorAll(selector); }
   return Object.freeze({ one, all, querySelector, querySelectorAll, waitFor, invalidate, stats, dispose() { observer?.disconnect(); cache.clear(); } });
 }
