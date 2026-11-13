@@ -14,6 +14,7 @@ type Settings = {
 };
 
 type RuntimeContext = {
+  dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
   menu: { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void };
   toaster: ((options: any) => any) & { success?: (options: any) => any };
   signal: AbortSignal;
@@ -338,6 +339,11 @@ export default {
         }),
       );
     }
+    ctx.dock?.register([
+      { id: "settings", label: "Configurações", run: () => void settingsApi.open() },
+      { id: "sync", label: "Sincronizar", run: () => void run(true) },
+      { id: "relay", label: "Configurar Relay", run: configure },
+    ]);
     const timer = setInterval(() => void run(), 60000);
     ctx.listen(document, "visibilitychange", () => void run());
     ctx.onDispose(() => {

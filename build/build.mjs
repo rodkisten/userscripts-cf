@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
+import { build as viteBuild } from "vite";
+import { execFileSync } from "node:child_process";
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
@@ -69,7 +71,7 @@ for (const target of targets) {
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
     if (!selected.length) continue;
-    const runtime = await bundleRuntime(root, selected);
+    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox" });
     if (world === "sandbox") {
       installers.push(
         `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
@@ -117,7 +119,51 @@ for (const target of targets) {
     printWidth: 110,
   });
   const file = `${target.id}.user.js`;
-  const source = `${metadata}\n\n${body}`;
+  let source = `${metadata}\n\n${body}`;
+  if (target.id === "standalone") {
+    // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
+    //
+    // BLOCKED: Vite 8/Rolldown emitted JavaScript but no external sourcemap
+    // with build.sourcemap=true, and no inline data URL with
+    // build.sourcemap="inline". Do not restore either implementation without
+    // an automated integration test that validates the emitted map, its
+    // sourcesContent and its correspondence to the published userscript.
+    //
+    // REQUIREMENTS:
+    // 1. Preserve the exact Tampermonkey metadata header.
+    // 2. Minify the generated runtime with Oxc.
+    // 3. Emit standalone.user.js.map with valid source mappings.
+    // 4. Reference the map only when it actually exists.
+    // 5. Cover the complete build with a regression test in CI.
+    //
+    // TEMPORARY: Ship minified standalone JavaScript without a sourcemap.
+    const chunks = await viteBuild({
+      configFile: false,
+      logLevel: "error",
+      plugins: [{
+        name: "standalone-runtime-entry",
+        resolveId(id) {
+          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
+        },
+        load(id) {
+          if (id === "\0virtual:standalone-runtime") return body;
+        },
+      }],
+      build: {
+        write: false,
+        minify: "oxc",
+        sourcemap: false,
+        rolldownOptions: {
+          input: "virtual:standalone-runtime",
+          output: { format: "iife", name: "UserscriptsCFStandalone" },
+        },
+      },
+    });
+    const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
+    const result = output.find((entry) => entry.type === "chunk");
+    if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
+    source = `${metadata}\n\n${result.code}\n`;
+  }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
   const metaSource = metadata + "\n";
@@ -134,6 +180,7 @@ for (const target of targets) {
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
+execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
 for (const file of (await fs.readdir(out)).sort()) {
   const code = await fs.readFile(path.join(out, file));

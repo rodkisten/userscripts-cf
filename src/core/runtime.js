@@ -1,4 +1,5 @@
 import { createGMBridge } from "../runtime/gm-bridge.js";
+import { createEventBus } from "../runtime/events/event-bus.js";
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createDomEngine } from "../runtime/dom-engine.js";
@@ -35,6 +36,53 @@ export function createRuntime(definitions, bridge, host = window) {
   function context(definition) {
     const abort = new host.AbortController();
     const cleanups = [];
+    const onDispose = (callback) => cleanups.push(callback);
+    const eventBus = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
+    const domListeners = new Map();
+    const captureOf = (options) => typeof options === "boolean" ? options : !!options?.capture;
+    const domEvents = Object.freeze({
+      add(target, type, callback, options) {
+        if (!target || typeof target.addEventListener !== "function") throw new TypeError("Expected EventTarget");
+        let types = domListeners.get(target);
+        if (!types) domListeners.set(target, (types = new Map()));
+        let handlers = types.get(type);
+        if (!handlers) types.set(type, (handlers = new Map()));
+        let captures = handlers.get(callback);
+        if (!captures) handlers.set(callback, (captures = new Map()));
+        const capture = captureOf(options);
+        if (captures.has(capture)) return;
+        const once = typeof options === "object" && options?.once;
+        const listener = once
+          ? function (...args) {
+              domEvents.remove(target, type, callback, options);
+              return typeof callback === "function"
+                ? callback.apply(this, args)
+                : callback.handleEvent(...args);
+            }
+          : callback;
+        target.addEventListener(type, listener, options);
+        captures.set(capture, { listener, options });
+      },
+      remove(target, type, callback, options) {
+        const capture = captureOf(options);
+        const handlers = domListeners.get(target)?.get(type);
+        const captures = handlers?.get(callback);
+        const record = captures?.get(capture);
+        target.removeEventListener(type, record?.listener ?? callback, options);
+        captures?.delete(capture);
+        if (captures && !captures.size) handlers.delete(callback);
+      },
+      dispose() {
+        for (const [target, types] of domListeners)
+          for (const [type, handlers] of types)
+            for (const [, captures] of handlers)
+              for (const [capture, record] of captures)
+                target.removeEventListener(type, record.listener, capture);
+        domListeners.clear();
+      },
+    });
+    onDispose(() => domEvents.dispose());
+    const events = Object.freeze({ ...eventBus, dom: domEvents });
     let uiHost;
     let uiRoot;
     function ensureUIRoot() {
@@ -62,7 +110,6 @@ export function createRuntime(definitions, bridge, host = window) {
       onDispose(() => node.remove());
       return node;
     }
-    const onDispose = (callback) => cleanups.push(callback);
     let store = stores.get(definition.id);
     if (!store) {
       store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
@@ -105,13 +152,14 @@ export function createRuntime(definitions, bridge, host = window) {
         await bridge.call("delete", { id: definition.id, key });
       },
     });
-    const gm = createGMBridge(host);
+    const gm = createGMBridge(host, definition.id);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
     onDispose(() => dom.dispose());
     return {
       id: definition.id,
+      events,
       http,
       gm,
       dom,
@@ -119,6 +167,25 @@ export function createRuntime(definitions, bridge, host = window) {
       signal: abort.signal,
       storage,
       menu: rod.menu,
+      dock: Object.freeze({
+        register(actions) {
+          const module = {
+            id: definition.id,
+            name: definition.name,
+            actions: actions.map((action) => ({
+              id: action.id,
+              label: action.label,
+              run: action.run,
+            })),
+          };
+          host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
+            detail: { type: "register", module },
+          }));
+          onDispose(() => host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
+            detail: { type: "unregister", id: definition.id },
+          })));
+        },
+      }),
       toaster: rod.toaster,
       get url() {
         return new URL(desiredURL);

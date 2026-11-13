@@ -3,15 +3,28 @@ import { build } from "vite";
 import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
 
-export async function bundleRuntime(root, definitions) {
+export async function bundleRuntime(root, definitions, options = {}) {
   const virtualID = "\0userscripts-cf-entry";
   const imports = definitions.map(
     (item, index) => `import module${index} from ${JSON.stringify(path.resolve(root, item.entry))};`,
   );
   const entries = definitions.map((item, index) => `{...${JSON.stringify(item)}, module: module${index}}`);
+  const dockImport = options.dock
+    ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/solid-ui/rod-dock.tsx"))};`
+    : "";
+  const dockBoot = options.dock
+    ? `const dock = installRodDock({ modules: [] });
+       const disposeRuntime = api.dispose.bind(api);
+       api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
+    : "";
   const entryCode = `${imports.join("\n")}
+    ${dockImport}
     import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
-    export function boot(bridge) { return createRuntime([${entries.join(",")}], bridge); }
+    export function boot(bridge) {
+      const api = createRuntime([${entries.join(",")}], bridge);
+      ${dockBoot}
+      return api;
+    }
   `;
   const result = await build({
     root,
