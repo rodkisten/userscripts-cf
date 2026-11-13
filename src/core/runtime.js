@@ -139,7 +139,7 @@ export function createRuntime(definitions, bridge, host = window) {
         await bridge.call("delete", { id: definition.id, key });
       },
     });
-    const gm = createGMBridge(host);
+    const gm = createGMBridge(host, definition.id);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
