@@ -29,7 +29,12 @@ export function analyzeClassReferences(source) {
     if (value.includes("\\")) return dynamic.push("escaped selector");
     for (const match of value.matchAll(/\.([a-zA-Z_][\w-]*)/g)) names.add(match[1]);
   };
+  const visited = new WeakSet();
   const walk = (node) => {
+    if (node && typeof node === "object") {
+      if (visited.has(node)) return;
+      visited.add(node);
+    }
     if (!node || typeof node !== "object") return;
     if (node.type === "JSXAttribute" && node.name?.name === "classList") {
       const object = node.value?.expression;
@@ -56,7 +61,7 @@ export function analyzeClassReferences(source) {
         else addClasses(value);
       }
     }
-    if (node.type === "ObjectProperty" && node.key?.name === "classList") {
+    if (node.type === "ObjectProperty" && !node.computed && (node.key?.name === "classList" || literal(node.key) === "classList")) {
       // Solid classList={{ active: signal() }}: keys are behavioral selectors.
       if (node.value?.type === "ObjectExpression") {
         for (const property of node.value.properties) {
@@ -97,6 +102,8 @@ export function analyzeClassReferences(source) {
       }
     }
     for (const [key, value] of Object.entries(node)) {
+      // Babel nodes may contain comments and parser metadata; none are executable.
+      if (key === "leadingComments" || key === "trailingComments" || key === "innerComments") continue;
       if (key === "loc" || key === "start" || key === "end" || key === "extra") continue;
       if (Array.isArray(value)) value.forEach(walk);
       else if (value && typeof value === "object") walk(value);
