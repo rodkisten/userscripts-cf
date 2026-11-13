@@ -36,7 +36,7 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["github-tools", "instagram-saved", "rodx-studio", "example-site", "page-repl", "gonewild", "unified"],
+    ["standalone", "github-tools", "instagram-saved", "rodx-studio", "example-site", "page-repl", "gonewild", "unified"],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
@@ -58,7 +58,7 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
       }
     }
     walk(ast);
-    if (entry.id !== "page-repl") assert.equal(dynamicImports.length, 0, entry.file);
+    if (!["page-repl", "standalone"].includes(entry.id)) assert.equal(dynamicImports.length, 0, entry.file);
     assert.equal(parse(source.slice(source.indexOf("// ==/UserScript==") + 19)).comments.length, 0);
     assert.equal(createHash("sha256").update(source).digest("hex"), entry.sha256);
   }
@@ -92,4 +92,20 @@ test("RodX individual and unified preserve original Tampermonkey identity and de
     assert.match(header, /@require\s+https:\/\/code.migos.club\/api\/cdn\?package=@videojs/);
     assert.ok(source.length > 800000);
   }
+});
+
+
+test("standalone includes all routes and preserves per-module excludes", async () => {
+  const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
+  const standalone = manifest.scripts.find((entry) => entry.id === "standalone");
+  assert.ok(standalone, "standalone distribution missing");
+  const source = await fs.readFile(new URL(standalone.file, dist), "utf8");
+  const header = source.slice(0, source.indexOf("// ==/UserScript=="));
+  for (const url of ["https://github.com/*", "https://www.instagram.com/*", "https://x.com/*", "https://www.reddit.com/*", "https://example.com/*"]) {
+    assert.ok(standalone.matches.includes(url), url);
+  }
+  assert.doesNotMatch(header, /@exclude\\s+https:\/\/example\\.com\/disabled/);
+  assert.match(source, /example\\.com\\/disabled/);
+  assert.match(header, /@grant\\s+GM_xmlhttpRequest/);
+  assert.match(header, /@require\\s+https:\/\/rod\\.migos\\.club\/menu/);
 });
