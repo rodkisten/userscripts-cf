@@ -2,6 +2,8 @@ import { createGMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
+import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
+import { createClipboardManager } from "../runtime/clipboard-manager.js";
 import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
@@ -13,6 +15,32 @@ function menu() {}
 export function createRuntime(definitions, bridge, host = window) {
   const rod = rodLibraries(host);
   const stores = new Map();
+  const clipboard = host.indexedDB ? createClipboardManager({ host }) : null;
+  if (clipboard) host.__RodClipboard = clipboard;
+  function openClipboardMenu() {
+    if (!clipboard) return;
+    const entries = clipboard.list().slice(0, 30);
+    rod.menu.open({
+      id: "rod-clipboard-history", title: "📋 Clipboard", presentation: "bottom-sheet", size: "lg",
+      description: "Histórico local. Selecione um item para copiar novamente.",
+      fields: [{ type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
+        { type: "select", name: "item", label: "Itens recentes", searchable: true,
+          options: entries.map((item) => ({ value: item.id, label: item.text.slice(0, 90) })) }],
+      actions: [
+        { id: "copy", label: "Copiar", handler: async (ctx) => clipboard.copy(ctx.values.item) },
+        { id: "read", label: "Ler clipboard", handler: () => clipboard.read() },
+        { id: "clear", label: "Excluir item", variant: "danger", handler: (ctx) => clipboard.remove(ctx.values.item) },
+      ],
+    });
+  }
+  const clipboardModule = { id: "rod-clipboard", name: "Clipboard", actions: [{ id: "open", label: "📋 Histórico", run: openClipboardMenu }, { id: "read", label: "Ler clipboard", run: () => clipboard?.read() }] };
+  if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }));
+  const clipboardKeydown = (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "v") {
+      event.preventDefault(); openClipboardMenu();
+    }
+  };
+  host.document.addEventListener("keydown", clipboardKeydown, true);
   const active = new Map();
   const state = new Map();
   const listeners = new Map();
@@ -155,13 +183,18 @@ export function createRuntime(definitions, bridge, host = window) {
     const gm = createGMBridge(host, definition.id);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
+    const interceptors = createNetworkInterceptors(http, { signal: abort.signal });
+    onDispose(() => interceptors.dispose());
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
     onDispose(() => dom.dispose());
     return {
       id: definition.id,
       events,
-      http,
+      http: Object.freeze({ ...http, request: interceptors.request }),
+      interceptRequest: interceptors.interceptRequest,
+      interceptResponse: interceptors.interceptResponse,
       gm,
+      clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
       db,
       signal: abort.signal,
@@ -330,6 +363,10 @@ export function createRuntime(definitions, bridge, host = window) {
     },
     async dispose() {
       closed = true;
+      host.document.removeEventListener("keydown", clipboardKeydown, true);
+      if (host.__RodClipboard === clipboard) delete host.__RodClipboard;
+      clipboard?.dispose();
+      if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
       host.removeEventListener("popstate", navigate);
       host.removeEventListener("hashchange", navigate);
       undoHistory.forEach((undo) => undo());
