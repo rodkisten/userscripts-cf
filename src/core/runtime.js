@@ -4,7 +4,6 @@ import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
 import { createClipboardManager } from "../runtime/clipboard-manager.js";
-import { ClipboardPanel } from "../runtime/actions/ClipboardPanel.tsx";
 import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
@@ -18,10 +17,6 @@ export function createRuntime(definitions, bridge, host = window) {
   const stores = new Map();
   const clipboard = host.indexedDB ? createClipboardManager({ host }) : null;
   if (clipboard) host.__RodClipboard = clipboard;
-  const unregisterClipboardTab = clipboard && host.__RodActions?.register({
-    id: "clipboard", title: "Clipboard",
-    tabs: [{ id: "history", title: "Histórico", icon: "▤", render: () => ClipboardPanel({ clipboard }) }],
-  });
   function openClipboardMenu() {
     if (!clipboard) return;
     const entries = clipboard.list().slice(0, 30);
@@ -369,7 +364,6 @@ export function createRuntime(definitions, bridge, host = window) {
     async dispose() {
       closed = true;
       host.document.removeEventListener("keydown", clipboardKeydown, true);
-      unregisterClipboardTab?.();
       if (host.__RodClipboard === clipboard) delete host.__RodClipboard;
       clipboard?.dispose();
       if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
