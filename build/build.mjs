@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
 import { transformWithEsbuild } from "vite";
+import { execFileSync } from "node:child_process";
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
@@ -157,3 +158,4 @@ for (const file of (await fs.readdir(out)).sort()) {
   sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
 }
 await fs.writeFile(path.join(out, "SHA256SUMS"), sums.join("\n") + "\n");
+execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
