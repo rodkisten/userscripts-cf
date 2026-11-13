@@ -152,10 +152,10 @@ for (const target of targets) {
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
+execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
 for (const file of (await fs.readdir(out)).sort()) {
   const code = await fs.readFile(path.join(out, file));
   sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
 }
 await fs.writeFile(path.join(out, "SHA256SUMS"), sums.join("\n") + "\n");
-execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
