@@ -5,8 +5,8 @@ import styles from "./GitHub.module.css";
 type Favorite = { name: string; url: string };
 type Workflow = { id: number; name: string; path: string; state?: string };
 type Run = { id: number; name: string; conclusion: string | null; status: string; html_url: string; created_at: string; workflow_id: number };
-type Settings = { files: Favorite[]; workflows: Workflow[]; count: number; filter: string; iconTheme: string };
-const defaults: Settings = { files: [], workflows: [], count: 10, filter: "all", iconTheme: "atom" };
+type Settings = { files: Favorite[]; workflows: Workflow[]; count: number; filter: string; iconTheme: string; repositories: string[] };
+const defaults: Settings = { files: [], workflows: [], count: 10, filter: "all", iconTheme: "atom", repositories: [] };
 const icon = (name: string, theme: string) => {
   if (theme === "simple") return "▤";
   const ext = name.split(".").pop()?.toLowerCase();
@@ -20,6 +20,8 @@ export function mountGitHubDashboard(ctx: any) {
   const [message, setMessage] = createSignal("");
   const [open, setOpen] = createSignal(false);
   const [repo, setRepo] = createSignal("");
+  const [sourceRepo, setSourceRepo] = createSignal("");
+  const [repoInput, setRepoInput] = createSignal("");
   let request = 0;
   let dragIndex: number | null = null;
   const save = (patch: Partial<Settings>) => {
@@ -37,11 +39,12 @@ export function mountGitHubDashboard(ctx: any) {
     if (!response.ok) throw Error("GitHub API " + response.status + (response.status === 403 ? " · permissões ou rate limit" : ""));
     return response.status === 204 ? null : response.json();
   };
-  const load = async () => {
+  const load = async (selected?: string) => {
     const parts = location.pathname.split("/").filter(Boolean);
     if (parts.length < 2 || ["settings","notifications","search","orgs","topics"].includes(parts[0])) return;
-    const name = parts[0] + "/" + parts[1];
+    const name = selected || sourceRepo() || parts[0] + "/" + parts[1];
     if (name !== repo()) {
+      setSourceRepo(name);
       setRepo(name);
       const stored = await ctx.storage.get("githubDashboard:" + name, defaults);
       if (ctx.signal.aborted || repo() !== name) return;
@@ -83,6 +86,16 @@ export function mountGitHubDashboard(ctx: any) {
     } catch (error) { setMessage(String(error) + " · confira workflow_dispatch e token Actions: write"); }
     finally { setBusy(false); }
   };
+  const addRepository = () => {
+    const name = repoInput().trim().replace(/^https?:\\/\\/github\\.com\\//, "").replace(/\\/$/, "");
+    if (!/^[a-zA-Z0-9_.-]+\\/[a-zA-Z0-9_.-]+$/.test(name)) {
+      setMessage("Use proprietário/repositório.");
+      return;
+    }
+    save({ repositories: Array.from(new Set([...settings().repositories, name])) });
+    setRepoInput("");
+    void load(name);
+  };
   const reorder = (to: number) => {
     if (dragIndex === null || dragIndex === to) return;
     const next = [...settings().files];
@@ -118,6 +131,21 @@ export function mountGitHubDashboard(ctx: any) {
             </select>
             <button class={styles.button} disabled={busy()} onClick={() => void load()}>↻</button>
           </div>
+          <details><summary>Repositórios no Dock</summary>
+            <div class={styles.dashboardControls}>
+              <input aria-label="Adicionar repositório" placeholder="owner/repo" value={repoInput()}
+                onInput={e => setRepoInput(e.currentTarget.value)} />
+              <button class={styles.button} onClick={addRepository}>Adicionar</button>
+            </div>
+            <For each={settings().repositories}>{name =>
+              <button class={styles.workflowChoice} onClick={() => void load(name)}>{name}</button>
+            }</For>
+            {/* FIXME(GITHUB-CROSS-REPO): The repository list is currently stored
+                in each repository's settings. Move it into a global Dock store
+                so switching repos preserves the complete list, including
+                credential scope, permissions and per-repo settings.
+                Completion: test persistence and private repo access on Safari. */}
+          </details>
           <h4>Workflows favoritos</h4>
           <For each={settings().workflows}>{w => <div class={styles.dashboardItem}>
             <a href={"/" + repo() + "/actions/workflows/" + w.path.split("/").pop()}>{w.name}</a>
