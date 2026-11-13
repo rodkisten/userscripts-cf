@@ -27,6 +27,10 @@ const result = await build({
     import { saveDraft } from ${JSON.stringify(base + "search/actions.js")};
     import { mountView, disposeView } from ${JSON.stringify(base + "ui/solid-mount.tsx")};
     import { VideoControls } from ${JSON.stringify(base + "media/transport.tsx")};
+    import { QuickUI } from ${JSON.stringify(base + "ui/quick-actions.tsx")};
+    import { showRodxToast } from ${JSON.stringify(base + "ui/toast.tsx")};
+    export const quickSearch = (query) => QuickUI.search(query);
+    export { showRodxToast };
     export { startRodX, openPanel, blankDraft, renderRoot, validateRawWorkbench, parseQueryBlocks, saveDraft, disposeView };
     export const studio = () => Studio;
     export const deck = () => state;
@@ -197,6 +201,70 @@ test("Solid player reacts to native events, seeks and disposes listeners", async
     await pause();
     assert.ok(added > 0);
     assert.equal(removed, added);
+  } finally {
+    await host.happyDOM.abort();
+  }
+});
+
+test("quick search keeps validation reactive and toast preserves severity and disposal", async () => {
+  const { host, api, errors } = await fixture();
+  try {
+    let form, closeMenu;
+    host.RodMenu.open = (schema) => {
+      form = schema.fields.find((field) => field.name === "query").render();
+      host.document.body.append(form);
+      return {
+        result: new Promise((resolve) => {
+          closeMenu = resolve;
+        }),
+        close: () => closeMenu(),
+      };
+    };
+    api.quickSearch("#amor");
+    await pause();
+    const input = form.querySelector("textarea");
+    const submit = form.querySelector("button[type=submit]");
+    assert.equal(submit.disabled, false);
+    input.value = "";
+    input.dispatchEvent(new host.Event("input", { bubbles: true }));
+    await pause();
+    assert.equal(submit.disabled, true);
+    input.value = "#fé";
+    input.dispatchEvent(new host.Event("input", { bubbles: true }));
+    await pause();
+    assert.equal(submit.disabled, false);
+    assert.equal(form.querySelectorAll("style[data-rodx-quick-search]").length, 1);
+    const originalTimeout = host.setTimeout;
+    let expire;
+    host.setTimeout = (callback, delay, ...args) => {
+      if (delay === 2600) {
+        expire = callback;
+        return 123456;
+      }
+      return originalTimeout.call(host, callback, delay, ...args);
+    };
+    try {
+      api.showRodxToast("Falha <teste>", "error");
+      await pause();
+      const toast = host.document.getElementById("rodx-native-toast");
+      assert.equal(toast.shadowRoot.querySelector("[role=status]").textContent, "Falha <teste>");
+      assert.equal(toast.shadowRoot.querySelector("[role=status]").getAttribute("aria-live"), "assertive");
+      assert.ok(toast.shadowRoot.querySelector("style"));
+      api.showRodxToast("Sucesso", "success");
+      await pause();
+      assert.equal(host.document.getElementById("rodx-native-toast"), toast);
+      assert.equal(toast.shadowRoot.querySelector("[role=status]").textContent, "Sucesso");
+      assert.equal(toast.shadowRoot.querySelector("[role=status]").getAttribute("aria-live"), "polite");
+      expire();
+      assert.equal(host.document.getElementById("rodx-native-toast"), null);
+    } finally {
+      host.setTimeout = originalTimeout;
+    }
+    closeMenu();
+    await pause();
+    assert.equal(form.querySelector("textarea"), null, "closing the menu disposes its Solid roots");
+    form.remove();
+    assert.deepEqual(errors, []);
   } finally {
     await host.happyDOM.abort();
   }

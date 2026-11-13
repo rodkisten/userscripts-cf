@@ -632,12 +632,14 @@
   "ui/search-workbench.js:renderRoot": {
     "file": "ui/search-workbench.tsx",
     "name": "renderRoot",
-    "sha256": "4997e13028cdcf85b37c4a3ee8221c3fa576b9d02a0ef85f244c30de81e509fe"
+    "sha256": "9de46228d0ebdf8241f53daccb74b924b2d959667019bd16c8e8d49b1f51ecdd",
+    "reason": "CSS registered after Solid mount to preserve styles across rerenders (40724d1, 6eb1720)."
   },
   "ui/search-workbench.js:renderDock": {
     "file": "ui/search-workbench.tsx",
     "name": "renderDock",
-    "sha256": "73d17256dfe2266582d92020e6902dee25599e2fa91589364e6739712a33a76f"
+    "sha256": "15018cf67777abcee39315a83aa936965b603ca1a98b5d7fde6b80677b7f5422",
+    "reason": "CSS registered after Solid mount to preserve styles across rerenders (40724d1, 6eb1720)."
   },
   "ui/search-workbench.js:inspectNativeQuery": {
     "file": "ui/search-workbench.tsx",
@@ -897,12 +899,14 @@
   "ui/toast.js:rodxToastTimer": {
     "file": "ui/toast.tsx",
     "name": "rodxToastTimer",
-    "sha256": "ea310a01327bae01fce7c5c5938e960e73ec142d07e489ee92935b3a1791eeca"
+    "sha256": "2a4fdc78e8bbe70d31d00371e61fa5ef27489850edaedf03482a0738851e77b2",
+    "reason": "Toast timer resets to undefined for shared Shadow DOM lifecycle."
   },
   "ui/toast.js:showRodxToast": {
     "file": "ui/toast.tsx",
     "name": "showRodxToast",
-    "sha256": "a0d02747bafbee5d65a81357aa937f7ce455b1290e5a6fe3d03697ea6ca7d2eb"
+    "sha256": "3bda3bce0509fda68f869fd3ab71429b6c4bdebb9a879876761a131de85a1d93",
+    "reason": "Reactive toast preserves message, severity, timeout and disposal in Shadow DOM."
   },
   "ui/draggable-dock.js:DragDock": {
     "file": "ui/draggable-dock.tsx",
@@ -1097,7 +1101,8 @@
   "ui/quick-actions.js:QuickUI": {
     "file": "ui/quick-actions.tsx",
     "name": "QuickUI",
-    "sha256": "393e4c2a6b32f3d5a020336ce0ed0ca4e932d12a21eeacb5442cb4395e4dcd93"
+    "sha256": "b6fa20ece8c2fe0cb57aedc702a50041e1f0d8dc26f51e50ecaf15856c7e8a71",
+    "reason": "Quick search uses signals for suggestions, validation and selection; disposes nested mounts."
   },
   "lists/render.js:APP": {
     "file": "lists/render.tsx",

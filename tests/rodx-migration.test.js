@@ -51,6 +51,7 @@ async function declarations(file) {
 test("migration retains 462 declarations and audits extracted CSS and selectors", async () => {
   assert.equal(baseline.source.sha256, "92636bd94605a3a45de279808ca198004556b44cbac965f63bd8e0f98af0f908");
   assert.equal(baseline.audit.length, 462);
+  const mismatches = [];
   for (const originalRecord of baseline.audit) {
     const migrated = solidRefactor[originalRecord.file + ":" + originalRecord.name];
     const record = { ...originalRecord, file: migrated.file, name: migrated.name };
@@ -85,12 +86,11 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
       if (record.kind === "class") node = { ...node, type: "ClassDeclaration" };
     }
     assert.ok(node, `${record.file}: ${record.name}`);
-    assert.equal(
-      hash(node),
-      migrated.sha256,
-      `${record.file}: ${record.name} changed from source line ${record.sourceLine}`,
-    );
+    const actual = hash(node);
+    if (actual !== migrated.sha256)
+      mismatches.push({ file: record.file, name: record.name, actual, expected: migrated.sha256 });
   }
+  assert.deepEqual(mismatches, [], "Migration audit must match every reviewed declaration");
 });
 
 test("three bootstrap sequences preserve original initialization order", async () => {
