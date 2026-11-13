@@ -250,21 +250,51 @@ export function mountGitHubDashboard(ctx: any) {
   return { toggleFile, load };
 }
 
+type CommitInfo = { sha: string; message: string; author: string };
+const COMMIT_TTL_MS = 5 * 60 * 1000;
+const COMMIT_CACHE_MAX = 300;
+const commitCache = new Map<string, { expires: number; value: CommitInfo | null }>();
+const commitPending = new Map<string, Promise<CommitInfo | null>>();
+let commitActive = 0;
+const commitQueue: Array<() => void> = [];
+async function withCommitSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (commitActive >= 3) await new Promise<void>(resolve => commitQueue.push(resolve));
+  commitActive++;
+  try { return await work(); }
+  finally { commitActive--; commitQueue.shift()?.(); }
+}
+async function fetchLatestCommit(props: { ctx: any; owner: string; repo: string; path: string }): Promise<CommitInfo | null> {
+  const key = props.owner + "/" + props.repo + "/" + props.path;
+  const cached = commitCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  const existing = commitPending.get(key);
+  if (existing) return existing;
+  const task = withCommitSlot(async () => {
+    const token = await props.ctx.storage.get("actionsToken", "");
+    const url = "https://api.github.com/repos/" + encodeURIComponent(props.owner) + "/" +
+      encodeURIComponent(props.repo) + "/commits?per_page=1&path=" + encodeURIComponent(props.path);
+    const response = await fetch(url, { signal: props.ctx.signal, credentials: "omit",
+      headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: "Bearer " + token } : {}) } });
+    if (!response.ok) throw Error("HTTP " + response.status);
+    const entries = await response.json();
+    const entry = entries[0];
+    const value: CommitInfo | null = entry ? { sha: entry.sha, message: entry.commit.message.split("\\n")[0],
+      author: entry.commit.author?.name || entry.author?.login || "" } : null;
+    commitCache.delete(key);
+    commitCache.set(key, { expires: Date.now() + COMMIT_TTL_MS, value });
+    if (commitCache.size > COMMIT_CACHE_MAX) commitCache.delete(commitCache.keys().next().value!);
+    return value;
+  });
+  commitPending.set(key, task);
+  try { return await task; } finally { commitPending.delete(key); }
+}
 export function FileCommit(props: { ctx: any; owner: string; repo: string; path: string; href: string }) {
   const [commit, setCommit] = createSignal<{ sha: string; message: string; author: string } | null>(null);
   const [error, setError] = createSignal("");
   void (async () => {
     try {
-      const token = await props.ctx.storage.get("actionsToken", "");
-      const url = "https://api.github.com/repos/" + encodeURIComponent(props.owner) + "/" +
-        encodeURIComponent(props.repo) + "/commits?per_page=1&path=" + encodeURIComponent(props.path);
-      const response = await fetch(url, { signal: props.ctx.signal, credentials: "omit",
-        headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: "Bearer " + token } : {}) } });
-      if (!response.ok) throw Error("HTTP " + response.status);
-      const entries = await response.json();
-      const entry = entries[0];
-      if (entry) setCommit({ sha: entry.sha, message: entry.commit.message.split("\n")[0],
-        author: entry.commit.author?.name || entry.author?.login || "" });
+      const entry = await fetchLatestCommit(props);
+      if (entry) setCommit(entry);
     } catch (e) { if (!props.ctx.signal.aborted) setError(String(e)); }
   })();
   return <Show when={commit()} fallback={<span title={error()} />}>{entry =>
