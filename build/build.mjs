@@ -149,9 +149,25 @@ for (const target of targets) {
     });
     const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
     const result = output.find((entry) => entry.type === "chunk");
-    if (!result?.map) throw new Error("Standalone minification did not produce a sourcemap");
+    if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
+    // Vite/Rolldown emits external sourcemaps as separate assets, not
+    // necessarily as chunk.map on the generated JavaScript chunk.
+    const mapAsset = output.find((entry) =>
+      entry.type === "asset" && entry.fileName?.endsWith(".map"),
+    );
+    const rawMap = result.map ?? mapAsset?.source;
+    if (!rawMap) {
+      throw new Error(
+        "Standalone sourcemap missing. Output: " +
+          output.map((entry) => entry.type + ":" + entry.fileName).join(", "),
+      );
+    }
     const mapFile = file + ".map";
-    const map = typeof result.map === "string" ? JSON.parse(result.map) : result.map;
+    const map = typeof rawMap === "string"
+      ? JSON.parse(rawMap)
+      : rawMap instanceof Uint8Array
+        ? JSON.parse(new TextDecoder().decode(rawMap))
+        : rawMap;
     map.file = file;
     await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
     source = `${metadata}\n\n${result.code.split("\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\n")}\n//# sourceMappingURL=${mapFile}\n`;
