@@ -2,7 +2,9 @@ const RELAY_URL = "https://xtelegram-cf.migos.club/notifications/send";
 
 function statusFrom(payload) {
   const event = payload?.data ?? payload?.event ?? payload;
-  const raw = String(event?.status ?? event?.build_status ?? event?.outcome ?? event?.result ?? "unknown").toLowerCase();
+  const raw = String(
+    event?.status ?? event?.build_status ?? event?.outcome ?? event?.result ?? "unknown",
+  ).toLowerCase();
   const ok = ["success", "successful", "succeeded", "completed", "passed"].includes(raw);
   const failed = ["failed", "failure", "error", "errored", "canceled", "cancelled"].includes(raw);
   if (!ok && !failed) return null;
@@ -32,7 +34,8 @@ function statusFrom(payload) {
 function authorized(request, env) {
   const secret = env.CLOUDFLARE_NOTIFY_WEBHOOK_SECRET;
   if (!secret || secret.length < 24) return false;
-  const provided = request.headers.get("x-webhook-secret") ||
+  const provided =
+    request.headers.get("x-webhook-secret") ||
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   return provided === secret;
 }

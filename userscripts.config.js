@@ -1,11 +1,36 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "github-tools",
+    name: "GitHub Native File Tools — Copiar tudo + Ordenar",
+    namespace: "https://rod.migos.club/userscripts",
+    unified: false,
+    world: "sandbox",
+    entry: "src/userscripts/github-tools/index.tsx",
+    matches: ["https://github.com/*"],
+    grants: [
+      "GM_getValue",
+      "GM_setValue",
+      "GM_setClipboard",
+      "GM_xmlhttpRequest",
+      "GM.xmlHttpRequest",
+      "GM_registerMenuCommand",
+      "GM_unregisterMenuCommand",
+    ],
+    connect: [
+      "github.com",
+      "api.github.com",
+      "raw.githubusercontent.com",
+      "media.githubusercontent.com",
+      "objects.githubusercontent.com",
+    ],
+  },
+  {
     id: "instagram-saved",
     name: "Instagram salvos → XTelegram",
     unified: false,
     world: "sandbox",
-    entry: "src/userscripts/instagram-saved/index.ts",
+    entry: "src/userscripts/instagram-saved/index.tsx",
     matches: ["https://www.instagram.com/*"],
     exclude: [],
     grants: [
@@ -89,14 +114,25 @@ export default [
     ],
     connect: ["*"],
   },
-    {
+  {
     id: "gonewild",
     unified: false,
-    name: "GoneWildStudio",
-    namespace: "https://rod.migos.club/gonewild",
+    name: "GoneWildStudio · Reddit Audio & Tags",
+    namespace: "https://local.gonewildstudio/",
     world: "sandbox",
-    entry: "src/userscripts/gonewild/index.js",
-    matches: ["http://*/*", "https://*/*"],
+    entry: "src/userscripts/gonewild/index.tsx",
+    matches: [
+      "https://www.reddit.com/*",
+      "https://reddit.com/*",
+      "https://new.reddit.com/*",
+      "https://old.reddit.com/*",
+      "https://soundgasm.net/*",
+      "https://www.soundgasm.net/*",
+      "https://audiochan.com/*",
+      "https://www.audiochan.com/*",
+      "https://audiochan.net/*",
+      "https://www.audiochan.net/*",
+    ],
     exclude: [],
     grants: [
       "unsafeWindow",

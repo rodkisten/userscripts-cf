@@ -1,0 +1,16 @@
+.launcher {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  z-index: 2147483000;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #525252;
+  background: #262626;
+  color: white;
+  font-size: 18px;
+}
+.launcher[hidden] {
+  display: none;
+}

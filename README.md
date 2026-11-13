@@ -2,9 +2,13 @@
 
 Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separados e um instalável unificado com roteamento por URL.
 
+## Scripts Reddit, GitHub e Instagram
+
+[Recursos e configuração](docs/integrated-userscripts.md): Reddit/Soundgasm, ferramentas do GitHub com cópia integral dos logs por step e sincronização de coleções do Instagram para o Relay. As UIs usam Solid 2 e CSS Modules. O build mantém o código legível e remove comentários de implementação, preservando o cabeçalho do userscript e os comentários nos fontes.
+
 ## Como desenvolver
 
-Node.js 22.12+ e npm:
+Node.js 22.18+ e npm:
 
 ```sh
 npm ci
@@ -58,11 +62,11 @@ Use `?inline` no CSS e `ctx.style(css)` para inserir e remover estilos junto com
 
 ## Saídas do build
 
-| Arquivo                | Uso                                                                   |
-| ---------------------- | --------------------------------------------------------------------- |
-| `dist/unified.user.js` | Instale apenas este para usar todos os módulos nas URLs configuradas. |
-| `dist/<id>.user.js`    | Instale um script específico, como alternativa ao unificado.          |
-| `dist/manifest.json`   | Lista dos instaláveis, regras de URL e SHA-256 dos arquivos gerados.  |
+| Arquivo                | Uso                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `dist/unified.user.js` | Inclui os módulos habilitados no unificado; scripts com `unified: false` são instalados separadamente. |
+| `dist/<id>.user.js`    | Instale um script específico, como alternativa ao unificado.                                           |
+| `dist/manifest.json`   | Lista dos instaláveis, regras de URL e SHA-256 dos arquivos gerados.                                   |
 
 O unificado contém os módulos configurados com `unified !== false` e ativa somente os que correspondem à URL. Não instale simultaneamente o unificado e uma saída individual para o mesmo módulo. Os instaláveis do RodX preservam o nome e namespace do original para atualizar a instalação existente. Outros userscripts têm armazenamento GM próprio; namespaces internos de chaves não permitem ler dados de outra instalação automaticamente.
 

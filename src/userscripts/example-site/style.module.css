@@ -10,5 +10,7 @@
   border-radius: var(--rodx-ds-radius-12);
   color: var(--rodx-ds-color-white);
   background: #171717;
-  font: var(--rodx-ds-text-14)/1.4 system-ui, sans-serif;
+  font:
+    var(--rodx-ds-text-14)/1.4 system-ui,
+    sans-serif;
 }

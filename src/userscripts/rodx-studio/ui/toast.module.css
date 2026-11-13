@@ -9,9 +9,13 @@
   border-radius: 12px;
   background: #202327;
   color: #fff;
-  font: 500 14px/1.45 system-ui, sans-serif;
+  font:
+    500 14px/1.45 system-ui,
+    sans-serif;
   box-shadow: 0 8px 30px #0006;
   pointer-events: none;
   overflow-wrap: anywhere;
 }
-.error { background: #b4232c; }
+.error {
+  background: #b4232c;
+}

@@ -1,5 +1,6 @@
+import { render } from "@solidjs/web";
+import { ActionsLauncher } from "./Launcher.tsx";
 import { mountActionsPanel, type ActionsModule } from "./Panel.tsx";
-import styles from "./actions.css?inline";
 
 export type RodActionsTab = ActionsModule["tabs"][number];
 export type RodActionsModule = ActionsModule;
@@ -22,25 +23,17 @@ export function installRodActions(menu: {
 
   const modules = new Map<string, RodActionsModule>();
   const listeners = new Set<() => void>();
-  const entries = () => [...modules.values()].flatMap((module) =>
-    module.tabs.map((tab) => ({
-      ...tab,
-      key: `${module.id}:${tab.id}`,
-      label: `${module.title} · ${tab.title}`,
-    })),
-  );
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = "⚙";
-  button.setAttribute("aria-label", "Abrir Rod Actions");
-  button.title = "Rod Actions";
-  button.style.cssText = "position:fixed;right:max(12px,env(safe-area-inset-right));" +
-    "bottom:calc(78px + env(safe-area-inset-bottom));z-index:2147483000;" +
-    "width:36px;height:36px;border-radius:50%;border:1px solid #525252;" +
-    "background:#262626;color:white;font-size:18px;display:none";
-
+  const entries = () =>
+    [...modules.values()].flatMap((module) =>
+      module.tabs.map((tab) => ({
+        ...tab,
+        key: `${module.id}:${tab.id}`,
+        label: `${module.title} · ${tab.title}`,
+      })),
+    );
+  const launcher = document.createElement("div");
+  launcher.dataset.rodActionsLauncher = "";
   const notify = () => {
-    button.style.display = modules.size ? "block" : "none";
     for (const listener of listeners) listener();
   };
   const hub: RodActionsHub = {
@@ -59,9 +52,6 @@ export function installRodActions(menu: {
       const tabs = entries();
       if (!tabs.length) return;
       const root = document.createElement("div");
-      const style = document.createElement("style");
-      style.textContent = styles;
-      root.append(style);
       const content = document.createElement("div");
       root.append(content);
       const dispose = mountActionsPanel(
@@ -84,8 +74,19 @@ export function installRodActions(menu: {
       void handle.result.finally(dispose);
     },
   };
-  button.addEventListener("click", () => hub.open());
-  document.documentElement.append(button);
+  document.documentElement.append(launcher);
+  render(
+    () =>
+      ActionsLauncher({
+        open: () => hub.open(),
+        subscribe: (listener) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        count: () => modules.size,
+      }),
+    launcher,
+  );
   window.__RodActions = hub;
   return hub;
 }

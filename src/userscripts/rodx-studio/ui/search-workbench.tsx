@@ -1978,8 +1978,10 @@ function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") 
   ensureShadowStyles(root, [
     ["search-deck.module", CSS],
     ["search-custom.module", CUSTOM_CSS],
-    [variant === "workspace" ? "workspace-overrides" : "dock-overrides",
-      variant === "workspace" ? workbenchOverrides2 : workbenchOverrides1],
+    [
+      variant === "workspace" ? "workspace-overrides" : "dock-overrides",
+      variant === "workspace" ? workbenchOverrides2 : workbenchOverrides1,
+    ],
   ]);
 }
 

@@ -8,9 +8,33 @@ export function ToastViewport() {
     <div class={styles.viewport} aria-label="Notificações">
       <For each={toastState.items}>
         {(item) => (
-          <section class={styles.toast} data-kind={item.kind} role={item.kind === "error" ? "alert" : "status"}>
-            <div class={styles.message}><span>{item.message}</span><Show when={item.progress !== undefined}><progress max="100" value={item.progress} aria-label="Progresso" /></Show><Show when={item.detail !== undefined}><details><summary>Detalhes</summary><pre>{typeof item.detail === "string" ? item.detail : JSON.stringify(item.detail, null, 2)}</pre></details></Show></div>
-            <button class={styles.dismiss} type="button" aria-label="Dispensar" onClick={() => toastActions.dismiss(item.id)}>×</button>
+          <section
+            class={styles.toast}
+            data-kind={item.kind}
+            role={item.kind === "error" ? "alert" : "status"}
+          >
+            <div class={styles.message}>
+              <span>{item.message}</span>
+              <Show when={item.progress !== undefined}>
+                <progress max="100" value={item.progress} aria-label="Progresso" />
+              </Show>
+              <Show when={item.detail !== undefined}>
+                <details>
+                  <summary>Detalhes</summary>
+                  <pre>
+                    {typeof item.detail === "string" ? item.detail : JSON.stringify(item.detail, null, 2)}
+                  </pre>
+                </details>
+              </Show>
+            </div>
+            <button
+              class={styles.dismiss}
+              type="button"
+              aria-label="Dispensar"
+              onClick={() => toastActions.dismiss(item.id)}
+            >
+              ×
+            </button>
           </section>
         )}
       </For>
@@ -22,9 +46,14 @@ let disposeRoot: (() => void) | undefined;
 export function mountToastViewport(target?: HTMLElement | ShadowRoot) {
   if (!disposeRoot) {
     const dispose = mountSolidShadow(() => <ToastViewport />, {
-      target, styles: [css], id: "toasts",
+      target,
+      styles: [css],
+      id: "toasts",
     });
-    disposeRoot = () => { dispose(); disposeRoot = undefined; };
+    disposeRoot = () => {
+      dispose();
+      disposeRoot = undefined;
+    };
   }
   return () => disposeRoot?.();
 }

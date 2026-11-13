@@ -1,7 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Window } from "happy-dom";
-import { createRuntime } from "../src/core/runtime.js";
+import { build } from "vite";
+const fixture = await build({
+  configFile: new URL("../vite.config.js", import.meta.url).pathname,
+  logLevel: "silent",
+  build: {
+    write: false,
+    lib: {
+      entry: new URL("../src/core/runtime.js", import.meta.url).pathname,
+      name: "RuntimeFixture",
+      formats: ["iife"],
+    },
+  },
+});
+const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
+  .flatMap((result) => result.output)
+  .find((chunk) => chunk.type === "chunk").code;
+function createRuntime(definitions, bridge, host) {
+  host.happyDOM.settings.enableJavaScriptEvaluation = true;
+  host.happyDOM.settings.suppressInsecureJavaScriptEnvironmentWarning = true;
+  host.eval(runtimeCode);
+  return host.RuntimeFixture.createRuntime(definitions, bridge, host);
+}
 import { matchURL } from "../src/core/match.js";
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
@@ -86,7 +107,7 @@ test("navigation during asynchronous initialization cleans the stale instance", 
   await settling;
   assert.equal(starts, 1);
   assert.equal(stops, 1);
-  assert.deepEqual(app.active, []);
+  assert.deepEqual([...app.active], []);
   await app.dispose();
   await host.happyDOM.abort();
 });

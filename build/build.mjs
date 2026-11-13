@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
+import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
 import { matchURL } from "../src/core/match.js";
@@ -100,7 +101,10 @@ for (const target of targets) {
     ),
     "// ==/UserScript==",
   ].join("\n");
-  const body = await format(installers.join("\n\n"), { parser: "babel", printWidth: 110 });
+  const body = await format(stripBuildComments(installers.join("\n\n")), {
+    parser: "babel",
+    printWidth: 110,
+  });
   const file = `${target.id}.user.js`;
   const source = `${metadata}\n\n${body}`;
   await fs.writeFile(path.join(out, file), source);

@@ -1,18 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import ts from "typescript";
+import { parse } from "@babel/parser";
 
 const fix = process.argv.includes("--fix");
-const targets = [
-  "src/userscripts/instagram-saved/index.ts",
-  "src/userscripts/instagram-saved/core.ts",
-];
+const targets = ["src/userscripts/instagram-saved/index.tsx", "src/userscripts/instagram-saved/core.ts"];
 let errors = 0;
 
 for (const filename of targets) {
   const absolute = path.resolve(filename);
   let content = await fs.readFile(absolute, "utf8");
-  const source = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  // TypeScript 7 no longer ships the old compiler API. Babel parses both TS
+  // and TSX here; type checking remains the responsibility of `tsc`.
+  const source = parse(content, { sourceType: "module", plugins: ["typescript", "jsx"] });
   const edits = [];
 
   function add(start, end, replacement, message) {
@@ -20,39 +19,57 @@ for (const filename of targets) {
   }
 
   function braces(body, label) {
-    if (body && !ts.isBlock(body)) {
-      add(body.getStart(source), body.getEnd(), `{\n${body.getText(source)}\n}`, `${label} requires braces`);
+    if (body && body.type !== "BlockStatement") {
+      add(body.start, body.end, `{\n${content.slice(body.start, body.end)}\n}`, `${label} requires braces`);
     }
   }
 
-  function visit(node) {
-    if (ts.isIfStatement(node)) {
-      braces(node.thenStatement, "if");
-      if (node.elseStatement && !ts.isIfStatement(node.elseStatement)) {
-        braces(node.elseStatement, "else");
+  function visit(node, parent) {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "IfStatement") {
+      braces(node.consequent, "if");
+      if (node.alternate && node.alternate.type !== "IfStatement") {
+        braces(node.alternate, "else");
       }
-    } else if (ts.isForStatement(node) || ts.isForInStatement(node) || ts.isForOfStatement(node) ||
-      ts.isWhileStatement(node) || ts.isDoStatement(node)) {
-      braces(node.statement, ts.SyntaxKind[node.kind]);
+    } else if (
+      ["ForStatement", "ForInStatement", "ForOfStatement", "WhileStatement", "DoWhileStatement"].includes(
+        node.type,
+      )
+    ) {
+      braces(node.body, node.type);
     }
 
-    const multiline = source.getLineAndCharacterOfPosition(node.getStart(source)).line <
-      source.getLineAndCharacterOfPosition(node.getEnd()).line;
-    const declaration = ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node) ||
-      ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node);
-    const control = ts.isIfStatement(node) || ts.isForStatement(node) || ts.isForInStatement(node) ||
-      ts.isForOfStatement(node) || ts.isWhileStatement(node) || ts.isDoStatement(node) ||
-      ts.isSwitchStatement(node) || ts.isTryStatement(node);
+    const multiline = node.loc?.start.line < node.loc?.end.line;
+    const declaration = [
+      "TSTypeAliasDeclaration",
+      "TSInterfaceDeclaration",
+      "FunctionDeclaration",
+      "ClassDeclaration",
+    ].includes(node.type);
+    const control = [
+      "IfStatement",
+      "ForStatement",
+      "ForInStatement",
+      "ForOfStatement",
+      "WhileStatement",
+      "DoWhileStatement",
+      "SwitchStatement",
+      "TryStatement",
+    ].includes(node.type);
 
-    if (multiline && (declaration || control) && node.parent && ts.isSourceFile(node.parent)) {
-      const end = node.getEnd();
+    if (multiline && (declaration || control) && parent?.type === "Program") {
+      const end = node.end;
       const remaining = content.slice(end);
       if (/^\r?\n[^\r\n\s]/.test(remaining) || /^\r?\n[ \t]+\S/.test(remaining)) {
         add(end, end, "\n", "blank line required after multiline declaration or control block");
       }
     }
 
-    ts.forEachChild(node, visit);
+    for (const [key, value] of Object.entries(node)) {
+      if (["loc", "start", "end", "comments"].includes(key)) continue;
+      if (Array.isArray(value)) value.forEach((child) => visit(child, node));
+      else if (value?.type) visit(value, node);
+    }
   }
 
   visit(source);

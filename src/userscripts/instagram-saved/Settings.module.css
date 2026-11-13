@@ -1,0 +1,54 @@
+.panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  min-width: 0;
+  color: inherit;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.panel label {
+  display: grid;
+  gap: 6px;
+}
+.panel input:not([type="checkbox"]) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background: #202124;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+}
+.panel .toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.panel button {
+  padding: 10px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background: #303134;
+  color: inherit;
+  font: inherit;
+}
+.panel p {
+  margin: 0;
+  line-height: 1.5;
+}
+.bookmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 8px;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
