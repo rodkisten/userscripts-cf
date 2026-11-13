@@ -61,6 +61,23 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
       : module));
   };
   document.addEventListener("rod-dock:menu", onMenu);
+  // Multiple registries may publish the same visible module under different IDs.
+  // Merge them at presentation time while preserving every distinct action.
+  const visibleModules = () => {
+    const grouped = new Map<string, DockModule>();
+    for (const module of entries()) {
+      const key = module.name.trim().toLocaleLowerCase();
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, { ...module, actions: [...module.actions] });
+        continue;
+      }
+      const actions = new Map(existing.actions.map(action => [action.label.trim().toLocaleLowerCase(), action]));
+      for (const action of module.actions) actions.set(action.label.trim().toLocaleLowerCase(), action);
+      grouped.set(key, { ...existing, actions: [...actions.values()] });
+    }
+    return [...grouped.values()];
+  };
   const DockView = () => (
     <>
       <style>{style}</style>
@@ -88,7 +105,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
         <section class="panel" role="dialog" aria-label="Rod Dock">
           <header class="header"><span>Rod Dock</span><button class="close" aria-label="Fechar Rod Dock" onClick={() => setOpen(false)}>×</button></header>
           <div class="content">
-            <For each={entries()}>{(module) => (
+            <For each={visibleModules()}>{(module) => (
               <section class="module">
                 <button class="module-title" aria-expanded={expanded() === module.id}
                   onClick={() => setExpanded(expanded() === module.id ? null : module.id)}>
