@@ -109,27 +109,22 @@ export function runtimeHelpers() {
         // Rewrite GM references as well as calls, including optional chaining and aliases.
         // Avoid declarations, property keys and shorthand object members.
         if (contextName && !shadowed.has(contextName) && !blocked && !keep(node)) {
-          if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) &&
-              node.expression.text === "GM" && !shadowed.has("GM")) {
-            edits.push({
-              start: node.getStart(source),
-              end: node.end,
-              value: contextName + ".gm.modern." + node.name.text,
-            });
-          } else if (ts.isIdentifier(node) && /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(node.text) &&
-              !shadowed.has(node.text)) {
+          if (ts.isIdentifier(node) && !shadowed.has(node.text) &&
+              (node.text === "GM" || /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(node.text))) {
             const parent = node.parent;
-            const declaration = (ts.isVariableDeclaration(parent) || ts.isParameter(parent) ||
-              ts.isFunctionDeclaration(parent) || ts.isImportSpecifier(parent) ||
-              ts.isPropertyAssignment(parent) || ts.isPropertyAccessExpression(parent) ||
-              ts.isMethodDeclaration(parent) || ts.isPropertyDeclaration(parent)) && parent.name === node;
-            const propertyName = ts.isPropertyAccessExpression(parent) && parent.name === node;
-            const shorthand = ts.isShorthandPropertyAssignment(parent);
-            if (!declaration && !propertyName && !shorthand) {
+            const isName = (ts.isVariableDeclaration(parent) || ts.isParameter(parent) ||
+              ts.isFunctionDeclaration(parent) || ts.isClassDeclaration(parent) ||
+              ts.isImportSpecifier(parent) || ts.isPropertyAssignment(parent) ||
+              ts.isPropertyAccessExpression(parent) || ts.isMethodDeclaration(parent) ||
+              ts.isPropertyDeclaration(parent) || ts.isBindingElement(parent)) && parent.name === node;
+            const isShorthand = ts.isShorthandPropertyAssignment(parent);
+            const isDeclaration = ts.isImportClause(parent) || ts.isNamespaceImport(parent);
+            if (!isName && !isShorthand && !isDeclaration) {
               edits.push({
                 start: node.getStart(source),
                 end: node.end,
-                value: contextName + ".gm.legacy." + node.text.slice(3),
+                value: node.text === "GM" ? contextName + ".gm.modern" :
+                  contextName + ".gm.legacy." + node.text.slice(3),
               });
             }
           }
