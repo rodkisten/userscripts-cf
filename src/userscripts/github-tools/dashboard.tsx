@@ -124,6 +124,14 @@ export function mountGitHubDashboard(ctx: any) {
             <button class={styles.button} onClick={() => void dispatch(w)}>▶</button>
             <button class={styles.button} aria-label="Remover favorito" onClick={() => toggleWorkflow(w)}>★</button>
           </div>}</For>
+          <details><summary>Reordenar arquivos no celular</summary>
+            <For each={settings().files}>{(file, i) => <div class={styles.dashboardItem}>
+              <span>{file.name}</span>
+              <button class={styles.button} disabled={i() === 0} onClick={() => { dragIndex = i(); reorder(i() - 1); }} aria-label={"Subir " + file.name}>↑</button>
+              <button class={styles.button} disabled={i() === settings().files.length - 1} onClick={() => { dragIndex = i(); reorder(i() + 1); }} aria-label={"Descer " + file.name}>↓</button>
+              <button class={styles.button} onClick={() => toggleFile(file.name, file.url)} aria-label={"Remover " + file.name}>✕</button>
+            </div>}</For>
+          </details>
           <details><summary>Adicionar workflows</summary>
             <For each={workflows()}>{w => <button class={styles.workflowChoice}
               onClick={() => toggleWorkflow(w)}>{settings().workflows.some(f => f.id === w.id) ? "★" : "☆"} {w.name}</button>}</For>
