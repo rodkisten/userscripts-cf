@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test:
@@ -19,6 +19,22 @@ jobs:
           cache: npm
       # Regenerate the dependency graph while the Vitest migration lockfile is pending.
       - run: npm install --package-lock-only --ignore-scripts
+      # One-time migration: regenerate the npm lockfile on the PR branch.
+      # Never push from forked PRs or modify main.
+      - name: "🔧 Finalizar migração Vitest e atualizar lockfile"
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'test/migrate-to-vitest'
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+        run: |
+          node build/migrate-vitest.mjs
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --quiet -- package-lock.json tests/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json tests/
+            git commit -m "test: migrate test imports and lock Vitest dependencies"
+            git push origin "HEAD:refs/heads/$PR_BRANCH"
+          fi
       - run: npm ci
       - run: node build/migrate-vitest.mjs
      # - run: npm run format:check
