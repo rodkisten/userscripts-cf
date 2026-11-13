@@ -98,7 +98,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   // jPlayer hydration and SPA navigation before removing this safeguard.
   const revealIfReady = () => {
     const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name, [role=alert]");
-    native(!failed && !rendered);
+    native(failed || !rendered);
   };
   revealIfReady();
   queueMicrotask(revealIfReady);
