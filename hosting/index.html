@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090b"><title>Userscripts CF · Instale seus scripts</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:#09090b;color:#fafafa}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 70% 30% at 50% -5%,#4338ca44,transparent),#09090b}a{color:inherit;text-decoration:none}button,input{font:inherit}main{max-width:1080px;margin:auto;padding:30px 22px 100px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{font-weight:750;letter-spacing:-.04em;font-size:20px}.brand span{color:#a78bfa}.tag{font-size:12px;border:1px solid #3f3f46;padding:7px 11px;border-radius:999px;color:#a1a1aa}.hero{text-align:center;padding:95px 0 55px}.eyebrow{display:inline-flex;border:1px solid #6d28d955;border-radius:999px;background:#6d28d91a;padding:8px 14px;color:#c4b5fd;font-size:12px;font-weight:600}.hero h1{font-size:clamp(38px,7vw,72px);letter-spacing:-.07em;line-height:1.05;margin:25px 0 18px}.hero h1 em{font-style:normal;background:linear-gradient(110deg,#c4b5fd,#60a5fa);background-clip:text;color:transparent}.hero p{color:#a1a1aa;max-width:530px;margin:0 auto;font-size:16px;line-height:1.7}.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:35px 0 20px;flex-wrap:wrap}.toolbar h2{font-size:19px;letter-spacing:-.04em;margin:0}.search{background:#18181b;border:1px solid #3f3f46;border-radius:10px;color:white;padding:12px 15px;min-width:min(100%,300px);outline:none}.search:focus{border-color:#a78bfa;box-shadow:0 0 0 3px #a78bfa22}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:16px}.card{display:flex;flex-direction:column;gap:14px;background:linear-gradient(145deg,#18181b,#111114);border:1px solid #303036;border-radius:17px;padding:22px;min-height:225px;transition:border-color .2s,transform .2s}.card:hover{border-color:#7c3aed;transform:translateY(-2px)}.card-head{display:flex;align-items:center;justify-content:space-between}.icon{width:49px;height:49px;border-radius:12px;background:#27272a;object-fit:cover}.small{color:#71717a;font-size:11px}.card h3{font-size:16px;line-height:1.3;letter-spacing:-.025em;margin:0;overflow-wrap:anywhere}.card p{color:#a1a1aa;font-size:12px;line-height:1.5;margin:0;flex:1}.actions{display:flex;gap:8px}.install{display:inline-flex;justify-content:center;align-items:center;flex:1;border-radius:9px;background:#fafafa;color:#18181b;padding:11px;font-size:12px;font-weight:700}.install:hover{background:#ddd6fe}.secondary{border:1px solid #3f3f46;border-radius:9px;padding:11px;font-size:12px;color:#d4d4d8}.featured{border-color:#7c3aed80;background:linear-gradient(135deg,#312e813d,#18181b 70%)}.empty{color:#a1a1aa;text-align:center;padding:55px}.footer{margin-top:55px;border-top:1px solid #27272a;padding-top:25px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;color:#71717a;font-size:12px}.footer a:hover{color:white}@media(max-width:550px){main{padding:22px 16px 80px}.hero{padding:72px 0 40px}.toolbar{align-items:stretch}.search{width:100%}}
+</style>
+</head>
+<body><main>
+<header class="top"><a class="brand" href="/">✳ Userscripts<span>CF</span></a><span class="tag" id="version">Catálogo</span></header>
+<section class="hero"><span class="eyebrow">✦ Seus scripts, em um só lugar</span><h1>Seu navegador.<br><em>Do seu jeito.</em></h1><p>Ferramentas para deixar a web mais prática. Explore, instale e mantenha seus userscripts atualizados automaticamente.</p></section>
+<section aria-label="Catálogo"><div class="toolbar"><h2 id="count">Userscripts disponíveis</h2><input class="search" type="search" id="search" placeholder="⌕ Buscar userscripts..." aria-label="Buscar userscripts"></div><div id="grid" class="grid" aria-live="polite"><div class="empty">Carregando catálogo…</div></div></section>
+<footer class="footer"><span>✳ Userscripts CF · Feito para uma web melhor</span><a href="/manifest.json">Manifest JSON ↗</a></footer>
+</main>
+<script type="module">
+const grid=document.querySelector("#grid"),search=document.querySelector("#search"),count=document.querySelector("#count");
+let scripts=[];
+const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function render(){
+ const q=search.value.trim().toLocaleLowerCase("pt-BR");
+ const filtered=scripts.filter(s=>(s.name+" "+s.id+" "+(s.description||"")).toLocaleLowerCase("pt-BR").includes(q));
+ count.textContent=filtered.length+" userscript"+(filtered.length===1?"":"s")+" disponível"+(filtered.length===1?"":"is");
+ grid.innerHTML=filtered.length?filtered.map(s=>{
+ const id=encodeURIComponent(s.id),name=escape(s.name),description=escape(s.description||"Instalação com atualização automática via Tampermonkey.");
+ const file=encodeURIComponent(s.file),meta=encodeURIComponent(s.metaFile);
+ return '<article class="card '+(s.id==="standalone"?"featured":"")+'"><div class="card-head"><img class="icon" src="/icons/'+id+'.svg" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="small">'+escape(s.id==="standalone"?"Tudo em um":s.id)+"</span></div><h3>"+name+"</h3><p>"+description+'</p><div class="actions"><a class="install" href="/'+file+'">↓ Instalar</a><a class="secondary" href="/'+meta+'" title="Metadados">↗</a></div></article>';
+ }).join(""):'<div class="empty">Nenhum userscript encontrado.</div>';
+}
+search.addEventListener("input",render);
+try{
+ const response=await fetch("/manifest.json",{cache:"no-store"});
+ if(!response.ok)throw Error("HTTP "+response.status);
+ const manifest=await response.json();
+ scripts=manifest.scripts||[];
+ document.querySelector("#version").textContent="v"+manifest.version;
+ render();
+}catch(error){grid.innerHTML='<div class="empty">Não foi possível carregar o catálogo. <button onclick="location.reload()">Tentar novamente</button></div>';}
+</script></body></html>
