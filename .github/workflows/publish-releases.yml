@@ -1,0 +1,61 @@
+name: "📦 Userscripts · GitHub Releases"
+run-name: "🚀 Release · ${{ github.ref_name }} · ${{ github.event_name }}"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: userscripts-release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: "🧪 Validar e publicar artefatos"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: "🟢 Node.js 22"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: "🔎 Conferir versão e release existente"
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Release $TAG já existe. Atualize a versão para publicar novos arquivos." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: "📦 Instalar dependências"
+        if: steps.version.outputs.publish == 'true'
+        run: npm ci
+      - name: "🧪 Typecheck, build e testes"
+        if: steps.version.outputs.publish == 'true'
+        run: npm test
+      - name: "🚀 Publicar todos os userscripts"
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: npm run release
+      - name: "📋 Resumo"
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          echo "### 🌻 Userscripts ${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Instale **standalone.user.js** para ativar todos os módulos em um único userscript." >> "$GITHUB_STEP_SUMMARY"
+          echo "Os scripts individuais, arquivos .meta.js, manifest.json e SHA256SUMS também estão na release." >> "$GITHUB_STEP_SUMMARY"
