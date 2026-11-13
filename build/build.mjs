@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
@@ -125,52 +126,62 @@ for (const target of targets) {
     // The map is external and embeds the full original generated runtime.
     // Vite 8 uses Oxc for minification. Bundle the virtual entry without
     // introducing a separate esbuild dependency or a temporary source file.
-    const chunks = await viteBuild({
-      configFile: false,
-      logLevel: "error",
-      plugins: [{
-        name: "standalone-runtime-entry",
-        resolveId(id) {
-          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
+    // Vite 8 does not guarantee a sourcemap asset in its in-memory
+    // build result. Write to an isolated temporary directory and read the
+    // actual artifacts, which also validates the files shipped to users.
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "userscripts-cf-"));
+    try {
+      await viteBuild({
+        configFile: false,
+        logLevel: "error",
+        plugins: [{
+          name: "standalone-runtime-entry",
+          resolveId(id) {
+            if (id === "virtual:standalone-runtime") return "\\0virtual:standalone-runtime";
+          },
+          load(id) {
+            if (id === "\\0virtual:standalone-runtime") return body;
+          },
+        }],
+        build: {
+          outDir: tempDir,
+          emptyOutDir: true,
+          write: true,
+          minify: "oxc",
+          sourcemap: true,
+          rolldownOptions: {
+            input: "virtual:standalone-runtime",
+            output: { format: "iife", name: "UserscriptsCFStandalone" },
+          },
         },
-        load(id) {
-          if (id === "\0virtual:standalone-runtime") return body;
-        },
-      }],
-      build: {
-        write: false,
-        minify: "oxc",
-        sourcemap: true,
-        rolldownOptions: {
-          input: "virtual:standalone-runtime",
-          output: { format: "iife", name: "UserscriptsCFStandalone" },
-        },
-      },
-    });
-    const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
-    const result = output.find((entry) => entry.type === "chunk");
-    if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
-    // Vite/Rolldown emits external sourcemaps as separate assets, not
-    // necessarily as chunk.map on the generated JavaScript chunk.
-    const mapAsset = output.find((entry) =>
-      entry.type === "asset" && entry.fileName?.endsWith(".map"),
-    );
-    const rawMap = result.map ?? mapAsset?.source;
-    if (!rawMap) {
-      throw new Error(
-        "Standalone sourcemap missing. Output: " +
-          output.map((entry) => entry.type + ":" + entry.fileName).join(", "),
-      );
+      });
+      async function findOutput(directory) {
+        for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+          const filename = path.join(directory, entry.name);
+          if (entry.isDirectory()) {
+            const nested = await findOutput(filename);
+            if (nested) return nested;
+          } else if (entry.name.endsWith(".js") && !entry.name.endsWith(".map.js")) {
+            const mapPath = filename + ".map";
+            if (await fs.stat(mapPath).then(() => true, () => false))
+              return { filename, mapPath };
+          }
+        }
+        return null;
+      }
+      const generated = await findOutput(tempDir);
+      if (!generated) {
+        throw new Error("Vite did not emit a JavaScript file with an external sourcemap");
+      }
+      const code = await fs.readFile(generated.filename, "utf8");
+      const map = JSON.parse(await fs.readFile(generated.mapPath, "utf8"));
+      const mapFile = file + ".map";
+      map.file = file;
+      await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
+      source = `${metadata}\\n\\n${code.split("\\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\\n")}\\n//# sourceMappingURL=${mapFile}\\n`;
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
     }
-    const mapFile = file + ".map";
-    const map = typeof rawMap === "string"
-      ? JSON.parse(rawMap)
-      : rawMap instanceof Uint8Array
-        ? JSON.parse(new TextDecoder().decode(rawMap))
-        : rawMap;
-    map.file = file;
-    await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-    source = `${metadata}\n\n${result.code.split("\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\n")}\n//# sourceMappingURL=${mapFile}\n`;
   }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
