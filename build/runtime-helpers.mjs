@@ -101,13 +101,13 @@ export function runtimeHelpers() {
           if (ts.isPropertyAccessExpression(callee)) {
             const receiver = callee.expression;
             const method = callee.name.text;
-            if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {
+            if (ts.isIdentifier(receiver)) {
               if (elements.has(receiver.text) && (method === "querySelector" || method === "querySelectorAll")) {
                 replacement = contextName + ".dom.scope(" + receiver.text + ")." + method;
               }
-              if (receiver.text === "document" && method === "querySelector") replacement = contextName + ".dom.querySelector";
-              if (receiver.text === "document" && method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
-              if (receiver.text === "window" && method === "fetch") replacement = contextName + ".http.fetch";
+              if (!shadowed.has(receiver.text) && receiver.text === "document" && method === "querySelector") replacement = contextName + ".dom.querySelector";
+              if (!shadowed.has(receiver.text) && receiver.text === "document" && method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
+              if (!shadowed.has(receiver.text) && receiver.text === "window" && method === "fetch") replacement = contextName + ".http.fetch";
             }
           }
           if (replacement) edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
