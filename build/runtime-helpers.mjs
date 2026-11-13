@@ -99,7 +99,6 @@ export function runtimeHelpers() {
             const receiver = callee.expression;
             const method = callee.name.text;
             if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {
-              if (receiver.text === "GM") replacement = contextName + ".gm.modern." + method;
               if (elements.has(receiver.text) && (method === "querySelector" || method === "querySelectorAll")) {
                 replacement = contextName + ".dom.scope(" + receiver.text + ")." + method;
               }
@@ -109,6 +108,34 @@ export function runtimeHelpers() {
             }
           }
           if (replacement) edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
+        }
+        // Rewrite GM references as well as calls, including optional chaining and aliases.
+        // Avoid declarations, property keys and shorthand object members.
+        if (contextName && !shadowed.has(contextName) && !blocked && !keep(node)) {
+          if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) &&
+              node.expression.text === "GM" && !shadowed.has("GM")) {
+            edits.push({
+              start: node.getStart(source),
+              end: node.end,
+              value: contextName + ".gm.modern." + node.name.text,
+            });
+          } else if (ts.isIdentifier(node) && /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(node.text) &&
+              !shadowed.has(node.text)) {
+            const parent = node.parent;
+            const declaration = (ts.isVariableDeclaration(parent) || ts.isParameter(parent) ||
+              ts.isFunctionDeclaration(parent) || ts.isImportSpecifier(parent) ||
+              ts.isPropertyAssignment(parent) || ts.isPropertyAccessExpression(parent) ||
+              ts.isMethodDeclaration(parent) || ts.isPropertyDeclaration(parent)) && parent.name === node;
+            const propertyName = ts.isPropertyAccessExpression(parent) && parent.name === node;
+            const shorthand = ts.isShorthandPropertyAssignment(parent);
+            if (!declaration && !propertyName && !shorthand) {
+              edits.push({
+                start: node.getStart(source),
+                end: node.end,
+                value: contextName + ".gm.legacy." + node.text.slice(3),
+              });
+            }
+          }
         }
         ts.forEachChild(node, (child) => walk(child, contextName, shadowed, blocked || keep(node), elements));
       }
