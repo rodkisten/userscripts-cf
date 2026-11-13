@@ -12,6 +12,7 @@ import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
+import { packageIcon } from "./package-icons.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
@@ -86,11 +87,13 @@ for (const target of targets) {
   // Per-module excludes must remain in the runtime router: a global @exclude
   // would disable other modules on the same URL (e.g. REPL and example-site).
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
+  const icon = await packageIcon({ name: target.name, category: target.tags?.[0] || target.id });
   const metadata = [
     "// ==UserScript==",
     `// @name         ${target.name}`,
     `// @namespace    ${target.namespace || "https://rod.migos.club/userscripts-cf"}`,
     `// @version      ${target.version}`,
+    `// @icon         ${icon.dataURL}`,
     `// @updateURL    ${baseURL}/${target.id}.meta.js`,
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
     `// @description  ${target.id === "standalone" ? "Instalador único: todos os módulos com roteamento e configuração por site." : "Vite IIFE; roteamento SPA e storage GM isolado por módulo."}`,
@@ -165,6 +168,8 @@ for (const target of targets) {
     source = `${metadata}\n\n${result.code}\n`;
   }
   await fs.writeFile(path.join(out, file), source);
+  await fs.mkdir(path.join(out, "icons"), { recursive: true });
+  await fs.writeFile(path.join(out, "icons", `${target.id}.svg`), icon.svg);
   const metaFile = `${target.id}.meta.js`;
   const metaSource = metadata + "\n";
   await fs.writeFile(path.join(out, metaFile), metaSource);
