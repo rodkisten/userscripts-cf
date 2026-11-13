@@ -48,7 +48,29 @@ export function runtimeHelpers() {
         }
         return names;
       }
-      function walk(node, contextName, shadowed = new Set(), blocked = false) {
+      // Infer only direct DOM element bindings, never arbitrary duck-typed objects.
+      function elementBindings(node) {
+        const names = new Set();
+        const visit = (child) => {
+          if (ts.isVariableDeclaration(child) && ts.isIdentifier(child.name)) {
+            const initializer = child.initializer;
+            const declared = child.type?.getText(source) ?? "";
+            const fromQuery = initializer && ts.isCallExpression(initializer) &&
+              ts.isPropertyAccessExpression(initializer.expression) &&
+              ["querySelector", "getElementById", "createElement"].includes(initializer.expression.name.text) &&
+              ts.isIdentifier(initializer.expression.expression) &&
+              initializer.expression.expression.text === "document";
+            if (fromQuery || /^(?:HTMLElement|Element|SVGElement|HTML\\w+Element)(?:\\s*\\|\\s*null)?$/.test(declared)) {
+              names.add(child.name.text);
+            }
+          }
+          if (child !== node && (ts.isFunctionLike(child) || ts.isBlock(child))) return;
+          ts.forEachChild(child, visit);
+        };
+        ts.forEachChild(node, visit);
+        return names;
+      }
+      function walk(node, contextName, shadowed = new Set(), blocked = false, elements = new Set()) {
         if (ts.isFunctionLike(node)) {
           const first = node.parameters?.[0];
           const explicit = first && ts.isIdentifier(first.name) && /^(ctx|context)$/.test(first.name.text);
@@ -56,12 +78,12 @@ export function runtimeHelpers() {
           const next = explicit ? first.name.text : local.has(contextName) ? null : contextName;
           const scope = new Set([...shadowed, ...local]);
           if (explicit) scope.delete(first.name.text);
-          ts.forEachChild(node, (child) => walk(child, next, scope, blocked || keep(node)));
+          ts.forEachChild(node, (child) => walk(child, next, scope, blocked || keep(node), new Set([...elements, ...elementBindings(node)])));
           return;
         }
         if (ts.isBlock(node) || ts.isSourceFile(node)) {
           const scope = new Set([...shadowed, ...bindings(node)]);
-          ts.forEachChild(node, (child) => walk(child, contextName, scope, blocked || keep(node)));
+          ts.forEachChild(node, (child) => walk(child, contextName, scope, blocked || keep(node), new Set([...elements, ...elementBindings(node)])));
           return;
         }
         if (contextName && !shadowed.has(contextName) && !blocked && ts.isCallExpression(node) && !keep(node)) {
@@ -73,7 +95,7 @@ export function runtimeHelpers() {
           if (ts.isPropertyAccessExpression(callee)) {
             const receiver = callee.expression;
             const method = callee.name.text;
-            if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {
+            if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {\n              if (elements.has(receiver.text) && (method === "querySelector" || method === "querySelectorAll")) {\n                replacement = contextName + ".dom.scope(" + receiver.text + ")." + method;\n              }
               if (receiver.text === "document" && method === "querySelector") replacement = contextName + ".dom.querySelector";
               if (receiver.text === "document" && method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
               if (receiver.text === "window" && method === "fetch") replacement = contextName + ".http.fetch";
@@ -81,7 +103,7 @@ export function runtimeHelpers() {
           }
           if (replacement) edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
         }
-        ts.forEachChild(node, (child) => walk(child, contextName, shadowed, blocked || keep(node)));
+        ts.forEachChild(node, (child) => walk(child, contextName, shadowed, blocked || keep(node), elements));
       }
       walk(source, null);
       if (!edits.length) return null;
