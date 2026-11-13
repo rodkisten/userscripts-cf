@@ -459,6 +459,7 @@ export default {
     });
     if (typeof GM_registerMenuCommand === "function")
       GM_registerMenuCommand("Abrir REPL JavaScript", () => (panel.hidden = false));
+    ctx.dock.register([{ id: "open", label: "Abrir REPL", run: () => { panel.hidden = false; editor.refresh(); editor.focus(); } }]);
     renderMethods();
     ctx.onDispose(() => {
       abort?.abort();
