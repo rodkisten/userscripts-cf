@@ -338,6 +338,11 @@ export default {
         }),
       );
     }
+    ctx.dock?.register([
+      { id: "settings", label: "Configurações", run: () => void settingsApi.open() },
+      { id: "sync", label: "Sincronizar", run: () => void run(true) },
+      { id: "relay", label: "Configurar Relay", run: configure },
+    ]);
     const timer = setInterval(() => void run(), 60000);
     ctx.listen(document, "visibilitychange", () => void run());
     ctx.onDispose(() => {
