@@ -26,6 +26,24 @@ export function buildTree(entries: Entry[]): Node[] {
   sort(root.children);
   return root.children;
 }
+export function splitTreeLocation(segments: string[], ref: string): { branch: string; current: string } | null {
+  const refParts = ref.split("/");
+  if (!ref || refParts.some((part, i) => segments[i] !== part)) return null;
+  return { branch: ref, current: segments.slice(refParts.length).join("/") };
+}
+function selectedGitHubRef(): string {
+  const selectors = [
+    "#branch-picker-repos-header-ref-selector",
+    '[data-testid="branch-selector"]',
+    'button[data-hotkey="w"]',
+    ".ref-selector",
+  ];
+  for (const selector of selectors) {
+    const label = document.querySelector(selector)?.textContent?.trim();
+    if (label) return label.replace(/^Branch:\s*/i, "").trim();
+  }
+  return "";
+}
 function TreeRow(props: { node: Node; depth: number; base: string; branch: string; current: string }) {
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
@@ -52,9 +70,8 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const path = location.pathname;
   const isTree = path.startsWith(base + "/tree/");
   const encoded = isTree ? path.slice((base + "/tree/").length).split("/").map(decodeURIComponent) : [];
-  const branch = isTree ? encoded[0] : "";
-  const [resolvedBranch, setResolvedBranch] = createSignal(branch || "main");
-  const current = isTree ? encoded.slice(1).join("/") : "";
+  const [resolvedBranch, setResolvedBranch] = createSignal("");
+  const [current, setCurrent] = createSignal("");
   const mount = mountPoint(container.parentNode!, () => (
     <section class={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
       <div class={styles.treeHeader}><span>Arquivos</span><span class={styles.treeCount}>{state() === "loading" ? "Carregando…" : nodes().length + " itens na raiz"}</span></div>
@@ -64,7 +81,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         </div>
       </Show>
       <Show when={state() === "error"}><div class={styles.treeError}>{message()} <button onClick={() => location.reload()}>Tentar novamente</button></div></Show>
-      <Show when={state() === "ready"}><div role="tree"><For each={nodes()}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current}/>}</For></div></Show>
+      <Show when={state() === "ready"}><div role="tree"><For each={nodes()}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current()}/>}</For></div></Show>
     </section>
   ), { before: container });
   mount.host.dataset.ghftTreeHost = "";
@@ -76,10 +93,29 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       const info = await fetch("https://api.github.com/repos/" + repo.owner + "/" + repo.repo, { headers, signal: controller.signal });
       if (!info.ok) throw Error("GitHub API: " + info.status);
       const details = await info.json();
-      const ref = branch || details.default_branch;
-      setResolvedBranch(ref);
-      const response = await fetch("https://api.github.com/repos/" + repo.owner + "/" + repo.repo + "/git/trees/" + encodeURIComponent(ref) + "?recursive=1", { headers, signal: controller.signal });
-      if (!response.ok) throw Error("Árvore indisponível: HTTP " + response.status);
+      const apiBase = "https://api.github.com/repos/" + repo.owner + "/" + repo.repo + "/git/trees/";
+      const candidates = isTree
+        ? [
+            ...[selectedGitHubRef(), details.default_branch].map(ref => splitTreeLocation(encoded, ref)).filter((value): value is { branch: string; current: string } => !!value),
+            ...Array.from({ length: encoded.length }, (_, i) => ({
+              branch: encoded.slice(0, encoded.length - i).join("/"),
+              current: encoded.slice(encoded.length - i).join("/"),
+            })),
+          ]
+        : [{ branch: details.default_branch as string, current: "" }];
+      const visited = new Set<string>();
+      let response: Response | undefined;
+      let match: { branch: string; current: string } | undefined;
+      for (const candidate of candidates) {
+        if (!candidate.branch || visited.has(candidate.branch)) continue;
+        visited.add(candidate.branch);
+        const attempt = await fetch(apiBase + encodeURIComponent(candidate.branch) + "?recursive=1", { headers, signal: controller.signal });
+        if (attempt.ok) { response = attempt; match = candidate; break; }
+        if (attempt.status !== 404 && attempt.status !== 422) throw Error("Árvore indisponível: HTTP " + attempt.status);
+      }
+      if (!response || !match) throw Error("Não foi possível resolver a branch da URL");
+      setResolvedBranch(match.branch);
+      setCurrent(match.current);
       const data = await response.json();
       if (data.truncated) throw Error("Repositório muito grande para carregar a árvore completa");
       const tree = buildTree(data.tree || []);
