@@ -16,7 +16,9 @@ export function runtimeHelpers() {
         if (ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)))) return true;
         const start = node.getStart(source);
         const lineStart = code.lastIndexOf("\n", start - 1) + 1;
-        return /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start));
+        const lineEnd = code.indexOf("\n", node.end);
+        const trailing = code.slice(node.end, lineEnd < 0 ? code.length : lineEnd);
+        return /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start)) || /^\s*\/\/[^\n]*@keep\b/.test(trailing);
       };
       function walk(node, contextName, blocked = false) {
         if (ts.isFunctionLike(node)) {
