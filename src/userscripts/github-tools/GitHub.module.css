@@ -300,3 +300,20 @@
 [data-ghft-dashboard] .dashboardPanel .button { border-radius: 8px; }
 .panelStatus { padding: 6px 14px 12px; color: var(--ghft-text-muted); font-size: 11px; }
 @media(max-width:470px) { [data-ghft-dashboard] .dashboardPanel { right: 8px; width: calc(100vw - 16px); max-height: 59dvh; } }
+
+/* Tree preserves GitHub's directory-list width and surrounding layout. */
+.directoryTree{width:100%;border:1px solid var(--borderColor-default,#30363d);border-radius:8px;background:var(--bgColor-default,#0d1117);color:var(--fgColor-default,#e6edf3);font:13px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;overflow:hidden}
+.treeHeader{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid var(--borderColor-muted,#30363d);font-weight:600}
+.treeCount{font-size:11px;color:var(--fgColor-muted,#8b949e);font-weight:400}
+.treeRow{display:flex;align-items:center;gap:8px;min-height:35px;padding-right:12px;border-bottom:1px solid var(--borderColor-muted,#30363d44)}
+.treeRow:hover{background:var(--bgColor-muted,#161b22)}
+.treeRow img{flex:none;object-fit:contain}
+.treeRow a{color:inherit;text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.treeRow a:hover{text-decoration:underline}
+.treeChevron{border:0;background:transparent;color:var(--fgColor-muted,#8b949e);width:20px;height:27px;flex:none;display:grid;place-items:center;font-size:18px;cursor:pointer}
+.treeSpacer{width:20px;flex:none}
+.treeSkeleton{height:13px;margin:17px 16px;border-radius:5px;background:linear-gradient(90deg,var(--bgColor-muted,#21262d) 25%,var(--borderColor-default,#30363d) 50%,var(--bgColor-muted,#21262d) 75%);background-size:200% 100%;animation:ghft-tree-shimmer 1.35s linear infinite}
+.treeError{padding:18px;color:var(--fgColor-muted,#8b949e);font-size:12px}
+.treeError button{margin-left:8px;border:1px solid var(--borderColor-default,#30363d);border-radius:7px;background:transparent;color:inherit;padding:5px 8px}
+@keyframes ghft-tree-shimmer{to{background-position-x:-200%}}
+@media(prefers-reduced-motion:reduce){.treeSkeleton{animation:none}}
