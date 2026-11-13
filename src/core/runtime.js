@@ -36,6 +36,7 @@ export function createRuntime(definitions, bridge, host = window) {
   function context(definition) {
     const abort = new host.AbortController();
     const cleanups = [];
+    const onDispose = (callback) => cleanups.push(callback);
     const eventBus = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
     const domListeners = new Map();
     const domEvents = Object.freeze({
@@ -96,7 +97,6 @@ export function createRuntime(definitions, bridge, host = window) {
       onDispose(() => node.remove());
       return node;
     }
-    const onDispose = (callback) => cleanups.push(callback);
     let store = stores.get(definition.id);
     if (!store) {
       store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
