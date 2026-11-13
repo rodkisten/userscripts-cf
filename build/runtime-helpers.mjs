@@ -54,8 +54,7 @@ export function runtimeHelpers() {
           const explicit = first && ts.isIdentifier(first.name) && /^(ctx|context)$/.test(first.name.text);
           const local = bindings(node);
           const next = explicit ? first.name.text : local.has(contextName) ? null : contextName;
-          const inherited = explicit ? new Set() : shadowed;
-          const scope = new Set([...inherited, ...local]);
+          const scope = new Set([...shadowed, ...local]);
           if (explicit) scope.delete(first.name.text);
           ts.forEachChild(node, (child) => walk(child, next, scope, blocked || keep(node)));
           return;
