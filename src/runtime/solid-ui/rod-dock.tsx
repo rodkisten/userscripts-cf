@@ -39,6 +39,20 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     }
   };
   document.addEventListener("rod-dock:registry", onRegistration);
+  const menuEntries = new Map<string, Map<unknown, DockAction>>();
+  const onMenu = (event: Event) => {
+    const { type, moduleId, id, label, callback } = (event as CustomEvent).detail || {};
+    if (!moduleId) return;
+    let commands = menuEntries.get(moduleId);
+    if (!commands) menuEntries.set(moduleId, (commands = new Map()));
+    if (type === "register" && typeof callback === "function")
+      commands.set(id, { id: String(id), label, run: callback });
+    if (type === "unregister") commands.delete(id);
+    setEntries((items) => items.map((module) => module.id === moduleId
+      ? { ...module, actions: [...commands!.values()] }
+      : module));
+  };
+  document.addEventListener("rod-dock:menu", onMenu);
   const DockView = () => (
     <>
       <style>{style}</style>
@@ -95,6 +109,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     close: () => setOpen(false),
     dispose() {
       document.removeEventListener("rod-dock:registry", onRegistration);
+      document.removeEventListener("rod-dock:menu", onMenu);
       dispose();
       host.remove();
       if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function")
