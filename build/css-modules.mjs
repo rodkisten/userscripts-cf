@@ -49,7 +49,12 @@ export function inlineCSSModules() {
       const classes = Object.fromEntries(
         Object.entries(result.exports || {}).map(([key, value]) => [key, value.name]),
       );
-      const optimized = deduplicateCSS(result.code.toString());
+      const originalCSS = result.code.toString();
+      const optimized = deduplicateCSS(originalCSS);
+      const savedBytes = Buffer.byteLength(originalCSS) - Buffer.byteLength(optimized.css);
+      if (savedBytes > 0) {
+        console.info(`[css-dedup] ${path.basename(id)}: ${optimized.merged} merged rules, ${savedBytes} bytes saved`);
+      }
       return `export const css = ${JSON.stringify(optimized.css)}; export default ${JSON.stringify(classes)};`;
     },
   };
