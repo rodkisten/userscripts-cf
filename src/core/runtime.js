@@ -39,32 +39,45 @@ export function createRuntime(definitions, bridge, host = window) {
     const onDispose = (callback) => cleanups.push(callback);
     const eventBus = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
     const domListeners = new Map();
+    const captureOf = (options) => typeof options === "boolean" ? options : !!options?.capture;
     const domEvents = Object.freeze({
       add(target, type, callback, options) {
+        if (!target || typeof target.addEventListener !== "function") throw new TypeError("Expected EventTarget");
         let types = domListeners.get(target);
         if (!types) domListeners.set(target, (types = new Map()));
         let handlers = types.get(type);
         if (!handlers) types.set(type, (handlers = new Map()));
         let captures = handlers.get(callback);
         if (!captures) handlers.set(callback, (captures = new Map()));
-        const capture = typeof options === "boolean" ? options : !!options?.capture;
+        const capture = captureOf(options);
         if (captures.has(capture)) return;
-        target.addEventListener(type, callback, options);
-        captures.set(capture, options);
+        const once = typeof options === "object" && options?.once;
+        const listener = once
+          ? function (...args) {
+              domEvents.remove(target, type, callback, options);
+              return typeof callback === "function"
+                ? callback.apply(this, args)
+                : callback.handleEvent(...args);
+            }
+          : callback;
+        target.addEventListener(type, listener, options);
+        captures.set(capture, { listener, options });
       },
       remove(target, type, callback, options) {
-        const capture = typeof options === "boolean" ? options : !!options?.capture;
-        target.removeEventListener(type, callback, options);
+        const capture = captureOf(options);
         const handlers = domListeners.get(target)?.get(type);
         const captures = handlers?.get(callback);
+        const record = captures?.get(capture);
+        target.removeEventListener(type, record?.listener ?? callback, options);
         captures?.delete(capture);
         if (captures && !captures.size) handlers.delete(callback);
       },
       dispose() {
         for (const [target, types] of domListeners)
           for (const [type, handlers] of types)
-            for (const [callback, captures] of handlers)
-              for (const options of captures.values()) target.removeEventListener(type, callback, options);
+            for (const [, captures] of handlers)
+              for (const [capture, record] of captures)
+                target.removeEventListener(type, record.listener, capture);
         domListeners.clear();
       },
     });
