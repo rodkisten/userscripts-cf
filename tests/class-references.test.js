@@ -28,6 +28,14 @@ describe("class references AST", () => {
     expect(result.classes).toEqual(["active", "busy", "menu", "ready", "selected"]);
     expect(result.dynamic).toEqual(["className", "jsx-class"]);
   });
+  it("tracks Solid classList keys and flags computed keys", () => {
+    const result = analyzeClassReferences(`
+      const element = <div classList={{ active: enabled(), "menu-open": expanded(), [dynamic]: true }} />;
+      node.class = "ready";
+    `);
+    expect(result.classes).toEqual(["active", "menu-open", "ready"]);
+    expect(result.dynamic).toEqual(["jsx-classList"]);
+  });
   it("flags computed selectors rather than guessing their class names", () => {
     const result = analyzeClassReferences(`
       element.matches(".item-" + state);
