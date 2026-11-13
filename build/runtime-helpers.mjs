@@ -105,7 +105,7 @@ export function runtimeHelpers() {
               ts.isIdentifier(callee.expression) &&
               (["window", "document"].includes(callee.expression.text) ||
                 elements.has(callee.expression.text)) &&
-              !shadowed.has(callee.expression.text)) {
+              (!shadowed.has(callee.expression.text) || elements.has(callee.expression.text))) {
             const operation = callee.name.text === "addEventListener" ? "add" : "remove";
             replacement = contextName + ".events.dom." + operation + ".bind(null, " + callee.expression.text + ")";
           }
