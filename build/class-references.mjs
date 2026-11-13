@@ -31,6 +31,21 @@ export function analyzeClassReferences(source) {
   };
   const walk = (node) => {
     if (!node || typeof node !== "object") return;
+    if (node.type === "JSXAttribute" && ["class", "className"].includes(node.name?.name)) {
+      const value = node.value?.type === "JSXExpressionContainer"
+        ? literal(node.value.expression)
+        : literal(node.value);
+      if (value === null) dynamic.push("jsx-class");
+      else addClasses(value);
+    }
+    if (node.type === "AssignmentExpression" && node.left?.type === "MemberExpression") {
+      const prop = node.left.computed ? literal(node.left.property) : node.left.property?.name;
+      if (prop === "className") {
+        const value = literal(node.right);
+        if (value === null) dynamic.push("className");
+        else addClasses(value);
+      }
+    }
     if (node.type === "CallExpression" || node.type === "OptionalCallExpression") {
       const callee = node.callee;
       const method = callee?.type === "MemberExpression" || callee?.type === "OptionalMemberExpression"
