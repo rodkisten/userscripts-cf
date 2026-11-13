@@ -87,6 +87,11 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
   }
   return Object.freeze({
     request,
+    fetch(input, init) {
+      // Native fetch signature: RequestInfo | URL, RequestInit; no implicit response cache.
+      const url = input instanceof Request ? input.url : String(input);
+      return request(url, { ...(input instanceof Request ? { method: input.method, headers: input.headers, body: input.body, credentials: input.credentials } : {}), ...init, cacheMode: "off" });
+    },
     async json(url, options) { const r = await request(url, options); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); },
     async text(url, options) { const r = await request(url, options); if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); },
     invalidate() { cache.clear(); },
