@@ -87,8 +87,8 @@ export function mountGitHubDashboard(ctx: any) {
     finally { setBusy(false); }
   };
   const addRepository = () => {
-    const name = repoInput().trim().replace(/^https?:\\/\\/github\\.com\\//, "").replace(/\\/$/, "");
-    if (!/^[a-zA-Z0-9_.-]+\\/[a-zA-Z0-9_.-]+$/.test(name)) {
+    const name = repoInput().trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+    if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(name)) {
       setMessage("Use proprietário/repositório.");
       return;
     }
