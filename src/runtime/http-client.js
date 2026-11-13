@@ -87,10 +87,26 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
   }
   return Object.freeze({
     request,
-    fetch(input, init) {
-      // Native fetch signature: RequestInfo | URL, RequestInit; no implicit response cache.
-      const url = input instanceof Request ? input.url : String(input);
-      return request(url, { ...(input instanceof Request ? { method: input.method, headers: input.headers, body: input.body, credentials: input.credentials } : {}), ...init, cacheMode: "off" });
+    fetch(input, init = {}) {
+      // Keep the native RequestInfo/URL + RequestInit contract, including
+      // inherited headers, credentials, body and AbortSignal from Request.
+      const isRequest = typeof Request !== "undefined" && input instanceof Request;
+      if (!isRequest) return request(input, { ...init, cacheMode: "off" });
+      const merged = new Request(input, init);
+      return request(merged.url, {
+        method: merged.method,
+        headers: merged.headers,
+        body: /^(GET|HEAD)$/i.test(merged.method) ? undefined : merged.body,
+        credentials: merged.credentials,
+        signal: merged.signal,
+        redirect: merged.redirect,
+        mode: merged.mode,
+        referrer: merged.referrer,
+        referrerPolicy: merged.referrerPolicy,
+        integrity: merged.integrity,
+        keepalive: merged.keepalive,
+        cacheMode: "off",
+      });
     },
     async json(url, options) { const r = await request(url, options); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); },
     async text(url, options) { const r = await request(url, options); if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); },
