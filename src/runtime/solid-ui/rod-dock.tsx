@@ -29,6 +29,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
   const [expanded, setExpanded] = createSignal<string | null>(null);
   const [entries, setEntries] = createSignal<DockModule[]>(modules as DockModule[]);
   const [position, setPosition] = createSignal(46);
+  const menuEntries = new Map<string, Map<unknown, DockAction>>();
   const onRegistration = (event: Event) => {
     const detail = (event as CustomEvent<DockEvent>).detail;
     if (!detail) return;
@@ -39,10 +40,12 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     }
   };
   document.addEventListener("rod-dock:registry", onRegistration);
-  const menuEntries = new Map<string, Map<unknown, DockAction>>();
   const onMenu = (event: Event) => {
     const { type, moduleId, id, label, callback } = (event as CustomEvent).detail || {};
     if (!moduleId) return;
+    if (type === "register" && !entries().some((item) => item.id === moduleId)) {
+      setEntries((items) => [...items, { id: moduleId, name: moduleId, actions: [] }]);
+    }
     let commands = menuEntries.get(moduleId);
     if (!commands) menuEntries.set(moduleId, (commands = new Map()));
     if (type === "register" && typeof callback === "function")
