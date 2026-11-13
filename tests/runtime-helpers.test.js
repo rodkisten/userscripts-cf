@@ -82,7 +82,7 @@ test("rewrites GM aliases and optional calls", () => {
   }`);
   assert.match(output, /const read = ctx\.gm\.modern\.getValue/);
   assert.match(output, /const legacyRead = ctx\.gm\.legacy\.getValue/);
-  assert.match(output, /ctx\.gm\.modern\.setValue\?\.\("key", 1\)/);
+  assert.match(output, /ctx\.gm\.modern\?\.setValue\?\.\("key", 1\)/);
   assert.match(output, /ctx\.gm\.legacy\.getValue\?\.\("key"\)/);
 });
 
