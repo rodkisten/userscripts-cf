@@ -3,6 +3,7 @@ import { navigationSize } from "./logs.ts";
 
 // Only adapts GitHub-owned navigation; no script UI is built here.
 export function fitGitHubNavigation(ctx: any) {
+  // GitHub owns its responsive navigation. Avoid mutating it: hidden tabs on mobile are worse than overflow.
   const watched = new Set<HTMLElement>();
   const fit = (nav: HTMLElement) => {
     const items = [...nav.querySelectorAll<HTMLElement>(":scope > li, :scope > a")];
@@ -52,5 +53,5 @@ export function fitGitHubNavigation(ctx: any) {
       });
     }
   });
-  return scan;
+  return () => { /* Native GitHub navigation remains untouched. */ };
 }
