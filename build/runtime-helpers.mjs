@@ -20,31 +20,69 @@ export function runtimeHelpers() {
         const trailing = code.slice(node.end, lineEnd < 0 ? code.length : lineEnd);
         return /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start)) || /^\s*\/\/[^\n]*@keep\b/.test(trailing);
       };
-      function walk(node, contextName, blocked = false) {
+      // Collect declarations before visiting expressions: let/const/var and function
+      // declarations shadow globals even when declared later in the scope.
+      function bindings(node) {
+        const names = new Set();
+        const add = (name) => {
+          if (ts.isIdentifier(name)) names.add(name.text);
+          else if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name)) {
+            for (const element of name.elements) {
+              if (ts.isBindingElement(element)) add(element.name);
+            }
+          }
+        };
+        if (ts.isFunctionLike(node)) {
+          for (const param of node.parameters) add(param.name);
+          if (node.name && ts.isIdentifier(node.name)) names.add(node.name.text);
+        }
+        const collect = (child) => {
+          if (ts.isVariableDeclaration(child)) add(child.name);
+          if ((ts.isFunctionDeclaration(child) || ts.isClassDeclaration(child)) && child.name) add(child.name);
+          // Do not cross lexical scope boundaries.
+          if (child !== node && (ts.isFunctionLike(child) || ts.isBlock(child) || ts.isClassLike(child))) return;
+          ts.forEachChild(child, collect);
+        };
+        if (ts.isSourceFile(node) || ts.isBlock(node) || ts.isFunctionLike(node)) {
+          ts.forEachChild(node, collect);
+        }
+        return names;
+      }
+      function walk(node, contextName, shadowed = new Set(), blocked = false) {
         if (ts.isFunctionLike(node)) {
           const first = node.parameters?.[0];
           const explicit = first && ts.isIdentifier(first.name) && /^(ctx|context)$/.test(first.name.text);
-          const shadowed = node.parameters?.some((p) => ts.isIdentifier(p.name) && p.name.text === contextName);
-          const next = explicit ? first.name.text : shadowed ? null : contextName;
-          ts.forEachChild(node, (child) => walk(child, next, blocked || keep(node)));
+          const local = bindings(node);
+          const next = explicit ? first.name.text : local.has(contextName) ? null : contextName;
+          const inherited = explicit ? new Set() : shadowed;
+          const scope = new Set([...inherited, ...local]);
+          if (explicit) scope.delete(first.name.text);
+          ts.forEachChild(node, (child) => walk(child, next, scope, blocked || keep(node)));
           return;
         }
-        if (contextName && !blocked && ts.isCallExpression(node) && !keep(node)) {
+        if (ts.isBlock(node) || ts.isSourceFile(node)) {
+          const scope = new Set([...shadowed, ...bindings(node)]);
+          ts.forEachChild(node, (child) => walk(child, contextName, scope, blocked || keep(node)));
+          return;
+        }
+        if (contextName && !shadowed.has(contextName) && !blocked && ts.isCallExpression(node) && !keep(node)) {
           const callee = node.expression;
           let replacement;
-          if (ts.isIdentifier(callee) && callee.text === "fetch") replacement = contextName + ".http.fetch";
+          if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
+            replacement = contextName + ".http.fetch";
+          }
           if (ts.isPropertyAccessExpression(callee)) {
             const receiver = callee.expression;
             const method = callee.name.text;
-            if (ts.isIdentifier(receiver) && /^(document|window)$/.test(receiver.text)) {
-              if (method === "querySelector") replacement = contextName + ".dom.querySelector";
-              if (method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
-              if (method === "fetch" && receiver.text === "window") replacement = contextName + ".http.fetch";
+            if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {
+              if (receiver.text === "document" && method === "querySelector") replacement = contextName + ".dom.querySelector";
+              if (receiver.text === "document" && method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
+              if (receiver.text === "window" && method === "fetch") replacement = contextName + ".http.fetch";
             }
           }
           if (replacement) edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
         }
-        ts.forEachChild(node, (child) => walk(child, contextName, blocked || keep(node)));
+        ts.forEachChild(node, (child) => walk(child, contextName, shadowed, blocked || keep(node)));
       }
       walk(source, null);
       if (!edits.length) return null;
