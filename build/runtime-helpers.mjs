@@ -1,7 +1,9 @@
-import * as tsNamespace from "typescript";
+import { createRequire } from "node:module";
 
-// TypeScript 7 exports can differ between Node and Vite config bundling.
-const ts = tsNamespace.default?.createSourceFile ? tsNamespace.default : tsNamespace;
+// Load TypeScript directly in Node instead of bundling its CommonJS export
+// through Vite config / Rolldown interop.
+const require = createRequire(import.meta.url);
+const ts = require("typescript");
 
 // Transform only inside functions that explicitly receive a context argument.
 // @keep on the same line or in the immediately preceding comment prevents rewriting.
@@ -11,8 +13,9 @@ export function runtimeHelpers() {
     enforce: "pre",
     transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || /node_modules|\/vendor\//.test(id)) return null;
-      const kind = /\.tsx(?:\?|$)/.test(id) ? 4 : /\.jsx(?:\?|$)/.test(id) ? 2 : 3;
-      const source = ts.createSourceFile(id, code, 99, true, kind);
+      const kind = /\.tsx(?:\?|$)/.test(id) ? ts.ScriptKind.TSX : /\.jsx(?:\?|$)/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
+      if (id.startsWith("\\0") || id.startsWith("\u0000")) return null;
+      const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
       const edits = [];
       const keep = (node) => {
         const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
