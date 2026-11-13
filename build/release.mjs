@@ -69,7 +69,7 @@ export async function release(tag) {
       "--title",
       `Userscripts ${tag}`,
       "--notes",
-      `Vite bundles from commit ${commit}. Install only unified.user.js or the individual scripts. Includes update metadata and SHA-256 checksums.`,
+      `Vite bundles from commit ${commit}. Install standalone.user.js for all modules, unified.user.js for RodX, or individual scripts. Includes update metadata and SHA-256 checksums.`,
     );
   // Upload to a draft first. Failed uploads do not replace the latest published release.
   run("gh", "release", "upload", tag, ...args, "--clobber", ...files.map((file) => path.join(dist, file)));
