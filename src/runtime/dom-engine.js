@@ -71,5 +71,22 @@ export function createDomEngine({ root = document, signal, maxEntries = 256 } = 
   // The array-returning all() helper remains available for cached snapshots.
   function querySelector(selector) { return root.querySelector(selector); }
   function querySelectorAll(selector) { return root.querySelectorAll(selector); }
-  return Object.freeze({ one, all, querySelector, querySelectorAll, waitFor, invalidate, stats, dispose() { observer?.disconnect(); cache.clear(); } });
+  // Scoped native signatures for Element/DocumentFragment calls.
+  // Preserve the native NodeList, rather than returning the cached array snapshot.
+  const scoped = new WeakMap();
+  function scope(element) {
+    if (!element || typeof element.querySelector !== "function" || typeof element.querySelectorAll !== "function") {
+      throw new TypeError("Expected an Element, Document or DocumentFragment");
+    }
+    let helper = scoped.get(element);
+    if (!helper) {
+      helper = Object.freeze({
+        querySelector(selector) { return element.querySelector(selector); },
+        querySelectorAll(selector) { return element.querySelectorAll(selector); },
+      });
+      scoped.set(element, helper);
+    }
+    return helper;
+  }
+  return Object.freeze({ one, all, querySelector, querySelectorAll, scope, waitFor, invalidate, stats, dispose() { observer?.disconnect(); cache.clear(); } });
 }
