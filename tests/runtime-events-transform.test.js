@@ -34,3 +34,14 @@ test("GM wrapper calls original and mirrors registration and removal", () => {
   assert.deepEqual(native[1], ["remove", 7]);
   assert.equal(emitted[1].type, "unregister");
 });
+
+test("AST rewrites listeners on statically identified DOM elements", () => {
+  const source = `function init(ctx) {
+    const button = document.createElement("button");
+    button.addEventListener("click", handler, { once: true });
+    button.removeEventListener("click", handler);
+  }`;
+  const output = runtimeHelpers().transform(source, "/tmp/element.ts").code;
+  assert.match(output, /ctx\\.events\\.dom\\.add\\.bind\\(null, button\\)/);
+  assert.match(output, /ctx\\.events\\.dom\\.remove\\.bind\\(null, button\\)/);
+});
