@@ -5,7 +5,7 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
   const stats = { hits: 0, misses: 0, requests: 0 };
   const gm = host.GM?.xmlHttpRequest?.bind(host.GM) ?? host.GM_xmlhttpRequest;
   const abortError = () => new DOMException("Aborted", "AbortError");
-  const keyFor = (url, options) => JSON.stringify([url, options.method ?? "GET", [...new Headers(options.headers ?? {}).entries()].sort()]);
+  const keyFor = (url, options) => JSON.stringify([url, (options.method ?? "GET").toUpperCase(), options.credentials ?? "same-origin", [...new Headers(options.headers ?? {}).entries()].sort()]);
   function gmFetch(url, options) {
     if (!gm) throw new Error("GM transport unavailable: check @grant and @connect");
     return new Promise((resolve, reject) => {
@@ -24,7 +24,10 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
             for (const line of String(response.responseHeaders ?? "").split(/\\r?\\n/)) {
               const i = line.indexOf(":"); if (i > 0) headers.append(line.slice(0, i).trim(), line.slice(i + 1).trim());
             }
-            finish(resolve, new Response(response.response, { status: response.status, statusText: response.statusText, headers }));
+            const status = Number(response.status);
+            if (status < 200 || status > 599) return finish(reject, new TypeError("Invalid GM HTTP status: " + status));
+            const body = options.method?.toUpperCase() === "HEAD" || status === 204 || status === 205 || status === 304 ? null : response.response;
+            finish(resolve, new Response(body, { status, statusText: response.statusText, headers }));
           },
           onerror: () => finish(reject, new TypeError("GM request failed")),
           ontimeout: () => finish(reject, new DOMException("Request timed out", "TimeoutError")),
@@ -36,7 +39,7 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
   async function request(url, options = {}) {
     const method = (options.method ?? "GET").toUpperCase();
     const key = keyFor(String(url), options);
-    const useCache = method === "GET" && options.cacheMode !== "off" &&
+    const useCache = method === "GET" && !options.signal && !signal && options.cacheMode !== "off" &&
       !new Headers(options.headers ?? {}).has("authorization") && options.credentials !== "include";
     const now = Date.now();
     if (useCache) {
@@ -78,7 +81,7 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
     };
     // Shared requests must not be cancelled by an individual consumer.
     const task = run();
-    if (useCache && !options.signal) pending.set(key, task);
+    if (useCache) pending.set(key, task);
     try { return (await task).clone(); }
     finally { if (pending.get(key) === task) pending.delete(key); }
   }
