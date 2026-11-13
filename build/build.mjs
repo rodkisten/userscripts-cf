@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
-import { transformWithEsbuild } from "vite";
+import { build as viteBuild } from "vite";
 import { execFileSync } from "node:child_process";
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
@@ -123,18 +123,38 @@ for (const target of targets) {
   if (target.id === "standalone") {
     // Keep the userscript metadata untouched: Tampermonkey must parse it.
     // The map is external and embeds the full original generated runtime.
-    const result = await transformWithEsbuild(body, "standalone.runtime.js", {
-      minify: true,
-      sourcemap: "external",
-      sourcesContent: true,
-      target: "es2022",
-      legalComments: "none",
+    // Vite 8 uses Oxc for minification. Bundle the virtual entry without
+    // introducing a separate esbuild dependency or a temporary source file.
+    const chunks = await viteBuild({
+      configFile: false,
+      logLevel: "error",
+      plugins: [{
+        name: "standalone-runtime-entry",
+        resolveId(id) {
+          if (id === "virtual:standalone-runtime") return "\\0virtual:standalone-runtime";
+        },
+        load(id) {
+          if (id === "\\0virtual:standalone-runtime") return body;
+        },
+      }],
+      build: {
+        write: false,
+        minify: "oxc",
+        sourcemap: true,
+        rolldownOptions: {
+          input: "virtual:standalone-runtime",
+          output: { format: "iife", name: "UserscriptsCFStandalone" },
+        },
+      },
     });
+    const output = chunks.flatMap((entry) => entry.output);
+    const result = output.find((entry) => entry.type === "chunk");
+    if (!result?.map) throw new Error("Standalone minification did not produce a sourcemap");
     const mapFile = file + ".map";
-    const map = JSON.parse(result.map);
+    const map = typeof result.map === "string" ? JSON.parse(result.map) : result.map;
     map.file = file;
     await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-    source = `${metadata}\n\n${result.code}\n//# sourceMappingURL=${mapFile}\n`;
+    source = `${metadata}\n\n${result.code.replace(/\\/\\/# sourceMappingURL=.*$/gm, "")}\n//# sourceMappingURL=${mapFile}\n`;
   }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
