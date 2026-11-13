@@ -131,10 +131,10 @@ for (const target of targets) {
       plugins: [{
         name: "standalone-runtime-entry",
         resolveId(id) {
-          if (id === "virtual:standalone-runtime") return "\\0virtual:standalone-runtime";
+          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
         },
         load(id) {
-          if (id === "\\0virtual:standalone-runtime") return body;
+          if (id === "\0virtual:standalone-runtime") return body;
         },
       }],
       build: {
