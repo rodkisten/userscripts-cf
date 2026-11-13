@@ -2,6 +2,7 @@ import { createGMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
+import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
 import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
@@ -155,12 +156,16 @@ export function createRuntime(definitions, bridge, host = window) {
     const gm = createGMBridge(host, definition.id);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
+    const interceptors = createNetworkInterceptors(http, { signal: abort.signal });
+    onDispose(() => interceptors.dispose());
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
     onDispose(() => dom.dispose());
     return {
       id: definition.id,
       events,
-      http,
+      http: Object.freeze({ ...http, request: interceptors.request }),
+      interceptRequest: interceptors.interceptRequest,
+      interceptResponse: interceptors.interceptResponse,
       gm,
       dom,
       db,
