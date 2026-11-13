@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { Window } from "happy-dom";
+import definitions from "../userscripts.config.js";
 
 const dist = new URL("../dist/", import.meta.url);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,7 +27,7 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["rodx-studio", "example-site", "page-repl", "unified"],
+    [...definitions.map((item) => item.id), "unified"],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
