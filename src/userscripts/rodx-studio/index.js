@@ -11,7 +11,7 @@ export function startRodX() {
 }
 export default {
   init(ctx) {
-    ctx.dock.register([
+    ctx.dock?.register([
       { id: "saved", label: "Pesquisas", run: () => openPanel("saved") },
       { id: "editor", label: "Editor", run: () => openPanel("editor") },
       { id: "presets", label: "Presets", run: () => openPanel("presets") },
