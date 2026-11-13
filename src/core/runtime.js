@@ -119,6 +119,25 @@ export function createRuntime(definitions, bridge, host = window) {
       signal: abort.signal,
       storage,
       menu: rod.menu,
+      dock: Object.freeze({
+        register(actions) {
+          const module = {
+            id: definition.id,
+            name: definition.name,
+            actions: actions.map((action) => ({
+              id: action.id,
+              label: action.label,
+              run: action.run,
+            })),
+          };
+          host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
+            detail: { type: "register", module },
+          }));
+          onDispose(() => host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
+            detail: { type: "unregister", id: definition.id },
+          })));
+        },
+      }),
       toaster: rod.toaster,
       get url() {
         return new URL(desiredURL);
