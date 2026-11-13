@@ -4,7 +4,7 @@ import styles from "./GitHub.module.css";
 
 type Favorite = { name: string; url: string };
 type Workflow = { id: number; name: string; path: string; state?: string };
-type Run = { id: number; name: string; conclusion: string | null; status: string; html_url: string; created_at: string; workflow_id: number };
+type Run = { id: number; name: string; conclusion: string | null; status: string; html_url: string; created_at: string; workflow_id: number; head_branch?: string };
 type Settings = { files: Favorite[]; workflows: Workflow[]; count: number; filter: string; iconTheme: string; repositories: string[] };
 const defaults: Settings = { files: [], workflows: [], count: 10, filter: "all", iconTheme: "atom", repositories: [] };
 const icon = (name: string, theme: string) => {
@@ -22,6 +22,12 @@ export function mountGitHubDashboard(ctx: any) {
   const [repo, setRepo] = createSignal("");
   const [sourceRepo, setSourceRepo] = createSignal("");
   const [repoInput, setRepoInput] = createSignal("");
+  const [runSearch, setRunSearch] = createSignal("");
+  const [branchFilter, setBranchFilter] = createSignal("");
+  const [dispatchWorkflow, setDispatchWorkflow] = createSignal<Workflow | null>(null);
+  const [dispatchRef, setDispatchRef] = createSignal("main");
+  const [dispatchInputs, setDispatchInputs] = createSignal("{}");
+  const [compact, setCompact] = createSignal(false);
   const [repositories, setRepositories] = createSignal<string[]>([]);
   const GLOBAL_REPOS_KEY = "githubDashboard:repositories:v1";
   void ctx.storage.get(GLOBAL_REPOS_KEY, []).then((stored: unknown) => {
@@ -78,18 +84,37 @@ export function mountGitHubDashboard(ctx: any) {
     const items = settings().workflows;
     save({ workflows: items.some(w => w.id === workflow.id) ? items.filter(w => w.id !== workflow.id) : [...items, workflow] });
   };
-  const dispatch = async (workflow: Workflow) => {
-    const ref = prompt("Branch/ref para executar " + workflow.name, "main");
-    if (!ref?.trim()) return;
+  const dispatch = async () => {
+    const workflow = dispatchWorkflow();
+    if (!workflow || !dispatchRef().trim()) return;
+    let inputs: Record<string, string>;
+    try {
+      const parsed: unknown = JSON.parse(dispatchInputs() || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) ||
+          Object.values(parsed).some(value => typeof value !== "string"))
+        throw Error("Inputs devem ser um objeto JSON de strings.");
+      inputs = parsed as Record<string, string>;
+    } catch (error) { setMessage("Inputs inválidos: " + String(error)); return; }
     setBusy(true);
     try {
       await api("/repos/" + repo() + "/actions/workflows/" + workflow.id + "/dispatches", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ref: ref.trim() }),
+        body: JSON.stringify({ ref: dispatchRef().trim(), inputs }),
       });
+      setDispatchWorkflow(null);
       setMessage("Workflow solicitado: " + workflow.name);
       void load();
     } catch (error) { setMessage(String(error) + " · confira workflow_dispatch e token Actions: write"); }
+    finally { setBusy(false); }
+  };
+  const runAction = async (run: Run, action: "rerun-failed-jobs" | "cancel") => {
+    if (!confirm((action === "cancel" ? "Cancelar" : "Reexecutar falhas de") + " #" + run.id + "?")) return;
+    setBusy(true);
+    try {
+      await api("/repos/" + repo() + "/actions/runs/" + run.id + "/" + action, { method: "POST" });
+      setMessage("Ação solicitada para #" + run.id);
+      void load();
+    } catch (error) { setMessage(String(error) + " · token Actions: write necessário"); }
     finally { setBusy(false); }
   };
   const addRepository = () => {
@@ -132,7 +157,7 @@ export function mountGitHubDashboard(ctx: any) {
             <label>Últimas <input type="number" min="1" max="100" value={settings().count}
               onChange={e => { save({ count: Math.max(1, Math.min(100, Number(e.currentTarget.value) || 10)) }); void load(); }}/></label>
             <select aria-label="Filtrar execuções" value={settings().filter} onChange={e => save({ filter: e.currentTarget.value })}>
-              <option value="all">Todas</option><option value="success">Sucesso</option><option value="failure">Falha</option>
+              <option value="all">Todas</option><option value="success">Sucesso</option><option value="failure">Falha</option><option value="running">Rodando</option>
             </select>
             <select aria-label="Ícones" value={settings().iconTheme} onChange={e => save({ iconTheme: e.currentTarget.value })}>
               <option value="atom">File icons</option><option value="simple">Simples</option>
@@ -154,7 +179,7 @@ export function mountGitHubDashboard(ctx: any) {
           <h4>Workflows favoritos</h4>
           <For each={settings().workflows}>{w => <div class={styles.dashboardItem}>
             <a href={"/" + repo() + "/actions/workflows/" + w.path.split("/").pop()}>{w.name}</a>
-            <button class={styles.button} onClick={() => void dispatch(w)}>▶</button>
+            <button class={styles.button} onClick={() => { setDispatchWorkflow(w); setDispatchInputs("{}"); }}>▶</button>
             <button class={styles.button} aria-label="Remover favorito" onClick={() => toggleWorkflow(w)}>★</button>
           </div>}</For>
           <details><summary>Reordenar arquivos no celular</summary>
@@ -163,18 +188,41 @@ export function mountGitHubDashboard(ctx: any) {
               <button class={styles.button} disabled={i() === 0} onClick={() => { dragIndex = i(); reorder(i() - 1); }} aria-label={"Subir " + file.name}>↑</button>
               <button class={styles.button} disabled={i() === settings().files.length - 1} onClick={() => { dragIndex = i(); reorder(i() + 1); }} aria-label={"Descer " + file.name}>↓</button>
               <button class={styles.button} onClick={() => toggleFile(file.name, file.url)} aria-label={"Remover " + file.name}>✕</button>
-            </div>}</For>
+            </div></div>}</For>
           </details>
           <details><summary>Adicionar workflows</summary>
             <For each={workflows()}>{w => <button class={styles.workflowChoice}
               onClick={() => toggleWorkflow(w)}>{settings().workflows.some(f => f.id === w.id) ? "★" : "☆"} {w.name}</button>}</For>
           </details>
+          <Show when={dispatchWorkflow()}>{w =>
+            <div class={styles.dispatchForm}>
+              <strong>Executar: {w().name}</strong>
+              <label>Branch/ref <input value={dispatchRef()} onInput={e => setDispatchRef(e.currentTarget.value)} /></label>
+              <label>Inputs JSON <textarea rows="3" spellcheck={false} value={dispatchInputs()} onInput={e => setDispatchInputs(e.currentTarget.value)} /></label>
+              <div><button class={styles.button} disabled={busy()} onClick={() => void dispatch()}>Executar</button>
+              <button class={styles.button} onClick={() => setDispatchWorkflow(null)}>Cancelar</button></div>
+            </div>
+          }</Show>
           <h4>Execuções recentes</h4>
-          <For each={runs().filter(r => settings().filter === "all" || r.conclusion === settings().filter)}>{run =>
-            <a class={styles.dashboardItem} href={run.html_url}>
+          <div class={styles.dashboardControls}>
+            <input aria-label="Buscar workflows" placeholder="Buscar workflow" value={runSearch()} onInput={e => setRunSearch(e.currentTarget.value)} />
+            <input aria-label="Filtrar branch" placeholder="Branch" value={branchFilter()} onInput={e => setBranchFilter(e.currentTarget.value)} />
+          </div>
+          <For each={runs().filter(r =>
+            (settings().filter === "all" || r.conclusion === settings().filter ||
+              (settings().filter === "running" && r.status !== "completed")) &&
+            r.name.toLowerCase().includes(runSearch().toLowerCase()) &&
+            (!branchFilter() || (r.head_branch || "").toLowerCase().includes(branchFilter().toLowerCase()))
+          )}>{run =>
+            <div class={styles.runRow}><a class={styles.dashboardItem} href={run.html_url}>
               <span>{run.conclusion === "success" ? "✓" : run.conclusion === "failure" ? "✕" : "◌"}</span>
-              <span>{run.name} <small>#{run.id} · {new Date(run.created_at).toLocaleString()}</small></span>
-            </a>}</For>
+              <span>{run.name} <small>#{run.id} · {run.head_branch || "?"} · {new Date(run.created_at).toLocaleString()}</small></span>
+            </a>
+            <div class={styles.runActions}>
+              <button class={styles.button} disabled={busy() || run.conclusion !== "failure"} onClick={() => void runAction(run, "rerun-failed-jobs")}>↻ Falhas</button>
+              <button class={styles.button} disabled={busy() || run.status === "completed"} onClick={() => void runAction(run, "cancel")}>✕</button>
+              <button class={styles.button} onClick={() => void navigator.clipboard.writeText(run.html_url).then(() => setMessage("Link copiado")).catch(() => setMessage("Cópia indisponível"))}>⧉</button>
+            </div>}</For>
           <p role="status">{busy() ? "Carregando…" : message()}</p>
           {/* TODO(GITHUB-DOCK): Expose dashboard preferences as typed Rod Dock settings
               across repositories, with per-repo credentials and secure cross-origin
