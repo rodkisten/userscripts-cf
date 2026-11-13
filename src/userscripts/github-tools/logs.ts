@@ -33,15 +33,11 @@ export async function loadStepOutput(step: StepAddress, token = "", signal?: Abo
   // GitHub's supported REST endpoint returns the whole job log, not an
   // individual step. Split by runner-generated step section markers only
   // when present. Never silently copy a different step's content.
-  const lines = text.split(/\\r?\\n/);
-  const start = lines.findIndex((line) => new RegExp("^(?:[^\\n]*?\\s)?(?:\\d{4}-\\d\\d-\\d\\dT[^ ]+Z\\s+)?(?:##\\[group\\])?Run ").test(line));
   // TODO(GITHUB-STEP-LOGS): Correlate step indices with job metadata from
   // GET /actions/jobs/{job_id} and parse runner log section boundaries
   // across hosted/self-hosted runner formats. The official API does not
   // expose GET /actions/jobs/{job_id}/steps/{n}/logs. Until then,
   // returning the complete job log is safe and explicitly labeled.
-  void lines;
-  void start;
   return text;
 }
 
