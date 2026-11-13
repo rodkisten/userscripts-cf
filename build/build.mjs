@@ -188,6 +188,8 @@ for (const target of targets) {
   await fs.writeFile(path.join(out, metaFile), metaSource);
   manifest.scripts.push({
     id: target.id,
+    name: target.name,
+    description: target.id === "standalone" ? "Todos os módulos em uma instalação" : "Userscript independente com atualizações automáticas",
     file,
     metaFile,
     metaSha256: createHash("sha256").update(metaSource).digest("hex"),
