@@ -33,7 +33,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     const detail = (event as CustomEvent<DockEvent>).detail;
     if (!detail) return;
     if (detail.type === "register" && detail.module) {
-      setEntries((items) => [...items.filter((item) => item.id !== detail.module!.id), detail.module!]);
+      setEntries((items) => [...items.filter((item) => item.id !== detail.module!.id), { ...detail.module!, actions: [...(detail.module!.actions || []), ...(menuEntries.get(detail.module!.id)?.values() || [])] }]);
     } else if (detail.type === "unregister" && detail.id) {
       setEntries((items) => items.filter((item) => item.id !== detail.id));
     }
