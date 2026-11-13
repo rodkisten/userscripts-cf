@@ -13,6 +13,7 @@ import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
 import { packageIcon } from "./package-icons.mjs";
+import { analyzeClassReferences } from "./class-references.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
@@ -68,6 +69,7 @@ const targets = [
   },
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
+const classAudit = {};
 for (const target of targets) {
   const installers = [];
   for (const world of ["sandbox", "page"]) {
@@ -180,6 +182,15 @@ for (const target of targets) {
     if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
     source = `${metadata}\n\n${result.code}\n`;
   }
+  // Audit the emitted JS, including delegated event handlers, without changing
+  // behavioral class identities. A dynamic selector blocks unsafe renaming.
+  const references = analyzeClassReferences(source.slice(metadata.length));
+  classAudit[target.id] = {
+    staticClasses: references.classes.length,
+    dynamicReferences: references.dynamic.length,
+    dynamicMethods: [...new Set(references.dynamic)].sort(),
+    bytes: Buffer.byteLength(source),
+  };
   await fs.writeFile(path.join(out, file), source);
   await fs.mkdir(path.join(out, "icons"), { recursive: true });
   await fs.writeFile(path.join(out, "icons", `${target.id}.svg`), icon.svg);
@@ -199,6 +210,7 @@ for (const target of targets) {
   console.log(`Built ${file} (${source.length} bytes)`);
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
 
 execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
