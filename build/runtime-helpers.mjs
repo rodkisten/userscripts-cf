@@ -103,7 +103,8 @@ export function runtimeHelpers() {
           if (ts.isPropertyAccessExpression(callee) &&
               ["addEventListener", "removeEventListener"].includes(callee.name.text) &&
               ts.isIdentifier(callee.expression) &&
-              ["window", "document"].includes(callee.expression.text) &&
+              (["window", "document"].includes(callee.expression.text) ||
+                elements.has(callee.expression.text)) &&
               !shadowed.has(callee.expression.text)) {
             const operation = callee.name.text === "addEventListener" ? "add" : "remove";
             replacement = contextName + ".events.dom." + operation + ".bind(null, " + callee.expression.text + ")";
