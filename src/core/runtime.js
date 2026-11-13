@@ -1,5 +1,6 @@
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
+import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
@@ -88,9 +89,12 @@ export function createRuntime(definitions, bridge, host = window) {
     });
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
+    const dom = createDomEngine({ root: host.document, signal: abort.signal });
+    onDispose(() => dom.dispose());
     return {
       id: definition.id,
       http,
+      dom,
       signal: abort.signal,
       storage,
       menu: rod.menu,
