@@ -1,4 +1,5 @@
-import { mountView } from "./solid-mount.tsx";
+import { createSignal, For } from "solid-js";
+import { disposeView, mountView } from "./solid-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
@@ -12,6 +13,21 @@ import { diagnosticSpans, highlightWithIssues } from "../search/highlight.tsx";
 import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { currentSearch, inspectNativeQuery } from "./search-workbench.tsx";
+
+const quickSearchStyles = new WeakMap<HTMLFormElement, HTMLStyleElement>();
+
+/** Keep the editor stylesheet outside the Solid render tree and avoid repeated injection. */
+function ensureQuickSearchStyles(form: HTMLFormElement) {
+  let style = quickSearchStyles.get(form);
+  if (style?.isConnected) return;
+  style = form.ownerDocument.createElement("style");
+  style.dataset.rodxQuickSearch = "true";
+  style.textContent = extractedCSS1;
+  form.prepend(style);
+  quickSearchStyles.set(form, style);
+}
+
+const listNameSetters = new WeakMap<HTMLDivElement, (name: string) => void>();
 
 export let QuickUI;
 
@@ -31,10 +47,15 @@ export function initializeDeckQuickUI() {
     function search(query = "") {
       const form = (<form />) as HTMLFormElement;
       form.className = "rodx-quick-search";
+      const [validationMessage, setValidationMessage] = createSignal("");
+      const [validationLevel, setValidationLevel] = createSignal("info");
+      const [canSubmit, setCanSubmit] = createSignal(false);
+      const [rows, setRows] = createSignal<any[]>([]);
+      const [selected, setSelected] = createSignal(-1);
       mountView(form, () => (
         <>
           {"\n            "}
-          <style textContent={extractedCSS1} />
+
           {"\n            "}
           <div class={"rxq-editor"}>
             {"\n              "}
@@ -51,18 +72,29 @@ export function initializeDeckQuickUI() {
               aria-label={"Pesquisa com destaque de sintaxe e sugestões"}
               aria-autocomplete={"list"}
               aria-controls={"rodx-quick-suggestions"}
+              aria-expanded={rows().length > 0 ? "true" : false}
+              aria-activedescendant={selected() >= 0 ? `rodx-rxq-option-${selected()}` : undefined}
               placeholder={"Pesquise usando termos, list:, filtros, hashtags, AND/OR…"}
             ></textarea>
             {"\n            "}
           </div>
           {"\n            "}
-          <small class={"rxq-message"} data-rxq={"message"} role={"status"} aria-live={"polite"}></small>
+          <small
+            class="rxq-message"
+            data-rxq="message"
+            data-level={validationLevel()}
+            role="status"
+            aria-live="polite"
+          >
+            {validationMessage()}
+          </small>
           {"\n            "}
           <div
             class={"rxq-suggestions"}
             id={"rodx-quick-suggestions"}
             data-rxq={"suggestions"}
             role={"listbox"}
+            hidden={rows().length === 0}
             aria-label={"Sugestões da pesquisa"}
           ></div>
           {"\n            "}
@@ -80,7 +112,7 @@ export function initializeDeckQuickUI() {
               {"Minhas listas"}
             </button>
             {"\n              "}
-            <button type={"submit"} data-rxq={"submit"}>
+            <button type={"submit"} data-rxq={"submit"} disabled={!canSubmit()}>
               {"Pesquisar"}
             </button>
             {"\n            "}
@@ -88,15 +120,12 @@ export function initializeDeckQuickUI() {
           {"\n          "}
         </>
       ));
+      ensureQuickSearchStyles(form);
       const input = form.querySelector<HTMLInputElement>(RODX_SELECTORS.queryWorkbenchInput);
       const syntax = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSyntax);
-      const message = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchMessage);
-      const submit = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSubmit);
       const suggestionBox = form.querySelector<HTMLElement>(RODX_SELECTORS.queryWorkbenchSuggestions);
       const initial = query || (location.pathname === "/search" ? currentSearch()?.query : "") || "";
       input.value = initial;
-      let rows = [];
-      let selected = -1;
       let sequence = 0;
       let refreshTimer = 0;
       let closed = false;
@@ -297,46 +326,49 @@ export function initializeDeckQuickUI() {
           ? { list: 11, full: 2, history: 1, token: 2 }
           : { list: 5, full: 5, history: 3, token: 3 };
         const countByKind = { list: 0, full: 0, history: 0, token: 0 };
-        rows = candidates
-          .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
-          .filter((item) => {
-            const key = `${item.kind}:${item.query || item.id}`;
-            if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) return false;
-            seen.add(key);
-            countByKind[item.kind]++;
-            return true;
-          })
-          .slice(0, 16);
-        selected = -1;
-        renderSuggestions();
+        setSelected(-1);
+        setRows(
+          candidates
+            .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
+            .filter((item) => {
+              const key = `${item.kind}:${item.query || item.id}`;
+              if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) return false;
+              seen.add(key);
+              countByKind[item.kind]++;
+              return true;
+            })
+            .slice(0, 16),
+        );
       }
       function renderSuggestions() {
-        suggestionBox.replaceChildren();
-        suggestionBox.hidden = rows.length === 0;
-        rows.forEach((row, index) => {
-          const option = (<button />) as HTMLButtonElement;
-          option.type = "button";
-          option.className = "rxq-option";
-          option.setAttribute("role", "option");
-          option.id = `rodx-rxq-option-${index}`;
-          option.setAttribute("aria-selected", String(index === selected));
-          const title = (<strong />) as HTMLElement;
-          const detail = (<small />) as HTMLElement;
-          title.textContent = row.label;
-          detail.textContent = row.detail;
-          option.append(title, detail);
-          option.addEventListener("pointerdown", (event) => {
-            if (event.pointerType !== "touch") event.preventDefault();
-          });
-          option.onclick = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            applySuggestion(row);
-          };
-          suggestionBox.append(option);
-        });
-        input.setAttribute("aria-expanded", String(Boolean(rows.length)));
+        mountView(suggestionBox, () => (
+          <>
+            <For each={rows()}>
+              {(row, index) => (
+                <button
+                type="button"
+                class="rxq-option"
+                role="option"
+                id={`rodx-rxq-option-${index()}`}
+                aria-selected={index() === selected() ? "true" : false}
+                onPointerDown={(event) => {
+                  if (event.pointerType !== "touch") event.preventDefault();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  applySuggestion(row);
+                }}
+              >
+                <strong>{row.label}</strong>
+                <small>{row.detail}</small>
+                </button>
+              )}
+            </For>
+          </>
+        ));
       }
+      renderSuggestions();
       function validate() {
         const value = input.value;
         input.style.setProperty("height", "auto", "important");
@@ -351,13 +383,14 @@ export function initializeDeckQuickUI() {
         const diagnostic = inspectNativeQuery(value);
         const issue = diagnosticSpans(value).find((item) => item.severity === "error");
         const error = issue?.message || (diagnostic.level === "error" ? diagnostic.message : "");
-        message.textContent =
+        setValidationMessage(
           error ||
-          (value.trim()
-            ? "Sugestões consideram a pesquisa inteira; toque numa lista para inserir seu ID."
-            : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui.");
-        message.dataset.level = error ? "error" : "info";
-        (submit as HTMLButtonElement).disabled = Boolean(error || !value.trim());
+            (value.trim()
+              ? "Sugestões consideram a pesquisa inteira; toque numa lista para inserir seu ID."
+              : "Buscas salvas, presets, listas, recentes, filtros e hashtags aparecem aqui."),
+        );
+        setValidationLevel(error ? "error" : "info");
+        setCanSubmit(Boolean(!error && value.trim()));
       }
       function queueSuggestions() {
         clearTimeout(refreshTimer);
@@ -396,23 +429,22 @@ export function initializeDeckQuickUI() {
       input.addEventListener("keydown", (event) => {
         if (event.isComposing) return;
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-          if (!rows.length) return;
+          if (!rows().length) return;
           event.preventDefault();
           event.stopPropagation();
-          selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
-          renderSuggestions();
+          setSelected((selected() + (event.key === "ArrowDown" ? 1 : -1) + rows().length) % rows().length);
           suggestionBox
             .querySelector<HTMLElement>(DOM_SELECTORS.selectedItems)
             ?.scrollIntoView({ block: "nearest" });
-        } else if (event.key === "Enter" && !event.shiftKey && selected >= 0 && rows[selected]) {
+        } else if (event.key === "Enter" && !event.shiftKey && selected() >= 0 && rows()[selected()]) {
           event.preventDefault();
           event.stopPropagation();
-          applySuggestion(rows[selected]);
-        } else if (event.key === "Escape" && rows.length) {
+          applySuggestion(rows()[selected()]);
+        } else if (event.key === "Escape" && rows().length) {
           event.preventDefault();
           event.stopPropagation();
-          rows = [];
-          renderSuggestions();
+          setRows([]);
+          setSelected(-1);
         } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
           form.requestSubmit();
@@ -431,7 +463,8 @@ export function initializeDeckQuickUI() {
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.focus();
         } else if (action === "lists") {
-          rows = (Studio.services.lists?.all() || [])
+          setSelected(-1);
+          setRows((Studio.services.lists?.all() || [])
             .map((item) => ({
               kind: "list",
               id: String(item.id),
@@ -440,9 +473,7 @@ export function initializeDeckQuickUI() {
               detail: `Lista · ID ${item.id} · inserir na pesquisa`,
               weight: 200,
             }))
-            .slice(0, 50);
-          selected = -1;
-          renderSuggestions();
+            .slice(0, 50));
           input.focus();
         }
       });
@@ -468,12 +499,15 @@ export function initializeDeckQuickUI() {
         closed = true;
         clearTimeout(refreshTimer);
         ++sequence;
-        rows = [];
+        // Dispose nested roots before the form root, even when the menu keeps the form cached.
+        disposeView(suggestionBox);
+        disposeView(syntax);
+        disposeView(form);
       });
       form.onsubmit = (event) => {
         event.preventDefault();
         validate();
-        if ((submit as HTMLButtonElement).disabled) return;
+        if (!canSubmit()) return;
         const full = input.value.trim();
         handle.close();
         void SearchHistory.record(full, "floating", "live");
@@ -581,9 +615,12 @@ export function initializeDeckQuickUI() {
         };
         document.body.append(floating);
         position();
-        const style = (<style />) as HTMLStyleElement;
-        style.textContent = extractedCSS2;
-        document.head.append(style);
+        if (!document.getElementById("rodx-quick-actions-page-css")) {
+          const style = document.createElement("style");
+          style.id = "rodx-quick-actions-page-css";
+          style.textContent = extractedCSS2;
+          document.head.append(style);
+        }
         window.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("resize", position, { passive: true });
         window.visualViewport?.addEventListener("scroll", position, { passive: true });
@@ -593,18 +630,23 @@ export function initializeDeckQuickUI() {
         if (!bar) continue;
         let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
-          button = (<button />) as HTMLButtonElement;
-          button.type = "button";
-          button.dataset.rodxAddList = "1";
-          button.textContent = "☷";
-          button.title = "Adicionar autor à lista";
-          button.setAttribute("aria-label", "Adicionar autor à lista");
-          button.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const user = authorOf(article);
-            if (user) void Studio.services.lists?.picker(user, button);
-          };
+          const action = (
+            <button
+              type="button"
+              data-rodx-add-list="1"
+              title="Adicionar autor à lista"
+              aria-label="Adicionar autor à lista"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const user = authorOf(article);
+                if (user) void Studio.services.lists?.picker(user, event.currentTarget);
+              }}
+            >
+              ☷
+            </button>
+          ) as HTMLButtonElement;
+          button = action;
           bar.append(button);
         }
       }
@@ -622,46 +664,65 @@ export function initializeDeckQuickUI() {
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
           applyComponentStyle(listInfo, "rx-quick-actions-listInfo", false);
-          const text = (<span />) as HTMLSpanElement;
-          text.textContent = "ID: " + id;
-          const name = (<strong />) as HTMLElement;
-          name.dataset.rodxLiveName = "1";
-          const found = Studio.services.lists?.all().find((item) => item.id === id);
-          name.textContent = found ? Studio.services.lists.displayName(found) : `lista ${id}`;
-          const copy = (<button />) as HTMLButtonElement;
-          copy.textContent = "Copiar";
-          copy.onclick = async () => {
-            try {
-              await navigator.clipboard.writeText(id);
-              copy.textContent = "Copiado";
-            } catch {
-              copy.textContent = "Não foi possível copiar";
-            }
-          };
-          const refreshName = (<button />) as HTMLButtonElement;
-          refreshName.textContent = "↻ Atualizar nome";
-          refreshName.onclick = async () => {
-            refreshName.disabled = true;
-            refreshName.textContent = "Atualizando…";
-            try {
-              await Studio.services.lists?.editName(id, true);
-            } finally {
-              refreshName.disabled = false;
-              refreshName.textContent = "↻ Atualizar nome";
-            }
-          };
-          const videos = (<button />) as HTMLButtonElement;
-          videos.textContent = "Ver vídeos";
-          videos.onclick = () => SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
-          listInfo.append(name, text, copy, refreshName, videos);
+          const listId = id;
+          const found = Studio.services.lists?.all().find((item) => item.id === listId);
+          const initialName = found ? Studio.services.lists.displayName(found) : `lista ${listId}`;
+          const listContainer = listInfo as HTMLDivElement;
+          mountView(listContainer, () => {
+            const [listName, setListName] = createSignal(initialName);
+            listNameSetters.set(listContainer, setListName);
+            const [copyLabel, setCopyLabel] = createSignal("Copiar");
+            const [refreshing, setRefreshing] = createSignal(false);
+            return (
+              <>
+                <strong data-rodx-live-name="1">{listName()}</strong>
+                <span>{"ID: " + listId}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(listId);
+                      setCopyLabel("Copiado");
+                    } catch {
+                      setCopyLabel("Não foi possível copiar");
+                    }
+                  }}
+                >
+                  {copyLabel()}
+                </button>
+                <button
+                  type="button"
+                  disabled={refreshing()}
+                  onClick={async () => {
+                    if (refreshing()) return;
+                    setRefreshing(true);
+                    try {
+                      await Studio.services.lists?.editName(listId, true);
+                      const updated = Studio.services.lists?.all().find((item) => item.id === listId);
+                      if (updated) setListName(Studio.services.lists.displayName(updated));
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
+                >
+                  {refreshing() ? "Atualizando…" : "↻ Atualizar nome"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void SearchAnchors.nativeSearch("list:" + listId + " filter:native_video")}
+                >
+                  Ver vídeos
+                </button>
+              </>
+            );
+          });
           main.prepend(listInfo);
         }
       }
       if (listInfo?.isConnected && listInfo.dataset.id === id) {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
-        const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
-        if (currentName && currentName.textContent !== name) currentName.textContent = name;
+        listNameSetters.get(listInfo as HTMLDivElement)?.(name);
       }
       for (const a of document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.listLinks)) {
         if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) continue;
@@ -672,16 +733,20 @@ export function initializeDeckQuickUI() {
         )
           a.nextElementSibling.remove();
         if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) continue;
-        const b = (<button />) as HTMLButtonElement;
-        b.type = "button";
-        b.textContent = "▷ Vídeos";
-        b.dataset.rodxListVideo = id;
+        const b = (
+          <button
+            type="button"
+            data-rodx-list-video={id}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
+            }}
+          >
+            ▷ Vídeos
+          </button>
+        ) as HTMLButtonElement;
         applyComponentStyle(b, "rx-quick-actions-b", false);
-        b.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
-        };
         a.after(b);
       }
     }

@@ -8,7 +8,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function boot(file, { direct = true } = {}) {
   const host = new Window({
     url: "https://x.com/home",
-    settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true },
+    settings: {
+      enableJavaScriptEvaluation: true,
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
+      suppressInsecureJavaScriptEnvironmentWarning: true,
+    },
   });
   const values = new Map(),
     errors = [];

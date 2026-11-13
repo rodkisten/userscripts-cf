@@ -1,5 +1,5 @@
-import { render } from "solid-js/web";
-import type { JSX } from "solid-js";
+import { render } from "@solidjs/web";
+import type { JSX } from "@solidjs/web";
 
 export type ShadowStyle = string | { css: string };
 export interface ShadowMountOptions {
@@ -51,8 +51,10 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
     document.body.append(host);
   }
   const target = options.target ?? host!;
-  const owner = typeof ShadowRoot !== "undefined" && target instanceof ShadowRoot ? target : target.attachShadow
-    ? target.shadowRoot ?? target.attachShadow({ mode: "open" }) : null;
+  const owner: ShadowRoot =
+    typeof ShadowRoot !== "undefined" && target instanceof ShadowRoot
+      ? target
+      : (target as HTMLElement).shadowRoot ?? (target as HTMLElement).attachShadow({ mode: "open" });
   if (!owner) throw new Error("A ShadowRoot is required to mount Solid UI");
   const releaseStyles = registerShadowStyles(owner, options.styles ?? []);
   const container = owner.ownerDocument.createElement("div");

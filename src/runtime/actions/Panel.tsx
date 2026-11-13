@@ -1,5 +1,5 @@
-import { For, createSignal, createEffect, onCleanup, onMount } from "solid-js";
-import { render } from "solid-js/web";
+import { For, createSignal, onCleanup } from "solid-js";
+import { render } from "@solidjs/web";
 
 export type ActionsTab = { id: string; title: string; render: () => HTMLElement };
 export type ActionsModule = { id: string; title: string; tabs: ActionsTab[] };
@@ -21,9 +21,9 @@ export function mountActionsPanel(
     const refresh = () => {
       const next = entries();
       setTabs(next);
-      if (!next.some((tab) => tab.key === active())) {
-        setActive(next[0]?.key || "");
-      }
+      const key = next.some((tab) => tab.key === active()) ? active() : next[0]?.key || "";
+      setActive(key);
+      show(key);
     };
  
     const unsubscribe = subscribe(refresh);
@@ -51,8 +51,8 @@ export function mountActionsPanel(
       }
     };
 
-    onMount(() => {
-      createEffect(() => show(active()));
+    queueMicrotask(() => {
+      if (content?.isConnected) show(active());
     });
 
     return (
@@ -62,10 +62,13 @@ export function mountActionsPanel(
             {(tab) => (
               <button
                 type="button"
-                class={{ "rod-actions-tab-active": active() === tab.key }}
-                aria-selected={active() === tab.key}
+                class={active() === tab.key ? "rod-actions-tab-active" : ""}
+                aria-selected={active() === tab.key ? "true" : false}
                 role="tab"
-                onClick={() => setActive(tab.key)}
+                onClick={() => {
+                  setActive(tab.key);
+                  show(tab.key);
+                }}
               >
                 {tab.label}
               </button>

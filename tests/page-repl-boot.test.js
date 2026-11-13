@@ -7,7 +7,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 test("complete REPL installable opens, runs async code, persists closure and cleans its UI", async () => {
   const host = new Window({
     url: "https://example.com",
-    settings: { enableJavaScriptEvaluation: true, suppressInsecureJavaScriptEnvironmentWarning: true },
+    settings: {
+      enableJavaScriptEvaluation: true,
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
+      suppressInsecureJavaScriptEnvironmentWarning: true,
+    },
   });
   // Reproduce a page with hostile inherited typography and the host inline reset.
   host.document.body.style.cssText = "font: 32px Times New Roman; color: black";

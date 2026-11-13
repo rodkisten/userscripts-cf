@@ -26,8 +26,7 @@ function ensureToast() {
   setToast = update;
   dispose = mountSolidShadow(() => (
     <div
-      class={styles.toast}
-      classList={{ [styles.error]: toast().kind === "error" }}
+      class={`${styles.toast} ${toast().kind === "error" ? styles.error : ""}`}
       role="status"
       aria-live={toast().kind === "error" ? "assertive" : "polite"}
     >

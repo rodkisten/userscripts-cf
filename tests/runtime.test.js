@@ -1,7 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Window } from "happy-dom";
-import { createRuntime } from "../src/core/runtime.js";
+import { build } from "vite";
+
+// Compile the same browser entry as production, including TS/TSX and vendor globals.
+const result = await build({
+  configFile: new URL("../vite.config.js", import.meta.url).pathname,
+  logLevel: "silent",
+  build: {
+    write: false,
+    lib: {
+      entry: new URL("../src/core/runtime.js", import.meta.url).pathname,
+      name: "RuntimeFixture",
+      formats: ["iife"],
+    },
+  },
+});
+const bundle = (Array.isArray(result) ? result : [result])
+  .flatMap((item) => item.output)
+  .find((item) => item.type === "chunk").code;
+function createRuntime(definitions, bridge, host) {
+  host.eval(bundle + ";window.runtimeFixture = RuntimeFixture;");
+  return host.runtimeFixture.createRuntime(definitions, bridge, host);
+}
+const settings = {
+  enableJavaScriptEvaluation: true,
+  suppressInsecureJavaScriptEnvironmentWarning: true,
+  disableJavaScriptFileLoading: true,
+  handleDisabledFileLoadingAsSuccess: true,
+};
 import { matchURL } from "../src/core/match.js";
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
@@ -14,7 +41,7 @@ test("URL patterns use hostname boundaries, paths, query and exclusions", () => 
 });
 
 test("SPA enters once, retains matching module, disposes events and styles on exit", async () => {
-  const host = new Window({ url: "https://x.com/home" });
+  const host = new Window({ settings, url: "https://x.com/home" });
   let starts = 0,
     stops = 0,
     clicks = 0;
@@ -44,7 +71,7 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   host.history.pushState({}, "", "/settings");
   await app.navigate();
   assert.equal(stops, 1);
-  assert.equal(host.document.querySelector("style"), null);
+  assert.equal(host.document.querySelector("[data-userscripts-cf-ui]"), null);
   host.dispatchEvent(new host.Event("click"));
   assert.equal(clicks, 1);
   host.history.pushState({}, "", "/home");
@@ -57,7 +84,7 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
 });
 
 test("navigation during asynchronous initialization cleans the stale instance", async () => {
-  const host = new Window({ url: "https://example.com/on" });
+  const host = new Window({ settings, url: "https://example.com/on" });
   let release,
     starts = 0,
     stops = 0;
@@ -86,7 +113,7 @@ test("navigation during asynchronous initialization cleans the stale instance", 
   await settling;
   assert.equal(starts, 1);
   assert.equal(stops, 1);
-  assert.deepEqual(app.active, []);
+  assert.deepEqual([...app.active], []);
   await app.dispose();
   await host.happyDOM.abort();
 });

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { Window } from "happy-dom";
+import { parse } from "acorn";
+import definitions from "../userscripts.config.js";
 
 const dist = new URL("../dist/", import.meta.url);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -11,6 +13,8 @@ async function run(file, url, values = new Map()) {
     url,
     settings: {
       enableJavaScriptEvaluation: true,
+      disableJavaScriptFileLoading: true,
+      handleDisabledFileLoadingAsSuccess: true,
       suppressInsecureJavaScriptEnvironmentWarning: true,
     },
   });
@@ -26,13 +30,24 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["rodx-studio", "example-site", "page-repl", "unified"],
+    [...definitions.map((item) => item.id), "unified"],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
     assert.match(source, /^\/\/ ==UserScript==/);
     assert.match(source, /@run-at\s+document-start/);
-    if (entry.id !== "page-repl") assert.doesNotMatch(source, /\bimport\s*\(/);
+    // Inspect syntax: storage.import() and the menu's optional loader string
+    // are not unresolved bundle imports.
+    const visit = (node) => {
+      if (!node || typeof node !== "object") return;
+      assert.notEqual(node.type, "ImportDeclaration");
+      if (entry.id !== "page-repl") assert.notEqual(node.type, "ImportExpression");
+      for (const value of Object.values(node)) {
+        if (Array.isArray(value)) value.forEach(visit);
+        else visit(value);
+      }
+    };
+    visit(parse(source, { ecmaVersion: "latest", sourceType: "script" }));
     assert.equal(createHash("sha256").update(source).digest("hex"), entry.sha256);
   }
 });
@@ -40,10 +55,14 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
 test("individual generated userscript executes npm dependency and cleans demo on excluded SPA route", async () => {
   const host = await run("example-site.user.js", "https://example.com/");
   assert.deepEqual([...host.__userscriptsCF["example-site"].active], ["example-site"]);
-  assert.match(host.document.querySelector("aside").textContent, /Vite \+ npm/);
+  assert.match(
+    host.document.querySelector("[data-userscripts-cf-ui=example-site]").shadowRoot.querySelector("aside")
+      .textContent,
+    /Vite \+ npm/,
+  );
   host.history.pushState({}, "", "/disabled/demo");
   await host.__userscriptsCF["example-site"].navigate();
-  assert.equal(host.document.querySelector("aside"), null);
+  assert.equal(host.document.querySelector("[data-userscripts-cf-ui=example-site]"), null);
   assert.equal(host.document.querySelector("style"), null);
   await host.__userscriptsCF["example-site"].dispose();
   await host.happyDOM.abort();

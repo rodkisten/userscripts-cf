@@ -1326,7 +1326,8 @@
       };
     }
 
-    async import(payload: ExportPayload, options: ImportOptions = {}) {
+    // Computed name also avoids DOM script evaluators mistaking this method for import().
+    async ["import"](payload: ExportPayload, options: ImportOptions = {}) {
       await this.readyPromise;
       if (payload.format !== "RodStorage" || payload.formatVersion !== 1)
         throw new TypeError("Invalid RodStorage export");
