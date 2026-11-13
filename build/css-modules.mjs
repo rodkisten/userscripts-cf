@@ -3,6 +3,7 @@ import path from "node:path";
 import postcss from "postcss";
 import { transform } from "lightningcss";
 import { stylesPipeline } from "./styles.mjs";
+import { deduplicateCSS } from "./css-deduplicate.mjs";
 
 /** Inline CSS Modules: userscripts cannot load a sidecar stylesheet. */
 export function inlineCSSModules() {
@@ -48,7 +49,8 @@ export function inlineCSSModules() {
       const classes = Object.fromEntries(
         Object.entries(result.exports || {}).map(([key, value]) => [key, value.name]),
       );
-      return `export const css = ${JSON.stringify(result.code.toString())}; export default ${JSON.stringify(classes)};`;
+      const optimized = deduplicateCSS(result.code.toString());
+      return `export const css = ${JSON.stringify(optimized.css)}; export default ${JSON.stringify(classes)};`;
     },
   };
 }
