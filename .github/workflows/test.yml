@@ -1,15 +1,16 @@
-name: Validate userscripts
-run-name: "Userscripts · ${{ github.ref_name }} · ${{ github.event_name }}"
+name: "🧪 Validate userscripts"
+run-name: "🧪 Userscripts · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}"
 
 on:
   workflow_dispatch:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
+    name: "🧪 Typecheck, build & Vitest"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,29 +20,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # Regenerate the dependency graph while the Vitest migration lockfile is pending.
-      - run: npm install --package-lock-only --ignore-scripts
-      # One-time migration: regenerate the npm lockfile on the PR branch.
-      # Never push from forked PRs or modify main.
-      - name: "🔧 Finalizar migração Vitest e atualizar lockfile"
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'test/migrate-to-vitest'
-        env:
-          PR_BRANCH: ${{ github.head_ref }}
-        run: |
-          node build/migrate-vitest.mjs
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          if ! git diff --quiet -- package-lock.json tests/; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json tests/
-            git commit -m "test: migrate test imports and lock Vitest dependencies"
-            git push origin "HEAD:refs/heads/$PR_BRANCH"
-          fi
-      - run: npm ci
-      - run: node build/migrate-vitest.mjs
-     # - run: npm run format:check
-      - run: npm test
+      - name: "📦 Install locked dependencies"
+        run: npm ci
+      - name: "🧪 Run tests"
+        run: npm test
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: userscripts-and-loader-lab
           path: |
