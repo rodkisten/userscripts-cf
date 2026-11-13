@@ -30,6 +30,8 @@ test("update metadata and downloads have matching versions and stable release UR
     assert.equal(createHash("sha256").update(meta).digest("hex"), entry.metaSha256);
     files.push(entry.file, entry.metaFile);
   }
+  const iconEntries = await fs.readdir(new URL("icons/", dist), { withFileTypes: true });
+  files.push(...iconEntries.filter(entry => entry.isFile()).map(entry => "icons/" + entry.name));
   for (const file of files.sort()) {
     const source = await fs.readFile(new URL(file, dist));
     expectedSums.push(`${createHash("sha256").update(source).digest("hex")}  ${file}`);
