@@ -187,8 +187,18 @@ await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, nul
 
 execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
-for (const file of (await fs.readdir(out)).sort()) {
-  const code = await fs.readFile(path.join(out, file));
-  sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
+async function checksumFiles(directory, prefix = "") {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    const relative = path.posix.join(prefix, entry.name);
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await checksumFiles(absolute, relative);
+    } else if (entry.isFile()) {
+      const code = await fs.readFile(absolute);
+      sums.push(`${createHash("sha256").update(code).digest("hex")}  ${relative}`);
+    }
+  }
 }
+await checksumFiles(out);
 await fs.writeFile(path.join(out, "SHA256SUMS"), sums.join("\n") + "\n");
