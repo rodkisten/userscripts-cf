@@ -92,7 +92,16 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     ),
     { id: "gws-sg-root" },
   );
-  native(failed);
+  // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty Solid host
+  // without throwing. Never hide the native player until replacement content
+  // exists. TODO: Add integration tests for recordings, profiles, delayed
+  // jPlayer hydration and SPA navigation before removing this safeguard.
+  const revealIfReady = () => {
+    const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name, [role=alert]");
+    native(!failed && !rendered);
+  };
+  revealIfReady();
+  queueMicrotask(revealIfReady);
   // jPlayer can set its URL after DOMContentLoaded. Detect late source/script
   // changes instead of committing a permanently empty player on first render.
   const refresh = () => {
@@ -130,7 +139,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     attributes: true,
     attributeFilter: ["src"],
   });
-  const interval = setInterval(refresh, 500);
+  const interval = setInterval(() => { refresh(); revealIfReady(); }, 500);
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
