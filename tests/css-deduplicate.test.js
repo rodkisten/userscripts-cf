@@ -18,6 +18,12 @@ describe("CSS deduplication and behavioral selectors", () => {
     expect(deduplicateCSS(".a{color:red;background:blue}.b{background:blue;color:red}").merged).toBe(0);
   });
 
+  it("does not combine nested or scoped rules", () => {
+    expect(deduplicateCSS(".a &{color:red}.b &{color:red}").merged).toBe(0);
+    expect(deduplicateCSS("@scope (.root){.a{color:red}.b{color:red}}").merged).toBe(0);
+    expect(deduplicateCSS("@starting-style{.a{opacity:0}.b{opacity:0}}").merged).toBe(0);
+  });
+
   it("keeps media-query boundaries and keyframes intact", () => {
     const result = deduplicateCSS("@media(min-width:10px){.a{color:red}.b{color:red}}.c{color:red}");
     expect(result.merged).toBe(1);
