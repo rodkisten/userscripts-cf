@@ -20,8 +20,8 @@ export function createHandler(assets, info) {
       let body,
         status = 200;
       if (url.pathname === "/") {
-        headers.set("Content-Type", "application/json; charset=utf-8");
-        body = JSON.stringify(info, null, 2);
+        headers.set("Content-Type", "text/html; charset=utf-8");
+        body = assets["index.html"] || JSON.stringify(info, null, 2);
       } else {
         const file = url.pathname.slice(1);
         if (!Object.hasOwn(assets, file)) {
@@ -32,7 +32,7 @@ export function createHandler(assets, info) {
           body = assets[file];
           headers.set(
             "Content-Type",
-            file.endsWith(".js")
+            file.endsWith(".html") ? "text/html; charset=utf-8" : file.endsWith(".svg") ? "image/svg+xml; charset=utf-8" : file.endsWith(".js")
               ? "application/javascript; charset=utf-8"
               : file.endsWith(".json")
                 ? "application/json; charset=utf-8"
