@@ -36,6 +36,43 @@ export function mountGitHubDashboard(ctx: any) {
   });
   let request = 0;
   let dragIndex: number | null = null;
+  let touchTimer: ReturnType<typeof setTimeout> | undefined;
+  let touchStart: { x: number; y: number; pointerId: number } | undefined;
+  let touchDragging = false;
+  const clearTouch = () => {
+    if (touchTimer) clearTimeout(touchTimer);
+    touchTimer = undefined;
+    touchStart = undefined;
+    touchDragging = false;
+  };
+  const touchDown = (event: PointerEvent, index: number) => {
+    if (event.pointerType !== "touch") return;
+    clearTouch();
+    touchStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+    touchTimer = setTimeout(() => {
+      if (!touchStart || ctx.signal.aborted) return;
+      dragIndex = index;
+      touchDragging = true;
+      navigator.vibrate?.(15);
+    }, 350);
+  };
+  const touchMove = (event: PointerEvent) => {
+    if (!touchStart || event.pointerId !== touchStart.pointerId) return;
+    if (!touchDragging && Math.hypot(event.clientX - touchStart.x, event.clientY - touchStart.y) > 9)
+      clearTouch();
+    if (touchDragging) event.preventDefault();
+  };
+  const touchUp = (event: PointerEvent) => {
+    if (!touchStart || event.pointerId !== touchStart.pointerId) return;
+    if (touchDragging) {
+      event.preventDefault();
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-ghft-favorite-index]");
+      const index = Number(target?.getAttribute("data-ghft-favorite-index"));
+      if (target && Number.isSafeInteger(index)) reorder(index);
+      dragIndex = null;
+    }
+    clearTouch();
+  };
   const save = (patch: Partial<Settings>) => {
     const next = { ...settings(), ...patch };
     setSettings(next);
@@ -142,11 +179,13 @@ export function mountGitHubDashboard(ctx: any) {
       <nav class={styles.favoriteBar} aria-label="Arquivos favoritos">
         <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "GitHub +"}</button>
         <For each={settings().files}>{(file, i) =>
-          <a class={styles.favorite} href={file.url} draggable="true"
+          <a class={styles.favorite} href={file.url} draggable="true" data-ghft-favorite-index={i()}
             onDragStart={(e) => { dragIndex = i(); e.dataTransfer?.setData("text/plain", file.url); }}
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); reorder(i()); }}
-            onPointerDown={(e) => { if (e.pointerType === "touch") dragIndex = i(); }}
-            onPointerUp={(e) => { if (e.pointerType === "touch" && dragIndex !== null) reorder(i()); }}
+            onPointerDown={(e) => touchDown(e, i())}
+            onPointerMove={touchMove}
+            onPointerUp={touchUp}
+            onPointerCancel={clearTouch}
             title={file.name}><span>{icon(file.name, settings().iconTheme)}</span> {file.name}</a>}
         </For>
       </nav>
@@ -246,7 +285,7 @@ export function mountGitHubDashboard(ctx: any) {
   ctx.listen(window, "popstate", navigate);
   ctx.listen(window, "turbo:load", navigate);
   void load();
-  ctx.onDispose(() => { request++; mount.dispose(); });
+  ctx.onDispose(() => { clearTouch(); request++; mount.dispose(); });
   return { toggleFile, load };
 }
 
