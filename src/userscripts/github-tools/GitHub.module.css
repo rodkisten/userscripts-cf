@@ -230,3 +230,34 @@
 [data-ghft-dashboard] .dashboardPanel .dashboardItem{gap:5px}
 [data-ghft-dashboard] .dashboardPanel .runActions{gap:4px}
 @media(max-width:470px){[data-ghft-dashboard] .favoriteBar{max-width:65vw}[data-ghft-dashboard] .dashboardPanel{width:calc(100vw - 16px)}}
+
+/* Compact shadcn-inspired toolbar, anchored below the native GitHub navigation. */
+[data-ghft-dashboard] {
+  top: calc(env(safe-area-inset-top, 0px) + 102px);
+}
+[data-ghft-dashboard] .favoriteBar {
+  max-width: min(92vw, 520px);
+  border-radius: 12px;
+  background: var(--ghft-overlay);
+  box-shadow: 0 5px 18px #0002;
+  padding: 5px;
+}
+.favoriteIcon { width: 16px; height: 16px; object-fit: contain; vertical-align: -3px; }
+.dragSetting { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
+.loadingBar {
+  margin-top: 5px;
+  padding: 8px 12px;
+  border: 1px solid var(--ghft-border);
+  border-radius: 10px;
+  background: var(--ghft-overlay);
+  box-shadow: var(--ghft-shadow);
+  pointer-events: none;
+}
+[data-ghft-dashboard] .favorite {
+  border-radius: 8px;
+  background: var(--ghft-surface);
+  font-weight: 500;
+}
+[data-ghft-dashboard] .favorite:hover {
+  background: var(--ghft-hover-bg);
+}
