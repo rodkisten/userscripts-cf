@@ -12,7 +12,7 @@ export function runtimeHelpers() {
     transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || /node_modules|\/vendor\//.test(id)) return null;
       const kind = /\.tsx(?:\?|$)/.test(id) ? 4 : /\.jsx(?:\?|$)/.test(id) ? 2 : 3;
-      const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
+      const source = ts.createSourceFile(id, code, 99, true, kind);
       const edits = [];
       const keep = (node) => {
         const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
