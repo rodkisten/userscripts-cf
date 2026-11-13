@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import styles from "./GitHub.module.css";
 
@@ -149,4 +149,28 @@ export function mountGitHubDashboard(ctx: any) {
   void load();
   ctx.onDispose(() => { request++; mount.dispose(); });
   return { toggleFile, load };
+}
+
+export function FileCommit(props: { ctx: any; owner: string; repo: string; path: string; href: string }) {
+  const [commit, setCommit] = createSignal<{ sha: string; message: string; author: string } | null>(null);
+  const [error, setError] = createSignal("");
+  void (async () => {
+    try {
+      const token = await props.ctx.storage.get("actionsToken", "");
+      const url = "https://api.github.com/repos/" + encodeURIComponent(props.owner) + "/" +
+        encodeURIComponent(props.repo) + "/commits?per_page=1&path=" + encodeURIComponent(props.path);
+      const response = await fetch(url, { signal: props.ctx.signal, credentials: "omit",
+        headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: "Bearer " + token } : {}) } });
+      if (!response.ok) throw Error("HTTP " + response.status);
+      const entries = await response.json();
+      const entry = entries[0];
+      if (entry) setCommit({ sha: entry.sha, message: entry.commit.message.split("\n")[0],
+        author: entry.commit.author?.name || entry.author?.login || "" });
+    } catch (e) { if (!props.ctx.signal.aborted) setError(String(e)); }
+  })();
+  return <Show when={commit()} fallback={<span title={error()} />}>{entry =>
+    <span class={styles.commitHint} title={entry().author + " · " + entry().sha}>
+      <a href={"/" + props.owner + "/" + props.repo + "/commit/" + entry().sha}>{entry().message}</a>
+      {" · "}<a href={props.href.replace("/blob/", "/blame/")}>blame</a>
+    </span>}</Show>;
 }
