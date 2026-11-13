@@ -452,3 +452,14 @@ body.gws-studio-search-active [data-testid="post-container"]:not(.gws-result) {
     padding: 7px 9px;
   }
 }
+.gws-tag[data-selection="include"] {
+  outline: 2px solid #b77baa;
+}
+.gws-tag[data-selection="exclude"] {
+  outline: 2px solid #e16767;
+  color: #ff9d9d;
+}
+.gws-searchbar {
+  display: flex;
+  flex-wrap: wrap;
+}

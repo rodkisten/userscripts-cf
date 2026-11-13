@@ -23,3 +23,18 @@ Informe IDs de coleções, token do Relay e canais na mesma tela de configuraç�
 ## Validação
 
 `npm ci`, `npm test` e `npm run lint`. Os testes cobrem logs completos, falhas de acesso, navegação SPA, montagem/limpeza de UI, configuração de coleções, deduplicação, backoff e remoção de comentários sem danificar strings ou regexes. Os fixtures de interface usam DOM simulado; sessões autenticadas e reprodução real no Safari precisam de validação no dispositivo.
+
+## Migração reativa 4.0.1
+
+As views não criam elementos soltos nem atualizam `textContent`, `innerHTML` ou `disabled` por seletores. Um teste de arquitetura verifica essa separação.
+
+| Camada                                                     | Responsabilidade                                                                                                                                                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gonewild/components/`                                     | `SoundgasmApp`, `Player`, `Catalogue`, `RecordingCard`, `Markdown`, `Tags`, `PostCard`, `FeedRoot` e `SettingsShell`. Signals controlam buscas/seleções locais; stores controlam reprodução, configurações e resultados. |
+| `gonewild/store.ts`                                        | Ações de configurações, vistos e busca; mantém as chaves legadas e persiste o payload da ação, sem ler um snapshot anterior ao commit do Solid 2.                                                                        |
+| `gonewild/services.ts`, `bridge.js`, `network.js`          | Rede, limites de memória, cache e transporte versionado de contexto.                                                                                                                                                     |
+| `*-adapter.tsx`, `native.ts`, `github-tools/navigation.ts` | Leitura do site e alterações indispensáveis em elementos pertencentes ao Reddit/GitHub/Soundgasm. Não montam filhos de UI manualmente.                                                                                   |
+| `runtime/solid-ui/mount-point.tsx`                         | Única criação de contêiner de montagem para integrar Solid com documentos externos. A exceção separada é a injeção do shim de rede na página.                                                                            |
+| GitHub e Instagram                                         | Toolbar/progresso/logs, bookmark, configurações e Rod Actions são componentes; o estado de exibição vem de signals/stores.                                                                                               |
+
+O player observa fontes do jPlayer que aparecem depois de `DOMContentLoaded`, mantendo a mesma instância de áudio. Uma falha de renderização reabre a interface original em vez de deixar a página vazia. Os testes exercitam chegada tardia da fonte, eventos de mídia, seek, velocidade, loop, persistência, filtros e interações reais com as configurações. A versão passa a 4.0.1 para permitir atualização pelo gerenciador de userscripts.

@@ -1,0 +1,43 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  background: #0009;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+.sheet {
+  box-sizing: border-box;
+  width: min(100%, 640px);
+  max-height: 90dvh;
+  overflow: auto;
+  border-radius: 18px 18px 0 0;
+  padding: 16px 18px max(16px, env(safe-area-inset-bottom));
+  background: #202124;
+  color: #f4f4f5;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.sheet:focus {
+  outline: none;
+}
+.sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sheet h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.sheet header button {
+  padding: 6px 12px;
+  background: #303134;
+  color: inherit;
+  border: 1px solid #555;
+  border-radius: 8px;
+  font: inherit;
+}
