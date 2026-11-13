@@ -21,6 +21,10 @@ export function deduplicateCSS(css) {
       const previous = node.prev();
       if (!previous || previous.type !== "rule") continue;
       if (previous.nodes.length !== node.nodes.length) continue;
+      // A nested selector may depend on its original parent context.
+      // Avoid merging selectors containing nesting (&) or CSS scope rules.
+      if (previous.selector.includes("&") || node.selector.includes("&")) continue;
+      if (node.parent?.type === "atrule" && /^(scope|starting-style)$/i.test(node.parent.name)) continue;
       if (node.nodes.some((child) => child.type !== "decl")) continue;
       const signature = (rule) =>
         rule.nodes.map((decl) => [decl.prop, decl.value, decl.important]).map(JSON.stringify).join(";");
