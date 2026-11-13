@@ -1,4 +1,5 @@
 import { matchesRoute } from "./match.js";
+import { createHttpClient } from "../runtime/http-client.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
@@ -85,8 +86,11 @@ export function createRuntime(definitions, bridge, host = window) {
         await bridge.call("delete", { id: definition.id, key });
       },
     });
+    const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
+    onDispose(() => http.dispose());
     return {
       id: definition.id,
+      http,
       signal: abort.signal,
       storage,
       menu: rod.menu,
