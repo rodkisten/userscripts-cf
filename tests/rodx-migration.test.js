@@ -109,3 +109,26 @@ test("three bootstrap sequences preserve original initialization order", async (
     );
   }
 });
+
+test("centralized GM storage preserves modern and legacy get/set behavior", async () => {
+  const { createGMStorage } = await import("../src/runtime/gm-storage.js");
+  const data = new Map();
+  const modern = createGMStorage({
+    GM: {
+      getValue: async (key, fallback) => data.get(key) ?? fallback,
+      setValue: async (key, value) => data.set(key, value),
+    },
+  });
+  assert.equal(modern.available, true);
+  await modern.set("key", "value");
+  assert.equal(await modern.get("key", null), "value");
+  assert.equal(await modern.get("missing", "fallback"), "fallback");
+
+  const legacy = createGMStorage({
+    GM_getValue: (key, fallback) => data.get(key) ?? fallback,
+    GM_setValue: (key, value) => data.set(key, value),
+  });
+  assert.equal(legacy.available, true);
+  await legacy.set("legacy", "ok");
+  assert.equal(await legacy.get("legacy"), "ok");
+});
