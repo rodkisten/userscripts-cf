@@ -1,19 +1,44 @@
-.scrim {
-  display: none;
-}
+/* The workspace is embedded in the shared menu panel. Preserve its own
+   accessible header, navigation and scrolling within the available viewport. */
+.scrim { display: none; }
 .panel {
   position: relative;
   inset: auto;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: auto;
-  max-height: none;
+  min-width: 0;
+  height: min(82dvh, 820px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
+  overflow: hidden;
   border: 0;
   box-shadow: none;
   border-radius: 0;
 }
-.body {
-  overflow: visible;
+.panel-head { flex: 0 0 auto; min-width: 0; }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.head-row > * { min-width: 0; }
+.tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
-.head-row {
-  display: none;
+.tabs::-webkit-scrollbar { display: none; }
+.tabs > * { flex: 0 0 auto; }
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 480px) {
+  .panel { height: min(78dvh, 760px); }
+  .head-row { font-size: 12px; }
+  .tabs > * { padding-inline: 9px; font-size: 12px; }
 }
