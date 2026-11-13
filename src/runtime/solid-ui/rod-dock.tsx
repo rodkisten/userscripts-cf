@@ -27,10 +27,11 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
   const [open, setOpen] = createSignal(false);
   const [expanded, setExpanded] = createSignal(null);
   const [entries, setEntries] = createSignal(modules);
+  const [position, setPosition] = createSignal(46);
   const dispose = render(() => (
     <>
       <Show when={!open()}>
-        <button class="launcher" aria-label="Abrir Rod Dock" onClick={() => setOpen(true)}>☰</button>
+        <button class="launcher" style={{ top: `${position()}%` }} aria-label="Abrir Rod Dock" onClick={() => setOpen(true)} onPointerDown={(event) => { const startY = event.clientY; const start = position(); const move = (e) => setPosition(Math.max(12, Math.min(88, start + (e.clientY - startY) / innerHeight * 100))); const end = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", end); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", end, { once: true }); }}>☰</button>
       </Show>
       <Show when={open()}>
         <section class="panel" role="dialog" aria-label="Rod Dock">
