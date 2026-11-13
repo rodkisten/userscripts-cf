@@ -21,7 +21,7 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
           data: options.body, responseType: "arraybuffer", timeout: options.timeoutMs,
           onload: (response) => {
             const headers = new Headers();
-            for (const line of String(response.responseHeaders ?? "").split(/\\r?\\n/)) {
+            for (const line of String(response.responseHeaders ?? "").split(/\r?\n/)) {
               const i = line.indexOf(":"); if (i > 0) headers.append(line.slice(0, i).trim(), line.slice(i + 1).trim());
             }
             const status = Number(response.status);
@@ -65,7 +65,7 @@ export function createHttpClient({ host = globalThis, signal, storage, namespace
         if (controller.signal.aborted) throw abortError();
         const transport = options.transport ?? "auto";
         const opts = { ...options, signal: controller.signal };
-        const response = transport === "gm" || (transport === "auto" && gm && new URL(String(url), host.location?.href).origin !== host.location?.origin)
+        const response = transport === "gm" || (transport === "auto" && gm && new URL(String(url), host.location?.href ?? "https://localhost/").origin !== (host.location?.origin ?? "https://localhost"))
           ? await gmFetch(String(url), opts)
           : await host.fetch(String(url), opts);
         if (useCache && response.ok && !/no-store|private/i.test(response.headers.get("cache-control") ?? "") && maxEntries > 0) {
