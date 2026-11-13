@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
+import { transformWithEsbuild } from "vite";
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
@@ -117,7 +118,23 @@ for (const target of targets) {
     printWidth: 110,
   });
   const file = `${target.id}.user.js`;
-  const source = `${metadata}\n\n${body}`;
+  let source = `${metadata}\n\n${body}`;
+  if (target.id === "standalone") {
+    // Keep the userscript metadata untouched: Tampermonkey must parse it.
+    // The map is external and embeds the full original generated runtime.
+    const result = await transformWithEsbuild(body, "standalone.runtime.js", {
+      minify: true,
+      sourcemap: "external",
+      sourcesContent: true,
+      target: "es2022",
+      legalComments: "none",
+    });
+    const mapFile = file + ".map";
+    const map = JSON.parse(result.map);
+    map.file = file;
+    await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
+    source = `${metadata}\n\n${result.code}\n//# sourceMappingURL=${mapFile}\n`;
+  }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
   const metaSource = metadata + "\n";
