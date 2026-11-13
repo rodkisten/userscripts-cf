@@ -1,4 +1,7 @@
-import ts from "typescript";
+import * as tsNamespace from "typescript";
+
+// TypeScript 7 exports can differ between Node and Vite config bundling.
+const ts = tsNamespace.default?.createSourceFile ? tsNamespace.default : tsNamespace;
 
 // Transform only inside functions that explicitly receive a context argument.
 // @keep on the same line or in the immediately preceding comment prevents rewriting.
@@ -8,7 +11,7 @@ export function runtimeHelpers() {
     enforce: "pre",
     transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || /node_modules|\/vendor\//.test(id)) return null;
-      const kind = /\.tsx(?:\?|$)/.test(id) ? ts.ScriptKind.TSX : /\.jsx(?:\?|$)/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
+      const kind = /\.tsx(?:\?|$)/.test(id) ? 4 : /\.jsx(?:\?|$)/.test(id) ? 2 : 3;
       const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
       const edits = [];
       const keep = (node) => {
