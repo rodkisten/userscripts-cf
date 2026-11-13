@@ -44,6 +44,24 @@ function selectedGitHubRef(): string {
   }
   return "";
 }
+const treeCache = new Map<string, { expires: number; nodes: Node[] }>();
+export function readTreeCache(key: string, now = Date.now()): Node[] | null {
+  const entry = treeCache.get(key);
+  if (!entry) return null;
+  if (entry.expires <= now) { treeCache.delete(key); return null; }
+  treeCache.delete(key);
+  treeCache.set(key, entry);
+  return entry.nodes;
+}
+export function writeTreeCache(key: string, nodes: Node[], now = Date.now()) {
+  treeCache.delete(key);
+  treeCache.set(key, { nodes, expires: now + 300000 });
+  while (treeCache.size > 12) {
+    const oldest = treeCache.keys().next().value;
+    if (oldest === undefined) break;
+    treeCache.delete(oldest);
+  }
+}
 function TreeRow(props: { node: Node; depth: number; base: string; branch: string; current: string }) {
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
@@ -103,6 +121,18 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
             })),
           ]
         : [{ branch: details.default_branch as string, current: "" }];
+      const cached = candidates.find(candidate => candidate.branch && readTreeCache(base + ":" + candidate.branch));
+      if (cached) {
+        const nodes = readTreeCache(base + ":" + cached.branch);
+        if (nodes && !controller.signal.aborted) {
+          setResolvedBranch(cached.branch);
+          setCurrent(cached.current);
+          setNodes(nodes);
+          setState("ready");
+          (container as HTMLElement).style.display = "none";
+          return;
+        }
+      }
       const visited = new Set<string>();
       let response: Response | undefined;
       let match: { branch: string; current: string } | undefined;
@@ -119,6 +149,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       const data = await response.json();
       if (data.truncated) throw Error("Repositório muito grande para carregar a árvore completa");
       const tree = buildTree(data.tree || []);
+      writeTreeCache(base + ':' + match.branch, tree);
       if (controller.signal.aborted) return;
       setNodes(tree); setState("ready");
       (container as HTMLElement).style.display = "none";
