@@ -147,7 +147,7 @@ for (const target of targets) {
         },
       },
     });
-    const output = chunks.flatMap((entry) => entry.output);
+    const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
     const result = output.find((entry) => entry.type === "chunk");
     if (!result?.map) throw new Error("Standalone minification did not produce a sourcemap");
     const mapFile = file + ".map";
