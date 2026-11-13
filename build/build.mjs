@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { format } from "prettier";
 import { build as viteBuild } from "vite";
 import { execFileSync } from "node:child_process";
@@ -190,6 +191,7 @@ for (const target of targets) {
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: Buffer.byteLength(source),
+    gzipBytes: gzipSync(Buffer.from(source), { level: 9 }).byteLength,
   };
   await fs.writeFile(path.join(out, file), source);
   await fs.mkdir(path.join(out, "icons"), { recursive: true });
@@ -211,6 +213,13 @@ for (const target of targets) {
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
+console.table(Object.entries(classAudit).map(([target, audit]) => ({
+  target,
+  bytes: audit.bytes,
+  gzip: audit.gzipBytes,
+  staticClasses: audit.staticClasses,
+  dynamicReferences: audit.dynamicReferences,
+})));
 
 execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
