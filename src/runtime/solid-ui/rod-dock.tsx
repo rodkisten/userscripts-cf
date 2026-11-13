@@ -16,22 +16,51 @@ const style = `
 .action:focus-visible,.close:focus-visible,.module-title:focus-visible,.launcher:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
 `;
 
+type DockAction = { id: string; label: string; run: () => void };
+type DockModule = { id: string; name: string; actions: DockAction[] };
+type DockEvent = { type: "register" | "unregister"; module?: DockModule; id?: string };
+
 export function installRodDock({ modules = [], registerMenu = globalThis.GM_registerMenuCommand } = {}) {
+  // The adapter owns the only DOM boundary. Solid owns all UI inside it.
   const host = document.createElement("div");
   host.dataset.rodDock = "";
   const shadow = host.attachShadow({ mode: "open" });
-  const stylesheet = document.createElement("style");
-  stylesheet.textContent = style;
-  shadow.append(stylesheet);
-  (document.body || document.documentElement).append(host);
   const [open, setOpen] = createSignal(false);
-  const [expanded, setExpanded] = createSignal(null);
-  const [entries, setEntries] = createSignal(modules);
+  const [expanded, setExpanded] = createSignal<string | null>(null);
+  const [entries, setEntries] = createSignal<DockModule[]>(modules as DockModule[]);
   const [position, setPosition] = createSignal(46);
-  const dispose = render(() => (
+  const onRegistration = (event: Event) => {
+    const detail = (event as CustomEvent<DockEvent>).detail;
+    if (!detail) return;
+    if (detail.type === "register" && detail.module) {
+      setEntries((items) => [...items.filter((item) => item.id !== detail.module!.id), detail.module!]);
+    } else if (detail.type === "unregister" && detail.id) {
+      setEntries((items) => items.filter((item) => item.id !== detail.id));
+    }
+  };
+  document.addEventListener("rod-dock:registry", onRegistration);
+  const DockView = () => (
     <>
+      <style>{style}</style>
       <Show when={!open()}>
-        <button class="launcher" style={{ top: `${position()}%` }} aria-label="Abrir Rod Dock" onClick={() => setOpen(true)} onPointerDown={(event) => { const startY = event.clientY; const start = position(); const move = (e) => setPosition(Math.max(12, Math.min(88, start + (e.clientY - startY) / innerHeight * 100))); const end = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", end); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", end, { once: true }); }}>☰</button>
+        <button class="launcher" style={{ top: `${position()}%` }} aria-label="Abrir Rod Dock"
+          onClick={() => setOpen(true)}
+          onPointerDown={(event) => {
+            const startY = event.clientY;
+            const start = position();
+            let moved = false;
+            const move = (next: PointerEvent) => {
+              if (Math.abs(next.clientY - startY) > 6) moved = true;
+              setPosition(Math.max(12, Math.min(88, start + (next.clientY - startY) / innerHeight * 100)));
+            };
+            const end = () => {
+              window.removeEventListener("pointermove", move);
+              window.removeEventListener("pointerup", end);
+              if (moved) setOpen(false);
+            };
+            window.addEventListener("pointermove", move);
+            window.addEventListener("pointerup", end, { once: true });
+          }}>☰</button>
       </Show>
       <Show when={open()}>
         <section class="panel" role="dialog" aria-label="Rod Dock">
@@ -39,12 +68,13 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
           <div class="content">
             <For each={entries()}>{(module) => (
               <section class="module">
-                <button class="module-title" aria-expanded={expanded() === module.id} onClick={() => setExpanded(expanded() === module.id ? null : module.id)}>
+                <button class="module-title" aria-expanded={expanded() === module.id}
+                  onClick={() => setExpanded(expanded() === module.id ? null : module.id)}>
                   <span>{module.name}</span><span>{expanded() === module.id ? "⌃" : "⌄"}</span>
                 </button>
                 <Show when={expanded() === module.id}>
                   <div class="actions">
-                    <For each={module.actions || []}>{(action) => (
+                    <For each={module.actions}>{(action) => (
                       <button class="action" onClick={() => { setOpen(false); action.run(); }}>{action.label}</button>
                     )}</For>
                   </div>
@@ -55,16 +85,20 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
         </section>
       </Show>
     </>
-  ), shadow);
+  );
+  (document.body || document.documentElement).append(host);
+  const dispose = render(DockView, shadow);
   const command = typeof registerMenu === "function" ? registerMenu("Abrir Rod Dock", () => setOpen(true)) : null;
   return {
     setModules: setEntries,
     open: () => setOpen(true),
     close: () => setOpen(false),
     dispose() {
+      document.removeEventListener("rod-dock:registry", onRegistration);
       dispose();
       host.remove();
-      if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function") globalThis.GM_unregisterMenuCommand(command);
+      if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function")
+        globalThis.GM_unregisterMenuCommand(command);
     },
   };
 }
