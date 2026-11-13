@@ -146,8 +146,8 @@ for (const item of manualCompiled) {
   await fs.writeFile(path.join(out, file), item.compiled);
   const header = item.compiled.match(/^\\/\\/\\s*==UserScript==[\\s\\S]*?^\\/\\/\\s*==\\/UserScript==\\s*$/m)?.[0];
   if (!header) throw Error(`Missing compiled metadata: ${item.relative}`);
-  await fs.writeFile(path.join(out, metaFile), header + "\\n");
-  manifest.scripts.push({ id: item.id, file, metaFile, matches: item.metadata.match || [], sha256: checksum(item.compiled), metaSha256: checksum(header + "\\n") });
+  await fs.writeFile(path.join(out, metaFile), header + "\n");
+  manifest.scripts.push({ id: item.id, file, metaFile, matches: item.metadata.match || [], sha256: checksum(item.compiled), metaSha256: checksum(header + "\n") });
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
