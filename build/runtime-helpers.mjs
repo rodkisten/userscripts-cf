@@ -7,16 +7,16 @@ export function runtimeHelpers() {
     name: "userscripts-cf:runtime-helpers",
     enforce: "pre",
     transform(code, id) {
-      if (!/\\.[cm]?[jt]sx?(?:\\?.*)?$/.test(id) || /node_modules|\\/vendor\\//.test(id)) return null;
-      const kind = /\\.tsx(?:\\?|$)/.test(id) ? ts.ScriptKind.TSX : /\\.jsx(?:\\?|$)/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
+      if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || /node_modules|\/vendor\//.test(id)) return null;
+      const kind = /\.tsx(?:\?|$)/.test(id) ? ts.ScriptKind.TSX : /\.jsx(?:\?|$)/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
       const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
       const edits = [];
       const keep = (node) => {
         const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
-        if (ranges.some((r) => /@keep\\b/.test(code.slice(r.pos, r.end)))) return true;
+        if (ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)))) return true;
         const start = node.getStart(source);
-        const lineStart = code.lastIndexOf("\\n", start - 1) + 1;
-        return /\\/\\/[^\\n]*@keep\\b/.test(code.slice(lineStart, start));
+        const lineStart = code.lastIndexOf("\n", start - 1) + 1;
+        return /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start));
       };
       function walk(node, contextName, blocked = false) {
         if (ts.isFunctionLike(node)) {
