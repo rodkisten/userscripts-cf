@@ -1,3 +1,4 @@
+import { runtimeHelpers } from "./build/runtime-helpers.mjs";
 import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
@@ -8,7 +9,7 @@ import { solidDOMTemplates } from "./build/solid-dom.mjs";
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
-  plugins: [inlineCSSModules(), inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
+  plugins: [runtimeHelpers(), inlineCSSModules(), inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },
