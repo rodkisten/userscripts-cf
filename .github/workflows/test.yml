@@ -18,7 +18,7 @@ jobs:
           ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
       - name: "⬆️ Use npm 11 (avoid npm 10 Arborist edgesOut bug)"
         run: npm install --global npm@11
