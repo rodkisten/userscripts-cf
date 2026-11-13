@@ -89,6 +89,9 @@ export function runtimeHelpers() {
         if (contextName && !shadowed.has(contextName) && !blocked && ts.isCallExpression(node) && !keep(node)) {
           const callee = node.expression;
           let replacement;
+          if (ts.isIdentifier(callee) && /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(callee.text) && !shadowed.has(callee.text)) {
+            replacement = contextName + ".gm.legacy." + callee.text.slice(3);
+          }
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
             replacement = contextName + ".http.fetch";
           }
@@ -96,6 +99,7 @@ export function runtimeHelpers() {
             const receiver = callee.expression;
             const method = callee.name.text;
             if (ts.isIdentifier(receiver) && !shadowed.has(receiver.text)) {
+              if (receiver.text === "GM") replacement = contextName + ".gm.modern." + method;
               if (elements.has(receiver.text) && (method === "querySelector" || method === "querySelectorAll")) {
                 replacement = contextName + ".dom.scope(" + receiver.text + ")." + method;
               }
