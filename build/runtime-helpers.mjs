@@ -89,9 +89,6 @@ export function runtimeHelpers() {
         if (contextName && !shadowed.has(contextName) && !blocked && ts.isCallExpression(node) && !keep(node)) {
           const callee = node.expression;
           let replacement;
-          if (ts.isIdentifier(callee) && /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(callee.text) && !shadowed.has(callee.text)) {
-            replacement = contextName + ".gm.legacy." + callee.text.slice(3);
-          }
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
             replacement = contextName + ".http.fetch";
           }
