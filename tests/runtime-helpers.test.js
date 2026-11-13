@@ -24,3 +24,24 @@ test("supports @keep single-line and multiline comments", () => {
   assert.match(output, /document\.querySelector\("\.a"\)/);
   assert.match(output, /ctx\.http\.fetch\("\/two"\)/);
 });
+
+test("does not rewrite shadowed browser globals", () => {
+  const output = transform(`function init(ctx) {
+    { const fetch = customFetch; fetch("/local"); }
+    { const document = localDocument; document.querySelector(".local"); }
+    fetch("/global");
+    document.querySelectorAll(".global");
+  }`);
+  assert.match(output, /fetch\("\/local"\)/);
+  assert.match(output, /document\.querySelector\("\.local"\)/);
+  assert.match(output, /ctx\.http\.fetch\("\/global"\)/);
+  assert.match(output, /ctx\.dom\.querySelectorAll\("\.global"\)/);
+});
+
+test("does not rewrite calls when context is shadowed by a nested function", () => {
+  const output = transform(`function init(ctx) {
+    function inner(ctx) { fetch("/inner"); }
+    fetch("/outer");
+  }`);
+  assert.match(output, /ctx\.http\.fetch\("\/outer"\)/);
+});
