@@ -30,7 +30,7 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
   return <>
-    <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? expanded() : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
+    <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
       <Show when={props.node.folder} fallback={<span class={styles.treeSpacer}/>}>
         <button class={styles.treeChevron} aria-label={(expanded() ? "Recolher " : "Expandir ") + props.node.name} onClick={() => setExpanded(!expanded())}>{expanded() ? "⌄" : "›"}</button>
       </Show>
@@ -45,7 +45,7 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
 export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
   const [state, setState] = createSignal<"loading" | "ready" | "error">("loading");
   const [nodes, setNodes] = createSignal<Node[]>([]);
-  const [resolvedBranch, setResolvedBranch] = createSignal(branch || "main");
+
   const [message, setMessage] = createSignal("");
   const controller = new AbortController();
   const base = "/" + repo.owner + "/" + repo.repo;
@@ -53,6 +53,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const isTree = path.startsWith(base + "/tree/");
   const encoded = isTree ? path.slice((base + "/tree/").length).split("/").map(decodeURIComponent) : [];
   const branch = isTree ? encoded[0] : "";
+  const [resolvedBranch, setResolvedBranch] = createSignal(branch || "main");
   const current = isTree ? encoded.slice(1).join("/") : "";
   const mount = mountPoint(container.parentNode!, () => (
     <section class={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
