@@ -38,8 +38,8 @@ function stableColors(category) {
   return palette[hash[0] % palette.length];
 }
 
-async function providerSymbol(category, fetcher) {
-  const icon = categoryIcons[category.toLowerCase()] || "lucide:package";
+async function providerSymbol(category, fetcher, override) {
+  const icon = override || categoryIcons[category.toLowerCase()] || "lucide:package";
   const [set, name] = icon.split(":");
   try {
     const response = await fetcher(`${provider}/${set}/${name}.svg?color=%23ffffff`, {
@@ -59,11 +59,32 @@ async function providerSymbol(category, fetcher) {
   }
 }
 
-export async function packageIcon({ name, category, fetcher = fetch }) {
+export function parseIconSpec(spec) {
+  if (!spec || typeof spec !== "string") return {};
+  if (/^https:\/\//i.test(spec)) return { url: spec };
+  const options = {};
+  for (const part of spec.split(",")) {
+    const [rawKey, ...rest] = part.trim().split(":");
+    const key = rawKey.trim();
+    const value = rest.join(":").trim();
+    if (!value && /^bg[A-Za-z]+$/.test(key)) options.background = key.slice(2).toLowerCase();
+    else if (key === "icon" && /^[a-z0-9-]+(?::[a-z0-9-]+)?$/i.test(value)) options.icon = value;
+    else if (key === "size" && /^\d+$/.test(value)) options.size = Math.max(12, Math.min(192, Number(value)));
+    else if (key === "iconColor" && /^#[0-9a-f]{6}$/i.test(value)) options.iconColor = value;
+    else if (key === "bg" && /^#[0-9a-f]{6}$/i.test(value)) options.background = value;
+    else throw new Error("Invalid icon specification: " + part);
+  }
+  return options;
+}
+const namedColors = { red: "#ef4444", blue: "#3b82f6", green: "#22c55e", purple: "#a855f7", orange: "#f97316", pink: "#ec4899" };
+export async function packageIcon({ name, category, spec, fetcher = fetch }) {
+  const options = parseIconSpec(spec);
   const label = initials(name);
   const key = String(category || "utilities").toLowerCase();
-  const [start, end] = stableColors(key);
-  const symbol = await providerSymbol(key, fetcher);
+  const [defaultStart, defaultEnd] = stableColors(key);
+  const start = namedColors[options.background] || options.background || defaultStart;
+  const end = options.background ? start : defaultEnd;
+  const symbol = await providerSymbol(key, fetcher, options.icon?.includes(":") ? options.icon : options.icon ? "simple-icons:" + options.icon.replace(/-icon$/, "") : undefined);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${start}"/><stop offset="1" stop-color="${end}"/></linearGradient></defs><rect x="5" y="5" width="246" height="246" rx="54" fill="url(#g)"/><rect x="8" y="8" width="240" height="240" rx="51" fill="none" stroke="white" stroke-opacity=".22" stroke-width="4"/><text x="128" y="91" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="80" fill="white">${escapeXml(label)}</text>${symbol || '<circle cx="128" cy="130" r="24" fill="white" opacity=".86"/><path d="M82 179h92" stroke="white" stroke-width="13" stroke-linecap="round"/>'}</svg>`;
-  return { svg, dataURL: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}` };
+  return { svg, options, dataURL: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}` };
 }
