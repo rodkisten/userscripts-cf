@@ -1,4 +1,5 @@
 import { createGMBridge } from "../runtime/gm-bridge.js";
+import { createEventBus } from "../runtime/events/event-bus.js";
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createDomEngine } from "../runtime/dom-engine.js";
@@ -35,6 +36,7 @@ export function createRuntime(definitions, bridge, host = window) {
   function context(definition) {
     const abort = new host.AbortController();
     const cleanups = [];
+    const events = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
     let uiHost;
     let uiRoot;
     function ensureUIRoot() {
@@ -112,6 +114,7 @@ export function createRuntime(definitions, bridge, host = window) {
     onDispose(() => dom.dispose());
     return {
       id: definition.id,
+      events,
       http,
       gm,
       dom,
