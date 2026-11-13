@@ -143,10 +143,10 @@ for (const target of targets) {
       plugins: [{
         name: "standalone-runtime-entry",
         resolveId(id) {
-          if (id === "virtual:standalone-runtime") return "\\0virtual:standalone-runtime";
+          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
         },
         load(id) {
-          if (id === "\\0virtual:standalone-runtime") return body;
+          if (id === "\0virtual:standalone-runtime") return body;
         },
       }],
       build: {
@@ -162,7 +162,7 @@ for (const target of targets) {
     const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
     const result = output.find((entry) => entry.type === "chunk");
     if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
-    source = `${metadata}\\n\\n${result.code}\\n`;
+    source = `${metadata}\n\n${result.code}\n`;
   }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
