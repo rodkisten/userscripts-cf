@@ -32,6 +32,8 @@ export function createRuntime(definitions, bridge, host = window) {
       ],
     });
   }
+  const clipboardModule = { id: "rod-clipboard", name: "Clipboard", actions: [{ id: "open", label: "📋 Histórico", run: openClipboardMenu }, { id: "read", label: "Ler clipboard", run: () => clipboard?.read() }] };
+  if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }));
   const clipboardKeydown = (event) => {
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "v") {
       event.preventDefault(); openClipboardMenu();
@@ -362,6 +364,7 @@ export function createRuntime(definitions, bridge, host = window) {
       closed = true;
       host.document.removeEventListener("keydown", clipboardKeydown, true);
       clipboard?.dispose();
+      if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
       host.removeEventListener("popstate", navigate);
       host.removeEventListener("hashchange", navigate);
       undoHistory.forEach((undo) => undo());
