@@ -4,8 +4,8 @@ import { render } from "@solidjs/web";
 const style = `
 :host{all:initial;color-scheme:dark;font:13px -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
 *{box-sizing:border-box}
-.launcher{position:fixed;right:0;top:46%;z-index:2147483646;transform:translateY(-50%);border:1px solid #52525b;border-right:0;border-radius:18px 0 0 18px;background:#18181b;color:#fafafa;padding:14px 11px;box-shadow:0 8px 30px #0007;touch-action:none}
-.panel{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483646;width:min(360px,calc(100vw - 24px));max-height:min(72dvh,640px);display:flex;flex-direction:column;border:1px solid #3f3f46;border-radius:18px;background:#09090b;color:#fafafa;box-shadow:0 12px 45px #0009;overflow:hidden}
+.launcher{pointer-events:auto;position:fixed;right:0;top:46%;z-index:2147483646;transform:translateY(-50%);border:1px solid #52525b;border-right:0;border-radius:18px 0 0 18px;background:#18181b;color:#fafafa;padding:14px 11px;box-shadow:0 8px 30px #0007;touch-action:none}
+.panel{pointer-events:auto;position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483646;width:min(360px,calc(100vw - 24px));max-height:min(72dvh,640px);display:flex;flex-direction:column;border:1px solid #3f3f46;border-radius:18px;background:#09090b;color:#fafafa;box-shadow:0 12px 45px #0009;overflow:hidden}
 .header{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #27272a;font-weight:650}
 .close{border:0;background:transparent;color:#a1a1aa;font-size:22px;padding:0 4px}
 .content{overflow-y:auto;min-height:0;padding:10px;overscroll-behavior:contain}
@@ -23,11 +23,16 @@ type DockEvent = { type: "register" | "unregister"; module?: DockModule; id?: st
 export function installRodDock({ modules = [], registerMenu = globalThis.GM_registerMenuCommand } = {}) {
   // The adapter owns the only DOM boundary. Solid owns all UI inside it.
   const host = document.createElement("div");
+  // A userscript must not inherit layout/stacking from the host page.
+  host.style.setProperty("position", "fixed", "important");
+  host.style.setProperty("inset", "0", "important");
+  host.style.setProperty("z-index", "2147483646", "important");
+  host.style.setProperty("pointer-events", "none", "important");
   host.dataset.rodDock = "";
   const shadow = host.attachShadow({ mode: "open" });
   const [open, setOpen] = createSignal(false);
   const [expanded, setExpanded] = createSignal<string | null>(null);
-  const [entries, setEntries] = createSignal<DockModule[]>(modules as DockModule[]);
+  const [entries, setEntries] = createSignal<DockModule[]>([...new Map((modules as DockModule[]).map(m => [m.id, m])).values()]);
   const [position, setPosition] = createSignal(46);
   const menuEntries = new Map<string, Map<unknown, DockAction>>();
   const onRegistration = (event: Event) => {
@@ -44,7 +49,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     const { type, moduleId, id, label, callback } = (event as CustomEvent).detail || {};
     if (!moduleId) return;
     if (type === "register" && !entries().some((item) => item.id === moduleId)) {
-      setEntries((items) => [...items, { id: moduleId, name: moduleId, actions: [] }]);
+      setEntries((items) => [...items.filter(item => item.id !== moduleId), { id: moduleId, name: moduleId, actions: [] }]);
     }
     let commands = menuEntries.get(moduleId);
     if (!commands) menuEntries.set(moduleId, (commands = new Map()));
@@ -52,7 +57,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
       commands.set(id, { id: String(id), label, run: callback });
     if (type === "unregister") commands.delete(id);
     setEntries((items) => items.map((module) => module.id === moduleId
-      ? { ...module, actions: [...commands!.values()] }
+      ? { ...module, actions: [...new Map([...(module.actions || []).filter(action => ![...commands!.values()].some(command => command.id === action.id)).map(action => [action.id, action] as const), ...[...commands!.values()].map(action => [action.id, action] as const)]).values()] }
       : module));
   };
   document.addEventListener("rod-dock:menu", onMenu);
