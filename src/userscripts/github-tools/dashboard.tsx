@@ -222,7 +222,7 @@ export function mountGitHubDashboard(ctx: any) {
               <button class={styles.button} disabled={busy() || run.conclusion !== "failure"} onClick={() => void runAction(run, "rerun-failed-jobs")}>↻ Falhas</button>
               <button class={styles.button} disabled={busy() || run.status === "completed"} onClick={() => void runAction(run, "cancel")}>✕</button>
               <button class={styles.button} onClick={() => void navigator.clipboard.writeText(run.html_url).then(() => setMessage("Link copiado")).catch(() => setMessage("Cópia indisponível"))}>⧉</button>
-            </div>}</For>
+            </div></div>}</For>
           <p role="status">{busy() ? "Carregando…" : message()}</p>
           {/* TODO(GITHUB-DOCK): Expose dashboard preferences as typed Rod Dock settings
               across repositories, with per-repo credentials and secure cross-origin
