@@ -38,13 +38,24 @@ export function analyzeClassReferences(source) {
       if (value === null) dynamic.push("jsx-class");
       else addClasses(value);
     }
-    if (node.type === "AssignmentExpression" && node.left?.type === "MemberExpression") {
+    if (node.type === "AssignmentExpression" && (node.left?.type === "MemberExpression" || node.left?.type === "OptionalMemberExpression")) {
       const prop = node.left.computed ? literal(node.left.property) : node.left.property?.name;
-      if (prop === "className") {
+      if (prop === "className" || prop === "class") {
         const value = literal(node.right);
-        if (value === null) dynamic.push("className");
+        if (value === null) dynamic.push(prop);
         else addClasses(value);
       }
+    }
+    if (node.type === "ObjectProperty" && node.key?.name === "classList") {
+      // Solid classList={{ active: signal() }}: keys are behavioral selectors.
+      if (node.value?.type === "ObjectExpression") {
+        for (const property of node.value.properties) {
+          if (property.type !== "ObjectProperty") { dynamic.push("classList-object"); continue; }
+          const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
+          if (name === null) dynamic.push("classList-object");
+          else addClasses(name);
+        }
+      } else dynamic.push("classList-object");
     }
     if (node.type === "CallExpression" || node.type === "OptionalCallExpression") {
       const callee = node.callee;
