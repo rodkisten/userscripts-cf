@@ -27,7 +27,7 @@ export function mountGitHubDashboard(ctx: any) {
   const [dispatchWorkflow, setDispatchWorkflow] = createSignal<Workflow | null>(null);
   const [dispatchRef, setDispatchRef] = createSignal("main");
   const [dispatchInputs, setDispatchInputs] = createSignal("{}");
-  const [compact, setCompact] = createSignal(false);
+
   const [repositories, setRepositories] = createSignal<string[]>([]);
   const GLOBAL_REPOS_KEY = "githubDashboard:repositories:v1";
   void ctx.storage.get(GLOBAL_REPOS_KEY, []).then((stored: unknown) => {
@@ -272,16 +272,8 @@ export function mountGitHubDashboard(ctx: any) {
     </section>
   ));
   const navigate = () => { void load(); };
-  // The shared GM bridge mirrors this native command into Rod Dock.
-  if (typeof GM_registerMenuCommand === "function") {
-    const menuId = GM_registerMenuCommand("GitHub · Favoritos e Actions", () => {
-      setOpen(true);
-      void load();
-    });
-    ctx.onDispose(() => {
-      if (typeof GM_unregisterMenuCommand === "function") GM_unregisterMenuCommand(menuId);
-    });
-  }
+  // Dashboard is opened from its own compact launcher. Avoid duplicate
+  // GM commands: the shared runtime already mirrors them into Rod Dock.
   ctx.listen(window, "popstate", navigate);
   ctx.listen(window, "turbo:load", navigate);
   void load();
