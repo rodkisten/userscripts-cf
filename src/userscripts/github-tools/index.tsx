@@ -1,9 +1,10 @@
 import { fitGitHubNavigation } from "./navigation.ts";
+import { mountGitHubDashboard } from "./dashboard.tsx";
 import { createStore } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { clipboardText } from "../../runtime/solid-ui/clipboard.tsx";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
-import { css } from "./GitHub.module.css";
+import styles, { css } from "./GitHub.module.css";
 
 // File listing extraction, bounded downloads and Markdown fencing preserve v1 behavior.
 export default {
@@ -429,6 +430,8 @@ function startGitHub(ctx: any) {
     return writeClipboardOnGesture(makeCopyText(items, repo, mode, progress));
   }
 
+  const dashboard = mountGitHubDashboard(ctx);
+  const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
   function scan() {
     fitNavigation();
@@ -447,6 +450,18 @@ function startGitHub(ctx: any) {
     }
     const groups = listGroups(repo);
     for (const group of groups) {
+      for (const item of group.items) {
+        if (favoriteHosts.has(item.row)) continue;
+        favoriteHosts.add(item.row);
+        const anchor = item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') || item.row.querySelector("a[href]");
+        if (!anchor) continue;
+        const mount = mountPoint(anchor.parentNode!, () => (
+          <button type="button" class={styles.button} title={"Favoritar " + item.name}
+            aria-label={"Favoritar " + item.name}
+            onClick={(event) => { event.preventDefault(); event.stopPropagation(); dashboard.toggleFile(item.name, item.href); }}>☆</button>
+        ), { tag: "span", before: anchor });
+        mounts.set(mount.host, mount.dispose);
+      }
       const toolbar = attachGroup(group, repo);
       const missingDates = group.items.filter((item) => item.date === null).length;
       toolbar.update(
