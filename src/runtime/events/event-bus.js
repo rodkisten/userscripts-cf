@@ -30,7 +30,7 @@ export function createEventBus({ namespace = "", signal, onDiagnostic = () => {}
     if (!set) listeners.set(key, (set = new Map()));
     if (set.has(callback)) {
       onDiagnostic({ kind: "duplicate-listener", event: key });
-      return () => off(name, callback);
+      return () => {};
     }
     const abort = () => off(name, callback);
     set.set(callback, { once: !!options.once, signal: eventSignal, abort });
