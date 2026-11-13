@@ -94,7 +94,7 @@ export function mountGitHubDashboard(ctx: any) {
   const mount = mountPoint(document.body, () => (
     <section class={styles.dashboard} data-ghft-dashboard="">
       <nav class={styles.favoriteBar} aria-label="Arquivos favoritos">
-        <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open()}>⌘ {open() ? "Fechar" : "GitHub +"}</button>
+        <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "GitHub +"}</button>
         <For each={settings().files}>{(file, i) =>
           <a class={styles.favorite} href={file.url} draggable="true"
             onDragStart={(e) => { dragIndex = i(); e.dataTransfer?.setData("text/plain", file.url); }}
