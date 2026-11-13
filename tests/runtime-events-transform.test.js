@@ -42,6 +42,6 @@ test("AST rewrites listeners on statically identified DOM elements", () => {
     button.removeEventListener("click", handler);
   }`;
   const output = runtimeHelpers().transform(source, "/tmp/element.ts").code;
-  assert.match(output, /ctx\\.events\\.dom\\.add\\.bind\\(null, button\\)/);
-  assert.match(output, /ctx\\.events\\.dom\\.remove\\.bind\\(null, button\\)/);
+  assert.match(output, /ctx\.events\.dom\.add\.bind\(null, button\)/);
+  assert.match(output, /ctx\.events\.dom\.remove\.bind\(null, button\)/);
 });
