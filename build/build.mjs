@@ -150,7 +150,7 @@ for (const target of targets) {
           sourcemap: true,
           rolldownOptions: {
             input: "virtual:standalone-runtime",
-            output: { format: "iife", name: "UserscriptsCFStandalone" },
+            output: { format: "iife", name: "UserscriptsCFStandalone", sourcemap: true },
           },
         },
       });
@@ -170,7 +170,7 @@ for (const target of targets) {
       }
       const generated = await findOutput(tempDir);
       if (!generated) {
-        throw new Error("Vite did not emit a JavaScript file with an external sourcemap");
+        throw new Error("Vite/Rolldown did not emit an external sourcemap. Files: " + (await fs.readdir(tempDir, { recursive: true })).join(", "));
       }
       const code = await fs.readFile(generated.filename, "utf8");
       const map = JSON.parse(await fs.readFile(generated.mapPath, "utf8"));
