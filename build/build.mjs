@@ -147,10 +147,10 @@ for (const target of targets) {
           emptyOutDir: true,
           write: true,
           minify: "oxc",
-          sourcemap: true,
+          sourcemap: "inline",
           rolldownOptions: {
             input: "virtual:standalone-runtime",
-            output: { format: "iife", name: "UserscriptsCFStandalone", sourcemap: true },
+            output: { format: "iife", name: "UserscriptsCFStandalone" },
           },
         },
       });
@@ -160,24 +160,24 @@ for (const target of targets) {
           if (entry.isDirectory()) {
             const nested = await findOutput(filename);
             if (nested) return nested;
-          } else if (entry.name.endsWith(".js") && !entry.name.endsWith(".map.js")) {
-            const mapPath = filename + ".map";
-            if (await fs.stat(mapPath).then(() => true, () => false))
-              return { filename, mapPath };
+          } else if (entry.name.endsWith(".js")) {
+            return filename;
           }
         }
         return null;
       }
       const generated = await findOutput(tempDir);
-      if (!generated) {
-        throw new Error("Vite/Rolldown did not emit an external sourcemap. Files: " + (await fs.readdir(tempDir, { recursive: true })).join(", "));
+      if (!generated) throw new Error("Vite did not emit standalone JavaScript");
+      const code = await fs.readFile(generated, "utf8");
+      const match = code.match(/\\/\\/# sourceMappingURL=data:application\\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)/);
+      if (!match) {
+        throw new Error("Vite did not embed a sourcemap in the generated JavaScript");
       }
-      const code = await fs.readFile(generated.filename, "utf8");
-      const map = JSON.parse(await fs.readFile(generated.mapPath, "utf8"));
+      const map = JSON.parse(Buffer.from(match[1], "base64").toString("utf8"));
       const mapFile = file + ".map";
       map.file = file;
       await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-      source = `${metadata}\n\n${code.split("\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\n")}\n//# sourceMappingURL=${mapFile}\n`;
+      source = `${metadata}\\n\\n${code.replace(match[0], "")}\\n//# sourceMappingURL=${mapFile}\\n`;
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
