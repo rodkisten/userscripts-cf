@@ -10,6 +10,7 @@ import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
+import { discoverManual, compileManual, manualStandaloneMetadata, wrapManualForStandalone, checksum } from "./manual-userscripts.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
@@ -38,6 +39,8 @@ for (const definition of definitions) {
   if (!entry.startsWith(root + path.sep)) throw Error("Entry outside project");
   await fs.access(entry);
 }
+const manual = await discoverManual(root);
+const manualCompiled = await Promise.all(manual.map(async (item) => ({ ...item, compiled: await compileManual(root, item) })));
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
 const targets = [
@@ -80,7 +83,9 @@ for (const target of targets) {
       );
     }
   }
-  const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
+  const isStandalone = target.id === "standalone";
+  const manualMeta = isStandalone ? manualStandaloneMetadata(manualCompiled) : { matches: [], includes: [], grants: [], requires: [], connect: [] };
+  const patterns = [...new Set([...target.definitions.flatMap((item) => item.matches), ...manualMeta.matches])];
   // Per-module excludes must remain in the runtime router: a global @exclude
   // would disable other modules on the same URL (e.g. REPL and example-site).
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
@@ -93,6 +98,7 @@ for (const target of targets) {
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
     `// @description  ${target.id === "standalone" ? "Instalador único: todos os módulos com roteamento e configuração por site." : "Vite IIFE; roteamento SPA e storage GM isolado por módulo."}`,
     ...patterns.map((pattern) => `// @match        ${pattern}`),
+    ...manualMeta.includes.map((pattern) => `// @include      ${pattern}`),
     ...exclusions.map((pattern) => `// @exclude      ${pattern}`),
     "// @run-at       document-start",
     "// @noframes",
@@ -102,12 +108,13 @@ for (const target of targets) {
         "GM_setValue",
         "GM_deleteValue",
         ...target.definitions.flatMap((item) => item.grants || []),
+        ...manualMeta.grants,
       ]),
     ].map((grant) => `// @grant        ${grant}`),
-    ...[...new Set(target.definitions.flatMap((item) => item.requires || []))].map(
+    ...[...new Set([...target.definitions.flatMap((item) => item.requires || []), ...manualMeta.requires])].map(
       (url) => `// @require      ${url}`,
     ),
-    ...[...new Set(target.definitions.flatMap((item) => item.connect || []))].map(
+    ...[...new Set([...target.definitions.flatMap((item) => item.connect || []), ...manualMeta.connect])].map(
       (host) => `// @connect      ${host}`,
     ),
     "// ==/UserScript==",
@@ -117,7 +124,8 @@ for (const target of targets) {
     printWidth: 110,
   });
   const file = `${target.id}.user.js`;
-  const source = `${metadata}\n\n${body}`;
+  const manualBody = isStandalone ? manualCompiled.map((item) => wrapManualForStandalone(item, item.compiled, matchURL.toString())).join("\n\n") : "";
+  const source = `${metadata}\n\n${body}\n${manualBody}`;
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
   const metaSource = metadata + "\n";
@@ -131,6 +139,15 @@ for (const target of targets) {
     sha256: createHash("sha256").update(source).digest("hex"),
   });
   console.log(`Built ${file} (${source.length} bytes)`);
+}
+for (const item of manualCompiled) {
+  const file = `${item.id}.user.js`;
+  const metaFile = `${item.id}.meta.js`;
+  await fs.writeFile(path.join(out, file), item.compiled);
+  const header = item.compiled.match(/^\\/\\/\\s*==UserScript==[\\s\\S]*?^\\/\\/\\s*==\\/UserScript==\\s*$/m)?.[0];
+  if (!header) throw Error(`Missing compiled metadata: ${item.relative}`);
+  await fs.writeFile(path.join(out, metaFile), header + "\\n");
+  manifest.scripts.push({ id: item.id, file, metaFile, matches: item.metadata.match || [], sha256: checksum(item.compiled), metaSha256: checksum(header + "\\n") });
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
