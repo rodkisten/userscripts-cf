@@ -1,5 +1,5 @@
 import { fitGitHubNavigation } from "./navigation.ts";
-import { mountGitHubDashboard } from "./dashboard.tsx";
+import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { createStore } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { clipboardText } from "../../runtime/solid-ui/clipboard.tsx";
@@ -461,6 +461,17 @@ function startGitHub(ctx: any) {
             onClick={(event) => { event.preventDefault(); event.stopPropagation(); dashboard.toggleFile(item.name, item.href); }}>☆</button>
         ), { tag: "span", before: anchor });
         mounts.set(mount.host, mount.dispose);
+        if (item.type === "file") {
+          // TODO(GITHUB-COMMITS): Resolve branch names containing slashes via
+          // GitHub's ref metadata rather than assuming the first URL segment.
+          // Cache and batch commit lookups for large directories; test private
+          // repositories, rate limits, and SPA branch switches.
+          const path = displayPath(item);
+          const commitMount = mountPoint(item.row, () => (
+            <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />
+          ), { tag: "span" });
+          mounts.set(commitMount.host, commitMount.dispose);
+        }
       }
       const toolbar = attachGroup(group, repo);
       const missingDates = group.items.filter((item) => item.date === null).length;
