@@ -1,5 +1,6 @@
 import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
+import { mountDirectoryTree } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { createStore } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
@@ -199,6 +200,8 @@ function startGitHub(ctx: any) {
     );
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo);
+    mounts.set(listContainer as HTMLElement, disposeTree);
     const record = {
       host: mount.host,
       update(hint: string, title: string) {
