@@ -11,7 +11,7 @@ for (const file of await fs.readdir(dist)) {
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
 }
 for (const file of await fs.readdir(path.join(dist, "icons"))) {
-  if (!/^[a-z][a-z0-9-]*\\.svg$/.test(file)) continue;
+  if (!/^[a-z][a-z0-9-]*\.svg$/.test(file)) continue;
   assets["icons/" + file] = await fs.readFile(path.join(dist, "icons", file), "utf8");
 }
 const code = `import {createHandler} from './handler.js';
