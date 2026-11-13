@@ -162,3 +162,68 @@
   border: 1px solid #555;
   border-radius: 8px;
 }
+
+
+:global(:root){
+  --ghft-space-1:4px;
+  --ghft-space-2:8px;
+  --ghft-space-3:12px;
+  --ghft-radius-sm:6px;
+  --ghft-radius-md:8px;
+  --ghft-font-size:12px;
+  --ghft-font-size-caption:11px;
+  --ghft-border:var(--borderColor-default,#d0d7de);
+  --ghft-border-muted:var(--borderColor-muted,#d8dee4);
+  --ghft-surface:var(--bgColor-default,#fff);
+  --ghft-overlay:var(--overlay-bgColor,var(--ghft-surface));
+  --ghft-text:var(--fgColor-default,#24292f);
+  --ghft-text-muted:var(--fgColor-muted,#656d76);
+  --ghft-shadow:0 10px 32px #0003;
+  --ghft-panel-width:390px;
+  --ghft-panel-height:70dvh;
+  --ghft-favorite-width:180px;
+  --ghft-control-height:30px;
+  --ghft-z-index:1000;
+  --ghft-bar-gap:5px;
+  --ghft-bar-padding:5px 8px;
+  --ghft-favorite-padding:5px 8px;
+  --ghft-panel-padding:12px;
+  --ghft-panel-offset:8px;
+  --ghft-row-padding:8px 4px;
+  --ghft-control-input-width:48px;
+  --ghft-hover-bg:var(--bgColor-muted,#f6f8fa);
+  --ghft-mobile-favorite-width:120px;
+}
+.dashboard{position:relative;z-index:10;color:var(--ghft-text);font:var(--ghft-font-size) -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+.favoriteBar{display:flex;align-items:center;gap:var(--ghft-bar-gap);overflow-x:auto;scrollbar-width:thin;padding:var(--ghft-bar-padding);border-bottom:1px solid var(--ghft-border);background:var(--ghft-surface)}
+.favorite{flex:none;max-width:var(--ghft-favorite-width);padding:var(--ghft-favorite-padding);border:1px solid var(--ghft-border);border-radius:6px;color:inherit;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;-webkit-user-select:none;touch-action:pan-x}
+.favorite:active{cursor:grabbing}
+.dashboardPanel{position:absolute;right:var(--ghft-panel-offset);top:100%;width:min(var(--ghft-panel-width),calc(100vw - 16px));max-height:var(--ghft-panel-height);overflow:auto;background:var(--ghft-overlay);border:1px solid var(--ghft-border);border-radius:8px;box-shadow:var(--ghft-shadow);padding:var(--ghft-panel-padding);z-index:var(--ghft-z-index)}
+.dashboardPanel header,.dashboardControls,.dashboardItem{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.dashboardControls{flex-wrap:wrap;padding:10px 0}
+.dashboardControls input[type="number"]{width:var(--ghft-control-input-width)}
+.dashboardControls input:not([type="number"]){flex:1;min-width:0;width:auto}
+.dashboardControls input,.dashboardControls select{background:var(--ghft-surface);color:inherit;border:1px solid var(--ghft-border);border-radius:6px;min-height:30px}
+.dashboardItem{padding:var(--ghft-row-padding);border-bottom:1px solid var(--ghft-border-muted);color:inherit;text-decoration:none;min-width:0}
+.dashboardItem>a,.dashboardItem>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
+.dashboardItem small{display:block;opacity:.65}
+.dashboardPanel h4{margin:12px 0 4px}
+.workflowChoice{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:8px;cursor:pointer}
+.workflowChoice:hover{background:var(--ghft-hover-bg)}
+@media(max-width:470px){.dashboardPanel{right:4px}.favorite{max-width:var(--ghft-mobile-favorite-width)}}
+
+.commitHint{display:inline-flex;gap:4px;align-items:center;max-width:100%;font-size:11px;color:var(--ghft-text-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:2px 6px}.commitHint a{color:inherit;text-decoration:none;max-width:210px;overflow:hidden;text-overflow:ellipsis}.commitHint a:hover{text-decoration:underline}
+
+:global(:root){
+  --ghft-run-gap:6px;
+  --ghft-form-gap:8px;
+  --ghft-form-padding:10px;
+  --ghft-form-input-padding:7px;
+}
+.runRow{display:flex;flex-direction:column;gap:var(--ghft-run-gap);border-bottom:1px solid var(--ghft-border-muted)}
+.runRow .dashboardItem{border-bottom:0}
+.runActions{display:flex;gap:var(--ghft-run-gap);justify-content:flex-end;padding-bottom:var(--ghft-space-2)}
+.dispatchForm{display:grid;gap:var(--ghft-form-gap);padding:var(--ghft-form-padding);border:1px solid var(--ghft-border);border-radius:var(--ghft-radius-md)}
+.dispatchForm label{display:grid;gap:var(--ghft-space-1)}
+.dispatchForm input,.dispatchForm textarea{box-sizing:border-box;min-width:0;width:100%;padding:var(--ghft-form-input-padding);background:var(--ghft-surface);color:var(--ghft-text);border:1px solid var(--ghft-border);border-radius:var(--ghft-radius-sm);font:inherit}
+.dispatchForm>div{display:flex;gap:var(--ghft-form-gap)}

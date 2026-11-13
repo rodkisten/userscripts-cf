@@ -126,7 +126,7 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
     void writing
       .then(() =>
         setState((draft) => {
-          draft.message = "Output completo copiado";
+          draft.message = "Log completo do job copiado";
         }),
       )
       .catch((error) =>
@@ -147,8 +147,8 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
         class={styles.button}
         disabled={state.busy}
         onClick={copy}
-        title="Copiar output inteiro do step, incluindo grupos recolhidos"
-        aria-label={`Copiar output inteiro do step ${props.address.stepNumber}`}
+        title="Copiar log completo do job, incluindo todos os steps"
+        aria-label={`Copiar log completo do job do step ${props.address.stepNumber}`}
       >
         {state.busy ? "◌" : "⧉"} Output
       </button>

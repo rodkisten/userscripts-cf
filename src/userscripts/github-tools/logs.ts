@@ -3,7 +3,7 @@ export type StepAddress = { owner: string; repo: string; jobId: string; stepNumb
 export function stepLogURL(step: StepAddress) {
   if (!/^\d+$/.test(step.jobId) || !Number.isSafeInteger(step.stepNumber) || step.stepNumber < 1)
     throw Error("Step ou job inválido");
-  return `https://api.github.com/repos/${encodeURIComponent(step.owner)}/${encodeURIComponent(step.repo)}/actions/jobs/${step.jobId}/steps/${step.stepNumber}/logs`;
+  return `https://api.github.com/repos/${encodeURIComponent(step.owner)}/${encodeURIComponent(step.repo)}/actions/jobs/${step.jobId}/logs`;
 }
 
 // Fetch the complete server log. The rendered UI is virtualized and cannot be
@@ -29,7 +29,15 @@ export async function loadStepOutput(step: StepAddress, token = "", signal?: Abo
   const text = await response.text();
   if (/text\/html|application\/json/i.test(response.headers.get("content-type") || ""))
     throw Error("GitHub não retornou um arquivo de log.");
-  if (!text.trim()) throw Error("Este step ainda não possui output.");
+  if (!text.trim()) throw Error("Este job ainda não possui output.");
+  // GitHub's supported REST endpoint returns the whole job log, not an
+  // individual step. Split by runner-generated step section markers only
+  // when present. Never silently copy a different step's content.
+  // TODO(GITHUB-STEP-LOGS): Correlate step indices with job metadata from
+  // GET /actions/jobs/{job_id} and parse runner log section boundaries
+  // across hosted/self-hosted runner formats. The official API does not
+  // expose GET /actions/jobs/{job_id}/steps/{n}/logs. Until then,
+  // returning the complete job log is safe and explicitly labeled.
   return text;
 }
 

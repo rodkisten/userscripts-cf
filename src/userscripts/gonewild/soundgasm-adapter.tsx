@@ -98,7 +98,11 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   // jPlayer hydration and SPA navigation before removing this safeguard.
   const revealIfReady = () => {
     const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name, [role=alert]");
-    native(failed || !rendered);
+    // A title alone does not prove that the replacement audio player is usable.
+    // Preserve the native player while jPlayer is still hydrating its source.
+    // FIXME(SOUNDGASM-SAFARI): Validate native and enhanced playback on iOS,
+    // including late media hydration, errors and navigation to another recording.
+    native(failed || !rendered || (!data.profile && !data.source));
   };
   revealIfReady();
   queueMicrotask(revealIfReady);
