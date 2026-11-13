@@ -51,6 +51,7 @@ async function declarations(file) {
 test("migration retains 462 declarations and audits extracted CSS and selectors", async () => {
   assert.equal(baseline.source.sha256, "92636bd94605a3a45de279808ca198004556b44cbac965f63bd8e0f98af0f908");
   assert.equal(baseline.audit.length, 462);
+  const mismatches = [];
   for (const originalRecord of baseline.audit) {
     const migrated = solidRefactor[originalRecord.file + ":" + originalRecord.name];
     const record = { ...originalRecord, file: migrated.file, name: migrated.name };
@@ -88,12 +89,11 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     // The GM storage adapter was intentionally centralized; validate its behavior
     // separately instead of pretending the original implementation is unchanged.
     if (record.file === "storage/gm.js" && ["gmGet", "gmSet", "gmAvailable"].includes(record.name)) continue;
-    assert.equal(
-      hash(node),
-      migrated.sha256,
-      `${record.file}: ${record.name} changed from source line ${record.sourceLine}`,
-    );
+    if (hash(node) !== migrated.sha256) {
+      mismatches.push(`${record.file}: ${record.name} changed from source line ${record.sourceLine}`);
+    }
   }
+  assert.deepEqual(mismatches, [], "Review every changed migration declaration before accepting new snapshots");
 });
 
 test("three bootstrap sequences preserve original initialization order", async () => {
