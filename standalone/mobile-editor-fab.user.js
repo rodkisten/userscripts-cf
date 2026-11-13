@@ -141,18 +141,59 @@
     buttons.get("ctrl").classList.remove("active");
     buttons.get("shift").classList.remove("active");
   }
+  // Synthetic keyboard events are untrusted; use Monaco's model API when exposed.
+  function activeMonaco() {
+    const node = target?.closest?.(".monaco-editor");
+    const api = window.monaco?.editor;
+    if (!node || typeof api?.getEditors !== "function") return null;
+    try { return api.getEditors().find(editor => editor.getDomNode?.() === node) || null; }
+    catch { return null; }
+  }
+  function monacoAction(editor, action, text) {
+    const model = editor.getModel?.();
+    const selection = editor.getSelection?.();
+    const position = editor.getPosition?.();
+    if (!model || !selection || !position) return false;
+    const delta = { ArrowLeft: [-1,0], ArrowRight: [1,0], ArrowUp: [0,-1], ArrowDown: [0,1] }[action];
+    if (delta || action === "Home" || action === "End") {
+      const lineNumber = Math.max(1, Math.min(model.getLineCount(), position.lineNumber + (delta?.[1] || 0)));
+      const column = action === "Home" ? 1 : action === "End" ? model.getLineMaxColumn(lineNumber)
+        : Math.max(1, Math.min(model.getLineMaxColumn(lineNumber), position.column + (delta?.[0] || 0)));
+      const next = { lineNumber, column };
+      if (shift && window.monaco?.Selection) editor.setSelection(new window.monaco.Selection(selection.selectionStartLineNumber, selection.selectionStartColumn, lineNumber, column));
+      else editor.setPosition(next);
+      editor.revealPositionInCenterIfOutsideViewport?.(next);
+    } else if (action === "selectAll") editor.setSelection(model.getFullModelRange());
+    else if (action === "undo" || action === "redo") editor.trigger("rod-fab", action, null);
+    else if (action === "paste" || action === "Tab" || action === "Enter") {
+      if (text === undefined) return false;
+      editor.executeEdits("rod-fab", [{ range: selection, text, forceMoveMarkers: true }]);
+    } else return false;
+    ctrl = shift = false;
+    buttons.get("ctrl").classList.remove("active");
+    buttons.get("shift").classList.remove("active");
+    return true;
+  }
   async function perform(action) {
     const element = editorTarget(target);
     if (!element) return;
     if (action === "ctrl" || action === "shift") { setModifier(action); return; }
     if (action === "keyboard") { element.focus(); setOpen(false); return; }
-    const monaco = target?.closest?.(".monaco-editor");
+    const monaco = activeMonaco();
+    if (monaco && action !== "copy" && action !== "cut") {
+      if (action === "paste") {
+        try { if (monacoAction(monaco, action, await navigator.clipboard.readText())) return; }
+        catch { /* Clipboard unavailable; do not alter Monaco's hidden textarea. */ }
+      } else if (monacoAction(monaco, action, action === "Tab" ? "\\t" : action === "Enter" ? "\\n" : undefined)) return;
+      return;
+    }
     if (action === "copy" || action === "cut") {
-      const selected = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement
+      const selected = monaco ? monaco.getModel()?.getValueInRange(monaco.getSelection()) : element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement
         ? element.value.slice(element.selectionStart, element.selectionEnd) : String(getSelection());
       if (selected) {
         try { await navigator.clipboard.writeText(selected); } catch { key(element, "c"); }
-        if (action === "cut" && !monaco && element.setRangeText) insertText(element, "");
+        if (action === "cut" && monaco) monacoAction(monaco, "paste", "");
+        else if (action === "cut" && element.setRangeText) insertText(element, "");
       }
     } else if (action === "paste") {
       try { insertText(element, await navigator.clipboard.readText()); }
