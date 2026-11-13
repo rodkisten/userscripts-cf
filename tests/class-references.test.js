@@ -17,6 +17,17 @@ describe("class references AST", () => {
     ]);
     expect(result.dynamic).toEqual([]);
   });
+  it("detects JSX and direct className assignments", () => {
+    const result = analyzeClassReferences(`
+      const button = <button class="menu active" />;
+      const other = <div className={"selected"} />;
+      element.className = "ready busy";
+      element.className = state;
+      const dynamic = <div class={state} />;
+    `);
+    expect(result.classes).toEqual(["active", "busy", "menu", "ready", "selected"]);
+    expect(result.dynamic).toEqual(["className", "jsx-class"]);
+  });
   it("flags computed selectors rather than guessing their class names", () => {
     const result = analyzeClassReferences(`
       element.matches(".item-" + state);
