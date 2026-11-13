@@ -124,8 +124,7 @@ for (const target of targets) {
   if (target.id === "standalone") {
     // Keep the userscript metadata untouched: Tampermonkey must parse it.
     // The map is external and embeds the full original generated runtime.
-    // Vite 8 uses Oxc for minification. Bundle the virtual entry without
-    // introducing a separate esbuild dependency or a temporary source file.
+    // Vite 8 uses Oxc for minification without an esbuild dependency.
     // Vite 8 does not guarantee a sourcemap asset in its in-memory
     // build result. Write to an isolated temporary directory and read the
     // actual artifacts, which also validates the files shipped to users.
@@ -137,10 +136,10 @@ for (const target of targets) {
         plugins: [{
           name: "standalone-runtime-entry",
           resolveId(id) {
-            if (id === "virtual:standalone-runtime") return "\\0virtual:standalone-runtime";
+            if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
           },
           load(id) {
-            if (id === "\\0virtual:standalone-runtime") return body;
+            if (id === "\0virtual:standalone-runtime") return body;
           },
         }],
         build: {
@@ -178,7 +177,7 @@ for (const target of targets) {
       const mapFile = file + ".map";
       map.file = file;
       await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-      source = `${metadata}\\n\\n${code.split("\\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\\n")}\\n//# sourceMappingURL=${mapFile}\\n`;
+      source = `${metadata}\n\n${code.split("\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\n")}\n//# sourceMappingURL=${mapFile}\n`;
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
