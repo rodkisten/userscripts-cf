@@ -24,3 +24,22 @@ All userscript application modules should use `ctx.http` for outgoing HTTP and `
 - [ ] Validate real Tampermonkey/Safari iOS behavior
 
 Do not merge until all checks are complete. Current implementation is an initial integration, not the full migration.
+
+## IndexedDB through runtime context
+
+Use `ctx.db("history")` to opt into **strict IndexedDB**. The string is a logical database namespace under the current userscript. No direct `indexedDB.open` or extra library import is needed:
+
+```ts
+const history = ctx.db("history");
+await history.ready();
+await history.set("cursor", { id: "123" });
+const cursor = await history.get("cursor");
+
+// Optional RodStorage features:
+const media = ctx.db("media", { version: 2, cache: { maxEntries: 100 } });
+await media.set("thumbnail", new Uint8Array([1, 2, 3]), { ttl: "7d" });
+```
+
+`ctx.storage` is unchanged and retains its legacy migration bridge. `ctx.db` uses the vendored RodStorage implementation, its own namespace, and the same async get/set/delete API plus migrations, TTL, transactions, export and diagnostics. Calling `ctx.db` again with the same name returns the same instance; options only apply on first creation. The instance closes on context disposal.
+
+Unlike RodStorage's default `auto` mode, `ctx.db` **does not fall back** to GM, localStorage or memory. If IndexedDB is unavailable (for example, restricted Safari contexts), `await db.ready()` rejects and the application must handle that failure. Existing IndexedDB databases are not migrated automatically: that requires an explicit migration plan to preserve old data.
