@@ -41,6 +41,13 @@ for (const definition of definitions) {
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
 const targets = [
+  {
+    id: "standalone",
+    definitions,
+    name: "🌻 Userscripts CF · Standalone (todos os módulos)",
+    namespace: "https://rod.migos.club/userscripts-cf/standalone",
+    version,
+  },
   ...definitions.map((item) => ({
     id: item.id,
     definitions: [item],
@@ -74,6 +81,9 @@ for (const target of targets) {
     }
   }
   const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
+  // Per-module excludes must remain in the runtime router: a global @exclude
+  // would disable other modules on the same URL (e.g. REPL and example-site).
+  const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
   const metadata = [
     "// ==UserScript==",
     `// @name         ${target.name}`,
@@ -81,8 +91,9 @@ for (const target of targets) {
     `// @version      ${target.version}`,
     `// @updateURL    ${baseURL}/${target.id}.meta.js`,
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
-    "// @description  Vite IIFE; roteamento SPA e storage GM isolado por módulo.",
+    `// @description  ${target.id === "standalone" ? "Instalador único: todos os módulos com roteamento e configuração por site." : "Vite IIFE; roteamento SPA e storage GM isolado por módulo."}`,
     ...patterns.map((pattern) => `// @match        ${pattern}`),
+    ...exclusions.map((pattern) => `// @exclude      ${pattern}`),
     "// @run-at       document-start",
     "// @noframes",
     ...[
