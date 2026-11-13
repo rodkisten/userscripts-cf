@@ -45,3 +45,16 @@ test("does not rewrite calls when context is shadowed by a nested function", () 
   }`);
   assert.match(output, /ctx\.http\.fetch\("\/outer"\)/);
 });
+
+test("rewrites inferred element queries without changing unrelated objects", () => {
+  const output = transform(`function init(ctx) {
+    const container = document.querySelector("#app");
+    const item = container.querySelector(".item");
+    const items = container.querySelectorAll(".item");
+    const service = createService();
+    service.querySelector(".custom");
+  }`);
+  assert.match(output, /ctx\.dom\.scope\(container\)\.querySelector\("\.item"\)/);
+  assert.match(output, /ctx\.dom\.scope\(container\)\.querySelectorAll\("\.item"\)/);
+  assert.match(output, /service\.querySelector\("\.custom"\)/);
+});
