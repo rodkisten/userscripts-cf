@@ -2,6 +2,7 @@ import { createSignal, createStore, Show } from "solid-js";
 import { mountPoint } from "../solid-ui/mount-point.tsx";
 import { Dialog } from "../solid-ui/Dialog.tsx";
 import { ActionsPanel, type ActionsModule } from "./Panel.tsx";
+import { ClipboardPanel } from "./ClipboardPanel.tsx";
 import styles, { css } from "./Launcher.module.css";
 export type RodActionsTab = ActionsModule["tabs"][number];
 export type RodActionsModule = ActionsModule;
@@ -79,5 +80,13 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
     { id: "rod-actions-hub", shadow: true },
   );
   window.__RodActions = hub;
+  const clipboard = (window as Window & { __RodClipboard?: Parameters<typeof ClipboardPanel>[0]["clipboard"] }).__RodClipboard;
+  if (clipboard) {
+    hub.register({
+      id: "clipboard",
+      title: "Clipboard",
+      tabs: [{ id: "history", title: "Histórico", icon: "▤", render: () => <ClipboardPanel clipboard={clipboard} /> }],
+    });
+  }
   return hub;
 }
