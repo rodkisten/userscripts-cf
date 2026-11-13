@@ -72,3 +72,27 @@ test("rewrites modern and legacy GM calls but honors @keep", () => {
   assert.match(output, /ctx\.gm\.modern\.xmlHttpRequest\(/);
   assert.match(output, /GM_getValue\("native"\)/);
 });
+
+test("rewrites GM aliases and optional calls", () => {
+  const output = transform(`function init(ctx) {
+    const read = GM.getValue;
+    const legacyRead = GM_getValue;
+    GM?.setValue?.("key", 1);
+    GM_getValue?.("key");
+  }`);
+  assert.match(output, /const read = ctx\.gm\.modern\.getValue/);
+  assert.match(output, /const legacyRead = ctx\.gm\.legacy\.getValue/);
+  assert.match(output, /ctx\.gm\.modern\.setValue\?\.\("key", 1\)/);
+  assert.match(output, /ctx\.gm\.legacy\.getValue\?\.\("key"\)/);
+});
+
+test("does not rewrite shadowed GM bindings", () => {
+  const output = transform(`function init(ctx) {
+    { const GM = custom; GM.getValue("local"); }
+    { const GM_getValue = custom; GM_getValue("local"); }
+    GM.getValue("native");
+  }`);
+  assert.match(output, /GM\.getValue\("local"\)/);
+  assert.match(output, /GM_getValue\("local"\)/);
+  assert.match(output, /ctx\.gm\.modern\.getValue\("native"\)/);
+});
