@@ -1,3 +1,4 @@
+import { createGMBridge } from "../runtime/gm-bridge.js";
 import { matchesRoute } from "./match.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createDomEngine } from "../runtime/dom-engine.js";
@@ -104,6 +105,7 @@ export function createRuntime(definitions, bridge, host = window) {
         await bridge.call("delete", { id: definition.id, key });
       },
     });
+    const gm = createGMBridge(host);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
@@ -111,6 +113,7 @@ export function createRuntime(definitions, bridge, host = window) {
     return {
       id: definition.id,
       http,
+      gm,
       dom,
       db,
       signal: abort.signal,
