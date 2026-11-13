@@ -132,16 +132,6 @@
   flex-shrink: 0;
   width: min(16px, 65%);
 }
-:global(nav.UnderlineNav):has(.navigation) {
-  overflow: visible;
-}
-:global(nav.UnderlineNav):has(.navigation) > :global(.UnderlineNav-actions) {
-  display: none;
-}
-:global(.js-repo-nav):has(.navigation) :global(.UnderlineNav-actions) {
-  display: none;
-}
-
 .tokenForm {
   display: grid;
   gap: 12px;
@@ -227,3 +217,16 @@
 .dispatchForm label{display:grid;gap:var(--ghft-space-1)}
 .dispatchForm input,.dispatchForm textarea{box-sizing:border-box;min-width:0;width:100%;padding:var(--ghft-form-input-padding);background:var(--ghft-surface);color:var(--ghft-text);border:1px solid var(--ghft-border);border-radius:var(--ghft-radius-sm);font:inherit}
 .dispatchForm>div{display:flex;gap:var(--ghft-form-gap)}
+
+/* Mobile: keep our floating controls outside GitHub's document flow. */
+[data-ghft-dashboard]{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 70px)!important;right:8px!important;left:auto!important;width:auto!important;max-width:calc(100vw - 16px)!important;z-index:2147483644!important;pointer-events:none}
+[data-ghft-dashboard] .favoriteBar{pointer-events:auto;max-width:min(76vw,340px);border:1px solid var(--ghft-border);border-radius:10px;box-shadow:var(--ghft-shadow);padding:3px 5px;gap:4px}
+[data-ghft-dashboard] .favoriteBar>.button{min-height:28px;padding:3px 7px;font-size:11px}
+[data-ghft-dashboard] .dashboardPanel{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 110px)!important;right:8px!important;left:auto!important;width:min(350px,calc(100vw - 16px))!important;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 130px)!important;pointer-events:auto;z-index:2147483645}
+[data-ghft-dashboard] .dashboardPanel .button{min-height:28px;padding:3px 7px;font-size:11px}
+[data-ghft-dashboard] .dashboardPanel .dashboardControls{gap:5px;padding:6px 0}
+[data-ghft-dashboard] .dashboardPanel .dashboardControls input,
+[data-ghft-dashboard] .dashboardPanel .dashboardControls select{min-height:28px;font-size:12px}
+[data-ghft-dashboard] .dashboardPanel .dashboardItem{gap:5px}
+[data-ghft-dashboard] .dashboardPanel .runActions{gap:4px}
+@media(max-width:470px){[data-ghft-dashboard] .favoriteBar{max-width:65vw}[data-ghft-dashboard] .dashboardPanel{width:calc(100vw - 16px)!important}}
