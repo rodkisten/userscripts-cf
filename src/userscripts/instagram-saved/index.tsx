@@ -1,5 +1,7 @@
+import { render } from "@solidjs/web";
+import { SavedPanel, SavedSettings, css } from "./Settings.tsx";
 import type { MediaPayload, Page } from "./core.ts";
-import { mountReelBookmark } from "./reel-bookmark.ts";
+import { mountReelBookmark } from "./reel-bookmark.tsx";
 import { installRodActions } from "../../runtime/actions/index.ts";
 type Config = { token: string; channels: string[] };
 type Settings = {
@@ -10,6 +12,7 @@ type Settings = {
   batchSize: number;
   maxItemsPerSession: number;
 };
+
 type RuntimeContext = {
   menu: { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void };
   toaster: ((options: any) => any) & { success?: (options: any) => any };
@@ -19,6 +22,7 @@ type RuntimeContext = {
     set: (key: string, value: any) => Promise<void>;
   };
   style: (css: string) => void;
+  pageStyle: (css: string) => void;
   ui: {
     root: ShadowRoot;
     mount: (node: Node) => Node;
@@ -28,6 +32,7 @@ type RuntimeContext = {
   listen: (target: EventTarget, event: string, callback: () => void) => void;
   onDispose: (callback: () => void) => void;
 };
+
 declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
 declare const GM_registerMenuCommand: ((label: string, callback: () => void) => any) | undefined;
 declare const GM_unregisterMenuCommand: ((id: any) => void) | undefined;
@@ -49,28 +54,21 @@ const RELAY = "https://xtelegram-cf.migos.club/batch";
 export default {
   init(ctx: RuntimeContext) {
     const abort = ctx.signal;
-    mountReelBookmark(abort);
+    ctx.ui.registerStyles(css);
+    mountReelBookmark(abort, ctx.pageStyle);
     const hub = installRodActions(ctx.menu);
     const unregisterActions = hub.register({
       id: "instagram-saved",
       title: "Instagram",
-      tabs: [{
-        id: "saved",
-        title: "Salvos",
-        render() {
-          const panel = document.createElement("div");
-          panel.style.cssText = "display:grid;gap:12px;padding:12px";
-          const description = document.createElement("p");
-          description.textContent = "Gerencie suas coleções salvas e o envio ao Relay.";
-          const settings = document.createElement("button");
-          settings.textContent = "Configurações de salvos";
-          settings.addEventListener("click", () => {
-            void (window as any).__XRodSettingsInstagram?.modules?.saved?.open();
-          });
-          panel.append(description, settings);
-          return panel;
+      tabs: [
+        {
+          id: "saved",
+          title: "Salvos",
+          render() {
+            return (<SavedPanel onOpen={() => void settingsApi.open()} />) as HTMLElement;
+          },
         },
-      }],
+      ],
     });
     ctx.onDispose(unregisterActions);
     let running = false;
@@ -91,21 +89,7 @@ export default {
         abort.addEventListener("abort", cancelled, { once: true });
       });
     async function configure() {
-      const token = prompt("Token do XTelegram Relay (armazenado no userscript):");
-      if (!token) return;
-      const channels = prompt("IDs dos canais Telegram, separados por vírgula:");
-      if (!channels) return;
-      const ids = [
-        ...new Set(
-          channels
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean),
-        ),
-      ];
-      if (!ids.length) return;
-      await set("config", { token: token.trim(), channels: ids });
-      void run(true);
+      await settingsApi.open();
     }
     function relay(config: Config, items: MediaPayload[]) {
       return new Promise<{ results: import("./core.ts").DeliveryResult[] }>((resolve, reject) => {
@@ -113,7 +97,9 @@ export default {
           typeof GM_xmlhttpRequest === "function"
             ? GM_xmlhttpRequest
             : (globalThis as any).GM?.xmlHttpRequest;
-        if (!request) return reject(Error("GM_xmlhttpRequest indisponível"));
+        if (!request) {
+          return reject(Error("GM_xmlhttpRequest indisponível"));
+        }
         const handle = request({
           method: "POST",
           url: RELAY,
@@ -125,7 +111,9 @@ export default {
             abort.removeEventListener("abort", cancel);
             try {
               const data = JSON.parse(response.responseText);
-              if (Array.isArray(data.results)) return resolve(data);
+              if (Array.isArray(data.results)) {
+                return resolve(data);
+              }
               const error = Error(`Relay HTTP ${response.status}`) as Error & {
                 status?: number;
                 retryAfter?: string;
@@ -160,25 +148,36 @@ export default {
           return await operation();
         } catch (caught) {
           const error = caught as Error & { status?: number; retryAfter?: string };
-          if (attempt >= 3 || !(error.status === 429 || error.status >= 500)) throw error;
+          if (attempt >= 3 || !(error.status === 429 || error.status >= 500)) {
+            throw error;
+          }
           await pause(retryDelay(attempt, size, error.retryAfter));
         }
       }
     }
     async function run(manual = false) {
-      if (running || (!manual && (document.hidden || Date.now() - lastRun < 300000))) return;
+      if (running || (!manual && (document.hidden || Date.now() - lastRun < 300000))) {
+        return;
+      }
       const config = await get("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
-      if (!settings.enabled || !settings.collectionIds?.length) return;
+      if (!settings.enabled || !settings.collectionIds?.length) {
+        return;
+      }
       const account = document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
-      if (!config?.token || !account) return;
+      if (!config?.token || !account) {
+        return;
+      }
       running = true;
       lastRun = Date.now();
       try {
-        if (!navigator.locks)
+        if (!navigator.locks) {
           throw Error("Web Locks indisponível; sincronização desativada para evitar concorrência");
+        }
         await navigator.locks.request(`instagram-saved:${account}`, { ifAvailable: true }, async (lock) => {
-          if (!lock) return;
+          if (!lock) {
+            return;
+          }
           abort.throwIfAborted();
           let count = 0;
           for (const collectionId of settings.collectionIds) {
@@ -195,11 +194,14 @@ export default {
               sendBatch: (items) => retry(() => relay(config, items), items.length),
               fetchPage: (cursor) =>
                 retry(async () => {
-                  if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account)
+                  if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account) {
                     throw Error("Conta alterada");
+                  }
                   const url = new URL(COLLECTION_PATH(collectionId), location.origin);
                   url.searchParams.set("count", "50");
-                  if (cursor) url.searchParams.set("max_id", cursor);
+                  if (cursor) {
+                    url.searchParams.set("max_id", cursor);
+                  }
                   const response = await fetch(url, {
                     credentials: "same-origin",
                     signal: abort,
@@ -225,11 +227,15 @@ export default {
             });
           }
           await set("lastError", null);
-          if (count > 0) ctx.toaster.success?.({ title: `${count} mídias enviadas` });
+          if (count > 0) {
+            ctx.toaster.success?.({ title: `${count} mídias enviadas` });
+          }
         });
       } catch (caught) {
         const error = caught as Error;
-        if (!abort.aborted) await set("lastError", { message: error.message, at: Date.now() });
+        if (!abort.aborted) {
+          await set("lastError", { message: error.message, at: Date.now() });
+        }
       } finally {
         running = false;
       }
@@ -256,27 +262,25 @@ export default {
       async open() {
         const settings = await this.get();
         const external = ctx.menu;
-        if (!external?.open) throw Error("RodMenu não carregado");
+        if (!external?.open) {
+          throw Error("RodMenu não carregado");
+        }
         external.configure?.({ defaultPresentation: "bottom-sheet" });
-        const root = document.createElement("div");
-        root.className = "instagram-saved-settings";
-        const field = (label: string, value: string | number | boolean, type = "text") => {
-          const wrapper = document.createElement("label");
-          wrapper.textContent = label;
-          const input = document.createElement("input");
-          input.type = type;
-          if (type === "checkbox") input.checked = Boolean(value);
-          else input.value = String(value);
-          wrapper.append(input);
-          root.append(wrapper);
-          return input;
-        };
-        const enabled = field("Sincronização automática", settings.enabled, "checkbox");
-        const ids = field("IDs das coleções (separados por vírgula)", settings.collectionIds.join(", "));
-        const delay = field("Delay (ms)", settings.delayMs, "number");
-        const jitter = field("Jitter (ms)", settings.jitterMs, "number");
-        const batch = field("Itens por lote", settings.batchSize, "number");
-        const max = field("Limite por execução", settings.maxItemsPerSession, "number");
+        const config = await get("config", { token: "", channels: [] });
+        let draft = { ...settings, ...config };
+        const root = (<div />) as HTMLDivElement;
+        const dispose = render(
+          () => (
+            <SavedSettings
+              settings={draft}
+              onChange={(next) => {
+                draft = next;
+              }}
+            />
+          ),
+          root,
+        );
+        ctx.onDispose(dispose);
         const handle = external.open({
           id: "xrod-instagram-saved-settings",
           title: "Instagram · Coleções salvas",
@@ -287,17 +291,18 @@ export default {
             { id: "cancel", label: "Cancelar", role: "cancel" },
           ],
         });
-        const result = await handle.result;
-        if (result?.action === "cancel" || result?.actionId === "cancel") return;
-        await this.update({
-          enabled: enabled.checked,
-          collectionIds: ids.value.split(","),
-          delayMs: Math.max(0, Number(delay.value) || 0),
-          jitterMs: Math.max(0, Number(jitter.value) || 0),
-          batchSize: Math.max(1, Number(batch.value) || 10),
-          maxItemsPerSession: Math.max(1, Number(max.value) || 100),
-        });
-        void run(true);
+        try {
+          const result = await handle.result;
+          if (!result || (result.action !== "save" && result.actionId !== "save")) {
+            return;
+          }
+          const { token, channels, ...settingsDraft } = draft;
+          await this.update(settingsDraft);
+          await set("config", { token: draft.token.trim(), channels: draft.channels });
+          void run(true);
+        } finally {
+          dispose();
+        }
       },
     };
     const page = (typeof unsafeWindow !== "undefined" ? unsafeWindow : window) as Window &
@@ -322,9 +327,12 @@ export default {
     ctx.listen(document, "visibilitychange", () => void run());
     ctx.onDispose(() => {
       clearInterval(timer);
-      if (page.__XRodSettingsInstagram?.modules?.saved === settingsApi)
+      if (page.__XRodSettingsInstagram?.modules?.saved === settingsApi) {
         delete page.__XRodSettingsInstagram.modules.saved;
-      if (typeof GM_unregisterMenuCommand === "function") menus.forEach((id) => GM_unregisterMenuCommand(id));
+      }
+      if (typeof GM_unregisterMenuCommand === "function") {
+        menus.forEach((id) => GM_unregisterMenuCommand(id));
+      }
     });
     void run();
   },

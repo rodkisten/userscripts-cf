@@ -1,3 +1,5 @@
+import { render } from "@solidjs/web";
+import styles, { css } from "./Settings.module.css";
 const ROOT_ID = "rod-instagram-reel-bookmark";
 const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from saved)$/i;
 const SAVED = /unsave|remover dos salvos|remove from saved/i;
@@ -44,71 +46,87 @@ function findActions(): HTMLElement | null {
   return null;
 }
 
-export function mountReelBookmark(signal: AbortSignal): void {
-  const button = document.createElement("button");
-  button.id = ROOT_ID;
-  button.type = "button";
-  button.setAttribute("aria-label", "Salvar");
-  button.style.cssText = "display:flex;align-items:center;justify-content:center;background:none;border:0;" +
-    "padding:8px;color:inherit;cursor:pointer;touch-action:manipulation";
-
+export function mountReelBookmark(signal: AbortSignal, pageStyle: (css: string) => void): void {
+  pageStyle(css);
+  const host = (<span />) as HTMLSpanElement;
+  let button!: HTMLButtonElement;
+  const dispose = render(
+    () => <button ref={button} id={ROOT_ID} type="button" class={styles.bookmark} aria-label="Salvar" />,
+    host,
+  );
+  let iconMarkup = "";
   let source: HTMLElement | null = null;
-  button.addEventListener("click", () => {
-    if (!reelIsOpen()) {
-      return;
-    }
+  button.addEventListener(
+    "click",
+    () => {
+      if (!reelIsOpen()) {
+        return;
+      }
 
-    const current = nativeSave();
-    if (current) {
-      current.click();
-      queueMicrotask(refresh);
-    }
-  }, { signal });
+      const current = nativeSave();
+      if (current) {
+        current.click();
+        queueMicrotask(refresh);
+      }
+    },
+    { signal },
+  );
 
   function refresh(): void {
     if (!reelIsOpen()) {
-      button.remove();
+      host.remove();
       return;
     }
 
     const actions = findActions();
     source = nativeSave();
     if (!actions || !source) {
-      button.remove();
+      host.remove();
       return;
     }
 
     const nativeIcon = source.querySelector("svg");
     if (!nativeIcon) {
-      button.remove();
+      host.remove();
       return;
     }
 
     const saved = SAVED.test(
       source.getAttribute("aria-label") ||
-      source.querySelector("[aria-label]")?.getAttribute("aria-label") || "",
+        source.querySelector("[aria-label]")?.getAttribute("aria-label") ||
+        "",
     );
     button.setAttribute("aria-label", saved ? "Remover dos salvos" : "Salvar");
     button.title = button.getAttribute("aria-label") || "";
-    button.replaceChildren(nativeIcon.cloneNode(true));
+    // Ignore our own DOM updates; replacing an unchanged clone would otherwise
+    // trigger this observer indefinitely on every Instagram page.
+    if (nativeIcon.outerHTML !== iconMarkup) {
+      iconMarkup = nativeIcon.outerHTML;
+      button.replaceChildren(nativeIcon.cloneNode(true));
+    }
     const icon = button.querySelector("svg");
     if (icon) {
       icon.removeAttribute("aria-label");
       icon.setAttribute("aria-hidden", "true");
     }
 
-    if (button.parentElement !== actions) {
-      actions.append(button);
+    if (host.parentElement !== actions) {
+      actions.append(host);
     }
   }
 
   const observer = new MutationObserver(() => refresh());
   observer.observe(document.documentElement, { subtree: true, childList: true });
   const interval = setInterval(refresh, 1200);
-  signal.addEventListener("abort", () => {
-    observer.disconnect();
-    clearInterval(interval);
-    button.remove();
-  }, { once: true });
+  signal.addEventListener(
+    "abort",
+    () => {
+      observer.disconnect();
+      clearInterval(interval);
+      dispose();
+      host.remove();
+    },
+    { once: true },
+  );
   refresh();
 }

@@ -1,0 +1,156 @@
+:host {
+  all: initial;
+  color-scheme: dark;
+  font:
+    14px -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+#shade {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000b;
+  pointer-events: auto;
+}
+#sheet {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: min(82dvh, 700px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #191a20;
+  color: #f2eef1;
+  padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid #604253;
+  pointer-events: auto;
+  box-shadow: 0 -12px 45px #0008;
+}
+#sheet.open,
+#shade.open {
+  display: block;
+}
+h2 {
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  margin: 6px 0 12px;
+}
+h3 {
+  font-size: 13px;
+  margin: 18px 0 7px;
+  color: #f4a6c7;
+}
+button {
+  border: 1px solid #56505a;
+  background: #2b2a30;
+  color: white;
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font:
+    600 13px -apple-system,
+    system-ui,
+    sans-serif;
+  touch-action: manipulation;
+}
+button.primary {
+  background: #e68cb1;
+  color: #1b1218;
+  border-color: #e68cb1;
+}
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  background: #25262d;
+  border: 1px solid #52515b;
+  color: white;
+  border-radius: 8px;
+  font:
+    16px -apple-system,
+    system-ui,
+    sans-serif;
+  min-height: 42px;
+}
+input[type="checkbox"] {
+  accent-color: #f59ac1;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+label.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 39px;
+  font-size: 13px;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 11px;
+}
+.fine {
+  color: #aaa4ae;
+  line-height: 1.5;
+  font-size: 11px;
+}
+.status {
+  color: #e89dbe;
+  font-size: 11px;
+}
+.sep {
+  height: 1px;
+  background: #333139;
+  margin: 12px 0;
+}
+#menu {
+  display: none;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  border-radius: 12px;
+  background: #28232a;
+  color: white;
+  border: 1px solid #554450;
+  padding: 9px;
+  box-shadow: 0 10px 40px #0009;
+  pointer-events: auto;
+  max-width: 360px;
+  margin: auto;
+}
+#menu.open {
+  display: block;
+}
+.menu-title {
+  font-size: 12px;
+  color: #f0a7c4;
+  margin: 4px 3px 8px;
+  overflow-wrap: anywhere;
+}
+.menu-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.menu-buttons button {
+  padding: 7px 4px;
+  font-size: 12px;
+}

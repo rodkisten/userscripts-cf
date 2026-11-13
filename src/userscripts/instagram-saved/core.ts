@@ -52,11 +52,15 @@ export const COLLECTION_PATH = (id: string) => `/api/v1/feed/collection/${encode
 
 export function reelPayload(raw: Reel): MediaPayload | null {
   const m = raw.media || raw;
-  if (m.product_type !== "clips" || !m.code) return null;
+  if (m.product_type !== "clips" || !m.code) {
+    return null;
+  }
   const variants = (m.video_versions || [])
     .filter((v) => /^https:\/\//.test(v.url || ""))
     .sort((a, b) => b.width * b.height - a.width * a.height);
-  if (!variants.length) return null;
+  if (!variants.length) {
+    return null;
+  }
   const sourceUrl = `https://www.instagram.com/reel/${m.code}/`;
   return {
     provider: "instagram",
@@ -125,12 +129,16 @@ export async function syncSaved({
   do {
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
-    if (!Array.isArray(page.items) || page.status === "fail") throw Error("Resposta de salvos inválida");
+    if (!Array.isArray(page.items) || page.status === "fail") {
+      throw Error("Resposta de salvos inválida");
+    }
     const items = page.items
       .map(reelPayload)
       .filter((item): item is MediaPayload => item !== null)
       .filter((item) => {
-        if (seen.has(item.mediaId)) return false;
+        if (seen.has(item.mediaId)) {
+          return false;
+        }
         seen.add(item.mediaId);
         return !done[item.mediaId];
       });
@@ -140,22 +148,33 @@ export async function syncSaved({
       for (let attempt = 0; pending.length && attempt < 4; attempt++) {
         signal?.throwIfAborted();
         const response = await sendBatch(pending);
-        if (!Array.isArray(response.results)) throw Error("Relay sem confirmação por item");
+        if (!Array.isArray(response.results)) {
+          throw Error("Relay sem confirmação por item");
+        }
         const retry: MediaPayload[] = [];
         for (let i = 0; i < pending.length; i++) {
           const result = response.results.find((r) => r.index === i);
           const status = classify(result, channels);
           if (status.complete) {
             done[pending[i].mediaId] = Date.now();
-            if (status.inserted) count++;
+            if (status.inserted) {
+              count++;
+            }
             await save(done);
-          } else if (result && (result.status === 429 || result.status >= 500)) retry.push(pending[i]);
-          else throw Error("Entrega não confirmada; sincronização interrompida");
+          } else if (result && (result.status === 429 || result.status >= 500)) {
+            retry.push(pending[i]);
+          } else {
+            throw Error("Entrega não confirmada; sincronização interrompida");
+          }
         }
         pending = retry;
-        if (pending.length) await pause(retryDelay(attempt, pending.length));
+        if (pending.length) {
+          await pause(retryDelay(attempt, pending.length));
+        }
       }
-      if (pending.length) throw Error("Limite de tentativas do Relay");
+      if (pending.length) {
+        throw Error("Limite de tentativas do Relay");
+      }
       await pause(
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
@@ -167,11 +186,15 @@ export async function syncSaved({
       await onCursor?.("");
       break;
     }
-    if (!next || cursors.has(next)) throw Error("Cursor de salvos repetido ou ausente");
+    if (!next || cursors.has(next)) {
+      throw Error("Cursor de salvos repetido ou ausente");
+    }
     cursors.add(next);
     cursor = next;
     await onCursor?.(cursor);
-    if (seen.size >= maxItems) break;
+    if (seen.size >= maxItems) {
+      break;
+    }
     await pause(Math.min(8000, 1000 + pages * 100));
   } while (true);
   return count;

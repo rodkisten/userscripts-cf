@@ -2,10 +2,10 @@ import { matchesRoute } from "./match.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
-//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo  
-function toast(){}
-function menu(){}
-  
+//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo
+function toast() {}
+function menu() {}
+
 export function createRuntime(definitions, bridge, host = window) {
   const rod = rodLibraries(host);
   const stores = new Map();
@@ -45,7 +45,11 @@ export function createRuntime(definitions, bridge, host = window) {
       uiHost.style.setProperty("z-index", "2147483000");
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
-      onDispose(() => { uiHost?.remove(); uiHost = undefined; uiRoot = undefined; });
+      onDispose(() => {
+        uiHost?.remove();
+        uiHost = undefined;
+        uiRoot = undefined;
+      });
       return uiRoot;
     }
     function addStyle(css, target) {
@@ -110,10 +114,20 @@ export function createRuntime(definitions, bridge, host = window) {
         });
       },
       ui: Object.freeze({
-        get root() { return ensureUIRoot(); },
-        get host() { ensureUIRoot(); return uiHost; },
-        mount(node) { ensureUIRoot().append(node); return node; },
-        style(css) { return addStyle(css, ensureUIRoot()); },
+        get root() {
+          return ensureUIRoot();
+        },
+        get host() {
+          ensureUIRoot();
+          return uiHost;
+        },
+        mount(node) {
+          ensureUIRoot().append(node);
+          return node;
+        },
+        style(css) {
+          return addStyle(css, ensureUIRoot());
+        },
         registerStyles(...styles) {
           const release = registerShadowStyles(ensureUIRoot(), styles.flat());
           onDispose(release);
@@ -129,7 +143,9 @@ export function createRuntime(definitions, bridge, host = window) {
         },
       }),
       // Isolated by default: styles here cannot match page DOM.
-      style(css) { return addStyle(css, ensureUIRoot()); },
+      style(css) {
+        return addStyle(css, ensureUIRoot());
+      },
       // Explicit opt-in for scripts that intentionally modify the website.
       pageStyle(css) {
         return addStyle(css, host.document.head || host.document.documentElement);

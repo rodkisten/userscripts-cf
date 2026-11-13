@@ -1,13 +1,33 @@
 import { createStore } from "solid-js/store";
 
 export type MenuValue = string | number | boolean | string[] | null;
-export interface MenuOption { label: string; value: string; disabled?: boolean }
+export interface MenuOption {
+  label: string;
+  value: string;
+  disabled?: boolean;
+}
 export interface MenuField {
   name: string;
   label?: string;
-  type: "text" | "email" | "password" | "url" | "search" | "tel" | "number" |
-    "textarea" | "select" | "multiselect" | "radio" | "checkbox" | "switch" |
-    "range" | "date" | "time" | "color" | "hidden";
+  type:
+    | "text"
+    | "email"
+    | "password"
+    | "url"
+    | "search"
+    | "tel"
+    | "number"
+    | "textarea"
+    | "select"
+    | "multiselect"
+    | "radio"
+    | "checkbox"
+    | "switch"
+    | "range"
+    | "date"
+    | "time"
+    | "color"
+    | "hidden";
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -15,7 +35,10 @@ export interface MenuField {
   min?: number;
   max?: number;
   step?: number;
-  validate?: (value: MenuValue, values: Readonly<Record<string, MenuValue>>) => string | null | Promise<string | null>;
+  validate?: (
+    value: MenuValue,
+    values: Readonly<Record<string, MenuValue>>,
+  ) => string | null | Promise<string | null>;
 }
 export interface MenuAction {
   id: string;
@@ -39,8 +62,15 @@ export interface MenuResult {
   action?: string;
   values: Record<string, MenuValue>;
 }
-interface MenuSession { resolve: (result: MenuResult) => void }
-interface MenuView { stack: MenuEntry[]; values: Record<string, Record<string, MenuValue>>; errors: Record<string, Record<string, string>>; busy: Record<string, boolean> }
+interface MenuSession {
+  resolve: (result: MenuResult) => void;
+}
+interface MenuView {
+  stack: MenuEntry[];
+  values: Record<string, Record<string, MenuValue>>;
+  errors: Record<string, Record<string, string>>;
+  busy: Record<string, boolean>;
+}
 const [state, setState] = createStore<MenuView>({ stack: [], values: {}, errors: {}, busy: {} });
 const sessions = new Map<string, MenuSession>();
 export const menuState = state;
@@ -48,10 +78,19 @@ export const menuActions = {
   open(entry: MenuEntry) {
     menuActions.close(entry.id);
     let resolve!: (result: MenuResult) => void;
-    const result = new Promise<MenuResult>((done) => { resolve = done; });
+    const result = new Promise<MenuResult>((done) => {
+      resolve = done;
+    });
     sessions.set(entry.id, { resolve });
     const values: Record<string, MenuValue> = { ...entry.initialValues };
-    for (const field of entry.fields ?? []) if (!(field.name in values)) values[field.name] = field.type === "checkbox" || field.type === "switch" ? false : field.type === "multiselect" ? [] : "";
+    for (const field of entry.fields ?? [])
+      if (!(field.name in values))
+        values[field.name] =
+          field.type === "checkbox" || field.type === "switch"
+            ? false
+            : field.type === "multiselect"
+              ? []
+              : "";
     setState("values", entry.id, values);
     setState("errors", entry.id, {});
     setState("stack", (stack) => [...stack, entry]);
@@ -68,7 +107,8 @@ export const menuActions = {
     const errors: Record<string, string> = {};
     for (const field of entry.fields ?? []) {
       const value = values[field.name];
-      if (field.required && (value === "" || value == null || (Array.isArray(value) && !value.length))) errors[field.name] = "Campo obrigatório";
+      if (field.required && (value === "" || value == null || (Array.isArray(value) && !value.length)))
+        errors[field.name] = "Campo obrigatório";
       else if (field.validate) {
         const message = await field.validate(value, values);
         if (message) errors[field.name] = message;
@@ -91,7 +131,9 @@ export const menuActions = {
       setState("stack", (stack) => stack.filter((entry) => entry.id !== id));
     } catch (error) {
       setState("errors", id, "_form", error instanceof Error ? error.message : String(error));
-    } finally { setState("busy", id, false); }
+    } finally {
+      setState("busy", id, false);
+    }
   },
   close(id: string, reason: MenuResult["reason"] = "close") {
     const session = sessions.get(id);
@@ -101,5 +143,7 @@ export const menuActions = {
     }
     setState("stack", (stack) => stack.filter((entry) => entry.id !== id));
   },
-  closeAll() { for (const id of [...sessions.keys()]) menuActions.close(id); },
+  closeAll() {
+    for (const id of [...sessions.keys()]) menuActions.close(id);
+  },
 };

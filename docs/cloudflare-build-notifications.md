@@ -3,6 +3,7 @@
 Receiver: `POST https://<userscripts-cf-worker-host>/webhooks/cloudflare/builds`.
 
 Requires Worker runtime secrets:
+
 - `CLOUDFLARE_NOTIFY_WEBHOOK_SECRET`: random secret, at least 24 characters
 - `RELAY_NOTIFICATION_TOKEN`: authorization token accepted by the Relay notification endpoint
 
@@ -10,6 +11,7 @@ The caller must send `Authorization: Bearer <CLOUDFLARE_NOTIFY_WEBHOOK_SECRET>`
 or `X-Webhook-Secret: <CLOUDFLARE_NOTIFY_WEBHOOK_SECRET>`.
 
 Example payload:
+
 ```json
 {
   "status": "failed",

@@ -24,16 +24,18 @@ function ensureToast() {
   (document.body || document.documentElement).append(host);
   const [toast, update] = createSignal<ToastState>({ message: "", kind: "info" });
   setToast = update;
-  dispose = mountSolidShadow(() => (
-    <div
-      class={styles.toast}
-      classList={{ [styles.error]: toast().kind === "error" }}
-      role="status"
-      aria-live={toast().kind === "error" ? "assertive" : "polite"}
-    >
-      {toast().message}
-    </div>
-  ), { target: host, styles: [css], id: "rodx-toast" });
+  dispose = mountSolidShadow(
+    () => (
+      <div
+        class={`${styles.toast} ${toast().kind === "error" ? styles.error : ""}`}
+        role="status"
+        aria-live={toast().kind === "error" ? "assertive" : "polite"}
+      >
+        {toast().message}
+      </div>
+    ),
+    { target: host, styles: [css], id: "rodx-toast" },
+  );
 }
 
 export function showRodxToast(message: unknown, kind: ToastKind = "info") {

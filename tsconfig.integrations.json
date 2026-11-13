@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.rodx.json",
+  "include": [
+    "src/userscripts/github-tools/**/*.ts",
+    "src/userscripts/github-tools/**/*.tsx",
+    "src/userscripts/gonewild/**/*.tsx",
+    "src/types/styles.d.ts"
+  ]
+}

@@ -17,6 +17,13 @@ export function stylesPipeline() {
               from: new URL("core.css", directory).pathname,
             }).nodes,
           );
+          // External font imports must remain before the injected design tokens.
+          const imports = [];
+          root.walkAtRules("import", (rule) => {
+            imports.push(rule);
+            rule.remove();
+          });
+          root.prepend(imports);
         }
       },
     },

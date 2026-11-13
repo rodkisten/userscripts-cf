@@ -20,9 +20,13 @@ export const toastActions = {
   show(message: string, options: ToastOptions = {}) {
     const id = options.id ?? `toast-${++nextId}`;
     const item: ToastItem = {
-      id, message: String(message), kind: options.kind ?? "info",
+      id,
+      message: String(message),
+      kind: options.kind ?? "info",
       duration: options.duration ?? (options.loading ? 0 : 4000),
-      createdAt: Date.now(), detail: options.detail, loading: options.loading,
+      createdAt: Date.now(),
+      detail: options.detail,
+      loading: options.loading,
       progress: options.progress,
     };
     clearTimeout(timers.get(id));
@@ -30,9 +34,13 @@ export const toastActions = {
     setState("items", (items) => {
       const index = items.findIndex((entry) => entry.id === id);
       if (index < 0) return [...items, item];
-      return items.map((entry) => entry.id === id ? item : entry);
+      return items.map((entry) => (entry.id === id ? item : entry));
     });
-    if (item.duration > 0) timers.set(id, setTimeout(() => toastActions.dismiss(id), item.duration));
+    if (item.duration > 0)
+      timers.set(
+        id,
+        setTimeout(() => toastActions.dismiss(id), item.duration),
+      );
     return id;
   },
   update(id: string, patch: Partial<Omit<ToastItem, "id">>) {

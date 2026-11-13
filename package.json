@@ -22,7 +22,7 @@
     "ci:cloudflare": "npm run build:hosting",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
-    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json",
+    "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json && tsc -p tsconfig.integrations.json",
     "lint": "node build/check-style.mjs",
     "lint:fix": "node build/check-style.mjs --fix"
   },

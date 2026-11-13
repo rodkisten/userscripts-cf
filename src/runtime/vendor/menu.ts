@@ -703,7 +703,9 @@ declare const require: ((...args: unknown[]) => unknown) | undefined;
     shadowRoot: true,
     defaultPresentation: "bottom-sheet",
     zIndex: DEFAULT_Z_INDEX,
-    autoLoadDependencies: true,
+    // The userscript runtime vendors its UI/storage fallbacks. Optional remote
+    // libraries must be explicitly requested, avoiding network work on every page.
+    autoLoadDependencies: false,
     dependencyTimeoutMs: 8_000,
     dependencyUrls: defaultDependencyUrls,
     toasterErrors: true,

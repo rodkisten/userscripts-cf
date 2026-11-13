@@ -21,10 +21,19 @@
   box-shadow: 0 8px 28px #0006;
   pointer-events: auto;
 }
-.toast[data-kind="error"] { border-left-color: #f87171; }
-.toast[data-kind="success"] { border-left-color: #4ade80; }
-.toast[data-kind="warning"] { border-left-color: #facc15; }
-.message { flex: 1; overflow-wrap: anywhere; }
+.toast[data-kind="error"] {
+  border-left-color: #f87171;
+}
+.toast[data-kind="success"] {
+  border-left-color: #4ade80;
+}
+.toast[data-kind="warning"] {
+  border-left-color: #facc15;
+}
+.message {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
 .dismiss {
   border: 0;
   background: transparent;
