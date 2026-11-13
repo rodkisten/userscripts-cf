@@ -9,10 +9,22 @@ export async function bundleRuntime(root, definitions, options = {}) {
     (item, index) => `import module${index} from ${JSON.stringify(path.resolve(root, item.entry))};`,
   );
   const entries = definitions.map((item, index) => `{...${JSON.stringify(item)}, module: module${index}}`);
-  const dockImport = options.dock ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/solid-ui/rod-dock.tsx"))};` : "";
-  const entryCode = `${imports.join("\n")}\n${dockImport}
+  const dockImport = options.dock
+    ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/solid-ui/rod-dock.tsx"))};`
+    : "";
+  const dockBoot = options.dock
+    ? `const dock = installRodDock({ modules: [] });
+       const disposeRuntime = api.dispose.bind(api);
+       api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
+    : "";
+  const entryCode = `${imports.join("\n")}
+    ${dockImport}
     import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
-    export function boot(bridge) { const api = createRuntime([${entries.join(",")}], bridge); ${options.dock ? `const dock = installRodDock({ modules: ${JSON.stringify(definitions.map(d=>({id:d.id,name:d.name})))}, registerMenu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : undefined }); api.ready.then(() => { dock.setModules(${JSON.stringify(definitions.map(d=>({id:d.id,name:d.name})))}.filter(m => api.active.includes(m.id)).map(m => ({...m, actions: []}))); }); const oldDispose = api.dispose.bind(api); api.dispose = async () => { dock.dispose(); await oldDispose(); };` : ""} return api; }
+    export function boot(bridge) {
+      const api = createRuntime([${entries.join(",")}], bridge);
+      ${dockBoot}
+      return api;
+    }
   `;
   const result = await build({
     root,
