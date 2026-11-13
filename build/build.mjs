@@ -16,6 +16,7 @@ import { packageIcon } from "./package-icons.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
+const iconSource = path.join(root, "assets", "icons");
 const { version } = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error("Use a stable x.y.z release version");
 const baseURL = distribution.baseURL.replace(/\/+$/, "");
@@ -87,13 +88,25 @@ for (const target of targets) {
   // Per-module excludes must remain in the runtime router: a global @exclude
   // would disable other modules on the same URL (e.g. REPL and example-site).
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
-  const icon = await packageIcon({ name: target.name, category: target.tags?.[0] || target.id });
+  const iconFile = path.join(iconSource, target.id + ".svg");
+  const iconSpec = target.definitions.length === 1 ? target.definitions[0].icon : undefined;
+  let icon;
+  try {
+    const svg = await fs.readFile(iconFile, "utf8");
+    icon = { svg };
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    icon = await packageIcon({ name: target.name, category: target.definitions[0]?.tags?.[0] || target.id, spec: iconSpec });
+    await fs.mkdir(iconSource, { recursive: true });
+    await fs.writeFile(iconFile, icon.svg);
+    console.log("Created icon source: " + path.relative(root, iconFile));
+  }
   const metadata = [
     "// ==UserScript==",
     `// @name         ${target.name}`,
     `// @namespace    ${target.namespace || "https://rod.migos.club/userscripts-cf"}`,
     `// @version      ${target.version}`,
-    `// @icon         ${icon.dataURL}`,
+    `// @icon         ${baseURL}/icons/${target.id}.svg`,
     `// @updateURL    ${baseURL}/${target.id}.meta.js`,
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
     `// @description  ${target.id === "standalone" ? "Instalador único: todos os módulos com roteamento e configuração por site." : "Vite IIFE; roteamento SPA e storage GM isolado por módulo."}`,
