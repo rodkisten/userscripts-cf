@@ -93,9 +93,14 @@ export function manualStandaloneMetadata(items) {
 
 export function wrapManualForStandalone(item, compiled, matchFunction) {
   const body = compiled.replace(HEADER, "");
-  const metadata = item.metadata;
-  const rules = JSON.stringify({ matches: metadata.match || [], includes: metadata.include || [], exclude: metadata.exclude || [] });
-  return `;(function(){const rules=${rules};const url=location.href;const match=${matchFunction};const included=rules.matches.some(p=>match(p,url))||rules.includes.some(p=>{const re=new RegExp("^"+p.split("*").map(s=>s.replace(/[.*+?^\${}()|[\\]\\]/g,"\\$&")).join(".*")+"$");return re.test(url)});if(!included||rules.exclude.some(p=>match(p,url)))return;\n${body}\n})();`;
+  const rules = JSON.stringify({
+    matches: item.metadata.match || [],
+    includes: item.metadata.include || [],
+    exclude: item.metadata.exclude || [],
+  });
+  // Manual scripts run only when their own route matches, not on every
+  // URL covered by the shared standalone installation.
+  return `;(function(){const rules=${rules};const url=location.href;const match=${matchFunction};const included=rules.matches.some(p=>match(p,url))||rules.includes.some(p=>new RegExp("^"+p.replaceAll(".","\\\\.").replaceAll("*",".*")+"$").test(url));if(!included||rules.exclude.some(p=>match(p,url)))return;\n${body}\n})();`;
 }
 
 export function checksum(value) { return createHash("sha256").update(value).digest("hex"); }
