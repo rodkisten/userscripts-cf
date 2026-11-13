@@ -317,3 +317,8 @@
 .treeError button{margin-left:8px;border:1px solid var(--borderColor-default,#30363d);border-radius:7px;background:transparent;color:inherit;padding:5px 8px}
 @keyframes ghft-tree-shimmer{to{background-position-x:-200%}}
 @media(prefers-reduced-motion:reduce){.treeSkeleton{animation:none}}
+
+.treeSearch{display:flex;align-items:center;gap:8px;margin:8px 10px;padding:0 10px;border:1px solid var(--borderColor-default,#30363d);border-radius:7px;color:var(--fgColor-muted,#8b949e);background:var(--bgColor-muted,#161b22)}
+.treeSearch input{flex:1;min-width:0;height:35px;border:0;outline:0;background:transparent;color:var(--fgColor-default,#e6edf3);font:13px system-ui,sans-serif}
+.treeSearch:focus-within{outline:2px solid var(--focus-outlineColor,#0969da);outline-offset:1px}
+@media(max-width:470px){.treeRow{min-height:40px}.treeChevron{min-width:26px;min-height:34px}}
