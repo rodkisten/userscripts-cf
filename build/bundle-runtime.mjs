@@ -3,15 +3,16 @@ import { build } from "vite";
 import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
 
-export async function bundleRuntime(root, definitions) {
+export async function bundleRuntime(root, definitions, options = {}) {
   const virtualID = "\0userscripts-cf-entry";
   const imports = definitions.map(
     (item, index) => `import module${index} from ${JSON.stringify(path.resolve(root, item.entry))};`,
   );
   const entries = definitions.map((item, index) => `{...${JSON.stringify(item)}, module: module${index}}`);
-  const entryCode = `${imports.join("\n")}
+  const dockImport = options.dock ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/solid-ui/rod-dock.tsx"))};` : "";
+  const entryCode = `${imports.join("\n")}\n${dockImport}
     import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
-    export function boot(bridge) { return createRuntime([${entries.join(",")}], bridge); }
+    export function boot(bridge) { const api = createRuntime([${entries.join(",")}], bridge); ${options.dock ? `const dock = installRodDock({ modules: ${JSON.stringify(definitions.map(d=>({id:d.id,name:d.name})))}, registerMenu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : undefined }); api.ready.then(() => { dock.setModules(${JSON.stringify(definitions.map(d=>({id:d.id,name:d.name})))}.filter(m => api.active.includes(m.id)).map(m => ({...m, actions: [{ label: "Abrir painel", run: () => document.dispatchEvent(new CustomEvent("rod-dock:open", {detail: {id:m.id}})) }]}))); }); const oldDispose = api.dispose.bind(api); api.dispose = async () => { dock.dispose(); await oldDispose(); };` : ""} return api; }
   `;
   const result = await build({
     root,
