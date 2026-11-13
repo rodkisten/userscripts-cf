@@ -14,6 +14,7 @@ type Settings = {
 };
 
 type RuntimeContext = {
+  dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
   menu: { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void };
   toaster: ((options: any) => any) & { success?: (options: any) => any };
   signal: AbortSignal;
