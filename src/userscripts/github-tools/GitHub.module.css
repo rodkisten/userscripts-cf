@@ -213,3 +213,17 @@
 @media(max-width:470px){.dashboardPanel{right:4px}.favorite{max-width:var(--ghft-mobile-favorite-width)}}
 
 .commitHint{display:inline-flex;gap:4px;align-items:center;max-width:100%;font-size:11px;color:var(--ghft-text-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:2px 6px}.commitHint a{color:inherit;text-decoration:none;max-width:210px;overflow:hidden;text-overflow:ellipsis}.commitHint a:hover{text-decoration:underline}
+
+:global(:root){
+  --ghft-run-gap:6px;
+  --ghft-form-gap:8px;
+  --ghft-form-padding:10px;
+  --ghft-form-input-padding:7px;
+}
+.runRow{display:flex;flex-direction:column;gap:var(--ghft-run-gap);border-bottom:1px solid var(--ghft-border-muted)}
+.runRow .dashboardItem{border-bottom:0}
+.runActions{display:flex;gap:var(--ghft-run-gap);justify-content:flex-end;padding-bottom:var(--ghft-space-2)}
+.dispatchForm{display:grid;gap:var(--ghft-form-gap);padding:var(--ghft-form-padding);border:1px solid var(--ghft-border);border-radius:var(--ghft-radius-md)}
+.dispatchForm label{display:grid;gap:var(--ghft-space-1)}
+.dispatchForm input,.dispatchForm textarea{box-sizing:border-box;min-width:0;width:100%;padding:var(--ghft-form-input-padding);background:var(--ghft-surface);color:var(--ghft-text);border:1px solid var(--ghft-border);border-radius:var(--ghft-radius-sm);font:inherit}
+.dispatchForm>div{display:flex;gap:var(--ghft-form-gap)}
