@@ -16,6 +16,7 @@ import { packageIcon } from "./package-icons.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
+const iconSource = path.join(root, "assets", "icons");
 const { version } = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error("Use a stable x.y.z release version");
 const baseURL = distribution.baseURL.replace(/\/+$/, "");
@@ -87,13 +88,25 @@ for (const target of targets) {
   // Per-module excludes must remain in the runtime router: a global @exclude
   // would disable other modules on the same URL (e.g. REPL and example-site).
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
-  const icon = await packageIcon({ name: target.name, category: target.tags?.[0] || target.id });
+  const iconFile = path.join(iconSource, target.id + ".svg");
+  const iconSpec = target.definitions.length === 1 ? target.definitions[0].icon : undefined;
+  let icon;
+  try {
+    const svg = await fs.readFile(iconFile, "utf8");
+    icon = { svg };
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    icon = await packageIcon({ name: target.name, category: target.definitions[0]?.tags?.[0] || target.id, spec: iconSpec });
+    await fs.mkdir(iconSource, { recursive: true });
+    await fs.writeFile(iconFile, icon.svg);
+    console.log("Created icon source: " + path.relative(root, iconFile));
+  }
   const metadata = [
     "// ==UserScript==",
     `// @name         ${target.name}`,
     `// @namespace    ${target.namespace || "https://rod.migos.club/userscripts-cf"}`,
     `// @version      ${target.version}`,
-    `// @icon         ${icon.dataURL}`,
+    `// @icon         ${baseURL}/icons/${target.id}.svg`,
     `// @updateURL    ${baseURL}/${target.id}.meta.js`,
     `// @downloadURL  ${baseURL}/${target.id}.user.js`,
     `// @description  ${target.id === "standalone" ? "Instalador único: todos os módulos com roteamento e configuração por site." : "Vite IIFE; roteamento SPA e storage GM isolado por módulo."}`,
@@ -175,6 +188,8 @@ for (const target of targets) {
   await fs.writeFile(path.join(out, metaFile), metaSource);
   manifest.scripts.push({
     id: target.id,
+    name: target.name,
+    description: target.id === "standalone" ? "Todos os módulos em uma instalação" : "Userscript independente com atualizações automáticas",
     file,
     metaFile,
     metaSha256: createHash("sha256").update(metaSource).digest("hex"),
@@ -187,8 +202,18 @@ await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, nul
 
 execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];
-for (const file of (await fs.readdir(out)).sort()) {
-  const code = await fs.readFile(path.join(out, file));
-  sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
+async function checksumFiles(directory, prefix = "") {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    const relative = path.posix.join(prefix, entry.name);
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await checksumFiles(absolute, relative);
+    } else if (entry.isFile()) {
+      const code = await fs.readFile(absolute);
+      sums.push(`${createHash("sha256").update(code).digest("hex")}  ${relative}`);
+    }
+  }
 }
+await checksumFiles(out);
 await fs.writeFile(path.join(out, "SHA256SUMS"), sums.join("\n") + "\n");

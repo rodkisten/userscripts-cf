@@ -1,12 +1,13 @@
 import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import styles from "./GitHub.module.css";
+import { materialIcon } from "./material-icons.ts";
 
 type Favorite = { name: string; url: string };
 type Workflow = { id: number; name: string; path: string; state?: string };
 type Run = { id: number; name: string; conclusion: string | null; status: string; html_url: string; created_at: string; workflow_id: number; head_branch?: string };
-type Settings = { files: Favorite[]; workflows: Workflow[]; count: number; filter: string; iconTheme: string; repositories: string[] };
-const defaults: Settings = { files: [], workflows: [], count: 10, filter: "all", iconTheme: "atom", repositories: [] };
+type Settings = { files: Favorite[]; workflows: Workflow[]; count: number; filter: string; iconTheme: string; repositories: string[]; dragMode: boolean; barPosition: { x: number; y: number } | null };
+const defaults: Settings = { files: [], workflows: [], count: 10, filter: "all", iconTheme: "atom", repositories: [], dragMode: false, barPosition: null };
 const icon = (name: string, theme: string) => {
   if (theme === "simple") return "▤";
   const ext = name.split(".").pop()?.toLowerCase();
@@ -17,6 +18,7 @@ export function mountGitHubDashboard(ctx: any) {
   const [runs, setRuns] = createSignal<Run[]>([]);
   const [workflows, setWorkflows] = createSignal<Workflow[]>([]);
   const [busy, setBusy] = createSignal(false);
+  const [customized, setCustomized] = createSignal(false);
   const [message, setMessage] = createSignal("");
   const [open, setOpen] = createSignal(false);
   const [repo, setRepo] = createSignal("");
@@ -98,6 +100,7 @@ export function mountGitHubDashboard(ctx: any) {
       const stored = await ctx.storage.get("githubDashboard:" + name, defaults);
       if (ctx.signal.aborted || repo() !== name) return;
       setSettings({ ...defaults, ...(stored || {}) });
+      setCustomized(true);
     }
     const id = ++request;
     setBusy(true);
@@ -174,10 +177,27 @@ export function mountGitHubDashboard(ctx: any) {
     dragIndex = null;
     save({ files: next });
   };
+  let barDrag: { x: number; y: number; baseX: number; baseY: number } | null = null;
+  const startBarDrag = (event: PointerEvent) => {
+    if (!settings().dragMode || (event.target as Element).closest("a,button")) return;
+    barDrag = { x: event.clientX, y: event.clientY, baseX: settings().barPosition?.x || 0, baseY: settings().barPosition?.y || 0 };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  };
+  const moveBarDrag = (event: PointerEvent) => {
+    if (!barDrag) return;
+    const x = Math.max(-innerWidth + 100, Math.min(innerWidth - 100, barDrag.baseX + event.clientX - barDrag.x));
+    const y = Math.max(-60, Math.min(innerHeight - 80, barDrag.baseY + event.clientY - barDrag.y));
+    setSettings(current => ({ ...current, barPosition: { x, y } }));
+  };
+  const endBarDrag = () => {
+    if (!barDrag) return;
+    barDrag = null;
+    save({ barPosition: settings().barPosition });
+  };
   const mount = mountPoint(document.body, () => (
-    <section class={styles.dashboard} data-ghft-dashboard="">
-      <nav class={styles.favoriteBar} aria-label="Arquivos favoritos">
-        <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "GitHub +"}</button>
+    <section class={styles.dashboard} data-ghft-dashboard="" style={{ transform: settings().barPosition ? "translate(" + settings().barPosition!.x + "px," + settings().barPosition!.y + "px)" : undefined }}>
+      <nav class={styles.favoriteBar} aria-label="Arquivos e workflows favoritos" onPointerDown={startBarDrag} onPointerMove={moveBarDrag} onPointerUp={endBarDrag} onPointerCancel={endBarDrag}>
+        <button class={styles.button} onClick={() => setOpen(!open())} aria-expanded={open() ? "true" : "false"}>⌘ {open() ? "Fechar" : "Favoritos"}</button>
         <For each={settings().files}>{(file, i) =>
           <a class={styles.favorite} href={file.url} draggable="true" data-ghft-favorite-index={i()}
             onDragStart={(e) => { dragIndex = i(); e.dataTransfer?.setData("text/plain", file.url); }}
@@ -186,13 +206,21 @@ export function mountGitHubDashboard(ctx: any) {
             onPointerMove={touchMove}
             onPointerUp={touchUp}
             onPointerCancel={clearTouch}
-            title={file.name}><span>{icon(file.name, settings().iconTheme)}</span> {file.name}</a>}
+            onClick={() => setOpen(false)} title={file.name}><img class={styles.favoriteIcon} src={materialIcon(file.name)} alt="" /> {file.name}</a>}
         </For>
+        <For each={settings().workflows}>{workflow =>
+          <a class={styles.favorite} href={"/" + repo() + "/actions/workflows/" + workflow.path.split("/").pop()}
+            title={workflow.name} onClick={() => setOpen(false)}>▶ {workflow.name}</a>
+        }</For>
       </nav>
+      <Show when={!customized() && busy()}><div class={styles.loadingBar} role="status">Carregando arquivos…</div></Show>
       <Show when={open()}>
         <div class={styles.dashboardPanel}>
           <header><strong>GitHub · {repo()}</strong><button class={styles.button} onClick={() => setOpen(false)}>✕</button></header>
           <div class={styles.dashboardControls}>
+            <label class={styles.dragSetting}><input type="checkbox" checked={settings().dragMode}
+              onChange={event => save({ dragMode: event.currentTarget.checked })}/> Arrastar barra</label>
+            <button class={styles.button} onClick={() => save({ barPosition: null })}>Redefinir posição</button>
             <label>Últimas <input type="number" min="1" max="100" value={settings().count}
               onChange={e => { save({ count: Math.max(1, Math.min(100, Number(e.currentTarget.value) || 10)) }); void load(); }}/></label>
             <select aria-label="Filtrar execuções" value={settings().filter} onChange={e => save({ filter: e.currentTarget.value })}>
