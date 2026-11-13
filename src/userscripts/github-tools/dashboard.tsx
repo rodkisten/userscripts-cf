@@ -22,6 +22,12 @@ export function mountGitHubDashboard(ctx: any) {
   const [repo, setRepo] = createSignal("");
   const [sourceRepo, setSourceRepo] = createSignal("");
   const [repoInput, setRepoInput] = createSignal("");
+  const [repositories, setRepositories] = createSignal<string[]>([]);
+  const GLOBAL_REPOS_KEY = "githubDashboard:repositories:v1";
+  void ctx.storage.get(GLOBAL_REPOS_KEY, []).then((stored: unknown) => {
+    if (Array.isArray(stored) && !ctx.signal.aborted)
+      setRepositories(stored.filter((value): value is string => typeof value === "string"));
+  });
   let request = 0;
   let dragIndex: number | null = null;
   const save = (patch: Partial<Settings>) => {
@@ -92,7 +98,9 @@ export function mountGitHubDashboard(ctx: any) {
       setMessage("Use proprietário/repositório.");
       return;
     }
-    save({ repositories: Array.from(new Set([...settings().repositories, name])) });
+    const next = Array.from(new Set([...repositories(), name]));
+    setRepositories(next);
+    void ctx.storage.set(GLOBAL_REPOS_KEY, next);
     setRepoInput("");
     void load(name);
   };
@@ -137,14 +145,11 @@ export function mountGitHubDashboard(ctx: any) {
                 onInput={e => setRepoInput(e.currentTarget.value)} />
               <button class={styles.button} onClick={addRepository}>Adicionar</button>
             </div>
-            <For each={settings().repositories}>{name =>
+            <For each={repositories()}>{name =>
               <button class={styles.workflowChoice} onClick={() => void load(name)}>{name}</button>
             }</For>
-            {/* FIXME(GITHUB-CROSS-REPO): The repository list is currently stored
-                in each repository's settings. Move it into a global Dock store
-                so switching repos preserves the complete list, including
-                credential scope, permissions and per-repo settings.
-                Completion: test persistence and private repo access on Safari. */}
+            {/* TODO(GITHUB-CROSS-REPO): Integrate global repository storage with
+                typed Rod Dock settings and permission-scoped private repo tests. */}
           </details>
           <h4>Workflows favoritos</h4>
           <For each={settings().workflows}>{w => <div class={styles.dashboardItem}>
