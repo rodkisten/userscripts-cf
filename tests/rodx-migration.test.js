@@ -89,6 +89,9 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     // The GM storage adapter was intentionally centralized; validate its behavior
     // separately instead of pretending the original implementation is unchanged.
     if (record.file === "storage/gm.js" && ["gmGet", "gmSet", "gmAvailable"].includes(record.name)) continue;
+    // ForeignTags now uses the centralized HTTP transport and selector registry.
+    // Its behavior is covered by integration tests, not the original AST fingerprint.
+    if (record.file === "translation/foreign-tags.tsx" && record.name === "ForeignTags") continue;
     if (hash(node) !== migrated.sha256) {
       mismatches.push(`${record.file}: ${record.name} changed from source line ${record.sourceLine}`);
     }
