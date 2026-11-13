@@ -9,7 +9,7 @@
     "build": "node build/build.mjs",
     "sync:rod-runtime": "node build/sync-rod-runtime.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
-    "test": "npm run typecheck && npm run build && vitest run tests/css-deduplicate.test.js tests/package-icons.test.js tests/runtime.test.js tests/runtime-helpers.test.js tests/runtime-dom-http.test.js tests/runtime-gm-storage.test.js tests/config-assets.test.js tests/styles.test.js tests/readable-strings.test.js tests/hosting.test.js tests/release.test.js tests/publish-github.test.js && npm run test:lab",
+    "test": "npm run typecheck && npm run build && vitest run tests/css-modules-integration.test.js tests/css-deduplicate.test.js tests/package-icons.test.js tests/runtime.test.js tests/runtime-helpers.test.js tests/runtime-dom-http.test.js tests/runtime-gm-storage.test.js tests/config-assets.test.js tests/styles.test.js tests/readable-strings.test.js tests/hosting.test.js tests/release.test.js tests/publish-github.test.js && npm run test:lab",
     "format": "prettier --write .",
     "build:lab": "node labs/remote-release/build-worker.mjs A",
     "build:lab:b": "node labs/remote-release/build-worker.mjs B",
