@@ -154,7 +154,7 @@ for (const target of targets) {
     const map = typeof result.map === "string" ? JSON.parse(result.map) : result.map;
     map.file = file;
     await fs.writeFile(path.join(out, mapFile), JSON.stringify(map));
-    source = `${metadata}\n\n${result.code.replace(/\\/\\/# sourceMappingURL=.*$/gm, "")}\n//# sourceMappingURL=${mapFile}\n`;
+    source = `${metadata}\n\n${result.code.split("\n").filter((line) => !line.startsWith("//# sourceMappingURL=")).join("\n")}\n//# sourceMappingURL=${mapFile}\n`;
   }
   await fs.writeFile(path.join(out, file), source);
   const metaFile = `${target.id}.meta.js`;
