@@ -1,3 +1,4 @@
+import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
 
@@ -13,14 +14,15 @@ const style = `
 .module-title{width:100%;text-align:left;background:#18181b;border:0;color:#fafafa;padding:12px;display:flex;justify-content:space-between;font-weight:600}
 .actions{padding:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;min-height:36px;padding:7px;text-align:left;overflow-wrap:anywhere}
-.action:focus-visible,.close:focus-visible,.module-title:focus-visible,.launcher:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
+.manager-list{display:grid;gap:8px}.manager-item{border:1px solid #3f3f46;border-radius:12px;padding:10px;display:flex;align-items:center;gap:8px}.manager-details{flex:1;min-width:0}.manager-name{font-weight:600;overflow-wrap:anywhere}.manager-status{font-size:11px;color:#a1a1aa}.manager-input{width:100%;min-height:40px;border:1px solid #52525b;border-radius:8px;background:#18181b;color:white;padding:8px}.manager-toolbar{display:flex;gap:8px;margin-bottom:10px}.manager-toolbar button{flex:1}.manager-rules{display:grid;gap:8px;margin:10px 0}.manager-rule{display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}.manager-rule span{flex:1;min-width:0}.manager-checkbox{width:20px;height:20px}.action:focus-visible,.close:focus-visible,.module-title:focus-visible,.launcher:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
 `;
 
 type DockAction = { id: string; label: string; run: () => void };
 type DockModule = { id: string; name: string; actions: DockAction[] };
 type DockEvent = { type: "register" | "unregister"; module?: DockModule; id?: string };
 
-export function installRodDock({ modules = [], registerMenu = globalThis.GM_registerMenuCommand } = {}) {
+type ScriptDefinition = { id: string; name: string; matches: string[]; exclude?: string[] };
+export function installRodDock({ modules = [], scripts = [], registerMenu = globalThis.GM_registerMenuCommand }: { modules?: DockModule[]; scripts?: ScriptDefinition[]; registerMenu?: typeof globalThis.GM_registerMenuCommand } = {}) {
   // The adapter owns the only DOM boundary. Solid owns all UI inside it.
   const host = document.createElement("div");
   // A userscript must not inherit layout/stacking from the host page.
@@ -34,6 +36,22 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
   const [expanded, setExpanded] = createSignal<string | null>(null);
   const [entries, setEntries] = createSignal<DockModule[]>([...new Map((modules as DockModule[]).map(m => [m.id, m])).values()]);
   const [position, setPosition] = createSignal(46);
+  const [managerOpen, setManagerOpen] = createSignal(false);
+  const [selectedScript, setSelectedScript] = createSignal<string | null>(null);
+  const [ruleKind, setRuleKind] = createSignal<"includes" | "excludes">("excludes");
+  const [rulePattern, setRulePattern] = createSignal("");
+  const [preferences, setPreferences] = createSignal<Record<string, { enabled?: boolean; includes?: string[]; excludes?: string[] }>>(readScriptRules(localStorage));
+  function updatePreference(id: string, patch: Partial<{enabled: boolean; includes: string[]; excludes: string[]}>) {
+    const next = { ...preferences(), [id]: { ...(preferences()[id] || {}), ...patch } };
+    setPreferences(next);
+    saveScriptRules(localStorage, next);
+    document.dispatchEvent(new CustomEvent("rod-script-manager:change"));
+  }
+  const currentScript = () => scripts.find((script) => script.id === selectedScript());
+  const scriptStatus = (script: ScriptDefinition) => {
+    if (preferences()[script.id]?.enabled === false) return "Desativado";
+    return matches(script, location.href, preferences()[script.id]) ? "Permitido" : "Fora da página";
+  };
   const menuEntries = new Map<string, Map<unknown, DockAction>>();
   const onRegistration = (event: Event) => {
     const detail = (event as CustomEvent<DockEvent>).detail;
@@ -103,8 +121,59 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
       </Show>
       <Show when={open()}>
         <section class="panel" role="dialog" aria-label="Rod Dock">
-          <header class="header"><span>Rod Dock</span><button class="close" aria-label="Fechar Rod Dock" onClick={() => setOpen(false)}>×</button></header>
+          <header class="header"><span>Rod Dock</span><button class="close" aria-label="Gerenciar scripts" onClick={() => { setManagerOpen(!managerOpen()); setSelectedScript(null); }}>⚙</button><button class="close" aria-label="Fechar Rod Dock" onClick={() => setOpen(false)}>×</button></header>
           <div class="content">
+            <Show when={managerOpen()}>
+              <div class="manager-toolbar">
+                <button class="action" onClick={() => setSelectedScript(null)}>Todos os scripts</button>
+                <button class="action" onClick={() => setManagerOpen(false)}>Módulos</button>
+              </div>
+              <Show when={!currentScript()} fallback={
+                <section class="manager-list">
+                  <button class="action" onClick={() => setSelectedScript(null)}>‹ Voltar</button>
+                  <strong>{currentScript()?.name}</strong>
+                  <div class="manager-status">Regras do manifest são obrigatórias e não podem ser removidas.</div>
+                  <For each={currentScript()?.matches || []}>{(pattern) => <div class="manager-status">Manifest: {pattern}</div>}</For>
+                  <For each={currentScript()?.exclude || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
+                  <div class="manager-toolbar">
+                    <button class="action" onClick={() => setRuleKind("includes")}>Incluir URL</button>
+                    <button class="action" onClick={() => setRuleKind("excludes")}>Excluir URL</button>
+                  </div>
+                  <label>{ruleKind() === "includes" ? "Nova inclusão" : "Nova exclusão"}</label>
+                  <input class="manager-input" value={rulePattern()} placeholder="https://example.com/*" onInput={(event) => setRulePattern(event.currentTarget.value)} />
+                  <button class="action" disabled={!rulePattern().trim()} onClick={() => {
+                    const id = selectedScript();
+                    if (!id) return;
+                    const pattern = rulePattern().trim();
+                    if (!/^https?:\/\//.test(pattern)) return;
+                    updatePreference(id, { [ruleKind()]: [...new Set([...(preferences()[id]?.[ruleKind()] || []), pattern])] });
+                    setRulePattern("");
+                  }}>Adicionar {ruleKind() === "includes" ? "inclusão" : "exclusão"}</button>
+                  <For each={["includes", "excludes"] as const}>{(kind) =>
+                    <div class="manager-rules">
+                      <strong>{kind === "includes" ? "Inclusões" : "Exclusões"}</strong>
+                      <For each={preferences()[selectedScript() || ""]?.[kind] || []}>{(pattern) =>
+                        <div class="manager-rule"><span>{pattern}</span><button class="action" onClick={() => {
+                          const id = selectedScript();
+                          if (id) updatePreference(id, { [kind]: (preferences()[id]?.[kind] || []).filter((item) => item !== pattern) });
+                        }}>×</button></div>
+                      }</For>
+                    </div>
+                  }</For>
+                </section>
+              }>
+                <div class="manager-list">
+                  <For each={scripts}>{(script) =>
+                    <div class="manager-item">
+                      <div class="manager-details"><div class="manager-name">{script.name}</div><div class="manager-status">{scriptStatus(script)}</div></div>
+                      <input class="manager-checkbox" type="checkbox" aria-label={`Ativar ${script.name}`} checked={preferences()[script.id]?.enabled !== false} onChange={(event) => updatePreference(script.id, {enabled: event.currentTarget.checked})}/>
+                      <button class="action" aria-label={`Configurar ${script.name}`} onClick={() => setSelectedScript(script.id)}>⚙</button>
+                    </div>
+                  }</For>
+                </div>
+              </Show>
+            </Show>
+            <Show when={!managerOpen()}>
             <For each={visibleModules()}>{(module) => (
               <section class="module">
                 <button class="module-title" aria-expanded={expanded() === module.id}
@@ -120,6 +189,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
                 </Show>
               </section>
             )}</For>
+            </Show>
           </div>
         </section>
       </Show>
