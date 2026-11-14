@@ -89,7 +89,7 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
   createEffect(() => {
     if (props.current === props.node.path || props.current.startsWith(props.node.path + "/")) setExpanded(true);
-  });
+  }, undefined);
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
   return <>
     <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
