@@ -59,6 +59,7 @@ export function mountReelBookmark(
   const [busy, setBusy] = createSignal(false);
   let mount: ReturnType<typeof mountPoint> | undefined;
   let parent: HTMLElement | null = null;
+  let cloned: HTMLElement | undefined;
   const send = async () => {
     if (busy()) return;
     setBusy(true);
@@ -75,14 +76,26 @@ export function mountReelBookmark(
     const target = reelIsOpen() ? actions() : null;
     if (!target || !nativeSave()) {
       mount?.dispose();
+      cloned?.remove();
+      cloned = undefined;
       mount = undefined;
       parent = null;
       return;
     }
     if (parent !== target || !mount?.host.isConnected) {
       mount?.dispose();
+      cloned?.remove();
       parent = target;
-      mount = mountPoint(target, () => (
+      // Copy the native action wrapper so Instagram controls spacing and swipe positioning.
+      const native = nativeSave()!;
+      cloned = native.cloneNode(true) as HTMLElement;
+      cloned.removeAttribute("id");
+      cloned.removeAttribute("aria-label");
+      cloned.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+      cloned.replaceChildren();
+      cloned.dataset.rodCollectionAction = "true";
+      native.insertAdjacentElement("afterend", cloned);
+      mount = mountPoint(cloned, () => (
         <button
           type="button"
           class={styles.bookmark}
@@ -111,6 +124,7 @@ export function mountReelBookmark(
     observer.disconnect();
     clearInterval(interval);
     mount?.dispose();
+    cloned?.remove();
   }, { once: true });
   refresh();
 }
