@@ -2,7 +2,7 @@ import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
 import { Dialog } from "../../runtime/solid-ui/Dialog.tsx";
 import { createStore } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
-import styles from "./GitHub.module.css";
+import styles, { css } from "./GitHub.module.css";
 import { loadStepOutput, stepNumber } from "./logs.ts";
 
 export function FileToolbar(props: {
@@ -183,7 +183,7 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
     const mount = mountPoint(
       step,
       () => <CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />,
-      { tag: "span", before: header?.nextSibling || step.firstChild },
+      { tag: "span", before: header?.nextSibling || step.firstChild, shadow: true, styles: [css] },
     );
     mount.host.dataset.ghftStepHost = key;
     mounts.set(mount.host, mount.dispose);
