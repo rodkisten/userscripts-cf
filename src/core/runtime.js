@@ -1,6 +1,6 @@
 import { createGMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
-import { matchesRoute } from "./match.js";
+import { matches, readScriptRules, SCRIPT_RULES_KEY } from "./script-manager.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
 import { createClipboardManager } from "../runtime/clipboard-manager.js";
@@ -41,6 +41,11 @@ export function createRuntime(definitions, bridge, host = window) {
     }
   };
   host.document.addEventListener("keydown", clipboardKeydown, true);
+  const rules = () => readScriptRules(host.localStorage);
+  const permitted = (definition, url) => matches(definition, url, rules()[definition.id]);
+  const onRulesChange = () => { void navigate(); };
+  host.addEventListener("storage", onRulesChange);
+  host.document.addEventListener("rod-script-manager:change", onRulesChange);
   const active = new Map();
   const state = new Map();
   const listeners = new Map();
@@ -299,7 +304,7 @@ export function createRuntime(definitions, bridge, host = window) {
     while (!closed) {
       const url = desiredURL;
       for (const [id, instance] of active) {
-        if (matchesRoute(instance.definition, url)) continue;
+        if (permitted(instance.definition, url)) continue;
         active.delete(id);
         await instance.context.dispose();
       }
@@ -308,7 +313,7 @@ export function createRuntime(definitions, bridge, host = window) {
         if (
           active.has(definition.id) ||
           failures.get(definition.id) === url ||
-          !matchesRoute(definition, url)
+          !permitted(definition, url)
         )
           continue;
         const ctx = context(definition);
@@ -367,6 +372,8 @@ export function createRuntime(definitions, bridge, host = window) {
       if (host.__RodClipboard === clipboard) delete host.__RodClipboard;
       clipboard?.dispose();
       if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
+      host.removeEventListener("storage", onRulesChange);
+      host.document.removeEventListener("rod-script-manager:change", onRulesChange);
       host.removeEventListener("popstate", navigate);
       host.removeEventListener("hashchange", navigate);
       undoHistory.forEach((undo) => undo());

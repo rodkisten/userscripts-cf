@@ -26,9 +26,10 @@ export default {
     const [depth, setDepth] = createSignal(0);
     const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
     const [picking, setPicking] = createSignal(false);
+    const [picking, setPicking] = createSignal(false);
     let editor, editorRoot, selected, overlay, refreshTimer, pickerListener, pickerCancelListener, highlightTarget, highlightFrame = 0, lastRect = "";
     const stop = () => { cancelAnimationFrame(highlightFrame); highlightFrame = 0; editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); cancelPicker(); };
-    const cancelPicker = () => {
+    const cancelPicker =  () => {
       if (pickerListener) document.removeEventListener("pointerdown", pickerListener, true);
       if (pickerCancelListener) document.removeEventListener("keydown", pickerCancelListener, true);
       pickerListener = undefined;
@@ -92,6 +93,14 @@ export default {
         setDepth(level);
         setSelectionName(pickSelector(node));
       }
+    };
+    const locateInSource = () => {
+      if (!editor || !selected || tab() !== "dom") return;
+      const source = editor.state.doc.toString();
+      const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
+      const index = source.indexOf(marker);
+      if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
+      else setStatus("Elemento não localizado no snapshot");
     };
     const locateInSource = () => {
       if (!editor || !selected || tab() !== "dom") return;
