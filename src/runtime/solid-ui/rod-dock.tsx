@@ -9,7 +9,7 @@ type DockAction = { id: string; label: string; run: () => void };
 type DockModule = { id: string; name: string; actions: DockAction[] };
 type DockEvent = { type: "register" | "unregister"; module?: DockModule; id?: string };
 
-type ScriptDefinition = { id: string; name: string; matches: string[]; exclude?: string[] };
+type ScriptDefinition = { id: string; name: string; matches: string[]; exclude?: string[]; excludeMatches?: string[]; excludes?: string[]; includes?: string[] };
 export function installRodDock({ modules = [], scripts = [], registerMenu = globalThis.GM_registerMenuCommand }: { modules?: DockModule[]; scripts?: ScriptDefinition[]; registerMenu?: typeof globalThis.GM_registerMenuCommand } = {}) {
   // The adapter owns the only DOM boundary. Solid owns all UI inside it.
   const host = document.createElement("div");
@@ -120,6 +120,8 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                   <div class="manager-status">Regras do manifest são obrigatórias e não podem ser removidas.</div>
                   <For each={currentScript()?.matches || []}>{(pattern) => <div class="manager-status">Manifest: {pattern}</div>}</For>
                   <For each={currentScript()?.exclude || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
+                  <For each={currentScript()?.excludeMatches || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
+                  <For each={currentScript()?.excludes || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
                   <div class="manager-toolbar" role="tablist" aria-label="Tipo de regra">
                     <button class="action" role="tab" aria-selected={ruleKind() === "includes"} onClick={() => { setRuleKind("includes"); setRulePattern(""); }}>Incluir URL</button>
                     <button class="action" role="tab" aria-selected={ruleKind() === "excludes"} onClick={() => { setRuleKind("excludes"); setRulePattern(""); }}>Excluir URL</button>
