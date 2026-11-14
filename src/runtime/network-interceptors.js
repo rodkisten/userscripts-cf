@@ -102,3 +102,54 @@ export function observePageFetch(callback, { host = globalThis, signal, maxBodyC
   else signal?.addEventListener("abort", off, { once: true });
   return off;
 }
+
+/**
+ * Passive XHR observer. Installs once per window, never changes response data,
+ * and restores prototype methods when no observers remain.
+ */
+const xhrObservers = new WeakMap();
+export function observePageXHR(callback, { host = globalThis, signal, maxBodyCharacters = 120000 } = {}) {
+  const prototype = host.XMLHttpRequest?.prototype;
+  if (!prototype) return () => {};
+  let entry = xhrObservers.get(prototype);
+  if (!entry) {
+    const open = prototype.open, send = prototype.send;
+    const listeners = new Set(), metadata = new WeakMap();
+    const patchedOpen = function (method, url, ...rest) {
+      metadata.set(this, { method: String(method), url: String(url) });
+      return open.call(this, method, url, ...rest);
+    };
+    const patchedSend = function (...args) {
+      const info = metadata.get(this) || { method: "GET", url: "" };
+      const start = Date.now();
+      this.addEventListener("loadend", () => {
+        const event = { ...info, status: this.status, durationMs: Date.now() - start, body: null };
+        try {
+          const type = this.getResponseHeader("content-type") || "";
+          if ((this.responseType === "" || this.responseType === "text") && /json|text|xml|javascript|graphql|html/i.test(type))
+            event.body = String(this.responseText).slice(0, maxBodyCharacters);
+          else if (this.responseType === "json") event.body = JSON.stringify(this.response).slice(0, maxBodyCharacters);
+        } catch { /* Ignore opaque, binary, and inaccessible responses. */ }
+        for (const listener of [...listeners]) { try { listener(event); } catch {} }
+      }, { once: true });
+      return send.apply(this, args);
+    };
+    prototype.open = patchedOpen;
+    prototype.send = patchedSend;
+    entry = { open, send, patchedOpen, patchedSend, listeners };
+    xhrObservers.set(prototype, entry);
+  }
+  entry.listeners.add(callback);
+  const off = () => {
+    entry.listeners.delete(callback);
+    if (!entry.listeners.size) {
+      if (prototype.open === entry.patchedOpen) prototype.open = entry.open;
+      if (prototype.send === entry.patchedSend) prototype.send = entry.send;
+      xhrObservers.delete(prototype);
+    }
+    signal?.removeEventListener("abort", off);
+  };
+  if (signal?.aborted) off();
+  else signal?.addEventListener("abort", off, { once: true });
+  return off;
+}
