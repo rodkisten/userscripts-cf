@@ -70,9 +70,9 @@ export default {
     ctx.interceptResponse?.(response => { setRecords(prev=>[...prev,{type:"response",url:response.url,status:response.status}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return response; });
     observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>setOpen(true)}]);
-    ctx.ui.mountSolid(()=> <Show when={open()}><section class={styles.panel} classList={{[styles.full]:full()}} role="dialog" aria-label="DOM Inspector">
+    ctx.ui.mountSolid(()=> <Show when={open()}><section class={[styles.panel, { [styles.full]: full() }]} role="dialog" aria-label="DOM Inspector">
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>{setOpen(false);stop()}}>✕</button></header>
-      <nav class={styles.tabs}>{["dom","css","network"].map(t=><button classList={{[styles.active]:tab()===t}} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
+      <nav class={styles.tabs}>{["dom","css","network"].map(t=><button class={{ [styles.active]: tab() === t }} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
       <div class={styles.tools}><input value={selector()} placeholder="CSS selector" onInput={e=>select(e.currentTarget.value)}/><button onClick={pick}>◎</button><button onClick={()=>copy(selector())}>Copy</button></div>
       <div class={styles.tools}><button onClick={()=>{highlight(selected?.parentElement);setSelector(pickSelector(selected));renderSource()}}>↑</button><button onClick={()=>{highlight(selected?.firstElementChild);if(selected)setSelector(pickSelector(selected));renderSource()}}>↓</button><label><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><button onClick={renderSource}>Refresh</button></div>
       <div class={styles.editor} ref={el=>{editorRoot=el;queueMicrotask(renderSource)}}/>
