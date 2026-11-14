@@ -1,3 +1,4 @@
+import { Studio } from "./core/studio.js";
 import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel } from "./ui/preferences.js";
@@ -11,6 +12,7 @@ export function startRodX() {
 }
 export default {
   init(ctx) {
+    Studio.ctx = ctx;
     ctx.dock?.register([
       { id: "saved", label: "Pesquisas", run: () => openPanel("saved") },
       { id: "editor", label: "Editor", run: () => openPanel("editor") },
