@@ -95,12 +95,36 @@ export default {
       }
     };
     const locateInSource = () => {
-      if (!editor || !selected || tab() !== "dom") return;
-      const source = editor.state.doc.toString();
-      const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
-      const index = source.indexOf(marker);
-      if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
-      else setStatus("Elemento não localizado no snapshot");
+      if (!editor || !selected || tab() !== "dom" || !selected.isConnected) return;
+      // A cloned DOM gives the selected node a unique marker without mutating the live page.
+      const ancestors = [];
+      for (let node = selected; node && node !== document.documentElement; node = node.parentElement) {
+        const parent = node.parentElement;
+        if (!parent) return;
+        ancestors.unshift(Array.prototype.indexOf.call(parent.children, node));
+      }
+      const clone = document.documentElement.cloneNode(true);
+      let target = clone;
+      for (const index of ancestors) target = target?.children[index];
+      if (!target) return;
+      const markerName = "data-rod-inspector-location";
+      const previous = target.getAttribute(markerName);
+      target.setAttribute(markerName, "selected");
+      const marked = clone.outerHTML;
+      const attribute = ' ' + markerName + '="selected"';
+      const markerIndex = marked.indexOf(attribute);
+      if (markerIndex < 0) return;
+      const unmarked = marked.slice(0, markerIndex) + marked.slice(markerIndex + attribute.length);
+      const snapshot = editor.state.doc.toString();
+      if (previous !== null || !snapshot.startsWith(unmarked.slice(0, Math.min(markerIndex, snapshot.length)))) {
+        setStatus("DOM mudou: atualize o snapshot antes de localizar");
+        return;
+      }
+      const start = marked.lastIndexOf("<", markerIndex);
+      if (start >= 0 && start < snapshot.length) {
+        editor.dispatch({ selection: { anchor: start }, scrollIntoView: true });
+        setStatus("Elemento localizado no HTML");
+      } else setStatus("Elemento fora do limite do snapshot");
     };
     const renderSource = () => {
       if (!editorRoot || !open()) return;
@@ -124,7 +148,7 @@ export default {
       clearTimeout(refreshTimer);
       if (!live() || !open() || tab() !== "dom") return;
       domObserver = new MutationObserver(mutations => {
-        if (mutations.some(m => !own(m.target) && m.target !== overlay && ![...m.addedNodes].every(node => node === overlay))) schedule();
+        if (mutations.some(m => !own(m.target) && m.target !== overlay && !(m.type === "childList" && [...m.addedNodes, ...m.removedNodes].every(node => node === overlay)))) schedule();
       });
       domObserver.observe(document.documentElement, {subtree:true, childList:true, attributes:true, characterData:true});
     };
@@ -165,9 +189,9 @@ export default {
     observePageXHR(event => { setRecords(prev => [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     createEffect(() => { const isOpen = open(); tab(); live(); updateLiveObserver(); if (isOpen) queueMicrotask(renderSource); else { editor?.destroy(); editor = undefined; editorRoot = undefined; } });
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>{cancelPicker();setOpen(true)}}]);
-    ctx.ui.mountSolid(()=> <><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={()=>{cancelPicker();setOpen(true)}}>Cancelar seleção ✕</button></Show><Show when={open()}><section class={[styles.panel, { [styles.full]: full() }]} role="region" aria-label="DOM Inspector">
+    ctx.ui.mountSolid(()=> <><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={()=>{cancelPicker();setOpen(true)}}>Cancelar seleção ✕</button></Show><Show when={open()}><section class={styles.panel} classList={{ [styles.full]: full() }} role="region" aria-label="DOM Inspector">
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>setOpen(false)}>✕</button></header>
-      <nav class={styles.tabs} role="tablist" aria-label="Inspector views">{["dom","css","network"].map(t=><button type="button" role="tab" aria-selected={tab()===t} class={{ [styles.active]: tab() === t }} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
+      <nav class={styles.tabs} role="tablist" aria-label="Inspector views">{["dom","css","network"].map(t=><button type="button" role="tab" aria-selected={tab()===t} classList={{ [styles.active]: tab() === t }} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
       <div class={styles.tools}><input value={selector()} placeholder="CSS selector" onInput={e=>select(e.currentTarget.value)}/><button onClick={pick}>◎</button><button onClick={()=>copy(selector())}>Copy</button></div>
       <div class={styles.tools}><button title="Pai" aria-label="Elemento pai" onClick={()=>moveSelection("parent")}>↑</button><button title="Filho" aria-label="Primeiro filho" onClick={()=>moveSelection("child")}>↓</button><button title="Anterior" aria-label="Irmão anterior" onClick={()=>moveSelection("previous")}>←</button><button title="Próximo" aria-label="Próximo irmão" onClick={()=>moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><label class={styles.switch}><input type="checkbox" checked={live()} onChange={e=>setLive(e.currentTarget.checked)}/> Live</label><button onClick={renderSource}>Refresh</button><button title="Localizar no código" aria-label="Localizar elemento no código" onClick={()=>{setTab("dom");queueMicrotask(()=>{renderSource();locateInSource()})}}>⌕</button></div>
       <div class={styles.hierarchy}><output class={styles.selection} title={selectionName()}>{selectionName()}</output><label for="inspector-depth">Nível {depth()}</label><input id="inspector-depth" aria-label="Subir na hierarquia DOM" type="range" min="0" max={INSPECTOR_CONFIG.maxHierarchyDepth} value={depth()} disabled={!selected} onInput={e=>traverse(Number(e.currentTarget.value))}/></div>
