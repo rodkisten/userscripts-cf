@@ -25,20 +25,48 @@ export default {
     const [records, setRecords] = createSignal([]);
     const [depth, setDepth] = createSignal(0);
     const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
-    let editor, editorRoot, selected, overlay, refreshTimer, pickerListener;
-    const stop = () => { editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); if (pickerListener) document.removeEventListener("click", pickerListener, true); pickerListener = undefined; };
+    let editor, editorRoot, selected, overlay, refreshTimer, pickerListener, highlightTarget, highlightFrame = 0, lastRect = "";
+    const stop = () => { cancelAnimationFrame(highlightFrame); highlightFrame = 0; editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); if (pickerListener) document.removeEventListener("click", pickerListener, true); pickerListener = undefined; };
     const own = el => !!el?.closest?.("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]") || el === overlay;
     const pickSelector = el => !el ? "" : el.id ? "#"+CSS.escape(el.id) : el.localName + [...el.classList].slice(0,2).map(x=>"."+CSS.escape(x)).join("");
+    const followHighlight = () => {
+      if (!highlightTarget?.isConnected || !overlay) {
+        overlay?.remove(); overlay = undefined;
+        highlightTarget = undefined;
+        highlightFrame = 0;
+        return;
+      }
+      const r = highlightTarget.getBoundingClientRect();
+      const rect = `${r.left}px,${r.top}px,${r.width}px,${r.height}px`;
+      if (rect !== lastRect) {
+        overlay.style.left = `${r.left}px`;
+        overlay.style.top = `${r.top}px`;
+        overlay.style.width = `${r.width}px`;
+        overlay.style.height = `${r.height}px`;
+        lastRect = rect;
+      }
+      highlightFrame = requestAnimationFrame(followHighlight);
+    };
+    const markElement = el => {
+      cancelAnimationFrame(highlightFrame);
+      overlay?.remove(); overlay = undefined;
+      highlightTarget = el;
+      lastRect = "";
+      if (!el) return;
+      overlay = document.createElement("div");
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.style.cssText = "position:fixed;pointer-events:none;z-index:2147483646;outline:2px solid #a78bfa;background:#a78bfa33";
+      document.documentElement.append(overlay);
+      followHighlight();
+    };
     const highlight = el => {
-      overlay?.remove(); selected = el;
+      selected = el;
+      markElement(el);
       setSelectionName(el ? pickSelector(el) : "Nenhum elemento");
       setDepth(0);
       if (!el) return;
       if (scroll()) el.scrollIntoView({behavior:"smooth",block:"center"});
-      const r=el.getBoundingClientRect();
-      overlay=document.createElement("div");
-      overlay.style.cssText=`position:fixed;pointer-events:none;z-index:2147483646;outline:2px solid #a78bfa;background:#a78bfa33;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
-      document.documentElement.append(overlay);
+
     };
     const moveSelection = direction => {
       const next = direction === "parent" ? selected?.parentElement : direction === "child" ? selected?.firstElementChild : direction === "previous" ? selected?.previousElementSibling : selected?.nextElementSibling;
@@ -52,14 +80,18 @@ export default {
       let node = selected;
       for (let i = 0; i < level && node.parentElement; i++) node = node.parentElement;
       if (!own(node)) {
-        overlay?.remove();
-        const r = node.getBoundingClientRect();
-        overlay = document.createElement("div");
-        overlay.style.cssText = `position:fixed;pointer-events:none;z-index:2147483646;outline:2px solid #a78bfa;background:#a78bfa33;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
-        document.documentElement.append(overlay);
+        markElement(node);
         setDepth(level);
         setSelectionName(pickSelector(node));
       }
+    };
+    const locateInSource = () => {
+      if (!editor || !selected || tab() !== "dom") return;
+      const source = editor.state.doc.toString();
+      const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
+      const index = source.indexOf(marker);
+      if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
+      else setStatus("Elemento não localizado no snapshot");
     };
     const renderSource = () => {
       if (!editorRoot || !open()) return;
@@ -105,7 +137,7 @@ export default {
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>setOpen(false)}>✕</button></header>
       <nav class={styles.tabs} role="tablist" aria-label="Inspector views">{["dom","css","network"].map(t=><button type="button" role="tab" aria-selected={tab()===t} classList={{[styles.active]:tab()===t}} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
       <div class={styles.tools}><input value={selector()} placeholder="CSS selector" onInput={e=>select(e.currentTarget.value)}/><button onClick={pick}>◎</button><button onClick={()=>copy(selector())}>Copy</button></div>
-      <div class={styles.tools}><button title="Pai" aria-label="Elemento pai" onClick={()=>moveSelection("parent")}>↑</button><button title="Filho" aria-label="Primeiro filho" onClick={()=>moveSelection("child")}>↓</button><button title="Anterior" aria-label="Irmão anterior" onClick={()=>moveSelection("previous")}>←</button><button title="Próximo" aria-label="Próximo irmão" onClick={()=>moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><button onClick={renderSource}>Refresh</button></div>
+      <div class={styles.tools}><button title="Pai" aria-label="Elemento pai" onClick={()=>moveSelection("parent")}>↑</button><button title="Filho" aria-label="Primeiro filho" onClick={()=>moveSelection("child")}>↓</button><button title="Anterior" aria-label="Irmão anterior" onClick={()=>moveSelection("previous")}>←</button><button title="Próximo" aria-label="Próximo irmão" onClick={()=>moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><button onClick={renderSource}>Refresh</button><button title="Localizar no código" aria-label="Localizar elemento no código" onClick={()=>{setTab("dom");queueMicrotask(()=>{renderSource();locateInSource()})}}>⌕</button></div>
       <div class={styles.hierarchy}><output class={styles.selection} title={selectionName()}>{selectionName()}</output><label for="inspector-depth">Nível {depth()}</label><input id="inspector-depth" aria-label="Subir na hierarquia DOM" type="range" min="0" max={INSPECTOR_CONFIG.maxHierarchyDepth} value={depth()} disabled={!selected} onInput={e=>traverse(Number(e.currentTarget.value))}/></div>
       <div class={styles.editor} ref={el=>{editorRoot=el;queueMicrotask(renderSource)}}/>
     </section></Show>,{styles:[css]});
