@@ -22,9 +22,9 @@ export default {
     const [full, setFull] = createSignal(false);
     const [scroll, setScroll] = createSignal(INSPECTOR_CONFIG.autoScroll);
     const [records, setRecords] = createSignal([]);
-    let editor, editorRoot, selected, overlay, observer, refreshTimer;
-    const stop = () => { editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); };
-    const own = el => !!el?.closest?.("[data-userscripts-cf-ui]") || el === overlay;
+    let editor, editorRoot, selected, overlay, refreshTimer, pickerListener;
+    const stop = () => { editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); if (pickerListener) document.removeEventListener("click", pickerListener, true); pickerListener = undefined; };
+    const own = el => !!el?.closest?.("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]") || el === overlay;
     const pickSelector = el => !el ? "" : el.id ? "#"+CSS.escape(el.id) : el.localName + [...el.classList].slice(0,2).map(x=>"."+CSS.escape(x)).join("");
     const highlight = el => {
       overlay?.remove(); selected = el;
@@ -41,8 +41,13 @@ export default {
       const source=mode==="dom" ? document.documentElement.outerHTML :
         mode==="css" ? selected ? [...getComputedStyle(selected)].map(k=>k+": "+getComputedStyle(selected).getPropertyValue(k)+";").join("\n") : "Select an element first" :
         JSON.stringify(records(),null,2);
-      editor?.destroy();
-      editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:source.slice(0,INSPECTOR_CONFIG.maxSourceCharacters),extensions:[lineNumbers(),javascript(),oneDark,EditorState.readOnly.of(true),EditorView.lineWrapping]})});
+      const content = source.slice(0, INSPECTOR_CONFIG.maxSourceCharacters);
+      if (editor && editor.dom.parentElement === editorRoot) {
+        if (editor.state.doc.toString() !== content) editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:content}});
+      } else {
+        editor?.destroy();
+        editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:content,extensions:[lineNumbers(),javascript(),oneDark,EditorState.readOnly.of(true),EditorView.lineWrapping]})});
+      }
       setStatus(mode==="network"?records().length+" requests":source.length+" chars");
     };
     const schedule = () => { clearTimeout(refreshTimer); refreshTimer=setTimeout(renderSource,INSPECTOR_CONFIG.refreshDelayMs); };
@@ -53,15 +58,15 @@ export default {
     const copy = text => { if (ctx.clipboard?.copy) ctx.clipboard.copy(text); else navigator.clipboard?.writeText(text); };
     const pick = () => {
       setOpen(false);
-      const listener = event => {
+      pickerListener = event => {
         if (own(event.target)) return;
         event.preventDefault();event.stopPropagation();
-        document.removeEventListener("click",listener,true);
+        document.removeEventListener("click",pickerListener,true);
+        pickerListener = undefined;
         highlight(event.target);setSelector(pickSelector(event.target));setTab("css");setOpen(true);
         queueMicrotask(renderSource);
       };
-      document.addEventListener("click",listener,true);
-      ctx.onDispose(()=>document.removeEventListener("click",listener,true));
+      document.addEventListener("click",pickerListener,true);
     };
     // Context interceptors observe ctx.http traffic, not arbitrary native page fetches.
     ctx.interceptRequest?.(request => { setRecords(prev=>[...prev,{type:"request",url:request.url,method:request.method||"GET"}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return request; });
