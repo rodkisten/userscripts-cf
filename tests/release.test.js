@@ -16,7 +16,7 @@ test("update metadata and downloads have matching versions and stable release UR
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   const { version } = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
   const expectedSums = [];
-  const files = ["manifest.json", "event-audit.json"];
+  const files = ["manifest.json", "event-audit.json", "css-class-audit.json"];
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
     const meta = await fs.readFile(new URL(entry.metaFile, dist), "utf8");
