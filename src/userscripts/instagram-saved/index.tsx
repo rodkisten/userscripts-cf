@@ -56,7 +56,7 @@ export default {
   init(ctx: RuntimeContext) {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
-    mountReelBookmark(abort, ctx.pageStyle);
+
     const hub = installRodActions(ctx.menu);
     const unregisterActions = hub.register({
       id: "instagram-saved",
@@ -287,6 +287,40 @@ export default {
         });
       }
     }
+
+    // Five taps on the native Instagram logo or bottom profile avatar reveal settings.
+    // Capture only the fifth tap; ordinary navigation remains untouched.
+    let taps = 0;
+    let lastTap = 0;
+    let lastTarget = "";
+    const shortcut = (event: MouseEvent) => {
+      const element = event.target;
+      if (!(element instanceof Element)) return;
+      const link = element.closest<HTMLElement>('a[href], [role="link"]');
+      const profile = link?.matches('a[href^="/"][href$="/"]') &&
+        !!link.querySelector('img[alt], img[src*="profile"], svg');
+      const logo = !!element.closest('a[href="/"], a[href="/home/"], svg[aria-label="Instagram"], [aria-label="Instagram"]');
+      if (!logo && !profile) return;
+      const target = logo ? "logo" : "profile";
+      const now = Date.now();
+      taps = target === lastTarget && now - lastTap < 650 ? taps + 1 : 1;
+      lastTarget = target;
+      lastTap = now;
+      if (taps === 5) {
+        taps = 0;
+        event.preventDefault();
+        event.stopPropagation();
+        void settingsApi.open();
+      }
+    };
+    document.addEventListener("click", shortcut, true);
+    ctx.onDispose(() => document.removeEventListener("click", shortcut, true));
+    mountReelBookmark(
+      abort,
+      ctx.pageStyle,
+      async () => (await get("settings", DEFAULTS)).collectionIds || [],
+      (message) => ctx.toaster({ title: message }),
+    );
 
     const settingsApi = {
       async get() {
