@@ -25,7 +25,9 @@ on:
         default: true
   push:
     branches: [feat/shared-event-bridge]
-    paths: [.github/workflows/solid-codemods.yml]
+    paths:
+      - .github/workflows/solid-codemods.yml
+      - "src/**"
 
 permissions:
   contents: write
@@ -49,7 +51,7 @@ jobs:
       - name: Run selected codemods and capture each exit status
         shell: bash
         env:
-          APPLY: ${{ inputs.apply || 'false' }}
+          APPLY: ${{ github.event_name == 'push' && 'true' || inputs.apply && 'true' || 'false' }}
           PROPERTIES: ${{ inputs.properties || 'false' }}
           CLASSLIST: ${{ inputs.classlist == false && 'false' || 'true' }}
           ARRAY_MAP: ${{ inputs.array_map == false && 'false' || 'true' }}
@@ -76,8 +78,9 @@ jobs:
           git diff --check || failed=1
           git diff --stat
           echo "CODEMOD_FAILED=$failed" >> "$GITHUB_ENV"
+          if (( failed != 0 )); then echo "::warning::One or more codemods failed; no automatic commit will be made"; fi
       - name: Typecheck
-        if: inputs.apply == true
+        if: github.event_name == 'push' || inputs.apply == true
         continue-on-error: true
         id: typecheck
         run: npm run typecheck
@@ -87,7 +90,7 @@ jobs:
         id: tests
         run: npm test
       - name: Commit only validated changes
-        if: inputs.apply == true && inputs.commit == true && env.CODEMOD_FAILED == '0' && steps.typecheck.outcome == 'success' && steps.tests.outcome == 'success'
+        if: (github.event_name == 'push' || (inputs.apply == true && inputs.commit == true)) && env.CODEMOD_FAILED == '0' && steps.typecheck.outcome == 'success' && steps.tests.outcome == 'success'
         shell: bash
         run: |
           if git diff --quiet; then exit 0; fi
