@@ -495,7 +495,6 @@ function startGitHub(ctx: any) {
     timer = setTimeout(scan, 180);
   }
 
-  ctx.pageStyle(css);
   let tokenDialog: ReturnType<typeof mountPoint> | undefined;
   let tokenRequest = 0;
   if (typeof GM_registerMenuCommand === "function") {
