@@ -187,16 +187,30 @@ export default {
     ctx.interceptResponse?.(response => { setRecords(prev=>[...prev,{type:"response",url:response.url,status:response.status}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return response; });
     observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     observePageXHR(event => { setRecords(prev => [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
-    createEffect(() => { const isOpen = open(); tab(); live(); updateLiveObserver(); if (isOpen) queueMicrotask(renderSource); else { editor?.destroy(); editor = undefined; editorRoot = undefined; } });
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>{cancelPicker();setOpen(true)}}]);
-    ctx.ui.mountSolid(()=> <><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={()=>{cancelPicker();setOpen(true)}}>Cancelar seleção ✕</button></Show><Show when={open()}><section class={styles.panel} classList={{ [styles.full]: full() }} role="region" aria-label="DOM Inspector">
+    ctx.ui.mountSolid(()=> {
+      // Effects must be created inside the Solid owner provided by mountSolid.
+      createEffect(() => {
+        const isOpen = open();
+        tab();
+        live();
+        updateLiveObserver();
+        if (isOpen) queueMicrotask(renderSource);
+        else {
+          editor?.destroy();
+          editor = undefined;
+          editorRoot = undefined;
+        }
+      });
+      return <><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={()=>{cancelPicker();setOpen(true)}}>Cancelar seleção ✕</button></Show><Show when={open()}><section class={styles.panel} classList={{ [styles.full]: full() }} role="region" aria-label="DOM Inspector">
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>setOpen(false)}>✕</button></header>
       <nav class={styles.tabs} role="tablist" aria-label="Inspector views">{["dom","css","network"].map(t=><button type="button" role="tab" aria-selected={tab()===t} classList={{ [styles.active]: tab() === t }} onClick={()=>{setTab(t);queueMicrotask(renderSource)}}>{t.toUpperCase()}</button>)}</nav>
       <div class={styles.tools}><input value={selector()} placeholder="CSS selector" onInput={e=>select(e.currentTarget.value)}/><button onClick={pick}>◎</button><button onClick={()=>copy(selector())}>Copy</button></div>
       <div class={styles.tools}><button title="Pai" aria-label="Elemento pai" onClick={()=>moveSelection("parent")}>↑</button><button title="Filho" aria-label="Primeiro filho" onClick={()=>moveSelection("child")}>↓</button><button title="Anterior" aria-label="Irmão anterior" onClick={()=>moveSelection("previous")}>←</button><button title="Próximo" aria-label="Próximo irmão" onClick={()=>moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><label class={styles.switch}><input type="checkbox" checked={live()} onChange={e=>setLive(e.currentTarget.checked)}/> Live</label><button onClick={renderSource}>Refresh</button><button title="Localizar no código" aria-label="Localizar elemento no código" onClick={()=>{setTab("dom");queueMicrotask(()=>{renderSource();locateInSource()})}}>⌕</button></div>
       <div class={styles.hierarchy}><output class={styles.selection} title={selectionName()}>{selectionName()}</output><label for="inspector-depth">Nível {depth()}</label><input id="inspector-depth" aria-label="Subir na hierarquia DOM" type="range" min="0" max={INSPECTOR_CONFIG.maxHierarchyDepth} value={depth()} disabled={!selected} onInput={e=>traverse(Number(e.currentTarget.value))}/></div>
       <div class={styles.editor} ref={el=>{editorRoot=el;queueMicrotask(renderSource)}}/>
-    </section></Show></>,{styles:[css]});
+    </section></Show></>;
+    },{styles:[css]});
     // Live DOM updates are opt-in, debounced and exclude the inspector UI and overlay.
     ctx.onDispose(stop);
   }
