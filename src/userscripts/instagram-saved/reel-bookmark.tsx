@@ -4,22 +4,38 @@ import styles, { css } from "./Settings.module.css";
 
 const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from saved)$/i;
 const SAVED = /unsave|remover dos salvos|remove from saved/i;
-const reelIsOpen = () => /^\/reel\/[A-Za-z0-9_-]+\/?$/.test(location.pathname);
+const reelIsOpen = () => /\/(reel|reels)\//.test(location.pathname) || !!document.querySelector('video, [role="dialog"] video');
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function nativeSave(): HTMLElement | null {
-  for (const node of document.querySelectorAll<HTMLElement>("[aria-label]")) {
-    if (node.closest("[data-solid-mount]") || !LABELS.test(node.getAttribute("aria-label")?.trim() || "")) continue;
-    const button = node.closest<HTMLElement>('button, [role="button"]');
-    if (button) return button;
-  }
-  return null;
-}
+const SAVE_LABEL = /save|salvar|guardar|saved|salvo|bookmark/i;
+const ACTION_LABEL = /like|curtir|comment|comentar|share|compartilhar|send|enviar|more options|mais opções|save|salvar/i;
 
+function controls(): HTMLElement[] {
+  return [...document.querySelectorAll<HTMLElement>('button, [role="button"]')]
+    .filter((button) => !button.closest('[data-solid-mount], [data-rod-collection-action]'))
+    .filter((button) => {
+      const label = [button.getAttribute("aria-label"), ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label"))].join(" ");
+      return ACTION_LABEL.test(label);
+    });
+}
+function nativeSave(): HTMLElement | null {
+  return controls().find((button) => SAVE_LABEL.test(
+    [button.getAttribute("aria-label"), ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label"))].join(" ")
+  )) || null;
+}
 function actions(): HTMLElement | null {
   const save = nativeSave();
   if (save?.parentElement) return save.parentElement;
-  return null;
+  const buttons = controls();
+  const video = [...document.querySelectorAll("video")].find((node) => node.getBoundingClientRect().width > 0);
+  const near = buttons.filter((button) => {
+    const rect = button.getBoundingClientRect();
+    if (!rect.width || !rect.height) return false;
+    if (!video) return true;
+    const bounds = video.getBoundingClientRect();
+    return rect.top >= bounds.top - 100 && rect.top <= bounds.bottom + 100;
+  });
+  return (near.find((button) => /share|compartilhar|like|curtir/i.test(button.innerHTML.slice(0, 600))) || near[0])?.parentElement || null;
 }
 
 function collectionOption(id: string): HTMLElement | null {
@@ -74,7 +90,7 @@ export function mountReelBookmark(
   };
   function refresh() {
     const target = reelIsOpen() ? actions() : null;
-    if (!target || !nativeSave()) {
+    if (!target) {
       mount?.dispose();
       cloned?.remove();
       cloned = undefined;
@@ -82,13 +98,13 @@ export function mountReelBookmark(
       parent = null;
       return;
     }
-    if (parent !== target || !mount?.host.isConnected) {
+    if (parent !== target || !mount?.host.isConnected || !cloned?.isConnected) {
       mount?.dispose();
       cloned?.remove();
       parent = target;
       // Copy the native action wrapper so Instagram controls spacing and swipe positioning.
-      const native = nativeSave()!;
-      cloned = native.cloneNode(true) as HTMLElement;
+      const native = nativeSave() || target.querySelector<HTMLElement>('button, [role="button"]') || target;
+      cloned = native.cloneNode(false) as HTMLElement;
       cloned.removeAttribute("id");
       cloned.removeAttribute("aria-label");
       cloned.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
