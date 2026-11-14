@@ -27,7 +27,7 @@
     "lint:fix": "node build/check-style.mjs --fix"
   },
   "devDependencies": {
-    "@babel/parser": "8.1.0",
+    "@babel/parser": "8.1.2",
     "@solidjs/vite-plugin": "3.0.0-next.57",
     "fake-indexeddb": "6.2.8",
     "happy-dom": "21.0.4",
