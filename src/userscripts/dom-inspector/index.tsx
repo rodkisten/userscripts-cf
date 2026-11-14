@@ -1,5 +1,4 @@
 import { createSignal, Show } from "solid-js";
-import { Dialog, Tabs, Switch } from "@kobalte/core";
 import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
@@ -70,13 +69,17 @@ export default {
     observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     observePageXHR(event => { setRecords(prev => [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>setOpen(true)}]);
-    ctx.ui.mountSolid(()=> <Dialog.Root open={open()} onOpenChange={setOpen} modal={false}><Dialog.Portal><Dialog.Content class={styles.panel} classList={{[styles.full]:full()}} aria-label="DOM Inspector">
-      <header class={styles.header}><Dialog.Title>Inspector</Dialog.Title><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>{setOpen(false);stop()}}>✕</button></header>
-      <Tabs.Root value={tab()} onChange={value=>{setTab(value);queueMicrotask(renderSource)}}><Tabs.List class={styles.tabs}>{["dom","css","network"].map(t=><Tabs.Trigger value={t} classList={{[styles.active]:tab()===t}}>{t.toUpperCase()}</Tabs.Trigger>)}</Tabs.List></Tabs.Root>
-      <div class={styles.tools}><input value={selector()} placeholder="CSS selector" onInput={e=>select(e.currentTarget.value)}/><button onClick={pick}>◎</button><button onClick={()=>copy(selector())}>Copy</button></div>
-      <div class={styles.tools}><button onClick={()=>{highlight(selected?.parentElement);setSelector(pickSelector(selected));renderSource()}}>↑</button><button onClick={()=>{highlight(selected?.firstElementChild);if(selected)setSelector(pickSelector(selected));renderSource()}}>↓</button><Switch.Root checked={scroll()} onChange={setScroll} class={styles.switch}><Switch.Input/><Switch.Control><Switch.Thumb/></Switch.Control><Switch.Label>Scroll</Switch.Label></Switch.Root><button onClick={renderSource}>Refresh</button></div>
-      <div class={styles.editor} ref={el=>{editorRoot=el;queueMicrotask(renderSource)}}/>
-    </Dialog.Content></Dialog.Portal></Dialog.Root>,{styles:[css]});
+    ctx.ui.mountSolid(() => <Show when={open()}>
+      <section class={styles.panel} classList={{ [styles.full]: full() }} role="dialog" aria-modal="false" aria-label="DOM Inspector" onKeyDown={event => { if (event.key === "Escape") { setOpen(false); stop(); } }}>
+        <header class={styles.header}><h2>Inspector</h2><small>{status()}</small><button type="button" aria-label="Alternar tela cheia" onClick={() => setFull(v => !v)}>⛶</button><button type="button" aria-label="Fechar" onClick={() => { setOpen(false); stop(); }}>✕</button></header>
+        <div class={styles.tabs} role="tablist" aria-label="Inspector views">
+          {["dom", "css", "network"].map(value => <button type="button" role="tab" aria-selected={tab() === value ? "true" : "false"} classList={{ [styles.active]: tab() === value }} onClick={() => { setTab(value); queueMicrotask(renderSource); }}>{value.toUpperCase()}</button>)}
+        </div>
+        <div class={styles.tools}><input value={selector()} placeholder="CSS selector" aria-label="CSS selector" onInput={e => select(e.currentTarget.value)}/><button type="button" onClick={pick}>◎</button><button type="button" onClick={() => copy(selector())}>Copy</button></div>
+        <div class={styles.tools}><button type="button" onClick={() => { highlight(selected?.parentElement); setSelector(pickSelector(selected)); renderSource(); }}>↑</button><button type="button" onClick={() => { highlight(selected?.firstElementChild); if (selected) setSelector(pickSelector(selected)); renderSource(); }}>↓</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={event => setScroll(event.currentTarget.checked)}/> Scroll</label><button type="button" onClick={renderSource}>Refresh</button></div>
+        <div class={styles.editor} ref={el => { editorRoot = el; queueMicrotask(renderSource); }}/>
+      </section>
+    </Show>, { styles: [css] });
     // Refresh is explicit: observing our own CodeMirror mutations would cause a loop.
     ctx.onDispose(stop);
   }
