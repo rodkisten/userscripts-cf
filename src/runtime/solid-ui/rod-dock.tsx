@@ -1,6 +1,7 @@
 import { css as dockStyles } from "./rod-dock.module.css";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
+import { Switch, Tabs, TextField } from "@kobalte/core";
 import { render } from "@solidjs/web";
 
 
@@ -112,10 +113,7 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
           <header class="header"><span>Rod Dock</span><button class="close" aria-label="Gerenciar scripts" onClick={() => { setManagerOpen(!managerOpen()); setSelectedScript(null); }}>⚙</button><button class="close" aria-label="Fechar Rod Dock" onClick={() => setOpen(false)}>×</button></header>
           <div class="content">
             <Show when={managerOpen()}>
-              <div class="manager-toolbar">
-                <button class="action" onClick={() => setSelectedScript(null)}>Todos os scripts</button>
-                <button class="action" onClick={() => setManagerOpen(false)}>Módulos</button>
-              </div>
+              <nav class="manager-toolbar" aria-label="Navegação do gerenciador"><button class="action" onClick={() => setSelectedScript(null)}>Todos os scripts</button><button class="action" onClick={() => setManagerOpen(false)}>Módulos</button></nav>
               <Show when={!currentScript()} fallback={
                 <section class="manager-list">
                   <button class="action" onClick={() => setSelectedScript(null)}>‹ Voltar</button>
@@ -123,12 +121,18 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                   <div class="manager-status">Regras do manifest são obrigatórias e não podem ser removidas.</div>
                   <For each={currentScript()?.matches || []}>{(pattern) => <div class="manager-status">Manifest: {pattern}</div>}</For>
                   <For each={currentScript()?.exclude || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
-                  <div class="manager-toolbar">
-                    <button class="action" onClick={() => setRuleKind("includes")}>Incluir URL</button>
-                    <button class="action" onClick={() => setRuleKind("excludes")}>Excluir URL</button>
-                  </div>
-                  <label>{ruleKind() === "includes" ? "Nova inclusão" : "Nova exclusão"}</label>
-                  <input class="manager-input" value={rulePattern()} placeholder="https://example.com/*" onInput={(event) => setRulePattern(event.currentTarget.value)} />
+                  <Tabs.Root value={ruleKind()} onChange={(value) => { setRuleKind(value as "includes" | "excludes"); setRulePattern(""); }}>
+                    <Tabs.List class="manager-toolbar" aria-label="Tipo de regra">
+                      <Tabs.Trigger class="action" value="includes">Incluir URL</Tabs.Trigger>
+                      <Tabs.Trigger class="action" value="excludes">Excluir URL</Tabs.Trigger>
+                    </Tabs.List>
+                    <Tabs.Content value="includes"><p class="manager-status">Permite páginas adicionais dentro do escopo do Tampermonkey.</p></Tabs.Content>
+                    <Tabs.Content value="excludes"><p class="manager-status">Bloqueia páginas mesmo quando correspondem ao manifest.</p></Tabs.Content>
+                  </Tabs.Root>
+                  <TextField.Root value={rulePattern()} onChange={setRulePattern} class="manager-field">
+                    <TextField.Label>{ruleKind() === "includes" ? "Nova inclusão" : "Nova exclusão"}</TextField.Label>
+                    <TextField.Input class="manager-input" placeholder="https://example.com/*" />
+                  </TextField.Root>
                   <button class="action" disabled={!rulePattern().trim()} onClick={() => {
                     const id = selectedScript();
                     if (!id) return;
@@ -154,7 +158,11 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                   <For each={scripts}>{(script) =>
                     <div class="manager-item">
                       <div class="manager-details"><div class="manager-name">{script.name}</div><div class="manager-status">{scriptStatus(script)}</div></div>
-                      <input class="manager-checkbox" type="checkbox" aria-label={`Ativar ${script.name}`} checked={preferences()[script.id]?.enabled !== false} onChange={(event) => updatePreference(script.id, {enabled: event.currentTarget.checked})}/>
+                      <Switch.Root class="manager-switch" checked={preferences()[script.id]?.enabled !== false} onChange={(enabled) => updatePreference(script.id, { enabled })}>
+                        <Switch.Input />
+                        <Switch.Control class="manager-switch-control"><Switch.Thumb class="manager-switch-thumb" /></Switch.Control>
+                        <Switch.Label class="manager-switch-label">Ativar {script.name}</Switch.Label>
+                      </Switch.Root>
                       <button class="action" aria-label={`Configurar ${script.name}`} onClick={() => setSelectedScript(script.id)}>⚙</button>
                     </div>
                   }</For>
