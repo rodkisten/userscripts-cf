@@ -1,7 +1,7 @@
-import { createSignal, For, Show, createEffect } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { materialIcon } from "./material-icons.ts";
-import styles from "./GitHub.module.css";
+import styles, { css } from "./GitHub.module.css";
 
 type Entry = { path: string; type: "blob" | "tree"; sha?: string };
 type Node = { name: string; path: string; folder: boolean; children: Node[]; sha?: string };
@@ -87,9 +87,6 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
     finally { setLoading(false); }
   };
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
-  createEffect(() => {
-    if (props.current === props.node.path || props.current.startsWith(props.node.path + "/")) setExpanded(true);
-  }, undefined);
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
   return <>
     <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
@@ -139,7 +136,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       <Show when={state() === "error"}><div class={styles.treeError}>{message()} <button onClick={() => location.reload()}>Tentar novamente</button></div></Show>
       <Show when={state() === "ready"}><div role="tree"><For each={filterTree(nodes(), query())}>{node => <TreeRow node={node} depth={0} base={base} branch={resolvedBranch()} current={current()} loadFolder={loadFolder}/>}</For></div></Show>
     </section>
-  ), { before: container });
+  ), { before: container, shadow: true, styles: [css] });
   mount.host.dataset.ghftTreeHost = "";
   let originalDisplay = (container as HTMLElement).style.display;
   const load = async () => {

@@ -13,7 +13,6 @@ export default {
       if (/^(?:www\.)?audiochan\.(?:com|net)$/i.test(location.hostname)) {
         const post = bridge.safeReddit(new URL(location.href).searchParams.get("gws_post"));
         if (!post) return;
-        ctx.pageStyle(css);
         const mount = mountPoint(
           document.querySelector("main") || document.body,
           () => (
@@ -21,7 +20,7 @@ export default {
               ↶ Voltar ao post no Reddit
             </a>
           ),
-          { before: (document.querySelector("main") || document.body).firstChild },
+          { before: (document.querySelector("main") || document.body).firstChild, shadow: true, styles: [css] },
         );
         ctx.onDispose(mount.dispose);
         return;

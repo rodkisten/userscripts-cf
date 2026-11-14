@@ -464,7 +464,7 @@ function startGitHub(ctx: any) {
           <button type="button" class={styles.button} title={"Favoritar " + item.name}
             aria-label={"Favoritar " + item.name}
             onClick={(event) => { event.preventDefault(); event.stopPropagation(); dashboard.toggleFile(item.name, item.href); }}>☆</button>
-        ), { tag: "span", before: anchor });
+        ), { tag: "span", before: anchor, shadow: true, styles: [css] });
         mounts.set(mount.host, mount.dispose);
         if (item.type === "file") {
           // TODO(GITHUB-COMMITS): Resolve branch names containing slashes via
@@ -474,7 +474,7 @@ function startGitHub(ctx: any) {
           const path = displayPath(item);
           const commitMount = mountPoint(item.row, () => (
             <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />
-          ), { tag: "span" });
+          ), { tag: "span", shadow: true, styles: [css] });
           mounts.set(commitMount.host, commitMount.dispose);
         }
       }
@@ -495,7 +495,6 @@ function startGitHub(ctx: any) {
     timer = setTimeout(scan, 180);
   }
 
-  ctx.pageStyle(css);
   let tokenDialog: ReturnType<typeof mountPoint> | undefined;
   let tokenRequest = 0;
   if (typeof GM_registerMenuCommand === "function") {
@@ -516,7 +515,7 @@ function startGitHub(ctx: any) {
             }}
           />
         ),
-        { shadow: true },
+        { shadow: true, styles: [css] },
       );
     });
     ctx.onDispose(() => {

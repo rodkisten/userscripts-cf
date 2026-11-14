@@ -58,7 +58,6 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
     document.body || document.documentElement,
     () => (
       <>
-        <style>{css}</style>
         <Show when={state.modules.length}>
           <button
             class={styles.launcher}
@@ -77,7 +76,7 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
         </Show>
       </>
     ),
-    { id: "rod-actions-hub", shadow: true },
+    { id: "rod-actions-hub", shadow: true, styles: [css] },
   );
   window.__RodActions = hub;
   const clipboard = (window as Window & { __RodClipboard?: Parameters<typeof ClipboardPanel>[0]["clipboard"] }).__RodClipboard;
