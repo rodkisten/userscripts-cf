@@ -3,3 +3,5 @@
 .switch input{accent-color:#a78bfa;width:18px;height:18px;min-height:18px}.tabs button[aria-selected="true"]{background:#504377}
 
 .hierarchy{display:flex;align-items:center;gap:9px;padding:8px 10px;border-bottom:1px solid #33384b;min-width:0}.selection{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c4b5fd;font:12px ui-monospace,SFMono-Regular,monospace}.hierarchy label{font-size:11px;white-space:nowrap;color:#a9abc0}.hierarchy input[type=range]{width:min(28vw,130px);min-height:24px;accent-color:#a78bfa;padding:0;background:transparent;border:0}.tools{overflow-x:auto;scrollbar-width:none}.tools button{flex-shrink:0}.tools::-webkit-scrollbar{display:none}@media(max-width:480px){.panel{font-size:12px}.tools{gap:5px;padding:6px}.tools button{min-width:36px;padding:7px}.hierarchy{gap:5px}}
+
+.cancelPicker{position:fixed;z-index:2147483647;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:12px 18px;min-height:44px;border:1px solid #a78bfa;border-radius:999px;background:#1b1830;color:#fff;font:600 13px system-ui;box-shadow:0 8px 28px #0009;touch-action:manipulation}
