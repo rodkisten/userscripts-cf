@@ -5,9 +5,10 @@
 :global(.manager-field){display:grid;gap:6px}
 :global(.manager-switch){display:flex;align-items:center;gap:7px;flex-shrink:0}
 :global(.manager-switch-control){position:relative;display:block;width:38px;height:23px;border:1px solid #71717a;border-radius:99px;background:#3f3f46;transition:background .18s ease}
-:global(.manager-switch[data-checked] .manager-switch-control){background:#a78bfa;border-color:#a78bfa}
+:global(.manager-switch:has(.manager-checkbox:checked) .manager-switch-control){background:#a78bfa;border-color:#a78bfa}
 :global(.manager-switch-thumb){display:block;width:17px;height:17px;border-radius:50%;background:#fafafa;transform:translate(2px,2px);transition:transform .18s ease}
-:global(.manager-switch[data-checked] .manager-switch-thumb){transform:translate(17px,2px)}
+:global(.manager-switch:has(.manager-checkbox:checked) .manager-switch-thumb){transform:translate(17px,2px)}
 :global(.manager-switch-label){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-:global(.manager-switch-control:focus-visible),:global(.manager-toolbar [data-selected]){outline:2px solid #a78bfa;outline-offset:2px}
-:global(.manager-toolbar [data-selected]){background:#3f3f46}
+:global(.manager-switch-control:focus-visible),:global(.manager-toolbar [aria-selected="true"]){outline:2px solid #a78bfa;outline-offset:2px}
+:global(.manager-toolbar [aria-selected="true"]){background:#3f3f46}
+\n:global(.manager-checkbox){position:absolute;opacity:0;width:38px;height:23px;cursor:pointer;z-index:1}\n:global(.manager-switch:has(.manager-checkbox:focus-visible) .manager-switch-control){outline:2px solid #a78bfa;outline-offset:2px}\n
