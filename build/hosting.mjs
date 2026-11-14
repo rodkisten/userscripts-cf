@@ -6,6 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
+assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
