@@ -21,6 +21,7 @@ export function createSharedEvents({ host = globalThis, namespace = "rod", signa
       history.push(entry);
       if (history.length > historyLimit) history.shift();
     }
+    target.dispatchEvent(new host.CustomEvent("rod-events:diagnostic", { detail: entry }));
     for (const observer of [...observers]) {
       try { observer(entry); } catch (error) { console.warn("[Rod events observer]", error); }
     }
