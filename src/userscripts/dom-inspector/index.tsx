@@ -73,7 +73,7 @@ export default {
     ctx.interceptResponse?.(response => { setRecords(prev=>[...prev,{type:"response",url:response.url,status:response.status}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return response; });
     observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     observePageXHR(event => { setRecords(prev => [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
-    createEffect(() => { if (open()) { tab(); queueMicrotask(renderSource); } else { editor?.destroy(); editor = undefined; editorRoot = undefined; } });
+    createEffect(() => { if (open()) { tab(); queueMicrotask(renderSource); } else { editor?.destroy(); editor = undefined; editorRoot = undefined; } }, undefined);
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>setOpen(true)}]);
     ctx.ui.mountSolid(()=> <Show when={open()}><section class={[styles.panel, { [styles.full]: full() }]} role="region" aria-label="DOM Inspector">
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>setOpen(false)}>✕</button></header>
