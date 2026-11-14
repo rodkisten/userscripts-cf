@@ -1,4 +1,4 @@
-import { createSignal, For, Show, createEffect } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { materialIcon } from "./material-icons.ts";
 import styles, { css } from "./GitHub.module.css";
@@ -87,9 +87,6 @@ function TreeRow(props: { node: Node; depth: number; base: string; branch: strin
     finally { setLoading(false); }
   };
   const [expanded, setExpanded] = createSignal(props.current === props.node.path || props.current.startsWith(props.node.path + "/"));
-  createEffect(() => {
-    if (props.current === props.node.path || props.current.startsWith(props.node.path + "/")) setExpanded(true);
-  });
   const url = () => props.base + "/" + (props.node.folder ? "tree" : "blob") + "/" + props.branch.split("/").map(encodeURIComponent).join("/") + "/" + props.node.path.split("/").map(encodeURIComponent).join("/");
   return <>
     <div class={styles.treeRow} role="treeitem" aria-level={props.depth + 1} aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined} style={{ "padding-left": 10 + props.depth * 17 + "px" }}>
