@@ -1,11 +1,9 @@
 import { createSignal, Show } from "solid-js";
 import { observePageFetch } from "../../runtime/network-interceptors.js";
 import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import { html } from "@codemirror/lang-html";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { search, searchKeymap } from "@codemirror/search";
 import styles, { css } from "./Inspector.module.css";
 
 export const INSPECTOR_CONFIG = Object.freeze({
@@ -25,9 +23,9 @@ export default {
     const [scroll, setScroll] = createSignal(INSPECTOR_CONFIG.autoScroll);
     const [records, setRecords] = createSignal([]);
     let editor, editorRoot, selected, overlay, observer, refreshTimer;
-    const stop = () => { editor?.destroy(); editor = undefined; observer?.disconnect(); observer = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); };
-    const own = el => !!el?.closest?.("[data-userscripts-cf-ui]");
-    const pickSelector = el => el.id ? "#"+CSS.escape(el.id) : el.localName + [...el.classList].slice(0,2).map(x=>"."+CSS.escape(x)).join("");
+    const stop = () => { editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); };
+    const own = el => !!el?.closest?.("[data-userscripts-cf-ui]") || el === overlay;
+    const pickSelector = el => !el ? "" : el.id ? "#"+CSS.escape(el.id) : el.localName + [...el.classList].slice(0,2).map(x=>"."+CSS.escape(x)).join("");
     const highlight = el => {
       overlay?.remove(); selected = el;
       if (!el) return;
@@ -44,7 +42,7 @@ export default {
         mode==="css" ? selected ? [...getComputedStyle(selected)].map(k=>k+": "+getComputedStyle(selected).getPropertyValue(k)+";").join("\n") : "Select an element first" :
         JSON.stringify(records(),null,2);
       editor?.destroy();
-      editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:source.slice(0,INSPECTOR_CONFIG.maxSourceCharacters),extensions:[lineNumbers(),mode==="dom"?html():javascript(),oneDark,search(),keymap.of(searchKeymap),EditorState.readOnly.of(true),EditorView.lineWrapping]})});
+      editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:source.slice(0,INSPECTOR_CONFIG.maxSourceCharacters),extensions:[lineNumbers(),javascript(),oneDark,EditorState.readOnly.of(true),EditorView.lineWrapping]})});
       setStatus(mode==="network"?records().length+" requests":source.length+" chars");
     };
     const schedule = () => { clearTimeout(refreshTimer); refreshTimer=setTimeout(renderSource,INSPECTOR_CONFIG.refreshDelayMs); };
@@ -52,7 +50,7 @@ export default {
       setSelector(value);
       try { const matches=[...document.querySelectorAll(value)].filter(el=>!own(el)); highlight(matches[0]);setStatus(matches.length+" matches"); } catch { highlight(null);setStatus("Invalid selector"); }
     };
-    const copy = text => { if (ctx.clipboard?.write) ctx.clipboard.write(text); else navigator.clipboard?.writeText(text); };
+    const copy = text => { if (ctx.clipboard?.copy) ctx.clipboard.copy(text); else navigator.clipboard?.writeText(text); };
     const pick = () => {
       setOpen(false);
       const listener = event => {
@@ -77,8 +75,7 @@ export default {
       <div class={styles.tools}><button onClick={()=>{highlight(selected?.parentElement);setSelector(pickSelector(selected));renderSource()}}>↑</button><button onClick={()=>{highlight(selected?.firstElementChild);if(selected)setSelector(pickSelector(selected));renderSource()}}>↓</button><label><input type="checkbox" checked={scroll()} onChange={e=>setScroll(e.currentTarget.checked)}/> Scroll</label><button onClick={renderSource}>Refresh</button></div>
       <div class={styles.editor} ref={el=>{editorRoot=el;queueMicrotask(renderSource)}}/>
     </section></Show>,{styles:[css]});
-    observer=new MutationObserver(()=>{if(open()&&tab()==="dom")schedule()});
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true});
+    // Refresh is explicit: observing our own CodeMirror mutations would cause a loop.
     ctx.onDispose(stop);
   }
 };
