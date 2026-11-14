@@ -1,4 +1,5 @@
-import { createSignal, Show, onCleanup } from "solid-js";
+import { createSignal, Show } from "solid-js";
+import { observePageFetch } from "../../runtime/network-interceptors.js";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { html } from "@codemirror/lang-html";
@@ -67,6 +68,7 @@ export default {
     // Context interceptors observe ctx.http traffic, not arbitrary native page fetches.
     ctx.interceptRequest?.(request => { setRecords(prev=>[...prev,{type:"request",url:request.url,method:request.method||"GET"}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return request; });
     ctx.interceptResponse?.(response => { setRecords(prev=>[...prev,{type:"response",url:response.url,status:response.status}].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); return response; });
+    observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>setOpen(true)}]);
     ctx.ui.mountSolid(()=> <Show when={open()}><section class={styles.panel} classList={{[styles.full]:full()}} role="dialog" aria-label="DOM Inspector">
       <header class={styles.header}><strong>Inspector</strong><small>{status()}</small><button onClick={()=>setFull(v=>!v)}>⛶</button><button onClick={()=>{setOpen(false);stop()}}>✕</button></header>
