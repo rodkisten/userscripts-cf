@@ -1,6 +1,17 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "dom-inspector",
+    name: "Rod DOM Inspector",
+    entry: "src/userscripts/dom-inspector/index.tsx",
+    world: "sandbox",
+    unified: false,
+    tags: ["development", "inspector"],
+    matches: ["http://*/*", "https://*/*"],
+    grants: ["GM_getValue", "GM_setValue"],
+  },
+
+  {
     id: "mobile-editor-fab",
     name: "Mobile Editor FAB",
     entry: "src/userscripts/mobile-editor-fab/index.tsx",
