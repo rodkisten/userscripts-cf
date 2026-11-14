@@ -13,6 +13,11 @@ const style = `
 .module-title{width:100%;text-align:left;background:#18181b;border:0;color:#fafafa;padding:12px;display:flex;justify-content:space-between;font-weight:600}
 .actions{padding:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;min-height:36px;padding:7px;text-align:left;overflow-wrap:anywhere}
+.tabs{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid #27272a}
+.tab{flex:1;min-height:40px;border:1px solid #3f3f46;border-radius:9px;background:#18181b;color:#fafafa}
+.tab[aria-selected="true"]{background:#3f3f46}
+.event{padding:9px;border-bottom:1px solid #27272a;overflow-wrap:anywhere}
+.event small{color:#a1a1aa;display:block;margin-top:3px}
 .action:focus-visible,.close:focus-visible,.module-title:focus-visible,.launcher:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
 `;
 
@@ -34,6 +39,15 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
   const [expanded, setExpanded] = createSignal<string | null>(null);
   const [entries, setEntries] = createSignal<DockModule[]>([...new Map((modules as DockModule[]).map(m => [m.id, m])).values()]);
   const [position, setPosition] = createSignal(46);
+  const [tab, setTab] = createSignal<"modules" | "events">("modules");
+  const [eventEntries, setEventEntries] = createSignal<Array<{ name: string; transport: string; timestamp: number }>>([]);
+  const onDiagnostic = (event: Event) => {
+    const entry = (event as CustomEvent<{ name: string; transport: string; timestamp: number }>).detail;
+    if (!entry || typeof entry.name !== "string") return;
+    // Do not retain payloads: event details may contain private user data.
+    setEventEntries((items) => [entry, ...items].slice(0, 100));
+  };
+  document.addEventListener("rod-events:diagnostic", onDiagnostic);
   const menuEntries = new Map<string, Map<unknown, DockAction>>();
   const onRegistration = (event: Event) => {
     const detail = (event as CustomEvent<DockEvent>).detail;
@@ -104,7 +118,23 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
       <Show when={open()}>
         <section class="panel" role="dialog" aria-label="Rod Dock">
           <header class="header"><span>Rod Dock</span><button class="close" aria-label="Fechar Rod Dock" onClick={() => setOpen(false)}>×</button></header>
+          <nav class="tabs" aria-label="Dock tabs">
+            <button class="tab" aria-selected={tab() === "modules"} onClick={() => setTab("modules")}>Módulos</button>
+            <button class="tab" aria-selected={tab() === "events"} onClick={() => setTab("events")}>Eventos</button>
+          </nav>
           <div class="content">
+            <Show when={tab() === "events"}>
+              <div role="log" aria-label="Histórico de eventos">
+                <Show when={eventEntries().length === 0}><p>Nenhum evento registrado nesta sessão.</p></Show>
+                <For each={eventEntries()}>{(entry) => (
+                  <div class="event"><strong>{entry.name}</strong>
+                    <small>{entry.transport} · {new Date(entry.timestamp).toLocaleTimeString()}</small>
+                  </div>
+                )}</For>
+              </div>
+              <button class="action" onClick={() => setEventEntries([])}>Limpar histórico</button>
+            </Show>
+            <Show when={tab() === "modules"}>
             <For each={visibleModules()}>{(module) => (
               <section class="module">
                 <button class="module-title" aria-expanded={expanded() === module.id}
@@ -120,6 +150,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
                 </Show>
               </section>
             )}</For>
+            </Show>
           </div>
         </section>
       </Show>
@@ -133,6 +164,7 @@ export function installRodDock({ modules = [], registerMenu = globalThis.GM_regi
     open: () => setOpen(true),
     close: () => setOpen(false),
     dispose() {
+      document.removeEventListener("rod-events:diagnostic", onDiagnostic);
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
       dispose();
