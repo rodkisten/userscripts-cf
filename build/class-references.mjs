@@ -1,0 +1,114 @@
+import { parse } from "@babel/parser";
+
+/**
+ * Collect literal class names referenced by DOM APIs.
+ * This is intentionally conservative: unknown dynamic expressions make
+ * automatic class renaming unsafe, so consumers should preserve identifiers.
+ */
+export function analyzeClassReferences(source) {
+  const ast = parse(source, {
+    sourceType: "unambiguous",
+    plugins: ["typescript", "jsx"],
+    errorRecovery: false,
+  });
+  const names = new Set();
+  const dynamic = [];
+  const methodNames = new Set(["add", "remove", "toggle", "contains", "replace"]);
+  const selectorNames = new Set(["querySelector", "querySelectorAll", "matches", "closest"]);
+  const literal = (node) => {
+    if (node?.type === "StringLiteral") return node.value;
+    if (node?.type === "TemplateLiteral" && node.expressions.length === 0)
+      return node.quasis[0].value.cooked;
+    return null;
+  };
+  const addClasses = (value) => {
+    for (const token of value.split(/\s+/).filter(Boolean)) names.add(token);
+  };
+  const addSelector = (value) => {
+    // Ignore escaped CSS selectors: they require full selector parsing.
+    if (value.includes("\\")) return dynamic.push("escaped selector");
+    for (const match of value.matchAll(/\.([a-zA-Z_][\w-]*)/g)) names.add(match[1]);
+  };
+  const visited = new WeakSet();
+  const walk = (node) => {
+    if (node && typeof node === "object") {
+      if (visited.has(node)) return;
+      visited.add(node);
+    }
+    if (!node || typeof node !== "object") return;
+    if (node.type === "JSXAttribute" && node.name?.name === "classList") {
+      const object = node.value?.expression;
+      if (object?.type !== "ObjectExpression") dynamic.push("jsx-classList");
+      else for (const property of object.properties) {
+        if (property.type !== "ObjectProperty") { dynamic.push("jsx-classList"); continue; }
+        const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
+        if (name === null) dynamic.push("jsx-classList");
+        else addClasses(name);
+      }
+    }
+    if (node.type === "JSXAttribute" && ["class", "className"].includes(node.name?.name)) {
+      const value = node.value?.type === "JSXExpressionContainer"
+        ? literal(node.value.expression)
+        : literal(node.value);
+      if (value === null) dynamic.push("jsx-class");
+      else addClasses(value);
+    }
+    if (node.type === "AssignmentExpression" && (node.left?.type === "MemberExpression" || node.left?.type === "OptionalMemberExpression")) {
+      const prop = node.left.computed ? literal(node.left.property) : node.left.property?.name;
+      if (prop === "className" || prop === "class") {
+        const value = literal(node.right);
+        if (value === null) dynamic.push(prop);
+        else addClasses(value);
+      }
+    }
+    if (node.type === "ObjectProperty" && !node.computed && (node.key?.name === "classList" || literal(node.key) === "classList")) {
+      // Solid classList={{ active: signal() }}: keys are behavioral selectors.
+      if (node.value?.type === "ObjectExpression") {
+        for (const property of node.value.properties) {
+          if (property.type !== "ObjectProperty") { dynamic.push("classList-object"); continue; }
+          const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
+          if (name === null) dynamic.push("classList-object");
+          else addClasses(name);
+        }
+      } else dynamic.push("classList-object");
+    }
+    if (node.type === "CallExpression" || node.type === "OptionalCallExpression") {
+      const callee = node.callee;
+      const method = callee?.type === "MemberExpression" || callee?.type === "OptionalMemberExpression"
+        ? callee.computed ? literal(callee.property) : callee.property?.name
+        : null;
+      const object = callee?.object;
+      const classList = object?.type === "MemberExpression" || object?.type === "OptionalMemberExpression"
+        ? (object.computed ? literal(object.property) : object.property?.name) === "classList"
+        : false;
+      if (classList && methodNames.has(method)) {
+        for (const argument of node.arguments) {
+          const value = literal(argument);
+          if (value === null) dynamic.push(method);
+          else addClasses(value);
+        }
+      } else if (selectorNames.has(method)) {
+        const value = literal(node.arguments[0]);
+        if (value === null) dynamic.push(method);
+        else addSelector(value);
+      } else if (method === "getElementsByClassName") {
+        const value = literal(node.arguments[0]);
+        if (value === null) dynamic.push(method);
+        else addClasses(value);
+      } else if (method === "setAttribute" && literal(node.arguments[0]) === "class") {
+        const value = literal(node.arguments[1]);
+        if (value === null) dynamic.push(method);
+        else addClasses(value);
+      }
+    }
+    for (const [key, value] of Object.entries(node)) {
+      // Babel nodes may contain comments and parser metadata; none are executable.
+      if (key === "leadingComments" || key === "trailingComments" || key === "innerComments") continue;
+      if (key === "loc" || key === "start" || key === "end" || key === "extra") continue;
+      if (Array.isArray(value)) value.forEach(walk);
+      else if (value && typeof value === "object") walk(value);
+    }
+  };
+  walk(ast.program);
+  return { classes: [...names].sort(), dynamic };
+}
