@@ -1,7 +1,6 @@
 import { css as dockStyles } from "./rod-dock.module.css";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
-import { Switch, Tabs, TextField } from "@kobalte/core";
 import { render } from "@solidjs/web";
 
 
@@ -121,18 +120,15 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                   <div class="manager-status">Regras do manifest são obrigatórias e não podem ser removidas.</div>
                   <For each={currentScript()?.matches || []}>{(pattern) => <div class="manager-status">Manifest: {pattern}</div>}</For>
                   <For each={currentScript()?.exclude || []}>{(pattern) => <div class="manager-status">Exclusão obrigatória: {pattern}</div>}</For>
-                  <Tabs.Root value={ruleKind()} onChange={(value) => { setRuleKind(value as "includes" | "excludes"); setRulePattern(""); }}>
-                    <Tabs.List class="manager-toolbar" aria-label="Tipo de regra">
-                      <Tabs.Trigger class="action" value="includes">Incluir URL</Tabs.Trigger>
-                      <Tabs.Trigger class="action" value="excludes">Excluir URL</Tabs.Trigger>
-                    </Tabs.List>
-                    <Tabs.Content value="includes"><p class="manager-status">Permite páginas adicionais dentro do escopo do Tampermonkey.</p></Tabs.Content>
-                    <Tabs.Content value="excludes"><p class="manager-status">Bloqueia páginas mesmo quando correspondem ao manifest.</p></Tabs.Content>
-                  </Tabs.Root>
-                  <TextField.Root value={rulePattern()} onChange={setRulePattern} class="manager-field">
-                    <TextField.Label>{ruleKind() === "includes" ? "Nova inclusão" : "Nova exclusão"}</TextField.Label>
-                    <TextField.Input class="manager-input" placeholder="https://example.com/*" />
-                  </TextField.Root>
+                  <div class="manager-toolbar" role="tablist" aria-label="Tipo de regra">
+                    <button class="action" role="tab" aria-selected={ruleKind() === "includes"} onClick={() => { setRuleKind("includes"); setRulePattern(""); }}>Incluir URL</button>
+                    <button class="action" role="tab" aria-selected={ruleKind() === "excludes"} onClick={() => { setRuleKind("excludes"); setRulePattern(""); }}>Excluir URL</button>
+                  </div>
+                  <p class="manager-status">{ruleKind() === "includes" ? "Permite páginas adicionais dentro do escopo do Tampermonkey." : "Bloqueia páginas mesmo quando correspondem ao manifest."}</p>
+                  <label class="manager-field">
+                    <span>{ruleKind() === "includes" ? "Nova inclusão" : "Nova exclusão"}</span>
+                    <input class="manager-input" value={rulePattern()} placeholder="https://example.com/*" onInput={(event) => setRulePattern(event.currentTarget.value)} />
+                  </label>
                   <button class="action" disabled={!rulePattern().trim()} onClick={() => {
                     const id = selectedScript();
                     if (!id) return;
@@ -158,11 +154,10 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                   <For each={scripts}>{(script) =>
                     <div class="manager-item">
                       <div class="manager-details"><div class="manager-name">{script.name}</div><div class="manager-status">{scriptStatus(script)}</div></div>
-                      <Switch.Root class="manager-switch" checked={preferences()[script.id]?.enabled !== false} onChange={(enabled) => updatePreference(script.id, { enabled })}>
-                        <Switch.Input />
-                        <Switch.Control class="manager-switch-control"><Switch.Thumb class="manager-switch-thumb" /></Switch.Control>
-                        <Switch.Label class="manager-switch-label">Ativar {script.name}</Switch.Label>
-                      </Switch.Root>
+                      <label class="manager-switch">
+                        <input class="manager-checkbox" type="checkbox" aria-label={`Ativar ${script.name}`} checked={preferences()[script.id]?.enabled !== false} onChange={(event) => updatePreference(script.id, { enabled: event.currentTarget.checked })} />
+                        <span class="manager-switch-control" aria-hidden="true"><span class="manager-switch-thumb" /></span>
+                      </label>
                       <button class="action" aria-label={`Configurar ${script.name}`} onClick={() => setSelectedScript(script.id)}>⚙</button>
                     </div>
                   }</For>
