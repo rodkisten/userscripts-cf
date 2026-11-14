@@ -12,6 +12,7 @@ export const INSPECTOR_CONFIG = Object.freeze({
   maxBodyCharacters: 120_000,
   autoScroll: false,
   refreshDelayMs: 350,
+  maxHierarchyDepth: 12,
 });
 export default {
   init(ctx) {
@@ -22,18 +23,43 @@ export default {
     const [full, setFull] = createSignal(false);
     const [scroll, setScroll] = createSignal(INSPECTOR_CONFIG.autoScroll);
     const [records, setRecords] = createSignal([]);
+    const [depth, setDepth] = createSignal(0);
+    const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
     let editor, editorRoot, selected, overlay, refreshTimer, pickerListener;
     const stop = () => { editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); if (pickerListener) document.removeEventListener("click", pickerListener, true); pickerListener = undefined; };
     const own = el => !!el?.closest?.("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]") || el === overlay;
     const pickSelector = el => !el ? "" : el.id ? "#"+CSS.escape(el.id) : el.localName + [...el.classList].slice(0,2).map(x=>"."+CSS.escape(x)).join("");
     const highlight = el => {
       overlay?.remove(); selected = el;
+      setSelectionName(el ? pickSelector(el) : "Nenhum elemento");
+      setDepth(0);
       if (!el) return;
       if (scroll()) el.scrollIntoView({behavior:"smooth",block:"center"});
       const r=el.getBoundingClientRect();
       overlay=document.createElement("div");
       overlay.style.cssText=`position:fixed;pointer-events:none;z-index:2147483646;outline:2px solid #a78bfa;background:#a78bfa33;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
       document.documentElement.append(overlay);
+    };
+    const moveSelection = direction => {
+      const next = direction === "parent" ? selected?.parentElement : direction === "child" ? selected?.firstElementChild : direction === "previous" ? selected?.previousElementSibling : selected?.nextElementSibling;
+      if (!next || own(next)) return;
+      highlight(next);
+      setSelector(pickSelector(next));
+      renderSource();
+    };
+    const traverse = level => {
+      if (!selected) return;
+      let node = selected;
+      for (let i = 0; i < level && node.parentElement; i++) node = node.parentElement;
+      if (!own(node)) {
+        overlay?.remove();
+        const r = node.getBoundingClientRect();
+        overlay = document.createElement("div");
+        overlay.style.cssText = `position:fixed;pointer-events:none;z-index:2147483646;outline:2px solid #a78bfa;background:#a78bfa33;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+        document.documentElement.append(overlay);
+        setDepth(level);
+        setSelectionName(pickSelector(node));
+      }
     };
     const renderSource = () => {
       if (!editorRoot || !open()) return;
@@ -81,7 +107,8 @@ export default {
           {["dom", "css", "network"].map(value => <button type="button" role="tab" aria-selected={tab() === value ? "true" : "false"} class={{ [styles.active]: tab() === value }} onClick={() => { setTab(value); queueMicrotask(renderSource); }}>{value.toUpperCase()}</button>)}
         </div>
         <div class={styles.tools}><input value={selector()} placeholder="CSS selector" aria-label="CSS selector" onInput={e => select(e.currentTarget.value)}/><button type="button" onClick={pick}>◎</button><button type="button" onClick={() => copy(selector())}>Copy</button></div>
-        <div class={styles.tools}><button type="button" onClick={() => { highlight(selected?.parentElement); setSelector(pickSelector(selected)); renderSource(); }}>↑</button><button type="button" onClick={() => { highlight(selected?.firstElementChild); if (selected) setSelector(pickSelector(selected)); renderSource(); }}>↓</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={event => setScroll(event.currentTarget.checked)}/> Scroll</label><button type="button" onClick={renderSource}>Refresh</button></div>
+        <div class={styles.tools}><button type="button" aria-label="Elemento pai" onClick={() => moveSelection("parent")}>↑</button><button type="button" aria-label="Primeiro filho" onClick={() => moveSelection("child")}>↓</button><button type="button" aria-label="Irmão anterior" onClick={() => moveSelection("previous")}>←</button><button type="button" aria-label="Próximo irmão" onClick={() => moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={event => setScroll(event.currentTarget.checked)}/> Scroll</label><button type="button" onClick={renderSource}>Refresh</button></div>
+        <div class={styles.hierarchy}><output class={styles.selection} title={selectionName()}>{selectionName()}</output><label for="inspector-depth">Nível {depth()}</label><input id="inspector-depth" aria-label="Subir na hierarquia DOM" type="range" min="0" max={INSPECTOR_CONFIG.maxHierarchyDepth} value={depth()} disabled={!selected} onInput={event => traverse(Number(event.currentTarget.value))}/></div>
         <div class={styles.editor} ref={el => { editorRoot = el; queueMicrotask(renderSource); }}/>
       </section>
     </Show>, { styles: [css] });
