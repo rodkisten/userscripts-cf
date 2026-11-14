@@ -102,14 +102,6 @@ export default {
       if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
       else setStatus("Elemento não localizado no snapshot");
     };
-    const locateInSource = () => {
-      if (!editor || !selected || tab() !== "dom") return;
-      const source = editor.state.doc.toString();
-      const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
-      const index = source.indexOf(marker);
-      if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
-      else setStatus("Elemento não localizado no snapshot");
-    };
     const renderSource = () => {
       if (!editorRoot || !open()) return;
       const mode=tab();
