@@ -1,21 +1,9 @@
+import dockStyles from "./rod-dock.module.css?inline";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
 
-const style = `
-:host{all:initial;color-scheme:dark;font:13px -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
-*{box-sizing:border-box}
-.launcher{pointer-events:auto;position:fixed;right:0;top:46%;z-index:2147483646;transform:translateY(-50%);border:1px solid #52525b;border-right:0;border-radius:18px 0 0 18px;background:#18181b;color:#fafafa;padding:14px 11px;box-shadow:0 8px 30px #0007;touch-action:none}
-.panel{pointer-events:auto;position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483646;width:min(360px,calc(100vw - 24px));max-height:min(72dvh,640px);display:flex;flex-direction:column;border:1px solid #3f3f46;border-radius:18px;background:#09090b;color:#fafafa;box-shadow:0 12px 45px #0009;overflow:hidden}
-.header{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #27272a;font-weight:650}
-.close{border:0;background:transparent;color:#a1a1aa;font-size:22px;padding:0 4px}
-.content{overflow-y:auto;min-height:0;padding:10px;overscroll-behavior:contain}
-.module{border:1px solid #27272a;border-radius:12px;margin:0 0 8px;overflow:hidden}
-.module-title{width:100%;text-align:left;background:#18181b;border:0;color:#fafafa;padding:12px;display:flex;justify-content:space-between;font-weight:600}
-.actions{padding:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;min-height:36px;padding:7px;text-align:left;overflow-wrap:anywhere}
-.manager-list{display:grid;gap:8px}.manager-item{border:1px solid #3f3f46;border-radius:12px;padding:10px;display:flex;align-items:center;gap:8px}.manager-details{flex:1;min-width:0}.manager-name{font-weight:600;overflow-wrap:anywhere}.manager-status{font-size:11px;color:#a1a1aa}.manager-input{width:100%;min-height:40px;border:1px solid #52525b;border-radius:8px;background:#18181b;color:white;padding:8px}.manager-toolbar{display:flex;gap:8px;margin-bottom:10px}.manager-toolbar button{flex:1}.manager-rules{display:grid;gap:8px;margin:10px 0}.manager-rule{display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}.manager-rule span{flex:1;min-width:0}.manager-checkbox{width:20px;height:20px}.action:focus-visible,.close:focus-visible,.module-title:focus-visible,.launcher:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
-`;
+
 
 type DockAction = { id: string; label: string; run: () => void };
 type DockModule = { id: string; name: string; actions: DockAction[] };
@@ -98,7 +86,7 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
   };
   const DockView = () => (
     <>
-      <style>{style}</style>
+      <style>{dockStyles}</style>
       <Show when={!open()}>
         <button class="launcher" style={{ top: `${position()}%` }} aria-label="Abrir Rod Dock"
           onClick={() => setOpen(true)}
