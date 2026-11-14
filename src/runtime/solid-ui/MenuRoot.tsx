@@ -3,6 +3,15 @@ import { mountSolidShadow } from "./shadow-mount";
 import { menuActions, menuState, type MenuEntry, type MenuField, type MenuValue } from "./menu-store";
 import styles, { css } from "./MenuRoot.module.css";
 
+function CustomField(props: { render: () => Node | null | undefined }) {
+  let container!: HTMLDivElement;
+  onMount(() => {
+    const node = props.render();
+    if (node) container.append(node);
+  });
+  return <div ref={container} />;
+}
+
 function Field(props: { menuId: string; field: MenuField }) {
   const value = () => menuState.values[props.menuId]?.[props.field.name];
   const change = (next: MenuValue) => menuActions.setValue(props.menuId, props.field.name, next);
@@ -25,6 +34,10 @@ function Field(props: { menuId: string; field: MenuField }) {
     : "text";
   return (
     <div class={styles.field}>
+      <Show when={type === "custom" && field.render}>
+        <CustomField render={field.render!} />
+      </Show>
+      <Show when={type !== "custom"}>
       <Show when={type !== "hidden" && type !== "checkbox" && type !== "switch"}>
         <label for={props.menuId + "-" + field.name}>{field.label ?? field.name}</label>
       </Show>
@@ -121,6 +134,7 @@ function Field(props: { menuId: string; field: MenuField }) {
           disabled={field.disabled}
           onInput={(event) => change(event.currentTarget.value)}
         />
+      </Show>
       </Show>
       <Show when={menuState.errors[props.menuId]?.[field.name]}>
         <span class={styles.error} role="alert">
