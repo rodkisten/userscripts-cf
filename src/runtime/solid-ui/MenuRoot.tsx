@@ -7,7 +7,15 @@ function CustomField(props: { render: () => Node | null | undefined }) {
   let container!: HTMLDivElement;
   onMount(() => {
     const node = props.render();
-    if (node) container.append(node);
+    if (!node) return;
+    const parent = node.parentNode;
+    const nextSibling = node.nextSibling;
+    container.append(node);
+    onCleanup(() => {
+      if (!parent) return;
+      if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
+      else parent.appendChild(node);
+    });
   });
   return <div ref={container} />;
 }
