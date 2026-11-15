@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createSignal, For, onCleanup } from 'solid-js';
 import { EditorState } from '@codemirror/state';
 import { EditorView, drawSelection } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
@@ -7,6 +7,7 @@ import { render } from 'solid-js/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
 import type { ControlOption } from '../src/runtime/solid-ui/form-controls/options';
+import { appendTwitterToken, parseTwitterSearch, removeTwitterToken } from '../src/runtime/solid-ui/form-controls/twitter-search';
 
 const options: ControlOption[] = [
   { value: 'filter:videos', label: 'Vídeos', group: 'Mídia' },
@@ -162,10 +163,17 @@ function App() {
           <textarea id="raw" rows="3" value={raw()} onInput={(event) => setRaw(event.currentTarget.value)} placeholder="filter:videos lang:pt typescript" />
           <div class="actions">
             <button type="button" onClick={() => setRaw([...selected(), ...tags()].join(' '))}>Gerar com filtros e tags</button>
+            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), 'filter:videos'))}>+ Vídeos</button>
+            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), '-filter:replies'))}>+ Sem respostas</button>
             <button type="button" onClick={() => void navigator.clipboard?.writeText(raw())}>Copiar</button>
           </div>
+          <div class="token-list" aria-label="Tokens da consulta">
+            <For each={parseTwitterSearch(raw())}>
+              {(token) => <button type="button" class={`token token-${token.kind}`} title={`Remover ${token.value}`} onClick={() => setRaw(removeTwitterToken(raw(), token))}>{token.value} ×</button>}
+            </For>
+          </div>
           <pre>{raw()}</pre>
-          <small>Parser bidirecional e syntax highlighting permanecem planejados.</small>
+          <small>Tokens sincronizados com a consulta raw. Clique em um token para removê-lo.</small>
         </section>
       </div>
     </main>
