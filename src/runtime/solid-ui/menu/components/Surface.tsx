@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
+import { createSignal, createMemo, For, Show, onCleanup } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import type {
   AnyRecord,
@@ -325,7 +325,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     destroy: () => finish('dismiss', undefined, 'api'),
   };
 
-  onMount(() => {
+  {
     props.onCreated?.(handle);
     registerSurface({
       id: props.id,
@@ -399,7 +399,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
         document.documentElement.style.overflow = '';
       }
     });
-  });
+  }
 
   // Bottom sheet drag-to-dismiss handlers
   let startY = 0;
