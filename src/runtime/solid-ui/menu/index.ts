@@ -18,15 +18,35 @@ export { Surface } from './components/Surface';
 export { RodMenuHost } from './components/RodMenuProvider';
 export { presets };
 
-let hostMounted = false;
+let hostContainer: HTMLElement | undefined;
+let disposeHost: (() => void) | undefined;
 
 function ensureHostMounted() {
-  if (hostMounted || typeof document === 'undefined') return;
-  hostMounted = true;
+  if (typeof document === 'undefined') {
+    throw new Error('[RodMenu] A DOM document is required to open a menu');
+  }
+  if (hostContainer?.isConnected && disposeHost) return;
+
+  // SPAs can replace documentElement children without a full page reload.
+  // Dispose the detached root and settle any handles before remounting.
+  if (disposeHost) {
+    closeAllSurfaces();
+    disposeHost();
+    disposeHost = undefined;
+  }
+  hostContainer?.remove();
   const container = document.createElement('div');
   container.id = 'rod-menu-solid-root';
   document.documentElement.appendChild(container);
-  render(() => RodMenuHost(), container);
+  try {
+    disposeHost = render(() => RodMenuHost(), container);
+    hostContainer = container;
+  } catch (error) {
+    container.remove();
+    hostContainer = undefined;
+    disposeHost = undefined;
+    throw error;
+  }
 }
 
 export const RodMenu = {
