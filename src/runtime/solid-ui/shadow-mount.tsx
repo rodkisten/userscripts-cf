@@ -48,6 +48,15 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   const host = options.target ? undefined : document.createElement("div");
   if (host) {
     host.dataset.userscriptsCfShadow = options.id ?? "";
+    // A fixed host must participate in the top-level stacking context. Styles
+    // inside its ShadowRoot cannot reliably raise the host above page overlays.
+    host.style.setProperty("position", "fixed", "important");
+    host.style.setProperty("inset", "0", "important");
+    host.style.setProperty("width", "0", "important");
+    host.style.setProperty("height", "0", "important");
+    host.style.setProperty("z-index", "2147483647", "important");
+    host.style.setProperty("pointer-events", "none", "important");
+    host.style.setProperty("visibility", "visible", "important");
     document.body.append(host);
   }
   const target = options.target ?? host!;
