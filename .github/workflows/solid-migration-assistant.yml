@@ -1,0 +1,111 @@
+name: Solid 2 migration assistant
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Analyze or apply safe transformations"
+        type: choice
+        options: [analyze, transform]
+        default: analyze
+      target:
+        description: "Project directory (relative to repository root)"
+        type: string
+        default: "."
+      format:
+        description: "Analyzer report format"
+        type: choice
+        options: [text]
+        default: text
+      commit_changes:
+        description: "Commit validated transformations to this branch"
+        type: boolean
+        default: true
+  push:
+    branches:
+      - feat/shared-event-bridge
+    paths:
+      - .github/workflows/solid-migration-assistant.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: solid-migration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: github.ref == 'refs/heads/feat/shared-event-bridge'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      MODE: ${{ inputs.mode || 'analyze' }}
+      TARGET: ${{ inputs.target || '.' }}
+      REPORT_FORMAT: ${{ inputs.format || 'agent' }}
+      COMMIT_CHANGES: ${{ inputs.commit_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Validate target path
+        shell: bash
+        run: |
+          target_path="$(realpath -m -- "$TARGET")"
+          case "$target_path" in
+            "$GITHUB_WORKSPACE"|"$GITHUB_WORKSPACE"/*) ;;
+            *) echo "::error::Target must be inside repository"; exit 1 ;;
+          esac
+          test -d "$target_path" || { echo "::error::Target directory missing"; exit 1; }
+      - name: Inspect published CLI capabilities
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/solid-migration"
+          npx --yes solid-migration-assistant@latest --help 2>&1 | tee "$RUNNER_TEMP/solid-migration/help.txt"
+      - name: Analyze Solid 2 migration
+        shell: bash
+        run: |
+          timeout 600s npx --yes solid-migration-assistant@latest --target "$TARGET" 2>&1 | tee "$RUNNER_TEMP/solid-migration/report.txt"
+      - name: Apply supported transformations
+        if: env.MODE == 'transform'
+        shell: bash
+        run: |
+          if ! grep -Eq '(^|[[:space:]])transform([[:space:]]|$)' "$RUNNER_TEMP/solid-migration/help.txt"; then
+            echo "::error::Installed solid-migration-assistant CLI does not advertise transform. Refusing unsupported invocation."
+            exit 1
+          fi
+          timeout 600s npx --yes solid-migration-assistant@latest transform --target "$TARGET" 2>&1 | tee "$RUNNER_TEMP/solid-migration/transform.txt"
+          git diff --check
+          git diff --stat
+      - name: Validate transformations
+        if: env.MODE == 'transform'
+        run: |
+          npm run typecheck
+          npm test
+      - name: Commit validated changes
+        if: env.MODE == 'transform' && env.COMMIT_CHANGES == 'true'
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No source changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u
+          git commit -m "refactor: apply validated Solid 2 migration"
+          git push origin HEAD:feat/shared-event-bridge
+      - name: Upload migration reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: solid-migration-report
+          path: ${{ runner.temp }}/solid-migration/
+          if-no-files-found: ignore
+          retention-days: 14

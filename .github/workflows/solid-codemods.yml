@@ -1,0 +1,116 @@
+name: Solid 2 codemods
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write changes (otherwise dry-run)"
+        type: boolean
+        default: false
+      properties:
+        description: "Legacy JSX properties to attributes (only Solid 1 code)"
+        type: boolean
+        default: false
+      classlist:
+        description: "Migrate classList to class"
+        type: boolean
+        default: true
+      array_map:
+        description: "Migrate JSX array.map to For"
+        type: boolean
+        default: true
+      commit:
+        description: "Commit changes only after successful validation"
+        type: boolean
+        default: true
+  push:
+    branches: [feat/shared-event-bridge]
+    paths:
+      - .github/workflows/solid-codemods.yml
+      - "src/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: solid-codemods-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  codemods:
+    if: github.ref == 'refs/heads/feat/shared-event-bridge'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run selected codemods and capture each exit status
+        shell: bash
+        env:
+          APPLY: ${{ github.event_name == 'push' && 'true' || inputs.apply && 'true' || 'false' }}
+          PROPERTIES: ${{ inputs.properties || 'false' }}
+          CLASSLIST: ${{ inputs.classlist == false && 'false' || 'true' }}
+          ARRAY_MAP: ${{ inputs.array_map == false && 'false' || 'true' }}
+        run: |
+          mkdir -p reports
+          failed=0
+          flags=()
+          if [[ "$APPLY" == "true" ]]; then flags+=(--write); fi
+          run_one() {
+            local label="$1" transform="$2"
+            echo "::group::$label"
+            set +e
+            npx --yes solid-codemod@latest "$transform" src "${flags[@]}" > "reports/$label.log" 2>&1
+            status=$?
+            set -e
+            cat "reports/$label.log"
+            echo "$label: exit $status" >> reports/status.txt
+            echo "::endgroup::"
+            if (( status != 0 )); then failed=1; fi
+          }
+          if [[ "$PROPERTIES" == "true" ]]; then run_one properties solid@v2/jsx-properties-to-attributes; fi
+          if [[ "$CLASSLIST" == "true" ]]; then run_one classlist solid@v2/jsx-classlist-to-class; fi
+          if [[ "$ARRAY_MAP" == "true" ]]; then run_one array-map solid@v2/jsx-array-map-to-for; fi
+          git diff --check || failed=1
+          git diff --stat
+          echo "CODEMOD_FAILED=$failed" >> "$GITHUB_ENV"
+          if (( failed != 0 )); then echo "::warning::One or more codemods failed; no automatic commit will be made"; fi
+      - name: Typecheck
+        if: github.event_name == 'push' || inputs.apply == true
+        continue-on-error: true
+        id: typecheck
+        run: npm run typecheck
+      - name: Tests
+        if: inputs.apply == true
+        continue-on-error: true
+        id: tests
+        run: npm test
+      - name: Commit only validated changes
+        if: (github.event_name == 'push' || (inputs.apply == true && inputs.commit == true)) && env.CODEMOD_FAILED == '0' && steps.typecheck.outcome == 'success' && steps.tests.outcome == 'success'
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u src
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "refactor: apply validated Solid 2 codemods"
+          git push origin HEAD:feat/shared-event-bridge
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## Solid 2 codemods' >> "$GITHUB_STEP_SUMMARY"
+          if test -f reports/status.txt; then cat reports/status.txt >> "$GITHUB_STEP_SUMMARY"; fi
+          echo "Typecheck: ${{ steps.typecheck.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tests: ${{ steps.tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: solid-codemods-report
+          path: reports/
+          if-no-files-found: ignore

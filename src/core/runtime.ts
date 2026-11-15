@@ -1,5 +1,6 @@
 import { createGMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
+import { createSharedEvents } from "../runtime/events/shared-events.js";
 import { matches, readScriptRules, SCRIPT_RULES_KEY } from "./script-manager.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
@@ -217,7 +218,8 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     });
 
     onDispose(() => domEvents.dispose());
-    const events = Object.freeze({ ...eventBus, dom: domEvents });
+    const sharedEvents = createSharedEvents({ host, signal: abort.signal });
+    const events = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEvents });
     
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;

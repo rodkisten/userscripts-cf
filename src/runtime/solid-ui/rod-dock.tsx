@@ -21,6 +21,15 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
   host.dataset.rodDock = "";
   const shadow = host.attachShadow({ mode: "open" });
   const [open, setOpen] = createSignal(false);
+  const [eventEntries, setEventEntries] = createSignal<Array<{ name: string; transport: string; timestamp: number }>>([]);
+  const onDiagnostic = (event: Event) => {
+    const detail = (event as CustomEvent<{ name?: string; transport?: string; timestamp?: number }>).detail;
+    if (!detail || typeof detail.name !== "string") return;
+    // Never retain the original detail payload in the Dock.
+    const entry = { name: detail.name, transport: detail.transport || "document", timestamp: detail.timestamp || Date.now() };
+    setEventEntries((items) => [entry, ...items].slice(0, 100));
+  };
+  document.addEventListener("rod-events:diagnostic", onDiagnostic);
   const [expanded, setExpanded] = createSignal<string | null>(null);
   const [entries, setEntries] = createSignal<DockModule[]>([...new Map((modules as DockModule[]).map(m => [m.id, m])).values()]);
   const [position, setPosition] = createSignal(46);
@@ -183,6 +192,14 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
               </section>
             )}</For>
             </Show>
+            <details class="module"><summary>Eventos compartilhados ({eventEntries().length})</summary>
+              <button class="action" onClick={() => setEventEntries([])}>Limpar histórico</button>
+              <div role="log" aria-label="Histórico de eventos compartilhados">
+                <For each={eventEntries()}>{(entry) => (
+                  <div class="event"><strong>{entry.name}</strong> <small>{entry.transport} · {new Date(entry.timestamp).toLocaleTimeString()}</small></div>
+                )}</For>
+              </div>
+            </details>
           </div>
         </section>
       </Show>
@@ -196,6 +213,7 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
     open: () => setOpen(true),
     close: () => setOpen(false),
     dispose() {
+      document.removeEventListener("rod-events:diagnostic", onDiagnostic);
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
       dispose();

@@ -16,12 +16,12 @@ interface TampermonkeyAPI {
   [key: string]: unknown;
 }
 
-interface ExtendedWindow extends Window & typeof globalThis {
+type ExtendedWindow = Window & typeof globalThis & {
   GM?: TampermonkeyAPI;
   GM_getValue?: NativeGetValue;
   GM_setValue?: NativeSetValue;
   GM_deleteValue?: NativeDeleteValue;
-}
+};
 
 // The only userscript-facing boundary for GM storage APIs.
 // Legacy callers retain their serialized JSON format during migration.
