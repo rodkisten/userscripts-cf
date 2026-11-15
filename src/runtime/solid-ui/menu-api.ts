@@ -24,6 +24,7 @@ export const menu = Object.freeze({
     return menu;
   },
   open(schema: LegacySchema) {
+    const { values, content, chrome, ...nativeSchema } = schema;
     const actions: RodMenuAction[] | undefined = schema.actions?.map((action) => ({
       id: action.id,
       label: action.label,
@@ -35,9 +36,9 @@ export const menu = Object.freeze({
       },
     }));
     return RodMenu.open({
-      ...schema,
-      description: schema.description ?? schema.content,
-      initialValues: schema.initialValues ?? schema.values,
+      ...nativeSchema,
+      description: schema.description ?? content,
+      initialValues: schema.initialValues ?? values,
       presentation: schema.presentation ?? (defaults.defaultPresentation as RodMenuSchema["presentation"]) ?? "bottom-sheet",
       actions,
     });
