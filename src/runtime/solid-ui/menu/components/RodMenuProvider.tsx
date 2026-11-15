@@ -30,6 +30,9 @@ export function spawnSurface<TValues extends AnyRecord = AnyRecord>(
     },
   ]);
 
+  if (!capturedHandle) {
+    throw new Error(`[RodMenu] Surface ${id} was not initialized synchronously`);
+  }
   return capturedHandle;
 }
 
