@@ -29,6 +29,7 @@ export function createStudioMenus(Studio) {
       id: "rodx-" + id,
       title,
       presentation: "bottom-sheet",
+      chrome: "bare",
       size: "lg",
       store: {
         persist: false,
@@ -43,13 +44,7 @@ export function createStudioMenus(Studio) {
           },
         },
       ],
-      actions: [
-        {
-          id: "close",
-          label: "Fechar",
-          role: "cancel",
-        },
-      ],
+      actions: [],
     });
     panels.set(id, handle);
     handle.result.finally(() => {
