@@ -44,4 +44,31 @@ describe("runtime graph analyzer", () => {
       await fs.rm(root, { recursive: true, force: true });
     }
   });
+  it("follows literal dynamic imports and CommonJS require calls", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-lazy-"));
+    try {
+      await fs.writeFile(path.join(root, "entry.ts"), 'export const lazy = () => import("./lazy.js"); const loaded = require("./required.js");');
+      await fs.writeFile(path.join(root, "lazy.ts"), 'export const open = (ctx) => ctx.menu.open();');
+      await fs.writeFile(path.join(root, "required.ts"), 'export const notify = (ctx) => ctx.toaster.success("ok");');
+      const result = await analyzeRuntimeGraph("entry.ts", { root });
+      expect(result.features).toEqual(["menu", "toaster"]);
+      expect(result.files).toEqual(["entry.ts", "lazy.ts", "required.ts"]);
+      expect(result.dynamic).toBe(false);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the full runtime for nonliteral lazy imports", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-dynamic-import-"));
+    try {
+      await fs.writeFile(path.join(root, "entry.ts"), 'export const lazy = (name) => import(name);');
+      const result = await analyzeRuntimeGraph("entry.ts", { root });
+      expect(result.dynamic).toBe(true);
+      expect(result.dynamicFiles).toEqual(["entry.ts"]);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
 });
