@@ -63,8 +63,7 @@ function DomHighlightOverlay(props: {
     height: number;
   } | null>(null);
 
-  createEffect(() => {
-    const current = props.target;
+  createEffect(() => props.target, (current) => {
     if (!current) {
       setRect(null);
       return;
