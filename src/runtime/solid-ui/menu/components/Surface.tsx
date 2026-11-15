@@ -216,7 +216,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
         reportError(err);
       }
       resolveResult(result);
-      unregisterSurface(props.id);
+      unregisterSurface(props.id, handle);
       props.onDestroy?.(props.id);
     }, 220);
   };
