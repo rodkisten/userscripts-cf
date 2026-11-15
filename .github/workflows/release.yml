@@ -46,8 +46,17 @@ jobs:
           BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
         run: |
           set -euo pipefail
-          npm version "$BUMP" --no-git-tag-version --ignore-scripts
-          VERSION="$(node -p 'require("./package.json").version')"
+          # Resume a release after a failed upload without incrementing twice.
+          LAST_SUBJECT="$(git log -1 --format=%s)"
+          CURRENT="$(node -p 'require("./package.json").version')"
+          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" ]] && ! gh release view "v$CURRENT" --json isDraft >/dev/null 2>&1; then
+            VERSION="$CURRENT"
+            echo "resume=true" >> "$GITHUB_OUTPUT"
+          else
+            npm version "$BUMP" --no-git-tag-version --ignore-scripts
+            VERSION="$(node -p 'require("./package.json").version')"
+            echo "resume=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
@@ -57,6 +66,7 @@ jobs:
         run: node --test tests/standalone-minify.test.js
       # Formatting is handled separately and must not block publishing.
       - name: Commit version to main
+        if: steps.version.outputs.resume != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
