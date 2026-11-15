@@ -17,4 +17,8 @@ describe("runtime feature selection", () => {
   it("ignores text and unrelated property access", () => {
     expect(analyzeRuntimeUsage('const text = "ctx.menu"; other.menu.open();').features).toEqual([]);
   });
+  it("parses TSX and JSX contexts without treating JSX markup as dynamic access", () => {
+    expect(analyzeRuntimeUsage("const view = <button onClick={() => ctx.menu.open({})}>Open</button>;", "widget.tsx")).toEqual({ features: ["menu"], dynamic: false });
+    expect(analyzeRuntimeUsage("const view = <button onClick={() => ctx.toaster.success(\"ok\")}>Open</button>;", "widget.jsx")).toEqual({ features: ["toaster"], dynamic: false });
+  });
 });
