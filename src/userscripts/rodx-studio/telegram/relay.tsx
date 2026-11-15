@@ -885,12 +885,8 @@ export function initializeDeckRelay() {
           else if (duplicate || siblings.length)
             notice("Relay respondeu, mas a entrega ainda não foi confirmada no D1.");
           else notice("Envio solicitado. Confira o status no relay.");
-          if (!force && confirmed.length && post.isVideo) {
-            // The D1 delivery check above is authoritative. An accepted HTTP response is not.
-            void XRepost.onTelegramConfirmed(post).catch((error) => {
-              console.warn("[RodX repost] Não foi possível preparar a publicação:", error.message);
-            });
-          }
+          // Telegram delivery must not launch the X repost/Relay composer.
+          // Reposting remains available only through an explicit user action.
           if (!force && conflicted.length) {
             // Verify exact destinations once more before offering a force operation.
             const reallySent = conflicted.filter((ch) => confirmed.includes(ch));
