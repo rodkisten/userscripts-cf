@@ -89,7 +89,10 @@ jobs:
                           import shutil
                           shutil.copyfileobj(source, output)
               print("::endgroup::")
-          print(f"Extracted {extracted} files into {relative}")
+          for archive in archives:
+              archive.unlink()
+              print(f"Removed ZIP: {archive.relative_to(root)}")
+          print(f"Extracted {extracted} files into {relative}; removed {len(archives)} ZIP archives")
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               output.write(f"archives={len(archives)}\n")
               output.write(f"files={extracted}\n")
@@ -112,6 +115,4 @@ jobs:
             - **Arquivos extraídos:** ${{ steps.extract.outputs.files }}
             - **Origem:** execução manual ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            Confira os arquivos extraídos e os checks antes de fazer merge.
-          add-paths: |
-            ${{ inputs.output_path }}/
+            Os ZIPs originais foram removidos neste PR após a extração.\n\n            Confira os arquivos extraídos e os checks antes de fazer merge.
