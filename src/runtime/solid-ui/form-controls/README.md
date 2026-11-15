@@ -22,3 +22,17 @@ RodMenu's existing `RodMenuField` includes app-specific media and diagnostic fie
 - [ ] Implement accessible Combobox / TagsInput
 - [ ] Add lazy Fuse.js, virtualized groups and Twitter Search adapter
 - [ ] Run typecheck, build and browser tests
+
+## SolidJS Combobox
+
+```tsx
+import { createSignal } from 'solid-js';
+import { Combobox } from './Combobox';
+
+const [value, setValue] = createSignal<string[]>([]);
+<Combobox id="twitter-filters" multiple grouped clearable
+  options={[{ value: 'filter:videos', label: 'Vídeos', group: 'Mídia' }]}
+  value={value()} onChange={(next) => setValue(Array.isArray(next) ? next : [next])} />;
+```
+
+The component supports controlled selection, multiple pills, grouped options, loading and clearable state. It is mounted by RodMenu's `TypeaheadSelect` compatibility wrapper. Remote fetching, Fuse.js, virtualization, custom tags and Twitter highlighting remain planned. The HTML playground is a behavior mock, not a SolidJS component harness yet.
