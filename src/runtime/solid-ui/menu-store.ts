@@ -1,4 +1,4 @@
-import { createStore } from "solid-js/store";
+import { createStore } from "./reactive-store";
 
 export type MenuValue = string | number | boolean | string[] | null;
 export interface MenuOption {
