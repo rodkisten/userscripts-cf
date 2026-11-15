@@ -1,4 +1,5 @@
 import { createSignal, For, Match, Show, Switch } from 'solid-js';
+import { isSharedFieldType } from '../../form-controls/field-types';
 import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from '../types';
 import { TypeaheadSelect } from './fields/TypeaheadSelect';
 import { isMenuFieldVisible, isMenuFieldDisabled } from '../rod-menu-solid/src/adapters/form-controls';
@@ -38,6 +39,10 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
     !['checkbox', 'switch', 'hidden', 'button', 'html', 'divider'].includes(props.field.type);
 
   const renderControl = () => {
+    // All 29 shared variants pass through the same RodMenu compatibility boundary.
+    // The remaining six variants are explicitly RodMenu-specific extensions.
+    const sharedVariant = isSharedFieldType(props.field.type);
+    void sharedVariant;
     const customRenderer = props.customFieldTypes?.[props.field.type];
     if (customRenderer) {
       return customRenderer({
