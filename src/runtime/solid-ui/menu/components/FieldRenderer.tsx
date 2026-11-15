@@ -1,7 +1,7 @@
 import { createSignal, For, Match, Show, Switch } from 'solid-js';
 import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from '../types';
 import { TypeaheadSelect } from './fields/TypeaheadSelect';
-import { isMenuFieldVisible, isMenuFieldDisabled } from '../adapters/form-controls';
+import { isMenuFieldVisible, isMenuFieldDisabled } from '../rod-menu-solid/src/adapters/form-controls';
 import {
   ChannelPickerControl,
   DebugJsonControl,
