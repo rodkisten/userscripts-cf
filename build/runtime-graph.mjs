@@ -9,11 +9,11 @@ async function resolveLocal(from, specifier) {
   if (!specifier.startsWith(".")) return null;
   const base = path.resolve(path.dirname(from), specifier);
   const candidates = [base];
-  for (const ext of extensions) candidates.push(base + ext);
   if (/\.(?:js|jsx|mjs)$/.test(base)) {
     const withoutExtension = base.replace(/\.(?:js|jsx|mjs)$/, "");
     for (const ext of extensions) candidates.push(withoutExtension + ext);
   }
+  for (const ext of extensions) candidates.push(base + ext);
   for (const ext of extensions) candidates.push(path.join(base, "index" + ext));
   for (const candidate of candidates) {
     try {
