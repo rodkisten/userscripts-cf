@@ -72,9 +72,21 @@ const targets = [
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
-const runtimeFeatureAudit = {};
+const runtimeFeatureAudit = { scripts: {}, targets: {} };
 for (const definition of definitions) {
-  runtimeFeatureAudit[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
+  runtimeFeatureAudit.scripts[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
+}
+for (const target of targets) {
+  const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
+  const features = [...new Set(scripts.flatMap((script) => script.features))].sort();
+  runtimeFeatureAudit.targets[target.id] = {
+    scripts: target.definitions.map(({ id }) => id),
+    features,
+    dynamic: scripts.some((script) => script.dynamic),
+    dynamicFiles: [...new Set(scripts.flatMap((script) => script.dynamicFiles))].sort(),
+    // This is an audit, not a claim that the current legacy runtime is tree-shaken.
+    treeShaken: false,
+  };
 }
 for (const target of targets) {
   const installers = [];
@@ -196,6 +208,8 @@ for (const target of targets) {
   // behavioral class identities. A dynamic selector blocks unsafe renaming.
   const references = analyzeClassReferences(source.slice(metadata.length));
   classAudit[target.id] = {
+    debugBytes: Buffer.byteLength(body),
+    debugGzipBytes: gzipSync(Buffer.from(body), { level: 9 }).byteLength,
     staticClasses: references.classes.length,
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
@@ -228,6 +242,8 @@ console.table(Object.entries(classAudit).map(([target, audit]) => ({
   target,
   bytes: audit.bytes,
   gzip: audit.gzipBytes,
+  debug: audit.debugBytes,
+  debugGzip: audit.debugGzipBytes,
   staticClasses: audit.staticClasses,
   dynamicReferences: audit.dynamicReferences,
 })));
