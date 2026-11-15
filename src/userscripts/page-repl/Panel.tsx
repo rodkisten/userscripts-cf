@@ -4,7 +4,11 @@ import { render } from "@solidjs/web";
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
 type HistoryItem = { code: string; at: string };
-const pretty = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value, null, 2));
+const pretty = (value: unknown) => {
+  if (typeof value === "string") return value;
+  try { return JSON.stringify(value, null, 2) ?? String(value); }
+  catch { return Object.prototype.toString.call(value); }
+};
 
 export function mountPanel(container: HTMLElement) {
   const [records, setRecords] = createSignal<RecordItem[]>([]);
@@ -27,7 +31,7 @@ export function mountPanel(container: HTMLElement) {
               {"×"}
             </button>
           </header>
-          <div class="repl-menu" hidden={!menuOpen()}>
+          <div class="repl-menu" hidden={!menuOpen()} role="group" aria-label="Opções avançadas do REPL">
           <nav class="tabs">
             <button data-tab="console" aria-selected="true">
               {"Console"}
@@ -35,10 +39,7 @@ export function mountPanel(container: HTMLElement) {
             <button data-tab="methods">{"Métodos"}</button>
             <button data-tab="history">{"Histórico"}</button>
           </nav>
-          </div>
-          <div class="view" data-view="console">
-            <div class="repl-settings">
-            <div class="toolbar execution-toolbar">
+          <div class="repl-menu-content">            <div class="toolbar execution-toolbar">
               <select aria-label="Método" data-method="">
                 <option value="auto">{"Automático · testa antes, executa uma vez"}</option>
               </select>
@@ -53,10 +54,7 @@ export function mountPanel(container: HTMLElement) {
               <button data-action="paste-code">Colar</button>
               <button data-action="validate">Validar</button>
             </div>
-            </div>
-            <div class="editor-wrap">
-              <div data-code-editor="" />
-            </div>
+
             <div class="options repl-settings">
               <label>
                 <input type="checkbox" data-raw="" />
@@ -78,7 +76,7 @@ export function mountPanel(container: HTMLElement) {
             </div>
             <p class="hint repl-settings" data-syntax="">
               {
-                "Await e última expressão retornam resultado. Use _, $, $$, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
+                "Await e última expressão retornam resultado. Use _, $, $, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
               }
             </p>
             <div class="row repl-settings">
@@ -105,6 +103,12 @@ export function mountPanel(container: HTMLElement) {
               <button data-action="run-all">{"Executar em todos"}</button>
               <button data-action="clear">{"Limpar saída"}</button>
               <button data-action="reset">{"Nova sessão"}</button>
+            </div>
+</div>
+          </div>
+          <div class="view" data-view="console">
+            <div class="editor-wrap">
+              <div data-code-editor="" />
             </div>
             <div class="output">
               <For each={records()}>
