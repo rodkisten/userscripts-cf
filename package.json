@@ -61,7 +61,7 @@
     "astring": "1.9.0",
     "eslint-scope": "9.1.2",
     "nanoid": "^5.1.6",
-    "solid-js": "2.0.0-rc.21"
+    "solid-js": "2.0.0-rc.22"
   },
   "version": "5.0.3"
 }
