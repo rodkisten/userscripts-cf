@@ -1,4 +1,4 @@
-import { createStore } from "solid-js/store";
+import { createStore } from "./reactive-store";
 
 export type MenuValue = string | number | boolean | string[] | null;
 export interface MenuOption {
@@ -27,7 +27,10 @@ export interface MenuField {
     | "date"
     | "time"
     | "color"
-    | "hidden";
+    | "hidden"
+    | "custom";
+  render?: () => Node | null | undefined;
+  chrome?: "bare" | "default";
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -51,6 +54,7 @@ export interface MenuEntry {
   id: string;
   title: string;
   content?: string;
+  size?: string;
   fields?: MenuField[];
   initialValues?: Record<string, MenuValue>;
   actions?: MenuAction[];
