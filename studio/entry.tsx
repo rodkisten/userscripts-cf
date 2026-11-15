@@ -37,7 +37,7 @@ render(() => {
     const selected = samples[sample()];
     const term = filter().trim().toLowerCase();
     if (!term || !selected || typeof selected !== "object" || selected instanceof Element) return selected;
-    return Object.fromEntries(Object.entries(selected).filter(([key, value]) => (key + " " + JSON.stringify(value)).toLowerCase().includes(term)));
+    return Object.fromEntries(Object.entries(selected).filter(([key, value]) => (key + " " + String(value instanceof Error ? value.message : typeof value === "object" ? Object.prototype.toString.call(value) : value)).toLowerCase().includes(term)));
   };
   return <div data-studio-inspector-revision={revision()}><ObjectInspector value={value()} options={{ ...inspectorOptions(), expandDepth: depth() }} /></div>;
 }, root);
