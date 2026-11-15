@@ -57,8 +57,16 @@ export async function bundleRuntime(root, definitions, options = {}) {
   });
   const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
   const chunks = output.filter((item) => item.type === "chunk");
-  if (chunks.length !== 1 || output.some((item) => item.type === "asset"))
-    throw Error("Use inline/raw CSS and bundle all dependencies");
+  if (chunks.length !== 1 || output.some((item) => item.type === "asset")) {
+    const unexpected = output.map((item) => ({
+      type: item.type,
+      fileName: item.fileName,
+      bytes: item.type === "asset" ? Buffer.byteLength(item.source || "") : Buffer.byteLength(item.code || ""),
+      imports: item.type === "chunk" ? item.imports : undefined,
+      dynamicImports: item.type === "chunk" ? item.dynamicImports : undefined,
+    }));
+    throw Error(`Userscript must be one self-contained JS chunk without CSS/assets. Output: ${JSON.stringify(unexpected, null, 2)}`);
+  }
   // Rolldown reports rendered module lengths after tree-shaking. These are
   // uncompressed contributions, not independently gzipped module sizes.
   if (typeof options.onBundleStats === "function") {

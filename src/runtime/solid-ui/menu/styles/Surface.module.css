@@ -39,7 +39,7 @@
   pointer-events: none;
 }
 
-.root[data-open="true"][data-stack-active="false"] .backdrop {
+.root[data-stack-active="false"] .backdrop {
   opacity: 0;
 }
 

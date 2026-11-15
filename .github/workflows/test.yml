@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -57,6 +58,11 @@ jobs:
       - name: "📦 Install locked dependencies"
         if: github.head_ref != 'test/migrate-to-vitest'
         run: npm ci --legacy-peer-deps
+      - name: "📚 Require Design System docs and playground for UI changes"
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: npm run check:design-system
       - name: "🧪 Run tests"
         run: npm test
       - uses: actions/upload-artifact@v4

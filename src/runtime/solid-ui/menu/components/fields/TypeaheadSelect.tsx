@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
+import { createSignal, createMemo, For, Show, onCleanup } from 'solid-js';
 import type { MultiSelectField, OptionItem, SelectField } from '../../types';
 import styles from '../../styles/Fields.module.css';
 
@@ -79,7 +79,7 @@ export function TypeaheadSelect(props: TypeaheadSelectProps) {
     }
   };
 
-  onMount(() => {
+  {
     const onDocPointerDown = (e: PointerEvent) => {
       if (!open() || !wrapRef) return;
       if (!e.composedPath().includes(wrapRef)) {
@@ -89,7 +89,7 @@ export function TypeaheadSelect(props: TypeaheadSelectProps) {
     };
     document.addEventListener('pointerdown', onDocPointerDown, true);
     onCleanup(() => document.removeEventListener('pointerdown', onDocPointerDown, true));
-  });
+  }
 
   return (
     <div

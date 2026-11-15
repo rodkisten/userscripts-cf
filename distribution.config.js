@@ -3,5 +3,5 @@
 export default {
   unified: { name: "RodX Studio — X/Twitter mobile-first", namespace: "https://rodx.local/userscripts" },
   repository: "rodkisten/userscripts-cf",
-  baseURL: process.env.USERSCRIPTS_BASE_URL || "https://userscripts-cf.kisten.workers.dev",
+  baseURL: process.env.USERSCRIPTS_BASE_URL || "https://userscripts.migos.club",
 };
