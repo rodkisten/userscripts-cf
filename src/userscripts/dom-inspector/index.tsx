@@ -3,8 +3,7 @@ import { observePageFetch, observePageXHR } from "../../runtime/network-intercep
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { htmlLanguage } from "@codemirror/lang-html";
-import { cssLanguage } from "@codemirror/lang-css";
-import { jsonLanguage } from "@codemirror/lang-json";
+import { javascriptLanguage } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import styles, { css } from "./Inspector.module.css";
 
@@ -113,7 +112,7 @@ export default {
         mode==="css" ? selected ? [...getComputedStyle(selected)].map(k=>k+": "+getComputedStyle(selected).getPropertyValue(k)+";").join("\n") : "Select an element first" :
         JSON.stringify(records(),null,2);
       const content = source.slice(0, INSPECTOR_CONFIG.maxSourceCharacters);
-      const language = mode === "dom" ? htmlLanguage : mode === "css" ? cssLanguage : jsonLanguage;
+      const language = mode === "dom" ? htmlLanguage : javascriptLanguage;
       if (editor && editor.dom.parentElement === editorRoot) {
         const effects = editorMode === mode ? [] : [syntax.reconfigure(language)];
         if (editor.state.doc.toString() !== content || effects.length) editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:content},effects});
