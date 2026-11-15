@@ -38,8 +38,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci --legacy-peer-deps
       - name: Skip superseded main revisions
         id: freshness
         if: github.ref == 'refs/heads/main'
@@ -53,6 +51,9 @@ jobs:
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Install locked dependencies
+        if: steps.freshness.outputs.skip != 'true'
+        run: npm ci --legacy-peer-deps
       - name: Select next version
         if: steps.freshness.outputs.skip != 'true'
         id: version
