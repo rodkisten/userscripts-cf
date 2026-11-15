@@ -1,8 +1,9 @@
-import {createMemo,createSignal,For,Show,type JSX} from "solid-js";
+import {createMemo,createSignal,For,Show} from "solid-js";
+import type { JSX } from "@solidjs/web";
 import {createEntrySource,getObjectPreview,getPrimitiveClassName,isObjectLike,normalizeOptions,safePrimitiveText,safeKeyText,isDomElement,getRectRelativeToWindow} from "./core";
 import {VirtualList} from "./VirtualList";
 import type {InspectorEntry,InternalRenderContext,ObjectInspectorProps} from "./types";
-import "./inspector.css";
+
 function Value(props:{value:unknown;context:InternalRenderContext}):JSX.Element{
  const v=props.value;
  if(!isObjectLike(v))return <span class={getPrimitiveClassName(v)}>{safePrimitiveText(v,props.context.quoteStrings)}</span>;
