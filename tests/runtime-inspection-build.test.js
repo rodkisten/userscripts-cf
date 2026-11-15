@@ -28,6 +28,17 @@ describe("inspectable build artifacts", () => {
     expect(audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)).toEqual(
       [...audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)].sort((a, b) => b - a)
     );
+    const editors = JSON.parse(await fs.readFile(path.join(dist, "editor-dependency-audit.json"), "utf8"));
+    expect(editors.schema).toBe(1);
+    for (const [target, stats] of Object.entries(editors.bundles)) {
+      const source = audit.bundles[target];
+      expect(source, target).toBeDefined();
+      const modules = Object.values(stats.families).flatMap((family) => family.modules);
+      expect(stats.totalEditorRenderedBytes).toBe(modules.reduce((sum, item) => sum + item.renderedBytes, 0));
+      for (const item of modules) {
+        expect(source.modules.some((module) => module.id === item.id && module.renderedBytes === item.renderedBytes)).toBe(true);
+      }
+    }
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
