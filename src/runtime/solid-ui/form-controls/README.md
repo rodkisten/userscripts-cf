@@ -56,3 +56,23 @@ Supports custom tags, suggestion selection, Enter/comma/semicolon creation, Back
 Use **TanStack Virtual** (https://tanstack.com/virtual/latest) for future large suggestion lists. Do not implement a custom virtualizer. For SolidJS v2, verify framework adapter compatibility before choosing the integration; use the core virtualizer if a compatible Solid adapter is unavailable. Include dynamic row measurement, keyboard scrolling, grouped options and mobile Shadow DOM tests.
 
 Playground follow-up: replace HTML mocks with a compiled SolidJS example so these props are exercised directly.
+
+## Async suggestions (SolidJS)
+
+```tsx
+<Combobox
+  id="remote-search"
+  options={[]}
+  source={async (query, { signal }) => {
+    const response = await fetch('/api/suggest?q=' + encodeURIComponent(query), { signal });
+    if (!response.ok) throw new Error('Suggestion request failed');
+    return (await response.json()) as ControlOption[];
+  }}
+  value={selected()}
+  onChange={(value) => setSelected(String(value))}
+/>
+```
+
+The async source receives an AbortSignal. Superseded requests are cancelled; loading, empty and error/retry states are displayed. Use stable source callbacks where possible. Async options are filtered by the shared loader after retrieval, so the endpoint should return candidates relevant to the query. This is not yet a debounced or cached loader.
+
+**Virtualization:** TanStack Virtual remains required for the later large-list integration; it is not implemented in this block.
