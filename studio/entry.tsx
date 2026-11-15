@@ -6,10 +6,23 @@ import { studioExamples, schemaForExample } from "./examples";
 import type { RodInspectorOptions } from "../src/runtime/solid-ui/object-inspector/types";
 import type { Presentation, RodMenuSchema } from "../src/runtime/solid-ui/menu/types";
 
-type InspectorSample = "response" | "dom" | "settings";
+type InspectorSample = "response" | "dom" | "settings" | "syntax";
 const samples: Record<InspectorSample, unknown> = {
   response: { ok: true, status: 200, data: { user: { id: 42, name: "Rod", roles: ["developer", "admin"] }, items: [{ id: "a", active: true }, { id: "b", active: false }] }, durationMs: 127 },
   dom: document.querySelector("main") ?? document.body,
+  syntax: (() => {
+    const circular: Record<string, unknown> = { label: "Circular" };
+    circular.self = circular;
+    return {
+      string: "Hello, syntax!", number: 42, bigint: 9007199254740993n,
+      boolean: true, nil: null, missing: undefined, symbol: Symbol("token"),
+      callable: function inspect() {}, array: [1, "two", false],
+      map: new Map([["key", 12]]), set: new Set(["one", "two"]),
+      date: new Date("2026-11-15T12:00:00Z"),
+      regexp: /syntax\s+highlight/gi,
+      error: new TypeError("Example error"), circular,
+    };
+  })(),
   settings: { theme: { accent: "#a78bfa", radius: 18 }, menu: { presentation: "bottom-sheet", size: "lg", scrollLock: true }, features: ["dock", "inspector", "menu"] },
 };
 const root = document.getElementById("tree");
