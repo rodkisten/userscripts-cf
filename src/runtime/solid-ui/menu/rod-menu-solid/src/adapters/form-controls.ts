@@ -6,7 +6,7 @@ import {
   transformFieldValue,
 } from '../../../../form-controls';
 import type { BaseField as FormBaseField, FieldRuntime } from '../../../../form-controls';
-import type { BaseField, RodMenuContext, RodMenuField } from '../types';
+import type { BaseField, RodMenuContext, RodMenuField } from '../../../types';
 
 /**
  * Bridge between legacy RodMenu field callbacks and the independent
