@@ -75,6 +75,7 @@ export function Combobox(props: ComboboxProps) {
       overscan: 6,
       onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
     });
+    virtualizer._willUpdate();
     virtualizer.measure();
   });
   const virtualRows = createMemo(() => {
@@ -123,6 +124,8 @@ export function Combobox(props: ComboboxProps) {
     }
   };
   onMount(() => {
+    const disposeVirtualizer = virtualizer._didMount();
+    onCleanup(disposeVirtualizer);
     const dismiss = (event: PointerEvent) => {
       if (root && !event.composedPath().includes(root)) { setOpen(false); setQuery(''); }
     };
