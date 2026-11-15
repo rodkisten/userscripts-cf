@@ -76,3 +76,31 @@ Playground follow-up: replace HTML mocks with a compiled SolidJS example so thes
 The async source receives an AbortSignal. Superseded requests are cancelled; loading, empty and error/retry states are displayed. Use stable source callbacks where possible. Async options are filtered by the shared loader after retrieval, so the endpoint should return candidates relevant to the query. This is not yet a debounced or cached loader.
 
 **Virtualization:** TanStack Virtual remains required for the later large-list integration; it is not implemented in this block.
+
+## TanStack Query integration
+
+Async suggestions now use `@tanstack/query-core` and `QueryObserver`, which avoids relying on a SolidJS 1-specific framework adapter while this project uses SolidJS 2 RC.
+
+- Requests use TanStack Query's AbortSignal and retry handling.
+- Cached suggestions are fresh for 30 seconds by default.
+- Pass a shared `QueryClient` and a unique `queryKey` when multiple controls should reuse cached results.
+- The `createAsyncOptions` helper accepts `{ queryClient, queryKey, staleTime, enabled }`.
+- No global provider is required when using the query-core adapter.
+
+```tsx
+import { QueryClient } from '@tanstack/query-core';
+import { createAsyncOptions } from './createAsyncOptions';
+
+const queryClient = new QueryClient();
+const suggestions = createAsyncOptions(
+  () => async (query, { signal }) => {
+    const response = await fetch('/api/suggest?q=' + encodeURIComponent(query), { signal });
+    if (!response.ok) throw new Error('Failed to fetch suggestions');
+    return response.json();
+  },
+  search,
+  { queryClient, queryKey: ['twitter', 'filters'], staleTime: 60_000 },
+);
+```
+
+**Build follow-up:** regenerate and commit `package-lock.json` using `npm install --package-lock-only` before CI; the manifest dependency has been added but the lockfile has not yet been updated. Validate TanStack Query against SolidJS 2 RC in the project typecheck and tests.
