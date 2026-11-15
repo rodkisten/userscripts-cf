@@ -387,3 +387,17 @@ pre {
 .repl-root .output { flex: 1 1 auto; min-height: 120px; overflow: auto; border-top: 1px solid #35445b; padding-top: 10px; }
 .repl-root .record pre { overflow-wrap: anywhere; }
 .repl-root .launcher { display: none !important; }
+
+/* Dropdown is an overlay: advanced controls never consume editor height. */
+.repl-root .repl-menu { max-height: min(72dvh, 580px); overflow-y: auto; overscroll-behavior: contain; }
+.repl-root .repl-menu-content { display: grid; gap: 8px; padding: 8px; }
+.repl-root .repl-menu-content .repl-settings { display: flex !important; flex-wrap: wrap; }
+.repl-root .repl-menu-content .hint { display: block !important; margin: 4px 0; }
+.repl-root .repl-menu-content .execution-toolbar { position: static; margin: 0; display: flex !important; }
+.repl-root .repl-menu-content .execution-toolbar select { flex-basis: 100%; }
+.repl-root .repl-menu-content .row { display: flex !important; }
+.repl-root .repl-menu-content .editor-actions { display: flex !important; }
+.repl-root .repl-menu-content .options { display: flex !important; }
+.repl-root .repl-menu-content .toolbar { display: flex !important; }
+.repl-root .panel > .view[hidden] { display: none !important; }
+.repl-root .panel > .view[data-view="console"]:not([hidden]) { display: flex; }
