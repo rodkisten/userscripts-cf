@@ -120,3 +120,11 @@ The hosted `/playground/form-controls.html` page now mounts the real `Combobox` 
 `npm run build:hosting` bundles the TSX entry with Vite and the SolidJS compiler into `playground/form-controls.js` and `playground/form-controls.css` assets embedded in the Cloudflare Worker. The hosting handler serves CSS with the proper MIME type.
 
 Every new control or behavior must be demonstrated in the playground alongside documentation. Production deployment and runtime tests are still required before considering this complete.
+
+## Busca fuzzy e virtualização
+
+O `Combobox` aceita `fuzzy`, `fuzzyThreshold` (padrão 0.35), `virtualize` e `virtualizeThreshold` (padrão 80). A busca local fuzzy usa Fuse.js, com índice recriado reativamente quando `options` muda. As fontes remotas continuam usando TanStack Query, sem refiltragem fuzzy no cliente.
+
+A virtualização é opt-in e usa `@tanstack/virtual-core` para listas planas. Listas agrupadas usam o renderer tradicional até que cabeçalhos virtuais sejam suportados. No Playground, habilite dataset de 1.500 opções, busca fuzzy e virtualização para testar o comportamento. Teclado usa `scrollToIndex` para trazer a opção ativa ao viewport.
+
+**Validação:** executar `npm install --package-lock-only --legacy-peer-deps` para atualizar o lockfile e depois `npm ci --legacy-peer-deps && npm run build:hosting && npm test`. O CI deve confirmar antes do merge.
