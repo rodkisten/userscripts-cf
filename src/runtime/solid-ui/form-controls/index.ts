@@ -17,3 +17,6 @@ export type { ComboboxProps } from './Combobox';
 
 export { TagsInput } from './TagsInput';
 export type { TagsInputProps } from './TagsInput';
+
+export { createAsyncOptions } from './createAsyncOptions';
+export type { AsyncOptionsState } from './createAsyncOptions';
