@@ -179,7 +179,7 @@ for (const target of targets) {
   const debugFile = `${target.id}.js`;
   await fs.writeFile(path.join(out, debugFile), body.endsWith("\n") ? body : body + "\n");
   let source = `${metadata}\n\n${body}`;
-  if (target.id === "standalone") {
+  {
     // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
     //
     // BLOCKED: Vite 8/Rolldown emitted JavaScript but no external sourcemap
@@ -200,12 +200,12 @@ for (const target of targets) {
       configFile: false,
       logLevel: "error",
       plugins: [{
-        name: "standalone-runtime-entry",
+        name: "userscript-runtime-minify",
         resolveId(id) {
-          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
+          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
         },
         load(id) {
-          if (id === "\0virtual:standalone-runtime") return body;
+          if (id === "\0virtual:userscript-runtime") return body;
         },
       }],
       build: {
@@ -213,14 +213,14 @@ for (const target of targets) {
         minify: "oxc",
         sourcemap: false,
         rolldownOptions: {
-          input: "virtual:standalone-runtime",
-          output: { format: "iife", name: "UserscriptsCFStandalone" },
+          input: "virtual:userscript-runtime",
+          output: { format: "iife", name: "UserscriptsCFBundle" },
         },
       },
     });
     const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
     const result = output.find((entry) => entry.type === "chunk");
-    if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
+    if (!result?.code) throw new Error(`Minification did not produce JavaScript for ${target.id}`);
     source = `${metadata}\n\n${result.code}\n`;
   }
   // Audit the emitted JS, including delegated event handlers, without changing
