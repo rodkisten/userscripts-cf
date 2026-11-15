@@ -141,7 +141,7 @@ export function VirtualList(props: VirtualListProps) {
     return Math.max(estimatedHeight(), Math.ceil(measured));
   };
 
-  createEffect(() => {
+  createEffect(() => bodyRef, () => {
     if (typeof ResizeObserver === "function") {
       rowObserver = new ResizeObserver((entries) => {
         if (!bodyRef) return;
@@ -184,7 +184,7 @@ export function VirtualList(props: VirtualListProps) {
 
     updateViewport(true);
     scheduleUpdate(true);
-  }, undefined);
+  });
 
   onCleanup(() => {
     if (rafId !== null) cancelAnimationFrame(rafId);
