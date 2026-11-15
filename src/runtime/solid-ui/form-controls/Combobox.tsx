@@ -3,6 +3,7 @@ import type { ControlOption } from './options';
 import { filterOptions, groupOptions } from './options';
 import type { OptionsSource } from './options';
 import { createAsyncOptions } from './createAsyncOptions';
+import type { QueryClient } from '@tanstack/query-core';
 import styles from './Combobox.module.css';
 
 export interface ComboboxProps {
@@ -10,6 +11,9 @@ export interface ComboboxProps {
   name?: string;
   options: readonly ControlOption[];
   source?: OptionsSource;
+  queryClient?: QueryClient;
+  queryKey?: readonly unknown[];
+  staleTime?: number;
   errorMessage?: string;
   value?: string | readonly string[] | null;
   multiple?: boolean;
@@ -34,13 +38,22 @@ export function Combobox(props: ComboboxProps) {
     props.multiple ? (Array.isArray(props.value) ? props.value.map(String) : []) :
       props.value == null || props.value === '' ? [] : [String(props.value)],
   ));
-  const remote = createAsyncOptions(() => props.source ?? props.options, query);
+  const remote = createAsyncOptions(
+    () => props.source ?? props.options,
+    query,
+    {
+      queryClient: props.queryClient,
+      queryKey: props.queryKey,
+      staleTime: props.staleTime,
+      enabled: () => Boolean(props.source) && open() && !props.disabled,
+    },
+  );
   const filtered = createMemo(() => props.source ? remote.options() : filterOptions(props.options, query()));
   const enabled = createMemo(() => filtered().filter((option) => !option.disabled));
   const loading = () => props.loading || (Boolean(props.source) && remote.loading());
   const displayed = () => {
     if (props.multiple || open()) return query();
-    return props.options.find((option) => selected().has(option.value))?.label ?? '';
+    return [...props.options, ...remote.options()].find((option) => selected().has(option.value))?.label ?? '';
   };
   const select = (option: ControlOption) => {
     if (props.disabled || props.readonly || option.disabled) return;
