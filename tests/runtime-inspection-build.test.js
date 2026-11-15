@@ -22,7 +22,9 @@ describe("inspectable build artifacts", () => {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
       expect(target.features).toEqual([...target.features].sort());
-      expect(target.treeShaken).toBe(false);
+      const hasDynamicAccess = target.scripts.some((id) => audit.scripts[id].dynamic);
+      expect(target.treeShaken).toBe(script.id !== "standalone" && !hasDynamicAccess);
+      expect(audit.bundles).toBeDefined();
       const expected = new Set(target.scripts.flatMap((id) => audit.scripts[id].features));
       expect(target.features).toEqual([...expected].sort());
     }
