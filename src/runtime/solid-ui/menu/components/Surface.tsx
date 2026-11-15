@@ -379,7 +379,8 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
       vv.addEventListener('scroll', syncViewport);
     }
 
-    requestAnimationFrame(() => {
+    const animationFrame = requestAnimationFrame(() => {
+      if (settled) return;
       setOpen(true);
       try {
         schema().onOpen?.(context);
@@ -390,6 +391,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     });
 
     onCleanup(() => {
+      cancelAnimationFrame(animationFrame);
       document.removeEventListener('keydown', onKeyDown, true);
       if (vv) {
         vv.removeEventListener('resize', syncViewport);
