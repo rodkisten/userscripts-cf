@@ -112,3 +112,11 @@ By default, each `createAsyncOptions` instance receives its own query-key namesp
 `tests/form-controls-options.test.js` covers normalization, grouping, filtering and cancellation in the headless options loader. TanStack Query observer integration, actual SolidJS rendering, and Safari behavior still require dedicated tests.
 
 **Merge blocker:** `package-lock.json` must be regenerated with `npm install --package-lock-only` and checked in before running `npm ci`. The lockfile has not been updated in this PR.
+
+## Live SolidJS playground
+
+The hosted `/playground/form-controls.html` page now mounts the real `Combobox` and `TagsInput` components from `playground/form-controls-app.tsx`. It includes a multiple/grouped Combobox, editable TagsInput, simulated asynchronous TanStack Query suggestions, disabled-state toggle, and Twitter search raw preview.
+
+`npm run build:hosting` bundles the TSX entry with Vite and the SolidJS compiler into `playground/form-controls.js` and `playground/form-controls.css` assets embedded in the Cloudflare Worker. The hosting handler serves CSS with the proper MIME type.
+
+Every new control or behavior must be demonstrated in the playground alongside documentation. Production deployment and runtime tests are still required before considering this complete.
