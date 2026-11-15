@@ -63,8 +63,7 @@ function DomHighlightOverlay(props: {
     height: number;
   } | null>(null);
 
-  createEffect(() => {
-    const current = props.target;
+  createEffect(() => props.target, (current) => {
     if (!current) {
       setRect(null);
       return;
@@ -98,12 +97,12 @@ function DomHighlightOverlay(props: {
       }, duration);
     }
 
-    onCleanup(() => {
+    return () => {
       active = false;
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (timerId !== null) clearTimeout(timerId);
-    });
-  }, undefined);
+    };
+  });
 
   return (
     <Show when={props.target && rect()}>
