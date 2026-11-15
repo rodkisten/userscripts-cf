@@ -7,10 +7,14 @@ export function createStore<T extends object>(initial: T): [
 ] {
   const [read, write] = createSignal<T>(initial, { equals: false });
   const wrap = (path: PropertyKey[]): unknown =>
-    new Proxy({}, {
+    new Proxy(Array.isArray(path.reduce<unknown>((v, k) => (v as Record<PropertyKey, unknown>)?.[k], read())) ? [] : {}, {
       get(_target, key) {
         if (key === "toJSON") return () => path.reduce<unknown>((v, k) => (v as Record<PropertyKey, unknown>)?.[k], read());
         const value = [...path, key].reduce<unknown>((v, k) => (v as Record<PropertyKey, unknown>)?.[k], read());
+        if (typeof value === "function") {
+          const owner = path.reduce<unknown>((v, k) => (v as Record<PropertyKey, unknown>)?.[k], read());
+          return value.bind(owner);
+        }
         return value !== null && typeof value === "object" ? wrap([...path, key]) : value;
       },
       ownKeys() {
