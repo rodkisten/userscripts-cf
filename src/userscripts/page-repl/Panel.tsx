@@ -1,4 +1,4 @@
-import { createSignal, For, onCleanup } from "solid-js";
+import { createSignal, For } from "solid-js";
 import { render } from "@solidjs/web";
 
 type RecordItem = { kind: string; title: string; value: unknown };
@@ -14,7 +14,7 @@ export function mountPanel(container: HTMLElement) {
   const callbacks = { method: (_id: string) => {}, history: (_code: string) => {} };
   const dispose = render(
     () => (
-      <div class="repl-root">
+      <div class="repl-root" classList={{ "menu-open": menuOpen() }}>
         <button class="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
         </button>
