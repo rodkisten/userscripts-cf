@@ -4,6 +4,12 @@ run-name: "🧪 Userscripts · ${{ github.head_ref || github.ref_name }} · ${{ 
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  # One running validation per PR branch; newer pushes cancel stale runs.
+  group: validate-userscripts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -16,14 +22,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - name: "🔎 Skip outdated branch commits"
+        id: fresh
+        shell: bash
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          LATEST="$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)"
+          CURRENT="$(git rev-parse HEAD)"
+          if [[ -n "$LATEST" && "$LATEST" == "$CURRENT" ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "Superseded by $LATEST; skipping stale validation." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/setup-node@v4
+        if: steps.fresh.outputs.latest == 'true'
         with:
           node-version: 22
           cache: npm
       - name: "⬆️ Use npm 11 (avoid npm 10 Arborist edgesOut bug)"
+        if: steps.fresh.outputs.latest == 'true'
         run: npm install --global npm@11
       - name: "🔧 Rebuild Vitest lockfile once"
-        if: github.event_name == 'pull_request' && github.head_ref == 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.fresh.outputs.latest == 'true' && github.event_name == 'pull_request' && github.head_ref == 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           node build/migrate-vitest.mjs
           rm -f package-lock.json
@@ -39,7 +63,7 @@ jobs:
       # Keep the lockfile synchronized on same-repository PRs. Never push to forks.
       # A follow-up PR run validates the committed lockfile with a clean npm ci.
       - name: "🔒 Synchronize npm lockfile"
-        if: github.event_name == 'pull_request' && github.head_ref != 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.fresh.outputs.latest == 'true' && github.event_name == 'pull_request' && github.head_ref != 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
           if ! git diff --quiet -- package-lock.json; then
@@ -50,9 +74,31 @@ jobs:
             git push origin "HEAD:${{ github.head_ref }}"
           fi
       - name: "📦 Install locked dependencies"
-        if: github.head_ref != 'test/migrate-to-vitest'
+        if: steps.fresh.outputs.latest == 'true' && github.head_ref != 'test/migrate-to-vitest'
         run: npm ci --legacy-peer-deps
+      - name: "📚 Require Design System docs and playground for UI changes"
+        if: steps.fresh.outputs.latest == 'true' && github.event_name == 'pull_request'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: npm run check:design-system
+      - name: "🔎 Recheck latest commit before tests"
+        if: steps.fresh.outputs.latest == 'true'
+        id: still_fresh
+        shell: bash
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          LATEST="$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)"
+          CURRENT="$(git rev-parse HEAD)"
+          if [[ "$LATEST" == "$CURRENT" ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "Newer commit detected; skipping tests." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: "🧪 Run tests"
+        if: steps.still_fresh.outputs.latest == 'true'
         run: npm test
       - uses: actions/upload-artifact@v4
         if: success()
