@@ -184,7 +184,7 @@ document.getElementById("inspectorReset")?.addEventListener("click", () => {
 /** The editor is loaded only by the Studio, never by the userscript inspector runtime. */
 const sourcePanel = document.createElement("section");
 sourcePanel.className = "inspector-source-panel";
-sourcePanel.innerHTML = '<div class="inspector-source-toolbar"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" aria-label="Código destacado"></div>';
+sourcePanel.innerHTML = '<div class="inspector-source-toolbar"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" aria-label="Código destacado"></div>';
 root.parentElement?.append(sourcePanel);
 
 function safeSource(value: unknown): string {
@@ -205,6 +205,7 @@ function safeSource(value: unknown): string {
 }
 
 let sourceText = "";
+let showStack = false;
 let updateSource: ((text: string) => void) | undefined;
 const sourceLanguage = document.getElementById("inspectorSourceLanguage") as HTMLSelectElement;
 const sourceHost = document.getElementById("inspectorSourceEditor");
@@ -233,12 +234,26 @@ async function loadSourceEditor() {
 }
 function refreshSource() {
   const selected = samples[sample()];
-  sourceText = selected instanceof Element ? selected.outerHTML : safeSource(selected);
+  const error = selected instanceof Error ? selected : selected && typeof selected === "object" && "error" in selected && selected.error instanceof Error ? selected.error : null;
+  sourceText = showStack && error ? (error.stack ?? error.message) : selected instanceof Element ? selected.outerHTML : safeSource(selected);
   updateSource?.(sourceText);
 }
 document.querySelectorAll<HTMLButtonElement>("[data-object]").forEach(button => button.addEventListener("click", refreshSource));
+document.getElementById("inspectorShowStack")?.addEventListener("click", () => { showStack = !showStack; refreshSource(); });
 document.getElementById("inspectorCopySource")?.addEventListener("click", () => navigator.clipboard?.writeText(sourceText));
 refreshSource();
 void loadSourceEditor().catch(error => {
   if (sourceHost) sourceHost.textContent = "CodeMirror unavailable: " + String(error);
 });
+
+const inspectorSourceStyle = document.createElement("style");
+inspectorSourceStyle.textContent = `
+.inspector-source-panel { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface2); min-width: 0; }
+.inspector-source-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; }
+.inspector-source-toolbar strong { flex: 1 1 180px; }
+.inspector-source-toolbar select, .inspector-source-toolbar button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--surface2); color: var(--ink); }
+#inspectorSourceEditor { max-height: 420px; overflow: auto; font-size: 12px; }
+#inspectorSourceEditor .cm-editor { min-height: 120px; }
+@media (max-width: 560px) { .inspector-source-toolbar strong { flex-basis: 100%; } #inspectorSourceEditor { max-height: 300px; } }
+`;
+document.head.append(inspectorSourceStyle);
