@@ -279,10 +279,16 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       return node;
     }
 
-    let store = stores.get(definition.id);
-    if (!store) {
-      store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
-      stores.set(definition.id, store);
+    // Initialize persistent storage only when a script actually uses ctx.storage.
+    // Context creation is frequent on SPA navigation; unused stores need not
+    // open a backend just because the runtime exposes the storage API.
+    function getStore() {
+      let store = stores.get(definition.id);
+      if (!store) {
+        store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
+        stores.set(definition.id, store);
+      }
+      return store;
     }
 
     const databases = new Map<string, any>();
@@ -303,21 +309,21 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
 
     const storage = Object.freeze({
       async get(key: string, fallback?: any) {
-        const value = await store.get(key);
+        const value = await getStore().get(key);
         if (value !== undefined) return value;
         const legacy = await bridge.call("get", { id: definition.id, key, fallback: undefined });
         if (legacy !== undefined) {
-          await store.set(key, legacy);
+          await getStore().set(key, legacy);
           return legacy;
         }
         return fallback;
       },
       async set(key: string, value: any) {
-        await store.set(key, value);
+        await getStore().set(key, value);
         await bridge.call("set", { id: definition.id, key, value });
       },
       async delete(key: string) {
-        await store.delete(key);
+        await getStore().delete(key);
         await bridge.call("delete", { id: definition.id, key });
       },
     });
