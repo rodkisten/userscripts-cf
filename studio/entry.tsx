@@ -180,3 +180,65 @@ document.getElementById("inspectorReset")?.addEventListener("click", () => {
     else (element as HTMLInputElement | HTMLSelectElement).value = value === undefined ? "" : String(value);
   });
 });
+
+/** The editor is loaded only by the Studio, never by the userscript inspector runtime. */
+const sourcePanel = document.createElement("section");
+sourcePanel.className = "inspector-source-panel";
+sourcePanel.innerHTML = '<div class="inspector-source-toolbar"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" aria-label="Código destacado"></div>';
+root.parentElement?.append(sourcePanel);
+
+function safeSource(value: unknown): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(value, (_key, item: unknown) => {
+    if (typeof item === "bigint") return String(item) + "n";
+    if (typeof item === "symbol") return String(item);
+    if (typeof item === "function") return String(item);
+    if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack };
+    if (item instanceof Map) return { type: "Map", entries: [...item.entries()] };
+    if (item instanceof Set) return { type: "Set", values: [...item.values()] };
+    if (typeof item === "object" && item !== null) {
+      if (seen.has(item)) return "[Circular]";
+      seen.add(item);
+    }
+    return item;
+  }, 2) ?? "undefined";
+}
+
+let sourceText = "";
+let updateSource: ((text: string) => void) | undefined;
+const sourceLanguage = document.getElementById("inspectorSourceLanguage") as HTMLSelectElement;
+const sourceHost = document.getElementById("inspectorSourceEditor");
+async function loadSourceEditor() {
+  if (!sourceHost) return;
+  const [{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }] = await Promise.all([
+    import("@codemirror/state"), import("@codemirror/view"), import("@codemirror/lang-javascript"),
+    import("@codemirror/language"), import("@codemirror/theme-one-dark"),
+  ]);
+  let view: InstanceType<typeof EditorView>;
+  const build = (text: string) => {
+    view?.destroy();
+    view = new EditorView({
+      parent: sourceHost,
+      state: EditorState.create({
+        doc: text,
+        extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false),
+          javascript({ typescript: sourceLanguage.value === "typescript" }),
+          syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark],
+      }),
+    });
+  };
+  updateSource = build;
+  build(sourceText);
+  sourceLanguage.addEventListener("change", () => build(sourceText));
+}
+function refreshSource() {
+  const selected = samples[sample()];
+  sourceText = selected instanceof Element ? selected.outerHTML : safeSource(selected);
+  updateSource?.(sourceText);
+}
+document.querySelectorAll<HTMLButtonElement>("[data-object]").forEach(button => button.addEventListener("click", refreshSource));
+document.getElementById("inspectorCopySource")?.addEventListener("click", () => navigator.clipboard?.writeText(sourceText));
+refreshSource();
+void loadSourceEditor().catch(error => {
+  if (sourceHost) sourceHost.textContent = "CodeMirror unavailable: " + String(error);
+});
