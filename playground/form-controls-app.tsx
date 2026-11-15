@@ -1,4 +1,8 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { EditorState } from '@codemirror/state';
+import { EditorView, drawSelection } from '@codemirror/view';
+import { javascript } from '@codemirror/lang-javascript';
+import { oneDark } from '@codemirror/theme-one-dark';
 import { render } from 'solid-js/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
@@ -13,6 +17,40 @@ const options: ControlOption[] = [
   { value: '-filter:replies', label: 'Sem respostas', group: 'Filtros' },
   { value: 'min_faves:100', label: '100+ curtidas', group: 'Engajamento' },
 ];
+
+function JsxPreview(props: { code: string }) {
+  let host!: HTMLDivElement;
+  let view: EditorView | undefined;
+  createEffect(() => {
+    const code = props.code;
+    if (!view) {
+      view = new EditorView({
+        state: EditorState.create({
+          doc: code,
+          extensions: [
+            javascript({ jsx: true, typescript: true }),
+            oneDark,
+            drawSelection(),
+            EditorState.readOnly.of(true),
+            EditorView.editable.of(false),
+            EditorView.lineWrapping,
+            EditorView.theme({
+              '&': { 'font-size': '13px', 'border-radius': '12px', overflow: 'hidden' },
+              '.cm-scroller': { 'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace' },
+              '.cm-content': { 'padding': '14px 0' },
+            }),
+          ],
+        }),
+        parent: host,
+      });
+    } else {
+      const previous = view.state.doc.toString();
+      if (previous !== code) view.dispatch({ changes: { from: 0, to: previous.length, insert: code } });
+    }
+  });
+  onCleanup(() => view?.destroy());
+  return <div ref={host} aria-label="Código JSX com syntax highlighting" />;
+}
 
 function App() {
   const [selected, setSelected] = createSignal<string[]>(['filter:videos']);
@@ -107,7 +145,7 @@ function App() {
             <button type="button" aria-pressed={activeExample() === 'tags'} onClick={() => setActiveExample('tags')}>TagsInput</button>
             <button type="button" onClick={() => void navigator.clipboard?.writeText(jsx())}>Copiar JSX</button>
           </div>
-          <pre><code>{jsx()}</code></pre>
+          <JsxPreview code={jsx()} />
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
