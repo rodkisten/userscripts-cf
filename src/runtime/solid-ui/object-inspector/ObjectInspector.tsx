@@ -103,7 +103,7 @@ function DomHighlightOverlay(props: {
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (timerId !== null) clearTimeout(timerId);
     });
-  });
+  }, undefined);
 
   return (
     <Show when={props.target && rect()}>
