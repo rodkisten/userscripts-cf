@@ -26,6 +26,7 @@ concurrency:
 
 jobs:
   release:
+    environment: production
     if: >-
       github.ref == 'refs/heads/main' &&
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
@@ -109,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in repository Actions secrets"
+            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment secrets"
             exit 1
           fi
           npm run deploy:cloudflare
