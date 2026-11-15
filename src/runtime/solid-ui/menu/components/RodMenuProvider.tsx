@@ -10,6 +10,7 @@ interface ActiveSurfaceEntry {
 }
 
 const [surfaces, setSurfaces] = createSignal<ActiveSurfaceEntry[]>([]);
+const activeHandles = new Map<string, RodMenuHandle<any>>();
 let idCounter = 0;
 
 export function spawnSurface<TValues extends AnyRecord = AnyRecord>(
@@ -17,7 +18,9 @@ export function spawnSurface<TValues extends AnyRecord = AnyRecord>(
 ): RodMenuHandle<TValues> {
   idCounter += 1;
   const id = schema.id || `rod-menu-${Date.now().toString(36)}-${idCounter.toString(36)}`;
-  let capturedHandle!: RodMenuHandle<TValues>;
+  // Never discard a live handle without settling its result.
+  activeHandles.get(id)?.close();
+  let capturedHandle: RodMenuHandle<TValues> | undefined;
 
   setSurfaces((prev) => [
     ...prev.filter((item) => item.id !== id),
@@ -26,23 +29,20 @@ export function spawnSurface<TValues extends AnyRecord = AnyRecord>(
       schema,
       onCreated: (h) => {
         capturedHandle = h;
+        activeHandles.set(id, h);
       },
     },
   ]);
 
   if (!capturedHandle) {
+    setSurfaces((prev) => prev.filter((item) => item.id !== id));
     throw new Error(`[RodMenu] Surface ${id} was not initialized synchronously`);
   }
   return capturedHandle;
 }
 
 export function closeAllSurfaces() {
-  for (const item of surfaces()) {
-    try {
-      // Unmount triggers cleanup
-      setSurfaces((prev) => prev.filter((s) => s.id !== item.id));
-    } catch {}
-  }
+  for (const handle of [...activeHandles.values()]) handle.close();
 }
 
 export function RodMenuHost() {
@@ -53,7 +53,10 @@ export function RodMenuHost() {
           id={entry.id}
           initialSchema={entry.schema}
           onCreated={entry.onCreated}
-          onDestroy={(id) => setSurfaces((prev) => prev.filter((s) => s.id !== id))}
+          onDestroy={(id) => {
+            activeHandles.delete(id);
+            setSurfaces((prev) => prev.filter((s) => s.id !== id));
+          }}
         />
       )}
     </For>
