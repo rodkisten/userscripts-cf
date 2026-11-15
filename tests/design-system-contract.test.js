@@ -20,6 +20,20 @@ describe("Rod UI Design System Studio contract", () => {
     expect(entry).toContain('RodMenu.open(');
     expect(entry).toContain('<ObjectInspector');
   });
+  it("offers searchable live examples backed by RodMenu schemas", () => {
+    const examples = read("studio/examples.ts");
+    const entry = read("studio/entry.tsx");
+    const page = read("hosting/design-system.html");
+    expect(examples).toContain("schemaForExample");
+    expect(examples).toContain("media-picker");
+    expect(examples).toContain("request-log");
+    expect(entry).toContain("RodMenu.open(schemaForExample(");
+    expect(page).toContain('id="examplesCatalog"');
+    expect(page).toContain('id="examplesSearch"');
+  });
+  it("uses the custom hostname as the canonical distribution URL", () => {
+    expect(read("distribution.config.js")).toContain("https://userscripts.migos.club");
+  });
   it("documents the mandatory feature update workflow", () => {
     const docs = read("studio/README.md");
     expect(docs).toContain("Mandatory feature documentation policy");
