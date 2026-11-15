@@ -11,3 +11,6 @@ export { normalizeOptions, filterOptions, groupOptions, createOptionsLoader } fr
 
 export { isFieldVisible, isFieldDisabled, resolveFieldValue, validateField, transformFieldValue } from './field-utils';
 export type { FieldRuntime } from './field-utils';
+
+export { Combobox } from './Combobox';
+export type { ComboboxProps } from './Combobox';
