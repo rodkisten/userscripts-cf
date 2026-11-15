@@ -334,7 +334,7 @@ export function safePreviewTokens(source: string): PreviewToken[] {
     else if (/^(true|false)$/.test(text)) type = "boolean";
     else if (text === "null") type = "null";
     else if (text === "undefined") type = "undefined";
-    else if (/^\\d|^(NaN|Infinity)$/.test(text)) type = "number";
+    else if (/^\d|^(NaN|Infinity)$/.test(text)) type = "number";
     else if (text === "ƒ") type = "function";
     else if (/^(Symbol)$/.test(text)) type = "symbol";
     else if (/^(Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError)$/.test(text)) type = "function";
