@@ -14,3 +14,6 @@ export type { FieldRuntime } from './field-utils';
 
 export { Combobox } from './Combobox';
 export type { ComboboxProps } from './Combobox';
+
+export { TagsInput } from './TagsInput';
+export type { TagsInputProps } from './TagsInput';
