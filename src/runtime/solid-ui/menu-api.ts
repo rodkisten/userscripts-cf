@@ -1,5 +1,22 @@
+import { openSolidDropdown } from "./SolidDropdown";
 import { RodMenu } from "./menu";
 import type { RodMenuSchema, RodMenuAction, AnyRecord } from "./menu/types";
+
+export interface DropdownItem {
+  label?: string;
+  type?: "item" | "separator" | "checkbox";
+  disabled?: boolean;
+  checked?: boolean;
+  children?: DropdownItem[];
+  onSelect?: () => unknown;
+  onCheckedChange?: (checked: boolean) => unknown;
+}
+export interface DropdownOptions {
+  id?: string;
+  trigger: HTMLElement;
+  items: DropdownItem[];
+  align?: "start" | "end";
+}
 
 type LegacyAction = {
   id: string;
@@ -19,6 +36,7 @@ let defaults: Record<string, unknown> = {};
 
 /** Compatibility facade: ctx.menu now delegates to RodMenu Solid 2. */
 export const menu = Object.freeze({
+  dropdown(options: DropdownOptions) { return openSolidDropdown(options); },
   configure(options: Record<string, unknown> = {}) {
     defaults = { ...defaults, ...options };
     return menu;
