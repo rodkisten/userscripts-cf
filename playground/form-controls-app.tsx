@@ -18,6 +18,38 @@ function App() {
   const [selected, setSelected] = createSignal<string[]>(['filter:videos']);
   const [tags, setTags] = createSignal<string[]>(['typescript']);
   const [disabled, setDisabled] = createSignal(false);
+  const [readonly, setReadonly] = createSignal(false);
+  const [multiple, setMultiple] = createSignal(true);
+  const [grouped, setGrouped] = createSignal(true);
+  const [clearable, setClearable] = createSignal(true);
+  const [placeholder, setPlaceholder] = createSignal('Pesquisar filtros…');
+  const [emptyMessage, setEmptyMessage] = createSignal('Nenhum filtro encontrado');
+  const [maxTags, setMaxTags] = createSignal(8);
+  const [activeExample, setActiveExample] = createSignal<'combobox' | 'tags'>('combobox');
+  const jsx = () => activeExample() === 'combobox'
+    ? `<Combobox
+  id="filters"
+  options={options}
+  value={selected()}
+  onChange={setSelected}
+  multiple={${multiple()}}
+  grouped={${grouped()}}
+  clearable={${clearable()}}
+  disabled={${disabled()}}
+  readonly={${readonly()}}
+  placeholder={${JSON.stringify(placeholder())}}
+  emptyMessage={${JSON.stringify(emptyMessage())}}
+/>`
+    : `<TagsInput
+  id="tags"
+  options={options}
+  value={tags()}
+  onChange={setTags}
+  disabled={${disabled()}}
+  readonly={${readonly()}}
+  maxTags={${maxTags()}}
+  placeholder={${JSON.stringify(placeholder())}}
+/>`;
   const [raw, setRaw] = createSignal('');
   const [asyncValue, setAsyncValue] = createSignal('');
   const source = async (query: string, { signal }: { signal: AbortSignal }) => {
@@ -37,13 +69,13 @@ function App() {
         <section class="card">
           <h2>Combobox múltiplo</h2>
           <label for="filters">Filtros da pesquisa</label>
-          <Combobox id="filters" options={options} value={selected()} onChange={(value) => setSelected(Array.isArray(value) ? value : [value])} multiple grouped clearable disabled={disabled()} />
+          <Combobox id="filters" options={options} value={multiple() ? selected() : (selected()[0] ?? '')} onChange={(value) => setSelected(Array.isArray(value) ? value : value ? [value] : [])} multiple={multiple()} grouped={grouped()} clearable={clearable()} disabled={disabled()} readonly={readonly()} placeholder={placeholder()} emptyMessage={emptyMessage()} />
           <pre>{JSON.stringify(selected(), null, 2)}</pre>
         </section>
         <section class="card">
           <h2>TagsInput</h2>
           <label for="tags">Termos personalizados</label>
-          <TagsInput id="tags" options={options} value={tags()} onChange={setTags} disabled={disabled()} placeholder="Digite e pressione Enter…" />
+          <TagsInput id="tags" options={options} value={tags()} onChange={setTags} disabled={disabled()} readonly={readonly()} maxTags={maxTags()} placeholder={placeholder()} />
           <pre>{JSON.stringify(tags(), null, 2)}</pre>
         </section>
         <section class="card">
@@ -56,7 +88,26 @@ function App() {
         <section class="card">
           <h2>Configurações</h2>
           <label class="toggle"><input type="checkbox" checked={disabled()} onChange={(event) => setDisabled(event.currentTarget.checked)} /> Desabilitar controles</label>
+          <label class="toggle"><input type="checkbox" checked={readonly()} onChange={(event) => setReadonly(event.currentTarget.checked)} /> Somente leitura</label>
+          <label class="toggle"><input type="checkbox" checked={multiple()} onChange={(event) => setMultiple(event.currentTarget.checked)} /> Seleção múltipla</label>
+          <label class="toggle"><input type="checkbox" checked={grouped()} onChange={(event) => setGrouped(event.currentTarget.checked)} /> Agrupar opções</label>
+          <label class="toggle"><input type="checkbox" checked={clearable()} onChange={(event) => setClearable(event.currentTarget.checked)} /> Permitir limpar</label>
+          <label for="playground-placeholder">Placeholder</label>
+          <input id="playground-placeholder" value={placeholder()} onInput={(event) => setPlaceholder(event.currentTarget.value)} />
+          <label for="playground-empty">Mensagem sem resultados</label>
+          <input id="playground-empty" value={emptyMessage()} onInput={(event) => setEmptyMessage(event.currentTarget.value)} />
+          <label for="playground-max-tags">Limite de tags: {maxTags()}</label>
+          <input id="playground-max-tags" type="range" min="1" max="20" value={maxTags()} onInput={(event) => setMaxTags(Number(event.currentTarget.value))} />
           <button type="button" onClick={() => { setSelected([]); setTags([]); setAsyncValue(''); }}>Limpar todos</button>
+        </section>
+        <section class="card wide">
+          <h2>JSX ao vivo</h2>
+          <div class="actions" role="group" aria-label="Exemplo de componente">
+            <button type="button" aria-pressed={activeExample() === 'combobox'} onClick={() => setActiveExample('combobox')}>Combobox</button>
+            <button type="button" aria-pressed={activeExample() === 'tags'} onClick={() => setActiveExample('tags')}>TagsInput</button>
+            <button type="button" onClick={() => void navigator.clipboard?.writeText(jsx())}>Copiar JSX</button>
+          </div>
+          <pre><code>{jsx()}</code></pre>
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
