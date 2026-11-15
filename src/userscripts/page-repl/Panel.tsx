@@ -1,6 +1,6 @@
 import { createSignal, For } from "solid-js";
 import { render } from "@solidjs/web";
-import { ObjectInspector } from "../../runtime/solid-ui/ObjectInspector";
+import { ObjectInspector } from "../../runtime/solid-ui/object-inspector/ObjectInspector";
 
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
