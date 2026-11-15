@@ -35,6 +35,7 @@ import type {
   RodInspectorPropertyKey,
 } from "./types";
 import { VirtualList } from "./VirtualList";
+import previewStyles, { css as previewCss } from "./Preview.module.css";
 
 
 interface HighlightTarget {
@@ -149,9 +150,10 @@ function PrimitiveNode(props: { value: unknown; quoteStrings: boolean }) {
 
 function PreviewTokens(props: { value: object; context: InternalRenderContext }) {
   const tokens = createMemo(() => safePreviewTokens(getObjectPreview(props.value, props.context.options)));
-  return <span class="rod-inspector__preview" data-highlight={props.context.options.syntaxHighlighting}>
+  return <span class={previewStyles.preview} data-highlight={props.context.options.syntaxHighlighting}>
+    <style>{previewCss}</style>
     <Show when={props.context.options.syntaxHighlighting} fallback={getObjectPreview(props.value, props.context.options)}>
-      <For each={tokens()}>{token => <span class={`rod-token--${token.type}`}>{token.text}</span>}</For>
+      <For each={tokens()}>{token => <span class={previewStyles[token.type]}>{token.text}</span>}</For>
     </Show>
   </span>;
 }
