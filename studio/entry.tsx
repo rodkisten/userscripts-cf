@@ -132,6 +132,7 @@ const inspectorControls: Array<{ key: keyof RodInspectorOptions; label: string; 
   { key: "unmountOnCollapse", label: "Desmontar ao recolher", kind: "boolean" },
   { key: "highlightDuration", label: "Duração do destaque (ms)", kind: "number", min: 0, max: 10000 },
   { key: "theme", label: "Tema", kind: "select" },
+  { key: "syntaxHighlighting", label: "Syntax highlighting", kind: "boolean" },
 ];
 const inspectorPanel = document.getElementById("inspectorAdvanced");
 if (inspectorPanel) {
