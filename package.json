@@ -62,7 +62,9 @@
     "eslint-scope": "9.1.2",
     "nanoid": "^5.1.6",
     "solid-js": "2.0.0-rc.21",
-    "@tanstack/query-core": "^5.90.0"
+    "@tanstack/query-core": "^5.90.0",
+    "fuse.js": "^7.1.0",
+    "@tanstack/virtual-core": "^3.13.0"
   },
   "version": "5.0.3"
 }
