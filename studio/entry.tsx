@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import sourceStyles, { css as sourceCss } from "./InspectorSource.module.css";
 import { render } from "@solidjs/web";
 import { ObjectInspector } from "../src/runtime/solid-ui/object-inspector";
 import { RodMenu } from "../src/runtime/solid-ui/menu";
@@ -183,8 +184,8 @@ document.getElementById("inspectorReset")?.addEventListener("click", () => {
 
 /** The editor is loaded only by the Studio, never by the userscript inspector runtime. */
 const sourcePanel = document.createElement("section");
-sourcePanel.className = "inspector-source-panel";
-sourcePanel.innerHTML = '<div class="inspector-source-toolbar"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" aria-label="Código destacado"></div>';
+sourcePanel.className = sourceStyles.panel;
+sourcePanel.innerHTML = '<div class="${sourceStyles.toolbar}"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" class="${sourceStyles.editor}" aria-label="Código destacado"></div>';
 root.parentElement?.append(sourcePanel);
 
 function safeSource(value: unknown): string {
@@ -247,13 +248,5 @@ void loadSourceEditor().catch(error => {
 });
 
 const inspectorSourceStyle = document.createElement("style");
-inspectorSourceStyle.textContent = `
-.inspector-source-panel { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface2); min-width: 0; }
-.inspector-source-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; }
-.inspector-source-toolbar strong { flex: 1 1 180px; }
-.inspector-source-toolbar select, .inspector-source-toolbar button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--surface2); color: var(--ink); }
-#inspectorSourceEditor { max-height: 420px; overflow: auto; font-size: 12px; }
-#inspectorSourceEditor .cm-editor { min-height: 120px; }
-@media (max-width: 560px) { .inspector-source-toolbar strong { flex-basis: 100%; } #inspectorSourceEditor { max-height: 300px; } }
-`;
-document.head.append(inspectorSourceStyle);
+inspectorSourceStyle.textContent = sourceCss;
+sourcePanel.prepend(inspectorSourceStyle);
