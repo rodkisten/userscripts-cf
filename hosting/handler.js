@@ -32,7 +32,7 @@ export function createHandler(assets, info) {
           body = assets[file];
           headers.set(
             "Content-Type",
-            file.endsWith(".html") ? "text/html; charset=utf-8" : file.endsWith(".svg") ? "image/svg+xml; charset=utf-8" : file.endsWith(".js")
+            file.endsWith(".html") ? "text/html; charset=utf-8" : file.endsWith(".css") ? "text/css; charset=utf-8" : file.endsWith(".svg") ? "image/svg+xml; charset=utf-8" : file.endsWith(".js")
               ? "application/javascript; charset=utf-8"
               : file.endsWith(".json")
                 ? "application/json; charset=utf-8"
