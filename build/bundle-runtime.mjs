@@ -38,6 +38,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
     __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
+    __ROD_FEATURE_UI__: JSON.stringify(enabled("ui")),
     __ROD_FEATURE_HTTP__: JSON.stringify(enabled("http") || enabled("interceptRequest") || enabled("interceptResponse")),
   };
   const result = await build({
