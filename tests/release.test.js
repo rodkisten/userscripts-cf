@@ -16,7 +16,7 @@ test("update metadata and downloads have matching versions and stable release UR
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   const { version } = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
   const expectedSums = [];
-  const files = [];
+  const files = ["manifest.json", "event-audit.json", "css-class-audit.json"];
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
     const meta = await fs.readFile(new URL(entry.metaFile, dist), "utf8");
@@ -28,19 +28,11 @@ test("update metadata and downloads have matching versions and stable release UR
     assert.ok(meta.includes(`// @updateURL    ${manifest.baseURL}/${entry.metaFile}`));
     assert.ok(meta.includes(`// @downloadURL  ${manifest.baseURL}/${entry.file}`));
     assert.equal(createHash("sha256").update(meta).digest("hex"), entry.metaSha256);
+    files.push(entry.file, entry.metaFile);
   }
-  // Match the build's recursive SHA256SUMS generation, including audit assets.
-  async function collectFiles(directory, prefix = "") {
-    const entries = await fs.readdir(directory, { withFileTypes: true });
-    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-      if (entry.name === "SHA256SUMS") continue;
-      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) await collectFiles(new URL(`${entry.name}/`, directory), relative);
-      else if (entry.isFile()) files.push(relative);
-    }
-  }
-  await collectFiles(dist);
-  for (const file of files) {
+  const iconEntries = await fs.readdir(new URL("icons/", dist), { withFileTypes: true });
+  files.push(...iconEntries.filter(entry => entry.isFile()).map(entry => "icons/" + entry.name));
+  for (const file of files.sort()) {
     const source = await fs.readFile(new URL(file, dist));
     expectedSums.push(`${createHash("sha256").update(source).digest("hex")}  ${file}`);
   }

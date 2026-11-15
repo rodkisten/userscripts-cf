@@ -1,7 +1,31 @@
-import { For, Show, onCleanup, onMount } from "solid-js";
+import { For, Show, onCleanup } from "solid-js";
 import { mountSolidShadow } from "./shadow-mount";
 import { menuActions, menuState, type MenuEntry, type MenuField, type MenuValue } from "./menu-store";
 import styles, { css } from "./MenuRoot.module.css";
+
+function CustomField(props: { render: () => Node | null | undefined }) {
+  let node: Node | null | undefined;
+  let parent: Node | null = null;
+  let nextSibling: Node | null = null;
+
+  onCleanup(() => {
+    if (!node || !parent) return;
+    if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
+    else parent.appendChild(node);
+  });
+
+  return (
+    <div
+      ref={(container) => {
+        node = props.render();
+        if (!node) return;
+        parent = node.parentNode;
+        nextSibling = node.nextSibling;
+        container.appendChild(node);
+      }}
+    />
+  );
+}
 
 function Field(props: { menuId: string; field: MenuField }) {
   const value = () => menuState.values[props.menuId]?.[props.field.name];
@@ -24,7 +48,11 @@ function Field(props: { menuId: string; field: MenuField }) {
     ? type
     : "text";
   return (
-    <div class={styles.field}>
+    <div class={field.chrome === "bare" ? styles.bareField : styles.field}>
+      <Show when={type === "custom" && field.render}>
+        <CustomField render={field.render!} />
+      </Show>
+      <Show when={type !== "custom"}>
       <Show when={type !== "hidden" && type !== "checkbox" && type !== "switch"}>
         <label for={props.menuId + "-" + field.name}>{field.label ?? field.name}</label>
       </Show>
@@ -122,6 +150,7 @@ function Field(props: { menuId: string; field: MenuField }) {
           onInput={(event) => change(event.currentTarget.value)}
         />
       </Show>
+      </Show>
       <Show when={menuState.errors[props.menuId]?.[field.name]}>
         <span class={styles.error} role="alert">
           {menuState.errors[props.menuId][field.name]}
@@ -133,15 +162,16 @@ function Field(props: { menuId: string; field: MenuField }) {
 function MenuDialog(props: { menu: MenuEntry }) {
   let dialog!: HTMLElement;
   let previousFocus: Element | null = null;
-  onMount(() => {
+  queueMicrotask(() => {
+    if (!dialog.isConnected) return;
     previousFocus =
       dialog.getRootNode() instanceof ShadowRoot
         ? (dialog.getRootNode() as ShadowRoot).activeElement
         : document.activeElement;
     dialog.focus();
-    onCleanup(() => {
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
-    });
+  });
+  onCleanup(() => {
+    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
   });
   const dismiss = () => {
     if (props.menu.dismissible !== false) menuActions.close(props.menu.id, "dismiss");
@@ -178,6 +208,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
         ref={dialog}
         class={styles.sheet}
         data-presentation={props.menu.presentation ?? "bottom-sheet"}
+        data-chrome={props.menu.chrome ?? "default"}
         role="dialog"
         aria-modal="true"
         aria-label={props.menu.title}
@@ -185,6 +216,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
         onKeyDown={onKeyDown}
         onClick={(event) => event.stopPropagation()}
       >
+        <Show when={props.menu.chrome !== "bare"}>
         <header class={styles.header}>
           <h2>{props.menu.title}</h2>
           <button
@@ -196,6 +228,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             ×
           </button>
         </header>
+        </Show>
         <Show when={props.menu.content}>
           <div class={styles.content}>{props.menu.content}</div>
         </Show>
@@ -205,6 +238,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             {menuState.errors[props.menu.id]._form}
           </p>
         </Show>
+        <Show when={props.menu.chrome !== "bare"}>
         <footer class={styles.actions}>
           <For each={props.menu.actions ?? []}>
             {(action) => (
@@ -218,6 +252,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             )}
           </For>
         </footer>
+        </Show>
       </section>
     </div>
   );

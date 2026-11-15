@@ -1,7 +1,7 @@
 import { createGMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { createSharedEvents } from "../runtime/events/shared-events.js";
-import { matchesRoute } from "./match.js";
+import { matches, readScriptRules, SCRIPT_RULES_KEY } from "./script-manager.js";
 import { createHttpClient } from "../runtime/http-client.js";
 import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
 import { createClipboardManager } from "../runtime/clipboard-manager.js";
@@ -9,16 +9,88 @@ import { createDomEngine } from "../runtime/dom-engine.js";
 import { rodLibraries } from "../runtime/rod-libraries.js";
 import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
 
-//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo
-function toast() {}
-function menu() {}
+// Tipos auxiliares e interfaces globais
+export interface ScriptDefinition {
+  id: string;
+  name: string;
+  match?: string | string[];
+  module: {
+    init: (ctx: ScriptContext) => void | (() => void) | Promise<void | (() => void)>;
+  };
+}
 
-export function createRuntime(definitions, bridge, host = window) {
+export interface DockAction {
+  id: string;
+  label: string;
+  run: () => void | Promise<void>;
+}
+
+export interface ScriptContext {
+  id: string;
+  events: Readonly<Record<string, any> & { dom: DomEventsEngine }>;
+  http: any;
+  interceptRequest: (handler: any) => void;
+  interceptResponse: (handler: any) => void;
+  gm: ReturnType<typeof createGMBridge>;
+  clipboard: (ReturnType<typeof createClipboardManager> & { open: () => void }) | null;
+  dom: ReturnType<typeof createDomEngine>;
+  db: (name?: string, options?: Record<string, any>) => any;
+  signal: AbortSignal;
+  storage: {
+    get(key: string, fallback?: any): Promise<any>;
+    set(key: string, value: any): Promise<void>;
+    delete(key: string): Promise<void>;
+  };
+  menu: any;
+  dock: {
+    register(actions: DockAction[]): void;
+  };
+  toaster: any;
+  readonly url: URL;
+  state: {
+    get: () => any;
+    set: (value: any) => void;
+    subscribe: (callback: (value: any) => void) => () => void;
+  };
+  onDispose: (callback: () => void | Promise<void>) => void;
+  listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions): void;
+  ui: {
+    readonly root: ShadowRoot;
+    readonly host: HTMLDivElement;
+    mount(node: Node): Node;
+    style(css: string): HTMLStyleElement;
+    registerStyles(...styles: any[]): () => void;
+    mountSolid(component: any, options?: Record<string, any>): () => void;
+  };
+  style(css: string): HTMLStyleElement;
+  pageStyle(css: string): HTMLStyleElement;
+  dispose(): Promise<void>;
+}
+
+interface DomEventsEngine {
+  add(target: EventTarget | null, type: string, callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  remove(target: EventTarget | null, type: string, callback: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  dispose(): void;
+}
+
+export interface RuntimeAPI {
+  ready: Promise<void>;
+  navigate: () => Promise<void>;
+  readonly active: string[];
+  dispose: () => Promise<void>;
+}
+
+//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo
+function toast(): void {}
+function menu(): void {}
+
+export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
   const rod = rodLibraries(host);
-  const stores = new Map();
+  const stores = new Map<string, any>();
   const clipboard = host.indexedDB ? createClipboardManager({ host }) : null;
-  if (clipboard) host.__RodClipboard = clipboard;
-  function openClipboardMenu() {
+  if (clipboard) (host as any).__RodClipboard = clipboard;
+
+  function openClipboardMenu(): void {
     if (!clipboard) return;
     const entries = clipboard.list().slice(0, 30);
     rod.menu.open({
@@ -26,32 +98,55 @@ export function createRuntime(definitions, bridge, host = window) {
       description: "Histórico local. Selecione um item para copiar novamente.",
       fields: [{ type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
         { type: "select", name: "item", label: "Itens recentes", searchable: true,
-          options: entries.map((item) => ({ value: item.id, label: item.text.slice(0, 90) })) }],
+          options: entries.map((item: any) => ({ value: item.id, label: item.text.slice(0, 90) })) }],
       actions: [
-        { id: "copy", label: "Copiar", handler: async (ctx) => clipboard.copy(ctx.values.item) },
+        { id: "copy", label: "Copiar", handler: async (ctx: any) => clipboard.copy(ctx.values.item) },
         { id: "read", label: "Ler clipboard", handler: () => clipboard.read() },
-        { id: "clear", label: "Excluir item", variant: "danger", handler: (ctx) => clipboard.remove(ctx.values.item) },
+        { id: "clear", label: "Excluir item", variant: "danger", handler: (ctx: any) => clipboard.remove(ctx.values.item) },
       ],
     });
   }
-  const clipboardModule = { id: "rod-clipboard", name: "Clipboard", actions: [{ id: "open", label: "📋 Histórico", run: openClipboardMenu }, { id: "read", label: "Ler clipboard", run: () => clipboard?.read() }] };
-  if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }));
-  const clipboardKeydown = (event) => {
+
+  const clipboardModule = { 
+    id: "rod-clipboard", 
+    name: "Clipboard", 
+    actions: [
+      { id: "open", label: "📋 Histórico", run: openClipboardMenu }, 
+      { id: "read", label: "Ler clipboard", run: () => clipboard?.read() }
+    ] 
+  };
+
+  if (clipboard) {
+    host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }));
+  }
+
+  const clipboardKeydown = (event: KeyboardEvent): void => {
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "v") {
-      event.preventDefault(); openClipboardMenu();
+      event.preventDefault(); 
+      openClipboardMenu();
     }
   };
-  host.document.addEventListener("keydown", clipboardKeydown, true);
-  const active = new Map();
-  const state = new Map();
-  const listeners = new Map();
-  const failures = new Map();
-  const undoHistory = [];
+
+  host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
+  
+  const rules = () => readScriptRules(host.localStorage);
+  const permitted = (definition: ScriptDefinition, url: string) => matches(definition, url, rules()[definition.id]);
+  const onRulesChange = () => { void navigate(); };
+
+  host.addEventListener("storage", onRulesChange);
+  host.document.addEventListener("rod-script-manager:change", onRulesChange);
+
+  const active = new Map<string, { definition: ScriptDefinition; context: ScriptContext }>();
+  const state = new Map<string, any>();
+  const listeners = new Map<string, Set<(value: any) => void>>();
+  const failures = new Map<string, string>();
+  const undoHistory: Array<() => void> = [];
+  
   let desiredURL = host.location.href;
-  let scheduled;
+  let scheduled: Promise<void> | null = null;
   let closed = false;
 
-  function publish(id, value) {
+  function publish(id: string, value: any): void {
     state.set(id, value);
     for (const callback of listeners.get(id) || []) {
       try {
@@ -62,14 +157,21 @@ export function createRuntime(definitions, bridge, host = window) {
     }
   }
 
-  function context(definition) {
+  function context(definition: ScriptDefinition): ScriptContext {
     const abort = new host.AbortController();
-    const cleanups = [];
-    const onDispose = (callback) => cleanups.push(callback);
-    const eventBus = createEventBus({ namespace: definition.id, signal: abort.signal, onDiagnostic: (diagnostic) => console.warn("[Userscripts CF events]", diagnostic) });
-    const domListeners = new Map();
-    const captureOf = (options) => typeof options === "boolean" ? options : !!options?.capture;
-    const domEvents = Object.freeze({
+    const cleanups: Array<() => void | Promise<void>> = [];
+    const onDispose = (callback: () => void | Promise<void>) => cleanups.push(callback);
+    
+    const eventBus = createEventBus({ 
+      namespace: definition.id, 
+      signal: abort.signal, 
+      onDiagnostic: (diagnostic: any) => console.warn("[Userscripts CF events]", diagnostic) 
+    });
+
+    const domListeners = new Map<EventTarget, Map<string, Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: any }>>>>();
+    const captureOf = (options?: boolean | AddEventListenerOptions) => typeof options === "boolean" ? options : !!options?.capture;
+    
+    const domEvents: DomEventsEngine = Object.freeze({
       add(target, type, callback, options) {
         if (!target || typeof target.addEventListener !== "function") throw new TypeError("Expected EventTarget");
         let types = domListeners.get(target);
@@ -78,21 +180,25 @@ export function createRuntime(definitions, bridge, host = window) {
         if (!handlers) types.set(type, (handlers = new Map()));
         let captures = handlers.get(callback);
         if (!captures) handlers.set(callback, (captures = new Map()));
+        
         const capture = captureOf(options);
         if (captures.has(capture)) return;
+        
         const once = typeof options === "object" && options?.once;
-        const listener = once
-          ? function (...args) {
+        const listener: EventListener = once
+          ? function (this: EventTarget, ...args: any[]) {
               domEvents.remove(target, type, callback, options);
               return typeof callback === "function"
-                ? callback.apply(this, args)
-                : callback.handleEvent(...args);
+                ? (callback as Function).apply(this, args)
+                : (callback as EventListenerObject).handleEvent(...(args as [Event]));
             }
-          : callback;
+          : (callback as EventListener);
+
         target.addEventListener(type, listener, options);
         captures.set(capture, { listener, options });
       },
       remove(target, type, callback, options) {
+        if (!target) return;
         const capture = captureOf(options);
         const handlers = domListeners.get(target)?.get(type);
         const captures = handlers?.get(callback);
@@ -110,15 +216,19 @@ export function createRuntime(definitions, bridge, host = window) {
         domListeners.clear();
       },
     });
+
     onDispose(() => domEvents.dispose());
     const sharedEvents = createSharedEvents({ host, signal: abort.signal });
     const events = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEvents });
-    let uiHost;
-    let uiRoot;
-    function ensureUIRoot() {
+    
+    let uiHost: HTMLDivElement | undefined;
+    let uiRoot: ShadowRoot | undefined;
+
+    function ensureUIRoot(): ShadowRoot {
       if (uiRoot?.isConnected) return uiRoot;
       const parent = host.document.body || host.document.documentElement;
       if (!parent) throw new Error("Document root is not available");
+      
       uiHost = host.document.createElement("div");
       uiHost.dataset.userscriptsCfUi = definition.id;
       uiHost.style.setProperty("all", "initial");
@@ -126,6 +236,7 @@ export function createRuntime(definitions, bridge, host = window) {
       uiHost.style.setProperty("z-index", "2147483000");
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
+      
       onDispose(() => {
         uiHost?.remove();
         uiHost = undefined;
@@ -133,22 +244,23 @@ export function createRuntime(definitions, bridge, host = window) {
       });
       return uiRoot;
     }
-    function addStyle(css, target) {
+
+    function addStyle(css: string, target: ParentNode): HTMLStyleElement {
       const node = host.document.createElement("style");
       node.textContent = String(css);
       target.append(node);
       onDispose(() => node.remove());
       return node;
     }
+
     let store = stores.get(definition.id);
     if (!store) {
       store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
       stores.set(definition.id, store);
     }
-    // Dedicated IndexedDB stores never silently fall back to localStorage or GM.
-    // Call ctx.db("history") to create a namespaced, lifecycle-managed RodStorage instance.
-    const databases = new Map();
-    function db(name = "default", options = {}) {
+
+    const databases = new Map<string, any>();
+    function db(name: string = "default", options: Record<string, any> = {}) {
       if (typeof name !== "string" || !name.trim() || name.includes("..")) {
         throw new TypeError("Database name must be a non-empty namespace segment");
       }
@@ -162,8 +274,9 @@ export function createRuntime(definitions, bridge, host = window) {
       onDispose(() => instance.close());
       return instance;
     }
+
     const storage = Object.freeze({
-      async get(key, fallback) {
+      async get(key: string, fallback?: any) {
         const value = await store.get(key);
         if (value !== undefined) return value;
         const legacy = await bridge.call("get", { id: definition.id, key, fallback: undefined });
@@ -173,22 +286,26 @@ export function createRuntime(definitions, bridge, host = window) {
         }
         return fallback;
       },
-      async set(key, value) {
+      async set(key: string, value: any) {
         await store.set(key, value);
         await bridge.call("set", { id: definition.id, key, value });
       },
-      async delete(key) {
+      async delete(key: string) {
         await store.delete(key);
         await bridge.call("delete", { id: definition.id, key });
       },
     });
+
     const gm = createGMBridge(host, definition.id);
     const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
     onDispose(() => http.dispose());
+    
     const interceptors = createNetworkInterceptors(http, { signal: abort.signal });
     onDispose(() => interceptors.dispose());
+    
     const dom = createDomEngine({ root: host.document, signal: abort.signal });
     onDispose(() => dom.dispose());
+
     return {
       id: definition.id,
       events,
@@ -203,7 +320,7 @@ export function createRuntime(definitions, bridge, host = window) {
       storage,
       menu: rod.menu,
       dock: Object.freeze({
-        register(actions) {
+        register(actions: DockAction[]) {
           const module = {
             id: definition.id,
             name: definition.name,
@@ -227,12 +344,15 @@ export function createRuntime(definitions, bridge, host = window) {
       },
       state: Object.freeze({
         get: () => state.get(definition.id),
-        set: (value) => publish(definition.id, value),
-        subscribe(callback) {
-          const set = listeners.get(definition.id) || new Set();
-          listeners.set(definition.id, set);
+        set: (value: any) => publish(definition.id, value),
+        subscribe(callback: (value: any) => void) {
+          let set = listeners.get(definition.id);
+          if (!set) {
+            set = new Set();
+            listeners.set(definition.id, set);
+          }
           set.add(callback);
-          const off = () => set.delete(callback);
+          const off = () => set!.delete(callback);
           onDispose(off);
           return off;
         },
@@ -250,21 +370,21 @@ export function createRuntime(definitions, bridge, host = window) {
         },
         get host() {
           ensureUIRoot();
-          return uiHost;
+          return uiHost!;
         },
-        mount(node) {
+        mount(node: Node) {
           ensureUIRoot().append(node);
           return node;
         },
-        style(css) {
+        style(css: string) {
           return addStyle(css, ensureUIRoot());
         },
-        registerStyles(...styles) {
+        registerStyles(...styles: any[]) {
           const release = registerShadowStyles(ensureUIRoot(), styles.flat());
           onDispose(release);
           return release;
         },
-        mountSolid(component, options = {}) {
+        mountSolid(component: any, options: Record<string, any> = {}) {
           const release = mountSolidShadow(component, {
             ...options,
             target: ensureUIRoot(),
@@ -273,12 +393,10 @@ export function createRuntime(definitions, bridge, host = window) {
           return release;
         },
       }),
-      // Isolated by default: styles here cannot match page DOM.
-      style(css) {
+      style(css: string) {
         return addStyle(css, ensureUIRoot());
       },
-      // Explicit opt-in for scripts that intentionally modify the website.
-      pageStyle(css) {
+      pageStyle(css: string) {
         return addStyle(css, host.document.head || host.document.documentElement);
       },
       async dispose() {
@@ -297,11 +415,11 @@ export function createRuntime(definitions, bridge, host = window) {
     };
   }
 
-  async function reconcile() {
+  async function reconcile(): Promise<void> {
     while (!closed) {
       const url = desiredURL;
       for (const [id, instance] of active) {
-        if (matchesRoute(instance.definition, url)) continue;
+        if (permitted(instance.definition, url)) continue;
         active.delete(id);
         await instance.context.dispose();
       }
@@ -310,7 +428,7 @@ export function createRuntime(definitions, bridge, host = window) {
         if (
           active.has(definition.id) ||
           failures.get(definition.id) === url ||
-          !matchesRoute(definition, url)
+          !permitted(definition, url)
         )
           continue;
         const ctx = context(definition);
@@ -331,7 +449,8 @@ export function createRuntime(definitions, bridge, host = window) {
       if (desiredURL === url) break;
     }
   }
-  function navigate() {
+
+  function navigate(): Promise<void> {
     if (closed) return Promise.resolve();
     desiredURL = host.location.href;
     if (!scheduled) {
@@ -343,21 +462,24 @@ export function createRuntime(definitions, bridge, host = window) {
     }
     return scheduled;
   }
-  for (const method of ["pushState", "replaceState"]) {
+
+  for (const method of ["pushState", "replaceState"] as const) {
     const original = host.history[method];
-    const wrapper = function (...args) {
+    const wrapper = function (this: History, ...args: Parameters<typeof original>) {
       const result = original.apply(this, args);
       void navigate();
       return result;
     };
-    host.history[method] = wrapper;
+    host.history[method] = wrapper as any;
     undoHistory.push(() => {
       if (host.history[method] === wrapper) host.history[method] = original;
     });
   }
+
   host.addEventListener("popstate", navigate);
   host.addEventListener("hashchange", navigate);
-  const api = {
+
+  const api: RuntimeAPI = {
     ready: navigate(),
     navigate,
     get active() {
@@ -365,10 +487,14 @@ export function createRuntime(definitions, bridge, host = window) {
     },
     async dispose() {
       closed = true;
-      host.document.removeEventListener("keydown", clipboardKeydown, true);
-      if (host.__RodClipboard === clipboard) delete host.__RodClipboard;
+      host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
+      if ((host as any).__RodClipboard === clipboard) delete (host as any).__RodClipboard;
       clipboard?.dispose();
-      if (clipboard) host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
+      if (clipboard) {
+        host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
+      }
+      host.removeEventListener("storage", onRulesChange);
+      host.document.removeEventListener("rod-script-manager:change", onRulesChange);
       host.removeEventListener("popstate", navigate);
       host.removeEventListener("hashchange", navigate);
       undoHistory.forEach((undo) => undo());
@@ -383,5 +509,6 @@ export function createRuntime(definitions, bridge, host = window) {
       bridge.dispose?.();
     },
   };
+
   return api;
 }

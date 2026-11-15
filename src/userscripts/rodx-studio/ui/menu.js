@@ -3,13 +3,11 @@ export function createStudioMenus(Studio) {
   const panels = new Map();
   function library() {
     if (api) return api;
-    const external = typeof RodMenu !== "undefined" ? RodMenu : globalThis.RodMenu;
-    if (!external || typeof external.open !== "function" || typeof external.configure !== "function") {
-      throw new Error(
-        "RodMenu indisponível. Verifique o carregamento do @require no gerenciador de userscripts.",
-      );
+    const runtimeMenu = Studio.ctx?.menu;
+    if (!runtimeMenu?.open) {
+      throw new Error("ctx.menu indisponível: inicialize o RodX pelo runtime.");
     }
-    api = external;
+    api = runtimeMenu;
     api.configure({
       autoLoadDependencies: false,
       toasterErrors: false,
@@ -31,6 +29,7 @@ export function createStudioMenus(Studio) {
       id: "rodx-" + id,
       title,
       presentation: "bottom-sheet",
+      chrome: "bare",
       size: "lg",
       store: {
         persist: false,
@@ -45,13 +44,7 @@ export function createStudioMenus(Studio) {
           },
         },
       ],
-      actions: [
-        {
-          id: "close",
-          label: "Fechar",
-          role: "cancel",
-        },
-      ],
+      actions: [],
     });
     panels.set(id, handle);
     handle.result.finally(() => {

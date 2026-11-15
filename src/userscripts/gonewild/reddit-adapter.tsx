@@ -112,7 +112,7 @@ export function mountReddit(ctx: any, bridge: any) {
         clear={clear}
       />
     ),
-    { id: "gws-shell", shadow: true },
+    { id: "gws-shell", shadow: true, styles: [css] },
   );
   let root: ReturnType<typeof mountPoint> | undefined;
   const setHidden = (node: Element, wanted: boolean) => {

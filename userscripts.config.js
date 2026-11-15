@@ -66,7 +66,6 @@ export default [
       "GM_xmlhttpRequest",
       "GM.xmlHttpRequest",
     ],
-    requires: ["https://rod.migos.club/menu/dist/menu.iife.min.js"],
     connect: ["xtelegram-cf.migos.club"],
   },
 
@@ -94,7 +93,6 @@ export default [
     ],
     requires: [
       "https://code.migos.club/api/cdn?package=@videojs/cdn@10.3.0/video.js%20(provider:jsdelivr)",
-      "https://rod.migos.club/menu/dist/menu.iife.min.js",
     ],
     connect: [
       "xtelegram-cf.migos.club",

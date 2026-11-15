@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
-import styles from "./GitHub.module.css";
+import styles, { css } from "./GitHub.module.css";
 import { materialIcon } from "./material-icons.ts";
 
 type Favorite = { name: string; url: string };
@@ -298,7 +298,7 @@ export function mountGitHubDashboard(ctx: any) {
         </div>
       </Show>
     </section>
-  ));
+  ), { shadow: true, styles: [css] });
   const navigate = () => { void load(); };
   // Dashboard is opened from its own compact launcher. Avoid duplicate
   // GM commands: the shared runtime already mirrors them into Rod Dock.
