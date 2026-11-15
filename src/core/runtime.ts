@@ -1,13 +1,17 @@
-import { createGMBridge } from "../runtime/gm-bridge.js";
+import type { createGMBridge } from "../runtime/gm-bridge.js";
+import { createGMFeature } from "../runtime/modular/features/gm.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { createSharedEvents } from "../runtime/events/shared-events.js";
 import { matches, readScriptRules, SCRIPT_RULES_KEY } from "./script-manager.js";
-import { createHttpClient } from "../runtime/http-client.js";
-import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
-import { createClipboardManager } from "../runtime/clipboard-manager.js";
-import { createDomEngine } from "../runtime/dom-engine.js";
-import { rodLibraries } from "../runtime/rod-libraries.js";
-import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
+import { createHttpFeature } from "../runtime/modular/features/http.js";
+import type { createClipboardManager } from "../runtime/clipboard-manager.js";
+import { createClipboardFeature } from "../runtime/modular/features/clipboard.js";
+import type { createDomEngine } from "../runtime/dom-engine.js";
+import { createDomFeature } from "../runtime/modular/features/dom.js";
+import { createMenuFeature } from "../runtime/modular/features/menu.js";
+import { createToasterFeature } from "../runtime/modular/features/toaster.js";
+import { createStorageFeature } from "../runtime/modular/features/storage.js";
+import { createUIFeature } from "../runtime/modular/features/ui.js";
 
 // Tipos auxiliares e interfaces globais
 export interface ScriptDefinition {
@@ -85,9 +89,10 @@ function toast(): void {}
 function menu(): void {}
 
 export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
-  const rod = rodLibraries(host);
+  const rod = { menu: createMenuFeature(), toaster: createToasterFeature(host), storage: createStorageFeature(host) };
+  const { mountSolidShadow, registerShadowStyles } = createUIFeature();
   const stores = new Map<string, any>();
-  const clipboard = host.indexedDB ? createClipboardManager({ host }) : null;
+  const clipboard = createClipboardFeature(host);
   if (clipboard) (host as any).__RodClipboard = clipboard;
 
   function openClipboardMenu(): void {
@@ -303,22 +308,19 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       },
     });
 
-    const gm = createGMBridge(host, definition.id);
-    const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
-    onDispose(() => http.dispose());
-    
-    const interceptors = createNetworkInterceptors(http, { signal: abort.signal });
-    onDispose(() => interceptors.dispose());
-    
-    const dom = createDomEngine({ root: host.document, signal: abort.signal });
+    const gm = createGMFeature(host, definition.id);
+    const network = createHttpFeature(host, abort.signal, storage, definition.id);
+    onDispose(() => network.dispose());
+
+    const dom = createDomFeature(host, abort.signal);
     onDispose(() => dom.dispose());
 
     return {
       id: definition.id,
       events,
-      http: Object.freeze({ ...http, request: interceptors.request }),
-      interceptRequest: interceptors.interceptRequest,
-      interceptResponse: interceptors.interceptResponse,
+      http: network.http,
+      interceptRequest: network.interceptRequest,
+      interceptResponse: network.interceptResponse,
       gm,
       clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
