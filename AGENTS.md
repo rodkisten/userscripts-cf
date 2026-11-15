@@ -2,6 +2,21 @@
 
 These instructions apply to every agent, automation, and code contributor working in this repository.
 
+## Repository-wide defaults: Solid-first and context-first (MANDATORY)
+
+**Everything interactive in this repository is SolidJS by default.** Do not introduce React, Vue, imperative DOM-rendered menus, manually assembled widgets, or another UI framework unless the user explicitly requests it. Use SolidJS components, signals/stores, and CSS Modules, including for shared runtime UI such as dropdowns, dialogs, inspectors, Dock controls, and toasts.
+
+**Every feature must use the existing `ctx` contract first.** Before changing code, inspect the relevant helper and its usage, then prefer the public context API for events, elements/DOM, HTTP, request/response interception, storage, clipboard, menus, UI mounting, and cleanup. Do not introduce parallel helpers or bypass `ctx` for convenience.
+
+- Events: `ctx.events` for local events, `ctx.events.shared` for cross-userscript events, and `ctx.listen`/`ctx.events.dom` for browser listeners. Register disposal for all subscriptions.
+- Elements and DOM: `ctx.dom` for queries, observation and element interaction. Avoid ad-hoc MutationObservers and polling in features.
+- HTTP: `ctx.http` for requests and `ctx.interceptRequest`/`ctx.interceptResponse` for interception. Never patch fetch or XHR separately in a feature.
+- UI: SolidJS and CSS Modules, mounted via `ctx.ui.mountSolid` and styled via `ctx.ui.registerStyles`. Shared UI must be reusable from `ctx` (for example `ctx.menu.dropdown`), not implemented again inside individual userscripts.
+- Lifecycle: `ctx.signal` and `ctx.onDispose`; do not leave timers, observers, listeners or mounted UI orphaned.
+- Existing native APIs inside shared runtime helpers are permitted when implementing the abstraction; do not copy that low-level code into feature modules.
+
+**Pre-commit gate:** inspect helpers, confirm SolidJS, verify no duplicated browser APIs, format, typecheck, test, and build. Report any check that could not be run. Never claim validation without evidence.
+
 ## Context-first rule: MUST
 
 Before writing any userscript feature, inspect `src/core/runtime.js`, `src/runtime/`, and the relevant existing integration. Use the public `ctx` helpers instead of introducing duplicate browser APIs or ad-hoc infrastructure. Do not bypass an existing helper just because direct browser code is shorter.
