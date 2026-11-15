@@ -8,3 +8,6 @@ export type {
 } from './fields';
 export type { ControlOption, OptionsSource, OptionGroup } from './options';
 export { normalizeOptions, filterOptions, groupOptions, createOptionsLoader } from './options';
+
+export { isFieldVisible, isFieldDisabled, resolveFieldValue, validateField, transformFieldValue } from './field-utils';
+export type { FieldRuntime } from './field-utils';
