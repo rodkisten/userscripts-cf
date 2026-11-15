@@ -1,0 +1,10 @@
+.preview { color: var(--rod-inspector-muted); }
+.preview[data-highlight="true"] .key { color: var(--rod-inspector-key); }
+.preview[data-highlight="true"] .meta { color: var(--rod-inspector-subtle); }
+.preview[data-highlight="true"] .function { color: var(--rod-inspector-function); }
+.preview[data-highlight="true"] .string { color: var(--rod-inspector-string); }
+.preview[data-highlight="true"] .number { color: var(--rod-inspector-number); }
+.preview[data-highlight="true"] .boolean { color: var(--rod-inspector-boolean); }
+.preview[data-highlight="true"] .null { color: var(--rod-inspector-null); }
+.preview[data-highlight="true"] .undefined { color: var(--rod-inspector-subtle); }
+.preview[data-highlight="true"] .symbol { color: var(--rod-inspector-symbol); }
