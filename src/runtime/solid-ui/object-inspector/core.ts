@@ -315,6 +315,17 @@ export function isError(value: unknown): value is Error {
   return tag === "[object Error]" || /Error$/.test(constructorName);
 }
 
+export function getSafePreviewType(value: object): string {
+  if (isArray(value)) return "array";
+  if (isMap(value)) return "map";
+  if (isSet(value)) return "set";
+  if (isDate(value)) return "date";
+  if (isRegExp(value)) return "regexp";
+  if (isError(value)) return "error";
+  if (typeof value === "function") return "function";
+  return "object";
+}
+
 export function isDomNode(value: unknown): value is Node {
   if (!value || typeof value !== "object") return false;
   return safeCall(() => {
