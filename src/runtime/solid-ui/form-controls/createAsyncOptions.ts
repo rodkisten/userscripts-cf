@@ -36,6 +36,7 @@ export function createAsyncOptions(
   let observer: QueryObserver<ControlOption[]> | undefined;
   let unsubscribe: (() => void) | undefined;
   let revision = 0;
+  const instanceKey = ['form-controls', 'suggestions', Math.random().toString(36).slice(2)];
 
   createEffect(() => {
     const currentSource = source();
@@ -45,7 +46,7 @@ export function createAsyncOptions(
     unsubscribe?.();
     observer?.destroy();
     observer = new QueryObserver<ControlOption[]>(client, {
-      queryKey: [...(config.queryKey ?? ['form-controls', 'suggestions']), currentQuery],
+      queryKey: [...(config.queryKey ?? instanceKey), currentQuery],
       enabled,
       staleTime: config.staleTime ?? 30_000,
       queryFn: async ({ signal }) => {
@@ -61,6 +62,10 @@ export function createAsyncOptions(
       setLoading(result.isPending && result.fetchStatus === 'fetching');
       setError(result.error ?? null);
     });
+    const initial = observer.getCurrentResult();
+    setOptions(initial.data ?? []);
+    setLoading(initial.isPending && initial.fetchStatus === 'fetching');
+    setError(initial.error ?? null);
   });
 
   onCleanup(() => {
