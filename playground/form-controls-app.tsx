@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, onCleanup } from 'solid-js';
+import { createEffect, createSignal, For, Show, onCleanup } from 'solid-js';
 import { EditorState } from '@codemirror/state';
 import { EditorView, drawSelection } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
@@ -7,7 +7,7 @@ import { render } from 'solid-js/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
 import type { ControlOption } from '../src/runtime/solid-ui/form-controls/options';
-import { appendTwitterToken, parseTwitterSearch, removeTwitterToken } from '../src/runtime/solid-ui/form-controls/twitter-search';
+import { appendTwitterToken, parseTwitterSearch, removeTwitterToken, replaceTwitterToken } from '../src/runtime/solid-ui/form-controls/twitter-search';
 
 const options: ControlOption[] = [
   { value: 'filter:videos', label: 'Vídeos', group: 'Mídia' },
@@ -96,6 +96,8 @@ function App() {
   placeholder={${JSON.stringify(placeholder())}}
 />`;
   const [raw, setRaw] = createSignal('');
+  const [editingToken, setEditingToken] = createSignal<number | null>(null);
+  const [tokenDraft, setTokenDraft] = createSignal('');
   const [asyncValue, setAsyncValue] = createSignal('');
   const source = async (query: string, { signal }: { signal: AbortSignal }) => {
     await new Promise<void>((resolve, reject) => {
@@ -169,11 +171,21 @@ function App() {
           </div>
           <div class="token-list" aria-label="Tokens da consulta">
             <For each={parseTwitterSearch(raw())}>
-              {(token) => <button type="button" class={`token token-${token.kind}`} title={`Remover ${token.value}`} onClick={() => setRaw(removeTwitterToken(raw(), token))}>{token.value} ×</button>}
+              {(token, index) => <span class={`token token-${token.kind}`} style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '4px 8px', margin: '3px', 'border-radius': '8px', background: token.kind === 'negative' ? '#5c202e' : token.kind === 'operator' ? '#253e63' : '#30303b' }}>
+                <Show when={editingToken() === index()} fallback={<button type="button" title={`Editar ${token.value}`} onClick={() => { setEditingToken(index()); setTokenDraft(token.raw); }}>{token.value}</button>}>
+                  <input aria-label={`Editar token ${index() + 1}`} value={tokenDraft()} onInput={(event) => setTokenDraft(event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') setEditingToken(null);
+                      if (event.key === 'Enter') { setRaw(replaceTwitterToken(raw(), token, tokenDraft())); setEditingToken(null); }
+                    }} />
+                  <button type="button" onClick={() => { setRaw(replaceTwitterToken(raw(), token, tokenDraft())); setEditingToken(null); }}>✓</button>
+                </Show>
+                <button type="button" aria-label={`Remover ${token.value}`} onClick={() => { setRaw(removeTwitterToken(raw(), token)); setEditingToken(null); }}>×</button>
+              </span>}
             </For>
           </div>
           <pre>{raw()}</pre>
-          <small>Tokens sincronizados com a consulta raw. Clique em um token para removê-lo.</small>
+          <small>Tokens sincronizados com a consulta raw. Clique em um token para editá-lo, Enter para salvar, Escape para cancelar.</small>
         </section>
       </div>
     </main>
