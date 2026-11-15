@@ -14,11 +14,11 @@ export function mountPanel(container: HTMLElement) {
   const [records, setRecords] = createSignal<RecordItem[]>([]);
   const [methods, setMethods] = createSignal<MethodItem[]>([]);
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
-  const [menuOpen, setMenuOpen] = createSignal(false);
-  const callbacks = { method: (_id: string) => {}, history: (_code: string) => {} };
+
+  const callbacks = { options: (_trigger: HTMLElement) => {}, method: (_id: string) => {}, history: (_code: string) => {} };
   const dispose = render(
     () => (
-      <div class="repl-root" classList={{ "menu-open": menuOpen() }}>
+      <div class="repl-root" >
         <button class="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
         </button>
@@ -26,12 +26,12 @@ export function mountPanel(container: HTMLElement) {
           <header>
             <strong>{"REPL · JavaScript"}</strong>
             <button data-action="run" class="primary" title="Executar código">{"▶ Executar"}</button>
-            <button aria-label="Opções do REPL" aria-expanded={menuOpen()} onClick={() => setMenuOpen(v => !v)}>{"⋯"}</button>
+            <button aria-label="Opções do REPL" aria-haspopup="menu" onClick={(event) => callbacks.options(event.currentTarget)}>{"⋯"}</button>
             <button data-action="close" aria-label="Fechar">
               {"×"}
             </button>
           </header>
-          <div class="repl-menu" hidden={!menuOpen()} role="group" aria-label="Opções avançadas do REPL">
+          <div class="repl-menu" hidden role="group" aria-label="Opções avançadas do REPL">
           <nav class="tabs">
             <button data-tab="console" aria-selected="true">
               {"Console"}
