@@ -46,7 +46,7 @@ describe("inspectable build artifacts", () => {
         for (const [flag, module] of Object.entries(optionalModules)) {
           if (runtime.featureDefines[flag] !== false) continue;
           const retained = report.modules.filter((item) => item.id.endsWith(module) && item.renderedBytes > 0);
-          expect(retained, \`Disabled \${flag} retained \${module} in \${script.id}:\${runtime.world}\`).toEqual([]);
+          expect(retained, `Disabled ${flag} retained ${module} in ${script.id}:${runtime.world}`).toEqual([]);
         }
       }
       for (const runtime of target.output.runtimes) {
