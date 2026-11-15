@@ -86,6 +86,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
   let pendingResult: RodMenuResult<TValues> | undefined;
   let finalized = false;
   const previousOverflow = typeof document !== 'undefined' ? document.documentElement.style.overflow : '';
+  let ownsScrollLock = false;
   let resolveResult!: (res: RodMenuResult<TValues>) => void;
   const resultPromise = new Promise<RodMenuResult<TValues>>((res) => {
     resolveResult = res;
@@ -343,6 +344,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     });
 
     if (schema().scrollLock !== false) {
+      ownsScrollLock = true;
       document.documentElement.style.overflow = 'hidden';
     }
 
@@ -411,7 +413,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
         pendingResult = { action: 'dismiss', values: cloneValue(store.values()), reason: 'api' };
       }
       finalize();
-      if (schema().scrollLock !== false && stack().length === 0) {
+      if (ownsScrollLock && !stack().some((entry) => entry.id !== props.id)) {
         document.documentElement.style.overflow = previousOverflow;
       }
     });
