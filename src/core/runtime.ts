@@ -231,9 +231,16 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       
       uiHost = host.document.createElement("div");
       uiHost.dataset.userscriptsCfUi = definition.id;
+      // The runtime owns the stacking context for all mounted Solid components.
+      // Keep the host non-interactive while allowing its UI descendants to receive input.
       uiHost.style.setProperty("all", "initial");
-      uiHost.style.setProperty("position", "relative");
-      uiHost.style.setProperty("z-index", "2147483000");
+      uiHost.style.setProperty("position", "fixed", "important");
+      uiHost.style.setProperty("inset", "0", "important");
+      uiHost.style.setProperty("width", "0", "important");
+      uiHost.style.setProperty("height", "0", "important");
+      uiHost.style.setProperty("z-index", "2147483647", "important");
+      uiHost.style.setProperty("pointer-events", "none", "important");
+      uiHost.style.setProperty("visibility", "visible", "important");
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
       
