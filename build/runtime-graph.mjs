@@ -47,15 +47,32 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     for (const feature of usage.features) features.add(feature);
     if (usage.dynamic) dynamicFiles.push(path.relative(rootPath, filename));
     const info = ts.preProcessFile(source, true, true);
-    for (const item of info.importedFiles) {
-      const dependency = await resolveLocal(filename, item.fileName);
+    const specifiers = new Set(info.importedFiles.map((item) => item.fileName));
+    // TypeScript preprocessing does not consistently report import() and
+    // require() calls. Include literal references in the feature graph.
+    // Non-literal imports cannot be resolved statically, so keep all features.
+    const ast = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true,
+      filename.endsWith(".tsx") ? ts.ScriptKind.TSX : filename.endsWith(".jsx") ? ts.ScriptKind.JSX : ts.ScriptKind.TS);
+    const inspectImports = (node) => {
+      if (ts.isCallExpression(node) &&
+          (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+           (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+        const argument = node.arguments[0];
+        if (argument && ts.isStringLiteralLike(argument)) specifiers.add(argument.text);
+        else if (argument) dynamicFiles.push(path.relative(rootPath, filename));
+      }
+      ts.forEachChild(node, inspectImports);
+    };
+    inspectImports(ast);
+    for (const specifier of specifiers) {
+      const dependency = await resolveLocal(filename, specifier);
       if (dependency && !visited.has(dependency)) pending.push(dependency);
     }
   }
   return {
     features: [...features].sort(),
     dynamic: dynamicFiles.length > 0,
-    dynamicFiles: dynamicFiles.sort(),
+    dynamicFiles: [...new Set(dynamicFiles)].sort(),
     files: [...visited].map((file) => path.relative(rootPath, file)).sort(),
     // Source bytes are diagnostic only; not bundled/minified byte attribution.
     sourceBytes: modules.reduce((sum, item) => sum + item.sourceBytes, 0),
