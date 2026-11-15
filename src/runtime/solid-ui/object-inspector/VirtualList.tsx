@@ -1,9 +1,9 @@
+import type { JSX } from "@solidjs/web";
 import {
   createSignal,
   For,
   onCleanup,
-  onMount,
-  type JSX,
+  createEffect,
 } from "solid-js";
 import { clamp, safeCall } from "./core";
 import type {
@@ -141,7 +141,7 @@ export function VirtualList(props: VirtualListProps) {
     return Math.max(estimatedHeight(), Math.ceil(measured));
   };
 
-  onMount(() => {
+  createEffect(() => bodyRef, () => {
     if (typeof ResizeObserver === "function") {
       rowObserver = new ResizeObserver((entries) => {
         if (!bodyRef) return;

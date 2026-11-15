@@ -13,6 +13,7 @@ import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
+import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 
@@ -71,12 +72,47 @@ const targets = [
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
+const runtimeFeatureAudit = { scripts: {}, targets: {}, bundles: {} };
+for (const definition of definitions) {
+  runtimeFeatureAudit.scripts[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
+}
+// Shared source modules help identify repeated dependencies across independently
+// installed scripts. These are source bytes, not attributable output bundle bytes.
+const moduleConsumers = new Map();
+for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
+  for (const module of analysis.modules) {
+    const item = moduleConsumers.get(module.file) || { file: module.file, sourceBytes: module.sourceBytes, scripts: [] };
+    item.scripts.push(scriptId);
+    moduleConsumers.set(module.file, item);
+  }
+}
+runtimeFeatureAudit.sharedModules = [...moduleConsumers.values()]
+  .filter((module) => module.scripts.length > 1)
+  .map((module) => ({ ...module, scripts: module.scripts.sort(), aggregateSourceBytes: module.sourceBytes * module.scripts.length }))
+  .sort((a, b) => b.aggregateSourceBytes - a.aggregateSourceBytes || a.file.localeCompare(b.file));
+runtimeFeatureAudit.summary = {
+  uniqueModules: moduleConsumers.size,
+  sharedModules: runtimeFeatureAudit.sharedModules.length,
+  sharedSourceBytesAcrossScripts: runtimeFeatureAudit.sharedModules.reduce((sum, module) => sum + module.aggregateSourceBytes, 0),
+};
+for (const target of targets) {
+  const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
+  const features = [...new Set(scripts.flatMap((script) => script.features))].sort();
+  runtimeFeatureAudit.targets[target.id] = {
+    scripts: target.definitions.map(({ id }) => id),
+    features,
+    dynamic: scripts.some((script) => script.dynamic),
+    dynamicFiles: [...new Set(scripts.flatMap((script) => script.dynamicFiles))].sort(),
+    // This is an audit, not a claim that the current legacy runtime is tree-shaken.
+    treeShaken: !scripts.some((script) => script.dynamic) && target.id !== "standalone",
+  };
+}
 for (const target of targets) {
   const installers = [];
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
     if (!selected.length) continue;
-    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })) });
+    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })), features: [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))], dynamic: selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic), onBundleStats: (stats) => { runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats; } });
     if (world === "sandbox") {
       installers.push(
         `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
@@ -138,8 +174,12 @@ for (const target of targets) {
     printWidth: 110,
   });
   const file = `${target.id}.user.js`;
+  // Inspectable JavaScript without Tampermonkey metadata or minification.
+  // Preserve the readable, formatted runtime before standalone Oxc minification.
+  const debugFile = `${target.id}.js`;
+  await fs.writeFile(path.join(out, debugFile), body.endsWith("\n") ? body : body + "\n");
   let source = `${metadata}\n\n${body}`;
-  if (target.id === "standalone") {
+  {
     // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
     //
     // BLOCKED: Vite 8/Rolldown emitted JavaScript but no external sourcemap
@@ -160,12 +200,12 @@ for (const target of targets) {
       configFile: false,
       logLevel: "error",
       plugins: [{
-        name: "standalone-runtime-entry",
+        name: "userscript-runtime-minify",
         resolveId(id) {
-          if (id === "virtual:standalone-runtime") return "\0virtual:standalone-runtime";
+          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
         },
         load(id) {
-          if (id === "\0virtual:standalone-runtime") return body;
+          if (id === "\0virtual:userscript-runtime") return body;
         },
       }],
       build: {
@@ -173,20 +213,22 @@ for (const target of targets) {
         minify: "oxc",
         sourcemap: false,
         rolldownOptions: {
-          input: "virtual:standalone-runtime",
-          output: { format: "iife", name: "UserscriptsCFStandalone" },
+          input: "virtual:userscript-runtime",
+          output: { format: "iife", name: "UserscriptsCFBundle" },
         },
       },
     });
     const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
     const result = output.find((entry) => entry.type === "chunk");
-    if (!result?.code) throw new Error("Standalone minification did not produce JavaScript");
+    if (!result?.code) throw new Error(`Minification did not produce JavaScript for ${target.id}`);
     source = `${metadata}\n\n${result.code}\n`;
   }
   // Audit the emitted JS, including delegated event handlers, without changing
   // behavioral class identities. A dynamic selector blocks unsafe renaming.
   const references = analyzeClassReferences(source.slice(metadata.length));
   classAudit[target.id] = {
+    debugBytes: Buffer.byteLength(body),
+    debugGzipBytes: gzipSync(Buffer.from(body), { level: 9 }).byteLength,
     staticClasses: references.classes.length,
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
@@ -204,6 +246,7 @@ for (const target of targets) {
     name: target.name,
     description: target.id === "standalone" ? "Todos os módulos em uma instalação" : "Userscript independente com atualizações automáticas",
     file,
+    debugFile,
     metaFile,
     metaSha256: createHash("sha256").update(metaSource).digest("hex"),
     matches: patterns,
@@ -212,11 +255,54 @@ for (const target of targets) {
   console.log(`Built ${file} (${source.length} bytes)`);
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+// Include emitted bytes, gzip and the largest retained modules in the audit.
+for (const [target, measurements] of Object.entries(classAudit)) {
+  const runtime = Object.entries(runtimeFeatureAudit.bundles)
+    .filter(([key]) => key.startsWith(target + ":"))
+    .map(([world, stats]) => ({ world: world.slice(target.length + 1), ...stats }));
+  runtimeFeatureAudit.targets[target].output = {
+    bytes: measurements.bytes,
+    gzipBytes: measurements.gzipBytes,
+    debugBytes: measurements.debugBytes,
+    debugGzipBytes: measurements.debugGzipBytes,
+    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({ world, bytes, includedModuleCount, topModules, featureDefines })),
+  };
+}
+const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
+  (stats.topModules || []).slice(0, 5).map(({ id, renderedBytes }) => ({ target, module: id, renderedBytes }))
+);
+// Rank dependencies by their aggregate rendered contribution across targets.
+// The aggregate is diagnostic: separately installed userscripts are not loaded
+// simultaneously, and this number must never be presented as download savings.
+const retainedConsumers = new Map();
+for (const [bundle, stats] of Object.entries(runtimeFeatureAudit.bundles)) {
+  for (const module of stats.modules) {
+    if (module.renderedBytes <= 0) continue;
+    const current = retainedConsumers.get(module.id) || { module: module.id, bundles: [], aggregateRenderedBytes: 0, maxRenderedBytes: 0 };
+    current.bundles.push({ bundle, renderedBytes: module.renderedBytes });
+    current.aggregateRenderedBytes += module.renderedBytes;
+    current.maxRenderedBytes = Math.max(current.maxRenderedBytes, module.renderedBytes);
+    retainedConsumers.set(module.id, current);
+  }
+}
+runtimeFeatureAudit.repeatedRenderedModules = [...retainedConsumers.values()]
+  .filter((entry) => entry.bundles.length > 1)
+  .sort((a, b) => b.aggregateRenderedBytes - a.aggregateRenderedBytes || a.module.localeCompare(b.module));
+runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
+console.log("\\nLargest repeated dependencies (unminified rendered bytes, NOT estimated savings):");
+console.table(runtimeFeatureAudit.repeatedRenderedModules.slice(0, 20).map(({ module, bundles, aggregateRenderedBytes, maxRenderedBytes }) => ({
+  module, consumers: bundles.length, aggregateRenderedBytes, maxRenderedBytes,
+})));
+console.log("\\nLargest retained runtime modules by target/world:");
+console.table(topRuntimeModules);
+await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
 console.table(Object.entries(classAudit).map(([target, audit]) => ({
   target,
   bytes: audit.bytes,
   gzip: audit.gzipBytes,
+  debug: audit.debugBytes,
+  debugGzip: audit.debugGzipBytes,
   staticClasses: audit.staticClasses,
   dynamicReferences: audit.dynamicReferences,
 })));

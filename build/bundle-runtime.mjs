@@ -26,10 +26,26 @@ export async function bundleRuntime(root, definitions, options = {}) {
       return api;
     }
   `;
+  // A dynamic ctx[key] lookup must preserve the complete runtime. The
+  // standalone installer also preserves global Dock/clipboard functionality.
+  const used = new Set(options.features || []);
+  const fullRuntime = options.dynamic || options.dock || !Array.isArray(options.features);
+  const enabled = (feature) => fullRuntime || used.has(feature);
+  const clipboard = enabled("clipboard");
+  const featureDefines = {
+    __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
+    __ROD_FEATURE_TOASTER__: JSON.stringify(enabled("toaster")),
+    __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
+    __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
+    __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
+    __ROD_FEATURE_UI__: JSON.stringify(enabled("ui")),
+    __ROD_FEATURE_HTTP__: JSON.stringify(enabled("http") || enabled("interceptRequest") || enabled("interceptResponse")),
+  };
   const result = await build({
     root,
     configFile: path.join(root, "vite.config.js"),
     logLevel: "warn",
+    define: featureDefines,
     plugins: [
       {
         name: "userscripts-cf-entry",
@@ -43,5 +59,23 @@ export async function bundleRuntime(root, definitions, options = {}) {
   const chunks = output.filter((item) => item.type === "chunk");
   if (chunks.length !== 1 || output.some((item) => item.type === "asset"))
     throw Error("Use inline/raw CSS and bundle all dependencies");
+  // Rolldown reports rendered module lengths after tree-shaking. These are
+  // uncompressed contributions, not independently gzipped module sizes.
+  if (typeof options.onBundleStats === "function") {
+    const modules = Object.entries(chunks[0].modules || {}).map(([id, info]) => ({
+      id: path.isAbsolute(id) ? path.relative(root, id).split(path.sep).join("/") : id,
+      renderedBytes: info.renderedLength ?? 0,
+      originalBytes: info.originalLength ?? 0,
+      removedExportsCount: info.removedExports?.length ?? 0,
+    })).sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
+    options.onBundleStats({
+      bytes: Buffer.byteLength(chunks[0].code),
+      modules,
+      totalRenderedModuleBytes: modules.reduce((sum, item) => sum + item.renderedBytes, 0),
+      includedModuleCount: modules.filter((item) => item.renderedBytes > 0).length,
+      topModules: modules.filter((item) => item.renderedBytes > 0).slice(0, 20),
+      featureDefines: Object.fromEntries(Object.entries(featureDefines).map(([key, value]) => [key, value === "true"])),
+    });
+  }
   return format(readableStrings(chunks[0].code), { parser: "babel", printWidth: 110 });
 }

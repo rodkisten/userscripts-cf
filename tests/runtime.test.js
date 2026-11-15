@@ -17,10 +17,11 @@ const fixture = await build({
 const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
   .flatMap((result) => result.output)
   .find((chunk) => chunk.type === "chunk").code;
-function createRuntime(definitions, bridge, host) {
+function createRuntime(definitions, bridge, host, beforeCreate) {
   host.happyDOM.settings.enableJavaScriptEvaluation = true;
   host.happyDOM.settings.suppressInsecureJavaScriptEnvironmentWarning = true;
   host.eval(runtimeCode);
+  beforeCreate?.(host);
   return host.RuntimeFixture.createRuntime(definitions, bridge, host);
 }
 import { matchURL } from "../src/core/match.js";
@@ -74,6 +75,46 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   await app.dispose();
   assert.equal(stops, 2);
   assert.equal(host.history.pushState, nativePush);
+  await host.happyDOM.abort();
+});
+
+test("persistent storage is created only on first use and reused across SPA navigation", async () => {
+  const host = new Window({ url: "https://example.com/on" });
+  const created = [];
+  let activeContext;
+  const app = createRuntime([{
+    id: "lazy-storage",
+    matches: ["https://example.com/on"],
+    module: { init(ctx) { activeContext = ctx; } },
+  }], { call: async () => undefined }, host, (window) => {
+    const original = window.RodStorage;
+    window.RodStorage = {
+      ...original,
+      create(options) {
+        created.push(options.namespace);
+        return {
+          get: async () => undefined,
+          set: async () => {},
+          delete: async () => {},
+          close: () => {},
+        };
+      },
+    };
+  });
+  await app.ready;
+  assert.deepEqual(created, [], "creating a context must not open persistent storage");
+  await activeContext.storage.get("missing");
+  assert.deepEqual(created, ["userscripts-cf/lazy-storage"]);
+  await activeContext.storage.set("key", "value");
+  await activeContext.storage.delete("key");
+  assert.equal(created.length, 1, "subsequent operations reuse the same store");
+  host.history.pushState({}, "", "/off");
+  await app.navigate();
+  host.history.pushState({}, "", "/on");
+  await app.navigate();
+  await activeContext.storage.get("missing");
+  assert.equal(created.length, 1, "SPA reentry reuses the store");
+  await app.dispose();
   await host.happyDOM.abort();
 });
 

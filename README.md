@@ -17,6 +17,10 @@ Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separa
 
 [Recursos e configuração](docs/integrated-userscripts.md): Reddit/Soundgasm, ferramentas do GitHub com cópia integral dos logs por step e sincronização de coleções do Instagram para o Relay. As UIs usam Solid 2 e CSS Modules. O build mantém o código legível e remove comentários de implementação, preservando o cabeçalho do userscript e os comentários nos fontes.
 
+## Arquitetura do contexto e otimização
+
+📖 [Guia técnico de contexto, lifecycle, tree-shaking e estratégia de otimização](docs/context-and-optimization.md). Inclui contrato de `ctx`, análise de dependências, flags de build, auditoria de tamanho, prioridades e critérios de aceite.
+
 ## Como desenvolver
 
 Node.js 22.18+ e npm:
