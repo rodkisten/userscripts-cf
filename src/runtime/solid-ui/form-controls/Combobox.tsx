@@ -1,12 +1,16 @@
 import { createMemo, createSignal, For, Show, onCleanup, onMount } from 'solid-js';
 import type { ControlOption } from './options';
 import { filterOptions, groupOptions } from './options';
+import type { OptionsSource } from './options';
+import { createAsyncOptions } from './createAsyncOptions';
 import styles from './Combobox.module.css';
 
 export interface ComboboxProps {
   id: string;
   name?: string;
   options: readonly ControlOption[];
+  source?: OptionsSource;
+  errorMessage?: string;
   value?: string | readonly string[] | null;
   multiple?: boolean;
   disabled?: boolean;
@@ -30,8 +34,10 @@ export function Combobox(props: ComboboxProps) {
     props.multiple ? (Array.isArray(props.value) ? props.value.map(String) : []) :
       props.value == null || props.value === '' ? [] : [String(props.value)],
   ));
-  const filtered = createMemo(() => filterOptions(props.options, query()));
+  const remote = createAsyncOptions(() => props.source ?? props.options, query);
+  const filtered = createMemo(() => props.source ? remote.options() : filterOptions(props.options, query()));
   const enabled = createMemo(() => filtered().filter((option) => !option.disabled));
+  const loading = () => props.loading || (Boolean(props.source) && remote.loading());
   const displayed = () => {
     if (props.multiple || open()) return query();
     return props.options.find((option) => selected().has(option.value))?.label ?? '';
@@ -110,7 +116,8 @@ export function Combobox(props: ComboboxProps) {
       </div>
       <Show when={open()}>
         <div id={listId()} role="listbox" aria-multiselectable={!!props.multiple} class={styles.list}>
-          <Show when={!props.loading} fallback={<div class={styles.status} role="status">Carregando…</div>}>
+          <Show when={!loading()} fallback={<div class={styles.status} role="status">Carregando…</div>}>
+            <Show when={!remote.error() || !props.source} fallback={<div class={styles.status} role="alert">{props.errorMessage ?? 'Não foi possível carregar sugestões.'} <button type="button" onClick={() => void remote.reload()}>Tentar novamente</button></div>}>
             <Show when={filtered().length > 0} fallback={<div class={styles.status}>{props.emptyMessage ?? 'Nenhuma opção encontrada.'}</div>}>
               <For each={props.grouped ? groupOptions(filtered()) : [{ label: '', options: filtered() }]}>
                 {(group) => <>
@@ -130,6 +137,7 @@ export function Combobox(props: ComboboxProps) {
                   </For>
                 </>}
               </For>
+            </Show>
             </Show>
           </Show>
         </div>
