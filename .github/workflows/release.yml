@@ -42,7 +42,7 @@ jobs:
         run: npm ci --legacy-peer-deps
       - name: Skip superseded main revisions
         id: freshness
-        if: steps.source.outputs.skip != 'true' && steps.freshness.outputs.skip != 'true'
+        if: github.ref == 'refs/heads/main'
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
@@ -54,6 +54,7 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Select next version
+        if: steps.freshness.outputs.skip != 'true'
         id: version
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,13 +77,14 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
       - name: Typecheck, build and test before publishing
+        if: steps.freshness.outputs.skip != 'true'
         run: npm test
-        if: ${{ github.event_name == 'pull_request' }}
       - name: Verify standalone userscript metadata
+        if: steps.freshness.outputs.skip != 'true'
         run: node --test tests/standalone-minify.test.js
       # Formatting is handled separately and must not block publishing.
       - name: Commit version to main
-        if: steps.version.outputs.resume != 'true'
+        if: steps.freshness.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -93,8 +95,10 @@ jobs:
           git commit -m "chore(release): v$VERSION [skip ci]"
           git push origin HEAD:main
       - name: Prepare Cloudflare Worker with versioned assets
+        if: steps.freshness.outputs.skip != 'true'
         run: node build/hosting.mjs
       - name: Deploy versioned userscripts to Cloudflare
+        if: steps.freshness.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -106,11 +110,13 @@ jobs:
           fi
           npm run deploy:cloudflare
       - name: Publish GitHub Release with userscripts and checksums
+        if: steps.freshness.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: npm run release
       - name: Release summary
+        if: steps.freshness.outputs.skip != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
