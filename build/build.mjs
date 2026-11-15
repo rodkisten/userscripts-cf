@@ -104,7 +104,7 @@ for (const target of targets) {
     dynamic: scripts.some((script) => script.dynamic),
     dynamicFiles: [...new Set(scripts.flatMap((script) => script.dynamicFiles))].sort(),
     // This is an audit, not a claim that the current legacy runtime is tree-shaken.
-    treeShaken: false,
+    treeShaken: !scripts.some((script) => script.dynamic) && target.id !== "standalone",
   };
 }
 for (const target of targets) {
@@ -112,7 +112,7 @@ for (const target of targets) {
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
     if (!selected.length) continue;
-    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })), onBundleStats: (stats) => { runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats; } });
+    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })), features: [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))], dynamic: selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic), onBundleStats: (stats) => { runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats; } });
     if (world === "sandbox") {
       installers.push(
         `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
