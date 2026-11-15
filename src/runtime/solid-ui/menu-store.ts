@@ -55,6 +55,7 @@ export interface MenuEntry {
   title: string;
   content?: string;
   size?: string;
+  chrome?: "bare" | "default";
   fields?: MenuField[];
   initialValues?: Record<string, MenuValue>;
   actions?: MenuAction[];
