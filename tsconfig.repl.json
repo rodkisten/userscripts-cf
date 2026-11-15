@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/userscripts/page-repl/*.tsx", "src/userscripts/page-repl/*.ts"]
+  "include": ["src/userscripts/page-repl/*.tsx", "src/userscripts/page-repl/*.ts", "src/types/styles.d.ts"]
 }
