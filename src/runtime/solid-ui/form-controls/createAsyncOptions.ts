@@ -1,5 +1,6 @@
 import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
-import { createOptionsLoader, normalizeOptions, type ControlOption, type OptionsSource } from './options';
+import { QueryClient, QueryObserver } from '@tanstack/query-core';
+import { normalizeOptions, type ControlOption, type OptionsSource } from './options';
 
 export interface AsyncOptionsState {
   options: Accessor<ControlOption[]>;
@@ -8,44 +9,73 @@ export interface AsyncOptionsState {
   reload: () => Promise<void>;
 }
 
+export interface AsyncOptionsConfig {
+  queryClient?: QueryClient;
+  queryKey?: readonly unknown[];
+  staleTime?: number;
+  enabled?: Accessor<boolean>;
+}
+
 /**
- * SolidJS adapter for the headless options loader.
- * Cancels superseded requests, prevents stale results and cleans up on unmount.
+ * TanStack Query core adapter for SolidJS 2.
+ * Uses QueryObserver rather than the Solid 1 adapter; consumers may share a
+ * QueryClient to reuse cached suggestions across fields and menus.
  */
 export function createAsyncOptions(
   source: Accessor<OptionsSource>,
   query: Accessor<string>,
+  config: AsyncOptionsConfig = {},
 ): AsyncOptionsState {
+  const ownedClient = !config.queryClient;
+  const client = config.queryClient ?? new QueryClient({
+    defaultOptions: { queries: { retry: 1, gcTime: 5 * 60_000 } },
+  });
   const [options, setOptions] = createSignal<ControlOption[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<unknown | null>(null);
-  let loader = createOptionsLoader(source());
+  let observer: QueryObserver<ControlOption[]> | undefined;
+  let unsubscribe: (() => void) | undefined;
   let revision = 0;
-
-  const reload = async () => {
-    const current = ++revision;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await loader.load(query());
-      if (current === revision) setOptions(normalizeOptions(next));
-    } catch (reason) {
-      if (current === revision) {
-        setOptions([]);
-        setError(reason);
-      }
-    } finally {
-      if (current === revision) setLoading(false);
-    }
-  };
 
   createEffect(() => {
     const currentSource = source();
-    query();
-    loader.dispose();
-    loader = createOptionsLoader(currentSource);
-    void reload();
+    const currentQuery = query();
+    const enabled = config.enabled?.() ?? true;
+    const current = ++revision;
+    unsubscribe?.();
+    observer?.destroy();
+    observer = new QueryObserver<ControlOption[]>(client, {
+      queryKey: [...(config.queryKey ?? ['form-controls', 'suggestions']), currentQuery],
+      enabled,
+      staleTime: config.staleTime ?? 30_000,
+      queryFn: async ({ signal }) => {
+        const result = typeof currentSource === 'function'
+          ? await currentSource(currentQuery, { signal })
+          : currentSource;
+        return normalizeOptions(result);
+      },
+    });
+    unsubscribe = observer.subscribe((result) => {
+      if (current !== revision) return;
+      setOptions(result.data ?? []);
+      setLoading(result.isPending && result.fetchStatus === 'fetching');
+      setError(result.error ?? null);
+    });
   });
-  onCleanup(() => { revision++; loader.dispose(); });
-  return { options, loading, error, reload };
+
+  onCleanup(() => {
+    revision++;
+    unsubscribe?.();
+    observer?.destroy();
+    if (ownedClient) client.clear();
+  });
+
+  return {
+    options,
+    loading,
+    error,
+    reload: async () => {
+      await observer?.refetch();
+    },
+  };
 }
