@@ -164,8 +164,12 @@ export default {
     observePageFetch(event => { setRecords(prev => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
     observePageXHR(event => { setRecords(prev => [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests)); if (open() && tab() === "network") schedule(); }, { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters });
 
-    ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>{cancelPicker();setOpen(true)}}]);
-    ctx.ui.mountSolid(() => {
+    try {
+      ctx.dock?.register([{id:"inspector",label:"🔬 DOM Inspector",run:()=>{cancelPicker();setOpen(true)}}]);
+    } catch (error) {
+      console.warn("[Rod DOM Inspector] Dock unavailable; standalone launcher remains active", error);
+    }
+    const unmount = ctx.ui.mountSolid(() => {
       createEffect(() => {
         const isOpen = open();
         tab();
@@ -179,10 +183,10 @@ export default {
         }
       });
       return <><Show when={!open() && !picking()}><button class={styles.launcher} type="button" aria-label="Abrir DOM Inspector" title="Abrir DOM Inspector" onClick={() => setOpen(true)}>🔬</button></Show><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={() => { cancelPicker(); setOpen(true); }}>Cancelar seleção ✕</button></Show><Show when={open()}>
-      <section class={[styles.panel, { [styles.full]: full() }]} role="dialog" aria-modal="false" aria-label="DOM Inspector" onKeyDown={event => { if (event.key === "Escape") setOpen(false); }}>
+      <section class={styles.panel} classList={{ [styles.full]: full() }} role="dialog" aria-modal="false" aria-label="DOM Inspector" onKeyDown={event => { if (event.key === "Escape") setOpen(false); }}>
         <header class={styles.header}><h2>Inspector</h2><small>{status()}</small><button type="button" aria-label="Alternar tela cheia" onClick={() => setFull(v => !v)}>⛶</button><button type="button" aria-label="Fechar" onClick={() => setOpen(false)}>✕</button></header>
         <div class={styles.tabs} role="tablist" aria-label="Inspector views">
-          {["dom", "css", "network"].map(value => <button type="button" role="tab" aria-selected={tab() === value ? "true" : "false"} class={{ [styles.active]: tab() === value }} onClick={() => { setTab(value); queueMicrotask(renderSource); }}>{value.toUpperCase()}</button>)}
+          {["dom", "css", "network"].map(value => <button type="button" role="tab" aria-selected={tab() === value ? "true" : "false"} classList={{ [styles.active]: tab() === value }} onClick={() => { setTab(value); queueMicrotask(renderSource); }}>{value.toUpperCase()}</button>)}
         </div>
         <div class={styles.tools}><input value={selector()} placeholder="CSS selector" aria-label="CSS selector" onInput={e => select(e.currentTarget.value)}/><button type="button" onClick={pick}>◎</button><button type="button" onClick={() => copy(selector())}>Copy</button></div>
         <div class={styles.tools}><button type="button" aria-label="Elemento pai" onClick={() => moveSelection("parent")}>↑</button><button type="button" aria-label="Primeiro filho" onClick={() => moveSelection("child")}>↓</button><button type="button" aria-label="Irmão anterior" onClick={() => moveSelection("previous")}>←</button><button type="button" aria-label="Próximo irmão" onClick={() => moveSelection("next")}>→</button><label class={styles.switch}><input type="checkbox" checked={scroll()} onChange={event => setScroll(event.currentTarget.checked)}/> Scroll</label><label class={styles.switch}><input type="checkbox" checked={live()} onChange={event => setLive(event.currentTarget.checked)}/> Live</label><button type="button" onClick={renderSource}>Refresh</button><button type="button" aria-label="Localizar elemento no código" onClick={() => { setTab("dom"); queueMicrotask(() => { renderSource(); locateInSource(); }); }}>⌕</button></div>
@@ -192,6 +196,6 @@ export default {
     </Show></>;
     }, { styles: [css] });
     // Refresh is explicit: observing our own CodeMirror mutations would cause a loop.
-    ctx.onDispose(stop);
+    ctx.onDispose(() => { stop(); unmount?.(); });
   }
 };
