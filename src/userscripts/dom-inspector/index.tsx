@@ -1,8 +1,9 @@
 import { createSignal, Show, createEffect } from "solid-js";
 import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
-import { javascript } from "@codemirror/lang-javascript";
+import { htmlLanguage } from "@codemirror/lang-html";
+import { javascriptLanguage } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import styles, { css } from "./Inspector.module.css";
 
@@ -28,7 +29,9 @@ export default {
     const [picking, setPicking] = createSignal(false);
     const [live, setLive] = createSignal(false);
     let editor, editorRoot, selected, overlay, refreshTimer, pickerListener, pickerCancelListener, highlightTarget, highlightFrame = 0, lastRect = "", domObserver;
-    const stop = () => { domObserver?.disconnect(); domObserver = undefined; cancelAnimationFrame(highlightFrame); highlightFrame = 0; editor?.destroy(); editor = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); cancelPicker(); };
+    const syntax = new Compartment();
+    let editorMode;
+    const stop = () => { domObserver?.disconnect(); domObserver = undefined; cancelAnimationFrame(highlightFrame); highlightFrame = 0; editor?.destroy(); editor = undefined; editorMode = undefined; editorRoot = undefined; overlay?.remove(); overlay = undefined; clearTimeout(refreshTimer); cancelPicker(); };
     const cancelPicker =  () => {
       if (pickerListener) document.removeEventListener("pointerdown", pickerListener, true);
       if (pickerCancelListener) document.removeEventListener("keydown", pickerCancelListener, true);
@@ -109,11 +112,15 @@ export default {
         mode==="css" ? selected ? [...getComputedStyle(selected)].map(k=>k+": "+getComputedStyle(selected).getPropertyValue(k)+";").join("\n") : "Select an element first" :
         JSON.stringify(records(),null,2);
       const content = source.slice(0, INSPECTOR_CONFIG.maxSourceCharacters);
+      const language = mode === "dom" ? htmlLanguage : javascriptLanguage;
       if (editor && editor.dom.parentElement === editorRoot) {
-        if (editor.state.doc.toString() !== content) editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:content}});
+        const effects = editorMode === mode ? [] : [syntax.reconfigure(language)];
+        if (editor.state.doc.toString() !== content || effects.length) editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:content},effects});
+        editorMode = mode;
       } else {
         editor?.destroy();
-        editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:content,extensions:[lineNumbers(),javascript(),oneDark,EditorState.readOnly.of(true),EditorView.lineWrapping]})});
+        editor=new EditorView({parent:editorRoot,state:EditorState.create({doc:content,extensions:[lineNumbers(),syntax.of(language),oneDark,EditorState.readOnly.of(true),EditorView.lineWrapping]})});
+        editorMode = mode;
       }
       setStatus(mode==="network"?records().length+" requests":source.length+" chars");
     };
