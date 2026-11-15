@@ -169,6 +169,16 @@ export default {
     } catch (error) {
       console.warn("[Rod DOM Inspector] Dock unavailable; standalone launcher remains active", error);
     }
+    // ctx.ui.mountSolid uses the runtime-owned host, not a new shadow host.
+    // Raise that actual host above site stacking contexts before mounting.
+    const uiHost = ctx.ui.host;
+    uiHost.style.setProperty("position", "fixed", "important");
+    uiHost.style.setProperty("inset", "0", "important");
+    uiHost.style.setProperty("width", "0", "important");
+    uiHost.style.setProperty("height", "0", "important");
+    uiHost.style.setProperty("z-index", "2147483647", "important");
+    uiHost.style.setProperty("pointer-events", "none", "important");
+    uiHost.style.setProperty("visibility", "visible", "important");
     const unmount = ctx.ui.mountSolid(() => {
       createEffect(() => {
         const isOpen = open();
