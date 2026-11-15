@@ -48,7 +48,7 @@ function Field(props: { menuId: string; field: MenuField }) {
     ? type
     : "text";
   return (
-    <div class={styles.field}>
+    <div class={field.chrome === "bare" ? styles.bareField : styles.field}>
       <Show when={type === "custom" && field.render}>
         <CustomField render={field.render!} />
       </Show>
@@ -208,6 +208,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
         ref={dialog}
         class={styles.sheet}
         data-presentation={props.menu.presentation ?? "bottom-sheet"}
+        data-chrome={props.menu.chrome ?? "default"}
         role="dialog"
         aria-modal="true"
         aria-label={props.menu.title}
@@ -215,6 +216,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
         onKeyDown={onKeyDown}
         onClick={(event) => event.stopPropagation()}
       >
+        <Show when={props.menu.chrome !== "bare"}>
         <header class={styles.header}>
           <h2>{props.menu.title}</h2>
           <button
@@ -226,6 +228,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             ×
           </button>
         </header>
+        </Show>
         <Show when={props.menu.content}>
           <div class={styles.content}>{props.menu.content}</div>
         </Show>
@@ -235,6 +238,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             {menuState.errors[props.menu.id]._form}
           </p>
         </Show>
+        <Show when={props.menu.chrome !== "bare"}>
         <footer class={styles.actions}>
           <For each={props.menu.actions ?? []}>
             {(action) => (
@@ -248,6 +252,7 @@ function MenuDialog(props: { menu: MenuEntry }) {
             )}
           </For>
         </footer>
+        </Show>
       </section>
     </div>
   );
