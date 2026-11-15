@@ -72,7 +72,7 @@ const targets = [
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
-const runtimeFeatureAudit = { scripts: {}, targets: {} };
+const runtimeFeatureAudit = { scripts: {}, targets: {}, bundles: {} };
 for (const definition of definitions) {
   runtimeFeatureAudit.scripts[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
 }
@@ -112,7 +112,7 @@ for (const target of targets) {
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
     if (!selected.length) continue;
-    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })) });
+    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })), onBundleStats: (stats) => { runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats; } });
     if (world === "sandbox") {
       installers.push(
         `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
