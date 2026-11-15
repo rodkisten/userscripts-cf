@@ -9,7 +9,7 @@ import {
   useContext,
   type JSX,
 } from "solid-js";
-import { Portal } from "solid-js/web";
+import { Portal } from "@solidjs/web";
 import {
   createEntrySource,
   getDomNodePreviewText,
