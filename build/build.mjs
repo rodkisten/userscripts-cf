@@ -13,6 +13,7 @@ import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
+import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 
@@ -71,6 +72,10 @@ const targets = [
 ];
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
+const runtimeFeatureAudit = {};
+for (const definition of definitions) {
+  runtimeFeatureAudit[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
+}
 for (const target of targets) {
   const installers = [];
   for (const world of ["sandbox", "page"]) {
@@ -138,6 +143,10 @@ for (const target of targets) {
     printWidth: 110,
   });
   const file = `${target.id}.user.js`;
+  // Inspectable JavaScript without Tampermonkey metadata or minification.
+  // Preserve the readable, formatted runtime before standalone Oxc minification.
+  const debugFile = `${target.id}.js`;
+  await fs.writeFile(path.join(out, debugFile), body.endsWith("\n") ? body : body + "\n");
   let source = `${metadata}\n\n${body}`;
   if (target.id === "standalone") {
     // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
@@ -204,6 +213,7 @@ for (const target of targets) {
     name: target.name,
     description: target.id === "standalone" ? "Todos os módulos em uma instalação" : "Userscript independente com atualizações automáticas",
     file,
+    debugFile,
     metaFile,
     metaSha256: createHash("sha256").update(metaSource).digest("hex"),
     matches: patterns,
@@ -212,6 +222,7 @@ for (const target of targets) {
   console.log(`Built ${file} (${source.length} bytes)`);
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
 console.table(Object.entries(classAudit).map(([target, audit]) => ({
   target,
