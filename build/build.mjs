@@ -299,16 +299,16 @@ console.table(topRuntimeModules);
 // actual rendered module graph, not package.json declarations. A module may
 // appear in multiple independently installable bundles, so keep worlds apart.
 const editorFamilies = [
-  ["codemirror", /(?:^|\\/)node_modules\\/@codemirror\\//],
-  ["lezer", /(?:^|\\/)node_modules\\/@lezer\\//],
-  ["acorn", /(?:^|\\/)node_modules\\/acorn\\//],
+  ["codemirror", (id) => id.includes("/node_modules/@codemirror/")],
+  ["lezer", (id) => id.includes("/node_modules/@lezer/")],
+  ["acorn", (id) => id.includes("/node_modules/acorn/")],
 ];
 const editorAudit = {
   schema: 1,
   note: "renderedBytes are pre-minification Rolldown contributions, not gzip or estimated download savings",
   bundles: Object.fromEntries(Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => {
     const families = Object.fromEntries(editorFamilies.map(([family, pattern]) => {
-      const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern.test(item.id));
+      const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern(item.id));
       return [family, {
         renderedBytes: modules.reduce((total, item) => total + item.renderedBytes, 0),
         modules: modules.map(({ id, renderedBytes }) => ({ id, renderedBytes })),
@@ -317,8 +317,8 @@ const editorAudit = {
     return [target, { families, totalEditorRenderedBytes: Object.values(families).reduce((total, item) => total + item.renderedBytes, 0) }];
   })),
 };
-await fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\\n");
-console.log("\\nEditor dependency footprint by target/world (pre-minification):");
+await fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n");
+console.log("\nEditor dependency footprint by target/world (pre-minification):");
 console.table(Object.entries(editorAudit.bundles).map(([target, report]) => ({
   target, codemirror: report.families.codemirror.renderedBytes,
   lezer: report.families.lezer.renderedBytes,
