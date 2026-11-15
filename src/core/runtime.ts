@@ -21,6 +21,7 @@ declare const __ROD_FEATURE_CLIPBOARD__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
 declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_HTTP__: boolean;
+declare const __ROD_FEATURE_UI__: boolean;
 
 // Tipos auxiliares e interfaces globais
 export interface ScriptDefinition {
@@ -103,7 +104,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     toaster: (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) ? createToasterFeature(host) : undefined,
     storage: createStorageFeature(host),
   };
-  const { mountSolidShadow, registerShadowStyles } = createUIFeature();
+  const uiFeature = (typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__) ? createUIFeature() : null;
   const stores = new Map<string, any>();
   const clipboard = (typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__) ? createClipboardFeature(host) : null;
   if (clipboard) (host as any).__RodClipboard = clipboard;
@@ -402,12 +403,14 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
           return addStyle(css, ensureUIRoot());
         },
         registerStyles(...styles: any[]) {
-          const release = registerShadowStyles(ensureUIRoot(), styles.flat());
+          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
+          const release = uiFeature.registerShadowStyles(ensureUIRoot(), styles.flat());
           onDispose(release);
           return release;
         },
         mountSolid(component: any, options: Record<string, any> = {}) {
-          const release = mountSolidShadow(component, {
+          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
+          const release = uiFeature.mountSolidShadow(component, {
             ...options,
             target: ensureUIRoot(),
           });
