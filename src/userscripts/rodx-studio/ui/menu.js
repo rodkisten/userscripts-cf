@@ -18,40 +18,53 @@ export function createStudioMenus(Studio) {
   }
   function close(id) {
     const handle = panels.get(id);
-    if (handle) {
-      panels.delete(id);
-      handle.close();
-    }
+    handle?.close();
   }
+
+  // The RodX workspace owns its ShadowRoot, delegated event handlers and CSS.
+  // Never transplant it into the runtime menu's second ShadowRoot.
   function panel(id, title, node, onClose) {
-    if (panels.has(id)) return panels.get(id);
-    const handle = library().open({
-      id: "rodx-" + id,
-      title,
-      presentation: "bottom-sheet",
-      chrome: "bare",
-      size: "lg",
-      store: {
-        persist: false,
+    const existing = panels.get(id);
+    if (existing) return existing;
+    const backdrop = document.createElement("div");
+    backdrop.setAttribute("data-rodx-panel-backdrop", id);
+    Object.assign(backdrop.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "2147483498",
+      background: "rgba(0, 0, 0, .58)",
+    });
+    const previousStyle = node.getAttribute("style");
+    const previousParent = node.parentNode;
+    const nextSibling = node.nextSibling;
+    node.style.setProperty("position", "fixed", "important");
+    node.style.setProperty("inset", "auto 0 0", "important");
+    node.style.setProperty("width", "100%", "important");
+    node.style.setProperty("max-width", "100vw", "important");
+    node.style.setProperty("max-height", "calc(100dvh - env(safe-area-inset-top, 0px))", "important");
+    node.style.setProperty("overflow", "hidden", "important");
+    node.style.setProperty("z-index", "2147483499", "important");
+    document.body.append(backdrop, node);
+    let resolve;
+    const result = new Promise((done) => { resolve = done; });
+    const handle = {
+      result,
+      close() {
+        if (panels.get(id) !== handle) return;
+        panels.delete(id);
+        backdrop.remove();
+        if (previousStyle === null) node.removeAttribute("style");
+        else node.setAttribute("style", previousStyle);
+        if (previousParent?.isConnected) {
+          if (nextSibling?.parentNode === previousParent) previousParent.insertBefore(node, nextSibling);
+          else previousParent.appendChild(node);
+        } else document.body.append(node);
+        resolve({ reason: "close" });
+        onClose?.();
       },
-      fields: [
-        {
-          type: "custom",
-          name: "workspace",
-          chrome: "bare",
-          render() {
-            return node;
-          },
-        },
-      ],
-      actions: [],
-    });
+    };
     panels.set(id, handle);
-    handle.result.finally(() => {
-      if (panels.get(id) === handle) panels.delete(id);
-      document.body.append(node);
-      onClose?.();
-    });
+    backdrop.addEventListener("click", () => handle.close());
     return handle;
   }
   return {
