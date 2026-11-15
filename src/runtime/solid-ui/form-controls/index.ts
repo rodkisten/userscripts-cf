@@ -23,3 +23,6 @@ export type { AsyncOptionsState } from './createAsyncOptions';
 
 export { parseTwitterSearch, replaceTwitterToken, appendTwitterToken, removeTwitterToken } from './twitter-search';
 export type { SearchToken } from './twitter-search';
+
+export { SHARED_FIELD_TYPES, isSharedFieldType } from './field-types';
+export type { SharedFieldType } from './field-types';
