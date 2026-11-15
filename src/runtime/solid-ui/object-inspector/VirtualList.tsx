@@ -184,7 +184,7 @@ export function VirtualList(props: VirtualListProps) {
 
     updateViewport(true);
     scheduleUpdate(true);
-  });
+  }, undefined);
 
   onCleanup(() => {
     if (rafId !== null) cancelAnimationFrame(rafId);
