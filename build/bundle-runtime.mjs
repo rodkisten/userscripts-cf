@@ -26,10 +26,25 @@ export async function bundleRuntime(root, definitions, options = {}) {
       return api;
     }
   `;
+  // A dynamic ctx[key] lookup must preserve the complete runtime. The
+  // standalone installer also preserves global Dock/clipboard functionality.
+  const used = new Set(options.features || []);
+  const fullRuntime = options.dynamic || options.dock || !Array.isArray(options.features);
+  const enabled = (feature) => fullRuntime || used.has(feature);
+  const clipboard = enabled("clipboard");
+  const featureDefines = {
+    __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
+    __ROD_FEATURE_TOASTER__: JSON.stringify(enabled("toaster")),
+    __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
+    __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
+    __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
+    __ROD_FEATURE_HTTP__: JSON.stringify(enabled("http") || enabled("interceptRequest") || enabled("interceptResponse")),
+  };
   const result = await build({
     root,
     configFile: path.join(root, "vite.config.js"),
     logLevel: "warn",
+    define: featureDefines,
     plugins: [
       {
         name: "userscripts-cf-entry",
