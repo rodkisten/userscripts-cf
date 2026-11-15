@@ -1,5 +1,5 @@
 import { createSignal, createMemo, For, Show, onCleanup } from 'solid-js';
-import { Portal } from 'solid-js/web';
+import { Portal } from '@solidjs/web';
 import type {
   AnyRecord,
   Presentation,
