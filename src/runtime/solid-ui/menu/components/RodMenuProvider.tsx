@@ -1,7 +1,7 @@
 import { createSignal, For } from 'solid-js';
 import type { AnyRecord, RodMenuHandle, RodMenuSchema } from '../types';
 import { Surface } from './Surface';
-import '../styles/tokens.css';
+import tokensCSS from '../styles/tokens.css?inline';
 
 interface ActiveSurfaceEntry {
   id: string;
@@ -47,7 +47,9 @@ export function closeAllSurfaces() {
 
 export function RodMenuHost() {
   return (
-    <For each={surfaces()}>
+    <>
+      <style data-rod-menu-tokens>{tokensCSS}</style>
+      <For each={surfaces()}>
       {(entry) => (
         <Surface
           id={entry.id}
@@ -63,6 +65,7 @@ export function RodMenuHost() {
           }}
         />
       )}
-    </For>
+      </For>
+    </>
   );
 }
