@@ -1,13 +1,27 @@
-import { createGMBridge } from "../runtime/gm-bridge.js";
+import type { createGMBridge } from "../runtime/gm-bridge.js";
+import { createGMFeature } from "../runtime/modular/features/gm.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { createSharedEvents } from "../runtime/events/shared-events.js";
 import { matches, readScriptRules, SCRIPT_RULES_KEY } from "./script-manager.js";
-import { createHttpClient } from "../runtime/http-client.js";
-import { createNetworkInterceptors } from "../runtime/network-interceptors.js";
-import { createClipboardManager } from "../runtime/clipboard-manager.js";
-import { createDomEngine } from "../runtime/dom-engine.js";
-import { rodLibraries } from "../runtime/rod-libraries.js";
-import { mountSolidShadow, registerShadowStyles } from "../runtime/solid-ui/shadow-mount";
+import { createHttpFeature } from "../runtime/modular/features/http.js";
+import type { createClipboardManager } from "../runtime/clipboard-manager.js";
+import { createClipboardFeature } from "../runtime/modular/features/clipboard.js";
+import type { createDomEngine } from "../runtime/dom-engine.js";
+import { createDomFeature } from "../runtime/modular/features/dom.js";
+import { createMenuFeature } from "../runtime/modular/features/menu.js";
+import { createToasterFeature } from "../runtime/modular/features/toaster.js";
+import { createStorageFeature } from "../runtime/modular/features/storage.js";
+import { createUIFeature } from "../runtime/modular/features/ui.js";
+
+// Build-time constants are replaced by Vite for each userscript target.
+// Direct runtime consumers retain the complete backwards-compatible API.
+declare const __ROD_FEATURE_MENU__: boolean;
+declare const __ROD_FEATURE_TOASTER__: boolean;
+declare const __ROD_FEATURE_CLIPBOARD__: boolean;
+declare const __ROD_FEATURE_GM__: boolean;
+declare const __ROD_FEATURE_DOM__: boolean;
+declare const __ROD_FEATURE_HTTP__: boolean;
+declare const __ROD_FEATURE_UI__: boolean;
 
 // Tipos auxiliares e interfaces globais
 export interface ScriptDefinition {
@@ -85,15 +99,20 @@ function toast(): void {}
 function menu(): void {}
 
 export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
-  const rod = rodLibraries(host);
+  const rod = {
+    menu: (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) ? createMenuFeature() : undefined,
+    toaster: (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) ? createToasterFeature(host) : undefined,
+    storage: createStorageFeature(host),
+  };
+  const uiFeature = (typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__) ? createUIFeature() : null;
   const stores = new Map<string, any>();
-  const clipboard = host.indexedDB ? createClipboardManager({ host }) : null;
+  const clipboard = (typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__) ? createClipboardFeature(host) : null;
   if (clipboard) (host as any).__RodClipboard = clipboard;
 
   function openClipboardMenu(): void {
     if (!clipboard) return;
     const entries = clipboard.list().slice(0, 30);
-    rod.menu.open({
+    rod.menu?.open({
       id: "rod-clipboard-history", title: "📋 Clipboard", presentation: "bottom-sheet", size: "lg",
       description: "Histórico local. Selecione um item para copiar novamente.",
       fields: [{ type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
@@ -127,7 +146,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     }
   };
 
-  host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
+  if (clipboard) host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
   
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) => matches(definition, url, rules()[definition.id]);
@@ -260,10 +279,16 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       return node;
     }
 
-    let store = stores.get(definition.id);
-    if (!store) {
-      store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
-      stores.set(definition.id, store);
+    // Initialize persistent storage only when a script actually uses ctx.storage.
+    // Context creation is frequent on SPA navigation; unused stores need not
+    // open a backend just because the runtime exposes the storage API.
+    function getStore() {
+      let store = stores.get(definition.id);
+      if (!store) {
+        store = rod.storage.create({ namespace: "userscripts-cf/" + definition.id, backend: "auto" });
+        stores.set(definition.id, store);
+      }
+      return store;
     }
 
     const databases = new Map<string, any>();
@@ -284,41 +309,38 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
 
     const storage = Object.freeze({
       async get(key: string, fallback?: any) {
-        const value = await store.get(key);
+        const value = await getStore().get(key);
         if (value !== undefined) return value;
         const legacy = await bridge.call("get", { id: definition.id, key, fallback: undefined });
         if (legacy !== undefined) {
-          await store.set(key, legacy);
+          await getStore().set(key, legacy);
           return legacy;
         }
         return fallback;
       },
       async set(key: string, value: any) {
-        await store.set(key, value);
+        await getStore().set(key, value);
         await bridge.call("set", { id: definition.id, key, value });
       },
       async delete(key: string) {
-        await store.delete(key);
+        await getStore().delete(key);
         await bridge.call("delete", { id: definition.id, key });
       },
     });
 
-    const gm = createGMBridge(host, definition.id);
-    const http = createHttpClient({ host, signal: abort.signal, storage, namespace: definition.id });
-    onDispose(() => http.dispose());
-    
-    const interceptors = createNetworkInterceptors(http, { signal: abort.signal });
-    onDispose(() => interceptors.dispose());
-    
-    const dom = createDomEngine({ root: host.document, signal: abort.signal });
-    onDispose(() => dom.dispose());
+    const gm = (typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__) ? createGMFeature(host, definition.id) : undefined as any;
+    const network = (typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__) ? createHttpFeature(host, abort.signal, storage, definition.id) : null;
+    if (network) onDispose(() => network.dispose());
+
+    const dom = (typeof __ROD_FEATURE_DOM__ === "undefined" || __ROD_FEATURE_DOM__) ? createDomFeature(host, abort.signal) : undefined as any;
+    if (dom) onDispose(() => dom.dispose());
 
     return {
       id: definition.id,
       events,
-      http: Object.freeze({ ...http, request: interceptors.request }),
-      interceptRequest: interceptors.interceptRequest,
-      interceptResponse: interceptors.interceptResponse,
+      http: network?.http,
+      interceptRequest: network?.interceptRequest ?? (() => {}),
+      interceptResponse: network?.interceptResponse ?? (() => {}),
       gm,
       clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
@@ -387,12 +409,14 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
           return addStyle(css, ensureUIRoot());
         },
         registerStyles(...styles: any[]) {
-          const release = registerShadowStyles(ensureUIRoot(), styles.flat());
+          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
+          const release = uiFeature.registerShadowStyles(ensureUIRoot(), styles.flat());
           onDispose(release);
           return release;
         },
         mountSolid(component: any, options: Record<string, any> = {}) {
-          const release = mountSolidShadow(component, {
+          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
+          const release = uiFeature.mountSolidShadow(component, {
             ...options,
             target: ensureUIRoot(),
           });

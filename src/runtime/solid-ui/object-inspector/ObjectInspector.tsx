@@ -7,9 +7,8 @@ import {
   onCleanup,
   Show,
   useContext,
-  type JSX,
 } from "solid-js";
-import { Portal } from "@solidjs/web";
+import { Portal, type JSX } from "@solidjs/web";
 import {
   createEntrySource,
   getDomNodePreviewText,
@@ -35,7 +34,7 @@ import type {
   RodInspectorPropertyKey,
 } from "./types";
 import { VirtualList } from "./VirtualList";
-import "./inspector.css";
+
 
 interface HighlightTarget {
   element: Element;
@@ -51,7 +50,7 @@ interface InspectorActionsContextValue {
   inspectElement: (element: Element) => void;
 }
 
-const InspectorActionsContext = createContext<InspectorActionsContextValue>();
+const InspectorActionsContext = createContext<InspectorActionsContextValue>(undefined as unknown as InspectorActionsContextValue);
 
 function DomHighlightOverlay(props: {
   target: HighlightTarget | null;
@@ -64,8 +63,7 @@ function DomHighlightOverlay(props: {
     height: number;
   } | null>(null);
 
-  createEffect(() => {
-    const current = props.target;
+  createEffect(() => props.target, (current) => {
     if (!current) {
       setRect(null);
       return;
@@ -99,11 +97,11 @@ function DomHighlightOverlay(props: {
       }, duration);
     }
 
-    onCleanup(() => {
+    return () => {
       active = false;
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (timerId !== null) clearTimeout(timerId);
-    });
+    };
   });
 
   return (
@@ -550,7 +548,7 @@ export function ObjectInspector(props: ObjectInspectorProps) {
   });
 
   return (
-    <InspectorActionsContext.Provider value={actions}>
+    <InspectorActionsContext value={actions}>
       <ValueNode
         value={props.value}
         context={rootContext()}
@@ -560,6 +558,6 @@ export function ObjectInspector(props: ObjectInspectorProps) {
         target={highlightTarget()}
         onExpire={() => setHighlightTarget(null)}
       />
-    </InspectorActionsContext.Provider>
+    </InspectorActionsContext>
   );
 }
