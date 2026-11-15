@@ -15,6 +15,7 @@ import {
   getElementPreviewParts,
   getObjectId,
   getObjectPreview,
+  getSafePreviewType,
   getPrimitiveClassName,
   getRectRelativeToWindow,
   isDomElement,
@@ -394,7 +395,7 @@ function ObjectNode(props: {
         <Show
           when={isDomNode(props.value)}
           fallback={
-            <span>{getObjectPreview(props.value, props.context.options)}</span>
+            <span class={`rod-inspector__preview rod-inspector__preview--${getSafePreviewType(props.value)}`}>{getObjectPreview(props.value, props.context.options)}</span>
           }
         >
           <DomSummaryNode
