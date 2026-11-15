@@ -1,30 +1,38 @@
 import { createSignal, For } from "solid-js";
 import { render } from "@solidjs/web";
+import { ObjectInspector } from "../../runtime/solid-ui/object-inspector/ObjectInspector";
 
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
 type HistoryItem = { code: string; at: string };
-const pretty = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value, null, 2));
+const pretty = (value: unknown) => {
+  if (typeof value === "string") return value;
+  try { return JSON.stringify(value, null, 2) ?? String(value); }
+  catch { return Object.prototype.toString.call(value); }
+};
 
 export function mountPanel(container: HTMLElement) {
   const [records, setRecords] = createSignal<RecordItem[]>([]);
   const [methods, setMethods] = createSignal<MethodItem[]>([]);
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
-  const callbacks = { method: (_id: string) => {}, history: (_code: string) => {} };
+
+  const callbacks = { options: (_trigger: HTMLElement) => {}, method: (_id: string) => {}, history: (_code: string) => {} };
   const dispose = render(
     () => (
-      <div class="repl-root">
-        <button class="launcher" aria-label="Abrir REPL JavaScript">
+      <div class="repl-root" >
+        <button class="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
         </button>
         <section class="panel" aria-label="REPL JavaScript" hidden={true}>
           <header>
             <strong>{"REPL · JavaScript"}</strong>
-            <button data-action="copy-report">{"Relatório"}</button>
+            <button data-action="run" class="primary" title="Executar código">{"▶ Executar"}</button>
+            <button aria-label="Opções do REPL" aria-haspopup="menu" onClick={(event) => callbacks.options(event.currentTarget)}>{"⋯"}</button>
             <button data-action="close" aria-label="Fechar">
               {"×"}
             </button>
           </header>
+          <div class="repl-menu" hidden role="group" aria-label="Opções avançadas do REPL">
           <nav class="tabs">
             <button data-tab="console" aria-selected="true">
               {"Console"}
@@ -32,8 +40,7 @@ export function mountPanel(container: HTMLElement) {
             <button data-tab="methods">{"Métodos"}</button>
             <button data-tab="history">{"Histórico"}</button>
           </nav>
-          <div class="view" data-view="console">
-            <div class="toolbar execution-toolbar">
+          <div class="repl-menu-content">            <div class="toolbar execution-toolbar">
               <select aria-label="Método" data-method="">
                 <option value="auto">{"Automático · testa antes, executa uma vez"}</option>
               </select>
@@ -42,16 +49,14 @@ export function mountPanel(container: HTMLElement) {
               </button>
               <button data-action="stop">{"Parar espera"}</button>
             </div>
-            <div class="editor-actions" role="toolbar" aria-label="Edição">
+            <div class="editor-actions repl-settings" role="toolbar" aria-label="Edição">
               <button data-action="select-all">Selecionar tudo</button>
               <button data-action="copy-code">Copiar</button>
               <button data-action="paste-code">Colar</button>
               <button data-action="validate">Validar</button>
             </div>
-            <div class="editor-wrap">
-              <div data-code-editor="" />
-            </div>
-            <div class="options">
+
+            <div class="options repl-settings">
               <label>
                 <input type="checkbox" data-raw="" />
                 Script global (sem wrapper)
@@ -70,12 +75,12 @@ export function mountPanel(container: HTMLElement) {
                 <option value="">{"Exemplos…"}</option>
               </select>
             </div>
-            <p class="hint" data-syntax="">
+            <p class="hint repl-settings" data-syntax="">
               {
-                "Await e última expressão retornam resultado. Use _, $, $$, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
+                "Await e última expressão retornam resultado. Use _, $, $, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
               }
             </p>
-            <div class="row">
+            <div class="row repl-settings">
               <input
                 data-url=""
                 type="url"
@@ -89,16 +94,22 @@ export function mountPanel(container: HTMLElement) {
                 {"Módulo"}
               </label>
             </div>
-            <p class="hint warning">
+            <p class="hint warning repl-settings">
               {
                 "Parar/timeout cancelam a espera, não interrompem loops síncronos nem desfazem efeitos. “Executar em todos” repete seu código."
               }
             </p>
-            <div class="toolbar">
+            <div class="toolbar repl-settings">
               <button data-action="probe">{"Testar compatibilidade"}</button>
               <button data-action="run-all">{"Executar em todos"}</button>
               <button data-action="clear">{"Limpar saída"}</button>
               <button data-action="reset">{"Nova sessão"}</button>
+            </div>
+</div>
+          </div>
+          <div class="view" data-view="console">
+            <div class="editor-wrap">
+              <div data-code-editor="" />
             </div>
             <div class="output">
               <For each={records()}>
@@ -109,7 +120,7 @@ export function mountPanel(container: HTMLElement) {
                     open={item.kind === "error" || item.kind === "result"}
                   >
                     <summary>{item.title}</summary>
-                    <pre>{pretty(item.value)}</pre>
+                    <ObjectInspector value={item.value} />
                   </details>
                 )}
               </For>
@@ -137,7 +148,7 @@ export function mountPanel(container: HTMLElement) {
                       <summary>
                         {item.world + (item.result ? " · " + item.result.elapsedMs + " ms" : "")}
                       </summary>
-                      <pre>{pretty(item.result || { expectedWorld: item.world })}</pre>
+                      <ObjectInspector value={item.result || { expectedWorld: item.world }} />
                     </details>
                     <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
                   </div>

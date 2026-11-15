@@ -2,6 +2,21 @@
 
 These instructions apply to every agent, automation, and code contributor working in this repository.
 
+## Repository-wide defaults: Solid-first and context-first (MANDATORY)
+
+**Everything interactive in this repository is SolidJS by default.** Do not introduce React, Vue, imperative DOM-rendered menus, manually assembled widgets, or another UI framework unless the user explicitly requests it. Use SolidJS components, signals/stores, and CSS Modules, including for shared runtime UI such as dropdowns, dialogs, inspectors, Dock controls, and toasts.
+
+**Every feature must use the existing `ctx` contract first.** Before changing code, inspect the relevant helper and its usage, then prefer the public context API for events, elements/DOM, HTTP, request/response interception, storage, clipboard, menus, UI mounting, and cleanup. Do not introduce parallel helpers or bypass `ctx` for convenience.
+
+- Events: `ctx.events` for local events, `ctx.events.shared` for cross-userscript events, and `ctx.listen`/`ctx.events.dom` for browser listeners. Register disposal for all subscriptions.
+- Elements and DOM: `ctx.dom` for queries, observation and element interaction. Avoid ad-hoc MutationObservers and polling in features.
+- HTTP: `ctx.http` for requests and `ctx.interceptRequest`/`ctx.interceptResponse` for interception. Never patch fetch or XHR separately in a feature.
+- UI: SolidJS and CSS Modules, mounted via `ctx.ui.mountSolid` and styled via `ctx.ui.registerStyles`. Shared UI must be reusable from `ctx` (for example `ctx.menu.dropdown`), not implemented again inside individual userscripts.
+- Lifecycle: `ctx.signal` and `ctx.onDispose`; do not leave timers, observers, listeners or mounted UI orphaned.
+- Existing native APIs inside shared runtime helpers are permitted when implementing the abstraction; do not copy that low-level code into feature modules.
+
+**Pre-commit gate:** inspect helpers, confirm SolidJS, verify no duplicated browser APIs, format, typecheck, test, and build. Report any check that could not be run. Never claim validation without evidence.
+
 ## Context-first rule: MUST
 
 Before writing any userscript feature, inspect `src/core/runtime.js`, `src/runtime/`, and the relevant existing integration. Use the public `ctx` helpers instead of introducing duplicate browser APIs or ad-hoc infrastructure. Do not bypass an existing helper just because direct browser code is shorter.
@@ -43,3 +58,49 @@ When no existing helper covers a use case, document the gap, add or extend the s
 ## Event semantics
 
 `ctx.events` is scoped to one script. `ctx.events.shared` is for cross-script communication on the same page, using `rod-<name>` DOM events. BroadcastChannel is opt-in, works only in supported same-origin contexts, and should never carry secrets. See `docs/context-helpers.md`.
+
+
+## Solid 2.0
+
+This project uses Solid 2.0 (`solid-js` 2.x with `@solidjs/web`). Components run once;
+there is no re-render. Read `node_modules/solid-js/CHEATSHEET.md` before writing Solid code,
+especially its last section, "What changed from 1.x".
+
+Rules that matter most:
+
+- Props are read, never destructured: `props.name` inside JSX, a memo, or an effect.
+  `function Comp({ name })` loses reactivity. Pass values, not accessors: `<Child count={count()} />`.
+- `createEffect(compute, apply)` takes two functions. The first reads reactive values and
+  returns a result; the second receives it and performs side effects. One argument is an error.
+- Stores are written through the draft: `setStore(s => { s.user.name = "Ada" })`.
+  There are no path setters and no `produce`.
+- Read reactive values inside JSX, a memo, or an effect, never at the top of a component body.
+- Do not write a signal or store from a memo, an effect's compute function, or a component body.
+  Write from event handlers, `onSettled`, or actions.
+
+Names that no longer exist, and what to use:
+
+- `solid-js/web` -> `@solidjs/web`; `solid-js/store` -> `solid-js`
+- `Suspense` -> `Loading`; `SuspenseList` -> `Reveal`; `ErrorBoundary` -> `Errored`
+- `mergeProps` -> `merge`; `splitProps` -> `omit`; `unwrap` -> `snapshot`; `onMount` -> `onSettled`
+- `createResource` -> an async `createMemo` or `createStore(fn)` read under `<Loading>`
+- `createSelector` -> `createProjection`; `createComputed` -> `createMemo` or a two-function `createEffect`
+- `batch` -> writes batch on a microtask (`flush()` applies them now); `on()` -> the compute half of `createEffect`
+- `startTransition` / `useTransition` -> built in; `isPending()` reports an in-flight change
+- `Index` -> `<For keyed={false}>`; `indexArray` -> `mapArray`; `createMutable` -> `createStore` with draft setters
+- `onError` / `catchError` -> `<Errored>` or the `error` option of `createEffect`
+- `classList` -> `class={{ active: isActive() }}`; `use:` directives -> `ref={factory(args)}`
+- `Context.Provider` -> `<Context value={...}>`; `equalFn` -> `isEqual`; `getListener` -> `getObserver`
+
+Tooling:
+
+- Skills: `node_modules/solid-js/skills/solid-2.0/SKILL.md` (primer),
+  `node_modules/solid-js/skills/reactivity-diagnostics/SKILL.md` (every warning code and its fix),
+  `node_modules/@solidjs/diagnostics/skills/agent-loops/SKILL.md` (capture evidence, assert budgets),
+  `node_modules/@solidjs/web/skills/server-components/SKILL.md` (server components and slots).
+- A console warning with a bracketed code, such as `[REACTIVE_WRITE_IN_OWNED_SCOPE]`, is a defect.
+  Look it up in the repair guide; do not suppress it.
+- Verify a reactive change with `captureArtifact` and `expectNoDiagnostics` from `@solidjs/diagnostics`,
+  or `POST /__solid/diagnostics` on the dev server with `{"method":"begin"}` ... `{"method":"end"}`.
+- Lint with `eslint-plugin-solid/configs/v2` (or `v2-strict`).
+- Docs: https://v2.solidjs.com/llms.txt; append `.md` to any page URL for its Markdown.
