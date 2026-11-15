@@ -321,7 +321,7 @@ export type PreviewToken = { text: string; type: "string" | "number" | "boolean"
 /** Lex compact previews without HTML injection or evaluating inspected values. */
 export function safePreviewTokens(source: string): PreviewToken[] {
   const tokens: PreviewToken[] = [];
-  const pattern = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\\b(?:true|false|null|undefined|NaN|Infinity)\\b|\\b\\d+(?:\\.\\d+)?n?\\b|\\b(?:Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError|Symbol)\\b|ƒ|(?:[A-Za-z_$][\\w$]*)(?=\\s*:)|[{}[\\]():,#]|=>)/g;
+  const pattern = /("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*'|\\b(?:true|false|null|undefined|NaN|Infinity)\\b|\\b\\d+(?:\\.\\d+)?n?\\b|\\b(?:Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError|Symbol)\\b|ƒ|(?:[A-Za-z_$][\\w$]*)(?=\\s*:)|=>|[{}():,#])/g;
   let offset = 0;
   for (const match of source.matchAll(pattern)) {
     const index = match.index ?? 0;
