@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { format } from "prettier";
+import { execFileSync } from "node:child_process";
 import { build as viteBuild } from "vite";
 import solidPlugin from "@solidjs/vite-plugin";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
