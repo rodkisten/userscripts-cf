@@ -36,3 +36,23 @@ const [value, setValue] = createSignal<string[]>([]);
 ```
 
 The component supports controlled selection, multiple pills, grouped options, loading and clearable state. It is mounted by RodMenu's `TypeaheadSelect` compatibility wrapper. Remote fetching, Fuse.js, virtualization, custom tags and Twitter highlighting remain planned. The HTML playground is a behavior mock, not a SolidJS component harness yet.
+
+## SolidJS TagsInput
+
+```tsx
+import { createSignal } from 'solid-js';
+import { TagsInput } from './TagsInput';
+
+const [tags, setTags] = createSignal(['typescript']);
+<TagsInput id="search-tags" value={tags()} onChange={setTags}
+  options={[{ value: 'filter:videos', label: 'Vídeos' }]}
+  maxTags={20} separators={[',', ';']} />;
+```
+
+Supports custom tags, suggestion selection, Enter/comma/semicolon creation, Backspace removal, maxTags, duplicate control, and readonly/disabled states.
+
+## Virtualization decision
+
+Use **TanStack Virtual** (https://tanstack.com/virtual/latest) for future large suggestion lists. Do not implement a custom virtualizer. For SolidJS v2, verify framework adapter compatibility before choosing the integration; use the core virtualizer if a compatible Solid adapter is unavailable. Include dynamic row measurement, keyboard scrolling, grouped options and mobile Shadow DOM tests.
+
+Playground follow-up: replace HTML mocks with a compiled SolidJS example so these props are exercised directly.
