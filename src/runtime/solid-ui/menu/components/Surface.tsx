@@ -82,6 +82,10 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   let shellRef: HTMLElement | undefined;
   let settled = false;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingResult: RodMenuResult<TValues> | undefined;
+  let finalized = false;
+  const previousOverflow = typeof document !== 'undefined' ? document.documentElement.style.overflow : '';
   let resolveResult!: (res: RodMenuResult<TValues>) => void;
   const resultPromise = new Promise<RodMenuResult<TValues>>((res) => {
     resolveResult = res;
@@ -209,16 +213,21 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
       reason,
     };
     setOpen(false);
-    window.setTimeout(() => {
-      try {
-        schema().onClose?.(result);
-      } catch (err) {
-        reportError(err);
-      }
-      resolveResult(result);
-      unregisterSurface(props.id, handle);
-      props.onDestroy?.(props.id);
-    }, 220);
+    pendingResult = result;
+    closeTimer = window.setTimeout(() => finalize(), 220);
+  };
+
+  const finalize = () => {
+    if (finalized) return;
+    finalized = true;
+    if (closeTimer !== undefined) clearTimeout(closeTimer);
+    const result = pendingResult ?? {
+      action: 'dismiss', values: cloneValue(store.values()), reason: 'api' as const,
+    };
+    try { schema().onClose?.(result); } catch (err) { reportError(err); }
+    resolveResult(result);
+    unregisterSurface(props.id, handle);
+    props.onDestroy?.(props.id);
   };
 
   const commitField = (field: RodMenuField, raw: unknown) => {
@@ -397,8 +406,13 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
         vv.removeEventListener('resize', syncViewport);
         vv.removeEventListener('scroll', syncViewport);
       }
+      if (!settled) {
+        settled = true;
+        pendingResult = { action: 'dismiss', values: cloneValue(store.values()), reason: 'api' };
+      }
+      finalize();
       if (schema().scrollLock !== false && stack().length === 0) {
-        document.documentElement.style.overflow = '';
+        document.documentElement.style.overflow = previousOverflow;
       }
     });
   }
