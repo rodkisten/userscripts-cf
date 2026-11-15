@@ -2,12 +2,35 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { format } from "prettier";
+import { build as viteBuild } from "vite";
+import solidPlugin from "@solidjs/vite-plugin";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 assets["playground/form-controls.html"] = await fs.readFile(path.join(root, "playground/form-controls.html"), "utf8");
+// Compile the actual SolidJS components instead of shipping a separate HTML mock.
+const playgroundDir = path.join(dist, "form-controls-playground");
+await viteBuild({
+  configFile: false,
+  root,
+  plugins: [solidPlugin()],
+  build: {
+    outDir: playgroundDir,
+    emptyOutDir: true,
+    cssCodeSplit: false,
+    lib: {
+      entry: path.join(root, "playground/form-controls-app.tsx"),
+      formats: ["es"],
+      fileName: () => "form-controls.js",
+      cssFileName: "form-controls",
+    },
+    minify: true,
+  },
+});
+assets["playground/form-controls.js"] = await fs.readFile(path.join(playgroundDir, "form-controls.js"), "utf8");
+assets["playground/form-controls.css"] = await fs.readFile(path.join(playgroundDir, "form-controls.css"), "utf8");
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
