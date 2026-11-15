@@ -4,20 +4,27 @@ import { menuActions, menuState, type MenuEntry, type MenuField, type MenuValue 
 import styles, { css } from "./MenuRoot.module.css";
 
 function CustomField(props: { render: () => Node | null | undefined }) {
-  let container!: HTMLDivElement;
-  {
-    const node = props.render();
-    if (!node) return;
-    const parent = node.parentNode;
-    const nextSibling = node.nextSibling;
-    container.append(node);
-    onCleanup(() => {
-      if (!parent) return;
-      if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
-      else parent.appendChild(node);
-    });
-  }
-  return <div ref={container} />;
+  let node: Node | null | undefined;
+  let parent: Node | null = null;
+  let nextSibling: Node | null = null;
+
+  onCleanup(() => {
+    if (!node || !parent) return;
+    if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
+    else parent.appendChild(node);
+  });
+
+  return (
+    <div
+      ref={(container) => {
+        node = props.render();
+        if (!node) return;
+        parent = node.parentNode;
+        nextSibling = node.nextSibling;
+        container.appendChild(node);
+      }}
+    />
+  );
 }
 
 function Field(props: { menuId: string; field: MenuField }) {
