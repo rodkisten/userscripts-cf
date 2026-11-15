@@ -29,14 +29,14 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: main
           persist-credentials: true
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - name: Install locked dependencies
         run: npm ci --legacy-peer-deps
@@ -64,6 +64,7 @@ jobs:
           echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
       - name: Typecheck, build and test before publishing
         run: npm test
+        if: ${{ github.event_name == 'pull_request' }}
       - name: Verify standalone userscript metadata
         run: node --test tests/standalone-minify.test.js
       # Formatting is handled separately and must not block publishing.
