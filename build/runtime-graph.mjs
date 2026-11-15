@@ -7,7 +7,9 @@ const extensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts", ".cts", ".json
 
 async function resolveLocal(from, specifier) {
   if (!specifier.startsWith(".")) return null;
-  const base = path.resolve(path.dirname(from), specifier);
+  const cleanSpecifier = specifier.split(/[?#]/, 1)[0];
+  if (!/\.(?:[cm]?[jt]sx?)$/.test(cleanSpecifier) && /\.[a-z0-9]+$/i.test(cleanSpecifier)) return null;
+  const base = path.resolve(path.dirname(from), cleanSpecifier);
   const candidates = [base];
   if (/\.(?:js|jsx|mjs)$/.test(base)) {
     const withoutExtension = base.replace(/\.(?:js|jsx|mjs)$/, "");

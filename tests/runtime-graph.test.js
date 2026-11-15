@@ -31,4 +31,17 @@ describe("runtime graph analyzer", () => {
       await fs.rm(root, { recursive: true, force: true });
     }
   });
+  it("skips CSS inline imports while following code imports with Vite queries", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-assets-"));
+    try {
+      await fs.writeFile(path.join(root, "entry.tsx"), 'import styles from "./theme.css?inline"; import "./logic.js?raw"; const view = ctx.menu;');
+      await fs.writeFile(path.join(root, "logic.ts"), 'export const run = (ctx) => ctx.storage.get("key");');
+      await fs.writeFile(path.join(root, "theme.css"), ".demo { color: red; }");
+      const result = await analyzeRuntimeGraph("entry.tsx", { root });
+      expect(result.features).toEqual(["menu", "storage"]);
+      expect(result.files).toEqual(["entry.tsx", "logic.ts"]);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
 });
