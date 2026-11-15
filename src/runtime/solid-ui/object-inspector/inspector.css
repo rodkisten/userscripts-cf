@@ -297,3 +297,12 @@
     animation: none;
   }
 }
+
+.rod-inspector__preview { color: var(--rod-inspector-muted); }
+.rod-inspector__preview--array,
+.rod-inspector__preview--map,
+.rod-inspector__preview--set { color: var(--rod-inspector-number); }
+.rod-inspector__preview--date,
+.rod-inspector__preview--regexp { color: var(--rod-inspector-string); }
+.rod-inspector__preview--function { color: var(--rod-inspector-function); }
+.rod-inspector__preview--error { color: var(--rod-inspector-warning); }
