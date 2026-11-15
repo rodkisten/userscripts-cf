@@ -119,3 +119,23 @@
   opacity: 0.5;
   cursor: wait;
 }
+
+/* Embedded panels own their visual chrome, header, tabs and close control. */
+.sheet[data-chrome="bare"] {
+  width: min(100%, 640px);
+  max-height: min(92dvh, 900px);
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.bareField {
+  display: block;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.bareField > div {
+  min-width: 0;
+}
