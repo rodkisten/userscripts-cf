@@ -298,15 +298,3 @@
   }
 }
 
-.rod-inspector__preview { color: var(--rod-inspector-muted); }
-.rod-inspector__preview--array,
-.rod-inspector__preview--map,
-.rod-inspector__preview--set { color: var(--rod-inspector-number); }
-.rod-inspector__preview--date,
-.rod-inspector__preview--regexp { color: var(--rod-inspector-string); }
-.rod-inspector__preview--function { color: var(--rod-inspector-function); }
-.rod-inspector__preview--error { color: var(--rod-inspector-warning); }
-
-.rod-inspector__preview[data-highlight="true"] .rod-token--key { color: var(--rod-inspector-key); }
-.rod-inspector__preview[data-highlight="true"] .rod-token--meta { color: var(--rod-inspector-subtle); }
-.rod-inspector__preview[data-highlight="true"] .rod-token--function { color: var(--rod-inspector-function); }
