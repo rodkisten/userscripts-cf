@@ -29,6 +29,26 @@ describe("inspectable build artifacts", () => {
       expect(target.output.gzipBytes).toBeGreaterThan(0);
       expect(target.output.gzipBytes).toBeLessThan(target.output.bytes);
       expect(target.output.runtimes.length).toBeGreaterThan(0);
+      // Assert the actual Rolldown module graph, not merely the requested flags.
+      // A disabled feature must contribute zero rendered bytes to the output.
+      const optionalModules = {
+        __ROD_FEATURE_MENU__: "src/runtime/modular/features/menu.ts",
+        __ROD_FEATURE_TOASTER__: "src/runtime/modular/features/toaster.ts",
+        __ROD_FEATURE_CLIPBOARD__: "src/runtime/modular/features/clipboard.ts",
+        __ROD_FEATURE_GM__: "src/runtime/modular/features/gm.ts",
+        __ROD_FEATURE_DOM__: "src/runtime/modular/features/dom.ts",
+        __ROD_FEATURE_UI__: "src/runtime/modular/features/ui.ts",
+        __ROD_FEATURE_HTTP__: "src/runtime/modular/features/http.ts",
+      };
+      for (const runtime of target.output.runtimes) {
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        expect(report).toBeDefined();
+        for (const [flag, module] of Object.entries(optionalModules)) {
+          if (runtime.featureDefines[flag] !== false) continue;
+          const retained = report.modules.filter((item) => item.id.endsWith(module) && item.renderedBytes > 0);
+          expect(retained, \`Disabled \${flag} retained \${module} in \${script.id}:\${runtime.world}\`).toEqual([]);
+        }
+      }
       for (const runtime of target.output.runtimes) {
         expect(runtime.includedModuleCount).toBeGreaterThan(0);
         expect(runtime.topModules.length).toBeGreaterThan(0);
