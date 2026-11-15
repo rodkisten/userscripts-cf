@@ -21,4 +21,15 @@ describe("runtime feature selection", () => {
     expect(analyzeRuntimeUsage("const view = <button onClick={() => ctx.menu.open({})}>Open</button>;", "widget.tsx")).toEqual({ features: ["menu"], dynamic: false });
     expect(analyzeRuntimeUsage("const view = <button onClick={() => ctx.toaster.success(\"ok\")}>Open</button>;", "widget.jsx")).toEqual({ features: ["toaster"], dynamic: false });
   });
+  it("tracks transitive context aliases", () => {
+    expect(analyzeRuntimeUsage("const a = ctx; const b = a; b.menu.open(); b[\`toaster\`].success('ok');")).toEqual({ features: ["menu", "toaster"], dynamic: false });
+  });
+  it("preserves all features when a context escapes to another function", () => {
+    expect(analyzeRuntimeUsage("installFeature(ctx);").dynamic).toBe(true);
+    expect(analyzeRuntimeUsage("const alias = ctx; return alias;").dynamic).toBe(true);
+  });
+  it("preserves all features for spreads and rest destructuring", () => {
+    expect(analyzeRuntimeUsage("const clone = { ...ctx };").dynamic).toBe(true);
+    expect(analyzeRuntimeUsage("const { menu, ...rest } = ctx;").dynamic).toBe(true);
+  });
 });
