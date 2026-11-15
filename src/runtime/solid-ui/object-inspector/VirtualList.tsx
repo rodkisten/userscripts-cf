@@ -141,7 +141,7 @@ export function VirtualList(props: VirtualListProps) {
     return Math.max(estimatedHeight(), Math.ceil(measured));
   };
 
-  createEffect(() => bodyRef, () => {
+  createEffect(() => {
     if (typeof ResizeObserver === "function") {
       rowObserver = new ResizeObserver((entries) => {
         if (!bodyRef) return;
