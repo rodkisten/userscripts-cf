@@ -141,6 +141,57 @@ export default {
     function renderHistory() {
       ui.setHistory([...state.history].reverse());
     }
+    // The shared dropdown lives in ctx.menu, not in this userscript's UI.
+    // Keep existing controls mounted (but hidden) so selectors and handlers remain compatible.
+    ui.callbacks.options = (trigger) => {
+      const action = (name) => () => {
+        const button = shadow.querySelector('[data-action="' + name + '"]');
+        button?.click();
+      };
+      const check = (selector, label) => {
+        const input = $(selector);
+        return {
+          type: "checkbox",
+          label,
+          checked: Boolean(input?.checked),
+          onCheckedChange: (checked) => {
+            if (!input) return;
+            input.checked = checked;
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+            save();
+          },
+        };
+      };
+      const items = [
+        { label: "Execução", children: [
+          { label: "Executar código", onSelect: action("run") },
+          { label: "Parar execução", onSelect: action("stop") },
+          { label: "Executar em todos", onSelect: action("run-all") },
+          check(RODX_SELECTORS.replPersist, "Persistir variáveis"),
+          check(RODX_SELECTORS.replRawMode, "Script global"),
+        ] },
+        { label: "Editor", children: [
+          { label: "Selecionar tudo", onSelect: action("select-all") },
+          { label: "Copiar", onSelect: action("copy-code") },
+          { label: "Colar", onSelect: action("paste-code") },
+          { label: "Validar", onSelect: action("validate") },
+          { label: "Completar", onSelect: action("complete") },
+        ] },
+        { label: "Ferramentas", children: [
+          { label: "Testar compatibilidade", onSelect: action("probe") },
+          { label: "Limpar output", onSelect: action("clear") },
+          { label: "Nova sessão", onSelect: action("reset") },
+          { label: "Exportar", onSelect: action("export") },
+          { label: "Importar", onSelect: action("import") },
+          { label: "Copiar relatório", onSelect: action("copy-report") },
+        ] },
+        { type: "separator" },
+        { label: "Métodos de execução", onSelect: () => tab("methods") },
+        { label: "Histórico", onSelect: () => tab("history") },
+        { label: "Console", onSelect: () => tab("console") },
+      ];
+      ctx.menu.dropdown({ id: "page-repl-options", trigger, align: "end", items });
+    };
     ui.callbacks.method = (id) => {
       $(RODX_SELECTORS.replMethod).value = id;
       tab("console");
