@@ -136,3 +136,7 @@ The existing RodMenu field variants, trailing actions and media/diagnostic exten
 ## Twitter search visual/raw editor
 
 `twitter-search.ts` exposes `parseTwitterSearch`, `replaceTwitterToken`, `removeTwitterToken` and `appendTwitterToken`. The Playground shows visually classified tokens with inline editing, Enter to commit, Escape to cancel, and removal while keeping the raw textarea as the source of truth. Token replacement uses source offsets to preserve the surrounding expression. Nested boolean validation and comprehensive quote/escape handling still require tests.
+
+## 29 shared field variants
+
+`SHARED_FIELD_TYPES` enumerates all 29 generic discriminants, including expanded text and date variants. The six RodMenu-specific extensions are `media-preview`, `media-picker`, `provider-status`, `request-log`, `debug-json`, and `channel-picker`. `isSharedFieldType` provides a runtime type guard. The RodMenu renderer retains the existing rendering and styling while the shared field type contracts live in `fields.ts`. This registry does not yet replace RodMenu's JSX implementation; do not treat the renderer extraction as complete.
