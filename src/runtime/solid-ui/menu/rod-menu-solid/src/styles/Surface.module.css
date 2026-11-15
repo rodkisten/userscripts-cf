@@ -39,8 +39,8 @@
   pointer-events: none;
 }
 
-.root[data-stack-active="false"] .backdrop {
-  opacity: 0 !important;
+.root[data-open="true"][data-stack-active="false"] .backdrop {
+  opacity: 0;
 }
 
 .root[data-stack-active="false"] .shell {
@@ -379,7 +379,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .backdrop, .shell, .action, .close {
-    transition-duration: .001ms !important;
-    animation-duration: .001ms !important;
+    transition-duration: .001ms;
+    animation-duration: .001ms;
   }
 }
