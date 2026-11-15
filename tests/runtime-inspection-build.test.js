@@ -15,6 +15,16 @@ describe("inspectable build artifacts", () => {
       expect(installable).toMatch(/^\/\/ ==UserScript==/);
     }
     const audit = JSON.parse(await fs.readFile(path.join(dist, "runtime-feature-audit.json"), "utf8"));
-    expect(Object.keys(audit).length).toBeGreaterThan(0);
+    expect(Object.keys(audit.scripts).length).toBeGreaterThan(0);
+    expect(audit.targets.standalone).toBeDefined();
+    expect(audit.targets.unified).toBeDefined();
+    for (const script of manifest.scripts) {
+      const target = audit.targets[script.id];
+      expect(target).toBeDefined();
+      expect(target.features).toEqual([...target.features].sort());
+      expect(target.treeShaken).toBe(false);
+      const expected = new Set(target.scripts.flatMap((id) => audit.scripts[id].features));
+      expect(target.features).toEqual([...expected].sort());
+    }
   });
 });
