@@ -13,6 +13,15 @@ import { createToasterFeature } from "../runtime/modular/features/toaster.js";
 import { createStorageFeature } from "../runtime/modular/features/storage.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
 
+// Build-time constants are replaced by Vite for each userscript target.
+// Direct runtime consumers retain the complete backwards-compatible API.
+declare const __ROD_FEATURE_MENU__: boolean;
+declare const __ROD_FEATURE_TOASTER__: boolean;
+declare const __ROD_FEATURE_CLIPBOARD__: boolean;
+declare const __ROD_FEATURE_GM__: boolean;
+declare const __ROD_FEATURE_DOM__: boolean;
+declare const __ROD_FEATURE_HTTP__: boolean;
+
 // Tipos auxiliares e interfaces globais
 export interface ScriptDefinition {
   id: string;
@@ -89,16 +98,20 @@ function toast(): void {}
 function menu(): void {}
 
 export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
-  const rod = { menu: createMenuFeature(), toaster: createToasterFeature(host), storage: createStorageFeature(host) };
+  const rod = {
+    menu: (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) ? createMenuFeature() : undefined,
+    toaster: (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) ? createToasterFeature(host) : undefined,
+    storage: createStorageFeature(host),
+  };
   const { mountSolidShadow, registerShadowStyles } = createUIFeature();
   const stores = new Map<string, any>();
-  const clipboard = createClipboardFeature(host);
+  const clipboard = (typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__) ? createClipboardFeature(host) : null;
   if (clipboard) (host as any).__RodClipboard = clipboard;
 
   function openClipboardMenu(): void {
     if (!clipboard) return;
     const entries = clipboard.list().slice(0, 30);
-    rod.menu.open({
+    rod.menu?.open({
       id: "rod-clipboard-history", title: "📋 Clipboard", presentation: "bottom-sheet", size: "lg",
       description: "Histórico local. Selecione um item para copiar novamente.",
       fields: [{ type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
@@ -132,7 +145,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     }
   };
 
-  host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
+  if (clipboard) host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
   
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) => matches(definition, url, rules()[definition.id]);
@@ -308,19 +321,19 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       },
     });
 
-    const gm = createGMFeature(host, definition.id);
-    const network = createHttpFeature(host, abort.signal, storage, definition.id);
-    onDispose(() => network.dispose());
+    const gm = (typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__) ? createGMFeature(host, definition.id) : undefined as any;
+    const network = (typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__) ? createHttpFeature(host, abort.signal, storage, definition.id) : null;
+    if (network) onDispose(() => network.dispose());
 
-    const dom = createDomFeature(host, abort.signal);
-    onDispose(() => dom.dispose());
+    const dom = (typeof __ROD_FEATURE_DOM__ === "undefined" || __ROD_FEATURE_DOM__) ? createDomFeature(host, abort.signal) : undefined as any;
+    if (dom) onDispose(() => dom.dispose());
 
     return {
       id: definition.id,
       events,
-      http: network.http,
-      interceptRequest: network.interceptRequest,
-      interceptResponse: network.interceptResponse,
+      http: network?.http,
+      interceptRequest: network?.interceptRequest ?? (() => {}),
+      interceptResponse: network?.interceptResponse ?? (() => {}),
       gm,
       clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
