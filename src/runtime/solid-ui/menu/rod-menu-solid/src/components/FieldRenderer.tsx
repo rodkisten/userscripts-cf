@@ -1,6 +1,7 @@
 import { createSignal, For, Match, Show, Switch } from 'solid-js';
 import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from '../types';
 import { TypeaheadSelect } from './fields/TypeaheadSelect';
+import { isMenuFieldVisible, isMenuFieldDisabled } from '../adapters/form-controls';
 import {
   ChannelPickerControl,
   DebugJsonControl,
@@ -23,27 +24,8 @@ export interface FieldRendererProps {
 export function FieldRenderer(props: FieldRendererProps) {
   const [trailingLoading, setTrailingLoading] = createSignal(false);
 
-  const isVisible = () => {
-    if (props.field.hidden) return false;
-    if (!props.field.visibleWhen) return true;
-    try {
-      return !!props.field.visibleWhen(props.context.values, props.context);
-    } catch (err) {
-      props.onError(err);
-      return true;
-    }
-  };
-
-  const isDisabled = () => {
-    if (props.field.disabled) return true;
-    if (!props.field.disabledWhen) return false;
-    try {
-      return !!props.field.disabledWhen(props.context.values, props.context);
-    } catch (err) {
-      props.onError(err);
-      return false;
-    }
-  };
+  const isVisible = () => isMenuFieldVisible(props.field, props.context, props.onError);
+  const isDisabled = () => isMenuFieldDisabled(props.field, props.context, props.onError);
 
   const fieldValue = () => props.context.values[props.field.name];
   const fieldError = () => props.context.errors[props.field.name];
