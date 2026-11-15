@@ -31,6 +31,18 @@ describe("Rod UI Design System Studio contract", () => {
     expect(page).toContain('id="examplesCatalog"');
     expect(page).toContain('id="examplesSearch"');
   });
+  it("documents and renders advanced menu and inspector controls", () => {
+    const examples = read("studio/examples.ts");
+    const entry = read("studio/entry.tsx");
+    const page = read("hosting/design-system.html");
+    for (const id of ["tabs", "sections", "validation", "conditional", "persistence", "gestures", "stack", "focus", "theme", "drawer", "popover", "async-action"]) {
+      expect(examples).toContain(`id: "${id}"`);
+    }
+    expect(entry).toContain("inspectorControls");
+    expect(entry).toContain("setInspectorOptions");
+    expect(page).toContain('id="inspectorAdvanced"');
+    expect(page).toContain('id="inspectorReset"');
+  });
   it("uses the custom hostname as the canonical distribution URL", () => {
     expect(read("distribution.config.js")).toContain("https://userscripts.migos.club");
   });
