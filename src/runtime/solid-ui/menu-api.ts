@@ -3,16 +3,12 @@ import { mountMenuRoot } from "./MenuRoot";
 
 type Values = Record<string, MenuValue>;
 type LegacyAction = { id: string; label: string; role?: "submit" | "cancel" | "secondary" | "destructive"; handler?: (context: { values: Values; close: () => void }) => unknown; run?: (values: Values) => unknown; validate?: boolean };
-type LegacySchema = Omit<MenuEntry, "actions"> & { description?: string; size?: string; actions?: LegacyAction[]; values?: Values; fields?: MenuEntry["fields"] };
-let mounted = false;
+type LegacySchema = Omit<MenuEntry, "actions" | "id" | "title"> & { id?: string; title?: string } & { description?: string; size?: string; actions?: LegacyAction[]; values?: Values; fields?: MenuEntry["fields"] };
 let defaults: Record<string, unknown> = {};
 
 function ensureMounted() {
   if (typeof document === "undefined") return;
-  if (!mounted) {
-    mountMenuRoot();
-    mounted = true;
-  }
+  mountMenuRoot();
 }
 
 /** Single Solid-backed menu API exposed as ctx.menu. */
