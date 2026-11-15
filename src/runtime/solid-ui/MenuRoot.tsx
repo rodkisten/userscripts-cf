@@ -1,11 +1,11 @@
-import { For, Show, onCleanup, onMount } from "solid-js";
+import { For, Show, onCleanup } from "solid-js";
 import { mountSolidShadow } from "./shadow-mount";
 import { menuActions, menuState, type MenuEntry, type MenuField, type MenuValue } from "./menu-store";
 import styles, { css } from "./MenuRoot.module.css";
 
 function CustomField(props: { render: () => Node | null | undefined }) {
   let container!: HTMLDivElement;
-  onMount(() => {
+  {
     const node = props.render();
     if (!node) return;
     const parent = node.parentNode;
@@ -16,7 +16,7 @@ function CustomField(props: { render: () => Node | null | undefined }) {
       if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
       else parent.appendChild(node);
     });
-  });
+  }
   return <div ref={container} />;
 }
 
@@ -155,15 +155,16 @@ function Field(props: { menuId: string; field: MenuField }) {
 function MenuDialog(props: { menu: MenuEntry }) {
   let dialog!: HTMLElement;
   let previousFocus: Element | null = null;
-  onMount(() => {
+  queueMicrotask(() => {
+    if (!dialog.isConnected) return;
     previousFocus =
       dialog.getRootNode() instanceof ShadowRoot
         ? (dialog.getRootNode() as ShadowRoot).activeElement
         : document.activeElement;
     dialog.focus();
-    onCleanup(() => {
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
-    });
+  });
+  onCleanup(() => {
+    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
   });
   const dismiss = () => {
     if (props.menu.dismissible !== false) menuActions.close(props.menu.id, "dismiss");
