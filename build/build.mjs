@@ -295,6 +295,35 @@ console.table(runtimeFeatureAudit.repeatedRenderedModules.slice(0, 20).map(({ mo
 })));
 console.log("\\nLargest retained runtime modules by target/world:");
 console.table(topRuntimeModules);
+// Editor dependency audit: attribute CodeMirror, Lezer and Acorn to the
+// actual rendered module graph, not package.json declarations. A module may
+// appear in multiple independently installable bundles, so keep worlds apart.
+const editorFamilies = [
+  ["codemirror", /(?:^|\\/)node_modules\\/@codemirror\\//],
+  ["lezer", /(?:^|\\/)node_modules\\/@lezer\\//],
+  ["acorn", /(?:^|\\/)node_modules\\/acorn\\//],
+];
+const editorAudit = {
+  schema: 1,
+  note: "renderedBytes are pre-minification Rolldown contributions, not gzip or estimated download savings",
+  bundles: Object.fromEntries(Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => {
+    const families = Object.fromEntries(editorFamilies.map(([family, pattern]) => {
+      const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern.test(item.id));
+      return [family, {
+        renderedBytes: modules.reduce((total, item) => total + item.renderedBytes, 0),
+        modules: modules.map(({ id, renderedBytes }) => ({ id, renderedBytes })),
+      }];
+    }));
+    return [target, { families, totalEditorRenderedBytes: Object.values(families).reduce((total, item) => total + item.renderedBytes, 0) }];
+  })),
+};
+await fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\\n");
+console.log("\\nEditor dependency footprint by target/world (pre-minification):");
+console.table(Object.entries(editorAudit.bundles).map(([target, report]) => ({
+  target, codemirror: report.families.codemirror.renderedBytes,
+  lezer: report.families.lezer.renderedBytes,
+  acorn: report.families.acorn.renderedBytes,
+})));
 await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
 console.table(Object.entries(classAudit).map(([target, audit]) => ({
