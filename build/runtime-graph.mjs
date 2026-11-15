@@ -34,6 +34,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   const visited = new Set();
   const features = new Set();
   const dynamicFiles = [];
+  const modules = [];
   while (pending.length) {
     const filename = pending.pop();
     if (visited.has(filename)) continue;
@@ -41,6 +42,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
       throw new Error(`Import outside project: ${filename}`);
     visited.add(filename);
     const source = await fs.readFile(filename, "utf8");
+    modules.push({ file: path.relative(rootPath, filename).split(path.sep).join("/"), sourceBytes: Buffer.byteLength(source) });
     const usage = analyzeRuntimeUsage(source, filename);
     for (const feature of usage.features) features.add(feature);
     if (usage.dynamic) dynamicFiles.push(path.relative(rootPath, filename));
@@ -55,5 +57,8 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     dynamic: dynamicFiles.length > 0,
     dynamicFiles: dynamicFiles.sort(),
     files: [...visited].map((file) => path.relative(rootPath, file)).sort(),
+    // Source bytes are diagnostic only; not bundled/minified byte attribution.
+    sourceBytes: modules.reduce((sum, item) => sum + item.sourceBytes, 0),
+    modules: modules.sort((a, b) => b.sourceBytes - a.sourceBytes || a.file.localeCompare(b.file)),
   };
 }
