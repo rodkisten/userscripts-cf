@@ -40,6 +40,19 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --legacy-peer-deps
+      - name: Skip superseded main revisions
+        id: freshness
+        if: steps.source.outputs.skip != 'true' && steps.freshness.outputs.skip != 'true'
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          LATEST_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$LATEST_SHA" != "$EXPECTED_SHA" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "A newer commit is on main; skip this outdated release." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Select next version
         id: version
         env:
