@@ -43,6 +43,7 @@ export const DEFAULT_OPTIONS: NormalizedInspectorOptions = Object.freeze({
   unmountOnCollapse: true,
   highlightDuration: 850,
   theme: "auto",
+  syntaxHighlighting: true,
 });
 
 export function hasOwn(object: object, key: PropertyKey): boolean {
@@ -184,6 +185,7 @@ export function normalizeOptions(
       60_000,
     ),
     theme,
+    syntaxHighlighting: toBoolean(options.syntaxHighlighting, DEFAULT_OPTIONS.syntaxHighlighting),
   };
 }
 
