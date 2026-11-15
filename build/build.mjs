@@ -76,6 +76,25 @@ const runtimeFeatureAudit = { scripts: {}, targets: {} };
 for (const definition of definitions) {
   runtimeFeatureAudit.scripts[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
 }
+// Shared source modules help identify repeated dependencies across independently
+// installed scripts. These are source bytes, not attributable output bundle bytes.
+const moduleConsumers = new Map();
+for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
+  for (const module of analysis.modules) {
+    const item = moduleConsumers.get(module.file) || { file: module.file, sourceBytes: module.sourceBytes, scripts: [] };
+    item.scripts.push(scriptId);
+    moduleConsumers.set(module.file, item);
+  }
+}
+runtimeFeatureAudit.sharedModules = [...moduleConsumers.values()]
+  .filter((module) => module.scripts.length > 1)
+  .map((module) => ({ ...module, scripts: module.scripts.sort(), aggregateSourceBytes: module.sourceBytes * module.scripts.length }))
+  .sort((a, b) => b.aggregateSourceBytes - a.aggregateSourceBytes || a.file.localeCompare(b.file));
+runtimeFeatureAudit.summary = {
+  uniqueModules: moduleConsumers.size,
+  sharedModules: runtimeFeatureAudit.sharedModules.length,
+  sharedSourceBytesAcrossScripts: runtimeFeatureAudit.sharedModules.reduce((sum, module) => sum + module.aggregateSourceBytes, 0),
+};
 for (const target of targets) {
   const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
   const features = [...new Set(scripts.flatMap((script) => script.features))].sort();
