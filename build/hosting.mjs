@@ -7,6 +7,7 @@ import solidPlugin from "@solidjs/vite-plugin";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
+execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 assets["playground/form-controls.html"] = await fs.readFile(path.join(root, "playground/form-controls.html"), "utf8");

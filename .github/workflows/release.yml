@@ -1,35 +1,129 @@
 name: Release userscripts
-run-name: "Release · ${{ inputs.tag || github.ref_name }}"
+run-name: "Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag igual à versão do package.json (ex.: v3.9.0)"
+      bump:
+        description: "Incremento semântico da versão"
         required: true
-        type: string
+        default: patch
+        type: choice
+        options: [patch, minor, major]
 
 permissions:
   contents: write
 
+# Only one release can bump and publish at a time. Do not cancel a release midway.
 concurrency:
   group: userscripts-releases
   cancel-in-progress: false
 
 jobs:
   release:
+    environment: production
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: true
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run format:check
-      - run: npm test
-      - name: Publish installable scripts and metadata
-        run: npm run release
+      - name: Install locked dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Skip dependency-bot commits
+        id: source
+        run: |
+          set -euo pipefail
+          AUTHOR="$(git log -1 --format=%an)"
+          EMAIL="$(git log -1 --format=%ae)"
+          SUBJECT="$(git log -1 --format=%s)"
+          if [[ "$AUTHOR $EMAIL $SUBJECT" =~ ([Rr]enovate|[Dd]ependabot) ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency bot change: publication skipped." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Select next version
+        if: steps.source.outputs.skip != 'true'
+        id: version
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
+        run: |
+          set -euo pipefail
+          # Resume a release after a failed upload without incrementing twice.
+          LAST_SUBJECT="$(git log -1 --format=%s)"
+          CURRENT="$(node -p 'require("./package.json").version')"
+          RELEASE_STATE="$(gh release view "v$CURRENT" --json isDraft --jq '.isDraft' 2>/dev/null || echo missing)"
+          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" && "$RELEASE_STATE" != "false" ]]; then
+            VERSION="$CURRENT"
+            echo "resume=true" >> "$GITHUB_OUTPUT"
+          else
+            npm version "$BUMP" --no-git-tag-version --ignore-scripts
+            VERSION="$(node -p 'require("./package.json").version')"
+            echo "resume=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+      - name: Typecheck, build and test before publishing
+        if: steps.source.outputs.skip != 'true'
+        run: npm test
+      - name: Verify installable userscript metadata
+        if: steps.source.outputs.skip != 'true'
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; const manifest=JSON.parse(fs.readFileSync("dist/manifest.json","utf8")); if(!manifest.scripts.length) throw Error("No scripts built"); for(const script of manifest.scripts) {const source=fs.readFileSync(`dist/${script.file}`,"utf8"); if(!source.startsWith("// ==UserScript==")) throw Error(`Missing metadata: ${script.file}`)}'
+      # Formatting is handled separately and must not block publishing.
+      - name: Commit version to main
+        if: steps.source.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$VERSION [skip ci]"
+          git push origin HEAD:main
+      - name: Prepare Cloudflare Worker with versioned assets
+        if: steps.source.outputs.skip != 'true'
+        run: node build/hosting.mjs
+      - name: Deploy versioned userscripts to Cloudflare
+        if: steps.source.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          USERSCRIPTS_BASE_URL: https://userscripts.migos.club
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment secrets"
+            exit 1
+          fi
+          npm run deploy:cloudflare
+      - name: Publish GitHub Release with userscripts and checksums
+        if: steps.source.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: npm run release
+      - name: Release summary
+        if: steps.source.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          echo "Cloudflare Worker userscripts-cf deployed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Published [$TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG)" >> "$GITHUB_STEP_SUMMARY"

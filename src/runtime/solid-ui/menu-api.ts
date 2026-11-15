@@ -1,7 +1,6 @@
 import { openSolidDropdown } from "./SolidDropdown";
-import { menuActions, type MenuEntry, type MenuValue } from "./menu-store";
-import { mountMenuRoot } from "./MenuRoot";
-
+import { RodMenu } from "./menu";
+import type { RodMenuSchema, RodMenuAction, AnyRecord } from "./menu/types";
 
 export interface DropdownItem {
   label?: string;
@@ -18,17 +17,25 @@ export interface DropdownOptions {
   items: DropdownItem[];
   align?: "start" | "end";
 }
-type Values = Record<string, MenuValue>;
-type LegacyAction = { id: string; label: string; role?: "submit" | "cancel" | "secondary" | "destructive"; handler?: (context: { values: Values; close: () => void }) => unknown; run?: (values: Values) => unknown; validate?: boolean };
-type LegacySchema = Omit<MenuEntry, "actions" | "id" | "title"> & { id?: string; title?: string } & { description?: string; size?: string; actions?: LegacyAction[]; values?: Values; fields?: MenuEntry["fields"] };
+
+type LegacyAction = {
+  id: string;
+  label: string;
+  role?: "submit" | "cancel" | "secondary" | "destructive";
+  handler?: (context: { values: AnyRecord; close: () => void }) => unknown;
+  run?: (values: AnyRecord) => unknown;
+  validate?: boolean;
+  close?: boolean;
+};
+type LegacySchema = Omit<RodMenuSchema, "actions"> & {
+  actions?: readonly LegacyAction[];
+  values?: AnyRecord;
+  content?: string;
+  chrome?: "bare" | "default";
+};
 let defaults: Record<string, unknown> = {};
 
-function ensureMounted() {
-  if (typeof document === "undefined") return;
-  mountMenuRoot();
-}
-
-/** Single Solid-backed menu API exposed as ctx.menu. */
+/** Compatibility facade: ctx.menu now delegates to RodMenu Solid 2. */
 export const menu = Object.freeze({
   dropdown(options: DropdownOptions) { return openSolidDropdown(options); },
   configure(options: Record<string, unknown> = {}) {
@@ -36,28 +43,32 @@ export const menu = Object.freeze({
     return menu;
   },
   open(schema: LegacySchema) {
-    ensureMounted();
-    const id = schema.id || "rod-menu-" + Math.random().toString(36).slice(2);
-    const entry: MenuEntry = {
-      ...schema,
-      id,
-      title: schema.title || "",
-      content: schema.content ?? schema.description,
-      presentation: schema.presentation ?? (defaults.defaultPresentation as MenuEntry["presentation"]) ?? "bottom-sheet",
-      initialValues: schema.initialValues ?? schema.values,
-      actions: schema.actions?.map((action) => ({
-        id: action.id,
-        label: action.label,
-        role: action.role,
-        validate: action.validate,
-        run: async (values) => {
-          if (action.handler) await action.handler({ values: values as Values, close: () => menuActions.close(id) });
-          else await action.run?.(values as Values);
-        },
-      })),
-    };
-    return menuActions.open(entry);
+    const { values, content, chrome, ...nativeSchema } = schema;
+    const actions: RodMenuAction[] | undefined = schema.actions?.map((action) => ({
+      id: action.id,
+      label: action.label,
+      role: action.role,
+      validate: action.validate,
+      close: action.close,
+      handler: async (context) => {
+        if (action.handler) return action.handler({ values: context.values, close: () => context.close() });
+        return action.run?.(context.values);
+      },
+    }));
+    return RodMenu.open({
+      ...nativeSchema,
+      description: schema.description ?? content,
+      initialValues: schema.initialValues ?? values,
+      presentation: schema.presentation ?? (defaults.defaultPresentation as RodMenuSchema["presentation"]) ?? "bottom-sheet",
+      actions,
+    });
   },
-  close(id: string) { menuActions.close(id); },
-  closeAll() { menuActions.closeAll(); },
+  form: RodMenu.form,
+  confirm: RodMenu.confirm,
+  actions: RodMenu.actions,
+  presets: RodMenu.presets,
+  get: RodMenu.get,
+  stack: RodMenu.stack,
+  close(id: string) { RodMenu.get(id)?.close(); },
+  closeAll() { RodMenu.closeAll(); },
 });

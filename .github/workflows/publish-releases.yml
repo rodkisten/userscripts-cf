@@ -2,8 +2,8 @@ name: "📦 Userscripts · GitHub Releases"
 run-name: "🚀 Release · ${{ github.ref_name }} · ${{ github.event_name }}"
 
 on:
-  push:
-    branches: [main]
+  # Automatic releases are owned exclusively by release.yml.
+  # Keep this legacy publisher manual-only to avoid duplicate builds.
   workflow_dispatch:
 
 permissions:

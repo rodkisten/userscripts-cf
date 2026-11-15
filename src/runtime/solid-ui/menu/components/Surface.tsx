@@ -1,5 +1,5 @@
-import { createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
-import { Portal } from 'solid-js/web';
+import { createSignal, createMemo, For, Show, onCleanup } from 'solid-js';
+import { Portal } from '@solidjs/web';
 import type {
   AnyRecord,
   Presentation,
@@ -82,6 +82,11 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   let shellRef: HTMLElement | undefined;
   let settled = false;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingResult: RodMenuResult<TValues> | undefined;
+  let finalized = false;
+  const previousOverflow = typeof document !== 'undefined' ? document.documentElement.style.overflow : '';
+  let ownsScrollLock = false;
   let resolveResult!: (res: RodMenuResult<TValues>) => void;
   const resultPromise = new Promise<RodMenuResult<TValues>>((res) => {
     resolveResult = res;
@@ -209,16 +214,21 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
       reason,
     };
     setOpen(false);
-    window.setTimeout(() => {
-      try {
-        schema().onClose?.(result);
-      } catch (err) {
-        reportError(err);
-      }
-      resolveResult(result);
-      unregisterSurface(props.id);
-      props.onDestroy?.(props.id);
-    }, 220);
+    pendingResult = result;
+    closeTimer = window.setTimeout(() => finalize(), 220);
+  };
+
+  const finalize = () => {
+    if (finalized) return;
+    finalized = true;
+    if (closeTimer !== undefined) clearTimeout(closeTimer);
+    const result = pendingResult ?? {
+      action: 'dismiss', values: cloneValue(store.values()), reason: 'api' as const,
+    };
+    try { schema().onClose?.(result); } catch (err) { reportError(err); }
+    resolveResult(result);
+    unregisterSurface(props.id, handle);
+    props.onDestroy?.(props.id);
   };
 
   const commitField = (field: RodMenuField, raw: unknown) => {
@@ -325,7 +335,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     destroy: () => finish('dismiss', undefined, 'api'),
   };
 
-  onMount(() => {
+  {
     props.onCreated?.(handle);
     registerSurface({
       id: props.id,
@@ -334,6 +344,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     });
 
     if (schema().scrollLock !== false) {
+      ownsScrollLock = true;
       document.documentElement.style.overflow = 'hidden';
     }
 
@@ -379,7 +390,8 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
       vv.addEventListener('scroll', syncViewport);
     }
 
-    requestAnimationFrame(() => {
+    const animationFrame = requestAnimationFrame(() => {
+      if (settled) return;
       setOpen(true);
       try {
         schema().onOpen?.(context);
@@ -390,16 +402,22 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     });
 
     onCleanup(() => {
+      cancelAnimationFrame(animationFrame);
       document.removeEventListener('keydown', onKeyDown, true);
       if (vv) {
         vv.removeEventListener('resize', syncViewport);
         vv.removeEventListener('scroll', syncViewport);
       }
-      if (schema().scrollLock !== false && stack().length === 0) {
-        document.documentElement.style.overflow = '';
+      if (!settled) {
+        settled = true;
+        pendingResult = { action: 'dismiss', values: cloneValue(store.values()), reason: 'api' };
+      }
+      finalize();
+      if (ownsScrollLock && !stack().some((entry) => entry.id !== props.id)) {
+        document.documentElement.style.overflow = previousOverflow;
       }
     });
-  });
+  }
 
   // Bottom sheet drag-to-dismiss handlers
   let startY = 0;

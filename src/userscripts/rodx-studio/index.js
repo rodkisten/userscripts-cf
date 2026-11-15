@@ -1,7 +1,7 @@
 import { Studio } from "./core/studio.js";
 import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
-import { openPanel } from "./ui/preferences.js";
+import { openPanel, Preferences } from "./ui/preferences.js";
 export function startRodX(ctx) {
   if (window.__rodxStudioV3) return;
   window.__rodxStudioV3 = true;
@@ -17,6 +17,8 @@ export default {
       { id: "saved", label: "Pesquisas", run: () => openPanel("saved") },
       { id: "editor", label: "Editor", run: () => openPanel("editor") },
       { id: "presets", label: "Presets", run: () => openPanel("presets") },
+      { id: "rodx-settings", label: "Preferências do X", run: () => openPanel("visual") },
+      { id: "rodx-feed-filters", label: "Filtros do feed", run: () => Preferences?.filters() },
     ]);
     startRodX(ctx);
   },
