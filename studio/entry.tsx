@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 import { render } from "@solidjs/web";
 import { ObjectInspector } from "../src/runtime/solid-ui/object-inspector";
 import { RodMenu } from "../src/runtime/solid-ui/menu";
+import { studioExamples, schemaForExample } from "./examples";
 import type { Presentation, RodMenuSchema } from "../src/runtime/solid-ui/menu/types";
 
 type InspectorSample = "response" | "dom" | "settings";
@@ -50,3 +51,51 @@ document.getElementById("menuLive")?.addEventListener("click", () => {
     actions: [{ id: "cancel", label: "Cancelar", role: "cancel" }, { id: "save", label: "Salvar", role: "submit" }],
   });
 });
+
+const catalog = document.getElementById("examplesCatalog");
+const search = document.getElementById("examplesSearch") as HTMLInputElement | null;
+const category = document.getElementById("examplesCategory") as HTMLSelectElement | null;
+const categories = [...new Set(studioExamples.map(example => example.category))];
+if (category) {
+  for (const name of categories) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    category.appendChild(option);
+  }
+}
+function renderExamples() {
+  if (!catalog) return;
+  catalog.replaceChildren();
+  const query = search?.value.trim().toLocaleLowerCase() ?? "";
+  const selectedCategory = category?.value ?? "";
+  for (const example of studioExamples.filter(item =>
+    (!selectedCategory || item.category === selectedCategory) &&
+    (!query || [item.title, item.description, item.category].join(" ").toLocaleLowerCase().includes(query))
+  )) {
+    const card = document.createElement("article");
+    card.className = "card";
+    const title = document.createElement("h3");
+    title.textContent = example.title;
+    const description = document.createElement("p");
+    description.textContent = example.description;
+    const categoryTag = document.createElement("span");
+    categoryTag.className = "token";
+    categoryTag.textContent = example.category;
+    const button = document.createElement("button");
+    button.className = "primary";
+    button.textContent = "Abrir instância real";
+    button.addEventListener("click", () => {
+      const presentation = (document.getElementById("presentation") as HTMLSelectElement)?.value as Presentation;
+      const size = (document.getElementById("menuSize") as HTMLSelectElement)?.value as RodMenuSchema["size"];
+      RodMenu.open(schemaForExample(example, presentation, size));
+      const output = document.getElementById("exampleCode");
+      if (output) output.textContent = JSON.stringify({ ...schemaForExample(example, presentation, size), fields: example.fields.map(field => Object.fromEntries(Object.entries(field).filter(([,value]) => typeof value !== "function"))) }, null, 2);
+    });
+    card.append(title, description, categoryTag, document.createElement("hr"), button);
+    catalog.appendChild(card);
+  }
+}
+search?.addEventListener("input", renderExamples);
+category?.addEventListener("change", renderExamples);
+renderExamples();
