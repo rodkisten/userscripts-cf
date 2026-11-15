@@ -369,3 +369,21 @@ pre {
     flex: 1 0 auto;
   }
 }
+
+/* Compact mobile console: editor and output are the primary surfaces. */
+.repl-root:not(.menu-open) .repl-settings { display: none !important; }
+.repl-root .repl-menu { position: absolute; top: 52px; right: 8px; z-index: 10; width: min(320px, calc(100% - 16px)); background: #202b3d; border: 1px solid #435067; border-radius: 12px; box-shadow: 0 12px 32px #0009; }
+.repl-root .repl-menu[hidden] { display: none !important; }
+.repl-root .repl-menu .tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+.repl-root .repl-menu .tabs button { min-width: 0; }
+.repl-root.menu-open .repl-settings { display: flex; flex-wrap: wrap; }
+.repl-root.menu-open .editor-actions { display: flex; }
+.repl-root.menu-open .hint { display: block; }
+.repl-root.menu-open .execution-toolbar { display: flex; }
+.repl-root.menu-open .row { display: flex; }
+.repl-root .panel { position: fixed; }
+.repl-root .view[data-view="console"] { display: flex; flex-direction: column; }
+.repl-root .editor-wrap { flex: 0 0 auto; padding-top: 10px; }
+.repl-root .output { flex: 1 1 auto; min-height: 120px; overflow: auto; border-top: 1px solid #35445b; padding-top: 10px; }
+.repl-root .record pre { overflow-wrap: anywhere; }
+.repl-root .launcher { display: none !important; }
