@@ -118,6 +118,42 @@ test("persistent storage is created only on first use and reused across SPA navi
   await host.happyDOM.abort();
 });
 
+test("event infrastructure is lazy, shared, and disposed across SPA transitions", async () => {
+  const host = new Window({ url: "https://example.com/on" });
+  let context;
+  let abortListeners = 0;
+  const nativeAdd = host.AbortSignal.prototype.addEventListener;
+  host.AbortSignal.prototype.addEventListener = function (type, ...args) {
+    if (type === "abort") abortListeners++;
+    return nativeAdd.call(this, type, ...args);
+  };
+  try {
+    const app = createRuntime([{
+      id: "events-lazy", matches: ["https://example.com/on"],
+      module: { init(ctx) { context = ctx; } },
+    }], { call() {} }, host);
+    await app.ready;
+    const beforeAccess = abortListeners;
+    const first = context.events;
+    assert.equal(first, context.events, "event services are memoized within a context");
+    assert.ok(abortListeners > beforeAccess, "event services register abort cleanup on demand");
+    let observed = 0;
+    first.on("message", () => observed++);
+    first.emit("message", {});
+    assert.equal(observed, 1);
+    host.history.pushState({}, "", "/off");
+    await app.navigate();
+    assert.equal(first.size, 0, "leaving the URL disposes event listeners");
+    host.history.pushState({}, "", "/on");
+    await app.navigate();
+    assert.notEqual(context.events, first, "SPA reentry creates a new scoped event bus");
+    await app.dispose();
+  } finally {
+    host.AbortSignal.prototype.addEventListener = nativeAdd;
+    await host.happyDOM.abort();
+  }
+});
+
 test("navigation during asynchronous initialization cleans the stale instance", async () => {
   const host = new Window({ url: "https://example.com/on" });
   let release,
