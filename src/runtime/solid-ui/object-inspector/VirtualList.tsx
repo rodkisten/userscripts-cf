@@ -1,4 +1,5 @@
-import {createSignal,For,onCleanup,onMount,type JSX} from "solid-js";
+import {createSignal,For,onCleanup,createEffect} from "solid-js";
+import type { JSX } from "@solidjs/web";
 import type {EntrySource,InspectorEntry,InternalRenderContext} from "./types";
 export function VirtualList(props:{source:EntrySource;context:InternalRenderContext;footer?:JSX.Element;renderRow:(entry:InspectorEntry|undefined,index:number)=>JSX.Element}){
  let host!:HTMLDivElement;
@@ -10,7 +11,7 @@ export function VirtualList(props:{source:EntrySource;context:InternalRenderCont
  const start=()=>Math.max(0,Math.floor(scroll()/row())-props.context.options.virtualOverscan);
  const end=()=>Math.min(count(),Math.ceil((scroll()+height())/row())+props.context.options.virtualOverscan);
  const indices=()=>Array.from({length:end()-start()},(_,i)=>i+start());
- onMount(()=>{if(typeof ResizeObserver!=="undefined"){observer=new ResizeObserver(()=>setHeight(host.clientHeight));observer.observe(host)}setHeight(host.clientHeight||360)});
+ createEffect(()=>{if(typeof ResizeObserver!=="undefined"){observer=new ResizeObserver(()=>setHeight(host.clientHeight));observer.observe(host)}setHeight(host.clientHeight||360)});
  onCleanup(()=>observer?.disconnect());
  return <div ref={host} class="rod-inspector__body" data-virtualized="true" style={{"max-height":props.context.options.virtualMaxHeight+"px","overflow-y":"auto"}} onScroll={e=>setScroll(e.currentTarget.scrollTop)}>
   <div style={{height:start()*row()+"px"}}/>
