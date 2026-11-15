@@ -7,7 +7,7 @@ describe("ObjectInspector syntax highlighting", () => {
     expect(normalizeOptions({ syntaxHighlighting: false }).syntaxHighlighting).toBe(false);
   });
   it("tokenizes keys, strings, numbers, booleans and null without HTML", () => {
-    const preview = getObjectPreview({ name: "Rod", count: 42, active: true, empty: null });
+    const preview = getObjectPreview({ name: "Rod", count: 42, active: true, empty: null }, normalizeOptions({ previewItems: 5 }));
     const tokens = safePreviewTokens(preview);
     expect(tokens.map(token => token.text).join("")).toBe(preview);
     expect(tokens.some(token => token.type === "key")).toBe(true);
