@@ -255,6 +255,24 @@ for (const target of targets) {
   console.log(`Built ${file} (${source.length} bytes)`);
 }
 await fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+// Include emitted bytes, gzip and the largest retained modules in the audit.
+for (const [target, measurements] of Object.entries(classAudit)) {
+  const runtime = Object.entries(runtimeFeatureAudit.bundles)
+    .filter(([key]) => key.startsWith(target + ":"))
+    .map(([world, stats]) => ({ world: world.slice(target.length + 1), ...stats }));
+  runtimeFeatureAudit.targets[target].output = {
+    bytes: measurements.bytes,
+    gzipBytes: measurements.gzipBytes,
+    debugBytes: measurements.debugBytes,
+    debugGzipBytes: measurements.debugGzipBytes,
+    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({ world, bytes, includedModuleCount, topModules, featureDefines })),
+  };
+}
+const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
+  (stats.topModules || []).slice(0, 5).map(({ id, renderedBytes }) => ({ target, module: id, renderedBytes }))
+);
+console.log("\\nLargest retained runtime modules by target/world:");
+console.table(topRuntimeModules);
 await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
 console.table(Object.entries(classAudit).map(([target, audit]) => ({
