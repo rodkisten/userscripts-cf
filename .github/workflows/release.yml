@@ -49,7 +49,8 @@ jobs:
           # Resume a release after a failed upload without incrementing twice.
           LAST_SUBJECT="$(git log -1 --format=%s)"
           CURRENT="$(node -p 'require("./package.json").version')"
-          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" ]] && ! gh release view "v$CURRENT" --json isDraft >/dev/null 2>&1; then
+          RELEASE_STATE="$(gh release view "v$CURRENT" --json isDraft --jq '.isDraft' 2>/dev/null || echo missing)"
+          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" && "$RELEASE_STATE" != "false" ]]; then
             VERSION="$CURRENT"
             echo "resume=true" >> "$GITHUB_OUTPUT"
           else
