@@ -51,7 +51,7 @@ document.getElementById("filter")?.addEventListener("input", event => setFilter(
 document.getElementById("depth")?.addEventListener("change", event => setDepth(Number((event.target as HTMLSelectElement).value)));
 document.getElementById("expand")?.addEventListener("click", () => setDepth(20));
 document.getElementById("collapse")?.addEventListener("click", () => { setDepth(0); setRevision(value => value + 1); });
-document.getElementById("copyObject")?.addEventListener("click", () => navigator.clipboard?.writeText(JSON.stringify(samples[sample()] instanceof Element ? { outerHTML: (samples[sample()] as Element).outerHTML } : samples[sample()], null, 2)));
+document.getElementById("copyObject")?.addEventListener("click", () => navigator.clipboard?.writeText(safeSource(samples[sample()] instanceof Element ? { outerHTML: (samples[sample()] as Element).outerHTML } : samples[sample()])));
 document.getElementById("menuLive")?.addEventListener("click", () => {
   const title = (document.getElementById("titleInput") as HTMLInputElement)?.value || "RodMenu";
   const presentation = (document.getElementById("presentation") as HTMLSelectElement)?.value as Presentation;
