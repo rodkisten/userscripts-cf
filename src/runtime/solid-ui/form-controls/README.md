@@ -104,3 +104,11 @@ const suggestions = createAsyncOptions(
 ```
 
 **Build follow-up:** regenerate and commit `package-lock.json` using `npm install --package-lock-only` before CI; the manifest dependency has been added but the lockfile has not yet been updated. Validate TanStack Query against SolidJS 2 RC in the project typecheck and tests.
+
+## Cache isolation and test coverage
+
+By default, each `createAsyncOptions` instance receives its own query-key namespace. This prevents unrelated remote sources from reusing each other's cached results. For intentional cache sharing, pass both a stable `queryClient` and a source-specific `queryKey` (for example `['twitter', 'search-filters']`).
+
+`tests/form-controls-options.test.js` covers normalization, grouping, filtering and cancellation in the headless options loader. TanStack Query observer integration, actual SolidJS rendering, and Safari behavior still require dedicated tests.
+
+**Merge blocker:** `package-lock.json` must be regenerated with `npm install --package-lock-only` and checked in before running `npm ci`. The lockfile has not been updated in this PR.
