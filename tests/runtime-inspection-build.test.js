@@ -18,6 +18,16 @@ describe("inspectable build artifacts", () => {
     expect(Object.keys(audit.scripts).length).toBeGreaterThan(0);
     expect(audit.targets.standalone).toBeDefined();
     expect(audit.targets.unified).toBeDefined();
+    expect(audit.repeatedRenderedModules.length).toBeGreaterThan(0);
+    expect(audit.summary.repeatedRenderedModules).toBe(audit.repeatedRenderedModules.length);
+    for (const entry of audit.repeatedRenderedModules) {
+      expect(entry.bundles.length).toBeGreaterThan(1);
+      expect(entry.aggregateRenderedBytes).toBe(entry.bundles.reduce((sum, item) => sum + item.renderedBytes, 0));
+      expect(entry.maxRenderedBytes).toBe(Math.max(...entry.bundles.map((item) => item.renderedBytes)));
+    }
+    expect(audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)).toEqual(
+      [...audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)].sort((a, b) => b - a)
+    );
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
