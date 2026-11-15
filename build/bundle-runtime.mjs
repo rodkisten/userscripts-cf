@@ -66,12 +66,15 @@ export async function bundleRuntime(root, definitions, options = {}) {
       id: path.isAbsolute(id) ? path.relative(root, id).split(path.sep).join("/") : id,
       renderedBytes: info.renderedLength ?? 0,
       originalBytes: info.originalLength ?? 0,
-      removedBytes: info.removedExports?.length ?? 0,
+      removedExportsCount: info.removedExports?.length ?? 0,
     })).sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
     options.onBundleStats({
       bytes: Buffer.byteLength(chunks[0].code),
       modules,
       totalRenderedModuleBytes: modules.reduce((sum, item) => sum + item.renderedBytes, 0),
+      includedModuleCount: modules.filter((item) => item.renderedBytes > 0).length,
+      topModules: modules.filter((item) => item.renderedBytes > 0).slice(0, 20),
+      featureDefines: Object.fromEntries(Object.entries(featureDefines).map(([key, value]) => [key, value === "true"])),
     });
   }
   return format(readableStrings(chunks[0].code), { parser: "babel", printWidth: 110 });
