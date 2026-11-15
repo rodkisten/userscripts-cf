@@ -5,7 +5,7 @@ import ts from "typescript";
  * callers must include all features when the key cannot be resolved.
  */
 export function analyzeRuntimeUsage(source, filename = "entry.ts") {
-  const kind = /\\.tsx$/.test(filename) ? ts.ScriptKind.TSX : /\\.jsx$/.test(filename) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
+  const kind = /\.tsx$/.test(filename) ? ts.ScriptKind.TSX : /\.jsx$/.test(filename) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
   const file = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, kind);
   const features = new Set();
   let dynamic = false;
