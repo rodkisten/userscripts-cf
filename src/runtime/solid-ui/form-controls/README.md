@@ -128,3 +128,11 @@ O `Combobox` aceita `fuzzy`, `fuzzyThreshold` (padrão 0.35), `virtualize` e `vi
 A virtualização é opt-in e usa `@tanstack/virtual-core` para listas planas. Listas agrupadas usam o renderer tradicional até que cabeçalhos virtuais sejam suportados. No Playground, habilite dataset de 1.500 opções, busca fuzzy e virtualização para testar o comportamento. Teclado usa `scrollToIndex` para trazer a opção ativa ao viewport.
 
 **Validação:** executar `npm install --package-lock-only --legacy-peer-deps` para atualizar o lockfile e depois `npm ci --legacy-peer-deps && npm run build:hosting && npm test`. O CI deve confirmar antes do merge.
+
+## RodMenu FieldRenderer compatibility boundary
+
+The existing RodMenu field variants, trailing actions and media/diagnostic extensions live in `menu/components/RodMenuFieldRenderer.tsx`. The original `menu/components/FieldRenderer.tsx` is a compatibility re-export, so callers do not need to migrate. Shared `form-controls` does not import RodMenu. Extracting the remaining generic JSX into the independent renderer is still pending.
+
+## Twitter search visual/raw editor
+
+`twitter-search.ts` exposes `parseTwitterSearch`, `replaceTwitterToken`, `removeTwitterToken` and `appendTwitterToken`. The Playground shows visually classified tokens with inline editing, Enter to commit, Escape to cancel, and removal while keeping the raw textarea as the source of truth. Token replacement uses source offsets to preserve the surrounding expression. Nested boolean validation and comprehensive quote/escape handling still require tests.
