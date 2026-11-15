@@ -38,10 +38,11 @@ export function createStudioMenus(Studio) {
     const previousParent = node.parentNode;
     const nextSibling = node.nextSibling;
     node.style.setProperty("position", "fixed", "important");
-    node.style.setProperty("inset", "auto 0 0", "important");
+    node.style.setProperty("inset", "0", "important");
     node.style.setProperty("width", "100%", "important");
     node.style.setProperty("max-width", "100vw", "important");
-    node.style.setProperty("max-height", "calc(100dvh - env(safe-area-inset-top, 0px))", "important");
+    node.style.setProperty("height", "100dvh", "important");
+    node.style.setProperty("max-height", "100dvh", "important");
     node.style.setProperty("overflow", "hidden", "important");
     node.style.setProperty("z-index", "2147483499", "important");
     document.body.append(backdrop, node);
