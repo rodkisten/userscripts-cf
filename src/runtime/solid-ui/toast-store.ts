@@ -1,4 +1,4 @@
-import { createStore, reconcile } from "solid-js/store";
+import { createStore } from "./reactive-store";
 
 export type ToastKind = "info" | "success" | "warning" | "error" | "debug";
 export interface ToastItem {
@@ -57,6 +57,6 @@ export const toastActions = {
   clear() {
     for (const timer of timers.values()) clearTimeout(timer);
     timers.clear();
-    setState("items", reconcile([]));
+    setState("items", []);
   },
 };
