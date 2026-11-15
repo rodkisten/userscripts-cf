@@ -60,6 +60,10 @@ function App() {
   const [multiple, setMultiple] = createSignal(true);
   const [grouped, setGrouped] = createSignal(true);
   const [clearable, setClearable] = createSignal(true);
+  const [fuzzy, setFuzzy] = createSignal(true);
+  const [virtualize, setVirtualize] = createSignal(true);
+  const [largeDataset, setLargeDataset] = createSignal(false);
+  const demoOptions = () => largeDataset() ? [...options, ...Array.from({ length: 1500 }, (_, i) => ({ value: `topic:${i}`, label: `Tópico ${i + 1}`, group: 'Tópicos' }))] : options;
   const [placeholder, setPlaceholder] = createSignal('Pesquisar filtros…');
   const [emptyMessage, setEmptyMessage] = createSignal('Nenhum filtro encontrado');
   const [maxTags, setMaxTags] = createSignal(8);
@@ -73,6 +77,8 @@ function App() {
   multiple={${multiple()}}
   grouped={${grouped()}}
   clearable={${clearable()}}
+  fuzzy={${fuzzy()}}
+  virtualize={${virtualize()}}
   disabled={${disabled()}}
   readonly={${readonly()}}
   placeholder={${JSON.stringify(placeholder())}}
@@ -107,7 +113,7 @@ function App() {
         <section class="card">
           <h2>Combobox múltiplo</h2>
           <label for="filters">Filtros da pesquisa</label>
-          <Combobox id="filters" options={options} value={multiple() ? selected() : (selected()[0] ?? '')} onChange={(value) => setSelected(Array.isArray(value) ? value : value ? [value] : [])} multiple={multiple()} grouped={grouped()} clearable={clearable()} disabled={disabled()} readonly={readonly()} placeholder={placeholder()} emptyMessage={emptyMessage()} />
+          <Combobox id="filters" options={demoOptions()} fuzzy={fuzzy()} virtualize={virtualize()} value={multiple() ? selected() : (selected()[0] ?? '')} onChange={(value) => setSelected(Array.isArray(value) ? value : value ? [value] : [])} multiple={multiple()} grouped={grouped()} clearable={clearable()} disabled={disabled()} readonly={readonly()} placeholder={placeholder()} emptyMessage={emptyMessage()} />
           <pre>{JSON.stringify(selected(), null, 2)}</pre>
         </section>
         <section class="card">
@@ -130,6 +136,9 @@ function App() {
           <label class="toggle"><input type="checkbox" checked={multiple()} onChange={(event) => setMultiple(event.currentTarget.checked)} /> Seleção múltipla</label>
           <label class="toggle"><input type="checkbox" checked={grouped()} onChange={(event) => setGrouped(event.currentTarget.checked)} /> Agrupar opções</label>
           <label class="toggle"><input type="checkbox" checked={clearable()} onChange={(event) => setClearable(event.currentTarget.checked)} /> Permitir limpar</label>
+          <label class="toggle"><input type="checkbox" checked={fuzzy()} onChange={(event) => setFuzzy(event.currentTarget.checked)} /> Busca fuzzy (Fuse.js)</label>
+          <label class="toggle"><input type="checkbox" checked={virtualize()} onChange={(event) => setVirtualize(event.currentTarget.checked)} /> Virtualização (TanStack Virtual)</label>
+          <label class="toggle"><input type="checkbox" checked={largeDataset()} onChange={(event) => { setLargeDataset(event.currentTarget.checked); setGrouped(false); }} /> Dataset de 1.500 opções (desativa grupos)</label>
           <label for="playground-placeholder">Placeholder</label>
           <input id="playground-placeholder" value={placeholder()} onInput={(event) => setPlaceholder(event.currentTarget.value)} />
           <label for="playground-empty">Mensagem sem resultados</label>
