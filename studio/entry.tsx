@@ -92,7 +92,7 @@ function renderExamples() {
       const size = (document.getElementById("menuSize") as HTMLSelectElement)?.value as RodMenuSchema["size"];
       RodMenu.open(schemaForExample(example, presentation, size));
       const output = document.getElementById("exampleCode");
-      if (output) output.textContent = JSON.stringify({ ...schemaForExample(example, presentation, size), fields: example.fields.map(field => Object.fromEntries(Object.entries(field).filter(([,value]) => typeof value !== "function"))) }, null, 2);
+      if (output) output.textContent = JSON.stringify(schemaForExample(example, presentation, size), (_key, value) => typeof value === "function" ? "[callback]" : value instanceof Element ? `[Element: ${value.tagName}]` : value, 2);
     });
     card.append(title, description, categoryTag, document.createElement("hr"), button);
     catalog.appendChild(card);
