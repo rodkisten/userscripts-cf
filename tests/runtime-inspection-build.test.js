@@ -25,6 +25,15 @@ describe("inspectable build artifacts", () => {
       const hasDynamicAccess = target.scripts.some((id) => audit.scripts[id].dynamic);
       expect(target.treeShaken).toBe(script.id !== "standalone" && !hasDynamicAccess);
       expect(audit.bundles).toBeDefined();
+      expect(target.output.bytes).toBeGreaterThan(0);
+      expect(target.output.gzipBytes).toBeGreaterThan(0);
+      expect(target.output.gzipBytes).toBeLessThan(target.output.bytes);
+      expect(target.output.runtimes.length).toBeGreaterThan(0);
+      for (const runtime of target.output.runtimes) {
+        expect(runtime.includedModuleCount).toBeGreaterThan(0);
+        expect(runtime.topModules.length).toBeGreaterThan(0);
+        expect(runtime.topModules.every((module) => module.renderedBytes > 0)).toBe(true);
+      }
       const expected = new Set(target.scripts.flatMap((id) => audit.scripts[id].features));
       expect(target.features).toEqual([...expected].sort());
     }
