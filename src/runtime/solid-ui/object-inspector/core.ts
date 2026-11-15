@@ -315,6 +315,35 @@ export function isError(value: unknown): value is Error {
   return tag === "[object Error]" || /Error$/.test(constructorName);
 }
 
+
+export type PreviewToken = { text: string; type: "string" | "number" | "boolean" | "null" | "undefined" | "symbol" | "function" | "key" | "meta" };
+
+/** Lex compact previews without HTML injection or evaluating inspected values. */
+export function safePreviewTokens(source: string): PreviewToken[] {
+  const tokens: PreviewToken[] = [];
+  const pattern = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\\b(?:true|false|null|undefined|NaN|Infinity)\\b|\\b\\d+(?:\\.\\d+)?n?\\b|\\b(?:Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError|Symbol)\\b|ƒ|(?:[A-Za-z_$][\\w$]*)(?=\\s*:)|[{}[\\]():,#]|=>)/g;
+  let offset = 0;
+  for (const match of source.matchAll(pattern)) {
+    const index = match.index ?? 0;
+    if (index > offset) tokens.push({ text: source.slice(offset, index), type: "meta" });
+    const text = match[0];
+    let type: PreviewToken["type"] = "meta";
+    if (/^["']/.test(text)) type = "string";
+    else if (/^(true|false)$/.test(text)) type = "boolean";
+    else if (text === "null") type = "null";
+    else if (text === "undefined") type = "undefined";
+    else if (/^\\d|^(NaN|Infinity)$/.test(text)) type = "number";
+    else if (text === "ƒ") type = "function";
+    else if (/^(Symbol)$/.test(text)) type = "symbol";
+    else if (/^(Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError)$/.test(text)) type = "function";
+    else if (/^[A-Za-z_$]/.test(text)) type = "key";
+    tokens.push({ text, type });
+    offset = index + text.length;
+  }
+  if (offset < source.length) tokens.push({ text: source.slice(offset), type: "meta" });
+  return tokens;
+}
+
 export function getSafePreviewType(value: object): string {
   if (isArray(value)) return "array";
   if (isMap(value)) return "map";
