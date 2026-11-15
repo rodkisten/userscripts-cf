@@ -1,0 +1,118 @@
+name: "📦 Import ZIPs → PR"
+
+on:
+  workflow_dispatch:
+    inputs:
+      output_path:
+        description: "Pasta de destino no repositório (ex.: src/runtime/solid-ui)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: import-zips-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  extract:
+    name: "📦 Extrair ZIPs e abrir PR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Extract tracked ZIP archives safely
+        id: extract
+        shell: bash
+        env:
+          OUTPUT_PATH: ${{ inputs.output_path }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import zipfile
+
+          root = pathlib.Path.cwd().resolve()
+          raw = os.environ["OUTPUT_PATH"].strip().replace("\\", "/")
+          relative = pathlib.PurePosixPath(raw)
+          if not raw or raw.startswith("/") or any(part in ("..", ".") for part in raw.split("/")) or relative == pathlib.PurePosixPath("."):
+              raise SystemExit("Invalid output_path: choose a relative directory inside the repository")
+          target = (root / relative).resolve()
+          if not target.is_relative_to(root) or target == root or target.is_relative_to(root / ".git"):
+              raise SystemExit("Destination must be a directory inside the repository")
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          archives = sorted(root / os.fsdecode(path) for path in tracked if path and path.lower().endswith(b".zip"))
+          if not archives:
+              print("No tracked ZIP archives found. Nothing to import.")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+                  output.write("archives=0\n")
+              raise SystemExit(0)
+          print(f"Found {len(archives)} tracked ZIP(s)")
+          seen = set()
+          extracted = 0
+          max_total = 500 * 1024 * 1024
+          max_files = 20000
+          total_size = 0
+          for archive in archives:
+              print(f"::group::Extract {archive.relative_to(root)}")
+              with zipfile.ZipFile(archive) as zf:
+                  for entry in zf.infolist():
+                      name = entry.filename.replace("\\", "/")
+                      parts = pathlib.PurePosixPath(name)
+                      if not name or name.startswith("/") or any(p in ("", ".", "..") for p in name.split("/")):
+                          raise SystemExit(f"Unsafe ZIP path: {archive.name}: {name}")
+                      if parts.parts[0] == ".git" or any(p == ".git" for p in parts.parts):
+                          raise SystemExit(f"Git metadata is not allowed: {name}")
+                      if (entry.external_attr >> 16) & 0o170000 == stat.S_IFLNK:
+                          raise SystemExit(f"ZIP symlink not allowed: {name}")
+                      destination = (target / parts).resolve()
+                      if not destination.is_relative_to(target):
+                          raise SystemExit(f"ZIP entry escapes output_path: {name}")
+                      if entry.is_dir():
+                          continue
+                      if destination in seen:
+                          raise SystemExit(f"Duplicate destination across ZIPs: {destination.relative_to(root)}")
+                      seen.add(destination)
+                      extracted += 1
+                      total_size += entry.file_size
+                      if extracted > max_files or total_size > max_total:
+                          raise SystemExit("ZIP extraction safety limit exceeded")
+                      destination.parent.mkdir(parents=True, exist_ok=True)
+                      with zf.open(entry) as source, destination.open("wb") as output:
+                          import shutil
+                          shutil.copyfileobj(source, output)
+              print("::endgroup::")
+          for archive in archives:
+              archive.unlink()
+              print(f"Removed ZIP: {archive.relative_to(root)}")
+          print(f"Extracted {extracted} files into {relative}; removed {len(archives)} ZIP archives")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"archives={len(archives)}\n")
+              output.write(f"files={extracted}\n")
+          PY
+
+      - name: Open pull request
+        if: steps.extract.outputs.archives != '0'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(import): extract repository ZIP archives"
+          branch: automation/import-zips
+          delete-branch: true
+          title: "📦 Importar arquivos ZIP para ${{ inputs.output_path }}"
+          body: |
+            Importação automática dos arquivos ZIP versionados no repositório.
+
+            - **Destino:** \`${{ inputs.output_path }}\`
+            - **Arquivos ZIP:** ${{ steps.extract.outputs.archives }}
+            - **Arquivos extraídos:** ${{ steps.extract.outputs.files }}
+            - **Origem:** execução manual ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Os ZIPs originais foram removidos neste PR após a extração.\n\n            Confira os arquivos extraídos e os checks antes de fazer merge.
