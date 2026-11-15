@@ -306,3 +306,7 @@
 .rod-inspector__preview--regexp { color: var(--rod-inspector-string); }
 .rod-inspector__preview--function { color: var(--rod-inspector-function); }
 .rod-inspector__preview--error { color: var(--rod-inspector-warning); }
+
+.rod-inspector__preview[data-highlight="true"] .rod-token--key { color: var(--rod-inspector-key); }
+.rod-inspector__preview[data-highlight="true"] .rod-token--meta { color: var(--rod-inspector-subtle); }
+.rod-inspector__preview[data-highlight="true"] .rod-token--function { color: var(--rod-inspector-function); }
