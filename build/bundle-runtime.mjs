@@ -43,5 +43,20 @@ export async function bundleRuntime(root, definitions, options = {}) {
   const chunks = output.filter((item) => item.type === "chunk");
   if (chunks.length !== 1 || output.some((item) => item.type === "asset"))
     throw Error("Use inline/raw CSS and bundle all dependencies");
+  // Rolldown reports rendered module lengths after tree-shaking. These are
+  // uncompressed contributions, not independently gzipped module sizes.
+  if (typeof options.onBundleStats === "function") {
+    const modules = Object.entries(chunks[0].modules || {}).map(([id, info]) => ({
+      id: path.isAbsolute(id) ? path.relative(root, id).split(path.sep).join("/") : id,
+      renderedBytes: info.renderedLength ?? 0,
+      originalBytes: info.originalLength ?? 0,
+      removedBytes: info.removedExports?.length ?? 0,
+    })).sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
+    options.onBundleStats({
+      bytes: Buffer.byteLength(chunks[0].code),
+      modules,
+      totalRenderedModuleBytes: modules.reduce((sum, item) => sum + item.renderedBytes, 0),
+    });
+  }
   return format(readableStrings(chunks[0].code), { parser: "babel", printWidth: 110 });
 }
