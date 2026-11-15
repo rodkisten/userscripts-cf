@@ -1,5 +1,6 @@
 import { createSignal, For } from "solid-js";
 import { render } from "@solidjs/web";
+import { ObjectInspector } from "../../runtime/solid-ui/ObjectInspector";
 
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
@@ -119,7 +120,7 @@ export function mountPanel(container: HTMLElement) {
                     open={item.kind === "error" || item.kind === "result"}
                   >
                     <summary>{item.title}</summary>
-                    <pre>{pretty(item.value)}</pre>
+                    <ObjectInspector value={item.value} />
                   </details>
                 )}
               </For>
@@ -147,7 +148,7 @@ export function mountPanel(container: HTMLElement) {
                       <summary>
                         {item.world + (item.result ? " · " + item.result.elapsedMs + " ms" : "")}
                       </summary>
-                      <pre>{pretty(item.result || { expectedWorld: item.world })}</pre>
+                      <ObjectInspector value={item.result || { expectedWorld: item.world }} />
                     </details>
                     <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
                   </div>
