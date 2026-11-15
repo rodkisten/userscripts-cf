@@ -20,3 +20,6 @@ export type { TagsInputProps } from './TagsInput';
 
 export { createAsyncOptions } from './createAsyncOptions';
 export type { AsyncOptionsState } from './createAsyncOptions';
+
+export { parseTwitterSearch, replaceTwitterToken, appendTwitterToken, removeTwitterToken } from './twitter-search';
+export type { SearchToken } from './twitter-search';
