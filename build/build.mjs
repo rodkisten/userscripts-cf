@@ -271,6 +271,28 @@ for (const [target, measurements] of Object.entries(classAudit)) {
 const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
   (stats.topModules || []).slice(0, 5).map(({ id, renderedBytes }) => ({ target, module: id, renderedBytes }))
 );
+// Rank dependencies by their aggregate rendered contribution across targets.
+// The aggregate is diagnostic: separately installed userscripts are not loaded
+// simultaneously, and this number must never be presented as download savings.
+const retainedConsumers = new Map();
+for (const [bundle, stats] of Object.entries(runtimeFeatureAudit.bundles)) {
+  for (const module of stats.modules) {
+    if (module.renderedBytes <= 0) continue;
+    const current = retainedConsumers.get(module.id) || { module: module.id, bundles: [], aggregateRenderedBytes: 0, maxRenderedBytes: 0 };
+    current.bundles.push({ bundle, renderedBytes: module.renderedBytes });
+    current.aggregateRenderedBytes += module.renderedBytes;
+    current.maxRenderedBytes = Math.max(current.maxRenderedBytes, module.renderedBytes);
+    retainedConsumers.set(module.id, current);
+  }
+}
+runtimeFeatureAudit.repeatedRenderedModules = [...retainedConsumers.values()]
+  .filter((entry) => entry.bundles.length > 1)
+  .sort((a, b) => b.aggregateRenderedBytes - a.aggregateRenderedBytes || a.module.localeCompare(b.module));
+runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
+console.log("\\nLargest repeated dependencies (unminified rendered bytes, NOT estimated savings):");
+console.table(runtimeFeatureAudit.repeatedRenderedModules.slice(0, 20).map(({ module, bundles, aggregateRenderedBytes, maxRenderedBytes }) => ({
+  module, consumers: bundles.length, aggregateRenderedBytes, maxRenderedBytes,
+})));
 console.log("\\nLargest retained runtime modules by target/world:");
 console.table(topRuntimeModules);
 await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
