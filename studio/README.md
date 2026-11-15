@@ -54,3 +54,9 @@ Not every schema field has its own interactive live example yet. Some catalog ca
 The **Exemplos interativos** gallery supports filtering by category and searching by title/description. Each example opens a real `RodMenu` with the selected presentation and size and shows a serializable schema preview. Available families include text inputs, boolean controls, range/rating, selection, date/time, color/file/media, diagnostics, layout and actions. Function callbacks are omitted from the JSON preview because JSON cannot serialize functions.
 
 When adding a new field type, add a concrete example in `studio/examples.ts` and update the corresponding documentation and contract tests. The canonical deployment domain is `https://userscripts.migos.club` (already attached to Worker `userscripts-cf` in Cloudflare). Set `USERSCRIPTS_BASE_URL` only when intentionally overriding this distribution URL.
+
+## Advanced examples
+
+The **Avançado** gallery includes live examples for tabs, collapsible sections, asynchronous field/form validation, conditional visibility and disabling, local persistence, mobile gestures and keyboard handling, stacking, focus management, instance theme tokens, side drawers, anchored popovers and async submit handlers. These use the production `RodMenuSchema` contract; the JSON viewer labels callbacks rather than executing code from JSON.
+
+The Object Inspector advanced panel exposes its options reactively: depth/item limits, previews, prototype and non-enumerable properties, virtual scrolling thresholds and row cache, collapse unmounting, highlight duration and theme. Use **Restaurar padrões** to reset controls. Validate Safari iPhone focus, viewport and gesture interactions before release.
