@@ -1,11 +1,11 @@
 # Rod UI Design System Studio
 
-The live playground is published at `/design-system.html` and linked from `hosting/index.html`.
+The live playground is published at `https://userscripts.migos.club/design-system.html` and linked from `hosting/index.html`.
 
 ## Architecture
 
 - `hosting/design-system.html`: responsive catalog, theme tokens, visual controls, copyable examples, navigation and usage recipes.
-- `studio/entry.tsx`: **real SolidJS 2 instances** of `RodMenu` and `ObjectInspector`, event bindings, datasets and runtime examples.
+- `studio/examples.ts`: searchable live RodMenu field gallery with real schema-backed examples.\n- `studio/entry.tsx`: **real SolidJS 2 instances** of `RodMenu` and `ObjectInspector`, event bindings, datasets and runtime examples.
 - `build/design-system.mjs`: Vite compilation using the same Solid and CSS pipeline as the userscripts.
 - `build/hosting.mjs`: builds and publishes `design-system.js` and `design-system.html` as Cloudflare Worker assets.
 - `src/runtime/solid-ui/menu/types.ts`: authoritative menu schema and field contracts.
@@ -48,3 +48,9 @@ Run `npm run build:hosting`, `npm run typecheck`, `npx vitest run tests/design-s
 ## Known gaps
 
 Not every schema field has its own interactive live example yet. Some catalog cards are documentation-only; the menu and inspector primary laboratories use actual runtime components. A successful bundle build and device validation are required before treating the studio as production-ready.
+
+## Live examples
+
+The **Exemplos interativos** gallery supports filtering by category and searching by title/description. Each example opens a real `RodMenu` with the selected presentation and size and shows a serializable schema preview. Available families include text inputs, boolean controls, range/rating, selection, date/time, color/file/media, diagnostics, layout and actions. Function callbacks are omitted from the JSON preview because JSON cannot serialize functions.
+
+When adding a new field type, add a concrete example in `studio/examples.ts` and update the corresponding documentation and contract tests. The canonical deployment domain is `https://userscripts.migos.club` (already attached to Worker `userscripts-cf` in Cloudflare). Set `USERSCRIPTS_BASE_URL` only when intentionally overriding this distribution URL.
