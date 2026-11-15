@@ -25,6 +25,7 @@ type LegacyAction = {
   handler?: (context: { values: AnyRecord; close: () => void }) => unknown;
   run?: (values: AnyRecord) => unknown;
   validate?: boolean;
+  close?: boolean;
 };
 type LegacySchema = Omit<RodMenuSchema, "actions"> & {
   actions?: readonly LegacyAction[];
@@ -48,6 +49,7 @@ export const menu = Object.freeze({
       label: action.label,
       role: action.role,
       validate: action.validate,
+      close: action.close,
       handler: async (context) => {
         if (action.handler) return action.handler({ values: context.values, close: () => context.close() });
         return action.run?.(context.values);
