@@ -185,7 +185,7 @@ document.getElementById("inspectorReset")?.addEventListener("click", () => {
 /** The editor is loaded only by the Studio, never by the userscript inspector runtime. */
 const sourcePanel = document.createElement("section");
 sourcePanel.className = sourceStyles.panel;
-sourcePanel.innerHTML = '<div class="${sourceStyles.toolbar}"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" class="${sourceStyles.editor}" aria-label="Código destacado"></div>';
+sourcePanel.innerHTML = `<div class="${sourceStyles.toolbar}"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" class="${sourceStyles.editor}" aria-label="Código destacado"></div>`;
 root.parentElement?.append(sourcePanel);
 
 function safeSource(value: unknown): string {
