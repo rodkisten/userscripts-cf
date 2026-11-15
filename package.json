@@ -9,6 +9,7 @@
     "build": "node build/build.mjs",
     "sync:rod-runtime": "node build/sync-rod-runtime.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
+    "test:perf": "vitest run tests/runtime-startup-benchmark.test.js",
     "test": "npm run typecheck && npm run build && vitest run tests/design-system-contract.test.js tests/runtime-modular.test.js tests/runtime-graph.test.js tests/runtime-inspection-build.test.js tests/script-manager.test.js tests/class-references.test.js tests/css-modules-integration.test.js tests/css-deduplicate.test.js tests/package-icons.test.js tests/runtime.test.js tests/shared-events.test.js tests/runtime-helpers.test.js tests/runtime-dom-http.test.js tests/runtime-gm-storage.test.js tests/config-assets.test.js tests/styles.test.js tests/readable-strings.test.js tests/hosting.test.js tests/release.test.js tests/publish-github.test.js && npm run test:lab",
     "format": "prettier --write .",
     "build:lab": "node labs/remote-release/build-worker.mjs A",
@@ -18,15 +19,15 @@
     "new": "node build/new.mjs",
     "release": "node build/release.mjs",
     "build:hosting": "npm run build && node build/hosting.mjs",
-    "check:design-system": "node build/check-design-system-changes.mjs",
-    "test:design-system": "vitest run tests/design-system-contract.test.js",
     "ci:cloudflare:old": "npm run format:check && npm run lint && npm test && node build/hosting.mjs",
     "ci:cloudflare": "npm run build:hosting",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
     "typecheck": "tsc -p tsconfig.repl.json && tsc -p tsconfig.rodx.json && tsc -p tsconfig.instagram.json && tsc -p tsconfig.integrations.json",
     "lint": "node build/check-style.mjs",
-    "lint:fix": "node build/check-style.mjs --fix"
+    "lint:fix": "node build/check-style.mjs --fix",
+    "check:design-system": "node build/check-design-system-changes.mjs",
+    "test:design-system": "vitest run tests/design-system-contract.test.js"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
@@ -62,5 +63,5 @@
     "nanoid": "^5.1.6",
     "solid-js": "2.0.0-rc.21"
   },
-  "version": "4.0.1"
+  "version": "5.0.0"
 }

@@ -181,11 +181,23 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     const cleanups: Array<() => void | Promise<void>> = [];
     const onDispose = (callback: () => void | Promise<void>) => cleanups.push(callback);
     
-    const eventBus = createEventBus({ 
-      namespace: definition.id, 
-      signal: abort.signal, 
-      onDiagnostic: (diagnostic: any) => console.warn("[Userscripts CF events]", diagnostic) 
-    });
+    // Defer event infrastructure until a module accesses ctx.events.
+    // Most scripts only use lifecycle, storage or UI APIs.
+    let eventBus: ReturnType<typeof createEventBus> | undefined;
+    let sharedEvents: ReturnType<typeof createSharedEvents> | undefined;
+    let eventsValue: ScriptContext["events"] | undefined;
+    function getEvents(): ScriptContext["events"] {
+      if (!eventsValue) {
+        eventBus = createEventBus({
+          namespace: definition.id,
+          signal: abort.signal,
+          onDiagnostic: (diagnostic: any) => console.warn("[Userscripts CF events]", diagnostic),
+        });
+        sharedEvents = createSharedEvents({ host, signal: abort.signal });
+        eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEvents });
+      }
+      return eventsValue;
+    }
 
     const domListeners = new Map<EventTarget, Map<string, Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: any }>>>>();
     const captureOf = (options?: boolean | AddEventListenerOptions) => typeof options === "boolean" ? options : !!options?.capture;
@@ -237,8 +249,6 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     });
 
     onDispose(() => domEvents.dispose());
-    const sharedEvents = createSharedEvents({ host, signal: abort.signal });
-    const events = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEvents });
     
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;
@@ -337,7 +347,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
 
     return {
       id: definition.id,
-      events,
+      get events() { return getEvents(); },
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),

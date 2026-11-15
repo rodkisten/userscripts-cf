@@ -9,7 +9,7 @@ import {
 } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab, selectAll } from "@codemirror/commands";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
-import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
+import { javascriptLanguage } from "@codemirror/lang-javascript";
 import {
   autocompletion,
   completionKeymap,
@@ -46,7 +46,7 @@ export function createEditor(
         highlightActiveLine(),
         highlightActiveLineGutter(),
         EditorView.lineWrapping,
-        javascript(),
+        javascriptLanguage,
         indentOnInput(),
         bracketMatching(),
         closeBrackets(),
