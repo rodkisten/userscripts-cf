@@ -1,4 +1,4 @@
-import { createSignal, type JSX } from "solid-js";
+import { createSignal, omit, type JSX } from "solid-js";
 import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 
@@ -37,7 +37,7 @@ export function Button(props: ButtonProps) {
   };
   return (
     <button
-      {...props}
+      {...omit(props, ["variant", "size", "icon", "iconEnd", "badge", "loading", "autoLoading", "loadingText", "onClick", "children"])}
       ref={props.ref}
       type={props.type ?? "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
@@ -84,7 +84,7 @@ export function DropdownButton(props: DropdownButtonProps) {
   };
   return (
     <Button
-      {...props}
+      {...omit(props, ["items", "menu", "align", "onClick"])}
       ref={setTrigger}
       aria-haspopup="menu"
       iconEnd={props.iconEnd ?? "▾"}
@@ -118,6 +118,7 @@ export function SplitButton(props: DropdownButtonProps) {
         variant={props.variant}
         disabled={props.disabled || props.loading}
         aria-label="Mais opções"
+        aria-haspopup="menu"
       >
         ▾
       </DropdownButton>
