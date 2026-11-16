@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { readFile, writeFile } from "node:fs/promises";
 import definitions from "../userscripts.config.js";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
@@ -54,7 +56,7 @@ export async function fingerprints() {
   return result;
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const report = await fingerprints();
   const filename = process.argv.find((arg) => arg.startsWith("--output="))?.slice(9);
   const json = JSON.stringify(report, null, 2) + "\n";
