@@ -344,9 +344,7 @@ export default {
     page.__XRodSettingsInstagram.modules.saved = settingsApi;
     // Use the runtime GM bridge: it mirrors native commands into the Dock.
     // Prefer the modern API and fall back to the legacy Tampermonkey bridge.
-    const gmMenu = ctx.gm.modern.registerMenuCommand
-      ? ctx.gm.modern
-      : ctx.gm.legacy;
+    const gmMenu = ctx.gm.modern.registerMenuCommand ? ctx.gm.modern : ctx.gm.legacy;
     const menus: Array<number | string> = [];
     const registerMenu = gmMenu.registerMenuCommand;
     if (registerMenu) {
@@ -354,13 +352,16 @@ export default {
         ["Instagram salvos · Configurar Relay", configure],
         ["Instagram salvos · Configurações", () => void settingsApi.open()],
         ["Instagram salvos · Sincronizar agora", () => void run(true)],
-        ["Instagram salvos · Diagnóstico", async () => {
-          const error = await get("lastError", null);
-          setRuntime((draft) => {
-            draft.lastError = error?.message || "Nenhum erro registrado";
-          });
-          await settingsApi.open();
-        }],
+        [
+          "Instagram salvos · Diagnóstico",
+          async () => {
+            const error = await get("lastError", null);
+            setRuntime((draft) => {
+              draft.lastError = error?.message || "Nenhum erro registrado";
+            });
+            await settingsApi.open();
+          },
+        ],
       ] as const) {
         menus.push(registerMenu(label, callback));
       }
