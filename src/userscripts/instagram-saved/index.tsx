@@ -320,11 +320,9 @@ export default {
         void settingsApi.open();
       }
     };
-    document.addEventListener("click", shortcut, true);
-    ctx.onDispose(() => document.removeEventListener("click", shortcut, true));
+    ctx.listen(document, "click", shortcut, { capture: true });
     mountReelBookmark(
-      abort,
-      ctx.pageStyle,
+      ctx,
       async () => (await get("settings", DEFAULTS)).collectionIds || [],
       (message) => ctx.toaster({ title: message }),
     );
