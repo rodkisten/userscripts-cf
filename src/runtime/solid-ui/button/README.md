@@ -33,7 +33,11 @@ ctx.ui.registerStyles(buttonCss);
 - [ ] Verify Solid 2 typecheck and build; fix any compile/runtime issues.
 - [x] Add real Solid Button/ButtonGroup/DropdownButton gallery in the design-system studio (variant, accent, loading and badge controls).\n- [ ] Expand the editor with size, radius and additional advanced variants.
 - [x] Switch RodMenu footer action rendering to shared Button; preserve runAction validation, loading, badge, shortcut and close semantics.\n- [ ] Verify styling compatibility and typecheck/build for RodMenu integration.
-- [ ] Expose consistent package entry point, dedicated Badge/IconButton and shared theme config.
+- [x] Public package entry point, accessible IconButton and independent Badge package.\n- [ ] Shared theme configuration and comprehensive badge positioning.
 - [ ] Add toggle, progress, confirm, copy and advanced button patterns.
 - [ ] Verify keyboard, mobile Safari and Shadow DOM behavior.
 - [ ] Update docs and playground with every subsequent user-visible change.
+
+## New examples
+
+The live Design System Studio includes `IconButton` with notification count and standalone `Badge` success/dot variants. Import `Badge, badgeCss` from `../badge`; register `badgeCss` in the same isolated style root as `buttonCss`. These are initial primitives, not yet validated by build/typecheck.
