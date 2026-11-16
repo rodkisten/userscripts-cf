@@ -465,7 +465,13 @@ if (buttonMount) {
           >
             Salvar
           </Button>
-          <IconButton icon="🔔" badge={count()} aria-label="Notificações" variant={variant()} onClick={() => setCount((n) => n + 1)} />
+          <IconButton
+            icon="🔔"
+            badge={count()}
+            aria-label="Notificações"
+            variant={variant()}
+            onClick={() => setCount((n) => n + 1)}
+          />
           <Badge variant="success">Pronto</Badge>
           <Badge variant="dot" aria-label="Online" />
           <ButtonGroup attached>
