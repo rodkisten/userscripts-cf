@@ -109,7 +109,7 @@ NODE
     fi
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
-      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
+      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
         targets="$(node -p 'require("./affected-userscripts.json").targets.join(",")')"
         if [[ -n "$targets" ]]; then
           echo "Building affected targets: $targets"
