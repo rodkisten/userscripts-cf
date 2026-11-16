@@ -61,7 +61,9 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
   let lastNotified = "";
   const read = () => {
     try {
-      return storage ? (JSON.parse(storage.getItem(key) || "{}") as { checked?: number; dismissed?: string }) : { ...fallbackCache };
+      return storage
+        ? (JSON.parse(storage.getItem(key) || "{}") as { checked?: number; dismissed?: string })
+        : { ...fallbackCache };
     } catch {
       return { ...fallbackCache };
     }
