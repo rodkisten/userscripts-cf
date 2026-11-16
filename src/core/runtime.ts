@@ -731,12 +731,13 @@ export function createRuntime(
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
           let release: () => void;
           try {
-            const scopedComponent = () => createComponent(RuntimeProvider, {
-              context: scriptContext,
-              get children() {
-                return typeof component === "function" ? (component as () => unknown)() : component;
-              },
-            });
+            const scopedComponent = () =>
+              createComponent(RuntimeProvider, {
+                context: scriptContext,
+                get children() {
+                  return typeof component === "function" ? (component as () => unknown)() : component;
+                },
+              });
             release = uiFeature.mountSolidShadow(scopedComponent, {
               ...options,
               target: ensureUIRoot(),

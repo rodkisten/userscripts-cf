@@ -1,5 +1,10 @@
 import type { ScriptContext } from "../core/runtime.js";
-import type { bindRuntime as bindRuntimeHelper, useContext as useContextHelper, useRuntime as useRuntimeHelper, useRuntimeWorld as useRuntimeWorldHelper } from "../core/runtime-context.js";
+import type {
+  bindRuntime as bindRuntimeHelper,
+  useContext as useContextHelper,
+  useRuntime as useRuntimeHelper,
+  useRuntimeWorld as useRuntimeWorldHelper,
+} from "../core/runtime-context.js";
 
 /**
  * Runtime helpers are available without imports in userscript source.
