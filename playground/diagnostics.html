@@ -10,6 +10,27 @@ render@https://example.com/solid.js:81:23</textarea></label><div class="actions"
 <div><section class="panel"><h2>Explorador</h2><div class="bar"><input id="search" type="search" placeholder="Buscar erro, script ou origem" aria-label="Buscar diagnósticos"><select id="filter"><option value="all">Todos os scripts</option></select><select id="sort"><option value="recent">Mais recentes</option><option value="count">Mais recorrentes</option></select></div><p id="stats" aria-live="polite"></p><div id="results" role="log" aria-live="polite"></div></section><section class="panel"><h2>Exemplo de integração</h2><pre class="stack">ctx.diagnostics.capture(new Error("Exemplo"), "custom.operation");
 const stop = ctx.diagnostics.observeNetwork();
 stop();</pre><small>Para ver erros reais, instale um userscript com o coletor no mesmo mundo JavaScript.</small></section></div></div></main>
+<section class="panel"><h2>🔗 Diagnóstico da ponte entre mundos</h2><p>Verifica se a página recebe mensagens da ponte. Para validar o mundo isolado, abra o playground com o userscript instalado e compare os IDs recebidos.</p><div class="actions"><button id="bridgeProbe">Enviar probe</button><button id="bridgeClear">Limpar mensagens</button></div><pre id="bridgeLog" class="stack" aria-live="polite">Aguardando mensagens…</pre></section>
+<script>
+(() => {
+const output=document.getElementById("bridgeLog");
+let count=0;
+document.addEventListener("rod-diagnostics:bridge:v1",event=>{
+  if(typeof event.detail!=="string")return;
+  try {
+    const data=JSON.parse(event.detail);
+    if(typeof data.type!=="string"||typeof data.sender!=="string")return;
+    const line=new Date().toLocaleTimeString()+" · "+data.type+" · "+data.sender;
+    output.textContent=(count++?output.textContent+"\n":"")+line;
+  }catch{}
+});
+document.getElementById("bridgeProbe").onclick=()=>{
+  const id="playground-"+Date.now();
+  document.dispatchEvent(new CustomEvent("rod-diagnostics:bridge:v1",{detail:JSON.stringify({type:"hello",sender:id,id:id+":1"})}));
+};
+document.getElementById("bridgeClear").onclick=()=>{count=0;output.textContent="Aguardando mensagens…"};
+})();
+</script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
