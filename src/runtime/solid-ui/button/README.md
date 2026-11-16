@@ -87,3 +87,7 @@ Badge no longer forwards `variant`, `count`, `max` or `children` as native span 
 ## SolidJS prop forwarding
 
 Button, ButtonGroup, DropdownButton and Badge now use Solid's `splitProps` for reactive prop forwarding, keeping component-only properties out of DOM attributes and preventing duplicate `class`/`ref` forwarding. Typecheck and browser validation remain pending.
+
+## Solid 2 runtime correction
+
+Solid 2 RC does not export `splitProps`. Button, ButtonGroup, DropdownButton and Badge now share a reactive `omitProps` Proxy in `src/runtime/solid-ui/shared/omitProps.ts`, instead of importing `splitProps`. This resolves a source-level missing-symbol issue discovered after the earlier validation report; a new build is required to confirm the latest main.

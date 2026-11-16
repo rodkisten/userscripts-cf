@@ -1,4 +1,5 @@
-import { splitProps, type JSX } from "solid-js";
+import type { JSX } from "solid-js";
+import { omitProps } from "../shared/omitProps";
 import styles, { css } from "./Badge.module.css";
 
 export { css as badgeCss };
@@ -10,7 +11,7 @@ export interface BadgeProps extends JSX.HTMLAttributes<HTMLSpanElement> {
   max?: number;
 }
 export function Badge(props: BadgeProps) {
-  const [, nativeProps] = splitProps(props, ["variant", "count", "max", "children", "class"]);
+  const nativeProps = omitProps(props, ["variant", "count", "max", "children", "class"]);
   const label = () =>
     props.count == null
       ? props.children
