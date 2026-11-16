@@ -31,9 +31,12 @@ ctx.ui.registerStyles(buttonCss);
 ## Remaining
 
 - [ ] Verify Solid 2 typecheck and build; fix any compile/runtime issues.
-- [x] Add real Solid Button/ButtonGroup/DropdownButton gallery in the design-system studio (variant, accent, loading and badge controls).\n- [ ] Expand the editor with size, radius and additional advanced variants.
-- [x] Switch RodMenu footer action rendering to shared Button; preserve runAction validation, loading, badge, shortcut and close semantics.\n- [ ] Verify styling compatibility and typecheck/build for RodMenu integration.
-- [x] Public package entry point, accessible IconButton and independent Badge package.\n- [ ] Shared theme configuration and comprehensive badge positioning.
+- [x] Add real Solid Button/ButtonGroup/DropdownButton gallery in the design-system studio (variant, accent, loading and badge controls).
+- [ ] Expand the editor with size, radius and additional advanced variants.
+- [x] Switch RodMenu footer action rendering to shared Button; preserve runAction validation, loading, badge, shortcut and close semantics.
+- [ ] Verify styling compatibility and typecheck/build for RodMenu integration.
+- [x] Public package entry point, accessible IconButton and independent Badge package.
+- [ ] Shared theme configuration and comprehensive badge positioning.
 - [ ] Add toggle, progress, confirm, copy and advanced button patterns.
 - [ ] Verify keyboard, mobile Safari and Shadow DOM behavior.
 - [ ] Update docs and playground with every subsequent user-visible change.
@@ -56,3 +59,7 @@ The Button filters component-only props before forwarding native HTML attributes
 - [ ] Build: not run for the same reason.
 - [ ] Safari iPhone and menu positioning: not manually verified.
 - [ ] Review native attributes, CSS precedence and async rejection behavior after compilation.
+
+## Styling note
+
+The button CSS uses explicit font properties so the component inherits the host font family without an invalid `font` shorthand. The tokens remain configurable on the component or its ancestor.
