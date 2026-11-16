@@ -66,7 +66,11 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     }
   };
   const save = (value: { checked?: number; dismissed?: string }) => {
-    try { storage?.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ }
+    try {
+      storage?.setItem(key, JSON.stringify(value));
+    } catch {
+      /* storage unavailable */
+    }
   };
   async function check(force = false): Promise<AvailableUpdate | null> {
     if (!enabled) return null;
@@ -91,11 +95,16 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
           return null;
         }
         const base = new URL(manifest.baseURL || ".", options.manifestURL);
-        const downloadURL = new URL(entry.file || `${options.id}.user.js`, base.href.endsWith("/") ? base : base.href + "/");
+        const downloadURL = new URL(
+          entry.file || `${options.id}.user.js`,
+          base.href.endsWith("/") ? base : base.href + "/",
+        );
         if (downloadURL.protocol !== "https:") throw new Error("Update URL must use HTTPS");
         const update = {
-          id: options.id, name: entry.name || options.id,
-          installedVersion: options.installedVersion, latestVersion: latest,
+          id: options.id,
+          name: entry.name || options.id,
+          installedVersion: options.installedVersion,
+          latestVersion: latest,
           downloadURL: downloadURL.href,
         };
         lastChecked = Date.now();
@@ -114,7 +123,9 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     })();
     return pending;
   }
-  const onFocus = () => { if (host.document.visibilityState === "visible") void check(); };
+  const onFocus = () => {
+    if (host.document.visibilityState === "visible") void check();
+  };
   function start() {
     if (timer || !enabled) return;
     void check();
@@ -127,11 +138,16 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     host.document.removeEventListener("visibilitychange", onFocus);
   }
   return {
-    check, start, stop,
+    check,
+    start,
+    stop,
     configure(next: { enabled?: boolean }) {
       if (next.enabled !== undefined) enabled = next.enabled;
-      if (enabled) start(); else stop();
+      if (enabled) start();
+      else stop();
     },
-    dismiss(version: string) { save({ ...read(), dismissed: version }); },
+    dismiss(version: string) {
+      save({ ...read(), dismissed: version });
+    },
   };
 }
