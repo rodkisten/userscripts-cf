@@ -3,7 +3,8 @@ import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import { createRoot, type Accessor } from "solid-js";
+import { createComponent, createRoot, type Accessor } from "solid-js";
+import { RuntimeProvider } from "./runtime-context.js";
 import { createStore } from "solid-js/store";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
@@ -587,7 +588,7 @@ export function createRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    return {
+    const scriptContext: ScriptContext = {
       id: definition.id,
       diagnostics: Object.freeze({
         capture: (error: unknown, source = SOURCE_MANUAL) =>
@@ -722,7 +723,13 @@ export function createRuntime(
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
           let release: () => void;
           try {
-            release = uiFeature.mountSolidShadow(component, {
+            const scopedComponent = () => createComponent(RuntimeProvider, {
+              context: scriptContext,
+              get children() {
+                return typeof component === "function" ? (component as () => unknown)() : component;
+              },
+            });
+            release = uiFeature.mountSolidShadow(scopedComponent, {
               ...options,
               target: ensureUIRoot(),
               onError: (error: unknown) => {
@@ -758,6 +765,7 @@ export function createRuntime(
         stateValues.delete(definition.id);
       },
     };
+    return scriptContext;
   }
 
   async function reconcile(): Promise<void> {
