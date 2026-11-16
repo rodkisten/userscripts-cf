@@ -518,6 +518,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   return (
     <Portal>
+      <style data-rod-button-styles>{buttonCss}</style>
       <div class={surfaceStyles.host} style={{ "z-index": themeVars()["--rm-z"] }}>
         <div
           class={`${surfaceStyles.root} rm-theme-root ${schema().className || ""}`.trim()}
