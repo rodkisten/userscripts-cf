@@ -80,7 +80,7 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
       - name: Typecheck, build and test before publishing
-        if: steps.source.outputs.skip != 'true'
+        if: (steps.source.outputs.skip != 'true' || github.event_name == 'workflow_dispatch')
         run: npm test
       - name: Verify installable userscript metadata
         if: steps.source.outputs.skip != 'true'
