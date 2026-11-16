@@ -57,6 +57,27 @@ jobs:
           node build/validation-fingerprints.mjs --output=fingerprints.json
           echo "hash=$(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].hash)')" >> "$GITHUB_OUTPUT"
           echo "tests=$(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].tests.length)')" >> "$GITHUB_OUTPUT"
+      - name: Restore userscript lint result
+        if: matrix.id == 'instagram-saved'
+        id: lint_cached
+        uses: actions/cache/restore@v4
+        with:
+          path: .validation-cache/lint/${{ matrix.id }}/passed
+          key: script-lint-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
+      - name: Check uncached userscript lint
+        if: matrix.id == 'instagram-saved' && steps.lint_cached.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run lint
+          mkdir -p .validation-cache/lint/instagram-saved
+          echo passed > .validation-cache/lint/instagram-saved/passed
+      - name: Save successful userscript lint
+        if: matrix.id == 'instagram-saved' && steps.lint_cached.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: .validation-cache/lint/${{ matrix.id }}/passed
+          key: script-lint-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
       - name: Restore userscript test result
         if: steps.fingerprint.outputs.tests != '0'
         id: cached
