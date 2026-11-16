@@ -19,7 +19,22 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
   ref?: HTMLButtonElement | ((element: HTMLButtonElement) => void);
 }
 export function Button(props: ButtonProps) {
-  const [, nativeProps] = splitProps(props, ["variant", "size", "icon", "iconEnd", "badge", "loading", "autoLoading", "loadingText", "onClick", "children", "ref", "class", "disabled", "type"]);
+  const [, nativeProps] = splitProps(props, [
+    "variant",
+    "size",
+    "icon",
+    "iconEnd",
+    "badge",
+    "loading",
+    "autoLoading",
+    "loadingText",
+    "onClick",
+    "children",
+    "ref",
+    "class",
+    "disabled",
+    "type",
+  ]);
   const [pending, setPending] = createSignal(false);
   const busy = () => !!props.loading || pending();
   const handleClick = (event: MouseEvent) => {
