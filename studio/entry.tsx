@@ -1,3 +1,5 @@
+import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
+import { IconButton } from "../src/runtime/solid-ui/button";
 import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
 import sourceStyles, { css as sourceCss } from "./InspectorSource.module.css";
@@ -414,7 +416,7 @@ buttonStudio.innerHTML =
   '<h2>Buttons & ButtonGroup</h2><p>Componentes reais: variantes, badges, loading e dropdown usando RodMenu.</p><div id="buttonStudioMount"></div>';
 document.querySelector("main.content")?.append(buttonStudio);
 const buttonStyle = document.createElement("style");
-buttonStyle.textContent = buttonCss;
+buttonStyle.textContent = buttonCss + "\n" + badgeCss;
 document.head.append(buttonStyle);
 const buttonMount = document.getElementById("buttonStudioMount");
 if (buttonMount) {
@@ -463,6 +465,9 @@ if (buttonMount) {
           >
             Salvar
           </Button>
+          <IconButton icon="🔔" badge={count()} aria-label="Notificações" variant={variant()} onClick={() => setCount((n) => n + 1)} />
+          <Badge variant="success">Pronto</Badge>
+          <Badge variant="dot" aria-label="Online" />
           <ButtonGroup attached>
             <Button variant="outline" onClick={() => setCount((n) => n + 1)}>
               Adicionar
