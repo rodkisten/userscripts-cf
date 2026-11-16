@@ -16,7 +16,10 @@
 - [x] Captura atribuída em module.init e ctx.listen (outros callbacks pendentes)
 - [x] Instrumentação de ctx.listen e ctx.events.dom com captura síncrona e assíncrona
 - [ ] Validar semântica de once, removeEventListener e AbortSignal em Safari
-- [ ] Integração com interceptadores HTTP e error boundaries Solid
+- [x] Captura de erros de requisição ctx.http.request e de interceptadores HTTP
+- [x] Captura de falhas síncronas no mount Solid
+- [ ] Error boundaries Solid e falhas reativas após o mount
+- [ ] Captura de erros de fetch/XHR nativos sem atribuição incorreta
 - [ ] Armazenamento IndexedDB com política de retenção e isolamento entre mundos
 - [ ] Sanitização robusta de stack, URL e dados de exceção antes de persistir
 - [x] Painel inicial Solid no Dock com filtro por script, stack e exportação JSON
@@ -51,3 +54,7 @@ ctx.listen(window, "click", async () => { throw new Error("Falha no listener"); 
 ```
 
 O Dock mostra a seção Diagnósticos e permite exportar o JSON. A captura de callbacks externos ao ctx ainda exige instrumentação própria. Não há validação de build concluída nesta etapa.
+
+## Integrações HTTP e Solid
+
+O runtime captura erros de `ctx.http.request` (rejeições de rede e exceções), falhas dos interceptadores de requisição/resposta e exceções de `ctx.ui.mountSolid`. O comportamento original é preservado: requisições ainda rejeitam e exceções de montagem são relançadas. Cancelamentos esperados por `AbortError` não são registrados. Respostas HTTP 4xx/5xx não são automaticamente tratadas como exceções. Fetch/XHR nativos da página e falhas reativas do Solid após a montagem ainda não estão cobertos.
