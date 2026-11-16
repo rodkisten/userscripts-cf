@@ -1,76 +1,139 @@
-name: Diagnose all userscripts failures
-run-name: "Diagnostics · ${{ github.ref_name }} · ${{ github.sha }}"
+name: Validate changed userscripts
+run-name: "Validate changed · ${{ github.ref_name }} · ${{ github.sha }}"
 
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "Validation scope"
+        type: choice
+        options: [changed, all]
+        default: all
 
 permissions:
   contents: read
 
 concurrency:
-  group: userscripts-diagnostics-${{ github.ref }}
-  # Preserve complete diagnostics until the checks finish.
-  cancel-in-progress: false
+  group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  diagnose:
-    name: "${{ matrix.check }}"
+  validate:
+    name: "Validate affected files"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - check: typecheck
-            command: npm run typecheck
-          # The integration suite consumes dist/, so build it once in this job.
-          # Hosting already runs the production build; no duplicate build-only job.
-          - check: unit-tests
-            command: npm run build && npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
-          - check: lab
-            command: npm run test:lab
-          - check: hosting
-            command: npm run build:hosting
-          - check: lint
-            command: npm run lint
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Install
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
-          npm ci --legacy-peer-deps
-      - name: Run ${{ matrix.check }} and capture complete output
-        id: check
+      - name: Detect changes and plan validation
+        id: plan
         shell: bash
         env:
-          CHECK_COMMAND: ${{ matrix.command }}
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SCOPE: ${{ inputs.scope || 'changed' }}
         run: |
-          set +e
-          bash -o pipefail -c "$CHECK_COMMAND" 2>&1 | tee "diagnostic-${{ matrix.check }}.log"
-          status=${PIPESTATUS[0]}
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == workflow_dispatch && "$SCOPE" == all ]]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            BASE="$PR_BASE_SHA"
+          else
+            BASE="$BEFORE_SHA"
+          fi
+          if [[ -z "$BASE" || "$BASE" =~ ^0+$ ]] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$BASE" HEAD > changed-files.txt
+          cat changed-files.txt
+          if [[ ! -s changed-files.txt ]]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          # Build tooling, shared runtime and dependency changes can affect every script.
+          if grep -Eq '^(build/|src/(runtime/|core/|config/|styles/|selectors\.|assets/)|package(-lock)?\.json$|vite\.config\.|tsconfig|\.github/workflows/|migration/)' changed-files.txt; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "full=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install dependencies
+        if: steps.plan.outputs.run == 'true'
+        run: npm ci --legacy-peer-deps
+      - name: Validate affected code
+        if: steps.plan.outputs.run == 'true'
+        shell: bash
+        env:
+          FULL: ${{ steps.plan.outputs.full }}
+        run: |
+          set -euo pipefail
+          if [[ "$FULL" == true ]]; then
+            echo "Shared infrastructure changed: running full validation."
+            npm run typecheck
+            npm run lint
+            npm run build
+            npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+            npm run test:lab
+            node build/hosting.mjs
+            exit 0
+          fi
+          mapfile -t files < changed-files.txt
+          source_changed=false
+          tests_changed=false
+          lab_changed=false
+          hosting_changed=false
+          for file in "${files[@]}"; do
+            case "$file" in
+              src/*) source_changed=true ;;
+              tests/*.test.*) tests_changed=true ;;
+              labs/*) lab_changed=true ;;
+              playground/*|public/*) hosting_changed=true ;;
+            esac
+          done
+          if [[ "$source_changed" == true ]]; then
+            npm run typecheck
+            npm run lint
+            # The userscript bundle is shared, so source changes require a build.
+            npm run build
+            # Vitest --related selects tests importing changed modules. Integration
+            # fixtures consume dist/ indirectly, so include them for userscript edits.
+            mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
+            if (( ${#changed_sources[@]} )); then
+              npx vitest related "${changed_sources[@]}" --run --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
+            fi
+            if printf '%s\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
+              npx vitest run tests/integrated-userscripts.test.js --maxWorkers=2
+            fi
+          fi
+          if [[ "$tests_changed" == true ]]; then
+            mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
+            if (( ${#changed_tests[@]} )); then
+              # Some integration tests read dist/ rather than importing source.
+              if [[ "$source_changed" != true ]]; then npm run build; fi
+              npx vitest run "${changed_tests[@]}" --maxWorkers=2
+            fi
+          fi
+          if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
+          if [[ "$hosting_changed" == true ]]; then
+            if [[ "$source_changed" != true && "$tests_changed" != true ]]; then npm run build; fi
+            node build/hosting.mjs
+          fi
           {
-            echo "### ${{ matrix.check }}: $([[ "$status" == 0 ]] && echo PASS || echo FAIL)"
-            echo '~~~text'
-            echo "Exit code: $status"
-            echo "Full logs are attached as artifacts; the excerpt below is only a quick index."
-            grep -E 'error TS[0-9]+|\\[MISSING_EXPORT\\]|(^| )Error:|npm error|FAIL|failed|✗|AssertionError|Test Files|Tests ' "diagnostic-${{ matrix.check }}.log" | tail -120 || true
-            echo '~~~'
+            echo "### Selective validation"
+            echo 'Changed files:'
+            sed 's/^/- `/; s/$/`/' changed-files.txt
           } >> "$GITHUB_STEP_SUMMARY"
-          exit 0
-      - name: Upload full log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostic-${{ matrix.check }}
-          path: diagnostic-${{ matrix.check }}.log
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Mark check failed after collecting logs
-        if: steps.check.outputs.exit_code != '0'
-        run: exit 1
