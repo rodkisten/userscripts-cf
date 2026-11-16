@@ -131,11 +131,11 @@ export function runtimeHelpers() {
           // without additional AST rewrites.
           if (
             ts.isIdentifier(callee) &&
-            ["useContext", "useRuntime"].includes(callee.text) &&
+            ["useContext", "useRuntime", "useRuntimeWorld"].includes(callee.text) &&
             !shadowed.has(callee.text) &&
             node.arguments.length === 0
           ) {
-            edits.push({ start: node.getStart(source), end: node.end, value: contextName });
+            edits.push({ start: node.getStart(source), end: node.end, value: callee.text === "useRuntimeWorld" ? contextName + ".events.shared" : contextName });
             return;
           }
           let replacement;
