@@ -2,7 +2,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { validateTag } from "../build/release.mjs";
+import { validateTag, pendingSourceChanges } from "../build/release.mjs";
 
 test("release rejects mismatched tags and shell fragments", () => {
   validateTag("v0.2.0", "0.2.0");
@@ -43,4 +43,18 @@ test("update metadata and downloads have matching versions and stable release UR
   }
   await collectChecksums(dist);
   assert.equal(await fs.readFile(new URL("SHA256SUMS", dist), "utf8"), expectedSums.join("\n") + "\n");
+});
+
+test("release ignores only the generated Cloudflare worker in git cleanliness check", () => {
+  const calls = [];
+  const run = (...args) => {
+    calls.push(args);
+    return "";
+  };
+  assert.equal(pendingSourceChanges(run), "");
+  assert.deepEqual(calls, [[
+    "git", "status", "--porcelain", "--untracked-files=normal", "--",
+    ".", ":(exclude)hosting/worker.mjs",
+  ]]);
+  assert.equal(pendingSourceChanges(() => " M src/runtime/index.ts"), " M src/runtime/index.ts");
 });
