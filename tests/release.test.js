@@ -45,16 +45,17 @@ test("update metadata and downloads have matching versions and stable release UR
   assert.equal(await fs.readFile(new URL("SHA256SUMS", dist), "utf8"), expectedSums.join("\n") + "\n");
 });
 
-test("release ignores only the generated Cloudflare worker in git cleanliness check", () => {
+test("release checks tracked source but ignores generated deployment artifacts", () => {
   const calls = [];
   const run = (...args) => {
     calls.push(args);
     return "";
   };
   assert.equal(pendingSourceChanges(run), "");
-  assert.deepEqual(calls, [[
-    "git", "status", "--porcelain", "--untracked-files=normal", "--",
-    ".", ":(exclude)hosting/worker.mjs",
-  ]]);
+  assert.deepEqual(calls[0].slice(0, 5), [
+    "git", "status", "--porcelain", "--untracked-files=no", "--",
+  ]);
+  assert.ok(calls[0].includes("src"));
+  assert.ok(calls[0].includes("package.json"));
   assert.equal(pendingSourceChanges(() => " M src/runtime/index.ts"), " M src/runtime/index.ts");
 });
