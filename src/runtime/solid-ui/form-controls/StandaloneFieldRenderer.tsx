@@ -87,7 +87,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(props: Standalo
     <Show when={kind() === 'color' && !!prop<readonly string[]>('presets')?.length}><div role="group" aria-label="Cores predefinidas"><For each={prop<readonly string[]>('presets') ?? []}>{(color) => <button type="button" aria-label={color} title={color} disabled={disabled() || readonly()} onClick={() => commit(color)}>{color}</button>}</For></div></Show>
     <Show when={kind() === 'range' && prop<boolean>('showValue')}><output for={id()}>{stringValue()}</output></Show>
     <Show when={kind() === 'divider'}><hr /></Show>
-    <Show when={kind() === 'html'}><div>{'html' in field() ? typeof (field() as { html: unknown }).html === 'function' ? (field() as { html: (ctx: TContext) => string }).html(props.context) : (field() as { html: string }).html : ''}</div></Show>
+    <Show when={kind() === 'html'}><div innerHTML={'html' in field() ? typeof (field() as { html: unknown }).html === 'function' ? (field() as { html: (ctx: TContext) => string }).html(props.context) : (field() as { html: string }).html : ''} /></Show>
     <Show when={kind() === 'custom'}>{(() => { const f = field(); return 'render' in f ? (f as { render: (ctx: TContext, field: typeof f) => import('solid-js').JSX.Element }).render(props.context, f) : null; })()}</Show>
     <Show when={field().description}><small>{field().description}</small></Show>
   </div>;
