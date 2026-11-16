@@ -44,6 +44,19 @@ export function runtimeHelpers() {
             }
           }
         };
+        if (ts.isSourceFile(node)) {
+          for (const statement of node.statements) {
+            if (ts.isImportDeclaration(statement) && statement.importClause) {
+              const clause = statement.importClause;
+              if (clause.name) names.add(clause.name.text);
+              if (clause.namedBindings) {
+                if (ts.isNamespaceImport(clause.namedBindings)) names.add(clause.namedBindings.name.text);
+                else for (const specifier of clause.namedBindings.elements) names.add(specifier.name.text);
+              }
+            }
+            if (ts.isImportEqualsDeclaration(statement)) names.add(statement.name.text);
+          }
+        }
         if (ts.isFunctionLike(node)) {
           for (const param of node.parameters) add(param.name);
           if (node.name && ts.isIdentifier(node.name)) names.add(node.name.text);
@@ -238,7 +251,8 @@ export function runtimeHelpers() {
           !keep(node)
         ) {
           const pos = source.getLineAndCharacterOfPosition(node.getStart(source));
-          this.error(
+          const fail = typeof this?.error === "function" ? this.error.bind(this) : (message) => { throw new Error(message); };
+          fail(
             `Unbound ${node.expression.text}() in ${id}:${pos.line + 1}:${pos.character + 1}. Move the call into init(ctx) or pass context explicitly to this module.`,
           );
         }
