@@ -96,6 +96,18 @@ jobs:
           npx vitest run "${tests[@]}" --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
           mkdir -p ".validation-cache/scripts/$SCRIPT_ID"
           echo "passed" > ".validation-cache/scripts/$SCRIPT_ID/passed"
+      - name: Explain failed userscript tests
+        if: failure() && steps.fingerprint.outputs.tests != '0'
+        env:
+          SCRIPT_ID: ${{ matrix.id }}
+        run: |
+          {
+            echo "### ❌ Userscript integration failed: $SCRIPT_ID"
+            echo "Test files: ${{ steps.fingerprint.outputs.tests }}"
+            echo "Build target: $SCRIPT_ID"
+            echo "Inspect the **Build and test uncached userscript** step for assertion errors."
+            echo "This is a test failure, not a cache or formatting failure."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Save successful userscript result
         if: steps.fingerprint.outputs.tests != '0' && steps.cached.outputs.cache-hit != 'true' && success()
         uses: actions/cache/save@v4
@@ -156,9 +168,16 @@ jobs:
         run: |
           gh workflow run prettier-full.yml --ref "$BRANCH" -f target_branch="$BRANCH" -f create_pr=false
           echo "Formatting repair requested for $BRANCH; its commit will trigger validation again." >> "$GITHUB_STEP_SUMMARY"
-      - name: Fail current validation on formatting error
+      - name: Report formatting failure and repair run
         if: steps.formatting.outcome == 'failure'
-        run: exit 1
+        run: |
+          {
+            echo "### ⚠️ Formatting requires repair"
+            echo "Prettier failed. See **Check formatting** for the affected files."
+            echo "The **Dispatch formatting repair** step requests a separate workflow."
+            echo "A successful repair requires a NEW validation run; this run remains failed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - name: Restore exact-source validation result
         id: validation_cache
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch'
