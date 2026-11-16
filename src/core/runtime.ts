@@ -473,6 +473,10 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
             release = uiFeature.mountSolidShadow(component, {
               ...options,
               target: ensureUIRoot(),
+              onError: (error: unknown) => {
+                captureDiagnostic(error, "solid.reactive", definition.id, host);
+                if (typeof options.onError === "function") options.onError(error);
+              },
             });
           } catch (error) {
             captureDiagnostic(error, "solid.mount", definition.id, host);
