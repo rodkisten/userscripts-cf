@@ -147,7 +147,7 @@ jobs:
         run: |
           printf '\\n.github/workflows/**\\n' >> .prettierignore
           npx prettier --check .
-          git restore -- .prettierignore
+          rm -f .prettierignore
       - name: Dispatch formatting repair
         if: steps.formatting.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
