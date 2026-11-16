@@ -4,7 +4,7 @@ import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnos
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import { createComponent, createRoot, type Accessor } from "solid-js";
-import { RuntimeProvider } from "./runtime-context.js";
+import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context.js";
 import { createStore } from "solid-js/store";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
@@ -316,6 +316,14 @@ export function createRuntime(
   release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
   const rod = initializeRodFeatures(host);
+  // Install helper implementations once per runtime, without a mutable active-script pointer.
+  const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
+  const installedHelpers: Array<keyof typeof helpers> = [];
+  for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
+    if (name in host) continue;
+    Object.defineProperty(host, name, { configurable: true, value: helpers[name], writable: false });
+    installedHelpers.push(name);
+  }
 
   updaterInstance = release ? setupUpdateChecker(release, host, rod) : null;
   updaterInstance?.start();
@@ -837,6 +845,10 @@ export function createRuntime(
     },
     async dispose() {
       closed = true;
+      for (const name of installedHelpers) {
+        if ((host as unknown as Record<string, unknown>)[name] === helpers[name])
+          delete (host as unknown as Record<string, unknown>)[name];
+      }
       updaterInstance?.stop();
       host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
       if ((host as unknown as Record<string, unknown>).__RodClipboard === clipboard)
