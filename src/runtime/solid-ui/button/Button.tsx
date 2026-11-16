@@ -37,7 +37,18 @@ export function Button(props: ButtonProps) {
   };
   return (
     <button
-      {...omit(props, ["variant", "size", "icon", "iconEnd", "badge", "loading", "autoLoading", "loadingText", "onClick", "children"])}
+      {...omit(props, [
+        "variant",
+        "size",
+        "icon",
+        "iconEnd",
+        "badge",
+        "loading",
+        "autoLoading",
+        "loadingText",
+        "onClick",
+        "children",
+      ])}
       ref={props.ref}
       type={props.type ?? "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
