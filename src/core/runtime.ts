@@ -159,7 +159,8 @@ export function createRuntime(
             id: `rod-update-${update.id}-${update.latestVersion}`,
             title: `Atualização disponível · ${update.name}`,
             description: `${update.installedVersion} → ${update.latestVersion}`,
-            duration: 0,\n        closeButton: true,
+            duration: 0,
+        closeButton: true,
             actions: [
               {
                 label: "Atualizar",
