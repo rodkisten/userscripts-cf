@@ -1,5 +1,5 @@
 import { For, Match, Show, Switch } from 'solid-js';
-import type { RodMenuContext, RodMenuField } from '../types';
+import type { RodMenuContext, RodMenuField, TextLikeField, DateLikeField, BooleanField, RadioField, CheckboxGroupField } from '../types';
 import { TypeaheadSelect } from './fields/TypeaheadSelect';
 import styles from '../styles/Fields.module.css';
 
@@ -32,7 +32,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           }
         >
           {(() => {
-            const f = props.field as Extract<RodMenuField, { type: 'text' }>;
+            const f = props.field as TextLikeField;
             return (
               <input
                 id={controlId()}
@@ -190,7 +190,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
 
         <Match when={props.field.type === 'radio' || props.field.type === 'checkbox-group'}>
           {(() => {
-            const f = props.field as Extract<RodMenuField, { type: 'radio' | 'checkbox-group' }>;
+            const f = props.field as RadioField | CheckboxGroupField;
             const isRadio = f.type === 'radio';
             const checkedSet = () =>
               new Set(Array.isArray(fieldValue()) ? (fieldValue() as unknown[]).map(String) : []);
@@ -237,7 +237,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
 
         <Match when={props.field.type === 'checkbox' || props.field.type === 'switch'}>
           {(() => {
-            const f = props.field as Extract<RodMenuField, { type: 'checkbox' | 'switch' }>;
+            const f = props.field as BooleanField;
             return (
               <label class={styles.checkRow}>
                 <span class={styles.checkLabel}>
@@ -296,7 +296,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           }
         >
           {(() => {
-            const f = props.field as Extract<RodMenuField, { type: 'date' }>;
+            const f = props.field as DateLikeField;
             return (
               <input
                 id={controlId()}
