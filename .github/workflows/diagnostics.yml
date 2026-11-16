@@ -40,6 +40,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SCOPE: ${{ inputs.scope || 'changed' }}
         run: |
           set -euo pipefail
@@ -49,7 +50,7 @@ jobs:
             exit 0
           fi
           if [[ "$EVENT_NAME" == pull_request ]]; then
-            BASE="$PR_BASE_SHA"
+            BASE="$(git merge-base "$PR_BASE_SHA" "$PR_HEAD_SHA")"
           else
             BASE="$BEFORE_SHA"
           fi
@@ -58,15 +59,19 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git diff --name-only "$BASE" HEAD > changed-files.txt
+          git diff --name-only --diff-filter=ACMRT "$BASE" HEAD > changed-files.txt
           cat changed-files.txt
           if [[ ! -s changed-files.txt ]]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          if ! grep -Eq '^(src/|tests/|build/|labs/|playground/|public/|migration/|package(-lock)?\.json$|tsconfig|vite\.config\.|\.github/workflows/)' changed-files.txt; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "run=true" >> "$GITHUB_OUTPUT"
           # Build tooling, shared runtime and dependency changes can affect every script.
-          if grep -Eq '^(build/|src/(runtime/|core/|config/|styles/|selectors\.|assets/)|package(-lock)?\.json$|vite\.config\.|tsconfig|\.github/workflows/|migration/)' changed-files.txt; then
+          if grep -Eq '^(build/|src/(runtime/|core/|config/|styles/|selectors\.|assets/)|package(-lock)?\.json$|vite\.config\.|tsconfig|migration/)' changed-files.txt; then
             echo "full=true" >> "$GITHUB_OUTPUT"
           else
             echo "full=false" >> "$GITHUB_OUTPUT"
@@ -94,21 +99,21 @@ jobs:
           mapfile -t files < changed-files.txt
           source_changed=false
           tests_changed=false
+          build_needed=false
           lab_changed=false
           hosting_changed=false
           for file in "${files[@]}"; do
             case "$file" in
-              src/*) source_changed=true ;;
+              src/*) source_changed=true; build_needed=true ;;
               tests/*.test.*) tests_changed=true ;;
               labs/*) lab_changed=true ;;
-              playground/*|public/*) hosting_changed=true ;;
+              playground/*|public/*) hosting_changed=true; build_needed=true ;;
             esac
           done
           if [[ "$source_changed" == true ]]; then
             npm run typecheck
             npm run lint
             # The userscript bundle is shared, so source changes require a build.
-            npm run build
             # Vitest --related selects tests importing changed modules. Integration
             # fixtures consume dist/ indirectly, so include them for userscript edits.
             mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
@@ -119,17 +124,20 @@ jobs:
               npx vitest run tests/integrated-userscripts.test.js --maxWorkers=2
             fi
           fi
+          if [[ "$build_needed" == true ]]; then npm run build; fi
           if [[ "$tests_changed" == true ]]; then
             mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
             if (( ${#changed_tests[@]} )); then
               # Some integration tests read dist/ rather than importing source.
-              if [[ "$source_changed" != true ]]; then npm run build; fi
+              if [[ "$build_needed" != true ]] && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone).*\.test\.'; then
+                npm run build
+                build_needed=true
+              fi
               npx vitest run "${changed_tests[@]}" --maxWorkers=2
             fi
           fi
           if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
           if [[ "$hosting_changed" == true ]]; then
-            if [[ "$source_changed" != true && "$tests_changed" != true ]]; then npm run build; fi
             node build/hosting.mjs
           fi
           {
