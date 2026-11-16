@@ -104,3 +104,11 @@ Tooling:
   or `POST /__solid/diagnostics` on the dev server with `{"method":"begin"}` ... `{"method":"end"}`.
 - Lint with `eslint-plugin-solid/configs/v2` (or `v2-strict`).
 - Docs: https://v2.solidjs.com/llms.txt; append `.md` to any page URL for its Markdown.
+
+## Form controls documentation and playground contract (MANDATORY)
+
+Before any change to form controls, RodMenu field rendering, Combobox, TagsInput, or their adapters, **read** `src/runtime/solid-ui/form-controls/README.md` and the relevant Playground source (`playground/form-controls-app.tsx`). Inspect current implementation and tests, not just the roadmap.
+
+In the **same logical change**, update the component README with what is implemented, remaining gaps, compatibility/limitations, and verification status. Add or update a **working interactive Playground example** for each added or changed user-visible behavior. Keep the example linked from the Playground index, and ensure it exercises real component code, not a static mock. Add/update regression tests and run typecheck, build and relevant tests. Do not check off roadmap items or claim CI passed without evidence. If validation is blocked, record the exact failure and next action. Avoid one commit per file: group related changes into one logical commit.
+
+The README is the persistent source of truth for the renderer migration, 29 shared field variants, RodMenu compatibility adapter, and mobile/Shadow DOM validation.
