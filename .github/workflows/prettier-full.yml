@@ -70,7 +70,7 @@ jobs:
       - name: Verify formatting of commit-eligible files
         shell: bash
         run: |
-          printf '\\n.github/workflows/**\\n' >> .prettierignore
+          printf '%s\n' '.github/workflows/**' > .prettierignore
           npx prettier --check .
           rm -f .prettierignore
 
