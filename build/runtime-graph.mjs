@@ -40,7 +40,10 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   let resolvedEntry;
   for (const candidate of entryCandidates) {
     try {
-      if ((await fs.stat(candidate)).isFile()) { resolvedEntry = candidate; break; }
+      if ((await fs.stat(candidate)).isFile()) {
+        resolvedEntry = candidate;
+        break;
+      }
     } catch (error) {
       if (error.code !== "ENOENT" && error.code !== "ENOTDIR") throw error;
     }
