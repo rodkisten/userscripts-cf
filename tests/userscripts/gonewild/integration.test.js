@@ -33,6 +33,27 @@ async function fixture(id, url, html, setup = () => {}) {
   return { host, errors, source, values, api: host.__userscriptsCF?.[id + ":sandbox"] };
 }
 
+test("Reddit network shim remains self-contained after bundling", async () => {
+  const { host, errors, source, api } = await fixture(
+    "gonewild",
+    "https://www.reddit.com/r/GoneWildAudioGay/",
+    "<main></main>",
+  );
+  try {
+    const referenceErrors = errors.filter((message) => /ReferenceError|is not defined/.test(message));
+    assert.deepEqual(
+      referenceErrors,
+      [],
+      "Injected page-world code must not reference closure variables from the compiled bundle. " +
+        "Check pageNetworkShim.toString() and the generated script source. Bundle bytes: " + source.length,
+    );
+    assert.equal(host.__gwsNetworkInstalled, true, "Reddit page-world network shim initializes");
+    await api.dispose();
+  } finally {
+    await host.happyDOM.abort();
+  }
+});
+
 test("Reddit audio module boots with scoped UI, preserves native post and cleans up", async () => {
   const html =
     '<main><shreddit-post id="t3_abc123" subreddit-name="GoneWildAudioGay" post-title="[M4M] Example [Comfort]" permalink="/r/GoneWildAudioGay/comments/abc123/example/"><a slot="title" href="/r/GoneWildAudioGay/comments/abc123/example/">[M4M] Example [Comfort]</a></shreddit-post></main>';
