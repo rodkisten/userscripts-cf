@@ -135,6 +135,7 @@ for (const target of targets) {
     if (!selected.length) continue;
     const runtime = await bundleRuntime(root, selected, {
       dock: target.id === "standalone" && world === "sandbox",
+      release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
       catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
         id,
         name,
