@@ -77,7 +77,7 @@ case "$mode" in
     done
     # Build first: integration tests consume dist/ and must never see stale bundles.
     mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
-    if (( ${#changed_tests[@]} )) && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\.test\.'; then
+    if (( ${#changed_tests[@]} )) && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
       build_needed=true
     fi
     if [[ "$source_changed" == true ]]; then
