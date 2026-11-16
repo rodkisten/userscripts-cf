@@ -143,7 +143,9 @@ jobs:
         id: formatting
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         continue-on-error: true
-        run: npm run format:check
+        shell: bash
+        run: |
+          git ls-files -z | grep -zv '^.github/workflows/' | xargs -0 -r npx prettier --check
       - name: Dispatch formatting repair
         if: steps.formatting.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
