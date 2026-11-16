@@ -230,3 +230,55 @@
   outline: 2px solid #a78bfa;
   outline-offset: 2px;
 }
+
+/* Mobile-first containment: never let a host page's viewport or styles squeeze the dock. */
+:global(.panel) {
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  contain: layout style;
+}
+:global(.panel .content),
+:global(.panel .module),
+:global(.panel .event),
+:global(.panel .manager-toolbar),
+:global(.panel .manager-list) {
+  min-width: 0;
+  max-width: 100%;
+}
+:global(.panel .manager-toolbar) {
+  flex-wrap: wrap;
+}
+:global(.panel .manager-toolbar > *) {
+  flex: 1 1 125px;
+  min-width: 0;
+}
+:global(.panel .event .action) {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+:global(.panel .actions) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+:global(.panel .action) {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+@media (max-width: 480px) {
+  :global(.panel) {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    max-height: min(70dvh, 580px);
+    border-radius: 16px;
+  }
+  :global(.panel .actions) { grid-template-columns: 1fr; }
+  :global(.panel .header) { flex-shrink: 0; }
+}
