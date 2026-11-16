@@ -149,7 +149,7 @@ const nativeFetchObservers = new WeakMap<Window & typeof globalThis, FetchRegist
 
 export function observePageFetch(
   callback: (event: FetchObserverEvent) => void, 
-  { host = globalThis, signal, maxBodyCharacters = 120000 }: FetchObserverOptions = {}
+  { host = window, signal, maxBodyCharacters = 120000 }: FetchObserverOptions = {}
 ): () => void {
   if (typeof callback !== "function") throw new TypeError("Expected network observer");
   if (typeof host.fetch !== "function") return () => {};
@@ -254,7 +254,7 @@ const xhrObservers = new WeakMap<any, XHRRegistryEntry>();
 
 export function observePageXHR(
   callback: (event: XHRObserverEvent) => void, 
-  { host = globalThis, signal, maxBodyCharacters = 120000 }: XHRObserverOptions = {}
+  { host = window, signal, maxBodyCharacters = 120000 }: XHRObserverOptions = {}
 ): () => void {
   const prototype = host.XMLHttpRequest?.prototype;
   if (!prototype) return () => {};

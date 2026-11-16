@@ -133,7 +133,7 @@ export default {
       <>
         <Show when={position().visible}>
           <button class={styles.fab} data-open={open()} style={{ left: position().x + "px", top: position().y + "px" }}
-            aria-label="Abrir atalhos do editor" aria-expanded={open()}
+            aria-label="Abrir atalhos do editor" aria-expanded={open() ? "true" : "false"}
             onPointerDown={event => event.preventDefault()} onClick={() => setOpen(v => !v)}><Icon name="keyboard"/></button>
         </Show>
         <Show when={open() && position().visible}>
