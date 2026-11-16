@@ -20,7 +20,7 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
 export function Button(props: ButtonProps) {
   const [pending, setPending] = createSignal(false);
   const busy = () => !!props.loading || pending();
-  const handleClick = async (event: MouseEvent) => {
+  const handleClick = (event: MouseEvent) => {
     if (busy() || props.disabled) return;
     const result = props.onClick?.(event);
     if (props.autoLoading && result && typeof (result as PromiseLike<unknown>).then === "function") {
