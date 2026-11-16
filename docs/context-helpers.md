@@ -53,3 +53,23 @@ The inspector history is a bounded record of events emitted through the bridge; 
 | Script state | `ctx.state.get/set/subscribe` |
 
 Prefer Solid components, CSS Modules, and responsive mobile-first controls. The runtime internals may use browser primitives to implement these helpers; feature modules should not duplicate them.
+
+## Shared TanStack Query service
+
+The runtime exposes one lazy QueryClient per `createRuntime()` instance. All script contexts belonging to that runtime share the same client; it is cleared on **runtime** disposal, not on individual script navigation or control unmount.
+
+```ts
+// Inside a userscript's init(ctx), with Solid signals created in a component/root:
+const suggestions = ctx.query.createAsyncOptions(
+  () => async (query, { signal }) => {
+    const response = await ctx.http.get('/api/suggest?q=' + encodeURIComponent(query), { signal });
+    return response;
+  },
+  search,
+  { queryKey: ['twitter', 'filters'], staleTime: 60_000 },
+);
+```
+
+`ctx.query.client` exposes the shared QueryClient for advanced operations. Do not instantiate a new client per component. Use distinct query keys for different sources and never cache private credentials. The standalone form-controls helper also has a module-local shared fallback for consumers without `ctx`; these are **separate** caches until explicitly injected. The runtime-scoped service does not share cache across independent bundles or tabs.
+
+**Follow-up:** validate `ctx.http` response and abort semantics in this example, run typecheck/build, add integration tests and a Playground harness for runtime contexts.
