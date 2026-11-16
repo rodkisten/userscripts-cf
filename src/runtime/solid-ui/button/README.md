@@ -63,3 +63,7 @@ The Button filters component-only props before forwarding native HTML attributes
 ## Styling note
 
 The button CSS uses explicit font properties so the component inherits the host font family without an invalid `font` shorthand. The tokens remain configurable on the component or its ancestor.
+
+## CSS token fix
+
+`--button-radius`, `--button-height`, and `--button-accent` are now read from ancestor styles with component fallbacks instead of being overwritten on every button. Optional size tokens: `--button-height-sm` and `--button-height-lg`. ButtonGroup filters its own configuration before forwarding HTML attributes. SplitButton renders a single dropdown chevron.

@@ -1,15 +1,15 @@
 .button {
-  --button-radius: 10px;
-  --button-height: 38px;
-  --button-accent: #7c3aed;
+  --_button-radius: var(--button-radius, 10px);
+  --_button-height: var(--button-height, 38px);
+  --_button-accent: var(--button-accent, #7c3aed);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: var(--button-height);
+  min-height: var(--_button-height);
   padding: 0 14px;
   border: 1px solid transparent;
-  border-radius: var(--button-radius);
+  border-radius: var(--_button-radius);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -21,7 +21,7 @@
   white-space: nowrap;
 }
 .button:focus-visible {
-  outline: 2px solid var(--button-accent);
+  outline: 2px solid var(--_button-accent);
   outline-offset: 2px;
 }
 .button:disabled {
@@ -35,7 +35,7 @@
   gap: 8px;
 }
 .default {
-  background: var(--button-accent);
+  background: var(--_button-accent);
   color: white;
 }
 .secondary {
@@ -68,15 +68,15 @@
   color: #111827;
 }
 .sm {
-  --button-height: 30px;
+  --_button-height: var(--button-height-sm, 30px);
   padding: 0 10px;
 }
 .lg {
-  --button-height: 46px;
+  --_button-height: var(--button-height-lg, 46px);
   padding: 0 20px;
 }
 .icon {
-  width: var(--button-height);
+  width: var(--_button-height);
   padding: 0;
 }
 .badge {
@@ -102,10 +102,10 @@
   border-radius: 0;
 }
 .group > .button:first-child {
-  border-radius: var(--button-radius) 0 0 var(--button-radius);
+  border-radius: var(--_button-radius) 0 0 var(--_button-radius);
 }
 .group > .button:last-child {
-  border-radius: 0 var(--button-radius) var(--button-radius) 0;
+  border-radius: 0 var(--_button-radius) var(--_button-radius) 0;
 }
 .group > .button + .button {
   margin-left: -1px;
@@ -114,17 +114,17 @@
   gap: 8px;
 }
 .detached > .button {
-  border-radius: var(--button-radius);
+  border-radius: var(--_button-radius);
   margin-left: 0;
 }
 .vertical {
   flex-direction: column;
 }
 .vertical > .button:first-child {
-  border-radius: var(--button-radius) var(--button-radius) 0 0;
+  border-radius: var(--_button-radius) var(--_button-radius) 0 0;
 }
 .vertical > .button:last-child {
-  border-radius: 0 0 var(--button-radius) var(--button-radius);
+  border-radius: 0 0 var(--_button-radius) var(--_button-radius);
 }
 .vertical > .button + .button {
   margin-left: 0;

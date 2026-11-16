@@ -63,7 +63,7 @@ export interface ButtonGroupProps extends JSX.HTMLAttributes<HTMLDivElement> {
 export function ButtonGroup(props: ButtonGroupProps) {
   return (
     <div
-      {...props}
+      {...omit(props, ["orientation", "attached", "children"])}
       role="group"
       class={`${styles.group} ${props.attached === false ? styles.detached : ""} ${props.orientation === "vertical" ? styles.vertical : ""} ${props.class ?? ""}`}
     >
@@ -119,9 +119,7 @@ export function SplitButton(props: DropdownButtonProps) {
         disabled={props.disabled || props.loading}
         aria-label="Mais opções"
         aria-haspopup="menu"
-      >
-        ▾
-      </DropdownButton>
+      />
     </ButtonGroup>
   );
 }
