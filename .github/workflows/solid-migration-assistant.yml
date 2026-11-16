@@ -103,7 +103,7 @@ jobs:
           git push origin HEAD:feat/shared-event-bridge
       - name: Upload migration reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: solid-migration-report
           path: ${{ runner.temp }}/solid-migration/
