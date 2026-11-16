@@ -52,14 +52,16 @@ test("GitHub installs one copy control per step, copies full server logs and han
     host.GM_setClipboard = (value) => {
       copied = value;
     };
-    const buttons = host.document.querySelectorAll("[data-ghft-step-copy] button");
+    const buttons = [...host.document.querySelectorAll("[data-ghft-step-host]")].map(
+      (element) => element.shadowRoot?.querySelector("[data-ghft-step-copy] button"),
+    ).filter(Boolean);
     assert.equal(buttons.length, 2);
     buttons[1].click();
     await pause();
     assert.match(requested, /\/actions\/jobs\/20\/logs$/);
     assert.equal(copied, text);
     assert.match(
-      host.document.querySelector("[data-ghft-step-host]:last-child")?.textContent ||
+      host.document.querySelector("[data-ghft-step-host]:last-child")?.shadowRoot?.textContent ||
         host.document.body.textContent,
       /Output completo copiado/,
     );
@@ -67,11 +69,11 @@ test("GitHub installs one copy control per step, copies full server logs and han
     await api.navigate();
     await pause(300);
     assert.equal(host.document.querySelectorAll("[data-ghft-step-copy]").length, 2);
-    host.document.querySelector("[data-ghft-step-copy] button").click();
+    host.document.querySelector("[data-ghft-step-host]")?.shadowRoot.querySelector("[data-ghft-step-copy] button").click();
     await pause();
     assert.match(requested, /\/actions\/jobs\/21\/logs$/);
     await api.dispose();
-    assert.equal(host.document.querySelector("[data-ghft-step-copy]"), null);
+    assert.equal(host.document.querySelector("[data-ghft-step-host]"), null);
   } finally {
     await host.happyDOM.abort();
   }
