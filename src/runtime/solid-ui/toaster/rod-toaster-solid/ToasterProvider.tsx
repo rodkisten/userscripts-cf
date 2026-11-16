@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { Portal } from 'solid-js/web';
+import { Portal } from '@solidjs/web';
 import {
   dismissAllToasts,
   useToasterState,
