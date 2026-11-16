@@ -33,8 +33,8 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   // Generated entry paths may use .js while the checked-in source is .ts/.tsx.
   const requestedEntry = path.resolve(rootPath, entry);
   const entryCandidates = [requestedEntry];
-  if (/\\.jsx?$/.test(requestedEntry)) {
-    const stem = requestedEntry.replace(/\\.jsx?$/, "");
+  if (/\.jsx?$/.test(requestedEntry)) {
+    const stem = requestedEntry.replace(/\.jsx?$/, "");
     entryCandidates.push(stem + ".ts", stem + ".tsx", stem + ".jsx");
   }
   let resolvedEntry;
