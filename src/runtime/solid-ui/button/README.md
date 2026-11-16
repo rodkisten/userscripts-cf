@@ -1,0 +1,32 @@
+# Button system (SolidJS 2)
+
+## Status
+Initial implementation committed. Build and typecheck have **not** been verified. No tests requested.
+
+## Components
+- `Button`: default, secondary, outline, ghost, destructive, success, warning, link; sm/md/lg/icon; icon, iconEnd, badge, loading, autoLoading, loadingText.
+- `ButtonGroup`: horizontal/vertical, attached/detached.
+- `DropdownButton`: delegates to existing `menu.dropdown` / `ctx.menu.dropdown` compatible facade; no duplicate menu renderer.
+- `SplitButton`: main action plus menu trigger.
+
+## Styling
+Import `buttonCss` and register through `ctx.ui.registerStyles(buttonCss)` when mounting in a Shadow Root. Tokens: `--button-accent`, `--button-radius`, `--button-height`.
+
+## Example
+```tsx
+import { Button, ButtonGroup, DropdownButton, buttonCss } from "./Button";
+ctx.ui.registerStyles(buttonCss);
+<ButtonGroup attached>
+  <Button icon="✓" autoLoading onClick={() => save()}>Save</Button>
+  <DropdownButton items={[{label:"Export",onSelect:exportData}]}>More</DropdownButton>
+</ButtonGroup>
+```
+
+## Remaining
+- [ ] Verify Solid 2 typecheck and build; fix any compile/runtime issues.
+- [ ] Add live examples to existing design-system studio, including variant/size/token editor.
+- [ ] Integrate buttons inside RodMenu's action renderer, not just as menu triggers.
+- [ ] Expose consistent package entry point, dedicated Badge/IconButton and shared theme config.
+- [ ] Add toggle, progress, confirm, copy and advanced button patterns.
+- [ ] Verify keyboard, mobile Safari and Shadow DOM behavior.
+- [ ] Update docs and playground with every subsequent user-visible change.
