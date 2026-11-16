@@ -1,6 +1,8 @@
-# Userscripts CF
+# Rod’s Userscripts System
 
 ## 🌻 Standalone: uma instalação para todos os userscripts
+
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/rodkisten/userscripts-cf?utm_source=readme&utm_medium=badge)
 
 Instale apenas **`standalone.user.js`** no Tampermonkey para receber todos os módulos. O build inclui RodX, Instagram, GitHub, Reddit/Soundgasm, Page REPL e o exemplo. Cada módulo conserva suas regras de `matches`, `exclude` e roteamento SPA definidas em `userscripts.config.js`. As permissões `@grant`, dependências `@require` e hosts `@connect` são a união das configurações de todos os módulos.
 
