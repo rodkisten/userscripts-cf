@@ -59,7 +59,7 @@ jobs:
           echo "tests=$(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].tests.length)')" >> "$GITHUB_OUTPUT"
       - name: Restore userscript lint result
         id: lint_cached
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .validation-cache/lint/${{ matrix.id }}/passed
           key: script-lint-v2-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
@@ -73,14 +73,14 @@ jobs:
           echo passed > ".validation-cache/lint/${{ matrix.id }}/passed"
       - name: Save successful userscript lint
         if: steps.lint_cached.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .validation-cache/lint/${{ matrix.id }}/passed
           key: script-lint-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
       - name: Restore userscript test result
         if: steps.fingerprint.outputs.tests != '0'
         id: cached
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .validation-cache/scripts/${{ matrix.id }}/passed
           key: script-tests-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
@@ -98,7 +98,7 @@ jobs:
           echo "passed" > ".validation-cache/scripts/$SCRIPT_ID/passed"
       - name: Save successful userscript result
         if: steps.fingerprint.outputs.tests != '0' && steps.cached.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .validation-cache/scripts/${{ matrix.id }}/passed
           key: script-tests-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
@@ -158,7 +158,7 @@ jobs:
       - name: Restore exact-source validation result
         id: validation_cache
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .validation-cache/passed
           key: userscripts-validation-v2-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml') }}
@@ -177,7 +177,7 @@ jobs:
           printf '%s\n' "Validation passed for exact source fingerprint" > .validation-cache/passed
       - name: Save successful exact-source validation
         if: steps.validation_cache.outputs.cache-hit != 'true' && steps.plan.outputs.run == 'true' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .validation-cache/passed
           key: ${{ steps.validation_cache.outputs.cache-primary-key }}
