@@ -1,4 +1,5 @@
-import { test } from "vitest";
+import { test, vi, afterEach } from "vitest";
+afterEach(() => vi.unstubAllGlobals());
 import assert from "node:assert/strict";
 import { Window } from "happy-dom";
 import {
@@ -11,10 +12,10 @@ import { stripBuildComments } from "../build/strip-comments.mjs";
 import { parse } from "@babel/parser";
 
 const step = { owner: "rodkisten", repo: "userscripts-cf", jobId: "123", stepNumber: 7 };
-test("step download addresses the server step number, including gaps after skipped steps", () => {
+test("job log URL uses supported GitHub endpoint and validates step metadata", () => {
   assert.equal(
     stepLogURL(step),
-    "https://api.github.com/repos/rodkisten/userscripts-cf/actions/jobs/123/steps/7/logs",
+    "https://api.github.com/repos/rodkisten/userscripts-cf/actions/jobs/123/logs",
   );
   const window = new Window();
   const node = window.document.createElement("details");
@@ -30,7 +31,7 @@ test("full step output comes from the server and retains every line and nested g
     Array.from({ length: 5000 }, (_, i) => `line ${i}\n`).join("") +
     "##[endgroup]\nLAST LINE\n";
   const signal = new AbortController().signal;
-  t.mock.method(globalThis, "fetch", async (url, options) => {
+  vi.stubGlobal("fetch", async (url, options) => {
     assert.equal(url, stepLogURL(step));
     assert.equal(options.headers.Authorization, "Bearer fixture-token");
     assert.equal(options.credentials, "omit");
@@ -41,7 +42,7 @@ test("full step output comes from the server and retains every line and nested g
 });
 test("missing, expired or unauthorized logs never silently copy a visible fragment", async (t) => {
   let status = 403;
-  t.mock.method(globalThis, "fetch", async () => new Response("", { status }));
+  vi.stubGlobal("fetch", async () => new Response("", { status }));
   await assert.rejects(loadStepOutput(step), /Actions: read/);
   status = 404;
   await assert.rejects(loadStepOutput(step), /indisponível/);
@@ -49,13 +50,9 @@ test("missing, expired or unauthorized logs never silently copy a visible fragme
   await assert.rejects(loadStepOutput(step), /expirado/);
 });
 test("HTML errors and empty logs cannot be presented as successful output", async (t) => {
-  const mock = t.mock.method(
-    globalThis,
-    "fetch",
-    async () => new Response("<html>login</html>", { headers: { "content-type": "text/html" } }),
-  );
+  vi.stubGlobal("fetch", async () => new Response("<html>login</html>", { headers: { "content-type": "text/html" } }));
   await assert.rejects(loadStepOutput(step), /arquivo de log/);
-  mock.mock.mockImplementation(async () => new Response("\n"));
+  vi.stubGlobal("fetch", async () => new Response("\n"));
   await assert.rejects(loadStepOutput(step), /ainda não possui output/);
 });
 test("navigation sizing adapts to viewport and tab count without a dropdown", () => {
