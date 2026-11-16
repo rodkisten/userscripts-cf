@@ -242,7 +242,7 @@ function createDomEventsEngine(definitionId: string, host: Window & typeof globa
   const captureOf = (options?: boolean | AddEventListenerOptions) =>
     typeof options === "boolean" ? options : !!options?.capture;
 
-  return Object.freeze({
+  const engine: DomEventsEngine = Object.freeze({
     add(target, type, callback, options) {
       if (!target || typeof target.addEventListener !== "function")
         throw new TypeError("Expected EventTarget");
@@ -259,7 +259,7 @@ function createDomEventsEngine(definitionId: string, host: Window & typeof globa
       const once =
         typeof options === "object" && options !== null && (options as AddEventListenerOptions)?.once;
       const listener: EventListener = function (this: EventTarget, event: Event) {
-        if (once) domEventsEngineInstance.remove(target, type, callback, options);
+        if (once) engine.remove(target, type, callback, options);
         try {
           const result: unknown =
             typeof callback === "function" ? callback.call(this, event) : callback.handleEvent(event);
@@ -297,9 +297,8 @@ function createDomEventsEngine(definitionId: string, host: Window & typeof globa
       domListeners.clear();
     },
   });
+  return engine;
 }
-
-let domEventsEngineInstance: DomEventsEngine;
 
 // ============================================================================
 // Função Principal de Criação do Runtime
@@ -424,7 +423,6 @@ export function createRuntime(
   };
 
   host.addEventListener("storage", onRulesChange);
-  host.document.addEventListener(SREGISTRY_CHANGE_EVENT_FALLBACK(HOST_DOC_EVENT), onRulesChange); // handled via literal below
   host.document.addEventListener("rod-script-manager:change", onRulesChange);
 
   const active = new Map<string, { definition: ScriptDefinition; context: ScriptContext }>();
@@ -460,6 +458,7 @@ export function createRuntime(
     let eventBus: ReturnType<typeof createEventBus> | undefined;
     let sharedEvents: ReturnType<typeof createSharedEvents> | undefined;
     let eventsValue: ScriptContext["events"] | undefined;
+    let domEventsEngine: DomEventsEngine | undefined;
 
     function getEvents(): ScriptContext["events"] {
       if (!eventsValue) {
@@ -469,13 +468,13 @@ export function createRuntime(
           onDiagnostic: (diagnostic: unknown) => console.warn(LOG_TAG_EVENTS, diagnostic),
         });
         sharedEvents = createSharedEvents({ host, signal: abort.signal });
-        domEventsEngineInstance = createDomEventsEngine(definition.id, host);
-        eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEventsEngineInstance });
+        domEventsEngine = createDomEventsEngine(definition.id, host);
+        eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEventsEngine });
       }
       return eventsValue;
     }
 
-    onDispose(() => domEventsEngineInstance?.dispose());
+    onDispose(() => domEventsEngine?.dispose());
 
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;
@@ -843,7 +842,3 @@ export function createRuntime(
   };
 }
 
-function SREGISTRY_CHANGE_EVENT_FALLBACK(_val: string): string {
-  return "rod-script-manager:change";
-}
-const HOST_DOC_EVENT = "rod-script-manager:change";
