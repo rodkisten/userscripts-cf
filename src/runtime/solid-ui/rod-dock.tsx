@@ -3,6 +3,7 @@ import { matches, readScriptRules, saveScriptRules } from "../../core/script-man
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
 import { getDiagnostics, type DiagnosticRecord } from "../diagnostics.js";
+import { ObjectInspector } from "./object-inspector/index.js";
 
 
 
@@ -228,7 +229,7 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
                     </button>
                     <Show when={diagnosticSelected() === item.fingerprint}>
                       <small>{item.lastSeen}</small>
-                      <pre style={{ "white-space": "pre-wrap", "overflow-wrap": "anywhere" }}>{item.stack || item.message}</pre>
+                      <ObjectInspector value={{ script: item.script, source: item.source, message: item.message, stack: item.stack, count: item.count, firstSeen: item.firstSeen, lastSeen: item.lastSeen, url: item.url }} />
                     </Show>
                   </div>
                 }</For>
