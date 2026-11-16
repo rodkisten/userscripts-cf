@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/query-core";
+import { captureDiagnostic } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { Accessor } from "solid-js";
@@ -46,6 +47,7 @@ export interface DockAction {
 
 export interface ScriptContext {
   id: string;
+  diagnostics: { capture(error: unknown, source?: string): void };
   events: Readonly<Record<string, any> & { dom: DomEventsEngine }>;
   http: any;
   interceptRequest: (handler: any) => void;
@@ -186,6 +188,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       try {
         callback(value);
       } catch (error) {
+        captureDiagnostic(error, "state.subscriber", id, host);
         console.error("[Userscripts CF subscriber]", error);
       }
     }
@@ -362,6 +365,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
 
     return {
       id: definition.id,
+      diagnostics: Object.freeze({ capture: (error: unknown, source = "manual") => captureDiagnostic(error, source, definition.id, host) }),
       get events() { return getEvents(); },
       query: queryService,
       http: network?.http,
@@ -415,10 +419,22 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       }),
       onDispose,
       listen(target, event, callback, options = {}) {
-        target.addEventListener(event, callback, {
-          ...options,
-          signal: abort.signal,
-        });
+        const wrapped: EventListener = function (this: EventTarget, value: Event) {
+          try {
+            const result = typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
+            if (result && typeof (result as Promise<unknown>).then === "function") {
+              void Promise.resolve(result).catch(error => {
+                captureDiagnostic(error, `event:${event}`, definition.id, host);
+                captureDiagnostic(error, "module.init", definition.id, host);
+          console.error(`[Userscripts CF: ${definition.id}]`, error);
+              });
+            }
+          } catch (error) {
+            captureDiagnostic(error, `event:${event}`, definition.id, host);
+            throw error;
+          }
+        };
+        target.addEventListener(event, wrapped, { ...options, signal: abort.signal });
       },
       ui: Object.freeze({
         get root() {
