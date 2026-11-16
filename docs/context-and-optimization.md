@@ -2,6 +2,70 @@
 
 > Estado documentado: PR #56, branch `feat/modular-runtime-tree-shaking`. Este documento distingue comportamento implementado, garantias testadas e trabalho planejado.
 
+
+## Runtime context lifecycle: source of truth
+
+The **userscript instance** owns its context. No module, page, or mutable global variable owns the active context.
+
+```mermaid
+flowchart TD
+    A["createRuntime(definitions, bridge, host)"] --> B["reconcile(): identify eligible scripts"]
+    B --> C["context(definition): create abort signal, cleanups and ScriptContext"]
+    C --> D["definition.module.init(ctx)"]
+    D --> E["AST: useContext() and useRuntime() become ctx"]
+    D --> F["ctx.ui.mountSolid(component)"]
+    F --> G["RuntimeProvider receives scriptContext"]
+    G --> H["Solid useContext(ScriptScope)"]
+    D --> I["ctx.signal / ctx.onDispose / ctx.listen"]
+    E --> J["ctx.dispose(): abort + cleanup + remove script-owned state"]
+    H --> J
+    I --> J
+```
+
+### Where the value is assigned
+
+1. `src/core/runtime.ts`: `createRuntime(...)` initializes the runtime and its definitions.
+2. `reconcile()` calls `context(definition)` for **each eligible script instance**. This creates a fresh `AbortController`, cleanup list and the actual `const scriptContext: ScriptContext = { ... }`.
+3. The context factory returns that object, then `reconcile()` calls `await definition.module.init(ctx)`. This is the explicit ownership boundary.
+4. **Compile-time path:** `build/runtime-helpers.mjs` rewrites unshadowed, zero-argument `useContext()` and `useRuntime()` calls inside lexically bound `init(ctx)` scopes to the local `ctx`; `useRuntimeWorld()` becomes `ctx.events.shared`. Destructuring, aliases and nested callbacks can close over that same local binding.
+5. **Solid path:** `ctx.ui.mountSolid` wraps the component in `RuntimeProvider`, passing the **same** `scriptContext`. `src/core/runtime-context.ts` reads it through Solid's context/owner tree.
+6. When the script stops matching or the runtime closes, `ctx.dispose()` aborts the signal, runs registered cleanup callbacks, and removes instance-owned state. A later activation receives a **new** context.
+
+```ts
+export default {
+  init(ctx: ScriptContext) {
+    const { storage, menu: actions } = useContext(); // compiled to: const { storage, menu: actions } = ctx
+    const { signal } = useRuntime();                  // compiled to: const { signal } = ctx
+    const shared = useRuntimeWorld();                 // compiled to: ctx.events.shared
+    const callback = async () => useContext().storage; // closes over this instance's ctx
+    ctx.onDispose(() => { /* release script-owned resources */ });
+  },
+};
+```
+
+### Important limits and safe shared modules
+
+The AST **does not automatically inject context into arbitrary imported modules**. Module-top-level `useContext()` is ambiguous when two scripts import the same module. Do not create a mutable `currentContext` global or silently bind to the last initialized script. Pass the context explicitly to a shared factory:
+
+```ts
+// shared/bookmarks.ts
+export function createBookmarks(ctx: ScriptContext) {
+  return { save: (item: string) => ctx.storage.set("bookmark", item) };
+}
+
+// userscript entrypoint
+init(ctx: ScriptContext) {
+  const bookmarks = createBookmarks(ctx);
+  ctx.onDispose(() => { /* release instance-owned resources */ });
+}
+```
+
+Solid's provider only propagates through its owner tree, not arbitrary async callbacks; `bindRuntime(ctx)` explicitly binds helpers where needed. `useRuntimeWorld()` currently refers to **cross-script shared events**, not page/sandbox execution-world selection. Shared events must never expose other scripts' private stores.
+
+### Documentation and verification contract
+
+**Every future change** to `ScriptContext`, `context(definition)`, `reconcile()`, AST helper resolution, `RuntimeProvider`, UI mounting or disposal must update **this guide and its diagram in the same work block**. Update real examples, limitations, tests (`tests/runtime-helpers.test.js` and lifecycle tests), and interactive Playground demos for new user-visible behavior. Run relevant tests, typecheck and build; report CI failures accurately. Register stores, styles, listeners and observers inside the owning context, never in a shared global singleton.
+
 ## 1. Arquitetura e fronteiras
 
 ```text
