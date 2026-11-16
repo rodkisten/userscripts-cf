@@ -103,7 +103,6 @@ export function mountReelBookmark(
   const [busy, setBusy] = createSignal(false);
   let mount: ReturnType<typeof mountPoint> | undefined;
   let anchor: HTMLElement | null = null;
-  let wrapper: HTMLElement | undefined;
   const send = async () => {
     if (busy()) return;
     setBusy(true);
@@ -118,9 +117,7 @@ export function mountReelBookmark(
   };
   function clear() {
     mount?.dispose();
-    wrapper?.remove();
     mount = undefined;
-    wrapper = undefined;
     anchor = null;
   }
 
@@ -131,17 +128,15 @@ export function mountReelBookmark(
       clear();
       return;
     }
-    if (anchor === native && mount?.host.isConnected && wrapper?.isConnected) return;
+    if (anchor === native && mount?.host.isConnected) return;
     clear();
     anchor = native;
     // Never clone an interactive element: a cloned button containing a Solid
     // button would create invalid nested controls and duplicate native handlers.
-    wrapper = document.createElement("span");
-    wrapper.dataset.rodCollectionAction = "true";
-    wrapper.style.display = "inline-flex";
-    native.insertAdjacentElement("afterend", wrapper);
+    // The shared Solid mount boundary owns the host element and its insertion.
+    // No imperative DOM construction belongs in the view component.
     mount = mountPoint(
-      wrapper,
+      native.parentNode!,
       () => (
         <button
           type="button"
@@ -169,8 +164,10 @@ export function mountReelBookmark(
           </svg>
         </button>
       ),
-      { tag: "span" },
+      { tag: "span", before: native.nextSibling },
     );
+    mount.host.dataset.rodCollectionAction = "true";
+    mount.host.style.display = "inline-flex";
   }
   const observer = new MutationObserver((records) => {
     if (
