@@ -25,8 +25,8 @@
 - [ ] Sanitização robusta de stack, URL e dados de exceção antes de persistir
 - [x] Painel inicial Solid no Dock com filtro por script, stack e exportação JSON
 - [x] Integrar Object Inspector existente ao Dock
-- [ ] Syntax highlighting especializado para stack traces
-- [ ] Playground interativo e link no design system
+- [x] Syntax highlighting de stack traces no Dock e playground
+- [x] Playground interativo de diagnósticos com link no design system
 - [ ] Sourcemaps validados para o bundle minificado
 - [ ] Validação de build, segurança e compatibilidade Safari/Tampermonkey
 
@@ -84,3 +84,7 @@ Somente falhas de transporte e status 5xx geram diagnósticos. O observador reut
 ## Revisão de integração (2026-11-16)
 
 Foi corrigida uma regressão em `src/core/runtime.ts`: `ctx.listen` atribuía indevidamente uma falha assíncrona também a `module.init`; a captura `module.init` foi restaurada ao bloco `catch` de inicialização. Não foi possível executar `npm run typecheck` nem `npm run build` neste ambiente porque o clone remoto não ficou acessível. A consulta de status do commit anterior não retornou checks. Portanto, a compilação continua **não validada**.
+
+## Playground
+
+Acesse `/playground/diagnostics.html` (linkado no catálogo e Design System). Inclui gerador de erros, simulação de recorrência, busca, filtros, ordenação, visualização de stack, importação e exportação JSON, modo local e integração ao coletor global quando disponível. O playground não executa código fornecido pelo usuário.
