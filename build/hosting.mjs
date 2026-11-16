@@ -10,6 +10,7 @@ const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
+assets["playground/ast-errors.html"] = await fs.readFile(path.join(root, "playground/ast-errors.html"), "utf8");
 assets["playground/diagnostics.html"] = await fs.readFile(path.join(root, "playground/diagnostics.html"), "utf8");
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 assets["playground/form-controls.html"] = await fs.readFile(path.join(root, "playground/form-controls.html"), "utf8");
@@ -32,6 +33,21 @@ await viteBuild({
     minify: true,
   },
 });
+await viteBuild({
+  configFile: false,
+  root,
+  build: {
+    outDir: path.join(dist, "ast-errors-playground"),
+    emptyOutDir: true,
+    lib: {
+      entry: path.join(root, "playground/ast-errors-app.js"),
+      formats: ["es"],
+      fileName: () => "ast-errors.js",
+    },
+    minify: true,
+  },
+});
+assets["playground/ast-errors.js"] = await fs.readFile(path.join(dist, "ast-errors-playground/ast-errors.js"), "utf8");
 assets["playground/form-controls.js"] = await fs.readFile(path.join(playgroundDir, "form-controls.js"), "utf8");
 assets["playground/form-controls.css"] = await fs.readFile(path.join(playgroundDir, "form-controls.css"), "utf8");
 for (const file of await fs.readdir(dist)) {

@@ -1,4 +1,3 @@
-import path from "node:path";
 import { parse } from "acorn";
 
 /**
@@ -23,7 +22,7 @@ export function instrumentErrorCallbacks(code, id, { root = process.cwd() } = {}
         const index = name === "addEventListener" ? 1 : 0;
         const callback = node.arguments[index];
         if (callback && (callback.type === "ArrowFunctionExpression" || callback.type === "FunctionExpression")) {
-          const script = path.relative(root, id.split("?")[0]).split(path.sep).join("/");
+          const script = id.split("?")[0].replaceAll("\\", "/").replace(root.replaceAll("\\", "/").replace(/\/$/, "") + "/", "");
           const meta = JSON.stringify({ script, source: name });
           // Report but preserve native callback return value and rejection semantics.
           edits.push({ at: callback.start, text: "__rodGuardCallback(" });
@@ -64,7 +63,7 @@ export function instrumentErrorsPlugin(root) {
     name: "userscripts-cf-ast-errors",
     enforce: "post",
     transform(code, id) {
-      if (!id.startsWith(root + path.sep) || id.includes("node_modules") || !/\.[cm]?jsx?(?:\?|$)/.test(id)) return null;
+      if (!id.startsWith(root + "/") || id.includes("node_modules") || !/\.[cm]?jsx?(?:\?|$)/.test(id)) return null;
       const result = instrumentErrorCallbacks(code, id, { root });
       return result.transformed ? { code: result.code, map: null } : null;
     },
