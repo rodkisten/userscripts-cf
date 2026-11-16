@@ -18,7 +18,9 @@ case "$mode" in
       echo "run=true" >> "$GITHUB_OUTPUT"
       exit 0
     fi
-    if [[ "$EVENT_NAME" == pull_request ]]; then
+    if [[ "$EVENT_NAME" == workflow_dispatch && "$SCOPE" == changed ]]; then
+      BASE="$(git rev-parse HEAD^ 2>/dev/null || true)"
+    elif [[ "$EVENT_NAME" == pull_request ]]; then
       BASE="$(git merge-base "$PR_BASE_SHA" "$PR_HEAD_SHA")"
     else
       BASE="$BEFORE_SHA"
@@ -28,7 +30,7 @@ case "$mode" in
       echo "run=true" >> "$GITHUB_OUTPUT"
       exit 0
     fi
-    git diff --name-only --diff-filter=ACMRT "$BASE" HEAD > changed-files.txt
+    git diff --name-only --diff-filter=ACMRT "$BASE" "${PR_HEAD_SHA:-HEAD}" > changed-files.txt
     cat changed-files.txt
     if [[ ! -s changed-files.txt ]]; then
       echo "run=false" >> "$GITHUB_OUTPUT"
