@@ -102,3 +102,42 @@ const selectedMedia = await toast.picker({
   multiple: true,
 });
 ```
+
+
+### Integração no runtime: `ctx.toast.promise`
+
+O runtime usa **somente** este pacote como implementação do Toast. `ctx.toast` e
+`ctx.toaster` são aliases da mesma instância. Não importe outro toaster.
+
+```ts
+const result = await ctx.toast.promise(
+  fetch('/api/sync').then(async (response) => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json() as Promise<{ count: number }>;
+  }),
+  {
+    loading: 'Sincronizando...',
+    success: ({ count }) => `${count} itens sincronizados`,
+    error: (error) => `Falha: ${String(error)}`,
+  },
+);
+```
+
+Também aceita uma função com contexto de task, `signal` para cancelamento e
+`setProgress` para progresso entre 0 e 1:
+
+```ts
+await ctx.toast.promise(
+  async ({ signal, setProgress }) => {
+    setProgress(0.2, 'Iniciando');
+    const response = await fetch('/api/export', { signal });
+    if (!response.ok) throw new Error('Falha na exportação');
+    setProgress(1, 'Concluído');
+    return response.blob();
+  },
+  { loading: 'Exportando...', success: 'Exportação concluída', error: 'Erro na exportação' },
+);
+```
+
+A operação é executada **uma única vez**, a Promise original resolve com o
+resultado ou rejeita com o erro original, e o Toast reflete o resultado.

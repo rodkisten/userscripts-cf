@@ -96,7 +96,7 @@ export function restorePersistedTasks(): TaskController[] {
   }
 }
 
-export function createTaskController(descriptor: TaskDescriptor | string = {}): TaskController | null {
+export function createTaskController(descriptor: TaskDescriptor | string = {}, autoStart = true): TaskController | null {
   const opts: TaskDescriptor = typeof descriptor === 'string' ? { title: descriptor } : { ...descriptor };
   const id = opts.id ?? `task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const existing = tasksMap.get(id);
@@ -263,7 +263,7 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}): 
 
   tasksMap.set(id, task);
   syncTasksSignal();
-  if (opts.run) void task.start().catch(() => undefined);
+  if (opts.run && autoStart) void task.start().catch(() => undefined);
   return task;
 }
 
@@ -279,7 +279,7 @@ export async function showPromiseToast<T>(
     ...loadingOpts,
     title: loadingOpts.title ?? descriptor.title ?? 'Loading...',
     run: async (ctx) => (typeof input === 'function' ? input(ctx) : input),
-  })!;
+  }, false)!;
 
   try {
     const result = await task.start();
