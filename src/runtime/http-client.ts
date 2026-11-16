@@ -41,7 +41,12 @@ interface GMRequestDetails {
   data?: BodyInit | null;
   responseType?: "arraybuffer" | "blob" | "json" | "text";
   timeout?: number;
-  onload?: (response: { status: number; statusText: string; responseHeaders?: string; response: ArrayBuffer }) => void;
+  onload?: (response: {
+    status: number;
+    statusText: string;
+    responseHeaders?: string;
+    response: ArrayBuffer;
+  }) => void;
   onerror?: () => void;
   ontimeout?: () => void;
   onabort?: () => void;
@@ -71,10 +76,12 @@ export function createHttpClient({
   const cache = new Map<string, CacheEntry>();
   const pending = new Map<string, Promise<Response>>();
   const stats: HttpClientStats = { hits: 0, misses: 0, requests: 0 };
-  
+
   const hostGM = (host as Window & { GM?: { xmlHttpRequest?: GMXhrFn } }).GM;
-  const gm: GMXhrFn | undefined = hostGM?.xmlHttpRequest?.bind(hostGM) ?? (host as Window & { GM_xmlhttpRequest?: GMXhrFn }).GM_xmlhttpRequest;
-  
+  const gm: GMXhrFn | undefined =
+    hostGM?.xmlHttpRequest?.bind(hostGM) ??
+    (host as Window & { GM_xmlhttpRequest?: GMXhrFn }).GM_xmlhttpRequest;
+
   const abortError = () => new DOMException("Aborted", "AbortError");
 
   const keyFor = (url: string, options: HttpRequestOptions): string =>
@@ -144,7 +151,7 @@ export function createHttpClient({
     const method = (options.method ?? "GET").toUpperCase();
     const urlString = String(url);
     const key = keyFor(urlString, options);
-    
+
     const useCache =
       method === "GET" &&
       !options.signal &&
@@ -152,7 +159,7 @@ export function createHttpClient({
       options.cacheMode !== "off" &&
       !new Headers(options.headers ?? {}).has("authorization") &&
       options.credentials !== "include";
-      
+
     const now = Date.now();
     if (useCache) {
       const hit = cache.get(key);
@@ -164,7 +171,7 @@ export function createHttpClient({
       }
       cache.delete(key);
     }
-    
+
     stats.misses++;
     if (useCache && pending.has(key)) return (await pending.get(key)!).clone();
 
@@ -172,10 +179,10 @@ export function createHttpClient({
       stats.requests++;
       const controller = new AbortController();
       const cancel = () => controller.abort();
-      
+
       signal?.addEventListener("abort", cancel, { once: true });
       options.signal?.addEventListener("abort", cancel, { once: true });
-      
+
       let timer: ReturnType<typeof setTimeout> | undefined;
       if (options.timeoutMs) timer = setTimeout(cancel, options.timeoutMs);
 
@@ -183,7 +190,7 @@ export function createHttpClient({
         if (controller.signal.aborted) throw abortError();
         const transport = options.transport ?? "auto";
         const opts: HttpRequestOptions = { ...options, signal: controller.signal };
-        
+
         const response =
           transport === "gm" ||
           (transport === "auto" &&
@@ -217,7 +224,7 @@ export function createHttpClient({
     // Shared requests must not be cancelled by an individual consumer.
     const task = run();
     if (useCache) pending.set(key, task);
-    
+
     try {
       return (await task).clone();
     } finally {
@@ -232,7 +239,7 @@ export function createHttpClient({
       // inherited headers, credentials, body and AbortSignal from Request.
       const isRequest = typeof Request !== "undefined" && input instanceof Request;
       if (!isRequest) return request(input, { ...init, cacheMode: "off" });
-      
+
       const merged = new Request(input, init);
       return request(merged.url, {
         method: merged.method,
