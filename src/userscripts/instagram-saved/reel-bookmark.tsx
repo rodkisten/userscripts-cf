@@ -128,7 +128,7 @@ export function mountReelBookmark(
       clear();
       return;
     }
-    if (anchor === native && mount?.host.isConnected) return;
+    if (anchor === native && mount?.host.isConnected && mount.host.parentNode === native.parentNode) return;
     clear();
     anchor = native;
     // Never clone an interactive element: a cloned button containing a Solid
@@ -178,7 +178,7 @@ export function mountReelBookmark(
           ),
       )
     )
-      refresh();
+      scheduleRefresh();
   });
   observer.observe(document.documentElement, {
     subtree: true,
@@ -186,12 +186,32 @@ export function mountReelBookmark(
     attributes: true,
     attributeFilter: ["aria-label"],
   });
-  const interval = setInterval(refresh, 1200);
+  // Instagram changes active reels without necessarily changing the URL.
+  // Coalesce navigation, touch/swipe and DOM updates into one scan per frame.
+  let frame = 0;
+  const scheduleRefresh = () => {
+    if (signal.aborted || frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      refresh();
+    });
+  };
+  const navigation = () => scheduleRefresh();
+  window.addEventListener("popstate", navigation);
+  window.addEventListener("pageshow", navigation);
+  window.addEventListener("hashchange", navigation);
+  document.addEventListener("touchend", navigation, { passive: true });
+  const interval = setInterval(scheduleRefresh, 600);
   signal.addEventListener(
     "abort",
     () => {
       observer.disconnect();
       clearInterval(interval);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("popstate", navigation);
+      window.removeEventListener("pageshow", navigation);
+      window.removeEventListener("hashchange", navigation);
+      document.removeEventListener("touchend", navigation);
       clear();
     },
     { once: true },

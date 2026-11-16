@@ -216,6 +216,9 @@ export function FeedRoot(props: { controller: FeedController }) {
     <>
       <section id="gws-searchbar" class={styles["gws-searchbar"]}>
         <strong>♫ Studio</strong>
+        <Show when={!state.settings.subreddits.some((name) => normalize(name) === normalize(location.pathname.split("/")[2] || ""))}>
+          <span role="status">Subreddit não configurado. Abra ⚙ para habilitar.</span>
+        </Show>
         <input
           id="gws-input"
           class={styles["gws-search-input"]}

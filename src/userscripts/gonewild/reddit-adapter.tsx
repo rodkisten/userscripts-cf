@@ -137,12 +137,12 @@ export function mountReddit(ctx: any, bridge: any) {
     if (ctx.signal.aborted) return;
     for (const [node] of mounts) if (!node.isConnected || !enabled()) remove(node);
     const main = document.querySelector("main") || document.body;
-    if (enabled()) {
+    if (/^(?:www\.|old\.|new\.|sh\.)?reddit\.com$/i.test(location.hostname)) {
       if (!root?.host.isConnected) {
         root?.dispose();
         root = mountPoint(main, () => <FeedRoot controller={controller} />, { before: main.firstChild });
       }
-      for (const node of document.querySelectorAll(POST_SELECTOR)) {
+      for (const node of enabled() ? document.querySelectorAll(POST_SELECTOR) : []) {
         if (
           node.closest("[data-solid-mount]") ||
           mounts.has(node) ||
@@ -232,17 +232,18 @@ export function mountReddit(ctx: any, bridge: any) {
   });
   observer.observe(document.documentElement, { subtree: true, childList: true });
   const disposeEffects = createRoot((dispose) => {
-    createEffect(
-      () => ({
+    createEffect(() => {
+      const snapshot = ({
         settings: { ...state.settings },
         seen: { ...state.seen },
         resolved: { ...state.resolved },
         active: state.search.active,
         include: [...state.search.include],
         exclude: [...state.search.exclude],
-      }),
-      schedule,
-    );
+      });
+      void snapshot;
+      schedule();
+    });
     return dispose;
   });
   const route = () => {
