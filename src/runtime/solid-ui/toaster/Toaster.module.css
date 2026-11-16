@@ -94,7 +94,7 @@
 .stack[data-has-interaction="true"] .toolbar,
 .stack[data-has-interaction="true"] .list {
   visibility: hidden;
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 .manager {
