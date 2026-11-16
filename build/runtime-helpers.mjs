@@ -251,7 +251,12 @@ export function runtimeHelpers() {
           !keep(node)
         ) {
           const pos = source.getLineAndCharacterOfPosition(node.getStart(source));
-          const fail = typeof this?.error === "function" ? this.error.bind(this) : (message) => { throw new Error(message); };
+          const fail =
+            typeof this?.error === "function"
+              ? this.error.bind(this)
+              : (message) => {
+                  throw new Error(message);
+                };
           fail(
             `Unbound ${node.expression.text}() in ${id}:${pos.line + 1}:${pos.character + 1}. Move the call into init(ctx) or pass context explicitly to this module.`,
           );

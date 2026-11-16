@@ -133,7 +133,6 @@ test("does not rewrite locally shadowed helpers", () => {
   assert.match(output, /const \{ local \} = useContext\(\)/);
 });
 
-
 test("binds shared factory helpers to the factory context in nested async methods", () => {
   const output = transform(`export function createBookmarks(ctx) {
     return {
