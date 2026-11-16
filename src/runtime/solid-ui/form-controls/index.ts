@@ -29,3 +29,5 @@ export type { SharedFieldType } from './field-types';
 
 export { StandaloneFieldRenderer } from './StandaloneFieldRenderer';
 export type { StandaloneFieldRendererProps } from './StandaloneFieldRenderer';
+
+export { getFormControlsQueryClient, disposeFormControlsQueryClient } from './query-client';
