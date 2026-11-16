@@ -61,18 +61,18 @@ test("GitHub installs one copy control per step, copies full server logs and han
     assert.match(requested, /\/actions\/jobs\/20\/logs$/);
     assert.equal(copied, text);
     assert.match(
-      host.document.querySelector("[data-ghft-step-host]:last-child")?.shadowRoot?.textContent ||
+      [...host.document.querySelectorAll("[data-ghft-step-host]")].at(-1)?.shadowRoot?.textContent ||
         host.document.body.textContent,
-      /Output completo copiado/,
+      /Log completo do job copiado/,
     );
     host.history.pushState({}, "", "/o/r/actions/runs/10/job/21");
     await api.navigate();
     await pause(300);
-    assert.equal(host.document.querySelectorAll("[data-ghft-step-copy]").length, 2);
+    assert.equal(host.document.querySelectorAll("[data-ghft-step-host]").length, 2);
     host.document
       .querySelector("[data-ghft-step-host]")
-      ?.shadowRoot.querySelector("[data-ghft-step-copy] button")
-      .click();
+      ?.shadowRoot?.querySelector("[data-ghft-step-copy] button")
+      ?.click();
     await pause();
     assert.match(requested, /\/actions\/jobs\/21\/logs$/);
     await api.dispose();
