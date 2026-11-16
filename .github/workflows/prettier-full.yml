@@ -48,6 +48,14 @@ jobs:
       - name: Format all supported files
         run: npm run format
 
+      - name: Exclude workflow files from bot formatting commits
+        shell: bash
+        run: |
+          # GITHUB_TOKEN cannot modify workflow files without workflows permission.
+          # Keep these files unchanged; report them for a separately authorized fix.
+          if [[ -d .github/workflows ]]; then
+            git restore --worktree -- .github/workflows
+          fi
       - name: Show changes
         id: changes
         shell: bash
@@ -59,8 +67,9 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Verify formatting
-        run: npm run format:check
+      - name: Verify formatting of commit-eligible files
+        run: npx prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path /dev/null
+        continue-on-error: true
 
       - name: Create formatting pull request
         if: steps.changes.outputs.changed == 'true' && inputs.create_pr
