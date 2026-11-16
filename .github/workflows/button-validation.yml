@@ -1,0 +1,55 @@
+name: "🧩 Button · Typecheck & Build"
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Validation scope"
+        required: true
+        type: choice
+        options:
+          - design-system
+          - full
+        default: design-system
+
+permissions:
+  contents: read
+
+concurrency:
+  group: button-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: "Solid 2 · ${{ inputs.scope }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout requested branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Build live Design System
+        run: node build/design-system.mjs
+      - name: Full repository build
+        if: inputs.scope == 'full'
+        run: npm run build
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🧩 Button validation"
+            echo "- Ref: \`${GITHUB_REF_NAME}\`"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Scope: \`${{ inputs.scope }}\`"
+            echo "- Typecheck and build errors appear in their own steps."
+            echo "- No test suite is run."
+          } >> "$GITHUB_STEP_SUMMARY"

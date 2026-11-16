@@ -67,3 +67,7 @@ The button CSS uses explicit font properties so the component inherits the host 
 ## CSS token fix
 
 `--button-radius`, `--button-height`, and `--button-accent` are now read from ancestor styles with component fallbacks instead of being overwritten on every button. Optional size tokens: `--button-height-sm` and `--button-height-lg`. ButtonGroup filters its own configuration before forwarding HTML attributes. SplitButton renders a single dropdown chevron.
+
+## Manual validation workflow
+
+Run [Button · Typecheck & Build](https://github.com/rodkisten/userscripts-cf/actions/workflows/button-validation.yml) using **Run workflow**, selecting the desired branch and scope. The default validates TypeScript and the Design System bundle; `full` also builds the repository. No tests, deployment, or formatting gate. Failures are shown as separate actionable steps. A workflow file alone is not evidence of a successful run.
