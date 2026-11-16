@@ -16,6 +16,17 @@ export function diagnosticPrelude(target, version, scripts) {
     let database = null;
     let revision = 0;
     let pending = false;
+    const durableQueue = [];
+    const flushDurable = () => {
+      if (!database || !durableQueue.length) return;
+      try {
+        const tx = database.transaction("events", "readwrite");
+        const store = tx.objectStore("events");
+        const batch = durableQueue.splice(0);
+        for (const event of batch) store.put(event);
+        tx.onabort = () => durableQueue.unshift(...batch);
+      } catch {}
+    };
     const persist = () => {
       if (!database || pending) return;
       pending = true;
@@ -30,14 +41,34 @@ export function diagnosticPrelude(target, version, scripts) {
     };
     if (root.indexedDB) {
       try {
-        const request = root.indexedDB.open("rod-script-diagnostics", 1);
+        const request = root.indexedDB.open("rod-script-diagnostics", 2);
         request.onupgradeneeded = () => {
           const db = request.result;
           if (!db.objectStoreNames.contains("snapshots")) db.createObjectStore("snapshots", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
         };
         request.onsuccess = () => {
           database = request.result;
           database.onversionchange = () => { database.close(); database = null; };
+          flushDurable();
+          try {
+            const tx = database.transaction("events", "readonly");
+            const read = tx.objectStore("events").getAll();
+            read.onsuccess = () => {
+              for (const item of read.result || []) {
+                if (!item || item.timestamp <= clearedAt) continue;
+                const existing = state.history.find(record => record.fingerprint === item.fingerprint);
+                if (existing) {
+                  existing.writerCounts ||= {};
+                  existing.writerCounts[item.writer] = Math.max(existing.writerCounts[item.writer] || 0, item.sequence);
+                  existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
+                } else state.history.push({ ...item.record, writerCounts: { [item.writer]: item.sequence }, count: item.sequence });
+              }
+              state.history.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+              state.history.length = Math.min(state.history.length, 250);
+              notify();
+            };
+          } catch {}
           try {
             const tx = database.transaction("snapshots", "readonly");
             const read = tx.objectStore("snapshots").get("history");
@@ -178,6 +209,13 @@ export function diagnosticPrelude(target, version, scripts) {
         revision++;
         try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
         persist();
+        const record = state.history.find(item => item.fingerprint === fingerprint);
+        durableQueue.push({
+          id: tabId + ":" + (++sequence) + ":" + Date.now(),
+          fingerprint, writer: tabId, sequence: record.writerCounts[tabId],
+          timestamp: Date.now(), record: { ...record },
+        });
+        flushDurable();
         send({ type: "capture", record: { ...state.history.find(item => item.fingerprint === fingerprint) } });
         notify();
       } catch {}
@@ -195,6 +233,8 @@ export function diagnosticPrelude(target, version, scripts) {
       revision++;
       try { root.localStorage.removeItem(storageKey); } catch {}
       persist();
+      durableQueue.length = 0;
+      try { if (database) database.transaction("events", "readwrite").objectStore("events").clear(); } catch {}
       send({ type: "clear", at: clearedAt });
       notify();
     };
