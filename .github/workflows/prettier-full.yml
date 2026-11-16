@@ -68,7 +68,11 @@ jobs:
           fi
 
       - name: Verify formatting of commit-eligible files
-        run: git ls-files -z | grep -zv '^.github/workflows/' | xargs -0 -r npx prettier --check
+        shell: bash
+        run: |
+          printf '\\n.github/workflows/**\\n' >> .prettierignore
+          npx prettier --check .
+          git restore -- .prettierignore
 
       - name: Create formatting pull request
         if: steps.changes.outputs.changed == 'true' && inputs.create_pr
