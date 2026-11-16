@@ -10,6 +10,8 @@ const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
+assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design-system.html"), "utf8");
+assets["design-system.js"] = await fs.readFile(path.join(dist, "design-system.js"), "utf8");
 assets["playground/ast-errors.html"] = await fs.readFile(path.join(root, "playground/ast-errors.html"), "utf8");
 assets["playground/diagnostics.html"] = await fs.readFile(path.join(root, "playground/diagnostics.html"), "utf8");
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");

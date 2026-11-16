@@ -108,7 +108,6 @@ export function mountReelBookmark(
       cloned.removeAttribute("id");
       cloned.removeAttribute("aria-label");
       cloned.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
-      cloned.replaceChildren();
       cloned.dataset.rodCollectionAction = "true";
       native.insertAdjacentElement("afterend", cloned);
       mount = mountPoint(cloned, () => (
