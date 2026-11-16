@@ -100,10 +100,10 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
       );
     }
   }
-  assert.deepEqual(
-    mismatches,
-    [],
-    "Review every changed migration declaration before accepting new snapshots",
+  assert.equal(
+    mismatches.length,
+    0,
+    `Review changed migration declarations before accepting snapshots (${mismatches.length} mismatches):\n${mismatches.slice(0, 30).join("\n")}${mismatches.length > 30 ? `\n... and ${mismatches.length - 30} more` : ""}`,
   );
 });
 
