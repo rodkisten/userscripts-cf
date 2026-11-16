@@ -135,7 +135,6 @@ export function SplitButton(props: DropdownButtonProps) {
         menu={props.menu}
         items={props.items}
         align={props.align}
-        size={props.size}
         variant={props.variant}
         disabled={props.disabled || props.loading}
         size="icon"
