@@ -102,8 +102,8 @@ export function mountReelBookmark(
   pageStyle(css);
   const [busy, setBusy] = createSignal(false);
   let mount: ReturnType<typeof mountPoint> | undefined;
-  let parent: HTMLElement | null = null;
-  let cloned: HTMLElement | undefined;
+  let anchor: HTMLElement | null = null;
+  let wrapper: HTMLElement | undefined;
   const send = async () => {
     if (busy()) return;
     setBusy(true);
@@ -116,60 +116,61 @@ export function mountReelBookmark(
       setBusy(false);
     }
   };
+  function clear() {
+    mount?.dispose();
+    wrapper?.remove();
+    mount = undefined;
+    wrapper = undefined;
+    anchor = null;
+  }
+
   function refresh() {
     const target = reelIsOpen() ? actions() : null;
-    if (!target) {
-      mount?.dispose();
-      cloned?.remove();
-      cloned = undefined;
-      mount = undefined;
-      parent = null;
+    const native = target && (nativeSave() || target.querySelector<HTMLElement>('button, [role="button"]'));
+    if (!target || !native || !native.isConnected) {
+      clear();
       return;
     }
-    if (parent !== target || !mount?.host.isConnected || !cloned?.isConnected) {
-      mount?.dispose();
-      cloned?.remove();
-      parent = target;
-      // Copy the native action wrapper so Instagram controls spacing and swipe positioning.
-      const native = nativeSave() || target.querySelector<HTMLElement>('button, [role="button"]') || target;
-      cloned = native.cloneNode(false) as HTMLElement;
-      cloned.removeAttribute("id");
-      cloned.removeAttribute("aria-label");
-      cloned.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
-      cloned.dataset.rodCollectionAction = "true";
-      native.insertAdjacentElement("afterend", cloned);
-      mount = mountPoint(
-        cloned,
-        () => (
-          <button
-            type="button"
-            class={styles.bookmark}
-            aria-label="Enviar para coleções"
-            title="Enviar para coleções configuradas"
-            disabled={busy()}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              void send();
-            }}
+    if (anchor === native && mount?.host.isConnected && wrapper?.isConnected) return;
+    clear();
+    anchor = native;
+    // Never clone an interactive element: a cloned button containing a Solid
+    // button would create invalid nested controls and duplicate native handlers.
+    wrapper = document.createElement("span");
+    wrapper.dataset.rodCollectionAction = "true";
+    wrapper.style.display = "inline-flex";
+    native.insertAdjacentElement("afterend", wrapper);
+    mount = mountPoint(
+      wrapper,
+      () => (
+        <button
+          type="button"
+          class={styles.bookmark}
+          aria-label="Enviar para coleções"
+          title="Enviar para coleções configuradas"
+          disabled={busy()}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void send();
+          }}
+        >
+          <svg
+            aria-hidden="true"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
           >
-            <svg
-              aria-hidden="true"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linejoin="round"
-            >
-              <path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" />
-            </svg>
-          </button>
-        ),
-        { tag: "span" },
-      );
-    }
+            <path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" />
+          </svg>
+        </button>
+      ),
+      { tag: "span" },
+    );
   }
   const observer = new MutationObserver((records) => {
     if (
@@ -194,8 +195,7 @@ export function mountReelBookmark(
     () => {
       observer.disconnect();
       clearInterval(interval);
-      mount?.dispose();
-      cloned?.remove();
+      clear();
     },
     { once: true },
   );
