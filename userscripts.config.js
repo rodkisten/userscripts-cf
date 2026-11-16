@@ -73,7 +73,7 @@ export default [
     id: "rodx-studio",
     name: "RodX Studio — X/Twitter mobile-first",
     namespace: "https://rodx.local/userscripts",
-    entry: "src/userscripts/rodx-studio/index.js",
+    entry: "src/userscripts/rodx-studio/index.ts",
     world: "sandbox",
     matches: ["https://x.com/*", "https://twitter.com/*"],
     exclude: [],
