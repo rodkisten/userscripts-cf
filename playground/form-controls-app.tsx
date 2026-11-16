@@ -112,7 +112,10 @@ function App() {
   const [editingToken, setEditingToken] = createSignal<number | null>(null);
   const [tokenDraft, setTokenDraft] = createSignal('');
   const [asyncValue, setAsyncValue] = createSignal('');
+  const [asyncValueTwo, setAsyncValueTwo] = createSignal('');
+  const [remoteRequests, setRemoteRequests] = createSignal(0);
   const source = async (query: string, { signal }: { signal: AbortSignal }) => {
+    setRemoteRequests((count) => count + 1);
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(resolve, 250);
       signal.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Cancelled', 'AbortError')); }, { once: true });
@@ -142,7 +145,10 @@ function App() {
           <h2>Async · TanStack Query</h2>
           <label for="async">Sugestões assíncronas simuladas</label>
           <Combobox id="async" options={options} source={source} queryKey={['playground', 'async-options']} value={asyncValue()} onChange={(value) => setAsyncValue(String(value))} disabled={disabled()} clearable />
-          <small>Simula 250 ms de latência e suporta cancelamento.</small>
+          <label for="async-shared">Segundo controle, mesmo cache</label>
+          <Combobox id="async-shared" options={options} source={source} queryKey={['playground', 'async-options']} value={asyncValueTwo()} onChange={(value) => setAsyncValueTwo(String(value))} disabled={disabled()} clearable />
+          <small>Os dois controles compartilham o QueryClient do runtime e a mesma queryKey. Simula 250 ms de latência e suporta cancelamento.</small>
+          <output aria-live="polite">Requisições simuladas: {remoteRequests()}</output>
           <pre>{JSON.stringify(asyncValue())}</pre>
         </section>
         <section class="card">
