@@ -1,4 +1,4 @@
-import { css as dockStyles } from "./rod-dock.module.css";
+import { css as dockStyles } from "./rod-dock.shadow.css";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
