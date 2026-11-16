@@ -82,7 +82,6 @@ case "$mode" in
       npm run typecheck
       npm run lint
     fi
-    if [[ "$build_needed" == true ]]; then npm run build; fi
     # Resolve transitive source dependencies using the same graph as the bundler.
     # A shared source file can affect multiple independently installed scripts.
     if [[ "$source_changed" == true ]]; then
@@ -107,6 +106,20 @@ console.log('Affected userscripts:', affected.join(', ') || '(no graph matches)'
 const summary = ['#### Dependency graph', ...affected.map(id => '- \`' + id + '\` ← ' + reasons[id].map(f => '\`' + f + '\`').join(', '))];
 await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
 NODE
+    fi
+    if [[ "$build_needed" == true ]]; then
+      # Full bundles remain necessary for dist-driven integration tests.
+      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
+        targets="$(node -p 'require("./affected-userscripts.json").targets.join(",")')"
+        if [[ -n "$targets" ]]; then
+          echo "Building affected targets: $targets"
+          node build/build.mjs "--targets=$targets"
+        else
+          npm run build
+        fi
+      else
+        npm run build
+      fi
     fi
     selected_tests=("${changed_tests[@]}")
     if [[ "$source_changed" == true ]]; then
