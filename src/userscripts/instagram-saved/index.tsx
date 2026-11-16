@@ -37,7 +37,8 @@ export default {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
 
-    const hub = installRodActions(ctx.menu!);
+    if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
+    const hub = installRodActions(ctx.menu);
     const unregisterActions = hub.register({
       id: "instagram-saved",
       title: "Instagram",
