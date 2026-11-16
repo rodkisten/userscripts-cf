@@ -1,0 +1,104 @@
+:root,
+.rod-toaster-theme-root {
+  color-scheme: dark;
+  --rod-surface: rgba(23, 23, 23, 0.985);
+  --rod-surface-raised: rgba(28, 28, 29, 0.992);
+  --rod-border: rgba(255, 255, 255, 0.105);
+  --rod-border-strong: rgba(255, 255, 255, 0.18);
+  --rod-text: rgba(232, 232, 232, 0.96);
+  --rod-text-strong: rgba(255, 255, 255, 0.985);
+  --rod-muted: rgba(163, 163, 163, 0.9);
+  --rod-muted-soft: rgba(132, 132, 137, 0.84);
+  --rod-hover: rgba(255, 255, 255, 0.07);
+  --rod-overlay: rgba(255, 255, 255, 0.05);
+  --rod-focus: rgba(255, 255, 255, 0.34);
+  --rod-toast-stack-max-height: 520px;
+  --rod-toast-stack-max-viewport: 48dvh;
+  --rod-toast-width: min(580px, calc(100vw - 28px));
+  --rod-toaster-font-size: 15px;
+  --rod-toaster-line-height: 1.48;
+  --rod-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --rod-shadow: 0 1px 0 rgba(255, 255, 255, 0.055) inset, 0 2px 3px rgba(0, 0, 0, 0.2), 0 18px 46px rgba(0, 0, 0, 0.38);
+  --rod-shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 4px 8px rgba(0, 0, 0, 0.22), 0 28px 66px rgba(0, 0, 0, 0.46);
+  --rod-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --rod-ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --rod-z: 2147483647;
+
+  /* Paletas semânticas (Dark default) */
+  --rod-default-bg: rgba(23, 23, 23, 0.985);
+  --rod-default-border: rgba(255, 255, 255, 0.11);
+  --rod-default-text: rgba(232, 232, 232, 0.96);
+  --rod-default-accent: #e5e5e5;
+
+  --rod-success-bg: rgba(16, 33, 24, 0.985);
+  --rod-success-border: rgba(52, 211, 153, 0.28);
+  --rod-success-text: #d1fae5;
+  --rod-success-accent: #34d399;
+
+  --rod-error-bg: rgba(38, 17, 20, 0.985);
+  --rod-error-border: rgba(248, 113, 113, 0.3);
+  --rod-error-text: #fee2e2;
+  --rod-error-accent: #f87171;
+
+  --rod-warning-bg: rgba(38, 28, 14, 0.985);
+  --rod-warning-border: rgba(251, 191, 36, 0.28);
+  --rod-warning-text: #fef3c7;
+  --rod-warning-accent: #fbbf24;
+
+  --rod-info-bg: rgba(17, 27, 42, 0.985);
+  --rod-info-border: rgba(96, 165, 250, 0.28);
+  --rod-info-text: #dbeafe;
+  --rod-info-accent: #60a5fa;
+
+  --rod-debug-bg: rgba(28, 20, 42, 0.985);
+  --rod-debug-border: rgba(192, 132, 252, 0.28);
+  --rod-debug-text: #f3e8ff;
+  --rod-debug-accent: #c084fc;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --rod-surface: rgba(255, 255, 255, 0.985);
+  --rod-surface-raised: rgba(255, 255, 255, 0.998);
+  --rod-border: rgba(24, 24, 27, 0.105);
+  --rod-border-strong: rgba(24, 24, 27, 0.17);
+  --rod-text: rgba(39, 39, 42, 0.94);
+  --rod-text-strong: rgba(9, 9, 11, 0.98);
+  --rod-muted: rgba(82, 82, 91, 0.82);
+  --rod-muted-soft: rgba(113, 113, 122, 0.78);
+  --rod-hover: rgba(24, 24, 27, 0.065);
+  --rod-overlay: rgba(24, 24, 27, 0.045);
+  --rod-focus: rgba(24, 24, 27, 0.32);
+  --rod-shadow: 0 1px 0 rgba(255, 255, 255, 0.96) inset, 0 1px 3px rgba(15, 23, 42, 0.08), 0 18px 48px rgba(15, 23, 42, 0.15);
+  --rod-shadow-raised: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 3px 8px rgba(15, 23, 42, 0.09), 0 28px 64px rgba(15, 23, 42, 0.18);
+
+  --rod-default-bg: rgba(255, 255, 255, 0.985);
+  --rod-default-border: rgba(24, 24, 27, 0.11);
+  --rod-default-text: rgba(24, 24, 27, 0.95);
+  --rod-default-accent: #18181b;
+
+  --rod-success-bg: rgba(240, 253, 244, 0.985);
+  --rod-success-border: rgba(22, 163, 74, 0.25);
+  --rod-success-text: #14532d;
+  --rod-success-accent: #16a34a;
+
+  --rod-error-bg: rgba(254, 242, 242, 0.985);
+  --rod-error-border: rgba(220, 38, 38, 0.25);
+  --rod-error-text: #7f1d1d;
+  --rod-error-accent: #dc2626;
+
+  --rod-warning-bg: rgba(255, 251, 235, 0.985);
+  --rod-warning-border: rgba(217, 119, 6, 0.25);
+  --rod-warning-text: #78350f;
+  --rod-warning-accent: #d97706;
+
+  --rod-info-bg: rgba(239, 246, 255, 0.985);
+  --rod-info-border: rgba(37, 99, 235, 0.25);
+  --rod-info-text: #1e3a8a;
+  --rod-info-accent: #2563eb;
+
+  --rod-debug-bg: rgba(250, 245, 255, 0.985);
+  --rod-debug-border: rgba(147, 51, 234, 0.25);
+  --rod-debug-text: #581c87;
+  --rod-debug-accent: #9333ea;
+}
