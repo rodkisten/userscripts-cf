@@ -148,3 +148,41 @@ The 29 generic field variants now render through `menu/components/SharedFieldRen
 ## Progressive RodMenu adapter (PR #75)
 
 RodMenu now supports an **opt-in** standalone renderer for text, email, password, search, url, tel, number, textarea, date, datetime-local, time, month, week, color, and hidden fields. Set `attributes: { 'data-renderer': 'standalone' }` on a RodMenu field to use the independent renderer. The adapter passes the existing context, current value, disabled state and commit callback, and forces bare chrome so RodMenu retains its label/error layout. Other variants, and fields without this attribute, keep the existing RodMenu renderer. This is a progressive compatibility bridge, not yet a full replacement; run typecheck, build, visual regression and mobile/Shadow DOM tests before enabling by default.
+
+## Renderer migration status (2026-11-15)
+
+This section tracks the ongoing independent renderer work in PR #75 and subsequent merges. Treat checkboxes as verified only when the corresponding checks actually pass.
+
+### Implemented in repository
+
+- [x] Independent `FormField<TContext>` contracts, field utilities, option helpers, and registry of 29 shared field types.
+- [x] `StandaloneFieldRenderer.tsx` with its own CSS Module and no RodMenu import.
+- [x] Basic rendering paths for text/email/password/search/url/tel, number, textarea, select, multiselect, radio, checkbox-group, checkbox, switch, range, date/datetime-local/time/month/week, color, file, hidden, segmented, rating, button, html, divider, and custom.
+- [x] Combobox and TagsInput components, plus Twitter search examples in `playground/form-controls-app.tsx`.
+- [x] Standalone enhancements: searchable select, multiselect, `allowZero` rating, file capture/multiple, color presets, range output, input validation attributes, async button error callback.
+- [x] RodMenu opt-in compatibility bridge in `RodMenuFieldRenderer.tsx`: `attributes: { 'data-renderer': 'standalone' }` for 15 basic variants. Legacy renderer remains default.
+- [x] Initial Playground wiring for field variant selection (verify actual rendered examples when changing it).
+
+### Still required before claiming complete parity
+
+- [ ] Audit all 29 variants against `SharedFieldRenderer.tsx`, including accessibility, focus, keyboard, error messages, attributes, transforms, callbacks, custom rendering and HTML trust/sanitization.
+- [ ] Verify the opt-in bridge preserves RodMenu semantics and fix differences before enabling by default.
+- [ ] Replace the legacy `SharedFieldRenderer.tsx` only after regression tests pass.
+- [ ] Build an interactive Playground example for **every** variant, including advanced settings, disabled/readonly, validation and async states; ensure examples render in Safari.
+- [ ] Add component tests for all variants and failure paths; verify typecheck, build, unit tests, hosting and lint.
+- [ ] Test Shadow DOM mounting, CSS isolation, keyboard/touch, Safari iPhone and small-screen layouts.
+- [ ] Remove redundant implementation and update public exports after verified migration.
+
+### CI and Solid 2 compatibility
+
+- GitHub Actions workflow parsing previously failed due to duplicate top-level `concurrency` in `.github/workflows/test.yml`; that duplication was removed on main.
+- Run #43782707653 reported `[MISSING_EXPORT] onMount` in `Combobox.tsx`; its other failed jobs included missing `dist/manifest.json` and built userscripts, which may be downstream of the failed build. Lint also failed and needs separate diagnosis. This run does **not** establish that later fixes passed.
+- **Important:** This repository uses SolidJS 2 RC. Read the Solid 2 section in root `AGENTS.md` and `node_modules/solid-js/CHEATSHEET.md`. Use `onSettled` rather than removed `onMount`; do not assume Solid 1 `createEffect(() => ...)` is valid in Solid 2. Verify lifecycle and cleanup behavior.
+
+### Maintenance rule for every future change
+
+1. Read this README, the root `AGENTS.md`, current component source and Playground.
+2. Implement the behavior using shared controls, SolidJS 2 and CSS Modules.
+3. Add/update a **live interactive** example in `playground/form-controls-app.tsx`, reachable from the index.
+4. Add tests, run available checks, and record actual outcomes.
+5. Update **both** the implemented and pending checklists here in the same change; do not silently mark unfinished work complete.
