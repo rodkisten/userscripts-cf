@@ -1,3 +1,4 @@
+import { test } from "vitest";
 import { transform as compileSolid } from "@solidjs/compiler";
 import { build, transformWithOxc } from "vite";
 import { DEFAULT_SETTINGS, createDefaults } from "../src/config/defaults.js";
@@ -322,3 +323,5 @@ console.log(count + " checks passed");
   await w.happyDOM.abort();
 }
 console.log("TOTAL " + count + " checks passed");
+
+test("RodX legacy fixture assertions completed", () => { assert.ok(count > 0); });
