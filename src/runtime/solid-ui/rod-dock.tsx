@@ -2,6 +2,7 @@ import { css as dockStyles } from "./rod-dock.module.css";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
+import { getDiagnostics, type DiagnosticRecord } from "../diagnostics.js";
 
 
 
@@ -21,6 +22,23 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
   host.dataset.rodDock = "";
   const shadow = host.attachShadow({ mode: "open" });
   const [open, setOpen] = createSignal(false);
+  const [diagnosticEntries, setDiagnosticEntries] = createSignal<DiagnosticRecord[]>([]);
+  const [diagnosticScript, setDiagnosticScript] = createSignal("all");
+  const [diagnosticSelected, setDiagnosticSelected] = createSignal<string | null>(null);
+  const refreshDiagnostics = () => setDiagnosticEntries([...(getDiagnostics()?.history || [])]);
+  refreshDiagnostics();
+  document.addEventListener("rod-diagnostics:change", refreshDiagnostics);
+  const filteredDiagnostics = () => diagnosticEntries().filter(item => diagnosticScript() === "all" || item.script === diagnosticScript());
+  const exportDiagnostics = () => {
+    const payload = getDiagnostics()?.export() || JSON.stringify({ errors: diagnosticEntries() }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "rod-script-diagnostics.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const [eventEntries, setEventEntries] = createSignal<Array<{ name: string; transport: string; timestamp: number }>>([]);
   const onDiagnostic = (event: Event) => {
     const detail = (event as CustomEvent<{ name?: string; transport?: string; timestamp?: number }>).detail;
@@ -192,6 +210,30 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
               </section>
             )}</For>
             </Show>
+            <details class="module" onToggle={event => { if (event.currentTarget.open) refreshDiagnostics(); }}>
+              <summary>🩺 Diagnósticos ({diagnosticEntries().reduce((sum, item) => sum + item.count, 0)})</summary>
+              <div class="manager-toolbar">
+                <select class="manager-input" aria-label="Filtrar erros por script" value={diagnosticScript()} onChange={event => setDiagnosticScript(event.currentTarget.value)}>
+                  <option value="all">Todos os scripts</option>
+                  <For each={[...new Set(diagnosticEntries().map(item => item.script))]}>{id => <option value={id}>{id}</option>}</For>
+                </select>
+                <button class="action" onClick={exportDiagnostics}>Exportar JSON</button>
+                <button class="action" onClick={() => { getDiagnostics()?.clear(); refreshDiagnostics(); }}>Limpar</button>
+              </div>
+              <div role="log" aria-label="Erros dos userscripts">
+                <For each={filteredDiagnostics()}>{item =>
+                  <div class="event">
+                    <button class="action" aria-expanded={diagnosticSelected() === item.fingerprint} onClick={() => setDiagnosticSelected(diagnosticSelected() === item.fingerprint ? null : item.fingerprint)}>
+                      {item.script} · {item.source} · {item.count}× · {item.message}
+                    </button>
+                    <Show when={diagnosticSelected() === item.fingerprint}>
+                      <small>{item.lastSeen}</small>
+                      <pre style={{ "white-space": "pre-wrap", "overflow-wrap": "anywhere" }}>{item.stack || item.message}</pre>
+                    </Show>
+                  </div>
+                }</For>
+              </div>
+            </details>
             <details class="module"><summary>Eventos compartilhados ({eventEntries().length})</summary>
               <button class="action" onClick={() => setEventEntries([])}>Limpar histórico</button>
               <div role="log" aria-label="Histórico de eventos compartilhados">
@@ -213,6 +255,7 @@ export function installRodDock({ modules = [], scripts = [], registerMenu = glob
     open: () => setOpen(true),
     close: () => setOpen(false),
     dispose() {
+      document.removeEventListener("rod-diagnostics:change", refreshDiagnostics);
       document.removeEventListener("rod-events:diagnostic", onDiagnostic);
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
