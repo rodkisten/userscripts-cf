@@ -22,7 +22,7 @@ export default {
     const [selector, setSelector] = createSignal("");
     const [status, setStatus] = createSignal("");
     const [full, setFull] = createSignal<boolean>(false);
-    const [scroll, setScroll] = createSignal(INSPECTOR_CONFIG.autoScroll);
+    const [scroll, setScroll] = createSignal<boolean>(INSPECTOR_CONFIG.autoScroll);
     const [records, setRecords] = createSignal([]);
     const [depth, setDepth] = createSignal(0);
     const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
