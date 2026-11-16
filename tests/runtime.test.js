@@ -229,3 +229,27 @@ test("mountSolid creates an isolated visible ShadowRoot and disposes it on navig
   await app.dispose();
   await host.happyDOM.abort();
 });
+
+
+test("ctx.query shares a lazy QueryClient between scripts and disposes on runtime shutdown", async () => {
+  const host = new Window({ url: "https://x.com/home" });
+  const clients = [];
+  const definitions = ["first", "second"].map((id) => ({
+    id,
+    matches: ["https://x.com/*"],
+    module: {
+      init(ctx) {
+        assert.equal(typeof ctx.query.createAsyncOptions, "function");
+        clients.push(ctx.query.client);
+      },
+    },
+  }));
+  const app = createRuntime(definitions, { call() {} }, host);
+  await app.ready;
+  assert.equal(clients.length, 2);
+  assert.strictEqual(clients[0], clients[1]);
+  clients[0].setQueryData(["shared", "test"], { ok: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(clients[1].getQueryData(["shared", "test"]))), { ok: true });
+  await app.dispose();
+  assert.equal(clients[0].getQueryData(["shared", "test"]), undefined);
+});
