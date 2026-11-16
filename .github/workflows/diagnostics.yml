@@ -60,8 +60,24 @@ jobs:
       - name: Fail current validation on installation error
         if: steps.install.outcome == 'failure'
         run: exit 1
-      - name: Validate affected code
+      - name: Check formatting
+        id: formatting
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run format:check
+      - name: Dispatch formatting repair
+        if: steps.formatting.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          gh workflow run prettier-full.yml --ref "$BRANCH" -f target_branch="$BRANCH" -f create_pr=false
+          echo "Formatting repair requested for $BRANCH; its commit will trigger validation again." >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail current validation on formatting error
+        if: steps.formatting.outcome == 'failure'
+        run: exit 1
+      - name: Validate affected code
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success'
         shell: bash
         env:
           FULL: ${{ steps.plan.outputs.full }}
