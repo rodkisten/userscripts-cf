@@ -120,7 +120,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
         }
         return update;
       } catch (error) {
-        console.warn("[Rod updates] Check failed", error);
+        // Update checks are best-effort; do not pollute the host page console.
         return null;
       } finally {
         pending = undefined;
