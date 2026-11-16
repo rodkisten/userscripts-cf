@@ -36,6 +36,7 @@ test("complete REPL installable opens, runs async code, persists closure and cle
   };
   host.unsafeWindow = host;
   host.console.error = (...args) => errors.push(args.map(String).join(" "));
+  let stage = "bootstrap";
   try {
     host.eval(await fs.readFile(new URL("../dist/page-repl.user.js", import.meta.url), "utf8"));
     await sleep(100);
@@ -43,6 +44,7 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     assert.ok(replHost, `REPL host missing; errors: ${errors.join(" | ")}`);
     const root = replHost.shadowRoot;
     assert.equal(typeof openRepl, "function", "REPL must expose its GM menu command");
+    stage = "open panel";
     openRepl();
     assert.equal(root.querySelector(".panel").hidden, false);
     const uiStyle = host.getComputedStyle(root.querySelector(".repl-root"));
@@ -62,20 +64,24 @@ test("complete REPL installable opens, runs async code, persists closure and cle
           new host.ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }),
         );
     }
+    stage = "first async execution";
     pasteCode('let n=2; function next(){return ++n} console.log("ready"); await Promise.resolve(next())');
     root.querySelector("[data-action=run]").click();
     await sleep(100);
     assert.match(root.querySelector(".output").textContent, /OK/);
     assert.match(root.querySelector(".output").textContent, /ready/);
+    stage = "persistent closure";
     pasteCode("next() + n");
     root.querySelector("[data-action=run]").click();
     await sleep(100);
     assert.match(root.querySelector(".output").lastElementChild.textContent, /"value": 8/);
+    stage = "autocomplete";
     host.AfixtureGlobal = { availableProperty: 1 };
     pasteCode("window.Afixture");
     root.querySelector("[data-action=complete]").click();
     await sleep(180);
     assert.match(root.querySelector(".cm-tooltip-autocomplete").textContent, /AfixtureGlobal/);
+    stage = "syntax validation";
     pasteCode("const invalid = ;");
     root.querySelector("[data-action=validate]").click();
     await sleep(450);
@@ -84,6 +90,7 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     assert.ok(root.querySelector(".cm-lineNumbers"));
     assert.ok(root.querySelector(".cm-line span"), "JavaScript tokens are highlighted");
     assert.ok(root.querySelector(".cm-lineWrapping"));
+    stage = "clipboard";
     let clipboard = "";
     host.navigator.clipboard.writeText = async (text) => {
       clipboard = text;
@@ -97,8 +104,11 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     await sleep(20);
     assert.match(root.querySelector(".cm-content").textContent, /42/);
     assert.deepEqual(errors, []);
+    stage = "dispose";
     await host.__userscriptsCF["page-repl:sandbox"].dispose();
     assert.equal(host.document.getElementById("rodx-page-repl"), null);
+  } catch (error) {
+    throw new Error(`REPL boot failed during ${stage}: ${error.message}; captured console: ${errors.join(" | ")}`, { cause: error });
   } finally {
     await host.happyDOM.abort();
   }
