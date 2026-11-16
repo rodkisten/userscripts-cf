@@ -72,7 +72,7 @@ jobs:
         run: |
           printf '\\n.github/workflows/**\\n' >> .prettierignore
           npx prettier --check .
-          git restore -- .prettierignore
+          rm -f .prettierignore
 
       - name: Create formatting pull request
         if: steps.changes.outputs.changed == 'true' && inputs.create_pr
