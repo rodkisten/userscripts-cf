@@ -3,6 +3,7 @@ import { COMPOSITE_SELECTORS, NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../..
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-gestures-1.css?inline";
 export let VideoTapGuard;
 
+// TODO: inject context to use state, storage and events
 export function initializeDeckVideoTapGuard() {
   VideoTapGuard = (() => {
     const DOUBLE_TAP_MS = RUNTIME_LIMITS.mediaGestures.doubleTapMs;
