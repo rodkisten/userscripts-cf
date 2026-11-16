@@ -1,7 +1,6 @@
 import { For, Show } from 'solid-js';
 import type { FormField, FieldContext } from './fields';
 import { Combobox } from './Combobox';
-import { TagsInput } from './TagsInput';
 import styles from './StandaloneFieldRenderer.module.css';
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
@@ -19,7 +18,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(props: Standalo
   const commit = (next: unknown) => props.onChange(next);
   const disabled = () => !!field().disabled;
   const kind = () => field().type;
-  const choices = () => 'options' in field() ? field().options : [];
+  const choices = () => 'options' in field() ? (field() as { options: readonly { value: string; label: string; disabled?: boolean }[] }).options : [];
   const stringValue = () => String(value() ?? '');
   const common = () => ({ id: id(), name: field().name, disabled: disabled(), required: !!field().required });
   return <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())}>
@@ -35,7 +34,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(props: Standalo
         onInput={(event) => commit(['number','range'].includes(kind()) ? (event.currentTarget.value === '' ? '' : event.currentTarget.valueAsNumber) : event.currentTarget.value)} />
     </Show>
     <Show when={kind() === 'textarea'}>
-      <textarea {...common()} rows={'rows' in field() ? field().rows : 4} value={stringValue()} readOnly={!!field().readonly} onInput={(e) => commit(e.currentTarget.value)} />
+      <textarea {...common()} rows={'rows' in field() ? (field() as { rows?: number }).rows : 4} value={stringValue()} readOnly={!!field().readonly} onInput={(e) => commit(e.currentTarget.value)} />
     </Show>
     <Show when={kind() === 'select'}>
       <select {...common()} value={stringValue()} onChange={(e) => commit(e.currentTarget.value)}>
@@ -61,11 +60,11 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(props: Standalo
     <Show when={kind() === 'rating'}>
       <div role="group" aria-label={field().label ?? field().name}><For each={Array.from({ length: 'max' in field() ? field().max ?? 5 : 5 }, (_, i) => i + 1)}>{(n) => <button type="button" aria-label={`${n} estrelas`} aria-pressed={Number(value() ?? 0) === n} onClick={() => commit(n)} disabled={disabled()}>★</button>}</For></div>
     </Show>
-    <Show when={kind() === 'file'}><input {...common()} type="file" accept={'accept' in field() ? field().accept : undefined} multiple={'multiple' in field() ? field().multiple : false} onChange={(e) => commit(Array.from(e.currentTarget.files ?? []))} /></Show>
-    <Show when={kind() === 'button'}><button type="button" disabled={disabled()} onClick={() => { const f = field(); if ('onPress' in f) void f.onPress?.(props.context); }}>{'text' in field() ? field().text ?? field().label : field().label}</button></Show>
+    <Show when={kind() === 'file'}><input {...common()} type="file" accept={'accept' in field() ? (field() as { accept?: string }).accept : undefined} multiple={'multiple' in field() ? (field() as { multiple?: boolean }).multiple : false} onChange={(e) => commit(Array.from(e.currentTarget.files ?? []))} /></Show>
+    <Show when={kind() === 'button'}><button type="button" disabled={disabled()} onClick={() => { const f = field(); if ('onPress' in f) void (f as { onPress?: (ctx: TContext) => void | Promise<void> }).onPress?.(props.context); }}>{'text' in field() ? (field() as { text?: string; label?: string }).text ?? field().label : field().label}</button></Show>
     <Show when={kind() === 'divider'}><hr /></Show>
-    <Show when={kind() === 'html'}><div>{'html' in field() ? typeof field().html === 'function' ? field().html(props.context) : field().html : ''}</div></Show>
-    <Show when={kind() === 'custom'}>{(() => { const f = field(); return 'render' in f ? f.render(props.context, f) : null; })()}</Show>
+    <Show when={kind() === 'html'}><div>{'html' in field() ? typeof (field() as { html: unknown }).html === 'function' ? (field() as { html: (ctx: TContext) => string }).html(props.context) : (field() as { html: string }).html : ''}</div></Show>
+    <Show when={kind() === 'custom'}>{(() => { const f = field(); return 'render' in f ? (f as { render: (ctx: TContext, field: typeof f) => import('solid-js').JSX.Element }).render(props.context, f) : null; })()}</Show>
     <Show when={field().description}><small>{field().description}</small></Show>
   </div>;
 }
