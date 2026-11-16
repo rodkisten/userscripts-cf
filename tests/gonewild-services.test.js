@@ -1,4 +1,5 @@
-import { test } from "vitest";
+import { test, vi, afterEach } from "vitest";
+afterEach(() => vi.unstubAllGlobals());
 import assert from "node:assert/strict";
 import { boundedAudio } from "../src/userscripts/gonewild/services.ts";
 import { parseTags } from "../src/userscripts/gonewild/domain.ts";
@@ -10,10 +11,9 @@ test("Soundgasm tags preserve explicit single tags and ignore Markdown links", (
     "Sleep",
   ]);
 });
-test("waveform transport cancels a stream when its byte limit is exceeded", async (t) => {
+test("waveform transport cancels a stream when its byte limit is exceeded", async () => {
   let cancelled = false;
-  t.mock.method(
-    globalThis,
+  vi.stubGlobal(
     "fetch",
     async () =>
       new Response(
