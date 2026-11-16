@@ -6,7 +6,7 @@ import styles, { css } from "./Button.module.css";
 function omitProps<T extends object>(props: T, omitted: readonly (keyof T)[]): Partial<T> {
   const excluded = new Set<PropertyKey>(omitted);
   return new Proxy({} as Partial<T>, {
-    get: (_, key) => excluded.has(key) ? undefined : Reflect.get(props, key),
+    get: (_, key) => (excluded.has(key) ? undefined : Reflect.get(props, key)),
     has: (_, key) => !excluded.has(key) && Reflect.has(props, key),
     ownKeys: () => Reflect.ownKeys(props).filter((key) => !excluded.has(key)),
     getOwnPropertyDescriptor: (_, key) => {
