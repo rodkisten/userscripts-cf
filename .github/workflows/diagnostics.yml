@@ -26,11 +26,11 @@ jobs:
           - check: build
             command: npm run build
           - check: unit-tests
-            command: npx vitest run --exclude '**/runtime-startup-benchmark.test.js'
+            command: npm run build && npx vitest run --exclude '**/runtime-startup-benchmark.test.js'
           - check: lab
             command: npm run test:lab
           - check: hosting
-            command: node build/hosting.mjs
+            command: npm run build:hosting
           - check: lint
             command: npm run lint
     steps:
