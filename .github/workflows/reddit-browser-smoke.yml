@@ -1,0 +1,36 @@
+name: "🧭 Reddit browser smoke"
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: "Browser engine"
+        type: choice
+        options: [chromium, webkit]
+        default: chromium
+  pull_request:
+    paths:
+      - "src/userscripts/gonewild/**"
+      - "tests/browser/reddit-smoke.mjs"
+      - ".github/workflows/reddit-browser-smoke.yml"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    env:
+      BROWSER: ${{ inputs.browser || 'chromium' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install browser runner without changing lockfile
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps "$BROWSER"
+      - name: Smoke test compiled Reddit userscript
+        run: node tests/browser/reddit-smoke.mjs
