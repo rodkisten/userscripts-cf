@@ -45,7 +45,8 @@ test("Reddit network shim remains self-contained after bundling", async () => {
       referenceErrors,
       [],
       "Injected page-world code must not reference closure variables from the compiled bundle. " +
-        "Check pageNetworkShim.toString() and the generated script source. Bundle bytes: " + source.length,
+        "Check pageNetworkShim.toString() and the generated script source. Bundle bytes: " +
+        source.length,
     );
     assert.equal(host.__gwsNetworkInstalled, true, "Reddit page-world network shim initializes");
     await api.dispose();
