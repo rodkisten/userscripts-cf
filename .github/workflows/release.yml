@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 26
           cache: npm
       # The release workflow can recover from package.json updates merged without
       # a matching lockfile. The version commit below persists the repaired lock.

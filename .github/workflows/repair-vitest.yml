@@ -17,7 +17,7 @@ jobs:
           ref: test/migrate-to-vitest
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
       - name: "🧹 Rebuild npm dependency graph from scratch"
         run: |
           node build/migrate-vitest.mjs
