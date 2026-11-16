@@ -1,5 +1,6 @@
 import { createSignal, createMemo, For, Show, onCleanup } from "solid-js";
 import { Portal } from "@solidjs/web";
+import { Button, buttonCss, type ButtonVariant } from "../../button";
 import type {
   AnyRecord,
   Presentation,
@@ -741,35 +742,35 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                           ? "secondary"
                           : "primary");
 
+                    const buttonVariant = (): ButtonVariant => {
+                      const value = variant();
+                      if (value === "danger") return "destructive";
+                      if (value === "primary") return "default";
+                      if (value === "secondary" || value === "outline" || value === "ghost" ||
+                          value === "destructive" || value === "success" || value === "warning" ||
+                          value === "link") return value;
+                      return "default";
+                    };
                     return (
                       <Show when={isVisible()}>
-                        <button
+                        <Button
                           type={action.role === "submit" ? "submit" : "button"}
                           class={surfaceStyles.action}
                           data-action={action.id}
                           data-variant={variant()}
+                          variant={buttonVariant()}
                           aria-label={action.ariaLabel}
                           disabled={isDisabled()}
+                          loading={!!actionLoadingMap()[action.id]}
+                          icon={action.icon ? (typeof action.icon === "string" ? <span>{action.icon}</span> : action.icon) : undefined}
+                          badge={badgeText() ?? undefined}
                           onClick={() => void runAction(action)}
                         >
-                          <Show when={actionLoadingMap()[action.id]}>
-                            <span class={surfaceStyles.spinner} />
-                          </Show>
-                          <Show when={action.icon}>
-                            {typeof action.icon === "string" ? (
-                              <span innerHTML={action.icon as string} />
-                            ) : (
-                              action.icon
-                            )}
-                          </Show>
-                          <span>{action.label}</span>
-                          <Show when={badgeText() != null && badgeText() !== ""}>
-                            <span class={surfaceStyles.badge}>{badgeText()}</span>
-                          </Show>
+                          {action.label}
                           <Show when={action.shortcut}>
                             <kbd class={surfaceStyles.shortcut}>{action.shortcut}</kbd>
                           </Show>
-                        </button>
+                        </Button>
                       </Show>
                     );
                   }}
