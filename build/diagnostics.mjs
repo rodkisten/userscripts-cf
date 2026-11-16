@@ -43,7 +43,7 @@ export function diagnosticPrelude(target, version, scripts) {
             const read = tx.objectStore("snapshots").get("history");
             read.onsuccess = () => {
               if (revision === 0 && Array.isArray(read.result?.records)) {
-                state.history.splice(0, state.history.length, ...read.result.records.slice(0, 250));
+                merge(read.result.records);
                 try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
                 try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
               } else persist();
@@ -53,6 +53,90 @@ export function diagnosticPrelude(target, version, scripts) {
         };
       } catch {}
     }
+
+    // Cross-tab synchronization is opt-in to the same origin and storage partition.
+    const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let sequence = 0;
+    const seen = new Set();
+    let clearedAt = 0;
+    const signalKey = storageKey + ":signal";
+    let channel;
+    const notify = () => {
+      try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
+    };
+    const send = (payload) => {
+      const message = { ...payload, sender: tabId, id: tabId + ":" + (++sequence) };
+      try { channel?.postMessage(message); } catch {}
+      try { root.localStorage.setItem(signalKey, JSON.stringify(message)); } catch {}
+    };
+    const merge = (records) => {
+      if (!Array.isArray(records)) return false;
+      let changed = false;
+      for (const item of records) {
+        if (!item || typeof item.fingerprint !== "string" || !item.lastSeen || Date.parse(item.lastSeen) <= clearedAt) continue;
+        const previous = state.history.find(value => value.fingerprint === item.fingerprint);
+        if (!previous) { state.history.push({ ...item }); changed = true; }
+        else if (item.lastSeen > previous.lastSeen || item.count > previous.count) {
+          previous.count = Math.max(previous.count || 1, item.count || 1);
+          previous.lastSeen = item.lastSeen > previous.lastSeen ? item.lastSeen : previous.lastSeen;
+          changed = true;
+        }
+      }
+      if (changed) {
+        state.history.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+        state.history.length = Math.min(state.history.length, 250);
+      }
+      return changed;
+    };
+    const receive = (message) => {
+      if (!message || message.sender === tabId || typeof message.id !== "string" || seen.has(message.id)) return;
+      seen.add(message.id);
+      if (seen.size > 1000) seen.clear();
+      if (message.type === "clear") {
+        if (!(message.at > clearedAt)) return;
+        clearedAt = message.at;
+        state.history.length = 0;
+        revision++;
+        try { root.localStorage.removeItem(storageKey); } catch {}
+        persist();
+        notify();
+      } else if (message.type === "capture") {
+        const item = message.record;
+        if (!item || Date.parse(item.lastSeen) <= clearedAt) return;
+        const existing = state.history.find(value => value.fingerprint === item.fingerprint);
+        if (existing) {
+          existing.count = (existing.count || 1) + 1;
+          existing.lastSeen = item.lastSeen > existing.lastSeen ? item.lastSeen : existing.lastSeen;
+        } else state.history.unshift({ ...item, count: 1 });
+        state.history.length = Math.min(state.history.length, 250);
+        revision++;
+        try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+        persist();
+        notify();
+      } else if (message.type === "snapshot") {
+        if (merge(message.records)) {
+          revision++;
+          try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+          persist();
+          notify();
+        }
+      } else if (message.type === "hello") send({ type: "snapshot", records: state.history });
+    };
+    try {
+      if (typeof root.BroadcastChannel === "function") {
+        channel = new root.BroadcastChannel(storageKey);
+        channel.onmessage = event => receive(event.data);
+      }
+    } catch {}
+    root.addEventListener("storage", event => {
+      if (event.key === signalKey && event.newValue) {
+        try { receive(JSON.parse(event.newValue)); } catch {}
+      }
+      if (event.key === storageKey && event.newValue) {
+        try { if (merge(JSON.parse(event.newValue))) { revision++; persist(); notify(); } } catch {}
+      }
+    });
+    send({ type: "hello" });
     const redact = (value) => String(value ?? "")
       .replace(/(Bearer\s+)[\w.~-]+/gi, "$1[REDACTED]")
       .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\s]+/gi, "$1[REDACTED]");
@@ -71,7 +155,8 @@ export function diagnosticPrelude(target, version, scripts) {
         revision++;
         try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
         persist();
-        try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
+        send({ type: "capture", record: { ...state.history.find(item => item.fingerprint === fingerprint) } });
+        notify();
       } catch {}
     };
     root.addEventListener("error", event => {
@@ -82,10 +167,12 @@ export function diagnosticPrelude(target, version, scripts) {
     state.export = () => JSON.stringify({ schema: 1, scripts: state.scripts, errors: state.history }, null, 2);
     state.clear = () => {
       state.history.length = 0;
+      clearedAt = Date.now();
       revision++;
       try { root.localStorage.removeItem(storageKey); } catch {}
       persist();
-      try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
+      send({ type: "clear", at: clearedAt });
+      notify();
     };
     root[key] = state;
   }
