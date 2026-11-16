@@ -1,5 +1,5 @@
 import { For } from "solid-js";
-import { css } from "./diagnostic-stack.module.css";
+import classes, { css } from "./diagnostic-stack.module.css";
 
 export type StackFrame = { raw: string; functionName?: string; location?: string; line?: string; column?: string; kind: "header" | "frame" | "text" };
 export function parseDiagnosticStack(stack: string): StackFrame[] {
@@ -11,13 +11,13 @@ export function parseDiagnosticStack(stack: string): StackFrame[] {
   });
 }
 export function DiagnosticStack(props: { stack: string; maxHeight?: string }) {
-  return <div class={css.stack} style={{ "max-height": props.maxHeight || "340px" }} role="region" aria-label="Stack trace destacado">
+  return <><style>{css}</style><div class={classes.stack} style={{ "max-height": props.maxHeight || "340px" }} role="region" aria-label="Stack trace destacado">
     <For each={parseDiagnosticStack(props.stack)}>{frame =>
-      <div class={css[frame.kind]}>
+      <div class={classes[frame.kind]}>
         {frame.kind === "frame"
-          ? <><span class={css.keyword}>at </span><span class={css.function}>{frame.functionName || "(anonymous)"}</span><span class={css.location}> {frame.location}</span><span class={css.number}>:{frame.line}:{frame.column}</span></>
+          ? <><span class={classes.keyword}>at </span><span class={classes.function}>{frame.functionName || "(anonymous)"}</span><span class={classes.location}> {frame.location}</span><span class={classes.number}>:{frame.line}:{frame.column}</span></>
           : frame.raw}
       </div>
     }</For>
-  </div>;
+  </div></>;
 }
