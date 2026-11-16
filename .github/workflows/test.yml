@@ -11,11 +11,6 @@ concurrency:
   group: validate-userscripts-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-concurrency:
-  # One running validation per PR branch; newer pushes cancel stale runs.
-  group: validate-userscripts-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: write
 
