@@ -46,7 +46,7 @@ jobs:
       REPORT_FORMAT: ${{ inputs.format || 'agent' }}
       COMMIT_CHANGES: ${{ inputs.commit_changes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
       - uses: actions/setup-node@v4

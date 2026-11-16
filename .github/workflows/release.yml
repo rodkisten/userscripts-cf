@@ -32,7 +32,7 @@ jobs:
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           persist-credentials: true
