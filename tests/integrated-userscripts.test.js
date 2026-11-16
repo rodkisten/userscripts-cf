@@ -56,7 +56,7 @@ test("GitHub installs one copy control per step, copies full server logs and han
     assert.equal(buttons.length, 2);
     buttons[1].click();
     await pause();
-    assert.match(requested, /\/jobs\/20\/steps\/7\/logs$/);
+    assert.match(requested, /\/actions\/jobs\/20\/logs$/);
     assert.equal(copied, text);
     assert.match(
       host.document.querySelector("[data-ghft-step-host]:last-child")?.textContent ||
@@ -69,7 +69,7 @@ test("GitHub installs one copy control per step, copies full server logs and han
     assert.equal(host.document.querySelectorAll("[data-ghft-step-copy]").length, 2);
     host.document.querySelector("[data-ghft-step-copy] button").click();
     await pause();
-    assert.match(requested, /\/jobs\/21\/steps\/2\/logs$/);
+    assert.match(requested, /\/actions\/jobs\/21\/logs$/);
     await api.dispose();
     assert.equal(host.document.querySelector("[data-ghft-step-copy]"), null);
   } finally {
