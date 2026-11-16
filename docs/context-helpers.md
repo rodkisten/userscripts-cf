@@ -88,3 +88,7 @@ O runtime inicializa o verificador para cada **instalável** (individual, `unifi
 API do contexto: `ctx.updates?.check(true)` força uma consulta, `ctx.updates?.stop()` interrompe o polling e `ctx.updates?.configure({ enabled: false })` desativa o verificador durante a sessão.
 
 **Limitações:** o servidor precisa permitir CORS para o manifesto (o Worker de hosting envia `Access-Control-Allow-Origin: *`); o Safari/Tampermonkey pode bloquear novas abas abertas após uma resposta assíncrona, por isso a instalação pode exigir abertura manual da URL caso o navegador bloqueie a nova aba. O teste real no Safari ainda está pendente.
+
+## Migrating legacy listeners and timers
+
+Use `ctx.listen(target, event, callback)` instead of direct `addEventListener` when the listener belongs to a script; use `ctx.observe(target, callback, options)` instead of constructing a `MutationObserver`, and `ctx.interval(callback, ms)` instead of `setInterval` plus manual `clearInterval`. These resources are disposed with the owning script. Keep native listeners only for short-lived local promises or integration boundaries where explicit teardown is required. Never add duplicate manual disposal for context-owned resources. Instagram Saved and the Reddit adapter are examples of this migration.

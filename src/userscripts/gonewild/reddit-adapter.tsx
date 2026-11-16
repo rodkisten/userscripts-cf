@@ -219,7 +219,7 @@ export function mountReddit(ctx: any, bridge: any) {
   }
   // Only this adapter touches native Reddit nodes. Every script-owned view is
   // rendered and updated by Solid; page observers never build UI children.
-  const observer = new MutationObserver((records) => {
+  ctx.observe(document.documentElement, (records) => {
     if (
       records.some(
         (record) =>
@@ -229,8 +229,7 @@ export function mountReddit(ctx: any, bridge: any) {
       )
     )
       schedule();
-  });
-  observer.observe(document.documentElement, { subtree: true, childList: true });
+  }, { subtree: true, childList: true });
   const disposeEffects = createRoot((dispose) => {
     createEffect(
       () => ({
@@ -254,7 +253,7 @@ export function mountReddit(ctx: any, bridge: any) {
   };
   ctx.listen(window, "popstate", route);
   ctx.listen(window, "pageshow", schedule);
-  const interval = setInterval(route, 1000);
+  ctx.interval(route, 1000);
   const disposeNetwork = installNetwork(KEYS.config, KEYS.seen);
   const params = new URL(location.href).searchParams;
   if (params.has("gws")) {
@@ -271,9 +270,7 @@ export function mountReddit(ctx: any, bridge: any) {
   }
   scan();
   ctx.onDispose(() => {
-    observer.disconnect();
     clearTimeout(scanTimer);
-    clearInterval(interval);
     searchRequest?.abort();
     disposeEffects();
     root?.dispose();

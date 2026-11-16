@@ -364,10 +364,10 @@ export default {
       { id: "sync", label: "Sincronizar", run: () => void run(true) },
       { id: "relay", label: "Configurar Relay", run: configure },
     ]);
-    const timer = setInterval(() => void run(), 60000);
+    // The script context owns the interval and cancels it on route disposal.
+    ctx.interval(() => void run(), 60000);
     ctx.listen(document, "visibilitychange", () => void run());
     ctx.onDispose(() => {
-      clearInterval(timer);
       if (page.__XRodSettingsInstagram?.modules?.saved === settingsApi) {
         delete page.__XRodSettingsInstagram.modules.saved;
       }
