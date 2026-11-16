@@ -58,7 +58,7 @@ test("Instagram retains collection sync API and exposes Solid settings through s
   }
 });
 
-test("Instagram bookmark is a reactive component and follows native save state and route", async () => {
+test("Instagram collection action mounts beside native save and follows the Reel route", async () => {
   const { host, api, errors } = await fixture(
     "instagram-saved",
     "https://www.instagram.com/reel/fixture/",
@@ -66,20 +66,16 @@ test("Instagram bookmark is a reactive component and follows native save state a
   );
   try {
     const native = host.document.getElementById("native");
-    native.addEventListener("click", () => {
-      native.setAttribute("aria-label", "Remover dos salvos");
-      native.querySelector("svg").setAttribute("aria-label", "Remover dos salvos");
-    });
-    const button = host.document.getElementById("rod-instagram-reel-bookmark");
-    assert.ok(button);
-    const path = button.querySelector("path").getAttribute("d");
-    button.click();
-    await pause();
-    assert.equal(button.getAttribute("aria-label"), "Remover dos salvos");
-    assert.notEqual(button.querySelector("path").getAttribute("d"), path);
+    const wrapper = host.document.querySelector("[data-rod-collection-action]");
+    assert.ok(wrapper, "collection action mounts beside the native save control");
+    assert.equal(native.nextElementSibling, wrapper);
+    const button = wrapper.querySelector('button[aria-label="Enviar para coleções"]');
+    assert.ok(button, "Solid renders the collection action");
+    assert.ok(button.querySelector("svg path"));
+    assert.equal(native.getAttribute("aria-label"), "Salvar", "native save is not changed on mount");
     host.history.pushState({}, "", "/");
     await pause(1300);
-    assert.equal(host.document.getElementById("rod-instagram-reel-bookmark"), null);
+    assert.equal(host.document.querySelector("[data-rod-collection-action]"), null);
     assert.deepEqual(errors, []);
     await api.dispose();
   } finally {
