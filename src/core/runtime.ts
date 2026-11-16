@@ -1,3 +1,8 @@
+import { QueryClient } from "@tanstack/query-core";
+import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
+import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
+import type { Accessor } from "solid-js";
+import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
@@ -56,6 +61,10 @@ export interface ScriptContext {
     delete(key: string): Promise<void>;
   };
   menu: any;
+  query: {
+    readonly client: QueryClient;
+    createAsyncOptions(source: Accessor<OptionsSource>, query: Accessor<string>, config?: Omit<AsyncOptionsConfig, 'queryClient'>): ReturnType<typeof createAsyncOptions>;
+  };
   dock: {
     register(actions: DockAction[]): void;
   };
@@ -106,6 +115,14 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
   };
   const uiFeature = (typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__) ? createUIFeature() : null;
   const stores = new Map<string, any>();
+  let queryClient: QueryClient | undefined;
+  const getQueryClient = () => queryClient ??= new QueryClient({ defaultOptions: { queries: { retry: 1, gcTime: 300_000 } } });
+  const queryService = Object.freeze({
+    get client() { return getQueryClient(); },
+    createAsyncOptions(source: Accessor<OptionsSource>, query: Accessor<string>, config: Omit<AsyncOptionsConfig, 'queryClient'> = {}) {
+      return createAsyncOptions(source, query, { ...config, queryClient: getQueryClient() });
+    },
+  });
   const clipboard = (typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__) ? createClipboardFeature(host) : null;
   if (clipboard) (host as any).__RodClipboard = clipboard;
 
@@ -348,6 +365,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     return {
       id: definition.id,
       get events() { return getEvents(); },
+      query: queryService,
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),
@@ -547,6 +565,8 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       listeners.clear();
       for (const store of stores.values()) store.close?.();
       stores.clear();
+      queryClient?.clear();
+      queryClient = undefined;
       bridge.dispose?.();
     },
   };
