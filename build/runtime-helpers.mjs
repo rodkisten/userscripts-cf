@@ -135,7 +135,11 @@ export function runtimeHelpers() {
             !shadowed.has(callee.text) &&
             node.arguments.length === 0
           ) {
-            edits.push({ start: node.getStart(source), end: node.end, value: callee.text === "useRuntimeWorld" ? contextName + ".events.shared" : contextName });
+            edits.push({
+              start: node.getStart(source),
+              end: node.end,
+              value: callee.text === "useRuntimeWorld" ? contextName + ".events.shared" : contextName,
+            });
             return;
           }
           let replacement;
@@ -221,14 +225,22 @@ export function runtimeHelpers() {
       walk(source, null);
       // Reject unresolved free helper calls. A shared module without an
       // explicit context cannot safely guess which userscript owns it.
-      const covered = (node) => edits.some((edit) => edit.start <= node.getStart(source) && edit.end >= node.end);
+      const covered = (node) =>
+        edits.some((edit) => edit.start <= node.getStart(source) && edit.end >= node.end);
       const checkUnresolved = (node, shadowed = new Set()) => {
         const scope = new Set([...shadowed, ...bindings(node)]);
-        if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)
-          && ["useContext", "useRuntime", "useRuntimeWorld"].includes(node.expression.text)
-          && !scope.has(node.expression.text) && !covered(node) && !keep(node)) {
+        if (
+          ts.isCallExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          ["useContext", "useRuntime", "useRuntimeWorld"].includes(node.expression.text) &&
+          !scope.has(node.expression.text) &&
+          !covered(node) &&
+          !keep(node)
+        ) {
           const pos = source.getLineAndCharacterOfPosition(node.getStart(source));
-          this.error(`Unbound ${node.expression.text}() in ${id}:${pos.line + 1}:${pos.character + 1}. Move the call into init(ctx) or pass context explicitly to this module.`);
+          this.error(
+            `Unbound ${node.expression.text}() in ${id}:${pos.line + 1}:${pos.character + 1}. Move the call into init(ctx) or pass context explicitly to this module.`,
+          );
         }
         ts.forEachChild(node, (child) => checkUnresolved(child, scope));
       };
