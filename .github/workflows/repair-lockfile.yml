@@ -2,12 +2,7 @@ name: 🔒 Repair npm lockfile
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/shared-event-bridge
-    paths:
-      - .github/workflows/repair-lockfile.yml
-
+  
 permissions:
   contents: write
 
