@@ -31,7 +31,7 @@ ctx.ui.registerStyles(buttonCss);
 ## Remaining
 
 - [ ] Verify Solid 2 typecheck and build; fix any compile/runtime issues.
-- [ ] Add live examples to existing design-system studio, including variant/size/token editor.
+- [x] Add real Solid Button/ButtonGroup/DropdownButton gallery in the design-system studio (variant, accent, loading and badge controls).\n- [ ] Expand the editor with size, radius and additional advanced variants.
 - [ ] Integrate buttons inside RodMenu's action renderer, not just as menu triggers.
 - [ ] Expose consistent package entry point, dedicated Badge/IconButton and shared theme config.
 - [ ] Add toggle, progress, confirm, copy and advanced button patterns.
