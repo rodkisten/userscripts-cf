@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/query-core";
-import { captureDiagnostic } from "../runtime/diagnostics.js";
+import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { Accessor } from "solid-js";
@@ -47,7 +47,10 @@ export interface DockAction {
 
 export interface ScriptContext {
   id: string;
-  diagnostics: { capture(error: unknown, source?: string): void };
+  diagnostics: {
+    capture(error: unknown, source?: string): void;
+    observeNetwork(): () => void;
+  };
   events: Readonly<Record<string, any> & { dom: DomEventsEngine }>;
   http: any;
   interceptRequest: (handler: any) => void;
@@ -374,7 +377,14 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
 
     return {
       id: definition.id,
-      diagnostics: Object.freeze({ capture: (error: unknown, source = "manual") => captureDiagnostic(error, source, definition.id, host) }),
+      diagnostics: Object.freeze({
+        capture: (error: unknown, source = "manual") => captureDiagnostic(error, source, definition.id, host),
+        observeNetwork: () => {
+          const stop = observeNetworkDiagnostics(host, abort.signal);
+          onDispose(stop);
+          return stop;
+        },
+      }),
       get events() { return getEvents(); },
       query: queryService,
       http: network?.http,
