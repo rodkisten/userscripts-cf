@@ -4,12 +4,11 @@ import { execFileSync } from "node:child_process";
 
 const source = "https://raw.githubusercontent.com/rodkisten/rodkisten.github.io/master";
 const target = path.resolve("src/runtime/vendor");
-// Vendor sources are compatibility snapshots. Never write into src/runtime/solid-ui.
-const allowedFiles = new Set(["menu.ts", "storage.ts", "toaster.js"]);
+// Only menu and storage are synchronized; the sole toaster lives in rod-toaster-solid.
+const allowedFiles = new Set(["menu.ts", "storage.ts"]);
 const files = [
   ["menu/menu.ts", "menu.ts"],
   ["storage/storage.ts", "storage.ts"],
-  ["userscripts/toaster.js", "toaster.js"],
 ];
 await fs.mkdir(target, { recursive: true });
 for (const [remote, local] of files) {
@@ -42,4 +41,4 @@ for (const name of ["menu", "storage"]) {
     { stdio: "inherit" },
   );
 }
-console.log("RodMenu, RodStorage and RodToaster sources synchronized.");
+console.log("RodMenu and RodStorage sources synchronized; Toast uses rod-toaster-solid.");

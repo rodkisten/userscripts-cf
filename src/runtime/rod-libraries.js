@@ -1,14 +1,9 @@
-// Vendored from rodkisten/rodkisten.github.io. Keep these imports ordered.
 import "./vendor/storage.ts";
-import "./vendor/toaster.js";
 import { menu } from "./solid-ui/menu-api";
+import { toast } from "./solid-ui/toaster/rod-toaster-solid/index.js";
 
 export function rodLibraries(host = globalThis) {
   const storage = host.RodStorage;
-  const toaster = host.RodToaster;
-
-  if (!storage?.create || !toaster) {
-    throw new Error("Rod runtime libraries unavailable");
-  }
-  return { storage, toaster, menu };
+  if (!storage?.create) throw new Error("RodStorage unavailable");
+  return { storage, toaster: toast, toast, menu };
 }
