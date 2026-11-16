@@ -111,7 +111,7 @@ NODE
     fi
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
-      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
+      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
         targets="$(node -p 'require("./affected-userscripts.json").targets.join(",")')"
         if [[ -n "$targets" ]]; then
           echo "Building affected targets: $targets"
@@ -132,14 +132,12 @@ NODE
         selected_tests+=("${related_tests[@]}")
       fi
       if [[ -f affected-userscripts.json ]]; then
-        if [[ -f affected-userscripts.json ]]; then
-          mapfile -t affected_ids < <(node -p 'require("./affected-userscripts.json").affected.join("\\n")')
+          mapfile -t affected_ids < <(node -p 'require("./affected-userscripts.json").affected.join("\n")')
           for id in "${affected_ids[@]}"; do
             if [[ -d "tests/userscripts/$id" ]]; then
               while IFS= read -r test_file; do selected_tests+=("$test_file"); done < <(find "tests/userscripts/$id" -type f -name '*.test.*')
             fi
           done
-        fi
       fi
     fi
     # Test files named after a userscript directory are selected automatically.
