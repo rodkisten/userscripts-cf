@@ -132,6 +132,8 @@ export interface ScriptContext {
     subscribe: (callback: (value: unknown) => void) => () => void;
   };
   onDispose: (callback: () => void | Promise<void>) => void;
+  observe(target: Node, callback: MutationCallback, options: MutationObserverInit): MutationObserver;
+  interval(callback: () => void, milliseconds: number): ReturnType<typeof setInterval>;
   listen(
     target: EventTarget,
     event: string,
@@ -655,6 +657,19 @@ export function createRuntime(
         },
       }),
       onDispose,
+      observe(target, callback, options) {
+        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
+        const observer = new host.MutationObserver(callback);
+        observer.observe(target, options);
+        onDispose(() => observer.disconnect());
+        return observer;
+      },
+      interval(callback, milliseconds) {
+        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
+        const timer = host.setInterval(callback, milliseconds);
+        onDispose(() => host.clearInterval(timer));
+        return timer;
+      },
       listen(target, event, callback, options = {}) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
