@@ -140,3 +140,7 @@ The existing RodMenu field variants, trailing actions and media/diagnostic exten
 ## 29 shared field variants
 
 `SHARED_FIELD_TYPES` enumerates all 29 generic discriminants, including expanded text and date variants. The six RodMenu-specific extensions are `media-preview`, `media-picker`, `provider-status`, `request-log`, `debug-json`, and `channel-picker`. `isSharedFieldType` provides a runtime type guard. The RodMenu renderer retains the existing rendering and styling while the shared field type contracts live in `fields.ts`. This registry does not yet replace RodMenu's JSX implementation; do not treat the renderer extraction as complete.
+
+## Extracted generic renderer
+
+The 29 generic field variants now render through `menu/components/SharedFieldRenderer.tsx`, invoked by `RodMenuFieldRenderer.tsx`. RodMenu retains its six media/diagnostic extensions and the public `FieldRenderer` compatibility re-export. The extracted component currently depends on RodMenu field/context types and menu styles; it is an intermediate migration stage, not yet a standalone `form-controls` renderer. Run typecheck, build and regression tests before merge.
