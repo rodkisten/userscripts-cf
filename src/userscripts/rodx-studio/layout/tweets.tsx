@@ -166,14 +166,14 @@ export function initializeDeckCompactLayout(): void {
         identity.dataset[DATA_ATTRS.handle] = handle;
 
         const title = (
-          <strong />
+          <strong>
+            {display.replace(new RegExp("@" + handle + "$", "i"), "").trim()}
+          </strong>
         ) as HTMLElement;
-        title.textContent = display.replace(new RegExp("@" + handle + "$", "i"), "").trim();
 
         const at = (
-          <span />
+          <span>{"@" + handle}</span>
         ) as HTMLSpanElement;
-        at.textContent = "@" + handle;
 
         identity.append(title, at);
 
@@ -406,28 +406,26 @@ export function initializeDeckCompactLayout(): void {
                 if (native) native.click();
                 else location.assign(mini!.href);
               }}
-            />
+            >
+              {image ? (
+                <img
+                  src={
+                    image.getAttribute("src") ||
+                    (image as HTMLImageElement).currentSrc ||
+                    image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] ||
+                    ""
+                  }
+                  alt=""
+                  width="28"
+                  height="28"
+                  decoding="async"
+                />
+              ) : (
+                "●"
+              )}
+            </a>
           ) as HTMLAnchorElement;
 
-          if (image) {
-            const src =
-              image.getAttribute("src") ||
-              (image as HTMLImageElement).currentSrc ||
-              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1];
-
-            const img = (
-              <img
-                src={src || ""}
-                alt=""
-                width="28"
-                height="28"
-                decoding="async"
-              />
-            ) as HTMLImageElement;
-            mini.append(img);
-          } else {
-            mini.textContent = "●";
-          }
           top.prepend(mini);
         }
 
@@ -450,14 +448,12 @@ export function initializeDeckCompactLayout(): void {
             authorLink.dataset[DATA_ATTRS.author] = signature;
 
             const nameEl = (
-              <strong />
+              <strong>{display}</strong>
             ) as HTMLElement;
-            nameEl.textContent = display;
 
             const atEl = (
-              <span />
+              <span>{"@" + key.slice(1)}</span>
             ) as HTMLSpanElement;
-            atEl.textContent = "@" + key.slice(1);
 
             authorLink.append(nameEl, atEl);
           }
