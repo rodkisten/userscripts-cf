@@ -58,7 +58,10 @@ export function diagnosticPrelude(target, version, scripts) {
     const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36);
     let sequence = 0;
     const seen = new Set();
-    let clearedAt = 0;
+    let clearedAt = (() => {
+      try { return Number(root.localStorage.getItem(storageKey + ":clearedAt")) || 0; } catch { return 0; }
+    })();
+    state.history.splice(0, state.history.length, ...state.history.filter(item => Date.parse(item.lastSeen) > clearedAt));
     const signalKey = storageKey + ":signal";
     let channel;
     const notify = () => {
@@ -95,6 +98,7 @@ export function diagnosticPrelude(target, version, scripts) {
       if (message.type === "clear") {
         if (!(message.at > clearedAt)) return;
         clearedAt = message.at;
+        try { root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt)); } catch {}
         state.history.length = 0;
         revision++;
         try { root.localStorage.removeItem(storageKey); } catch {}
@@ -168,6 +172,7 @@ export function diagnosticPrelude(target, version, scripts) {
     state.clear = () => {
       state.history.length = 0;
       clearedAt = Date.now();
+      try { root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt)); } catch {}
       revision++;
       try { root.localStorage.removeItem(storageKey); } catch {}
       persist();
