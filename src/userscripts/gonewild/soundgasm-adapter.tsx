@@ -67,7 +67,11 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   });
   if (data.profile && !data.recordings.length) return; // Keep native empty/unknown profiles usable.
   ctx.pageStyle(css);
-  const native = (show: boolean) => document.body.classList.toggle(styles["gws-sg-enhanced"], !show);
+  // Never blank the host page while Safari hydrates jPlayer or Solid.
+  // The native Soundgasm player remains available as a guaranteed fallback.
+  const native = (_show: boolean) => {
+    document.body.classList.remove(styles["gws-sg-enhanced"]);
+  };
   let failed = false;
   const mount = mountPoint(
     document.body,
