@@ -78,8 +78,9 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     if (!enabled) return null;
     if (pending) return pending;
     const cache = read();
-    // A cached timestamp suppresses requests, not future notifications after reload.
-    if (!force && Date.now() - Math.max(lastChecked, cache.checked ?? 0) < intervalMs) return null;
+    // Check once per page load even if a previous page checked recently.
+    // Otherwise a user may never see the toast after navigating to another page.
+    if (!force && Date.now() - lastChecked < intervalMs) return null;
     pending = (async () => {
       try {
         const raw = options.fetchManifest
