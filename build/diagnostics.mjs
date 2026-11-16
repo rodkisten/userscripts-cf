@@ -25,6 +25,11 @@ export function diagnosticPrelude(target, version, scripts) {
         const batch = durableQueue.splice(0);
         for (const event of batch) store.put(event);
         tx.onabort = () => durableQueue.unshift(...batch);
+        tx.onerror = () => {};
+        tx.oncomplete = () => {
+          // A successful transaction is the durability boundary.
+          if (durableQueue.length) flushDurable();
+        };
       } catch {}
     };
     const persist = () => {
@@ -140,6 +145,8 @@ export function diagnosticPrelude(target, version, scripts) {
         revision++;
         try { root.localStorage.removeItem(storageKey); } catch {}
         persist();
+        durableQueue.length = 0;
+        try { if (database) database.transaction("events", "readwrite").objectStore("events").clear(); } catch {}
         notify();
       } else if (message.type === "capture") {
         const item = message.record;
