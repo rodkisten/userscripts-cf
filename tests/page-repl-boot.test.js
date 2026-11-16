@@ -52,7 +52,10 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     assert.match(uiStyle.fontFamily, /apple-system/);
     // Happy DOM does not reliably resolve stylesheets registered in ShadowRoot.
     // Check the actual shipped CSS rule instead of a synthetic computed style.
-    const replCss = await fs.readFile(new URL("../src/userscripts/page-repl/style.css", import.meta.url), "utf8");
+    const replCss = await fs.readFile(
+      new URL("../src/userscripts/page-repl/style.css", import.meta.url),
+      "utf8",
+    );
     assert.match(replCss, /\\.execution-toolbar\\s*\\{[^}]*position:\\s*sticky\\s*;/);
     assert.match(root.querySelector("header [data-action=run]").textContent, /Executar/);
     // Advanced controls are kept mounted for the shared ctx.menu, even when hidden.
