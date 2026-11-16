@@ -168,32 +168,30 @@ jobs:
         run: |
           gh workflow run prettier-full.yml --ref "$BRANCH" -f target_branch="$BRANCH" -f create_pr=false
           echo "Formatting repair requested for $BRANCH; its commit will trigger validation again." >> "$GITHUB_STEP_SUMMARY"
-      - name: Report formatting failure and repair run
+      - name: Report formatting repair without blocking validation
         if: steps.formatting.outcome == 'failure'
         run: |
           {
-            echo "### ⚠️ Formatting requires repair"
-            echo "Prettier failed. See **Check formatting** for the affected files."
-            echo "The **Dispatch formatting repair** step requests a separate workflow."
-            echo "A successful repair requires a NEW validation run; this run remains failed."
+            echo "### ⚠️ Formatting repair requested (non-blocking)"
+            echo "Prettier found changes. The separate repair workflow handles them."
+            echo "Tests and release validation continue independently of formatting."
           } >> "$GITHUB_STEP_SUMMARY"
-          exit 1
       - name: Restore exact-source validation result
         id: validation_cache
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch'
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
           key: userscripts-validation-v2-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml') }}
       - name: Validate affected code
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
         shell: bash
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: ${{ github.event_name != 'workflow_dispatch' || inputs.scope != 'all' }}
         run: bash build/validate-changed.sh run
       - name: Record successful exact-source validation
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
         shell: bash
         run: |
           mkdir -p .validation-cache
