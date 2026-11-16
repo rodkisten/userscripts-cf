@@ -661,7 +661,7 @@ export function createRuntime(
             listeners.set(definition.id, set);
           }
           set.add(callback);
-          const off = () => set!.delete(callback);
+          const off = () => { set!.delete(callback); };
           onDispose(off);
           return off;
         },
