@@ -43,74 +43,131 @@ import { performAction } from "../ui/events.tsx";
 import { closePanel, openPanel } from "../ui/preferences.js";
 import { renderDock } from "../ui/search-workbench.tsx";
 
-export function initializeRodX_deck_164() {
-  document.addEventListener(
-    "click",
-    (event) => {
-      const el = event.target instanceof Element ? event.target : null;
-      if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) return;
-      if (
-        !state.visual.blockTweetOpen ||
-        event.defaultPrevented ||
-        event.detail === 0 ||
-        (event.button != null && event.button !== 0) ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      )
-        return;
-      const article = el.closest(XDOM.tweet);
-      if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) return;
-      if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) return;
-      if (window.getSelection()?.toString().trim()) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    },
-    true,
-  );
+// ============================================================================
+// Constantes Semânticas e Mensagens
+// ============================================================================
+const EVENT_TYPES = {
+  click: "click",
+  storage: "storage",
+  keydown: "keydown",
+  visibilityChange: "visibilitychange",
+} as const;
+
+const HOTKEYS = {
+  keyS: "KeyS",
+  escape: "Escape",
+} as const;
+
+const MENU_COMMANDS = {
+  openDeck: "Abrir RodX Search Deck",
+  newSearch: "Nova busca avançada",
+  cloudConfig: "Nuvem D1: configurar chave pessoal",
+} as const;
+
+const STUDIO_JOBS = {
+  cloudRefresh: "cloud.refresh",
+  identityNavigation: "identity.navigation",
+  uiDock: "ui.dock",
+  feedsFilters: "feeds.filters",
+  searchNavigation: "search.navigation",
+  profileLists: "profile.lists",
+  tweetsEnhance: "tweets.enhance",
+  linksTelegram: "links.telegram",
+  translationNative: "translation.native",
+  mediaSetup: "media.setup",
+  layoutTweets: "layout.tweets",
+  uiQuickActions: "ui.quick-actions",
+} as const;
+
+const STUDIO_GROUPS = {
+  hygiene: "hygiene",
+  profile: "profile",
+  links: "links",
+  translation: "translation",
+  media: "media",
+  layout: "layout",
+} as const;
+
+const UI_TEXTS = {
+  storageErrorLog: "[RodX] Storage update inválido:",
+} as const;
+
+const FEED_MEDIA_TYPES = {
+  video: "video",
+  image: "image",
+  media: "media",
+  all: "all",
+} as const;
+
+export let databaseSaveTimer: ReturnType<typeof setTimeout> | undefined;
+export let refreshingCloud = false;
+
+// TODO: injetar contexto para substituir helpers  
+// ============================================================================
+// Funções Semânticas Especializadas
+// ============================================================================
+
+export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
+  const el = event.target instanceof Element ? event.target : null;
+  if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) return;
+  if (
+    !state.visual.blockTweetOpen ||
+    event.defaultPrevented ||
+    event.detail === 0 ||
+    (event.button != null && event.button !== 0) ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return;
+  const article = el.closest<HTMLElement>(XDOM.tweet);
+  if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) return;
+  if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) return;
+  if (window.getSelection()?.toString().trim()) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
 }
 
-export function initializeRodX_deck_169() {
-  window.addEventListener("storage", (event) => {
-    if (gmAvailable || event.key !== PREFIX + state.account) return;
-    try {
-      const db = JSON.parse(event.newValue || "null");
-      state.searches = Array.isArray(db?.searches) ? db.searches.map(normalizedSearch).filter(Boolean) : [];
-      state.presets = Array.isArray(db?.presets) ? db.presets.map(normalizedPreset).filter(Boolean) : [];
-      state.selectionList = Array.isArray(db?.selectionList) ? db.selectionList.slice(0, 150) : [];
-      repaint();
-    } catch (err) {
-      console.warn("[RodX] Storage update inválido:", err);
-    }
-  });
-}
-
-export function initializeRodX_deck_170() {
-  window.addEventListener("keydown", (event) => {
-    if (event.altKey && event.shiftKey && event.code === "KeyS") {
-      event.preventDefault();
-      state.open ? performAction("close") : performAction("open");
-    } else if (event.key === "Escape" && state.open) {
-      event.preventDefault();
-      performAction("close");
-    }
-  });
-}
-
-export function initializeRodX_deck_171() {
-  if (typeof GM_registerMenuCommand === "function") {
-    GM_registerMenuCommand("Abrir RodX Search Deck", () => openPanel("saved"));
-    GM_registerMenuCommand("Nova busca avançada", newDraft);
-    GM_registerMenuCommand("Nuvem D1: configurar chave pessoal", () => void CloudSync.configure());
+export function handleCrossTabStorageSynchronization(event: StorageEvent): void {
+  if (gmAvailable || event.key !== PREFIX + state.account) return;
+  try {
+    const db = JSON.parse(event.newValue || "null");
+    state.searches = Array.isArray(db?.searches) ? db.searches.map(normalizedSearch).filter(Boolean) : [];
+    state.presets = Array.isArray(db?.presets) ? db.presets.map(normalizedPreset).filter(Boolean) : [];
+    state.selectionList = Array.isArray(db?.selectionList) ? db.selectionList.slice(0, 150) : [];
+    repaint();
+  } catch (err) {
+    console.warn(UI_TEXTS.storageErrorLog, err);
   }
 }
 
-export function initializeRodX_deck_172() {
-  Studio.services.listAccess = createListAccess(Studio, (q) => SearchAnchors.nativeSearch(q));
+export function handleGlobalKeyboardShortcuts(event: KeyboardEvent): void {
+  if (event.altKey && event.shiftKey && event.code === HOTKEYS.keyS) {
+    event.preventDefault();
+    state.open ? performAction("close") : performAction("open");
+  } else if (event.key === HOTKEYS.escape && state.open) {
+    event.preventDefault();
+    performAction("close");
+  }
 }
 
-export function initializeRodX_deck_173() {
+export function registerTampermonkeyMenuCommands(): void {
+  const win = window as Window & {
+    GM_registerMenuCommand?: (name: string, fn: () => void) => void;
+  };
+  if (typeof win.GM_registerMenuCommand === "function") {
+    win.GM_registerMenuCommand(MENU_COMMANDS.openDeck, () => openPanel("saved"));
+    win.GM_registerMenuCommand(MENU_COMMANDS.newSearch, newDraft);
+    win.GM_registerMenuCommand(MENU_COMMANDS.cloudConfig, () => void CloudSync.configure());
+  }
+}
+
+export function registerStudioListAccessService(): void {
+  Studio.services.listAccess = createListAccess(Studio, (q: string) => SearchAnchors.nativeSearch(q));
+}
+
+export function registerStudioCloudSyncService(): void {
   Studio.services.cloud = {
     syncNow: async () => {
       await CloudSync.onAccountLoaded(state.account, state.accountGeneration);
@@ -120,17 +177,17 @@ export function initializeRodX_deck_173() {
   };
 }
 
-export function initializeRodX_deck_175() {
+export function registerStudioDeckPanelService(): void {
   Studio.services.deck = {
     close: closePanel,
     open: openPanel,
   };
 }
 
-export function initializeRodX_deck_176() {
-  Studio.navigate = (href) => {
+export function configureStudioSpaNavigation(): void {
+  Studio.navigate = (href: string) => {
     const target = new URL(href, location.origin);
-    const anchor = [...document.querySelectorAll(DOM_SELECTORS.linksWithHref)].find(
+    const anchor = Array.from(document.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref)).find(
       (a) =>
         a.pathname === target.pathname &&
         a.search === target.search &&
@@ -141,66 +198,68 @@ export function initializeRodX_deck_176() {
   };
 }
 
-export function initializeRodX_deck_177() {
+export function initializeStudioListsModule(): void {
   if (Studio.enabled("lists")) createListsModule(Studio);
 }
 
-export function initializeRodX_deck_178() {
+export function setupStudioListTypeahead(): void {
   installListTypeahead(Studio);
 }
 
-export function initializeRodX_deck_179() {
+export function setupStudioRecommendationCleanup(): void {
   installRecommendationCleanup(Studio);
 }
 
-export function initializeRodX_deck_180() {
-  Studio.on("lists:dock", () => Studio.queue("ui.dock"));
+export function bindListsDockEventEmitter(): void {
+  Studio.on("lists:dock", () => Studio.queue(STUDIO_JOBS.uiDock));
 }
 
-export function initializeRodX_deck_181() {
+export function bindListsChangeEventEmitter(): void {
   Studio.on("lists:changed", () => {
-    Studio.queue("ui.dock");
-    Studio.queue("ui.quick-actions");
-    Studio.queue("search.navigation");
+    Studio.queue(STUDIO_JOBS.uiDock);
+    Studio.queue(STUDIO_JOBS.uiQuickActions);
+    Studio.queue(STUDIO_JOBS.searchNavigation);
   });
 }
 
-export function initializeRodX_deck_182() {
-  Studio.on("lists:settings", ({ id, settings }) => {
+export function bindListsSettingsEventEmitter(): void {
+  Studio.on("lists:settings", ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
     if (!id) return;
     const scope = "list:" + id;
+    const mediaValue = settings.media;
+    const mappedMedia = ["videos", "native"].includes(mediaValue || "")
+      ? FEED_MEDIA_TYPES.video
+      : mediaValue === "images"
+        ? FEED_MEDIA_TYPES.image
+        : mediaValue === "media"
+          ? FEED_MEDIA_TYPES.media
+          : FEED_MEDIA_TYPES.all;
+
     const config = {
       reposts: !settings.hideReposts,
-      media: ["videos", "native"].includes(settings.media)
-        ? "video"
-        : settings.media === "images"
-          ? "image"
-          : settings.media === "media"
-            ? "media"
-            : "all",
+      media: mappedMedia,
     };
+
     if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) return;
     state.visual.feedFilters = {
       ...state.visual.feedFilters,
       [scope]: config,
     };
     FeedFilters.publish();
-    Studio.queue("feeds.filters");
+    Studio.queue(STUDIO_JOBS.feedsFilters);
   });
 }
 
-export function initializeRodX_deck_183() {
-  if (Studio.enabled("hygiene")) XInterfaceHygiene.install();
+export function setupInterfaceHygieneModule(): void {
+  if (Studio.enabled(STUDIO_GROUPS.hygiene)) XInterfaceHygiene.install();
 }
 
-export let databaseSaveTimer, refreshingCloud;
-
-export function initializeDeckDatabaseSaveTimerAndRefreshingCloud() {
+export function resetDatabaseState(): void {
   databaseSaveTimer = undefined;
   refreshingCloud = false;
 }
 
-export function initializeRodX_deck_185() {
+export function setupDatabaseDirtyAutoSaveWatcher(): void {
   Studio.on("database:dirty", () => {
     if (refreshingCloud) return;
     clearTimeout(databaseSaveTimer);
@@ -210,9 +269,9 @@ export function initializeRodX_deck_185() {
   });
 }
 
-export function initializeRodX_deck_186() {
+export function registerCloudBackgroundSyncJob(): void {
   Studio.register(
-    "cloud.refresh",
+    STUDIO_JOBS.cloudRefresh,
     async () => {
       if (!state.account || refreshingCloud) return;
       refreshingCloud = true;
@@ -226,25 +285,24 @@ export function initializeRodX_deck_186() {
   );
 }
 
-export function initializeRodX_deck_187() {
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) Studio.queue("cloud.refresh");
+export function setupVisibilityChangeCloudSyncTrigger(): void {
+  document.addEventListener(EVENT_TYPES.visibilityChange, () => {
+    if (!document.hidden) Studio.queue(STUDIO_JOBS.cloudRefresh);
   });
 }
 
-export function initializeRodX_deck_188() {
-  Studio.register("identity.navigation", tick, {
+export function registerIdentityNavigationJob(): void {
+  Studio.register(STUDIO_JOBS.identityNavigation, tick, {
     minMs: RUNTIME_LIMITS.bootstrapDeckEvents.identityNavigationIntervalMs,
   });
 }
 
-export function initializeRodX_deck_189() {
+export function registerDockRenderJob(): void {
   Studio.register(
-    "ui.dock",
+    STUDIO_JOBS.uiDock,
     () => {
       ensureDock();
       renderDock();
-      // The old page-wide search launcher is intentionally no longer inserted.
     },
     {
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.dockRefreshIntervalMs,
@@ -252,31 +310,31 @@ export function initializeRodX_deck_189() {
   );
 }
 
-export function initializeRodX_deck_190() {
-  Studio.register("feeds.filters", FeedFilters.scan, {
+export function registerFeedFiltersScanJob(): void {
+  Studio.register(STUDIO_JOBS.feedsFilters, FeedFilters.scan, {
     minMs: RUNTIME_LIMITS.bootstrapDeckEvents.feedFilterScanIntervalMs,
   });
 }
 
-export function initializeRodX_deck_191() {
-  Studio.register("search.navigation", SearchAnchors.scan, {
+export function registerSearchNavigationScanJob(): void {
+  Studio.register(STUDIO_JOBS.searchNavigation, SearchAnchors.scan, {
     minMs: RUNTIME_LIMITS.bootstrapDeckEvents.searchNavigationIntervalMs,
   });
 }
 
-export function initializeRodX_deck_192() {
-  Studio.register("profile.lists", ProfileLists.scan, {
-    group: "profile",
+export function registerProfileListsScanJob(): void {
+  Studio.register(STUDIO_JOBS.profileLists, ProfileLists.scan, {
+    group: STUDIO_GROUPS.profile,
     minMs: RUNTIME_LIMITS.bootstrapDeckEvents.profileListsScanIntervalMs,
   });
 }
 
-export function initializeRodX_deck_193() {
+export function registerTweetEnhancementScanJob(): void {
   Studio.register(
-    "tweets.enhance",
+    STUDIO_JOBS.tweetsEnhance,
     () => {
       applyPostLimit();
-      ResultEnhancer.scan();
+      ResultEnhancer?.scan();
     },
     {
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.tweetEnhancementIntervalMs,
@@ -284,9 +342,9 @@ export function initializeRodX_deck_193() {
   );
 }
 
-export function initializeRodX_deck_194() {
+export function registerLinksAndTelegramScanJob(): void {
   Studio.register(
-    "links.telegram",
+    STUDIO_JOBS.linksTelegram,
     () => {
       Relay.scan();
       ImmersiveDownload.scan();
@@ -295,22 +353,22 @@ export function initializeRodX_deck_194() {
       SocialAppLinks.scan();
     },
     {
-      group: "links",
+      group: STUDIO_GROUPS.links,
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.socialLinksScanIntervalMs,
     },
   );
 }
 
-export function initializeRodX_deck_195() {
-  Studio.register("translation.native", NativeTranslation.scan, {
-    group: "translation",
+export function registerNativeTranslationScanJob(): void {
+  Studio.register(STUDIO_JOBS.translationNative, NativeTranslation.scan, {
+    group: STUDIO_GROUPS.translation,
     minMs: RUNTIME_LIMITS.bootstrapDeckEvents.nativeTranslationIntervalMs,
   });
 }
 
-export function initializeRodX_deck_196() {
+export function registerMediaExperienceSetupJob(): void {
   Studio.register(
-    "media.setup",
+    STUDIO_JOBS.mediaSetup,
     () => {
       SeekPreviews.scan();
       VideoExperience.scan();
@@ -320,30 +378,158 @@ export function initializeRodX_deck_196() {
       ImmersiveSwipe.scan();
     },
     {
-      group: "media",
+      group: STUDIO_GROUPS.media,
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
 }
 
-export function initializeRodX_deck_197() {
+export function registerLayoutTweetsAndChromeScanJob(): void {
   Studio.register(
-    "layout.tweets",
+    STUDIO_JOBS.layoutTweets,
     () => {
       CompactLayout.scan();
       ScrollChrome.scan();
     },
     {
-      group: "layout",
+      group: STUDIO_GROUPS.layout,
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.quickActionsScanIntervalMs,
     },
   );
 }
 
-export function initializeRodX_deck_198() {
+export function executeInitialIdentityTick(): void {
   tick();
 }
 
-export function initializeRodX_deck_199() {
+export function startStudioRuntimeEngine(): void {
   Studio.start();
+}
+
+// ============================================================================
+// Funções de Inicialização (Referências Limpas)
+// ============================================================================
+
+export function initializeRodX_deck_164(): void {
+  document.addEventListener(EVENT_TYPES.click, blockNativeTweetOpenOnClicks, true);
+}
+
+export function initializeRodX_deck_169(): void {
+  window.addEventListener(EVENT_TYPES.storage, handleCrossTabStorageSynchronization);
+}
+
+export function initializeRodX_deck_170(): void {
+  window.addEventListener(EVENT_TYPES.keydown, handleGlobalKeyboardShortcuts);
+}
+
+export function initializeRodX_deck_171(): void {
+  registerTampermonkeyMenuCommands();
+}
+
+export function initializeRodX_deck_172(): void {
+  registerStudioListAccessService();
+}
+
+export function initializeRodX_deck_173(): void {
+  registerStudioCloudSyncService();
+}
+
+export function initializeRodX_deck_175(): void {
+  registerStudioDeckPanelService();
+}
+
+export function initializeRodX_deck_176(): void {
+  configureStudioSpaNavigation();
+}
+
+export function initializeRodX_deck_177(): void {
+  initializeStudioListsModule();
+}
+
+export function initializeRodX_deck_178(): void {
+  setupStudioListTypeahead();
+}
+
+export function initializeRodX_deck_179(): void {
+  setupStudioRecommendationCleanup();
+}
+
+export function initializeRodX_deck_180(): void {
+  bindListsDockEventEmitter();
+}
+
+export function initializeRodX_deck_181(): void {
+  bindListsChangeEventEmitter();
+}
+
+export function initializeRodX_deck_182(): void {
+  bindListsSettingsEventEmitter();
+}
+
+export function initializeRodX_deck_183(): void {
+  setupInterfaceHygieneModule();
+}
+
+export function initializeDeckDatabaseSaveTimerAndRefreshingCloud(): void {
+  resetDatabaseState();
+}
+
+export function initializeRodX_deck_185(): void {
+  setupDatabaseDirtyAutoSaveWatcher();
+}
+
+export function initializeRodX_deck_186(): void {
+  registerCloudBackgroundSyncJob();
+}
+
+export function initializeRodX_deck_187(): void {
+  setupVisibilityChangeCloudSyncTrigger();
+}
+
+export function initializeRodX_deck_188(): void {
+  registerIdentityNavigationJob();
+}
+
+export function initializeRodX_deck_189(): void {
+  registerDockRenderJob();
+}
+
+export function initializeRodX_deck_190(): void {
+  registerFeedFiltersScanJob();
+}
+
+export function initializeRodX_deck_191(): void {
+  registerSearchNavigationScanJob();
+}
+
+export function initializeRodX_deck_192(): void {
+  registerProfileListsScanJob();
+}
+
+export function initializeRodX_deck_193(): void {
+  registerTweetEnhancementScanJob();
+}
+
+export function initializeRodX_deck_194(): void {
+  registerLinksAndTelegramScanJob();
+}
+
+export function initializeRodX_deck_195(): void {
+  registerNativeTranslationScanJob();
+}
+
+export function initializeRodX_deck_196(): void {
+  registerMediaExperienceSetupJob();
+}
+
+export function initializeRodX_deck_197(): void {
+  registerLayoutTweetsAndChromeScanJob();
+}
+
+export function initializeRodX_deck_198(): void {
+  executeInitialIdentityTick();
+}
+
+export function initializeRodX_deck_199(): void {
+  startStudioRuntimeEngine();
 }
