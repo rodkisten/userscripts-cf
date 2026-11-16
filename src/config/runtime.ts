@@ -2,10 +2,10 @@
 export type DeepReadonly<T> = T extends (infer R)[]
   ? ReadonlyArray<DeepReadonly<R>>
   : T extends Function
-  ? T
-  : T extends object
-  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-  : T;
+    ? T
+    : T extends object
+      ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+      : T;
 
 // Operational limits, durations and protocol values. Numeric loop/index arithmetic stays local.
 const freeze = <T>(value: T): DeepReadonly<T> => {
