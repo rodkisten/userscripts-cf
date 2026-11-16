@@ -75,3 +75,7 @@ Run [Button · Typecheck & Build](https://github.com/rodkisten/userscripts-cf/ac
 ## Studio token controls
 
 The interactive Studio now exposes button size (sm/md/lg), border radius (0–28px) and height (28–64px). These are applied as CSS custom properties on the gallery container; the JSON preview reflects the current values. The preview requires a successful Studio build and is not yet browser-verified.
+
+## Studio presets and CSS export
+
+Presets: Compact (30px/6px/blue), Default (38px/10px/purple), Touch (48px/16px/teal). Accent is reactive. **Copiar CSS** exports the current token declarations through Clipboard API and reports success or permission failure via an accessible status message. Browser validation remains pending.

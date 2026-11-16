@@ -429,12 +429,31 @@ if (buttonMount) {
     const [size, setSize] = createSignal<"sm" | "md" | "lg">("md");
     const [radius, setRadius] = createSignal(10);
     const [height, setHeight] = createSignal(38);
+    const [accent, setAccent] = createSignal("#7c3aed");
+    const [copyStatus, setCopyStatus] = createSignal("");
+    const applyPreset = (preset: "compact" | "default" | "touch") => {
+      const presets = {
+        compact: { size: "sm", radius: 6, height: 30, accent: "#2563eb" },
+        default: { size: "md", radius: 10, height: 38, accent: "#7c3aed" },
+        touch: { size: "lg", radius: 16, height: 48, accent: "#0d9488" },
+      } as const;
+      const selected = presets[preset];
+      setSize(selected.size); setRadius(selected.radius); setHeight(selected.height); setAccent(selected.accent);
+      setCopyStatus("");
+    };
+    const exportTokens = async () => {
+      const tokens = { "--button-accent": accent(), "--button-radius": `${radius()}px`, "--button-height": `${height()}px`, "--button-height-sm": `${height()}px`, "--button-height-lg": `${height()}px` };
+      const cssText = ":root {\n" + Object.entries(tokens).map(([key, value]) => `  ${key}: ${value};`).join("\n") + "\n}";
+      try { await navigator.clipboard.writeText(cssText); setCopyStatus("CSS copiado"); }
+      catch { setCopyStatus("Falha ao copiar CSS. Verifique as permissões."); }
+    };
     return (
       <div
         class="card"
         style={{
           display: "grid",
           gap: "18px",
+          "--button-accent": accent(),
           "--button-radius": `${radius()}px`,
           "--button-height": `${height()}px`,
           "--button-height-sm": `${height()}px`,
@@ -442,6 +461,19 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
+          <label>Preset{" "}
+            <select value="" onChange={(e) => {
+              const value = e.currentTarget.value;
+              if (value) applyPreset(value as "compact" | "default" | "touch");
+            }}>
+              <option value="">Personalizado</option>
+              <option value="compact">Compacto</option>
+              <option value="default">Padrão</option>
+              <option value="touch">Touch</option>
+            </select>
+          </label>
+          <button type="button" onClick={() => void exportTokens()}>Copiar CSS</button>
+          <span role="status" aria-live="polite">{copyStatus()}</span>
           <label>
             Variante{" "}
             <select
@@ -491,8 +523,8 @@ if (buttonMount) {
             Accent{" "}
             <input
               type="color"
-              value="#7c3aed"
-              onInput={(e) => buttonMount?.style.setProperty("--button-accent", e.currentTarget.value)}
+              value={accent()}
+              onInput={(e) => setAccent(e.currentTarget.value)}
             />
           </label>
         </div>
