@@ -234,14 +234,23 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
         if (captures.has(capture)) return;
         
         const once = typeof options === "object" && options?.once;
-        const listener: EventListener = once
-          ? function (this: EventTarget, ...args: any[]) {
-              domEvents.remove(target, type, callback, options);
-              return typeof callback === "function"
-                ? (callback as Function).apply(this, args)
-                : (callback as EventListenerObject).handleEvent(...(args as [Event]));
+        const listener: EventListener = function (this: EventTarget, event: Event) {
+          if (once) domEvents.remove(target, type, callback, options);
+          try {
+            const result: unknown = typeof callback === "function"
+              ? callback.call(this, event)
+              : callback.handleEvent(event);
+            if (result && typeof (result as Promise<unknown>).then === "function") {
+              void Promise.resolve(result).catch(error => {
+                captureDiagnostic(error, `dom.event:${type}`, definition.id, host);
+                console.error(`[Userscripts CF: ${definition.id}]`, error);
+              });
             }
-          : (callback as EventListener);
+          } catch (error) {
+            captureDiagnostic(error, `dom.event:${type}`, definition.id, host);
+            throw error;
+          }
+        };
 
         target.addEventListener(type, listener, options);
         captures.set(capture, { listener, options });
