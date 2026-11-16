@@ -9,10 +9,12 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   // Bound the wait and continue using native page metadata on failure.
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const context = await Promise.race([
-    Promise.resolve().then(() => bridge.readLocation()).catch((error: unknown) => {
-      console.warn("[GoneWildStudio] Optional Soundgasm context unavailable", error);
-      return null;
-    }),
+    Promise.resolve()
+      .then(() => bridge.readLocation())
+      .catch((error: unknown) => {
+        console.warn("[GoneWildStudio] Optional Soundgasm context unavailable", error);
+        return null;
+      }),
     new Promise<null>((resolve) => {
       timeout = setTimeout(() => resolve(null), 1500);
     }),
