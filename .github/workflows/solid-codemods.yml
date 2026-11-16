@@ -42,10 +42,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26'
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
       - name: Run selected codemods and capture each exit status
@@ -108,7 +108,7 @@ jobs:
           if test -f reports/status.txt; then cat reports/status.txt >> "$GITHUB_STEP_SUMMARY"; fi
           echo "Typecheck: ${{ steps.typecheck.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Tests: ${{ steps.tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: solid-codemods-report
