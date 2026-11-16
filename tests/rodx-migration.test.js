@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { parse } from "@babel/parser";
 import { format } from "prettier";
+import postcssPlugin from "prettier/plugins/postcss";
 
 const root = new URL("../src/userscripts/rodx-studio/", import.meta.url);
 const baseline = JSON.parse(
@@ -73,7 +74,7 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
             .readFile(new URL(record.styleFile.replace(/\.css$/, ".module.css"), root), "utf8")
             .catch(() => fs.readFile(new URL(record.styleFile, root), "utf8")),
           {
-            parser: "css",
+            parser: "css", plugins: [postcssPlugin],
             printWidth: 110,
           },
         );
