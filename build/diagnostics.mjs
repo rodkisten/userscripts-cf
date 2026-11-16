@@ -81,9 +81,10 @@ export function diagnosticPrelude(target, version, scripts) {
         if (!item || typeof item.fingerprint !== "string" || !item.lastSeen || Date.parse(item.lastSeen) <= clearedAt) continue;
         const previous = state.history.find(value => value.fingerprint === item.fingerprint);
         if (!previous) { state.history.push({ ...item }); changed = true; }
-        else if (item.lastSeen > previous.lastSeen || item.count > previous.count) {
+        else if (item.writerCounts || previous.writerCounts || item.lastSeen > previous.lastSeen || item.count > previous.count) {
           const counts = { ...(previous.writerCounts || {}) };
           for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          if (!Object.keys(counts).length && previous.count) counts.legacy = previous.count;
           previous.writerCounts = counts;
           previous.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(previous.count || 1, item.count || 1);
           previous.lastSeen = item.lastSeen > previous.lastSeen ? item.lastSeen : previous.lastSeen;
@@ -116,6 +117,7 @@ export function diagnosticPrelude(target, version, scripts) {
         if (existing) {
           const counts = { ...(existing.writerCounts || {}) };
           for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          if (!Object.keys(counts).length && existing.count) counts.legacy = existing.count;
           existing.writerCounts = counts;
           existing.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(existing.count || 1, item.count || 1);
           existing.lastSeen = item.lastSeen > existing.lastSeen ? item.lastSeen : existing.lastSeen;
