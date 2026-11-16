@@ -20,3 +20,23 @@ test("public distribution serves JS with fresh metadata and HEAD support", async
   assert.equal((await worker.fetch(new Request("https://test/__proto__"))).status, 404);
   assert.equal((await worker.fetch(new Request("https://test/", { method: "POST" }))).status, 405);
 });
+
+test("SolidJS playground assets have correct MIME types", async () => {
+  const app = createHandler(
+    {
+      "playground/form-controls.html": '<script type="module" src="/playground/form-controls.js"></script>',
+      "playground/form-controls.js": 'console.log("solid");',
+      "playground/form-controls.css": '.root{color:red}',
+    },
+    { version: "test" },
+  );
+  for (const [file, expected] of [
+    ["playground/form-controls.html", /text\/html/],
+    ["playground/form-controls.js", /application\/javascript/],
+    ["playground/form-controls.css", /text\/css/],
+  ]) {
+    const response = await app.fetch(new Request("https://test/" + file));
+    assert.equal(response.status, 200, file);
+    assert.match(response.headers.get("content-type"), expected, file);
+  }
+});
