@@ -5,110 +5,208 @@ import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lay
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 
-export let CompactLayout;
+// ============================================================================
+// Constantes Semânticas e Mensagens
+// ============================================================================
+const ELEMENT_IDS = {
+  compactLayoutStyle: "rodx-compact-layout-css",
+} as const;
 
-export function initializeDeckCompactLayout() {
+const CSS_CLASSES = {
+  profileName: "rodx-profile-name",
+  profileIdentity: "rodx-profile-identity",
+  profileIdentitySource: "rodx-profile-identity-source",
+  profileHandle: "rodx-profile-handle",
+  profileDetail: "rodx-profile-detail",
+  profileMore: "rodx-profile-more",
+  detailOpen: "rodx-detail-open",
+  profileOverlayRow: "rodx-profile-overlay-row",
+  profileAvatarSlot: "rodx-profile-avatar-slot",
+  profileActionSlot: "rodx-profile-action-slot",
+  repeatAuthor: "rodx-repeat-author",
+  avatarGutter: "rodx-avatar-gutter",
+  edgeContent: "rodx-edge-content",
+  glassActions: "rodx-glass-actions",
+  tweetTopbar: "rodx-tweet-topbar",
+  miniAvatar: "rodx-mini-avatar",
+  topbarAuthor: "rodx-topbar-author",
+  authorInTopbar: "rodx-author-in-topbar",
+  rxTweetsClone: "rx-tweets-clone",
+  rxTweetsToggle: "rx-tweets-toggle",
+} as const;
+
+const DATA_ATTRS = {
+  repeat: "rodxRepeat",
+  long: "rodxLong",
+  handle: "handle",
+  author: "author",
+  proxy: "proxy",
+  expanded: "aria-expanded",
+  pressed: "aria-pressed",
+} as const;
+
+const UI_TEXTS = {
+  moreText: "Ver mais",
+  lessText: "Ver menos",
+  openProfileTitle: "Abrir perfil",
+  openProfileAriaPrefix: "Abrir perfil ",
+  repostLabel: "Repostar",
+  likeLabel: "Curtir",
+  bookmarkLabel: "Salvar",
+  telegramLabel: "Enviar ao Telegram",
+} as const;
+
+const REGEX_PATTERNS = {
+  profilePath: /^\/([a-zA-Z0-9_]{1,15})(?:\/(?:media|with_replies|highlights|articles))?\/?$/,
+  excludedProfileHandles: /^(home|search|explore|notifications|messages|settings|i|compose|lists|login|signup|communities)$/i,
+  unfollowedRegex: /^(?:não é seguido por ninguém que você segue|not followed by anyone you.re following)$/i,
+  backgroundImageUrl: /url\(["']?([^"')]+)["']?\)/,
+  handleValidation: /^\/[A-Za-z0-9_]{1,15}$/,
+} as const;
+
+const PROXY_ACTIONS = [
+  { action: "repost", label: UI_TEXTS.repostLabel, selector: '[data-testid="retweet"],[data-testid="unretweet"]', icon: "↻" },
+  { action: "like", label: UI_TEXTS.likeLabel, selector: '[data-testid="like"],[data-testid="unlike"]', icon: "♡" },
+  { action: "bookmark", label: UI_TEXTS.bookmarkLabel, selector: '[data-testid="bookmark"],[data-testid="removeBookmark"],.rodx-bookmark-btn', icon: "♧" },
+  { action: "telegram", label: UI_TEXTS.telegramLabel, selector: "button.rodx-tg-action:not(.rodx-tg-video-overlay)", icon: "➤" },
+] as const;
+
+export interface CompactLayoutAPI {
+  scan(): void;
+}
+
+export type CompactLayoutController = CompactLayoutAPI | undefined;
+
+export let CompactLayout: CompactLayoutController;
+
+export function initializeDeckCompactLayout(): void {
   CompactLayout = (() => {
-    let last = 0,
-      profileKey = "";
-    const marked = new Set<any>();
-    const add = (el, name) => {
+    let last = 0;
+    let profileKey = "";
+    const marked = new Set<HTMLElement>();
+
+    const add = (el: HTMLElement | null, name: string): void => {
       if (el) {
         el.classList.add(name);
         marked.add(el);
       }
     };
-    const profilePath = () => {
-      const match = location.pathname.match(
-        /^\/([a-zA-Z0-9_]{1,15})(?:\/(?:media|with_replies|highlights|articles))?\/?$/,
-      );
-      return match &&
-        !/^(home|search|explore|notifications|messages|settings|i|compose|lists|login|signup|communities)$/i.test(
-          match[1],
-        )
-        ? match[1]
-        : "";
+
+    const profilePath = (): string => {
+      const match = location.pathname.match(REGEX_PATTERNS.profilePath);
+      return match && !REGEX_PATTERNS.excludedProfileHandles.test(match[1]) ? match[1] : "";
     };
-    function childOf(el, parent) {
-      while (el?.parentElement && el.parentElement !== parent) el = el.parentElement;
-      return el?.parentElement === parent ? el : null;
+
+    function childOf(el: HTMLElement | null, parent: HTMLElement): HTMLElement | null {
+      let current = el;
+      while (current?.parentElement && current.parentElement !== parent) {
+        current = current.parentElement;
+      }
+      return current?.parentElement === parent ? current : null;
     }
-    function style() {
-      if (document.getElementById("rodx-compact-layout-css")) return;
-      const node = (<style />) as HTMLStyleElement;
-      node.id = "rodx-compact-layout-css";
-      node.textContent = extractedCSS1;
+
+    function style(): void {
+      if (document.getElementById(ELEMENT_IDS.compactLayoutStyle)) return;
+      const node = (
+        <style id={ELEMENT_IDS.compactLayoutStyle}>{extractedCSS1}</style>
+      ) as HTMLStyleElement;
       document.head.append(node);
     }
-    function resetProfile() {
+
+    function resetProfile(): void {
       for (const el of marked) {
         if (!el.isConnected) {
           marked.delete(el);
           continue;
         }
-        for (const name of [...el.classList])
-          if (name.startsWith("rodx-profile-") || name === "rodx-detail-open") el.classList.remove(name);
+        for (const name of Array.from(el.classList)) {
+          if (name.startsWith("rodx-profile-") || name === CSS_CLASSES.detailOpen) {
+            el.classList.remove(name);
+          }
+        }
       }
       document
         .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileIdentityControls)
         .forEach((el) => el.remove());
     }
-    function profile() {
+
+    function profile(): void {
       const handle = profilePath();
       if (handle !== profileKey) {
         resetProfile();
         profileKey = handle;
       }
       if (!handle) return;
+
       const primary =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
       if (!primary) return;
+
       const name = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileUserName);
       if (!name || name.closest(DOM_SELECTORS.articles)) return;
-      add(name, "rodx-profile-name");
+      add(name, CSS_CLASSES.profileName);
+
       let identity = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileIdentity);
       if (!identity) {
-        identity = (<div />) as HTMLDivElement;
-        identity.className = "rodx-profile-identity";
+        identity = (
+          <div class={CSS_CLASSES.profileIdentity} />
+        ) as HTMLDivElement;
         name.before(identity);
       }
+
       const display =
-        (name.innerText || name.textContent)
+        (name.innerText || name.textContent || "")
           .split("\n")
           .map((v) => v.trim())
           .find((v) => v && !v.startsWith("@")) || handle;
-      if (identity.dataset.handle !== handle) {
+
+      if (identity.dataset[DATA_ATTRS.handle] !== handle) {
         identity.replaceChildren();
-        identity.dataset.handle = handle;
-        const title = (<strong />) as HTMLElement;
+        identity.dataset[DATA_ATTRS.handle] = handle;
+
+        const title = (
+          <strong />
+        ) as HTMLElement;
         title.textContent = display.replace(new RegExp("@" + handle + "$", "i"), "").trim();
-        const at = (<span />) as HTMLSpanElement;
+
+        const at = (
+          <span />
+        ) as HTMLSpanElement;
         at.textContent = "@" + handle;
+
         identity.append(title, at);
+
         const badge = name.querySelector<HTMLElement>(DOM_SELECTORS.svgIcons);
         if (badge) {
-          const clone = badge.cloneNode(true);
-          applyComponentStyle(clone, "rx-tweets-clone", false);
-          title.append(clone);
+          const badgeClone = badge.cloneNode(true) as HTMLElement;
+          applyComponentStyle(badgeClone, CSS_CLASSES.rxTweetsClone, false);
+          title.append(badgeClone);
         }
       }
-      add(name, "rodx-profile-identity-source");
-      const handleNode = [...name.querySelectorAll<HTMLElement>(DOM_SELECTORS.textSpansAndDivs)]
-        .filter((el) => el.textContent.trim().toLowerCase() === "@" + handle.toLowerCase())
+
+      add(name, CSS_CLASSES.profileIdentitySource);
+
+      const handleNode = Array.from(name.querySelectorAll<HTMLElement>(DOM_SELECTORS.textSpansAndDivs))
+        .filter((el) => (el.textContent || "").trim().toLowerCase() === "@" + handle.toLowerCase())
         .sort(
           (a, b) =>
             a.querySelectorAll<HTMLElement>(DOM_SELECTORS.allElements).length -
             b.querySelectorAll<HTMLElement>(DOM_SELECTORS.allElements).length,
         )[0];
+
       if (handleNode) {
         let branch = handleNode;
-        while (branch.parentElement && branch.parentElement !== name) branch = branch.parentElement;
-        add(branch, "rodx-profile-handle");
+        while (branch.parentElement && branch.parentElement !== name) {
+          branch = branch.parentElement;
+        }
+        add(branch, CSS_CLASSES.profileHandle);
       }
-      const details = [
-        ...primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.profileSocialDetails),
-      ].filter((el) => !el.closest(DOM_SELECTORS.articles));
+
+      const details = Array.from(
+        primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.profileSocialDetails),
+      ).filter((el) => !el.closest(DOM_SELECTORS.articles));
+
       for (const link of primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.mutualFollowerLinks)) {
         if (!link.closest(DOM_SELECTORS.articles)) details.push(link);
       }
@@ -117,69 +215,92 @@ export function initializeDeckCompactLayout() {
       }
       for (const el of primary.querySelectorAll<HTMLElement>(DOM_SELECTORS.textDivsAndSpans)) {
         if (el.closest(DOM_SELECTORS.articles) || el.childElementCount > 2) continue;
-        if (
-          /^(?:não é seguido por ninguém que você segue|not followed by anyone you.re following)$/i.test(
-            el.textContent.trim(),
-          )
-        )
+        if (REGEX_PATTERNS.unfollowedRegex.test((el.textContent || "").trim())) {
           details.push(el);
+        }
       }
-      const following = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followingLinks),
-        followers = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followerLinks);
+
+      const following = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followingLinks);
+      const followers = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followerLinks);
+
       if (following && followers) {
         let row = following.parentElement;
-        while (row && row !== primary && !row.contains(followers)) row = row.parentElement;
+        while (row && row !== primary && !row.contains(followers)) {
+          row = row.parentElement;
+        }
         if (
           row &&
           row !== primary &&
           !row.contains(name) &&
           !row.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileDescription)
-        )
+        ) {
           details.push(row);
+        }
       }
-      for (const el of details) add(el, "rodx-profile-detail");
+
+      for (const el of details) {
+        add(el, CSS_CLASSES.profileDetail);
+      }
+
       let toggle = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileMoreButton);
       if (!toggle && details.length) {
-        toggle = (<button />) as HTMLButtonElement;
-        toggle.className = "rodx-profile-more";
-        (toggle as HTMLButtonElement).type = "button";
-        toggle.textContent = "Ver mais";
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.onclick = (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const open = toggle.getAttribute("aria-expanded") !== "true";
-          toggle.setAttribute("aria-expanded", String(open));
-          toggle.textContent = open ? "Ver menos" : "Ver mais";
-          primary
-            .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
-            .forEach((el) => el.classList.toggle("rodx-detail-open", open));
-        };
+        toggle = (
+          <button
+            type="button"
+            class={CSS_CLASSES.profileMore}
+            aria-expanded="false"
+            onClick={(event: MouseEvent) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
+              toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
+              toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
+              primary
+                .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
+                .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
+            }}
+          >
+            {UI_TEXTS.moreText}
+          </button>
+        ) as HTMLButtonElement;
+
         name.after(toggle);
       }
-      if (toggle) applyComponentStyle(toggle, "rx-tweets-toggle", false);
-      const open = toggle?.getAttribute("aria-expanded") === "true";
-      details.forEach((el) => el.classList.toggle("rodx-detail-open", open));
+
+      if (toggle) applyComponentStyle(toggle, CSS_CLASSES.rxTweetsToggle, false);
+      
+      const isOpen = toggle?.getAttribute(DATA_ATTRS.expanded) === "true";
+      details.forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
+
       const avatar = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profilePhotoLinkByHandle(handle));
       const cover = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileCoverLinkByHandle(handle));
       const action =
         primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.userActions) ||
         primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followToggleButtons);
+
       if (!avatar || !cover || !action) return;
-      let row = avatar.parentElement;
-      while (row && row !== primary && !row.contains(action)) row = row.parentElement;
-      if (!row || row === primary || row.contains(name) || row.contains(cover)) return;
-      const avatarSlot = childOf(avatar, row),
-        actionSlot = childOf(action, row);
+
+      let rowNode = avatar.parentElement;
+      while (rowNode && rowNode !== primary && !rowNode.contains(action)) {
+        rowNode = rowNode.parentElement;
+      }
+
+      if (!rowNode || rowNode === primary || rowNode.contains(name) || rowNode.contains(cover)) return;
+
+      const avatarSlot = childOf(avatar, rowNode);
+      const actionSlot = childOf(action, rowNode);
+
       if (!avatarSlot || !actionSlot || avatarSlot === actionSlot) return;
-      add(row, "rodx-profile-overlay-row");
-      add(avatarSlot, "rodx-profile-avatar-slot");
-      add(actionSlot, "rodx-profile-action-slot");
+
+      add(rowNode, CSS_CLASSES.profileOverlayRow);
+      add(avatarSlot, CSS_CLASSES.profileAvatarSlot);
+      add(actionSlot, CSS_CLASSES.profileActionSlot);
     }
-    function author(article) {
-      const user = article.querySelector(NATIVE_X_SELECTORS.tweetAuthorName);
-      const link = [...(user?.querySelectorAll(DOM_SELECTORS.linksWithHref) || [])].find((a) =>
-        /^\/[A-Za-z0-9_]{1,15}$/.test(a.getAttribute("href") || ""),
+
+    function author(article: HTMLElement) {
+      const user = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAuthorName);
+      const link = Array.from(user?.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref) || []).find((a) =>
+        REGEX_PATTERNS.handleValidation.test(a.getAttribute("href") || ""),
       );
       return {
         user,
@@ -187,7 +308,8 @@ export function initializeDeckCompactLayout() {
         key: link?.getAttribute("href")?.toLowerCase() || "",
       };
     }
-    function tweets() {
+
+    function tweets(): void {
       let previous = "";
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (
@@ -196,176 +318,213 @@ export function initializeDeckCompactLayout() {
           getComputedStyle(article).display === "none"
         )
           continue;
+
         const { user, link, key } = author(article);
-        const context = article.querySelector(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
+        const context = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
         const identity = key ? key + ":" + context : "";
-        article.dataset.rodxRepeat = identity && identity === previous ? "1" : "0";
+
+        article.dataset[DATA_ATTRS.repeat] = identity && identity === previous ? "1" : "0";
         previous = identity;
-        article.dataset.rodxLong = article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
+        article.dataset[DATA_ATTRS.long] = article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
+
         article
-          .querySelectorAll(RODX_SELECTORS.repeatedAuthor)
-          .forEach((el) => el.classList.remove("rodx-repeat-author"));
-        if (user)
-          for (const a of user.querySelectorAll(DOM_SELECTORS.linksWithHref))
-            if (a.getAttribute("href")?.toLowerCase() === key) a.classList.add("rodx-repeat-author");
-        const avatar =
-          article.querySelector(NATIVE_X_SELECTORS.tweetAvatarContainers) ||
-          article.querySelector(NATIVE_X_SELECTORS.profileImages)?.closest(DOM_SELECTORS.anchors);
-        if (avatar && user) {
-          let row = avatar.parentElement;
-          while (row && row !== article && !row.contains(user)) row = row.parentElement;
-          if (row && row !== article) {
-            const gutter = childOf(avatar, row),
-              content = childOf(user, row);
-            if (gutter && content && gutter !== content) {
-              add(gutter, "rodx-avatar-gutter");
-              add(content, "rodx-edge-content");
+          .querySelectorAll<HTMLElement>(RODX_SELECTORS.repeatedAuthor)
+          .forEach((el) => el.classList.remove(CSS_CLASSES.repeatAuthor));
+
+        if (user) {
+          for (const a of user.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref)) {
+            if (a.getAttribute("href")?.toLowerCase() === key) {
+              a.classList.add(CSS_CLASSES.repeatAuthor);
             }
           }
         }
-        const like = article.querySelector(NATIVE_X_SELECTORS.likeToggleButtons);
-        const bar = like?.closest(DOM_SELECTORS.actionGroups);
-        if (!bar || bar.closest(DOM_SELECTORS.articles) !== article) continue;
-        bar.classList.remove("rodx-glass-actions");
-        bar.querySelectorAll(RODX_SELECTORS.miniAvatar).forEach((el) => el.remove());
-        // The tweet itself can be a horizontal React flex row. A full-width
-        // sibling placed there consumes the content width. Mount inside the
-        // existing column containing both author and native action group.
-        let column = user?.parentElement;
-        while (column && column !== article && !column.contains(bar)) column = column.parentElement;
-        if (!column || column === article) continue;
-        let top = article.querySelector(RODX_SELECTORS.tweetTopbar);
-        if (!top) {
-          top = (<div />) as HTMLDivElement;
-          top.className = "rodx-tweet-topbar rodx-glass-actions";
+
+        const avatar =
+          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAvatarContainers) ||
+          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileImages)?.closest<HTMLElement>(DOM_SELECTORS.anchors);
+
+        if (avatar && user) {
+          let rowNode = avatar.parentElement;
+          while (rowNode && rowNode !== article && !rowNode.contains(user)) {
+            rowNode = rowNode.parentElement;
+          }
+          if (rowNode && rowNode !== article) {
+            const gutter = childOf(avatar, rowNode);
+            const content = childOf(user, rowNode);
+            if (gutter && content && gutter !== content) {
+              add(gutter, CSS_CLASSES.avatarGutter);
+              add(content, CSS_CLASSES.edgeContent);
+            }
+          }
         }
-        if (top.parentElement !== column) column.prepend(top);
-        const image = avatar?.querySelector(DOM_SELECTORS.imageOrBackgroundImage);
+
+        const like = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.likeToggleButtons);
+        const bar = like?.closest<HTMLElement>(DOM_SELECTORS.actionGroups);
+        if (!bar || bar.closest(DOM_SELECTORS.articles) !== article) continue;
+
+        bar.classList.remove(CSS_CLASSES.glassActions);
+        bar.querySelectorAll(RODX_SELECTORS.miniAvatar).forEach((el) => el.remove());
+
+        let column = user?.parentElement;
+        while (column && column !== article && !column.contains(bar)) {
+          column = column.parentElement;
+        }
+        if (!column || column === article) continue;
+
+        let top = article.querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
+        if (!top) {
+          top = (
+            <div class={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />
+          ) as HTMLDivElement;
+        }
+
+        if (top.parentElement !== column) {
+          column.prepend(top);
+        }
+
+        const image = avatar?.querySelector<HTMLElement>(DOM_SELECTORS.imageOrBackgroundImage);
         const sourceURL =
-          avatar?.closest(DOM_SELECTORS.linksWithHref)?.getAttribute("href") ||
+          avatar?.closest<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref)?.getAttribute("href") ||
           link?.getAttribute("href") ||
           key;
-        let mini = top.querySelector(RODX_SELECTORS.miniAvatar);
+
+        let mini = top.querySelector<HTMLAnchorElement>(RODX_SELECTORS.miniAvatar);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
-          mini = (<a />) as HTMLAnchorElement;
-          mini.className = "rodx-mini-avatar";
-          mini.href = sourceURL;
-          mini.title = "Abrir perfil";
-          mini.setAttribute("aria-label", "Abrir perfil " + key.slice(1));
-          mini.onclick = (event) => {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            const native = [...article.querySelectorAll(NATIVE_X_SELECTORS.authorProfileLinks)].find(
-              (a) => a.getAttribute("href")?.toLowerCase() === key,
-            );
-            if (native) native.click();
-            else location.assign(mini.href);
-          };
+          mini = (
+            <a
+              class={CSS_CLASSES.miniAvatar}
+              href={sourceURL}
+              title={UI_TEXTS.openProfileTitle}
+              aria-label={UI_TEXTS.openProfileAriaPrefix + key.slice(1)}
+              onClick={(event: MouseEvent) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const native = Array.from(article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks)).find(
+                  (a) => a.getAttribute("href")?.toLowerCase() === key,
+                );
+                if (native) native.click();
+                else location.assign(mini!.href);
+              }}
+            />
+          ) as HTMLAnchorElement;
+
           if (image) {
-            const img = (<img />) as HTMLElement;
             const src =
-              image.currentSrc ||
               image.getAttribute("src") ||
-              image.style?.backgroundImage?.match(/url\(["']?([^"')]+)["']?\)/)?.[1];
-            if (src) (img as HTMLImageElement).src = src;
-            (img as HTMLImageElement).alt = "";
-            (img as HTMLImageElement).width = 28;
-            (img as HTMLImageElement).height = 28;
-            (img as HTMLImageElement).decoding = "async";
+              (image as HTMLImageElement).currentSrc ||
+              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1];
+
+            const img = (
+              <img
+                src={src || ""}
+                alt=""
+                width="28"
+                height="28"
+                decoding="async"
+              />
+            ) as HTMLImageElement;
             mini.append(img);
-          } else mini.textContent = "●";
+          } else {
+            mini.textContent = "●";
+          }
           top.prepend(mini);
         }
-        let authorLink = top.querySelector(RODX_SELECTORS.topbarAuthor);
+
+        let authorLink = top.querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
         if (!authorLink) {
-          authorLink = (<a />) as HTMLAnchorElement;
-          authorLink.className = "rodx-topbar-author";
+          authorLink = (
+            <a class={CSS_CLASSES.topbarAuthor} />
+          ) as HTMLAnchorElement;
           top.insertBefore(authorLink, top.querySelector(RODX_SELECTORS.proxyActions));
         }
+
         if (key) {
           authorLink.href = key;
-          authorLink.title = "Abrir perfil " + key.slice(1);
+          authorLink.title = UI_TEXTS.openProfileAriaPrefix + key.slice(1);
           const display = (link?.textContent || key.slice(1)).trim();
           const signature = key + ":" + display;
-          if (authorLink.dataset.author !== signature) {
+
+          if (authorLink.dataset[DATA_ATTRS.author] !== signature) {
             authorLink.replaceChildren();
-            authorLink.dataset.author = signature;
-            const name = (<strong />) as HTMLElement;
-            name.textContent = display;
-            const at = (<span />) as HTMLSpanElement;
-            at.textContent = "@" + key.slice(1);
-            authorLink.append(name, at);
+            authorLink.dataset[DATA_ATTRS.author] = signature;
+
+            const nameEl = (
+              <strong />
+            ) as HTMLElement;
+            nameEl.textContent = display;
+
+            const atEl = (
+              <span />
+            ) as HTMLSpanElement;
+            atEl.textContent = "@" + key.slice(1);
+
+            authorLink.append(nameEl, atEl);
           }
-          authorLink.onclick = (event) => {
+
+          authorLink.onclick = (event: MouseEvent) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = [...article.querySelectorAll(NATIVE_X_SELECTORS.authorProfileLinks)].find(
+            const native = Array.from(article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks)).find(
               (a) => a.getAttribute("href")?.toLowerCase() === key,
             );
             if (native) native.click();
-            else location.assign(authorLink.href);
+            else location.assign(authorLink!.href);
           };
         }
-        article.classList.add("rodx-author-in-topbar");
-        for (const [action, label, selector] of [
-          ["repost", "Repostar", '[data-testid="retweet"],[data-testid="unretweet"]'],
-          ["like", "Curtir", '[data-testid="like"],[data-testid="unlike"]'],
-          [
-            "bookmark",
-            "Salvar",
-            '[data-testid="bookmark"],[data-testid="removeBookmark"],.rodx-bookmark-btn',
-          ],
-          ["telegram", "Enviar ao Telegram", "button.rodx-tg-action:not(.rodx-tg-video-overlay)"],
-        ]) {
-          let proxy = top.querySelector(RODX_SELECTORS.proxyActionByName(action));
+
+        article.classList.add(CSS_CLASSES.authorInTopbar);
+
+        for (const { action, label, selector, icon } of PROXY_ACTIONS) {
+          let proxy = top.querySelector<HTMLButtonElement>(RODX_SELECTORS.proxyActionByName(action));
           if (!proxy) {
-            proxy = (<button />) as HTMLButtonElement;
-            proxy.type = "button";
-            proxy.dataset.proxy = action;
-            proxy.title = label;
-            proxy.setAttribute("aria-label", label);
+            proxy = (
+              <button
+                type="button"
+                data-proxy={action}
+                title={label}
+                aria-label={label}
+                onClick={(event: MouseEvent) => {
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                  const nativeEl = Array.from(article.querySelectorAll<HTMLElement>(selector)).find((el) => !top.contains(el));
+                  nativeEl?.click();
+                }}
+              />
+            ) as HTMLButtonElement;
             top.append(proxy);
-            proxy.onclick = (event) => {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              const native = [...article.querySelectorAll(selector)].find((el) => !top.contains(el));
-              native?.click();
-            };
           }
-          const native = [...article.querySelectorAll(selector)].find((el) => !top.contains(el));
+
+          const native = Array.from(article.querySelectorAll<HTMLElement>(selector)).find((el) => !top.contains(el));
           proxy.hidden = !native;
           if (native) {
-            const svg = native.querySelector(DOM_SELECTORS.svgIcons);
-            const icon = svg
-              ? svg.cloneNode(true)
-              : {
-                  repost: "↻",
-                  like: "♡",
-                  bookmark: "♧",
-                  telegram: "➤",
-                }[action];
+            const svg = native.querySelector<HTMLElement>(DOM_SELECTORS.svgIcons);
+            const markup = svg ? svg.cloneNode(true) : icon;
             const pressed =
-              native.getAttribute("aria-pressed") === "true" ||
+              native.getAttribute(DATA_ATTRS.pressed) === "true" ||
               /unlike|unretweet|removeBookmark/.test(native.dataset.testid || "");
-            const markup = icon;
+
             mountView(proxy, () => markup);
-            proxy.setAttribute("aria-pressed", String(pressed));
+            proxy.setAttribute(DATA_ATTRS.pressed, String(pressed));
           }
         }
       }
     }
-    function scan() {
+
+    function scan(): void {
       const now = Date.now();
       if (now - last < 500) return;
       last = now;
       style();
       profile();
       tweets();
-      for (const el of marked) if (!el.isConnected) marked.delete(el);
+      for (const el of marked) {
+        if (!el.isConnected) marked.delete(el);
+      }
     }
-    return {
+
+    return Object.freeze({
       scan,
-    };
+    });
   })();
 }
