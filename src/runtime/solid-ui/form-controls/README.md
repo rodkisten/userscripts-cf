@@ -217,3 +217,13 @@ Use `ctx.query.createAsyncOptions` from a Solid component rather than importing 
 - [ ] Run the regression test and inspect failures; do not mark it verified until it passes.
 - [ ] Add a true runtime-context Playground harness and test async option observer cancellation.
 - [ ] Keep QueryClient out of baseline bundles that do not use `ctx.query` when the tree-shaking audit reveals unnecessary cost.
+
+### CI diagnostic follow-up: run 43788114387
+
+- [x] Typecheck, core build and Lab passed in this run.
+- [x] Identified hosting failure from SolidJS 2 removed `solid-js/web` export; updated Playground and toaster imports to `@solidjs/web` (validation pending).
+- [x] Registered Prettier postcss plugin for the CSS parser in `tests/rodx-migration.test.js` (validation pending).
+- [ ] Confirm hosting and RodX migration tests pass after these commits.
+- [ ] Resolve 2 style issues in `src/userscripts/instagram-saved/index.tsx`.
+- [ ] Triage 15 failing assertions and 4 test-suite load failures in the diagnostic unit-tests job; avoid masking failures by excluding tests.
+- [ ] Verify full diagnostic workflow green before claiming completion.
