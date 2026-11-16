@@ -1,5 +1,6 @@
 import { render } from "@solidjs/web";
 import { Errored } from "solid-js";
+import { captureDiagnostic } from "../diagnostics.js";
 import type { JSX } from "@solidjs/web";
 
 export type ShadowStyle = string | { css: string };
@@ -78,26 +79,19 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
     dispose = render(
       () => (
         <Errored
-          fallback={(error, reset) => (
+          fallback={(error, reset) => {\n            const failure = error();\n            try { options.onError?.(failure); } catch { /* diagnostic callbacks must not crash recovery */ }\n            captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");\n            return (
             <div role="alert" style={{ "pointer-events": "auto", padding: "12px", "background-color": "#18181b", color: "#fafafa", "border-radius": "8px" }}>
-              <span>Erro na interface: {String(error())}</span>
+              <span>Erro na interface: {String(failure)}</span>
               <button type="button" onClick={reset} style={{ "margin-left": "8px", "pointer-events": "auto" }}>
                 Tentar novamente
               </button>
             </div>
-          )}
+            );\n          }}
         >
           {component()}
         </Errored>
       ),
       container,
-      options.onError
-        ? {
-            // Solid 2 reports errors from reactive descendants, including async
-            // reads handled by a boundary. A render-time try/catch cannot do this.
-            onError: (error: unknown) => options.onError?.(error),
-          }
-        : undefined,
     );
   } catch (error) {
     container.remove();
