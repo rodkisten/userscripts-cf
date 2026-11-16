@@ -32,7 +32,7 @@ ctx.ui.registerStyles(buttonCss);
 
 - [ ] Verify Solid 2 typecheck and build; fix any compile/runtime issues.
 - [x] Add real Solid Button/ButtonGroup/DropdownButton gallery in the design-system studio (variant, accent, loading and badge controls).\n- [ ] Expand the editor with size, radius and additional advanced variants.
-- [ ] Integrate buttons inside RodMenu's action renderer, not just as menu triggers.
+- [x] Switch RodMenu footer action rendering to shared Button; preserve runAction validation, loading, badge, shortcut and close semantics.\n- [ ] Verify styling compatibility and typecheck/build for RodMenu integration.
 - [ ] Expose consistent package entry point, dedicated Badge/IconButton and shared theme config.
 - [ ] Add toggle, progress, confirm, copy and advanced button patterns.
 - [ ] Verify keyboard, mobile Safari and Shadow DOM behavior.
