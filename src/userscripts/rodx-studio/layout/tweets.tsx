@@ -58,17 +58,38 @@ const UI_TEXTS = {
 
 const REGEX_PATTERNS = {
   profilePath: /^\/([a-zA-Z0-9_]{1,15})(?:\/(?:media|with_replies|highlights|articles))?\/?$/,
-  excludedProfileHandles: /^(home|search|explore|notifications|messages|settings|i|compose|lists|login|signup|communities)$/i,
+  excludedProfileHandles:
+    /^(home|search|explore|notifications|messages|settings|i|compose|lists|login|signup|communities)$/i,
   unfollowedRegex: /^(?:não é seguido por ninguém que você segue|not followed by anyone you.re following)$/i,
   backgroundImageUrl: /url\(["']?([^"')]+)["']?\)/,
   handleValidation: /^\/[A-Za-z0-9_]{1,15}$/,
 } as const;
 
 const PROXY_ACTIONS = [
-  { action: "repost", label: UI_TEXTS.repostLabel, selector: '[data-testid="retweet"],[data-testid="unretweet"]', icon: "↻" },
-  { action: "like", label: UI_TEXTS.likeLabel, selector: '[data-testid="like"],[data-testid="unlike"]', icon: "♡" },
-  { action: "bookmark", label: UI_TEXTS.bookmarkLabel, selector: '[data-testid="bookmark"],[data-testid="removeBookmark"],.rodx-bookmark-btn', icon: "♧" },
-  { action: "telegram", label: UI_TEXTS.telegramLabel, selector: "button.rodx-tg-action:not(.rodx-tg-video-overlay)", icon: "➤" },
+  {
+    action: "repost",
+    label: UI_TEXTS.repostLabel,
+    selector: '[data-testid="retweet"],[data-testid="unretweet"]',
+    icon: "↻",
+  },
+  {
+    action: "like",
+    label: UI_TEXTS.likeLabel,
+    selector: '[data-testid="like"],[data-testid="unlike"]',
+    icon: "♡",
+  },
+  {
+    action: "bookmark",
+    label: UI_TEXTS.bookmarkLabel,
+    selector: '[data-testid="bookmark"],[data-testid="removeBookmark"],.rodx-bookmark-btn',
+    icon: "♧",
+  },
+  {
+    action: "telegram",
+    label: UI_TEXTS.telegramLabel,
+    selector: "button.rodx-tg-action:not(.rodx-tg-video-overlay)",
+    icon: "➤",
+  },
 ] as const;
 
 export interface CompactLayoutAPI {
@@ -107,9 +128,7 @@ export function initializeDeckCompactLayout(): void {
 
     function style(): void {
       if (document.getElementById(ELEMENT_IDS.compactLayoutStyle)) return;
-      const node = (
-        <style id={ELEMENT_IDS.compactLayoutStyle}>{extractedCSS1}</style>
-      ) as HTMLStyleElement;
+      const node = (<style id={ELEMENT_IDS.compactLayoutStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
       document.head.append(node);
     }
 
@@ -149,9 +168,7 @@ export function initializeDeckCompactLayout(): void {
 
       let identity = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileIdentity);
       if (!identity) {
-        identity = (
-          <div class={CSS_CLASSES.profileIdentity} />
-        ) as HTMLDivElement;
+        identity = (<div class={CSS_CLASSES.profileIdentity} />) as HTMLDivElement;
         name.before(identity);
       }
 
@@ -166,14 +183,10 @@ export function initializeDeckCompactLayout(): void {
         identity.dataset[DATA_ATTRS.handle] = handle;
 
         const title = (
-          <strong>
-            {display.replace(new RegExp("@" + handle + "$", "i"), "").trim()}
-          </strong>
+          <strong>{display.replace(new RegExp("@" + handle + "$", "i"), "").trim()}</strong>
         ) as HTMLElement;
 
-        const at = (
-          <span>{"@" + handle}</span>
-        ) as HTMLSpanElement;
+        const at = (<span>{"@" + handle}</span>) as HTMLSpanElement;
 
         identity.append(title, at);
 
@@ -268,7 +281,7 @@ export function initializeDeckCompactLayout(): void {
       }
 
       if (toggle) applyComponentStyle(toggle, CSS_CLASSES.rxTweetsToggle, false);
-      
+
       const isOpen = toggle?.getAttribute(DATA_ATTRS.expanded) === "true";
       details.forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
 
@@ -299,9 +312,9 @@ export function initializeDeckCompactLayout(): void {
 
     function author(article: HTMLElement) {
       const user = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAuthorName);
-      const link = Array.from(user?.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref) || []).find((a) =>
-        REGEX_PATTERNS.handleValidation.test(a.getAttribute("href") || ""),
-      );
+      const link = Array.from(
+        user?.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref) || [],
+      ).find((a) => REGEX_PATTERNS.handleValidation.test(a.getAttribute("href") || ""));
       return {
         user,
         link,
@@ -320,12 +333,14 @@ export function initializeDeckCompactLayout(): void {
           continue;
 
         const { user, link, key } = author(article);
-        const context = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
+        const context =
+          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
         const identity = key ? key + ":" + context : "";
 
         article.dataset[DATA_ATTRS.repeat] = identity && identity === previous ? "1" : "0";
         previous = identity;
-        article.dataset[DATA_ATTRS.long] = article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
+        article.dataset[DATA_ATTRS.long] =
+          article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
 
         article
           .querySelectorAll<HTMLElement>(RODX_SELECTORS.repeatedAuthor)
@@ -341,7 +356,9 @@ export function initializeDeckCompactLayout(): void {
 
         const avatar =
           article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAvatarContainers) ||
-          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileImages)?.closest<HTMLElement>(DOM_SELECTORS.anchors);
+          article
+            .querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileImages)
+            ?.closest<HTMLElement>(DOM_SELECTORS.anchors);
 
         if (avatar && user) {
           let rowNode = avatar.parentElement;
@@ -373,9 +390,7 @@ export function initializeDeckCompactLayout(): void {
 
         let top = article.querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
-          top = (
-            <div class={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />
-          ) as HTMLDivElement;
+          top = (<div class={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />) as HTMLDivElement;
         }
 
         if (top.parentElement !== column) {
@@ -400,9 +415,9 @@ export function initializeDeckCompactLayout(): void {
               onClick={(event: MouseEvent) => {
                 event.preventDefault();
                 event.stopImmediatePropagation();
-                const native = Array.from(article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks)).find(
-                  (a) => a.getAttribute("href")?.toLowerCase() === key,
-                );
+                const native = Array.from(
+                  article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+                ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
                 if (native) native.click();
                 else location.assign(mini!.href);
               }}
@@ -431,9 +446,7 @@ export function initializeDeckCompactLayout(): void {
 
         let authorLink = top.querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
         if (!authorLink) {
-          authorLink = (
-            <a class={CSS_CLASSES.topbarAuthor} />
-          ) as HTMLAnchorElement;
+          authorLink = (<a class={CSS_CLASSES.topbarAuthor} />) as HTMLAnchorElement;
           top.insertBefore(authorLink, top.querySelector(RODX_SELECTORS.proxyActions));
         }
 
@@ -447,13 +460,9 @@ export function initializeDeckCompactLayout(): void {
             authorLink.replaceChildren();
             authorLink.dataset[DATA_ATTRS.author] = signature;
 
-            const nameEl = (
-              <strong>{display}</strong>
-            ) as HTMLElement;
+            const nameEl = (<strong>{display}</strong>) as HTMLElement;
 
-            const atEl = (
-              <span>{"@" + key.slice(1)}</span>
-            ) as HTMLSpanElement;
+            const atEl = (<span>{"@" + key.slice(1)}</span>) as HTMLSpanElement;
 
             authorLink.append(nameEl, atEl);
           }
@@ -461,9 +470,9 @@ export function initializeDeckCompactLayout(): void {
           authorLink.onclick = (event: MouseEvent) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            const native = Array.from(article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks)).find(
-              (a) => a.getAttribute("href")?.toLowerCase() === key,
-            );
+            const native = Array.from(
+              article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+            ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
             if (native) native.click();
             else location.assign(authorLink!.href);
           };
@@ -483,7 +492,9 @@ export function initializeDeckCompactLayout(): void {
                 onClick={(event: MouseEvent) => {
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  const nativeEl = Array.from(article.querySelectorAll<HTMLElement>(selector)).find((el) => !top.contains(el));
+                  const nativeEl = Array.from(article.querySelectorAll<HTMLElement>(selector)).find(
+                    (el) => !top.contains(el),
+                  );
                   nativeEl?.click();
                 }}
               />
@@ -491,7 +502,9 @@ export function initializeDeckCompactLayout(): void {
             top.append(proxy);
           }
 
-          const native = Array.from(article.querySelectorAll<HTMLElement>(selector)).find((el) => !top.contains(el));
+          const native = Array.from(article.querySelectorAll<HTMLElement>(selector)).find(
+            (el) => !top.contains(el),
+          );
           proxy.hidden = !native;
           if (native) {
             const svg = native.querySelector<HTMLElement>(DOM_SELECTORS.svgIcons);

@@ -78,7 +78,8 @@ const REGEX_PATTERNS = {
   negativeHashtag: /-#[\p{L}\p{M}\p{N}_]+/gu,
   hashtagOnly: /^(?:\s*#[\\p{L}\\p{M}\\p{N}_]+[\s,;]*)+$/u,
   hashtagMulti: /(?:#[\\p{L}\\p{M}\\p{N}_]+[\s,;]+){1,}#[\\p{L}\\p{M}\\p{N}_]+/u,
-  bookmarkMenuMatch: /^(?:bookmark|save to bookmarks|salvar nos itens salvos|adicionar aos itens salvos|remove bookmark|remover dos itens salvos|remover marcador)/i,
+  bookmarkMenuMatch:
+    /^(?:bookmark|save to bookmarks|salvar nos itens salvos|adicionar aos itens salvos|remove bookmark|remover dos itens salvos|remover marcador)/i,
   bookmarkTestIdMatch: /^(?:bookmark|removeBookmark)$/,
 } as const;
 
@@ -108,10 +109,12 @@ export function initializeDeckResultEnhancer(): void {
     let style: HTMLStyleElement | null = null;
     let cachedSig = "";
     let rules: unknown[] = [];
-    
+
     function postId(article: HTMLElement): string {
       const link =
-        article.querySelector<HTMLAnchorElement>(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
+        article
+          .querySelector<HTMLAnchorElement>(DOM_SELECTORS.timestamps)
+          ?.closest(NATIVE_X_SELECTORS.statusLinks) ||
         article.querySelector<HTMLAnchorElement>(NATIVE_X_SELECTORS.statusLinks);
       return link?.getAttribute("href")?.match(REGEX_PATTERNS.uid)?.[1] || "";
     }
@@ -138,7 +141,9 @@ export function initializeDeckResultEnhancer(): void {
     }
 
     function seenButtonText(article: HTMLElement, id: string): void {
-      const btn = article.querySelector<HTMLElement>(RODX_SELECTORS.resultReadButtonByActionClass(CSS_CLASSES.resultActions));
+      const btn = article.querySelector<HTMLElement>(
+        RODX_SELECTORS.resultReadButtonByActionClass(CSS_CLASSES.resultActions),
+      );
       if (btn) {
         const read = state.seen.has(id);
         btn.textContent = read ? UI_TEXTS.seenMark : UI_TEXTS.seenUnmark;
@@ -194,7 +199,7 @@ export function initializeDeckResultEnhancer(): void {
       const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return [];
       const found = new Map<string, HashtagInfo>();
-      
+
       for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.encodedHashtagLinks)) {
         const t = (anchor.textContent || "").trim().match(/#[\p{L}\p{N}_]+/u)?.[0];
         if (t && !found.has(normalizedTag(t))) {
@@ -204,7 +209,7 @@ export function initializeDeckResultEnhancer(): void {
           });
         }
       }
-      
+
       for (const t of text.textContent?.match(/#[\p{L}\p{N}_]+/gu) || []) {
         const key = normalizedTag(t);
         if (!found.has(key)) {
@@ -231,14 +236,14 @@ export function initializeDeckResultEnhancer(): void {
         const id = normalizedTag(tagAttr);
         const yes = positive.has(id);
         const no = negative.has(id);
-        
+
         item.dataset.selected = yes ? "1" : "0";
         item.dataset.excluded = no ? "1" : "0";
         item.dataset.color = state.visual.colorfulTags && !yes && !no ? "1" : "0";
-        
+
         const add = item.querySelector<HTMLElement>(RODX_SELECTORS.tagAddButton);
         if (add) add.hidden = yes;
-        
+
         const remove = item.querySelector<HTMLElement>(RODX_SELECTORS.tagExcludeButton);
         if (remove) remove.hidden = no;
       }
@@ -247,23 +252,25 @@ export function initializeDeckResultEnhancer(): void {
     function suppressNativeHashtagList(article: HTMLElement, tags: HashtagInfo[]): void {
       const text = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return;
-      
+
       text.classList.remove(CSS_CLASSES.nativeOnlyTags);
       for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove(CSS_CLASSES.nativeTagTail, CSS_CLASSES.nativeTagSource);
       }
       if (tags.length < 2) return;
-      
+
       const onlyTags = REGEX_PATTERNS.hashtagOnly;
       const multi = REGEX_PATTERNS.hashtagMulti;
       const full = (text.innerText || text.textContent || "").trim();
-      
+
       if (onlyTags.test(full)) {
         text.classList.add(CSS_CLASSES.nativeOnlyTags);
         return;
       }
 
-      const candidates = Array.from(text.querySelectorAll<HTMLElement>(DOM_SELECTORS.textContainers)).reverse();
+      const candidates = Array.from(
+        text.querySelectorAll<HTMLElement>(DOM_SELECTORS.textContainers),
+      ).reverse();
       for (const node of candidates) {
         if (node.classList.contains(CSS_CLASSES.nativeTagSource)) continue;
         if (node.closest(RODX_SELECTORS.nativeTagSource)) continue;
@@ -274,29 +281,29 @@ export function initializeDeckResultEnhancer(): void {
           continue;
         node.classList.add(CSS_CLASSES.nativeTagSource);
       }
-      
+
       const lines = (text.innerText || text.textContent || "").split(/\n+/);
       const listLines = lines.filter((line) => onlyTags.test(line.trim()) && multi.test(line.trim()));
       if (!listLines.length) return;
-      
+
       const wanted = new Set(
         listLines
           .flatMap((line) => line.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
           .map((tag) => tag.normalize("NFKC").toLocaleLowerCase()),
       );
-      
+
       for (const anchor of text.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.hashtagLinks)) {
         if (anchor.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const anchorText = anchor.textContent || "";
         const tag = anchorText.trim().normalize("NFKC").toLocaleLowerCase();
         if (!wanted.has(tag)) continue;
-        
+
         const parentText = (anchor.parentElement?.textContent || "").trim();
         if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, "")))
           continue;
         anchor.classList.add(CSS_CLASSES.nativeTagSource);
       }
-      
+
       const breaks = Array.from(text.querySelectorAll<HTMLElement>(DOM_SELECTORS.lineBreaks));
       for (const source of text.querySelectorAll<HTMLElement>(RODX_SELECTORS.nativeTagSource)) {
         let previous: ChildNode | null = source.previousSibling;
@@ -314,7 +321,7 @@ export function initializeDeckResultEnhancer(): void {
           break;
         }
       }
-      
+
       for (const br of breaks.slice(-2)) {
         const following = (br.nextSibling?.textContent || "").trim();
         if (following && onlyTags.test(following)) br.classList.add(CSS_CLASSES.nativeTagTail);
@@ -329,19 +336,21 @@ export function initializeDeckResultEnhancer(): void {
         tray?.remove();
         return;
       }
-      
+
       const actions = findActions(article);
       if (!tray) {
-        tray = (<div class={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />) as HTMLDivElement;
+        tray = (
+          <div class={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />
+        ) as HTMLDivElement;
       }
-      
+
       if (actions?.parentElement) {
         if (tray.parentElement !== actions.parentElement || tray.nextElementSibling !== actions)
           actions.before(tray);
       } else if (!tray.isConnected) {
         article.append(tray);
       }
-      
+
       const signature = tags.map(({ tag }) => normalizedTag(tag)).join("|");
       if (tray.dataset.signature !== signature) {
         tray.replaceChildren();
@@ -378,11 +387,11 @@ export function initializeDeckResultEnhancer(): void {
               </button>
             </span>
           ) as HTMLSpanElement;
-          
+
           tray.append(item);
         }
       }
-      
+
       if (state.visual.translateForeignTags) {
         ForeignTags.scan(tray);
       } else {
@@ -391,7 +400,7 @@ export function initializeDeckResultEnhancer(): void {
           item.querySelector(RODX_SELECTORS.tagTranslation)?.remove();
         }
       }
-      
+
       suppressNativeHashtagList(article, tags);
       refreshAllHashtagStates();
     }
@@ -403,13 +412,13 @@ export function initializeDeckResultEnhancer(): void {
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
       const existing = group.querySelector<HTMLElement>(RODX_SELECTORS.bookmarkButton);
-      
+
       if (visibleNative) {
         existing?.remove();
         return;
       }
       if (existing) return;
-      
+
       const btn = (
         <button
           type="button"
@@ -422,40 +431,37 @@ export function initializeDeckResultEnhancer(): void {
             const menuButton =
               article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
               article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
-              
+
             if (!menuButton) {
               btn.title = UI_TEXTS.bookmarkMenuError;
               return;
             }
-            
+
             let observer: MutationObserver | null = null;
             let timeout: ReturnType<typeof setTimeout> | null = null;
             let committed = false;
-            
+
             const finish = (): void => {
               observer?.disconnect();
               if (timeout !== null) clearTimeout(timeout);
             };
-            
+
             const choose = (): void => {
               if (committed) return;
               const options = Array.from(
                 document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
               ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
-              
+
               const target =
-                options.find((el) =>
-                  REGEX_PATTERNS.bookmarkMenuMatch.test(
-                    (el.textContent || "").trim(),
-                  ),
-                ) || options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
-                
+                options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
+                options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
+
               if (!target) return;
               committed = true;
               finish();
               target.click();
             };
-            
+
             observer = new MutationObserver(choose);
             observer.observe(document.body, {
               childList: true,
@@ -469,7 +475,7 @@ export function initializeDeckResultEnhancer(): void {
       ) as HTMLButtonElement;
 
       mountView(btn, () => <BookmarkSVGIcon />);
-      
+
       const share = group.querySelector<HTMLElement>(NATIVE_X_SELECTORS.shareButton);
       if (share?.parentElement?.parentElement === group) {
         share.parentElement.before(btn);
@@ -486,23 +492,23 @@ export function initializeDeckResultEnhancer(): void {
     function setupReader(): void {
       if (state.readObserver || document.visibilityState !== "visible") return;
       const getHeight = (): number => window.innerHeight || document.documentElement.clientHeight;
-      
+
       function fullyOutside(rect: DOMRectReadOnly): boolean {
         const viewportHeight = getHeight();
         return rect.bottom <= 0 || rect.top >= viewportHeight;
       }
-      
+
       function sufficientlyVisible(rect: DOMRectReadOnly, visiblePixels: number, ratio: number): boolean {
         return ratio >= state.visual.viewedThreshold || (rect.height > 440 && visiblePixels >= 220);
       }
-      
+
       function pause(article: HTMLElement, progress: ReadProgress): void {
         const timer = state.readTimers.get(article);
         if (timer != null) clearTimeout(timer);
         state.readTimers.delete(article);
         progress.started = 0;
       }
-      
+
       function valid(progress: ReadProgress, article: HTMLElement): boolean {
         const timelineCell = article.closest<HTMLElement>(NATIVE_X_SELECTORS.timelineCells);
         return (
@@ -521,7 +527,7 @@ export function initializeDeckResultEnhancer(): void {
             const article = entry.target as HTMLElement;
             const id = postId(article);
             if (!id) continue;
-            
+
             let progress = state.readProgress.get(article) as ReadProgress | undefined;
             if (!progress || progress.id !== id || progress.account !== state.account) {
               if (progress) pause(article, progress);
@@ -533,12 +539,12 @@ export function initializeDeckResultEnhancer(): void {
               };
               state.readProgress.set(article, progress);
             }
-            
+
             if (state.seen.has(id) || !valid(progress, article)) {
               pause(article, progress);
               continue;
             }
-            
+
             const rect = entry.boundingClientRect;
             if (!entry.isIntersecting && fullyOutside(rect)) {
               if (progress.qualified) {
@@ -549,7 +555,7 @@ export function initializeDeckResultEnhancer(): void {
               progress.qualified = false;
               continue;
             }
-            
+
             if (progress.qualified) continue;
             if (
               !entry.isIntersecting ||
@@ -558,18 +564,18 @@ export function initializeDeckResultEnhancer(): void {
               pause(article, progress);
               continue;
             }
-            
+
             if (progress.started) continue;
             progress.started = performance.now();
             const delay = state.visual.seenDelayMs;
-            
+
             const timer = setTimeout(() => {
               state.readTimers.delete(article);
               if (!valid(progress!, article)) {
                 progress!.started = 0;
                 return;
               }
-              
+
               const nowRect = article.getBoundingClientRect();
               const intersectionHeight = Math.max(
                 0,
@@ -582,7 +588,7 @@ export function initializeDeckResultEnhancer(): void {
               }
               progress!.qualified = true;
             }, delay);
-            
+
             state.readTimers.set(article, timer);
           }
         },
@@ -611,7 +617,7 @@ export function initializeDeckResultEnhancer(): void {
       flushPendingNativeTags();
       const current = nativeSearch();
       ensureStyle();
-      
+
       document.body?.classList.toggle(
         "rodx-search-page",
         Boolean(current && [SORT_MODES.live, SORT_MODES.top].includes(current.sort as any)),
@@ -633,31 +639,30 @@ export function initializeDeckResultEnhancer(): void {
       const local = currentRules();
       const main = document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn);
       if (!main) return;
-      
+
       const matches = main.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
         if (!id) continue;
         const cell = article.closest<HTMLElement>(NATIVE_X_SELECTORS.timelineCells) || article;
-        
-        if (
-          cell.dataset.rodxUnmatched === "1" ||
-          cell.dataset.rodxLimited === "1"
-        )
+
+        if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
           cell.style.removeProperty("display");
-          
+
         delete cell.dataset.rodxUnmatched;
         delete cell.dataset.rodxLimited;
-        
+
         article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
         article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
         article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
-        
+
         setSeen(article, id);
         addHashtagBtns(article);
         ensureBookmark(article);
-        
-        let actions = article.querySelector<HTMLDivElement>(DOM_SELECTORS.resultActionsByClass(CSS_CLASSES.resultActions));
+
+        let actions = article.querySelector<HTMLDivElement>(
+          DOM_SELECTORS.resultActionsByClass(CSS_CLASSES.resultActions),
+        );
         if (!actions) {
           actions = (
             <div class={CSS_CLASSES.resultActions}>
@@ -672,7 +677,7 @@ export function initializeDeckResultEnhancer(): void {
                       .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
                       ?.closest<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
                     article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
-                    
+
                   if (!anchor) {
                     showRodxToast(UI_TEXTS.toastAnchorError, "error");
                     return;
@@ -704,20 +709,20 @@ export function initializeDeckResultEnhancer(): void {
             article.append(actions);
           }
         }
-        
+
         const targetActions = findActions(article);
         if (targetActions && actions.parentElement !== targetActions) {
           actions.hidden = false;
           targetActions.append(actions);
         }
-        
+
         const exp = actions.querySelector<HTMLElement>(RODX_SELECTORS.expandAction);
         if (exp) {
           exp.textContent = UI_TEXTS.expandSymbol;
           exp.title = UI_TEXTS.expandTitle;
           exp.setAttribute("aria-label", exp.title);
         }
-        
+
         if (state.readObserver && article.dataset.rodxObserved !== "1") {
           state.readObserver.observe(article);
           article.dataset.rodxObserved = "1";

@@ -108,12 +108,11 @@ const OWN_SELECTOR = [
   "[data-rodx-list-video]",
 ].join(",");
 
-
 // TODO: create useRuntime() ou useContext() pra usar isso certo
 export function createStudioRuntime(): StudioRuntime {
   const defaults = createDefaults(STUDIO_SECTION_NAME);
   let saved: Record<string, unknown> = {};
-  
+
   try {
     const rawSaved = localStorage.getItem(CONFIG_STORAGE_KEY);
     saved = rawSaved ? JSON.parse(rawSaved) : {};
@@ -222,7 +221,7 @@ export function createStudioRuntime(): StudioRuntime {
     { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 }: RegisterOptions = {},
   ): () => void {
     if (jobs.has(id)) throw Error("Duplicate module: " + id);
-    
+
     jobs.set(id, {
       fn,
       events,
@@ -232,15 +231,15 @@ export function createStudioRuntime(): StudioRuntime {
       running: false,
       again: false,
     });
-    
+
     stats.set(id, {
       calls: 0,
       ms: 0,
       errors: 0,
     });
-    
+
     queue(id);
-    
+
     return () => {
       jobs.delete(id);
       pending.delete(id);
@@ -250,7 +249,7 @@ export function createStudioRuntime(): StudioRuntime {
   function drain(): void {
     drainTimer = 0;
     if (document.hidden) return;
-    
+
     const begin = performance.now();
     let remainingDelay = Infinity;
 
@@ -264,22 +263,22 @@ export function createStudioRuntime(): StudioRuntime {
         pending.delete(id);
         continue;
       }
-      
+
       const remaining = job.minMs - (performance.now() - job.last);
       if (remaining > 0) {
         remainingDelay = Math.min(remainingDelay, remaining);
         continue;
       }
-      
+
       pending.delete(id);
       if (job.running) {
         job.again = true;
         continue;
       }
-      
+
       job.last = performance.now();
       job.running = true;
-      
+
       const metric = stats.get(id)!;
       const at = performance.now();
       metric.calls++;
@@ -295,7 +294,7 @@ export function createStudioRuntime(): StudioRuntime {
       try {
         const result = job.fn();
         metric.ms += performance.now() - at;
-        
+
         if (result && typeof (result as Promise<unknown>).then === "function") {
           Promise.resolve(result)
             .catch((error) => {
@@ -329,7 +328,7 @@ export function createStudioRuntime(): StudioRuntime {
   function nodes(selector: string): Element[] {
     const hit = cache.get(selector);
     if (hit?.generation === generation) return hit.nodes;
-    
+
     const elementNodes = Array.from(document.querySelectorAll(selector));
     cache.set(selector, {
       generation,
@@ -338,7 +337,7 @@ export function createStudioRuntime(): StudioRuntime {
     return elementNodes;
   }
 
-  const owned = (node: Node | null): boolean => 
+  const owned = (node: Node | null): boolean =>
     node?.nodeType === 1 && Boolean((node as Element).closest?.(OWN_SELECTOR));
 
   function start(): void {
@@ -388,7 +387,7 @@ export function createStudioRuntime(): StudioRuntime {
       route();
       invalidate("dom");
     });
-    
+
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         route();

@@ -80,12 +80,14 @@ export function initializeDeckXInterfaceHygiene(): void {
     function openTweet(article: HTMLElement, event: MouseEvent): void {
       event.preventDefault();
       event.stopImmediatePropagation();
-      
+
       // Use React's existing click handler on the status permalink.
       const anchor =
-        article.querySelector<HTMLAnchorElement>(DOM_SELECTORS.timestamps)?.closest<HTMLAnchorElement>(NATIVE_X_SELECTORS.statusLinks) ||
+        article
+          .querySelector<HTMLAnchorElement>(DOM_SELECTORS.timestamps)
+          ?.closest<HTMLAnchorElement>(NATIVE_X_SELECTORS.statusLinks) ||
         article.querySelector<HTMLAnchorElement>(NATIVE_X_SELECTORS.statusLinks);
-        
+
       if (!anchor) {
         showRodxToast(UI_TEXTS.nativeTweetNotFound, "error");
         return;
@@ -116,10 +118,10 @@ export function initializeDeckXInterfaceHygiene(): void {
     }
 
     function replaceTweetGrok(article: HTMLElement): void {
-      const controls = Array.from(article.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.grokActionCandidates())).filter(
-        (el) => !el.closest(COMPOSITE_SELECTORS.tweetTextOrReplacement),
-      );
-      
+      const controls = Array.from(
+        article.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.grokActionCandidates()),
+      ).filter((el) => !el.closest(COMPOSITE_SELECTORS.tweetTextOrReplacement));
+
       let replacement = article.querySelector<HTMLElement>(RODX_SELECTORS.grokReplacement);
       if (controls.length) {
         const original = controls[0];
@@ -129,7 +131,7 @@ export function initializeDeckXInterfaceHygiene(): void {
       } else if (replacement) {
         replacement.remove();
       }
-      
+
       const oldOpen = article.querySelector<HTMLElement>(RODX_SELECTORS.expandResultAction);
       if (oldOpen) oldOpen.hidden = Boolean(controls.length);
     }
@@ -156,11 +158,11 @@ export function initializeDeckXInterfaceHygiene(): void {
       for (const control of root.querySelectorAll<HTMLElement>(INLINE_MORE_SELECTORS)) {
         if (expanded.has(control)) continue;
         if (!REGEX_PATTERNS.inlineMore.test((control.textContent || "").trim())) continue;
-        
+
         const link = control.closest<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref);
         if (link && !REGEX_PATTERNS.emptyHref.test(link.getAttribute("href") || "")) continue;
         if (control.closest(NATIVE_X_SELECTORS.tweetActionMenuItems)) continue;
-        
+
         expanded.add(control);
         control.click();
       }
@@ -181,7 +183,7 @@ export function initializeDeckXInterfaceHygiene(): void {
     function install(): void {
       const style = (<style id={ELEMENT_IDS.hygieneStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
       (document.head || document.documentElement).append(style);
-      
+
       Studio.register("interface.hygiene", scan, {
         group: "hygiene",
         minMs: RUNTIME_LIMITS.layoutHygiene.installMinMs,

@@ -47,10 +47,26 @@ function scheduleDeckInitialization(): void {
 
 function registerStudioDockActions(ctx: ScriptContext): void {
   ctx.dock?.register([
-    { id: DOCK_ACTIONS.saved.id, label: DOCK_ACTIONS.saved.label, run: () => openPanel(DOCK_ACTIONS.saved.panel) },
-    { id: DOCK_ACTIONS.editor.id, label: DOCK_ACTIONS.editor.label, run: () => openPanel(DOCK_ACTIONS.editor.panel) },
-    { id: DOCK_ACTIONS.presets.id, label: DOCK_ACTIONS.presets.label, run: () => openPanel(DOCK_ACTIONS.presets.panel) },
-    { id: DOCK_ACTIONS.settings.id, label: DOCK_ACTIONS.settings.label, run: () => openPanel(DOCK_ACTIONS.settings.panel) },
+    {
+      id: DOCK_ACTIONS.saved.id,
+      label: DOCK_ACTIONS.saved.label,
+      run: () => openPanel(DOCK_ACTIONS.saved.panel),
+    },
+    {
+      id: DOCK_ACTIONS.editor.id,
+      label: DOCK_ACTIONS.editor.label,
+      run: () => openPanel(DOCK_ACTIONS.editor.panel),
+    },
+    {
+      id: DOCK_ACTIONS.presets.id,
+      label: DOCK_ACTIONS.presets.label,
+      run: () => openPanel(DOCK_ACTIONS.presets.panel),
+    },
+    {
+      id: DOCK_ACTIONS.settings.id,
+      label: DOCK_ACTIONS.settings.label,
+      run: () => openPanel(DOCK_ACTIONS.settings.panel),
+    },
     { id: DOCK_ACTIONS.filters.id, label: DOCK_ACTIONS.filters.label, run: () => Preferences?.filters() },
   ]);
 }
@@ -61,7 +77,7 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 export function startRodX(ctx: ScriptContext): void {
   if (hasRodXAlreadyStarted(window)) return;
   markRodXAsStarted(window);
-  
+
   initializeNetwork();
   Studio.ctx = ctx;
   scheduleDeckInitialization();

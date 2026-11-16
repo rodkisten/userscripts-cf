@@ -20,7 +20,8 @@ const DESC_DIRECTION_VALUE = "desc";
 const PATHS_MODE_VALUE = "paths";
 
 const DIRECTORY_ROW_SELECTOR = 'tr, [role="row"], .react-directory-row, .js-navigation-item';
-const TIME_ELEMENT_SELECTORS = "relative-time[datetime], time[datetime], [data-time], [data-timestamp], [datetime]";
+const TIME_ELEMENT_SELECTORS =
+  "relative-time[datetime], time[datetime], [data-time], [data-timestamp], [datetime]";
 const BRANCH_PICKER_SELECTORS = [
   "#branch-picker-repos-header-ref-selector",
   '[data-testid="branch-selector"]',
@@ -105,7 +106,10 @@ export default {
 // ============================================================================
 function readUserPreferences(): GitHubPreferences {
   try {
-    const stored = typeof GM_getValue === "function" ? GM_getValue(PREFERENCES_STORAGE_KEY, "") : localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    const stored =
+      typeof GM_getValue === "function"
+        ? GM_getValue(PREFERENCES_STORAGE_KEY, "")
+        : localStorage.getItem(PREFERENCES_STORAGE_KEY);
     const value = typeof stored === "string" ? JSON.parse(stored || "{}") : stored || {};
     return {
       sort: value.sort === MODIFIED_SORT_VALUE ? MODIFIED_SORT_VALUE : DEFAULT_SORT_MODE,
@@ -121,7 +125,11 @@ function readUserPreferences(): GitHubPreferences {
   }
 }
 
-function persistUserPreferences(changes: Partial<GitHubPreferences>, setPreferences: any, scheduleScan: () => void): void {
+function persistUserPreferences(
+  changes: Partial<GitHubPreferences>,
+  setPreferences: any,
+  scheduleScan: () => void,
+): void {
   setPreferences((draft: GitHubPreferences) => {
     Object.assign(draft, changes);
     try {
@@ -191,13 +199,20 @@ function extractRowFileInfo(row: Element, repo: RepositoryInfo): FileItemInfo | 
   const tail = link.url.pathname.slice(
     `/${repo.owner}/${repo.repo}/${link.type === "file" ? BLOB_SEGMENT : TREE_SEGMENT}/`.length,
   );
-  return { row, name, type: link.type, href: link.url.href, tail, date: extractRowLastModifiedTimestamp(row) };
+  return {
+    row,
+    name,
+    type: link.type,
+    href: link.url.href,
+    tail,
+    date: extractRowLastModifiedTimestamp(row),
+  };
 }
 
 function collectRepositoryDirectoryGroups(repo: RepositoryInfo): DirectoryGroup[] {
   const main = document.querySelector("main") || document;
   const groups = new Map<Element, Map<Element, FileItemInfo>>();
-  
+
   for (const anchor of main.querySelectorAll<HTMLAnchorElement>('a[href*="/blob/"], a[href*="/tree/"]')) {
     if (
       anchor.closest(
@@ -218,7 +233,7 @@ function collectRepositoryDirectoryGroups(repo: RepositoryInfo): DirectoryGroup[
     if (!groups.has(parent)) groups.set(parent, new Map());
     groups.get(parent)!.set(row, info);
   }
-  
+
   return [...groups.entries()]
     .map(([parent, infoMap]) => ({ parent, items: [...infoMap.values()] }))
     .filter((group) => group.items.length > 0);
@@ -308,7 +323,7 @@ function isContentBinaryOrGitHubErrorPage(text: string, mime: string): boolean {
 async function fetchMultipleFileContents(
   items: FileItemInfo[],
   repo: RepositoryInfo,
-  progress: (done: number, total: number) => void
+  progress: (done: number, total: number) => void,
 ): Promise<Array<{ item: FileItemInfo; text?: string; error?: string }>> {
   const results: Array<{ item: FileItemInfo; text?: string; error?: string }> = Array(items.length);
   let next = 0;
@@ -386,7 +401,7 @@ async function buildCombinedClipboardText(
   items: FileItemInfo[],
   repo: RepositoryInfo,
   mode: "content" | "paths",
-  progress: (done: number, total: number) => void
+  progress: (done: number, total: number) => void,
 ): Promise<string> {
   const header = `# ${repo.owner}/${repo.repo}\nFonte: ${location.href}\n`;
   if (mode === PATHS_MODE_VALUE) {
@@ -431,7 +446,9 @@ function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void
       const item = new ClipboardItem({
         "text/plain": textPromise.then((text) => new Blob([text], { type: "text/plain" })),
       });
-      return navigator.clipboard.write([item]).catch(async () => writeTextToSystemClipboard(await textPromise));
+      return navigator.clipboard
+        .write([item])
+        .catch(async () => writeTextToSystemClipboard(await textPromise));
     } catch {
       /* cair para o método alternativo */
     }
@@ -443,7 +460,7 @@ function copyDirectoryItemsToClipboard(
   items: FileItemInfo[],
   repo: RepositoryInfo,
   prefs: GitHubPreferences,
-  progress: (done: number, total: number) => void
+  progress: (done: number, total: number) => void,
 ): Promise<void> {
   if (!items.length) return Promise.resolve();
   const mode = prefs.mode;
@@ -502,7 +519,9 @@ function startGitHub(ctx: any): void {
           info={info}
           save={savePrefs}
           copy={(progress) => {
-            const items = collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
+            const items =
+              collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items ||
+              [];
             const files = items.filter((item) => item.type === "file");
             if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length)
               return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
@@ -600,7 +619,9 @@ function startGitHub(ctx: any): void {
         prefs.sort === MODIFIED_SORT_VALUE && missingDates
           ? `${missingDates} sem data`
           : `${group.items.length} itens`,
-        missingDates && prefs.sort === MODIFIED_SORT_VALUE ? "Itens sem data aparecem por último em cada grupo." : "",
+        missingDates && prefs.sort === MODIFIED_SORT_VALUE
+          ? "Itens sem data aparecem por último em cada grupo."
+          : "",
       );
       sortDirectoryGroup(group);
     }

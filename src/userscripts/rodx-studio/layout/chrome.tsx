@@ -214,10 +214,10 @@ export function initializeDeckScrollChrome(): void {
               const selector = target.hasAttribute(DATA_ATTRS.addList)
                 ? `[${DATA_ATTRS.addList}]`
                 : target.dataset.proxy
-                ? `[${DATA_ATTRS.proxy}="${target.dataset.proxy}"]`
-                : target.classList.contains(CSS_CLASSES.miniAvatar)
-                ? `.${CSS_CLASSES.miniAvatar}`
-                : `.${CSS_CLASSES.topbarAuthor}`;
+                  ? `[${DATA_ATTRS.proxy}="${target.dataset.proxy}"]`
+                  : target.classList.contains(CSS_CLASSES.miniAvatar)
+                    ? `.${CSS_CLASSES.miniAvatar}`
+                    : `.${CSS_CLASSES.topbarAuthor}`;
 
               active.querySelector<HTMLElement>(selector)?.click();
             }}
@@ -251,17 +251,23 @@ export function initializeDeckScrollChrome(): void {
 
       portal.style.setProperty(
         "height",
-        contextLabel ? CHROME_METRICS.contextBarHeightWithContext : CHROME_METRICS.contextBarHeightWithoutContext,
+        contextLabel
+          ? CHROME_METRICS.contextBarHeightWithContext
+          : CHROME_METRICS.contextBarHeightWithoutContext,
         "important",
       );
       portal.style.setProperty(
         "max-height",
-        contextLabel ? CHROME_METRICS.contextBarHeightWithContext : CHROME_METRICS.contextBarHeightWithoutContext,
+        contextLabel
+          ? CHROME_METRICS.contextBarHeightWithContext
+          : CHROME_METRICS.contextBarHeightWithoutContext,
         "important",
       );
       portal.style.setProperty(
         "padding-top",
-        contextLabel ? CHROME_METRICS.contextBarPaddingWithContext : CHROME_METRICS.contextBarPaddingWithoutContext,
+        contextLabel
+          ? CHROME_METRICS.contextBarPaddingWithContext
+          : CHROME_METRICS.contextBarPaddingWithoutContext,
         "important",
       );
 
@@ -269,8 +275,10 @@ export function initializeDeckScrollChrome(): void {
       portal.hidden = false;
 
       const articlesContainer = candidate.closest<HTMLElement>(DOM_SELECTORS.articles);
-      const rect = articlesContainer ? articlesContainer.getBoundingClientRect() : { left: 0, width: innerWidth };
-      
+      const rect = articlesContainer
+        ? articlesContainer.getBoundingClientRect()
+        : { left: 0, width: innerWidth };
+
       portal.style.setProperty("left", Math.max(0, rect.left) + "px", "important");
       portal.style.setProperty(
         "width",
@@ -325,15 +333,15 @@ export function initializeDeckScrollChrome(): void {
         if (article.hidden || getComputedStyle(article).display === "none") continue;
         const r = article.getBoundingClientRect();
         const delta = r.top - top;
-        if (
-          r.height > innerHeight * CHROME_METRICS.snapScreenRatio ||
-          Math.abs(delta) >= Math.abs(distance)
-        )
+        if (r.height > innerHeight * CHROME_METRICS.snapScreenRatio || Math.abs(delta) >= Math.abs(distance))
           continue;
         distance = delta;
       }
 
-      if (Math.abs(distance) > CHROME_METRICS.snapMinDistance && Math.abs(distance) < CHROME_METRICS.snapMaxDistance) {
+      if (
+        Math.abs(distance) > CHROME_METRICS.snapMinDistance &&
+        Math.abs(distance) < CHROME_METRICS.snapMaxDistance
+      ) {
         window.scrollBy({
           top: distance,
           left: 0,

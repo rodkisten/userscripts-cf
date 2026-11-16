@@ -182,7 +182,7 @@ function deepCloneValue<T>(value: T): T {
   }
   if (value !== null && typeof value === OBJECT_TYPE_NAME) {
     return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, deepCloneValue(item)])
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, deepCloneValue(item)]),
     ) as unknown as T;
   }
   return value;

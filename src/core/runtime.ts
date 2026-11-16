@@ -180,13 +180,21 @@ export interface RuntimeAPI {
 
 function initializeRodFeatures(host: Window & typeof globalThis) {
   return {
-    menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
-    toaster: typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__ ? createToasterFeature(host) : undefined,
+    menu:
+      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
+    toaster:
+      typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
+        ? createToasterFeature(host)
+        : undefined,
     storage: createStorageFeature(host),
   };
 }
 
-function setupUpdateChecker(release: { id: string; version: string; manifestURL: string }, host: Window & typeof globalThis, rod: ReturnType<typeof initializeRodFeatures>) {
+function setupUpdateChecker(
+  release: { id: string; version: string; manifestURL: string },
+  host: Window & typeof globalThis,
+  rod: ReturnType<typeof initializeRodFeatures>,
+) {
   return createUpdateChecker({
     id: release.id,
     installedVersion: release.version,
@@ -225,7 +233,10 @@ let updaterInstance: ReturnType<typeof createUpdateChecker> | null = null;
 function createDomEventsEngine(definitionId: string, host: Window & typeof globalThis): DomEventsEngine {
   const domListeners = new Map<
     EventTarget,
-    Map<string, Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: unknown }>>>
+    Map<
+      string,
+      Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: unknown }>>
+    >
   >();
 
   const captureOf = (options?: boolean | AddEventListenerOptions) =>
@@ -245,7 +256,8 @@ function createDomEventsEngine(definitionId: string, host: Window & typeof globa
       const capture = captureOf(options);
       if (captures.has(capture)) return;
 
-      const once = typeof options === "object" && options !== null && (options as AddEventListenerOptions)?.once;
+      const once =
+        typeof options === "object" && options !== null && (options as AddEventListenerOptions)?.once;
       const listener: EventListener = function (this: EventTarget, event: Event) {
         if (once) domEventsEngineInstance.remove(target, type, callback, options);
         try {
@@ -300,19 +312,21 @@ export function createRuntime(
   release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
   const rod = initializeRodFeatures(host);
-  
+
   updaterInstance = release ? setupUpdateChecker(release, host, rod) : null;
   updaterInstance?.start();
 
   const uiFeature =
     typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : null;
-  
+
   const stores = new Map<string, ReturnType<typeof rod.storage.create>>();
   let queryClient: QueryClient | undefined;
-  
+
   const getQueryClient = () =>
-    (queryClient ??= new QueryClient({ defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } } }));
-  
+    (queryClient ??= new QueryClient({
+      defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },
+    }));
+
   const queryService = Object.freeze({
     get client() {
       return getQueryClient();
@@ -330,7 +344,7 @@ export function createRuntime(
     typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__
       ? createClipboardFeature(host)
       : null;
-      
+
   if (clipboard) (host as unknown as Record<string, unknown>).__RodClipboard = clipboard;
 
   function openClipboardMenu(): void {
@@ -343,17 +357,29 @@ export function createRuntime(
       size: "lg",
       description: CLIPBOARD_DESCRIPTION,
       fields: [
-        { type: "search", name: CLIPBOARD_SEARCH_NAME, label: CLIPBOARD_SEARCH_LABEL, placeholder: CLIPBOARD_SEARCH_PLACEHOLDER },
+        {
+          type: "search",
+          name: CLIPBOARD_SEARCH_NAME,
+          label: CLIPBOARD_SEARCH_LABEL,
+          placeholder: CLIPBOARD_SEARCH_PLACEHOLDER,
+        },
         {
           type: "select",
           name: CLIPBOARD_ITEM_NAME,
           label: CLIPBOARD_ITEM_LABEL,
           searchable: true,
-          options: entries.map((item: { id: string; text: string }) => ({ value: item.id, label: item.text.slice(0, CLIPBOARD_SNIPPET_LENGTH) })),
+          options: entries.map((item: { id: string; text: string }) => ({
+            value: item.id,
+            label: item.text.slice(0, CLIPBOARD_SNIPPET_LENGTH),
+          })),
         },
       ],
       actions: [
-        { id: CLIPBOARD_ACTION_COPY, label: CLIPBOARD_ACTION_COPY_LABEL, handler: async (ctx: { values: { item: string } }) => clipboard.copy(ctx.values.item) },
+        {
+          id: CLIPBOARD_ACTION_COPY,
+          label: CLIPBOARD_ACTION_COPY_LABEL,
+          handler: async (ctx: { values: { item: string } }) => clipboard.copy(ctx.values.item),
+        },
         { id: CLIPBOARD_ACTION_READ, label: CLIPBOARD_ACTION_READ_LABEL, handler: () => clipboard.read() },
         {
           id: CLIPBOARD_ACTION_CLEAR,
@@ -392,7 +418,7 @@ export function createRuntime(
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
     matches(definition, url, rules()[definition.id]);
-  
+
   const onRulesChange = () => {
     void navigate();
   };
@@ -415,7 +441,7 @@ export function createRuntime(
     stateValues.set(id, value);
     const scriptListeners = listeners.get(id);
     if (!scriptListeners) return;
-    
+
     for (const callback of scriptListeners) {
       try {
         callback(value);
@@ -434,7 +460,7 @@ export function createRuntime(
     let eventBus: ReturnType<typeof createEventBus> | undefined;
     let sharedEvents: ReturnType<typeof createSharedEvents> | undefined;
     let eventsValue: ScriptContext["events"] | undefined;
-    
+
     function getEvents(): ScriptContext["events"] {
       if (!eventsValue) {
         eventBus = createEventBus({
@@ -491,7 +517,10 @@ export function createRuntime(
     function getStore() {
       let store = stores.get(definition.id);
       if (!store) {
-        store = rod.storage.create({ namespace: `${STORAGE_NAMESPACE_PREFIX}${definition.id}`, backend: "auto" });
+        store = rod.storage.create({
+          namespace: `${STORAGE_NAMESPACE_PREFIX}${definition.id}`,
+          backend: "auto",
+        });
         stores.set(definition.id, store);
       }
       return store;
@@ -503,13 +532,13 @@ export function createRuntime(
         throw new TypeError("Database name must be a non-empty namespace segment");
       }
       if (databases.has(name)) return databases.get(name);
-      
+
       const instance = rod.storage.create({
         ...options,
         namespace: `${STORAGE_NAMESPACE_PREFIX}${definition.id}${DB_NAMESPACE_SEGMENT}${name}`,
         backend: { preferred: "indexeddb", fallbacks: [] },
       });
-      
+
       databases.set(name, instance);
       onDispose(() => (instance as { close?: () => void })?.close?.());
       return instance;
@@ -540,25 +569,26 @@ export function createRuntime(
       typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
         ? createGMFeature(host, definition.id)
         : (undefined as unknown as ReturnType<typeof createGMFeature>);
-        
+
     const network =
       typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__
         ? createHttpFeature(host, abort.signal, storage, definition.id)
         : null;
-        
+
     if (network) onDispose(() => network.dispose());
 
     const dom =
       typeof __ROD_FEATURE_DOM__ === "undefined" || __ROD_FEATURE_DOM__
         ? createDomFeature(host, abort.signal)
         : (undefined as unknown as ReturnType<typeof createDomFeature>);
-        
+
     if (dom) onDispose(() => dom.dispose());
 
     return {
       id: definition.id,
       diagnostics: Object.freeze({
-        capture: (error: unknown, source = SOURCE_MANUAL) => captureDiagnostic(error, source, definition.id, host),
+        capture: (error: unknown, source = SOURCE_MANUAL) =>
+          captureDiagnostic(error, source, definition.id, host),
         observeNetwork: () => {
           const stop = observeNetworkDiagnostics(host, abort.signal);
           onDispose(stop);
@@ -778,9 +808,9 @@ export function createRuntime(
       closed = true;
       updaterInstance?.stop();
       host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
-      if ((host as unknown as Record<string, unknown>).__RodClipboard === clipboard) 
+      if ((host as unknown as Record<string, unknown>).__RodClipboard === clipboard)
         delete (host as unknown as Record<string, unknown>).__RodClipboard;
-      
+
       clipboard?.dispose();
       if (clipboard) {
         host.document.dispatchEvent(
@@ -793,19 +823,19 @@ export function createRuntime(
       host.document.removeEventListener("rod-script-manager:change", onRulesChange);
       host.removeEventListener("popstate", navigate);
       host.removeEventListener("hashchange", navigate);
-      
+
       undoHistory.forEach((undo) => undo());
       await scheduled;
-      
+
       for (const instance of active.values()) await instance.context.dispose();
       active.clear();
       failures.clear();
       stateValues.clear();
       listeners.clear();
-      
+
       for (const store of stores.values()) (store as { close?: () => void })?.close?.();
       stores.clear();
-      
+
       queryClient?.clear();
       queryClient = undefined;
       bridge.dispose?.();

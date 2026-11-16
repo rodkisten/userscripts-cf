@@ -65,11 +65,7 @@ function appendStyleToTarget(
   }
 }
 
-function registerManagedClass(
-  element: HTMLElement | Element,
-  className: string,
-  append: boolean,
-): string[] {
+function registerManagedClass(element: HTMLElement | Element, className: string, append: boolean): string[] {
   const previous = managedClasses.get(element) || [];
   if (!append) {
     element.classList.remove(...previous);

@@ -102,7 +102,7 @@ const FEED_MEDIA_TYPES = {
 export let databaseSaveTimer: ReturnType<typeof setTimeout> | undefined;
 export let refreshingCloud = false;
 
-// TODO: injetar contexto para substituir helpers  
+// TODO: injetar contexto para substituir helpers
 // ============================================================================
 // Funções Semânticas Especializadas
 // ============================================================================
@@ -223,31 +223,34 @@ export function bindListsChangeEventEmitter(): void {
 }
 
 export function bindListsSettingsEventEmitter(): void {
-  Studio.on("lists:settings", ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
-    if (!id) return;
-    const scope = "list:" + id;
-    const mediaValue = settings.media;
-    const mappedMedia = ["videos", "native"].includes(mediaValue || "")
-      ? FEED_MEDIA_TYPES.video
-      : mediaValue === "images"
-        ? FEED_MEDIA_TYPES.image
-        : mediaValue === "media"
-          ? FEED_MEDIA_TYPES.media
-          : FEED_MEDIA_TYPES.all;
+  Studio.on(
+    "lists:settings",
+    ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
+      if (!id) return;
+      const scope = "list:" + id;
+      const mediaValue = settings.media;
+      const mappedMedia = ["videos", "native"].includes(mediaValue || "")
+        ? FEED_MEDIA_TYPES.video
+        : mediaValue === "images"
+          ? FEED_MEDIA_TYPES.image
+          : mediaValue === "media"
+            ? FEED_MEDIA_TYPES.media
+            : FEED_MEDIA_TYPES.all;
 
-    const config = {
-      reposts: !settings.hideReposts,
-      media: mappedMedia,
-    };
+      const config = {
+        reposts: !settings.hideReposts,
+        media: mappedMedia,
+      };
 
-    if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) return;
-    state.visual.feedFilters = {
-      ...state.visual.feedFilters,
-      [scope]: config,
-    };
-    FeedFilters.publish();
-    Studio.queue(STUDIO_JOBS.feedsFilters);
-  });
+      if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) return;
+      state.visual.feedFilters = {
+        ...state.visual.feedFilters,
+        [scope]: config,
+      };
+      FeedFilters.publish();
+      Studio.queue(STUDIO_JOBS.feedsFilters);
+    },
+  );
 }
 
 export function setupInterfaceHygieneModule(): void {
