@@ -132,7 +132,14 @@ NODE
         selected_tests+=("${related_tests[@]}")
       fi
       if printf '%s\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
-        selected_tests+=("tests/integrated-userscripts.test.js")
+        if [[ -f affected-userscripts.json ]]; then
+          mapfile -t affected_ids < <(node -p 'require("./affected-userscripts.json").affected.join("\\n")')
+          for id in "${affected_ids[@]}"; do
+            if [[ -d "tests/userscripts/$id" ]]; then
+              while IFS= read -r test_file; do selected_tests+=("$test_file"); done < <(find "tests/userscripts/$id" -type f -name '*.test.*')
+            fi
+          done
+        fi
       fi
     fi
     # Test files named after a userscript directory are selected automatically.
@@ -162,30 +169,4 @@ NODE
     ;;
   *) echo "Usage: $0 plan|run" >&2; exit 2 ;;
 esac
- || true)
-        if (( ${#unit_tests[@]} )); then npx vitest run "${unit_tests[@]}" --maxWorkers=2 --passWithNoTests; fi
-        npx vitest run tests/integrated-userscripts.test.js --testNamePattern "$integration_filter" --maxWorkers=2
-      else
-      npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
-      fi
-    fi
-    if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
-    if [[ "$hosting_changed" == true ]]; then
-      node build/hosting.mjs
-    fi
-    {
-      echo "### Selective validation"
-      echo '| Check | Enabled |'
-      echo '|---|---|'
-      echo "| Typecheck and lint | $source_changed |"
-      echo "| Build | $build_needed |"
-      echo "| Vitest candidates | ${#selected_tests[@]} |"
-      echo "| Lab | $lab_changed |"
-      echo "| Hosting | $hosting_changed |"
-      echo ''
-      echo 'Changed files:'
-      sed 's/^/- `/; s/$/`/' changed-files.txt
-    } >> "$GITHUB_STEP_SUMMARY"
-    ;;
-  *) echo "Usage: $0 plan|run" >&2; exit 2 ;;
-esac
+
