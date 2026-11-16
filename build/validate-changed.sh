@@ -131,7 +131,7 @@ NODE
         mapfile -t related_tests < <(npx vitest related "${changed_sources[@]}" --listTests --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js' 2>/dev/null | grep -E 'tests/.*\.test\.[cm]?[jt]sx?$' || true)
         selected_tests+=("${related_tests[@]}")
       fi
-      if printf '%s\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
+      if [[ -f affected-userscripts.json ]]; then
         if [[ -f affected-userscripts.json ]]; then
           mapfile -t affected_ids < <(node -p 'require("./affected-userscripts.json").affected.join("\\n")')
           for id in "${affected_ids[@]}"; do
@@ -143,7 +143,7 @@ NODE
       fi
     fi
     # Test files named after a userscript directory are selected automatically.
-    # Legacy integrated tests remain unfiltered until moved to per-script files.
+    # Folder-based suites are selected from affected runtime dependency graphs.
     if (( ${#selected_tests[@]} )); then
       mapfile -t unique_tests < <(printf '%s\\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
