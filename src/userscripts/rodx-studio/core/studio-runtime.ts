@@ -108,6 +108,8 @@ const OWN_SELECTOR = [
   "[data-rodx-list-video]",
 ].join(",");
 
+
+// TODO: create useRuntime() ou useContext() pra usar isso certo
 export function createStudioRuntime(): StudioRuntime {
   const defaults = createDefaults(STUDIO_SECTION_NAME);
   let saved: Record<string, unknown> = {};
