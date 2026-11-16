@@ -128,6 +128,7 @@ export function SplitButton(props: DropdownButtonProps) {
         size={props.size}
         variant={props.variant}
         disabled={props.disabled || props.loading}
+        iconEnd="▾"
         aria-label="Mais opções"
         aria-haspopup="menu"
       />

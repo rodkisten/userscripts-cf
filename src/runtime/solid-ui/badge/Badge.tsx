@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import { omit, type JSX } from "solid-js";
 import styles, { css } from "./Badge.module.css";
 
 export { css as badgeCss };
@@ -18,7 +18,7 @@ export function Badge(props: BadgeProps) {
         : props.count;
   return (
     <span
-      {...props}
+      {...omit(props, ["variant", "count", "max", "children"])}
       class={`${styles.badge} ${styles[props.variant ?? "default"]} ${props.class ?? ""}`}
       aria-label={props["aria-label"] ?? (props.variant === "dot" ? "Indicador" : String(label()))}
     >

@@ -431,6 +431,7 @@ if (buttonMount) {
     const [height, setHeight] = createSignal(38);
     const [accent, setAccent] = createSignal("#7c3aed");
     const [copyStatus, setCopyStatus] = createSignal("");
+    const [preset, setPreset] = createSignal<"compact" | "default" | "touch" | "">("default");
     const applyPreset = (preset: "compact" | "default" | "touch") => {
       const presets = {
         compact: { size: "sm", radius: 6, height: 30, accent: "#2563eb" },
@@ -438,6 +439,7 @@ if (buttonMount) {
         touch: { size: "lg", radius: 16, height: 48, accent: "#0d9488" },
       } as const;
       const selected = presets[preset];
+      setPreset(preset);
       setSize(selected.size);
       setRadius(selected.radius);
       setHeight(selected.height);
@@ -482,7 +484,7 @@ if (buttonMount) {
           <label>
             Preset{" "}
             <select
-              value=""
+              value={preset()}
               onChange={(e) => {
                 const value = e.currentTarget.value;
                 if (value) applyPreset(value as "compact" | "default" | "touch");
@@ -515,7 +517,7 @@ if (buttonMount) {
           </label>
           <label>
             Tamanho{" "}
-            <select value={size()} onChange={(e) => setSize(e.currentTarget.value as "sm" | "md" | "lg")}>
+            <select value={size()} onChange={(e) => { setPreset(""); setSize(e.currentTarget.value as "sm" | "md" | "lg"); }}>
               <option value="sm">Pequeno</option>
               <option value="md">Médio</option>
               <option value="lg">Grande</option>
@@ -528,7 +530,7 @@ if (buttonMount) {
               min="0"
               max="28"
               value={radius()}
-              onInput={(e) => setRadius(Number(e.currentTarget.value))}
+              onInput={(e) => { setPreset(""); setRadius(Number(e.currentTarget.value)); }}
             />
           </label>
           <label>
@@ -538,7 +540,7 @@ if (buttonMount) {
               min="28"
               max="64"
               value={height()}
-              onInput={(e) => setHeight(Number(e.currentTarget.value))}
+              onInput={(e) => { setPreset(""); setHeight(Number(e.currentTarget.value)); }}
             />
           </label>
           <label>
@@ -546,7 +548,7 @@ if (buttonMount) {
             Loading
           </label>
           <label>
-            Accent <input type="color" value={accent()} onInput={(e) => setAccent(e.currentTarget.value)} />
+            Accent <input type="color" value={accent()} onInput={(e) => { setPreset(""); setAccent(e.currentTarget.value); }} />
           </label>
         </div>
         <div class="flex">

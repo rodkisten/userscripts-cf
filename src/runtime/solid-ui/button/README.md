@@ -79,3 +79,7 @@ The interactive Studio now exposes button size (sm/md/lg), border radius (0–28
 ## Studio presets and CSS export
 
 Presets: Compact (30px/6px/blue), Default (38px/10px/purple), Touch (48px/16px/teal). Accent is reactive. **Copiar CSS** exports the current token declarations through Clipboard API and reports success or permission failure via an accessible status message. Browser validation remains pending.
+
+## Consistency fixes
+
+Badge no longer forwards `variant`, `count`, `max` or `children` as native span attributes. The split dropdown trigger renders one visible chevron even when its button has no text. Preset selection stays controlled and changes to individual tokens switch the editor to **Personalizado**. Build/typecheck are still unverified.
