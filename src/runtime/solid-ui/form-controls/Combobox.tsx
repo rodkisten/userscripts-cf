@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, Show, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Show, onCleanup, onSettled } from 'solid-js';
 import Fuse from 'fuse.js';
 import { Virtualizer } from '@tanstack/virtual-core';
 import type { ControlOption } from './options';
@@ -123,7 +123,7 @@ export function Combobox(props: ComboboxProps) {
       setQuery('');
     }
   };
-  createEffect(() => {
+  onSettled(() => {
     const disposeVirtualizer = virtualizer._didMount();
     onCleanup(disposeVirtualizer);
     const dismiss = (event: PointerEvent) => {
