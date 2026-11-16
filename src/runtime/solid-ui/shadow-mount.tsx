@@ -79,14 +79,19 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
     dispose = render(
       () => (
         <Errored
-          fallback={(error, reset) => {\n            const failure = error();\n            try { options.onError?.(failure); } catch { /* diagnostic callbacks must not crash recovery */ }\n            captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");\n            return (
+          fallback={(error, reset) => {
+            const failure = error();
+            try { options.onError?.(failure); } catch { /* diagnostic callbacks must not crash recovery */ }
+            captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");
+            return (
             <div role="alert" style={{ "pointer-events": "auto", padding: "12px", "background-color": "#18181b", color: "#fafafa", "border-radius": "8px" }}>
               <span>Erro na interface: {String(failure)}</span>
               <button type="button" onClick={reset} style={{ "margin-left": "8px", "pointer-events": "auto" }}>
                 Tentar novamente
               </button>
             </div>
-            );\n          }}
+            );
+          }}
         >
           {component()}
         </Errored>
