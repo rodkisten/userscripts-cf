@@ -147,6 +147,7 @@ jobs:
         shell: bash
         env:
           FULL: ${{ steps.plan.outputs.full }}
+          SCRIPT_TESTS_SEPARATE: ${{ github.event_name != 'workflow_dispatch' || inputs.scope != 'all' }}
         run: bash build/validate-changed.sh run
       - name: Record successful exact-source validation
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.formatting.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
