@@ -46,7 +46,24 @@ for (const definition of definitions) {
     matchURL(pattern, "https://example.com/");
   const entry = path.resolve(root, definition.entry);
   if (!entry.startsWith(root + path.sep)) throw Error("Entry outside project");
-  await fs.access(entry);
+  // A configured .js entry may refer to checked-in TypeScript source.
+  // Keep this validation aligned with analyzeRuntimeGraph's entry resolution.
+  const candidates = [entry];
+  if (/\\.jsx?$/.test(entry)) {
+    const stem = entry.replace(/\\.jsx?$/, "");
+    candidates.push(stem + ".ts", stem + ".tsx", stem + ".jsx");
+  }
+  const exists = await Promise.all(
+    candidates.map(async (candidate) => {
+      try {
+        return (await fs.stat(candidate)).isFile();
+      } catch (error) {
+        if (error.code === "ENOENT" || error.code === "ENOTDIR") return false;
+        throw error;
+      }
+    }),
+  );
+  if (!exists.some(Boolean)) throw new Error(`Userscript entry not found: ${definition.entry}`);
 }
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
