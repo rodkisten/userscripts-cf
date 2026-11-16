@@ -3,7 +3,7 @@
 export function diagnosticPrelude(target, version, scripts) {
   const key = "__rodScriptDiagnosticsV1";
   const storageKey = "rod:script-diagnostics:v1";
-  const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+  const root = window;
   let state = root[key];
   if (!state) {
     const history = (() => {
@@ -27,6 +27,7 @@ export function diagnosticPrelude(target, version, scripts) {
           url: root.location?.origin + root.location?.pathname });
         state.history.length = Math.min(state.history.length, 250);
         try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+        try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
       } catch {}
     };
     root.addEventListener("error", event => {
@@ -35,7 +36,7 @@ export function diagnosticPrelude(target, version, scripts) {
     }, true);
     root.addEventListener("unhandledrejection", event => state.capture(event.reason, "unhandledrejection"));
     state.export = () => JSON.stringify({ schema: 1, scripts: state.scripts, errors: state.history }, null, 2);
-    state.clear = () => { state.history.length = 0; try { root.localStorage.removeItem(storageKey); } catch {} };
+    state.clear = () => { state.history.length = 0; try { root.localStorage.removeItem(storageKey); root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {} };
     root[key] = state;
   }
   for (const script of scripts) state.scripts[script] = { target, version };
