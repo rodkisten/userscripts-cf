@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: userscripts-diagnostics-${{ github.ref }}
-  # Preserve diagnostics until all shards finish, even if release pushes a version commit.
+  # Preserve complete diagnostics until the checks finish.
   cancel-in-progress: false
 
 jobs:
@@ -24,14 +24,10 @@ jobs:
         include:
           - check: typecheck
             command: npm run typecheck
-          - check: build
-            command: npm run build
-          - check: unit-tests-1
-            command: npm run build && npx vitest run --shard=1/3 --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
-          - check: unit-tests-2
-            command: npm run build && npx vitest run --shard=2/3 --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
-          - check: unit-tests-3
-            command: npm run build && npx vitest run --shard=3/3 --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+          # The integration suite consumes dist/, so build it once in this job.
+          # Hosting already runs the production build; no duplicate build-only job.
+          - check: unit-tests
+            command: npm run build && npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
           - check: lab
             command: npm run test:lab
           - check: hosting
