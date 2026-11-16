@@ -111,3 +111,24 @@ test("rewrites GM object destructuring and preserves property names", () => {
   assert.match(output, /\{ GM_getValue: true \}/);
   assert.match(output, /const read = ctx\.gm\.legacy\.getValue/);
 });
+
+test("rewrites runtime helpers inside init, destructuring and nested callbacks", () => {
+  const output = transform(`function init(ctx) {
+    const { storage, menu: actions } = useContext();
+    const { signal } = useRuntime();
+    const { emit } = useRuntimeWorld();
+    async function sync() { return useContext().http; }
+  }`);
+  assert.match(output, /\{ storage, menu: actions \} = ctx/);
+  assert.match(output, /\{ signal \} = ctx/);
+  assert.match(output, /\{ emit \} = ctx\.events\.shared/);
+  assert.match(output, /return ctx\.http/);
+});
+
+test("does not rewrite locally shadowed helpers", () => {
+  const output = transform(`function init(ctx) {
+    const useContext = () => ({ local: true });
+    const { local } = useContext();
+  }`);
+  assert.match(output, /const \{ local \} = useContext\(\)/);
+});
