@@ -7,6 +7,7 @@ import { render } from 'solid-js/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
 import { StandaloneFieldRenderer } from '../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer';
+import { getFormControlsQueryClient } from '../src/runtime/solid-ui/form-controls/query-client';
 import { SHARED_FIELD_TYPES } from '../src/runtime/solid-ui/form-controls/field-types';
 import type { FormField } from '../src/runtime/solid-ui/form-controls/fields';
 import type { ControlOption } from '../src/runtime/solid-ui/form-controls/options';
@@ -114,6 +115,9 @@ function App() {
   const [asyncValue, setAsyncValue] = createSignal('');
   const [asyncValueTwo, setAsyncValueTwo] = createSignal('');
   const [remoteRequests, setRemoteRequests] = createSignal(0);
+  const [cacheSnapshot, setCacheSnapshot] = createSignal('Clique em Inspecionar cache');
+  const queryClient = getFormControlsQueryClient();
+  const inspectCache = () => setCacheSnapshot(JSON.stringify(queryClient.getQueryCache().getAll().map((entry) => ({ key: entry.queryKey, status: entry.state.status, updatedAt: entry.state.dataUpdatedAt })), null, 2));
   const source = async (query: string, { signal }: { signal: AbortSignal }) => {
     setRemoteRequests((count) => count + 1);
     await new Promise<void>((resolve, reject) => {
@@ -144,11 +148,14 @@ function App() {
         <section class="card">
           <h2>Async · TanStack Query</h2>
           <label for="async">Sugestões assíncronas simuladas</label>
-          <Combobox id="async" options={options} source={source} queryKey={['playground', 'async-options']} value={asyncValue()} onChange={(value) => setAsyncValue(String(value))} disabled={disabled()} clearable />
+          <Combobox id="async" options={options} source={source} queryClient={queryClient} queryKey={['playground', 'async-options']} value={asyncValue()} onChange={(value) => setAsyncValue(String(value))} disabled={disabled()} clearable />
           <label for="async-shared">Segundo controle, mesmo cache</label>
           <Combobox id="async-shared" options={options} source={source} queryKey={['playground', 'async-options']} value={asyncValueTwo()} onChange={(value) => setAsyncValueTwo(String(value))} disabled={disabled()} clearable />
-          <small>Os dois controles compartilham o QueryClient do runtime e a mesma queryKey. Simula 250 ms de latência e suporta cancelamento.</small>
+          <small>Os dois controles compartilham o QueryClient do módulo e a mesma queryKey. Em userscripts, use ctx.query.client para compartilhar o cache da instância do runtime. Simula 250 ms de latência e suporta cancelamento.</small>
           <output aria-live="polite">Requisições simuladas: {remoteRequests()}</output>
+          <button type="button" onClick={inspectCache}>Inspecionar cache compartilhado</button>
+          <button type="button" onClick={() => { queryClient.removeQueries({ queryKey: ['playground', 'async-options'] }); inspectCache(); }}>Limpar cache da demonstração</button>
+          <pre aria-live="polite">{cacheSnapshot()}</pre>
           <pre>{JSON.stringify(asyncValue())}</pre>
         </section>
         <section class="card">
