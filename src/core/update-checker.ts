@@ -52,6 +52,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
   const host = options.host ?? window;
   const intervalMs = Math.max(60_000, options.intervalMs ?? SIX_HOURS);
   const storage = options.storage;
+  const fallbackCache: { checked?: number; dismissed?: string } = {};
   const key = `rod:updates:${options.id}`;
   let enabled = options.enabled !== false;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -62,11 +63,12 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     try {
       return JSON.parse(storage?.getItem(key) || "{}") as { checked?: number; dismissed?: string };
     } catch {
-      return {} as { checked?: number; dismissed?: string };
+      return { ...fallbackCache };
     }
   };
   const save = (value: { checked?: number; dismissed?: string }) => {
     try {
+      Object.assign(fallbackCache, value);
       storage?.setItem(key, JSON.stringify(value));
     } catch {
       /* storage unavailable */
@@ -76,6 +78,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     if (!enabled) return null;
     if (pending) return pending;
     const cache = read();
+    // A cached timestamp suppresses requests, not future notifications after reload.
     if (!force && Date.now() - Math.max(lastChecked, cache.checked ?? 0) < intervalMs) return null;
     pending = (async () => {
       try {
@@ -87,6 +90,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
               return response.json();
             })();
         const manifest = raw as Manifest;
+        if (!manifest || !Array.isArray(manifest.scripts)) throw new Error("Invalid update manifest");
         const entry = manifest.scripts?.find((item) => item.id === options.id);
         const latest = entry?.version ?? manifest.version;
         if (!entry || !latest || compareVersions(options.installedVersion, latest) !== -1) {
@@ -129,11 +133,11 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
   function start() {
     if (timer || !enabled) return;
     void check();
-    timer = setInterval(() => void check(), intervalMs);
+    timer = host.setInterval(() => void check(), intervalMs);
     if (options.checkOnFocus !== false) host.document.addEventListener("visibilitychange", onFocus);
   }
   function stop() {
-    if (timer) clearInterval(timer);
+    if (timer) host.clearInterval(timer);
     timer = undefined;
     host.document.removeEventListener("visibilitychange", onFocus);
   }
