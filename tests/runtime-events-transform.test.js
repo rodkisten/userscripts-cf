@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { runtimeHelpers } from "../build/runtime-helpers.mjs";
 import { createGMBridge } from "../src/runtime/gm-bridge.js";
