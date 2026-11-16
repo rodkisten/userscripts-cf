@@ -480,6 +480,18 @@ if (buttonMount) {
           >
             Mais ações
           </DropdownButton>
+          <Button variant="secondary" icon="⚙" onClick={() => RodMenu.open({
+            title: "Ações com Button compartilhado",
+            description: "RodMenu real com loading, badge, ícone e atalhos.",
+            actions: [
+              { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
+              { id: "save", label: "Salvar", role: "submit", icon: "✓", badge: count(),
+                shortcut: "mod+s", handler: async () => {
+                  await new Promise((resolve) => setTimeout(resolve, 700));
+                  setCount((n) => n + 1);
+                } },
+            ],
+          })}>Abrir RodMenu com Button</Button>
         </div>
         <pre class="code">
           {JSON.stringify({ variant: variant(), loading: busy(), badge: count() }, null, 2)}
