@@ -1,5 +1,4 @@
 import { render } from "@solidjs/web";
-import { ErrorBoundary } from "solid-js";
 import type { JSX } from "@solidjs/web";
 
 export type ShadowStyle = string | { css: string };
@@ -76,11 +75,13 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   let dispose: (() => void) | undefined;
   try {
     dispose = render(() => {
-      return options.onError ? (
-        <ErrorBoundary fallback={(error) => { options.onError?.(error); return null; }}>
-          {component()}
-        </ErrorBoundary>
-      ) : component();
+      try {
+        return component();
+      } catch (error) {
+        if (!options.onError) throw error;
+        options.onError(error);
+        return null;
+      }
     }, container);
   } catch (error) {
     container.remove();
