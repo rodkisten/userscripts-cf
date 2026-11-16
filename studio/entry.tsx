@@ -1,5 +1,5 @@
 import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
-import { IconButton } from "../src/runtime/solid-ui/button";
+import { IconButton, SplitButton } from "../src/runtime/solid-ui/button";
 import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
 import sourceStyles, { css as sourceCss } from "./InspectorSource.module.css";
@@ -465,6 +465,22 @@ if (buttonMount) {
           >
             Salvar
           </Button>
+          <SplitButton
+            variant={variant()}
+            icon="💾"
+            badge={count()}
+            autoLoading
+            onClick={async () => {
+              await new Promise((resolve) => setTimeout(resolve, 600));
+              setCount((n) => n + 1);
+            }}
+            items={[
+              { label: "Salvar cópia", onSelect: () => setCount((n) => n + 1) },
+              { label: "Zerar contador", onSelect: () => setCount(0) },
+            ]}
+          >
+            Salvar
+          </SplitButton>
           <IconButton
             icon="🔔"
             badge={count()}
