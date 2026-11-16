@@ -23,6 +23,65 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.ids.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: ids
+        shell: bash
+        run: |
+          echo "ids=$(node --input-type=module -e 'import definitions from "./userscripts.config.js"; console.log(JSON.stringify(definitions.map(d => d.id)))')" >> "$GITHUB_OUTPUT"
+  script-tests:
+    needs: discover
+    if: github.event_name != 'workflow_dispatch' || inputs.scope != 'all'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJSON(needs.discover.outputs.ids) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Calculate dependency fingerprint
+        id: fingerprint
+        env:
+          SCRIPT_ID: ${{ matrix.id }}
+        run: |
+          node build/validation-fingerprints.mjs --output=fingerprints.json
+          echo "hash=$(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].hash)')" >> "$GITHUB_OUTPUT"
+          echo "tests=$(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].tests.length)')" >> "$GITHUB_OUTPUT"
+      - name: Restore userscript test result
+        if: steps.fingerprint.outputs.tests != '0'
+        id: cached
+        uses: actions/cache/restore@v4
+        with:
+          path: .validation-cache/scripts/${{ matrix.id }}/passed
+          key: script-tests-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
+      - name: Build and test uncached userscript
+        if: steps.fingerprint.outputs.tests != '0' && steps.cached.outputs.cache-hit != 'true'
+        env:
+          SCRIPT_ID: ${{ matrix.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          mapfile -t tests < <(node -e 'console.log(require("./fingerprints.json")[process.env.SCRIPT_ID].tests.join("\\n"))')
+          npx vitest run "${tests[@]}" --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+          mkdir -p ".validation-cache/scripts/$SCRIPT_ID"
+          echo "passed" > ".validation-cache/scripts/$SCRIPT_ID/passed"
+      - name: Save successful userscript result
+        if: steps.fingerprint.outputs.tests != '0' && steps.cached.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: .validation-cache/scripts/${{ matrix.id }}/passed
+          key: script-tests-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
   validate:
     name: "Validate affected files"
     runs-on: ubuntu-latest
