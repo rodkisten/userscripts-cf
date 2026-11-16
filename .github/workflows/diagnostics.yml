@@ -110,31 +110,32 @@ jobs:
               playground/*|public/*) hosting_changed=true; build_needed=true ;;
             esac
           done
+          # Build first: integration tests consume dist/ and must never see stale bundles.
+          mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
+          if (( ${#changed_tests[@]} )) && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\.test\.'; then
+            build_needed=true
+          fi
           if [[ "$source_changed" == true ]]; then
             npm run typecheck
             npm run lint
-            # The userscript bundle is shared, so source changes require a build.
-            # Vitest --related selects tests importing changed modules. Integration
-            # fixtures consume dist/ indirectly, so include them for userscript edits.
-            mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
-            if (( ${#changed_sources[@]} )); then
-              npx vitest related "${changed_sources[@]}" --run --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
-            fi
-            if printf '%s\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
-              npx vitest run tests/integrated-userscripts.test.js --maxWorkers=2
-            fi
           fi
           if [[ "$build_needed" == true ]]; then npm run build; fi
-          if [[ "$tests_changed" == true ]]; then
-            mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
-            if (( ${#changed_tests[@]} )); then
-              # Some integration tests read dist/ rather than importing source.
-              if [[ "$build_needed" != true ]] && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone).*\.test\.'; then
-                npm run build
-                build_needed=true
-              fi
-              npx vitest run "${changed_tests[@]}" --maxWorkers=2
+          selected_tests=("${changed_tests[@]}")
+          if [[ "$source_changed" == true ]]; then
+            mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
+            if (( ${#changed_sources[@]} )); then
+              # --related runs only graph-linked tests. Dist-driven suites are added below.
+              mapfile -t related_tests < <(npx vitest related "${changed_sources[@]}" --listTests --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js' 2>/dev/null | grep -E 'tests/.*\.test\.[cm]?[jt]sx?$' || true)
+              selected_tests+=("${related_tests[@]}")
             fi
+            if printf '%s\n' "${files[@]}" | grep -Eq '^src/userscripts/'; then
+              selected_tests+=("tests/integrated-userscripts.test.js")
+            fi
+          fi
+          if (( ${#selected_tests[@]} )); then
+            mapfile -t unique_tests < <(printf '%s\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
+            echo "Selected tests: ${unique_tests[*]}"
+            npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
           fi
           if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
           if [[ "$hosting_changed" == true ]]; then
