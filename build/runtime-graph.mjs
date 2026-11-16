@@ -30,7 +30,32 @@ async function resolveLocal(from, specifier) {
 /** Analyze static runtime feature usage across all reachable local imports. */
 export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) {
   const rootPath = path.resolve(root);
-  const pending = [path.resolve(rootPath, entry)];
+  // Config entries may still use .js while the source has migrated to .ts/.tsx.
+  // Resolve the entry with the same extension fallback as local imports.
+  const configuredEntry = path.resolve(rootPath, entry);
+  let resolvedEntry = configuredEntry;
+  try {
+    await fs.access(configuredEntry);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    const extension = path.extname(configuredEntry);
+    const stem = configuredEntry.slice(0, -extension.length);
+    let found = false;
+    for (const candidateExtension of extensions) {
+      const candidate = stem + candidateExtension;
+      try {
+        if ((await fs.stat(candidate)).isFile()) {
+          resolvedEntry = candidate;
+          found = true;
+          break;
+        }
+      } catch (candidateError) {
+        if (candidateError.code !== "ENOENT") throw candidateError;
+      }
+    }
+    if (!found) throw new Error(`Unresolved userscript entry: ${entry}`);
+  }
+  const pending = [resolvedEntry];
   const visited = new Set();
   const features = new Set();
   const dynamicFiles = [];
