@@ -95,7 +95,7 @@ async function saveToCollections(ids: string[], signal: AbortSignal) {
 }
 
 export function mountReelBookmark(
-  ctx: Pick<ScriptContext, "signal" | "pageStyle" | "listen" | "onDispose">,
+  ctx: Pick<ScriptContext, "signal" | "pageStyle" | "listen" | "onDispose" | "observe" | "interval">,
   getCollectionIds: () => Promise<string[]>,
   notify: (message: string) => void,
 ) {
@@ -170,7 +170,7 @@ export function mountReelBookmark(
     mount.host.dataset.rodCollectionAction = "true";
     mount.host.style.display = "inline-flex";
   }
-  const observer = new MutationObserver((records) => {
+  ctx.observe(document.documentElement, (records) => {
     if (
       records.some(
         (record) =>
@@ -180,8 +180,7 @@ export function mountReelBookmark(
       )
     )
       scheduleRefresh();
-  });
-  observer.observe(document.documentElement, {
+  }, {
     subtree: true,
     childList: true,
     attributes: true,
@@ -202,7 +201,7 @@ export function mountReelBookmark(
   ctx.listen(window, "pageshow", navigation);
   ctx.listen(window, "hashchange", navigation);
   ctx.listen(document, "touchend", navigation, { passive: true });
-  const interval = setInterval(scheduleRefresh, 600);
+  ctx.interval(scheduleRefresh, 600);
   ctx.onDispose(() => {
     observer.disconnect();
     clearInterval(interval);
