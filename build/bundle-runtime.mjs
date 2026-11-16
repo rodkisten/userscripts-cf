@@ -2,6 +2,7 @@ import path from "node:path";
 import { build } from "vite";
 import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
+import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
 
 export async function bundleRuntime(root, definitions, options = {}) {
   const virtualID = "\0userscripts-cf-entry";
@@ -47,6 +48,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     logLevel: "warn",
     define: featureDefines,
     plugins: [
+      instrumentErrorsPlugin(root),
       {
         name: "userscripts-cf-entry",
         resolveId: (id) => (id.endsWith("userscripts-cf-entry") ? virtualID : null),
