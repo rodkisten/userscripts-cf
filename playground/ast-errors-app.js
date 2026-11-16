@@ -1,4 +1,4 @@
-import ts from "typescript";
+import * as ts from "typescript";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -33,7 +33,7 @@ function diffLines(before, after) {
     root.textContent = "Diff muito grande. Reduza o exemplo para comparar as linhas.";
     return;
   }
-  const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
+  const dp = Array.from({ length: a.length + 1 }, () => new Uint32Array(b.length + 1));
   for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
   let i = 0, j = 0;
   const fragment = document.createDocumentFragment();
