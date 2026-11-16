@@ -75,7 +75,6 @@ const suggestions = ctx.query.createAsyncOptions(
 
 **Follow-up:** validate `ctx.http` response and abort semantics in this example, run typecheck/build, add integration tests and a Playground harness for runtime contexts.
 
-
 ## Atualizações automáticas dos userscripts
 
 O runtime inicializa o verificador para cada **instalável** (individual, `unified` ou `standalone`), usando a versão embutida pelo build e `https://userscripts.migos.club/manifest.json`. O manifesto publicado contém a versão de release e o arquivo `.user.js` correspondente.
