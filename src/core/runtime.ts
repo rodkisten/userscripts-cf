@@ -421,7 +421,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       listen(target, event, callback, options = {}) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
-            const result = typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
+            const result: unknown = typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
             if (result && typeof (result as Promise<unknown>).then === "function") {
               void Promise.resolve(result).catch(error => {
                 captureDiagnostic(error, `event:${event}`, definition.id, host);
