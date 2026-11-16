@@ -2,42 +2,151 @@ import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
 
-export function createStudioRuntime() {
-  const key = "rodx:studio:runtime:v3";
-  const defaults = createDefaults("studio");
-  let saved = {};
+// ============================================================================
+// Tipos e Interfaces
+// ============================================================================
+export type StudioConfig = ReturnType<typeof createDefaults>["studio"] & {
+  budgetMs: number;
+  scanDelayMs: number;
+  maintenanceMs: number;
+  homeListLimit: number;
+  [key: string]: unknown;
+};
+
+export interface NetworkState {
+  ready: boolean;
+  authReady: boolean;
+  error: string;
+}
+
+export interface StudioState {
+  config: StudioConfig;
+  network: NetworkState;
+  route: string;
+  [key: string]: unknown;
+}
+
+export type EventCallback = (data?: unknown) => void;
+export type JobFunction = () => void | Promise<unknown>;
+
+export interface JobDefinition {
+  fn: JobFunction;
+  events: string[];
+  group: string;
+  minMs: number;
+  last: number;
+  running: boolean;
+  again: boolean;
+}
+
+export interface JobStats {
+  calls: number;
+  ms: number;
+  errors: number;
+}
+
+export interface RegisterOptions {
+  events?: string[];
+  group?: string;
+  minMs?: number;
+}
+
+export interface DiagnosticInfo {
+  version: string;
+  network: NetworkState;
+  selectors: {
+    tweets: number;
+    userCells: number;
+    primaryColumnFound: boolean;
+    nativeSearchFound: boolean;
+  };
+  modules: Record<string, { calls: number; ms: number; errors: number }>;
+  queued: number;
+  domGeneration: number;
+}
+
+export interface StudioRuntime {
+  state: StudioState;
+  config: StudioConfig;
+  on(type: string, fn: EventCallback): () => void;
+  emit(type: string, data?: unknown): void;
+  slice<T>(name: string, value: T): T;
+  register(id: string, fn: JobFunction, options?: RegisterOptions): () => void;
+  invalidate(reason?: string): void;
+  queue(id: string): void;
+  enabled(group: string): boolean;
+  dom: {
+    nodes(selector: string): Element[];
+  };
+  start(): void;
+  configure(patch: Partial<StudioConfig>): void;
+  diagnostics(): DiagnosticInfo;
+  services: Record<string, unknown>;
+}
+
+// ============================================================================
+// Constantes Semânticas e Mensagens
+// ============================================================================
+const CONFIG_STORAGE_KEY = "rodx:studio:runtime:v3";
+const STUDIO_SECTION_NAME = "studio";
+const DEFAULT_ROUTE_REASON = "dom";
+const STUDIO_LOGGER_TAG = "[RodX Studio]";
+const STUDIO_VERSION = "3.7.0";
+
+const OWN_SELECTOR = [
+  "#rodx-search-deck-root",
+  "#rodx-search-deck-dock",
+  "#rodx-navigation-strip",
+  "#rodx-feed-filters",
+  "#rodx-active-tweetbar",
+  "#x-lists-studio-root",
+  "#rodx-profile-lists",
+  "#rodx-list-id",
+  "#rodx-floating-search",
+  ".rodx-quick-search",
+  "[data-rod-menu-host]",
+  "[data-rodx-list-video]",
+].join(",");
+
+export function createStudioRuntime(): StudioRuntime {
+  const defaults = createDefaults(STUDIO_SECTION_NAME);
+  let saved: Record<string, unknown> = {};
+  
   try {
-    saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const rawSaved = localStorage.getItem(CONFIG_STORAGE_KEY);
+    saved = rawSaved ? JSON.parse(rawSaved) : {};
   } catch {}
-  const config = {
+
+  const config: StudioConfig = {
     ...defaults,
     ...saved,
     feedDefaults: {
       ...defaults.feedDefaults,
-      ...saved.feedDefaults,
+      ...((saved.feedDefaults as Record<string, unknown>) || {}),
     },
     modules: {
       ...defaults.modules,
-      ...saved.modules,
+      ...((saved.modules as Record<string, boolean>) || {}),
     },
+    budgetMs: Math.max(
+      STUDIO_RANGES.budgetMs.min,
+      Math.min(STUDIO_RANGES.budgetMs.max, Number(saved.budgetMs) || defaults.budgetMs),
+    ),
+    scanDelayMs: Math.max(
+      STUDIO_RANGES.scanDelayMs.min,
+      Math.min(STUDIO_RANGES.scanDelayMs.max, Number(saved.scanDelayMs) || defaults.scanDelayMs),
+    ),
+    maintenanceMs: Math.max(
+      STUDIO_RANGES.maintenanceMs.min,
+      Number(saved.maintenanceMs) || defaults.maintenanceMs,
+    ),
+    homeListLimit: Math.max(
+      STUDIO_RANGES.homeListLimit.min,
+      Math.min(STUDIO_RANGES.homeListLimit.max, Number(saved.homeListLimit) || defaults.homeListLimit),
+    ),
   };
-  config.budgetMs = Math.max(
-    STUDIO_RANGES.budgetMs.min,
-    Math.min(STUDIO_RANGES.budgetMs.max, Number(config.budgetMs) || defaults.budgetMs),
-  );
-  config.scanDelayMs = Math.max(
-    STUDIO_RANGES.scanDelayMs.min,
-    Math.min(STUDIO_RANGES.scanDelayMs.max, Number(config.scanDelayMs) || defaults.scanDelayMs),
-  );
-  config.maintenanceMs = Math.max(
-    STUDIO_RANGES.maintenanceMs.min,
-    Number(config.maintenanceMs) || defaults.maintenanceMs,
-  );
-  config.homeListLimit = Math.max(
-    STUDIO_RANGES.homeListLimit.min,
-    Math.min(STUDIO_RANGES.homeListLimit.max, Number(config.homeListLimit) || defaults.homeListLimit),
-  );
-  const state = {
+
+  const state: StudioState = {
     config,
     network: {
       ready: false,
@@ -46,55 +155,72 @@ export function createStudioRuntime() {
     },
     route: location.pathname + location.search,
   };
-  const listeners = new Map(),
-    jobs = new Map(),
-    pending = new Set(),
-    stats = new Map(),
-    cache = new Map();
-  let drainTimer = 0,
-    domTimer = 0,
-    started = false,
-    generation = 0;
-  function on(type, fn) {
+
+  const listeners = new Map<string, Set<EventCallback>>();
+  const jobs = new Map<string, JobDefinition>();
+  const pending = new Set<string>();
+  const stats = new Map<string, JobStats>();
+  const cache = new Map<string, { generation: number; nodes: Element[] }>();
+
+  let drainTimer = 0;
+  let domTimer = 0;
+  let started = false;
+  let generation = 0;
+
+  function on(type: string, fn: EventCallback): () => void {
     if (!listeners.has(type)) listeners.set(type, new Set());
-    listeners.get(type).add(fn);
-    return () => listeners.get(type)?.delete(fn);
+    listeners.get(type)!.add(fn);
+    return () => {
+      listeners.get(type)?.delete(fn);
+    };
   }
-  function emit(type, data) {
-    for (const fn of listeners.get(type) || [])
+
+  function emit(type: string, data?: unknown): void {
+    for (const fn of listeners.get(type) || []) {
       try {
         fn(data);
       } catch (e) {
-        console.warn("[RodX Studio]", type, e);
+        console.warn(STUDIO_LOGGER_TAG, type, e);
       }
+    }
   }
-  function slice(name, value) {
-    if (state[name]) return state[name];
+
+  function slice<T>(name: string, value: T): T {
+    if (state[name] !== undefined) return state[name] as T;
     state[name] = value;
     return value;
   }
-  function enabled(group) {
+
+  function enabled(group: string): boolean {
     return !group || config.modules[group] !== false;
   }
-  function queue(id) {
+
+  function queue(id: string): void {
     if (!jobs.has(id)) return;
     pending.add(id);
-    if (!drainTimer && !document.hidden) drainTimer = setTimeout(drain, config.scanDelayMs);
+    if (!drainTimer && !document.hidden) {
+      drainTimer = window.setTimeout(drain, config.scanDelayMs);
+    }
   }
-  function invalidate(reason = "dom") {
+
+  function invalidate(reason: string = DEFAULT_ROUTE_REASON): void {
     if (reason === "dom" || reason === "route") {
       generation++;
       cache.clear();
     }
-    for (const [id, job] of jobs) if (job.events.includes(reason)) queue(id);
+    for (const [id, job] of jobs) {
+      if (job.events.includes(reason)) queue(id);
+    }
     emit(reason, state.route);
   }
+
   function register(
-    id,
-    fn,
-    { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 } = {},
-  ) {
+    id: string,
+    fn: JobFunction,
+    { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 }: RegisterOptions = {},
+  ): () => void {
     if (jobs.has(id)) throw Error("Duplicate module: " + id);
+    
     jobs.set(id, {
       fn,
       events,
@@ -104,23 +230,29 @@ export function createStudioRuntime() {
       running: false,
       again: false,
     });
+    
     stats.set(id, {
       calls: 0,
       ms: 0,
       errors: 0,
     });
+    
     queue(id);
+    
     return () => {
       jobs.delete(id);
       pending.delete(id);
     };
   }
-  function drain() {
+
+  function drain(): void {
     drainTimer = 0;
     if (document.hidden) return;
+    
     const begin = performance.now();
     let remainingDelay = Infinity;
-    for (const id of [...pending]) {
+
+    for (const id of Array.from(pending)) {
       const job = jobs.get(id);
       if (!job) {
         pending.delete(id);
@@ -130,21 +262,26 @@ export function createStudioRuntime() {
         pending.delete(id);
         continue;
       }
+      
       const remaining = job.minMs - (performance.now() - job.last);
       if (remaining > 0) {
         remainingDelay = Math.min(remainingDelay, remaining);
         continue;
       }
+      
       pending.delete(id);
       if (job.running) {
         job.again = true;
         continue;
       }
+      
       job.last = performance.now();
       job.running = true;
-      const metric = stats.get(id),
-        at = performance.now();
+      
+      const metric = stats.get(id)!;
+      const at = performance.now();
       metric.calls++;
+
       const finish = () => {
         job.running = false;
         if (job.again) {
@@ -152,49 +289,60 @@ export function createStudioRuntime() {
           queue(id);
         }
       };
+
       try {
         const result = job.fn();
         metric.ms += performance.now() - at;
-        if (result?.then)
+        
+        if (result && typeof (result as Promise<unknown>).then === "function") {
           Promise.resolve(result)
             .catch((error) => {
               metric.errors++;
-              console.warn("[RodX Studio]", id, error);
+              console.warn(STUDIO_LOGGER_TAG, id, error);
             })
             .finally(finish);
-        else finish();
+        } else {
+          finish();
+        }
       } catch (error) {
         metric.errors++;
         metric.ms += performance.now() - at;
         finish();
-        console.warn("[RodX Studio]", id, error);
+        console.warn(STUDIO_LOGGER_TAG, id, error);
       }
+
       if (performance.now() - begin >= config.budgetMs) break;
     }
-    if (pending.size && !drainTimer)
-      drainTimer = setTimeout(
+
+    if (pending.size && !drainTimer) {
+      drainTimer = window.setTimeout(
         drain,
         Number.isFinite(remainingDelay)
           ? Math.max(RUNTIME_LIMITS.scheduler.minimumFrameDelayMs, remainingDelay)
           : RUNTIME_LIMITS.scheduler.minimumFrameDelayMs,
       );
+    }
   }
-  function nodes(selector) {
+
+  function nodes(selector: string): Element[] {
     const hit = cache.get(selector);
     if (hit?.generation === generation) return hit.nodes;
-    const nodes = [...document.querySelectorAll(selector)];
+    
+    const elementNodes = Array.from(document.querySelectorAll(selector));
     cache.set(selector, {
       generation,
-      nodes,
+      nodes: elementNodes,
     });
-    return nodes;
+    return elementNodes;
   }
-  const ownSelector =
-    "#rodx-search-deck-root,#rodx-search-deck-dock,#rodx-navigation-strip,#rodx-feed-filters,#rodx-active-tweetbar,#x-lists-studio-root,#rodx-profile-lists,#rodx-list-id,#rodx-floating-search,.rodx-quick-search,[data-rod-menu-host],[data-rodx-list-video]";
-  const owned = (node) => node?.nodeType === 1 && Boolean(node.closest?.(ownSelector));
-  function start() {
+
+  const owned = (node: Node | null): boolean => 
+    node?.nodeType === 1 && Boolean((node as Element).closest?.(OWN_SELECTOR));
+
+  function start(): void {
     if (started || !document.body) return;
     started = true;
+
     new MutationObserver((records) => {
       if (
         !records.some(
@@ -202,17 +350,19 @@ export function createStudioRuntime() {
             !owned(r.target) &&
             !(
               r.type === "childList" &&
-              [...r.addedNodes, ...r.removedNodes].length &&
-              [...r.addedNodes, ...r.removedNodes].every(owned)
+              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).length &&
+              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
             ),
         )
       )
         return;
-      if (!domTimer)
-        domTimer = setTimeout(() => {
+
+      if (!domTimer) {
+        domTimer = window.setTimeout(() => {
           domTimer = 0;
           invalidate("dom");
         }, config.scanDelayMs);
+      }
     }).observe(document.body, {
       childList: true,
       subtree: true,
@@ -220,20 +370,23 @@ export function createStudioRuntime() {
       attributes: true,
       attributeFilter: ["href"],
     });
-    let last = state.route;
+
+    let lastRoute = state.route;
     const route = () => {
       const next = location.pathname + location.search;
-      if (next === last) return;
-      last = next;
+      if (next === lastRoute) return;
+      lastRoute = next;
       state.route = next;
       invalidate("route");
     };
+
     document.addEventListener("rodx:route", route);
     window.addEventListener("popstate", route);
     window.addEventListener("pageshow", () => {
       route();
       invalidate("dom");
     });
+    
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         route();
@@ -241,27 +394,33 @@ export function createStudioRuntime() {
         invalidate("media");
       }
     });
+
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
     setInterval(() => {
       if (!document.hidden) route();
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
+
     setInterval(() => {
       if (!document.hidden) invalidate("maintenance");
     }, config.maintenanceMs);
+
     setInterval(() => {
       if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
     }, 500);
+
     invalidate("dom");
   }
-  function configure(patch) {
+
+  function configure(patch: Partial<StudioConfig>): void {
     Object.assign(config, patch);
     try {
-      localStorage.setItem(key, JSON.stringify(config));
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
     } catch {}
     invalidate("state");
   }
-  const diagnostics = () => ({
-    version: "3.7.0",
+
+  const diagnostics = (): DiagnosticInfo => ({
+    version: STUDIO_VERSION,
     network: {
       ...state.network,
     },
@@ -272,7 +431,7 @@ export function createStudioRuntime() {
       nativeSearchFound: Boolean(document.querySelector(XDOM.nativeSearch)),
     },
     modules: Object.fromEntries(
-      [...stats].map(([id, s]) => [
+      Array.from(stats.entries()).map(([id, s]) => [
         id,
         {
           ...s,
@@ -283,6 +442,7 @@ export function createStudioRuntime() {
     queued: pending.size,
     domGeneration: generation,
   });
+
   return {
     state,
     config,
