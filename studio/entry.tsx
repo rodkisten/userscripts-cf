@@ -517,7 +517,13 @@ if (buttonMount) {
           </label>
           <label>
             Tamanho{" "}
-            <select value={size()} onChange={(e) => { setPreset(""); setSize(e.currentTarget.value as "sm" | "md" | "lg"); }}>
+            <select
+              value={size()}
+              onChange={(e) => {
+                setPreset("");
+                setSize(e.currentTarget.value as "sm" | "md" | "lg");
+              }}
+            >
               <option value="sm">Pequeno</option>
               <option value="md">Médio</option>
               <option value="lg">Grande</option>
@@ -530,7 +536,10 @@ if (buttonMount) {
               min="0"
               max="28"
               value={radius()}
-              onInput={(e) => { setPreset(""); setRadius(Number(e.currentTarget.value)); }}
+              onInput={(e) => {
+                setPreset("");
+                setRadius(Number(e.currentTarget.value));
+              }}
             />
           </label>
           <label>
@@ -540,7 +549,10 @@ if (buttonMount) {
               min="28"
               max="64"
               value={height()}
-              onInput={(e) => { setPreset(""); setHeight(Number(e.currentTarget.value)); }}
+              onInput={(e) => {
+                setPreset("");
+                setHeight(Number(e.currentTarget.value));
+              }}
             />
           </label>
           <label>
@@ -548,7 +560,15 @@ if (buttonMount) {
             Loading
           </label>
           <label>
-            Accent <input type="color" value={accent()} onInput={(e) => { setPreset(""); setAccent(e.currentTarget.value); }} />
+            Accent{" "}
+            <input
+              type="color"
+              value={accent()}
+              onInput={(e) => {
+                setPreset("");
+                setAccent(e.currentTarget.value);
+              }}
+            />
           </label>
         </div>
         <div class="flex">
