@@ -31,6 +31,7 @@ jobs:
       #  run: npm test
       - name: Commit regenerated lockfile
         run: |
+          git pull
           if git diff --quiet -- package-lock.json; then
             echo "Lockfile already synchronized."
             exit 0
