@@ -1,4 +1,4 @@
-import { render } from '@solidjs/web';
+import { render } from "@solidjs/web";
 import type {
   MultiLoadingDescriptor,
   PickerOptions,
@@ -14,7 +14,7 @@ import type {
   ToasterConfig,
   ToastOptions,
   ToastType,
-} from './types';
+} from "./types";
 import {
   addEventListenerInternal,
   createToast,
@@ -27,7 +27,7 @@ import {
   setTheme,
   updateConfig,
   useToasterState,
-} from './toasterStore';
+} from "./toasterStore";
 import {
   clearPersistedTasks,
   createTaskController,
@@ -37,23 +37,23 @@ import {
   restorePersistedTasks,
   showPromiseToast,
   showRetryToast,
-} from './taskManager';
-import { showMultiLoadingToast } from './MultiLoadingView';
-import { showConfirmToast, showPromptToast, showSelectToast } from './ActionDialogView';
-import { showPickerToast } from './PickerView';
-import { ToasterHost } from './ToasterProvider';
-import './tokens.css';
+} from "./taskManager";
+import { showMultiLoadingToast } from "./MultiLoadingView";
+import { showConfirmToast, showPromptToast, showSelectToast } from "./ActionDialogView";
+import { showPickerToast } from "./PickerView";
+import { ToasterHost } from "./ToasterProvider";
+import "./tokens.css";
 
-export * from './types';
-export { ToasterHost } from './ToasterProvider';
+export * from "./types";
+export { ToasterHost } from "./ToasterProvider";
 
 let mounted = false;
 
 function ensureMounted() {
-  if (mounted || typeof document === 'undefined') return;
+  if (mounted || typeof document === "undefined") return;
   mounted = true;
-  const root = document.createElement('div');
-  root.id = '__rod-super-toaster-solid-host__';
+  const root = document.createElement("div");
+  root.id = "__rod-super-toaster-solid-host__";
   document.body.appendChild(root);
   render(() => ToasterHost({ api: toast }), root);
 }
@@ -71,7 +71,7 @@ function showSemantic(type: ToastType, args: unknown[]) {
     return showBase([], {
       ...extra,
       type,
-      title: extra.title ?? err.message ?? 'Error',
+      title: extra.title ?? err.message ?? "Error",
       description: extra.description ?? err.name,
       error: err,
     });
@@ -81,7 +81,7 @@ function showSemantic(type: ToastType, args: unknown[]) {
 
 function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
   const merge = <T extends ToastOptions>(desc?: T | string): T => {
-    const obj = typeof desc === 'string' ? { title: desc } : { ...(desc ?? {}) };
+    const obj = typeof desc === "string" ? { title: desc } : { ...(desc ?? {}) };
     return { ...defaults, ...obj, scope: name } as T;
   };
   return {
@@ -106,7 +106,7 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
       const { toasts } = useToasterState();
       toasts()
         .filter((t) => t.record.options.scope === name)
-        .forEach((t) => dismissToast(t.record.id, 'scope-dismissAll', immediate));
+        .forEach((t) => dismissToast(t.record.id, "scope-dismissAll", immediate));
     },
     getTasks: () => getAllTasks().filter((t) => t.snapshot().scope === name),
     minimize: () => toast.minimize(),
@@ -119,19 +119,19 @@ function toastFn(...args: unknown[]) {
 }
 
 export const toast = Object.assign(toastFn, {
-  version: '4.9.2',
-  error: (...args: unknown[]) => showSemantic('error', args),
-  info: (...args: unknown[]) => showSemantic('info', args),
-  success: (...args: unknown[]) => showSemantic('success', args),
-  warning: (...args: unknown[]) => showSemantic('warning', args),
+  version: "4.9.2",
+  error: (...args: unknown[]) => showSemantic("error", args),
+  info: (...args: unknown[]) => showSemantic("info", args),
+  success: (...args: unknown[]) => showSemantic("success", args),
+  warning: (...args: unknown[]) => showSemantic("warning", args),
   message: (descriptor: ToastOptions | string = {}) =>
-    showBase([], typeof descriptor === 'string' ? { title: descriptor } : descriptor),
+    showBase([], typeof descriptor === "string" ? { title: descriptor } : descriptor),
   copyError: (error: unknown, options: ToastOptions = {}) =>
-    showSemantic('error', [error, { ...options, copyError: true }]),
+    showSemantic("error", [error, { ...options, copyError: true }]),
   loading: (...args: unknown[]) => {
     const parsed = parseArguments(args, null);
-    const title = typeof parsed.args[0] === 'string' ? parsed.args[0] : parsed.options.title;
-    return showBase([], { ...parsed.options, title, loading: true, loadingState: 'loading' });
+    const title = typeof parsed.args[0] === "string" ? parsed.args[0] : parsed.options.title;
+    return showBase([], { ...parsed.options, title, loading: true, loadingState: "loading" });
   },
   multiLoading: (descriptor: MultiLoadingDescriptor = {}) => {
     ensureMounted();
@@ -154,8 +154,8 @@ export const toast = Object.assign(toastFn, {
     return showPickerToast<T>(descriptor);
   },
   undo: (descriptor: ToastOptions | string = {}) => {
-    const opts = typeof descriptor === 'string' ? { title: descriptor } : descriptor;
-    return showBase([], { ...opts, actionLabel: opts.actionLabel ?? 'Undo' });
+    const opts = typeof descriptor === "string" ? { title: descriptor } : descriptor;
+    return showBase([], { ...opts, actionLabel: opts.actionLabel ?? "Undo" });
   },
   task: (descriptor: TaskDescriptor | string = {}) => {
     ensureMounted();
@@ -177,8 +177,8 @@ export const toast = Object.assign(toastFn, {
     return createTaskGroup(descriptor);
   },
   scope: (name: string, defaults: ToastOptions = {}) => createScope(name, defaults),
-  debug: (...args: unknown[]) => showBase(args, 'debug'),
-  inspect: (...args: unknown[]) => showBase(args, 'debug'),
+  debug: (...args: unknown[]) => showBase(args, "debug"),
+  inspect: (...args: unknown[]) => showBase(args, "debug"),
   options: (options: ToastOptions = {}) => {
     const copy = { ...options };
     Object.defineProperty(copy, OPTIONS_SYMBOL, { value: true, enumerable: false });
@@ -189,20 +189,26 @@ export const toast = Object.assign(toastFn, {
     return (...args: unknown[]) => toast(...args, marked);
   },
   update: (id: string, ...args: unknown[]) => {
-    const found = useToasterState().toasts().find((t) => t.record.id === id);
+    const found = useToasterState()
+      .toasts()
+      .find((t) => t.record.id === id);
     return found ? found.controller.update(...args) : null;
   },
   progress: (id: string, value: number | null, next: ToastOptions = {}) => {
-    const found = useToasterState().toasts().find((t) => t.record.id === id);
+    const found = useToasterState()
+      .toasts()
+      .find((t) => t.record.id === id);
     return found ? found.controller.setProgress(value, next) : null;
   },
-  resolve: (id: string, type: Exclude<ToastType, 'default' | 'debug'> = 'success', ...args: unknown[]) => {
-    const found = useToasterState().toasts().find((t) => t.record.id === id);
+  resolve: (id: string, type: Exclude<ToastType, "default" | "debug"> = "success", ...args: unknown[]) => {
+    const found = useToasterState()
+      .toasts()
+      .find((t) => t.record.id === id);
     return found ? found.controller[type](...args) : null;
   },
-  dismiss: (target?: string | { id: string }, reason = 'programmatic', immediate = false) => {
+  dismiss: (target?: string | { id: string }, reason = "programmatic", immediate = false) => {
     if (!target) return;
-    const id = typeof target === 'string' ? target : target.id;
+    const id = typeof target === "string" ? target : target.id;
     dismissToast(id, reason, immediate);
   },
   dismissAll: (immediate = false) => dismissAllToasts(immediate),
@@ -263,9 +269,9 @@ export const toast = Object.assign(toastFn, {
   },
   toggleTheme: () => {
     const { resolvedTheme } = useToasterState();
-    return setTheme(resolvedTheme() === 'dark' ? 'light' : 'dark');
+    return setTheme(resolvedTheme() === "dark" ? "light" : "dark");
   },
-  setSize: (size: ToasterConfig['size']) => {
+  setSize: (size: ToasterConfig["size"]) => {
     updateConfig({ size });
     return size;
   },

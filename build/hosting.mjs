@@ -12,10 +12,19 @@ execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { c
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design-system.html"), "utf8");
 assets["design-system.js"] = await fs.readFile(path.join(dist, "design-system.js"), "utf8");
-assets["playground/ast-errors.html"] = await fs.readFile(path.join(root, "playground/ast-errors.html"), "utf8");
-assets["playground/diagnostics.html"] = await fs.readFile(path.join(root, "playground/diagnostics.html"), "utf8");
+assets["playground/ast-errors.html"] = await fs.readFile(
+  path.join(root, "playground/ast-errors.html"),
+  "utf8",
+);
+assets["playground/diagnostics.html"] = await fs.readFile(
+  path.join(root, "playground/diagnostics.html"),
+  "utf8",
+);
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
-assets["playground/form-controls.html"] = await fs.readFile(path.join(root, "playground/form-controls.html"), "utf8");
+assets["playground/form-controls.html"] = await fs.readFile(
+  path.join(root, "playground/form-controls.html"),
+  "utf8",
+);
 // Compile the actual SolidJS components instead of shipping a separate HTML mock.
 const playgroundDir = path.join(dist, "form-controls-playground");
 await viteBuild({
@@ -49,9 +58,18 @@ await viteBuild({
     minify: true,
   },
 });
-assets["playground/ast-errors.js"] = await fs.readFile(path.join(dist, "ast-errors-playground/ast-errors.js"), "utf8");
-assets["playground/form-controls.js"] = await fs.readFile(path.join(playgroundDir, "form-controls.js"), "utf8");
-assets["playground/form-controls.css"] = await fs.readFile(path.join(playgroundDir, "form-controls.css"), "utf8");
+assets["playground/ast-errors.js"] = await fs.readFile(
+  path.join(dist, "ast-errors-playground/ast-errors.js"),
+  "utf8",
+);
+assets["playground/form-controls.js"] = await fs.readFile(
+  path.join(playgroundDir, "form-controls.js"),
+  "utf8",
+);
+assets["playground/form-controls.css"] = await fs.readFile(
+  path.join(playgroundDir, "form-controls.css"),
+  "utf8",
+);
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");

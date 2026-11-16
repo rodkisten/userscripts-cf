@@ -205,4 +205,3 @@ test("Reddit settings and seen actions update the native card through the shared
     await host.happyDOM.abort();
   }
 });
-

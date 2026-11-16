@@ -52,7 +52,9 @@ Erros globais sem contexto de execução são marcados como `unknown`; não atri
 
 ```ts
 ctx.diagnostics.capture(new Error("Falha de exemplo"), "custom.operation");
-ctx.listen(window, "click", async () => { throw new Error("Falha no listener"); });
+ctx.listen(window, "click", async () => {
+  throw new Error("Falha no listener");
+});
 ```
 
 O Dock mostra a seção Diagnósticos e permite exportar o JSON. A captura de callbacks externos ao ctx ainda exige instrumentação própria. Não há validação de build concluída nesta etapa.

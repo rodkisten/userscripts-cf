@@ -26,7 +26,7 @@ test("SolidJS playground assets have correct MIME types", async () => {
     {
       "playground/form-controls.html": '<script type="module" src="/playground/form-controls.js"></script>',
       "playground/form-controls.js": 'console.log("solid");',
-      "playground/form-controls.css": '.root{color:red}',
+      "playground/form-controls.css": ".root{color:red}",
     },
     { version: "test" },
   );

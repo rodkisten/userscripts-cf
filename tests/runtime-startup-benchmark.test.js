@@ -8,12 +8,17 @@ import { build } from "vite";
 const result = await build({
   configFile: new URL("../vite.config.js", import.meta.url).pathname,
   logLevel: "silent",
-  build: { write: false, lib: {
-    entry: new URL("../src/core/runtime.js", import.meta.url).pathname,
-    name: "RuntimeBenchmark", formats: ["iife"],
-  } },
+  build: {
+    write: false,
+    lib: {
+      entry: new URL("../src/core/runtime.js", import.meta.url).pathname,
+      name: "RuntimeBenchmark",
+      formats: ["iife"],
+    },
+  },
 });
-const code = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output)
+const code = (Array.isArray(result) ? result : [result])
+  .flatMap((item) => item.output)
   .find((item) => item.type === "chunk").code;
 
 describe("runtime startup and SPA diagnostic", () => {
@@ -25,8 +30,16 @@ describe("runtime startup and SPA diagnostic", () => {
     let starts = 0;
     let stops = 0;
     const definition = {
-      id: "bench", matches: ["https://example.com/on"],
-      module: { init(ctx) { starts++; ctx.onDispose(() => { stops++; }); } },
+      id: "bench",
+      matches: ["https://example.com/on"],
+      module: {
+        init(ctx) {
+          starts++;
+          ctx.onDispose(() => {
+            stops++;
+          });
+        },
+      },
     };
     const started = performance.now();
     const runtime = host.RuntimeBenchmark.createRuntime([definition], { call: async () => undefined }, host);
@@ -48,7 +61,14 @@ describe("runtime startup and SPA diagnostic", () => {
     expect(stops).toBe(starts);
     expect(coldBootstrapMs).toBeGreaterThanOrEqual(0);
     expect(spaRoundTripMs).toBeGreaterThanOrEqual(0);
-    console.table([{ coldBootstrapMs: +coldBootstrapMs.toFixed(3), spaRoundTripMs: +spaRoundTripMs.toFixed(3), teardownMs: +teardownMs.toFixed(3), iterations }]);
+    console.table([
+      {
+        coldBootstrapMs: +coldBootstrapMs.toFixed(3),
+        spaRoundTripMs: +spaRoundTripMs.toFixed(3),
+        teardownMs: +teardownMs.toFixed(3),
+        iterations,
+      },
+    ]);
     await host.happyDOM.abort();
   });
 });

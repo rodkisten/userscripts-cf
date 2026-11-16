@@ -20,7 +20,11 @@ export default {
               ↶ Voltar ao post no Reddit
             </a>
           ),
-          { before: (document.querySelector("main") || document.body).firstChild, shadow: true, styles: [css] },
+          {
+            before: (document.querySelector("main") || document.body).firstChild,
+            shadow: true,
+            styles: [css],
+          },
         );
         ctx.onDispose(mount.dispose);
         return;

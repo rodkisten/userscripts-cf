@@ -1,58 +1,53 @@
-import type { JSX } from 'solid-js';
+import type { JSX } from "solid-js";
 
-export type ToastType = 'default' | 'error' | 'info' | 'success' | 'warning' | 'debug';
-export type Theme = 'auto' | 'dark' | 'light';
-export type ResolvedTheme = Exclude<Theme, 'auto'>;
-export type ToastSize = 'compact' | 'comfortable' | 'large';
+export type ToastType = "default" | "error" | "info" | "success" | "warning" | "debug";
+export type Theme = "auto" | "dark" | "light";
+export type ResolvedTheme = Exclude<Theme, "auto">;
+export type ToastSize = "compact" | "comfortable" | "large";
 export type ToastPosition =
-  | 'top-center'
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-center'
-  | 'bottom-left'
-  | 'bottom-right';
+  "top-center" | "top-left" | "top-right" | "bottom-center" | "bottom-left" | "bottom-right";
 
-export type LoadingAnimation = 'spinner' | 'pulse' | 'progress' | 'none';
-export type LoadingState = 'loading' | 'settled';
-export type ActionVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-export type TaskStatus = 'queued' | 'running' | 'paused' | 'success' | 'error' | 'warning' | 'cancelled';
-export type MultiLoadingItemStatus = 'queued' | 'running' | 'success' | 'error' | 'cancelled';
-export type TaskStorageName = 'sessionStorage' | 'localStorage';
-export type ToastLane = 'notification' | 'task' | 'interaction';
+export type LoadingAnimation = "spinner" | "pulse" | "progress" | "none";
+export type LoadingState = "loading" | "settled";
+export type ActionVariant = "primary" | "secondary" | "danger" | "ghost";
+export type TaskStatus = "queued" | "running" | "paused" | "success" | "error" | "warning" | "cancelled";
+export type MultiLoadingItemStatus = "queued" | "running" | "success" | "error" | "cancelled";
+export type TaskStorageName = "sessionStorage" | "localStorage";
+export type ToastLane = "notification" | "task" | "interaction";
 export type UnknownRecord = Record<string, unknown>;
 export type MaybePromise<T> = T | Promise<T>;
-export type ToastImageFit = 'cover' | 'contain';
+export type ToastImageFit = "cover" | "contain";
 
 export type SvgIconName =
-  | 'circle'
-  | 'circle-x'
-  | 'info'
-  | 'check'
-  | 'triangle-alert'
-  | 'terminal'
-  | 'x'
-  | 'chevron-down'
-  | 'chevrons-up'
-  | 'x-circle'
-  | 'loader-circle'
-  | 'download'
-  | 'upload'
-  | 'refresh'
-  | 'clock'
-  | 'sparkles'
-  | 'history'
-  | 'send'
-  | 'copy'
-  | 'pause'
-  | 'play'
-  | 'image'
-  | 'square'
-  | 'list'
-  | 'folder'
-  | 'eye'
-  | 'trash'
-  | 'undo'
-  | 'settings';
+  | "circle"
+  | "circle-x"
+  | "info"
+  | "check"
+  | "triangle-alert"
+  | "terminal"
+  | "x"
+  | "chevron-down"
+  | "chevrons-up"
+  | "x-circle"
+  | "loader-circle"
+  | "download"
+  | "upload"
+  | "refresh"
+  | "clock"
+  | "sparkles"
+  | "history"
+  | "send"
+  | "copy"
+  | "pause"
+  | "play"
+  | "image"
+  | "square"
+  | "list"
+  | "folder"
+  | "eye"
+  | "trash"
+  | "undo"
+  | "settings";
 
 export interface ToastImageIconDescriptor {
   src: string | URL;
@@ -61,14 +56,7 @@ export interface ToastImageIconDescriptor {
   objectPosition?: string;
 }
 
-export type ToastIcon =
-  | SvgIconName
-  | string
-  | URL
-  | JSX.Element
-  | ToastImageIconDescriptor
-  | false
-  | null;
+export type ToastIcon = SvgIconName | string | URL | JSX.Element | ToastImageIconDescriptor | false | null;
 
 export interface ToastActionContext {
   action: ToastActionDescriptor;
@@ -125,7 +113,7 @@ export interface ToastOptions {
   pauseOnInteraction?: boolean;
   closeButton?: boolean;
   dismissible?: boolean;
-  role?: 'status' | 'alert' | 'alertdialog' | 'dialog';
+  role?: "status" | "alert" | "alertdialog" | "dialog";
   swipeToDismiss?: boolean;
   title?: string;
   description?: string;
@@ -181,14 +169,14 @@ export interface SelectChoice<T = unknown> {
   disabled?: boolean;
 }
 
-export interface SelectOptions<T = unknown> extends Omit<ToastOptions, 'options' | 'value'> {
+export interface SelectOptions<T = unknown> extends Omit<ToastOptions, "options" | "value"> {
   options?: readonly (T | SelectChoice<T>)[];
   value?: T | readonly T[];
 }
 
-export type PickerMediaType = 'image' | 'video';
-export type PickerReturnType = 'items' | 'ids' | 'indexes' | 'descriptors';
-export type PickerSelectionSeed = 'all' | boolean | string | number | readonly (string | number)[];
+export type PickerMediaType = "image" | "video";
+export type PickerReturnType = "items" | "ids" | "indexes" | "descriptors";
+export type PickerSelectionSeed = "all" | boolean | string | number | readonly (string | number)[];
 
 export interface PickerItemDescriptor {
   id?: string | number;
@@ -221,10 +209,7 @@ export interface PickerNormalizedDescriptor<T extends PickerSource = PickerSourc
 }
 
 export type PickerSelectionValue<T extends PickerSource = PickerSource> =
-  | T[]
-  | string[]
-  | number[]
-  | PickerNormalizedDescriptor<T>[];
+  T[] | string[] | number[] | PickerNormalizedDescriptor<T>[];
 
 export interface PickerOptions<T extends PickerSource = PickerSource> extends ToastOptions {
   items?: readonly T[];
@@ -255,21 +240,21 @@ export interface ToastRecordState {
   options: Required<
     Pick<
       ToastOptions,
-      | 'type'
-      | 'lane'
-      | 'duration'
-      | 'dedupe'
-      | 'dedupeWindow'
-      | 'pauseOnInteraction'
-      | 'closeButton'
-      | 'dismissible'
-      | 'role'
-      | 'swipeToDismiss'
-      | 'title'
-      | 'description'
-      | 'loading'
-      | 'loadingState'
-      | 'animation'
+      | "type"
+      | "lane"
+      | "duration"
+      | "dedupe"
+      | "dedupeWindow"
+      | "pauseOnInteraction"
+      | "closeButton"
+      | "dismissible"
+      | "role"
+      | "swipeToDismiss"
+      | "title"
+      | "description"
+      | "loading"
+      | "loadingState"
+      | "animation"
     >
   > &
     ToastOptions;
@@ -420,10 +405,15 @@ export interface ScopeApi {
   confirm: (descriptor?: ToastOptions | string) => Promise<unknown>;
   prompt: (descriptor?: ToastOptions | string) => Promise<unknown>;
   select: <T = unknown>(descriptor?: SelectOptions<T>) => Promise<T | T[] | null>;
-  picker: <T extends PickerSource = PickerSource>(descriptor?: PickerOptions<T>) => Promise<PickerSelectionValue<T> | null>;
+  picker: <T extends PickerSource = PickerSource>(
+    descriptor?: PickerOptions<T>,
+  ) => Promise<PickerSelectionValue<T> | null>;
   undo: (descriptor?: ToastOptions | string) => ToastController | null;
   task: (descriptor?: TaskDescriptor | string) => TaskController | null;
-  promise: <T>(input: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>), descriptor?: PromiseDescriptor<T>) => Promise<T>;
+  promise: <T>(
+    input: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>),
+    descriptor?: PromiseDescriptor<T>,
+  ) => Promise<T>;
   retry: <T>(descriptor: RetryDescriptor<T>) => Promise<T>;
   group: (descriptor?: TaskGroupDescriptor | string) => TaskGroup;
   dismissAll: (immediate?: boolean) => void;
@@ -491,10 +481,15 @@ export interface ToasterApi {
   confirm: (descriptor?: ToastOptions | string) => Promise<unknown>;
   prompt: (descriptor?: ToastOptions | string) => Promise<unknown>;
   select: <T = unknown>(descriptor?: SelectOptions<T>) => Promise<T | T[] | null>;
-  picker: <T extends PickerSource = PickerSource>(descriptor?: PickerOptions<T>) => Promise<PickerSelectionValue<T> | null>;
+  picker: <T extends PickerSource = PickerSource>(
+    descriptor?: PickerOptions<T>,
+  ) => Promise<PickerSelectionValue<T> | null>;
   undo: (descriptor?: ToastOptions | string) => ToastController | null;
   task: (descriptor?: TaskDescriptor | string) => TaskController | null;
-  promise: <T>(input: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>), descriptor?: PromiseDescriptor<T>) => Promise<T>;
+  promise: <T>(
+    input: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>),
+    descriptor?: PromiseDescriptor<T>,
+  ) => Promise<T>;
   retry: <T>(descriptor: RetryDescriptor<T>) => Promise<T>;
   group: (descriptor?: TaskGroupDescriptor | string) => TaskGroup;
   scope: (name: string, defaults?: ToastOptions) => ScopeApi;
@@ -504,7 +499,11 @@ export interface ToasterApi {
   with: (options?: ToastOptions) => (...args: unknown[]) => ToastController | null;
   update: (id: string, ...args: unknown[]) => ToastController | null;
   progress: (id: string, value: number | null, next?: ToastOptions) => ToastController | null;
-  resolve: (id: string, type?: Exclude<ToastType, 'default' | 'debug'>, ...args: unknown[]) => ToastController | null;
+  resolve: (
+    id: string,
+    type?: Exclude<ToastType, "default" | "debug">,
+    ...args: unknown[]
+  ) => ToastController | null;
   dismiss: (target?: string | ToastController, reason?: string, immediate?: boolean) => void;
   dismissAll: (immediate?: boolean) => void;
   on: (eventName: string, listener: ToastEventListener) => () => void;

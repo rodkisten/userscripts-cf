@@ -10,7 +10,6 @@ Instale apenas **`standalone.user.js`** no Tampermonkey para receber todos os m�
 
 A publicação automática é disparada após push na `main` quando ainda não existe release para a versão do `package.json`. Para publicar novos arquivos, aumente a versão antes do merge; uma release existente não é sobrescrita.
 
-
 Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separados e um instalável unificado com roteamento por URL.
 
 ## Scripts Reddit, GitHub e Instagram

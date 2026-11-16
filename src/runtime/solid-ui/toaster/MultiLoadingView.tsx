@@ -1,13 +1,13 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from "solid-js";
 import type {
   MultiLoadingController,
   MultiLoadingDescriptor,
   MultiLoadingItemDescriptor,
   MultiLoadingItemStatus,
-} from './types';
-import { createToast } from './toasterStore';
-import { SvgIcon } from './SvgIcon';
-import styles from './Toaster.module.css';
+} from "./types";
+import { createToast } from "./toasterStore";
+import { SvgIcon } from "./SvgIcon";
+import styles from "./Toaster.module.css";
 
 interface InternalMultiItem {
   id: string;
@@ -16,7 +16,7 @@ interface InternalMultiItem {
   status: MultiLoadingItemStatus;
   progress: number | null;
   progressLabel: string | null;
-  run?: MultiLoadingItemDescriptor['run'];
+  run?: MultiLoadingItemDescriptor["run"];
   abortController: AbortController;
 }
 
@@ -28,22 +28,19 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
     [],
     {
       ...descriptor,
-      lane: 'task',
+      lane: "task",
       duration: 0,
       dedupe: false,
       closeButton: false,
       icon: false,
     },
     () => {
-      const completedCount = () => items().filter((i) => i.status === 'success').length;
+      const completedCount = () => items().filter((i) => i.status === "success").length;
       const totalCount = () => items().length;
       const aggregatePct = () => {
         const list = items();
         if (!list.length) return 0;
-        const sum = list.reduce(
-          (acc, it) => acc + (it.status === 'success' ? 1 : it.progress ?? 0),
-          0,
-        );
+        const sum = list.reduce((acc, it) => acc + (it.status === "success" ? 1 : (it.progress ?? 0)), 0);
         return Math.round((sum / list.length) * 100);
       };
 
@@ -51,7 +48,7 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
         <div class={styles.multiRoot}>
           <div class={styles.multiHeader}>
             <div>
-              <div class={styles.multiTitle}>{descriptor.title ?? 'Processing items'}</div>
+              <div class={styles.multiTitle}>{descriptor.title ?? "Processing items"}</div>
               <Show when={descriptor.showSummary !== false}>
                 <div class={styles.multiSummary}>
                   {aggregatePct()}% · {completedCount()} de {totalCount()} itens
@@ -59,22 +56,14 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
               </Show>
             </div>
             <div class={styles.toolbarActions}>
-              <button
-                type="button"
-                class={styles.toolbarButton}
-                onClick={() => controller.clearCompleted()}
-              >
+              <button type="button" class={styles.toolbarButton} onClick={() => controller.clearCompleted()}>
                 <SvgIcon name="check" size={13} />
                 <span>Clear done</span>
               </button>
               <Show when={descriptor.cancellable !== false}>
-                <button
-                  type="button"
-                  class={styles.toolbarButton}
-                  onClick={() => controller.cancelAll()}
-                >
+                <button type="button" class={styles.toolbarButton} onClick={() => controller.cancelAll()}>
                   <SvgIcon name="x-circle" size={13} />
-                  <span>{descriptor.cancelAllLabel ?? 'Cancel all'}</span>
+                  <span>{descriptor.cancelAllLabel ?? "Cancel all"}</span>
                 </button>
               </Show>
             </div>
@@ -85,22 +74,24 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
           </div>
 
           <div class={styles.multiList}>
-            <For each={items()} fallback={<div class={styles.description}>{descriptor.emptyLabel ?? 'No active operations.'}</div>}>
+            <For
+              each={items()}
+              fallback={
+                <div class={styles.description}>{descriptor.emptyLabel ?? "No active operations."}</div>
+              }
+            >
               {(item) => (
                 <div class={styles.multiItem}>
-                  <div
-                    class={styles.icon}
-                    data-spinning={String(item.status === 'running')}
-                  >
+                  <div class={styles.icon} data-spinning={String(item.status === "running")}>
                     <SvgIcon
                       name={
-                        item.status === 'success'
-                          ? 'check'
-                          : item.status === 'error'
-                            ? 'circle-x'
-                            : item.status === 'cancelled'
-                              ? 'x-circle'
-                              : 'loader-circle'
+                        item.status === "success"
+                          ? "check"
+                          : item.status === "error"
+                            ? "circle-x"
+                            : item.status === "cancelled"
+                              ? "x-circle"
+                              : "loader-circle"
                       }
                       size={16}
                     />
@@ -120,7 +111,7 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
                     </Show>
                   </div>
                   <div class={styles.actions}>
-                    <Show when={item.status === 'error'}>
+                    <Show when={item.status === "error"}>
                       <button
                         type="button"
                         class={styles.iconButton}
@@ -130,7 +121,7 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
                         <SvgIcon name="refresh" size={14} />
                       </button>
                     </Show>
-                    <Show when={item.status === 'running' || item.status === 'queued'}>
+                    <Show when={item.status === "running" || item.status === "queued"}>
                       <button
                         type="button"
                         class={styles.iconButton}
@@ -156,7 +147,7 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
 
   const runItem = async (item: InternalMultiItem) => {
     if (!item.run) return;
-    patchItem(item.id, { status: 'running' });
+    patchItem(item.id, { status: "running" });
     try {
       await item.run({
         signal: item.abortController.signal,
@@ -168,20 +159,20 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
         update: (p) => patchItem(item.id, p as Partial<InternalMultiItem>),
       });
       if (!item.abortController.signal.aborted) {
-        patchItem(item.id, { status: 'success', progress: 1 });
+        patchItem(item.id, { status: "success", progress: 1 });
       }
     } catch (err) {
       if (!item.abortController.signal.aborted) {
         patchItem(item.id, {
-          status: 'error',
+          status: "error",
           description: err instanceof Error ? err.message : String(err),
         });
       }
     }
 
-    const allDone = items().length > 0 && items().every((i) => i.status === 'success');
+    const allDone = items().length > 0 && items().every((i) => i.status === "success");
     if (allDone && descriptor.autoDismiss !== false) {
-      setTimeout(() => toastCtrl.dismiss('multi-complete'), 1800);
+      setTimeout(() => toastCtrl.dismiss("multi-complete"), 1800);
     }
   };
 
@@ -194,8 +185,8 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
       const item: InternalMultiItem = {
         id,
         title: desc.title,
-        description: desc.description ?? '',
-        status: desc.status ?? 'queued',
+        description: desc.description ?? "",
+        status: desc.status ?? "queued",
         progress: desc.progress ?? null,
         progressLabel: desc.progressLabel ?? null,
         run: desc.run,
@@ -213,7 +204,7 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
       if (!target) return;
       const fresh: InternalMultiItem = {
         ...target,
-        status: 'queued',
+        status: "queued",
         progress: 0,
         abortController: new AbortController(),
       };
@@ -223,18 +214,18 @@ export function showMultiLoadingToast(descriptor: MultiLoadingDescriptor = {}): 
     cancelItem(id) {
       const target = items().find((i) => i.id === id);
       if (!target) return;
-      target.abortController.abort('cancelled');
-      patchItem(id, { status: 'cancelled' });
+      target.abortController.abort("cancelled");
+      patchItem(id, { status: "cancelled" });
     },
     cancelAll() {
       items().forEach((i) => {
-        if (i.status === 'running' || i.status === 'queued') controller.cancelItem(i.id);
+        if (i.status === "running" || i.status === "queued") controller.cancelItem(i.id);
       });
     },
     clearCompleted() {
-      setItems((list) => list.filter((i) => i.status !== 'success' && i.status !== 'cancelled'));
+      setItems((list) => list.filter((i) => i.status !== "success" && i.status !== "cancelled"));
     },
-    dismiss(reason = 'programmatic') {
+    dismiss(reason = "programmatic") {
       toastCtrl.dismiss(reason);
     },
   };

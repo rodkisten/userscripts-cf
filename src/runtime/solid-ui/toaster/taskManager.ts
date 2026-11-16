@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createSignal } from "solid-js";
 import type {
   PromiseDescriptor,
   RetryDescriptor,
@@ -9,8 +9,8 @@ import type {
   TaskGroupDescriptor,
   TaskSnapshot,
   TaskStatus,
-} from './types';
-import { createToast, emitEvent, useToasterState } from './toasterStore';
+} from "./types";
+import { createToast, emitEvent, useToasterState } from "./toasterStore";
 
 const tasksMap = new Map<string, TaskController>();
 const [tasksSignal, setTasksSignal] = createSignal<TaskController[]>([]);
@@ -28,7 +28,7 @@ export function getTaskById(id: string): TaskController | null {
 }
 
 function getStorage(): Storage | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   const { config } = useToasterState();
   try {
     return window[config().taskStorage];
@@ -72,16 +72,16 @@ export function restorePersistedTasks(): TaskController[] {
     const now = Date.now();
     const restored: TaskController[] = [];
     for (const snap of list) {
-      const isTerminal = ['success', 'error', 'cancelled'].includes(snap.status);
+      const isTerminal = ["success", "error", "cancelled"].includes(snap.status);
       if (isTerminal && now - snap.updatedAt > config().taskTerminalRetention) continue;
-      const wasActive = snap.status === 'running' || snap.status === 'queued';
+      const wasActive = snap.status === "running" || snap.status === "queued";
       const ctrl = createTaskController({
         id: snap.id,
         title: snap.title,
         description: wasActive
-          ? `${snap.description}${snap.description ? ' · ' : ''}Restored after reload.`
+          ? `${snap.description}${snap.description ? " · " : ""}Restored after reload.`
           : snap.description,
-        status: wasActive ? 'paused' : snap.status,
+        status: wasActive ? "paused" : snap.status,
         progress: snap.progress,
         progressLabel: snap.progressLabel,
         metadata: snap.metadata,
@@ -96,22 +96,25 @@ export function restorePersistedTasks(): TaskController[] {
   }
 }
 
-export function createTaskController(descriptor: TaskDescriptor | string = {}, autoStart = true): TaskController | null {
-  const opts: TaskDescriptor = typeof descriptor === 'string' ? { title: descriptor } : { ...descriptor };
+export function createTaskController(
+  descriptor: TaskDescriptor | string = {},
+  autoStart = true,
+): TaskController | null {
+  const opts: TaskDescriptor = typeof descriptor === "string" ? { title: descriptor } : { ...descriptor };
   const id = opts.id ?? `task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const existing = tasksMap.get(id);
   if (existing && !existing.dismissed) return existing;
 
   const { config } = useToasterState();
   const abortController = new AbortController();
-  const [status, setStatus] = createSignal<TaskStatus>(opts.status ?? 'queued');
+  const [status, setStatus] = createSignal<TaskStatus>(opts.status ?? "queued");
   const [progress, setProgress] = createSignal<number | null>(opts.progress ?? null);
   const [dismissed, setDismissed] = createSignal(false);
 
   const meta: TaskSnapshot = {
     id,
-    title: opts.title ?? 'Task',
-    description: opts.description ?? '',
+    title: opts.title ?? "Task",
+    description: opts.description ?? "",
     status: status(),
     progress: progress(),
     progressLabel: opts.progressLabel ?? null,
@@ -125,11 +128,11 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
   const toastCtrl = createToast([], {
     ...opts,
     id: `task:${id}`,
-    lane: 'task',
-    type: 'default',
+    lane: "task",
+    type: "default",
     loading: true,
-    loadingState: 'loading',
-    animation: meta.progress === null ? 'spinner' : 'progress',
+    loadingState: "loading",
+    animation: meta.progress === null ? "spinner" : "progress",
     duration: 0,
     dedupe: false,
     onDismiss: (ev) => {
@@ -146,11 +149,11 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
     meta.progress = progress();
     meta.updatedAt = Date.now();
     if (meta.persist) persistTasksNow();
-    emitEvent('task:update', { task });
+    emitEvent("task:update", { task });
 
-    if (meta.status === 'success') {
+    if (meta.status === "success") {
       toastCtrl.success({ title: meta.title, description: meta.description });
-    } else if (meta.status === 'error') {
+    } else if (meta.status === "error") {
       toastCtrl.error({ title: meta.title, description: meta.description });
     } else {
       toastCtrl.update({
@@ -158,7 +161,7 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
         description: meta.description,
         progress: meta.progress,
         progressLabel: meta.progressLabel,
-        animation: meta.progress === null ? 'spinner' : 'progress',
+        animation: meta.progress === null ? "spinner" : "progress",
       });
     }
   };
@@ -181,7 +184,7 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
     },
     async start() {
       if (!opts.run) return undefined;
-      setStatus('running');
+      setStatus("running");
       syncToast();
       const ctx: TaskExecutorContext = {
         task,
@@ -191,15 +194,15 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
       };
       try {
         const result = await opts.run(ctx);
-        if (status() !== 'cancelled') {
-          setStatus('success');
+        if (status() !== "cancelled") {
+          setStatus("success");
           setProgress(1);
           syncToast();
         }
         return result;
       } catch (err) {
-        if (status() !== 'cancelled') {
-          setStatus('error');
+        if (status() !== "cancelled") {
+          setStatus("error");
           meta.description = err instanceof Error ? err.message : String(err);
           syncToast();
         }
@@ -207,22 +210,22 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
       }
     },
     async pause() {
-      if (status() !== 'running') return;
+      if (status() !== "running") return;
       await opts.onPause?.();
-      setStatus('paused');
+      setStatus("paused");
       syncToast();
     },
     async resume() {
-      if (status() !== 'paused') return;
+      if (status() !== "paused") return;
       await opts.onResume?.();
-      setStatus('running');
+      setStatus("running");
       syncToast();
     },
-    async cancel(reason = 'user') {
-      if (['success', 'error', 'cancelled'].includes(status())) return;
+    async cancel(reason = "user") {
+      if (["success", "error", "cancelled"].includes(status())) return;
       abortController.abort(reason);
       await opts.onCancel?.(reason);
-      setStatus('cancelled');
+      setStatus("cancelled");
       syncToast();
       toastCtrl.dismiss(reason);
     },
@@ -240,20 +243,20 @@ export function createTaskController(descriptor: TaskDescriptor | string = {}, a
       syncToast();
     },
     success(next) {
-      const patch = typeof next === 'string' ? { description: next } : next ?? {};
+      const patch = typeof next === "string" ? { description: next } : (next ?? {});
       if (patch.title) meta.title = patch.title;
       if (patch.description) meta.description = patch.description;
-      setStatus('success');
+      setStatus("success");
       setProgress(1);
       syncToast();
     },
     error(err, next = {}) {
-      meta.description = next.description ?? (err instanceof Error ? err.message : String(err ?? 'Error'));
+      meta.description = next.description ?? (err instanceof Error ? err.message : String(err ?? "Error"));
       if (next.title) meta.title = next.title;
-      setStatus('error');
+      setStatus("error");
       syncToast();
     },
-    dismiss(reason = 'programmatic') {
+    dismiss(reason = "programmatic") {
       toastCtrl.dismiss(reason);
     },
     snapshot() {
@@ -272,27 +275,30 @@ export async function showPromiseToast<T>(
   descriptor: PromiseDescriptor<T> = {},
 ): Promise<T> {
   const loadingOpts =
-    typeof descriptor.loading === 'string' ? { title: descriptor.loading } : descriptor.loading ?? {};
+    typeof descriptor.loading === "string" ? { title: descriptor.loading } : (descriptor.loading ?? {});
 
-  const task = createTaskController({
-    ...descriptor,
-    ...loadingOpts,
-    title: loadingOpts.title ?? descriptor.title ?? 'Loading...',
-    run: async (ctx) => (typeof input === 'function' ? input(ctx) : input),
-  }, false)!;
+  const task = createTaskController(
+    {
+      ...descriptor,
+      ...loadingOpts,
+      title: loadingOpts.title ?? descriptor.title ?? "Loading...",
+      run: async (ctx) => (typeof input === "function" ? input(ctx) : input),
+    },
+    false,
+  )!;
 
   try {
     const result = await task.start();
     const successSpec =
-      typeof descriptor.success === 'function' ? descriptor.success(result as T) : descriptor.success;
+      typeof descriptor.success === "function" ? descriptor.success(result as T) : descriptor.success;
     if (successSpec) {
-      task.success(typeof successSpec === 'string' ? { title: successSpec } : successSpec);
+      task.success(typeof successSpec === "string" ? { title: successSpec } : successSpec);
     }
     return result as T;
   } catch (err) {
-    const errorSpec = typeof descriptor.error === 'function' ? descriptor.error(err) : descriptor.error;
+    const errorSpec = typeof descriptor.error === "function" ? descriptor.error(err) : descriptor.error;
     if (errorSpec) {
-      task.error(err, typeof errorSpec === 'string' ? { title: errorSpec } : errorSpec);
+      task.error(err, typeof errorSpec === "string" ? { title: errorSpec } : errorSpec);
     }
     throw err;
   }
@@ -307,7 +313,9 @@ export async function showRetryToast<T>(descriptor: RetryDescriptor<T>): Promise
     let lastError: unknown;
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
-        ctx.update({ description: attempt > 1 ? `Attempt ${attempt} of ${attempts}...` : descriptor.description });
+        ctx.update({
+          description: attempt > 1 ? `Attempt ${attempt} of ${attempts}...` : descriptor.description,
+        });
         return await descriptor.run({ ...ctx, attempt });
       } catch (err) {
         lastError = err;
@@ -321,7 +329,8 @@ export async function showRetryToast<T>(descriptor: RetryDescriptor<T>): Promise
 }
 
 export function createTaskGroup(descriptor: TaskGroupDescriptor | string = {}): TaskGroup {
-  const opts: TaskGroupDescriptor = typeof descriptor === 'string' ? { title: descriptor } : { ...descriptor };
+  const opts: TaskGroupDescriptor =
+    typeof descriptor === "string" ? { title: descriptor } : { ...descriptor };
   const id = opts.id ?? `group-${Date.now().toString(36)}`;
   const parent = createTaskController({ ...opts, id, progress: 0 })!;
   const children = new Map<string, TaskController>();
@@ -334,7 +343,7 @@ export function createTaskGroup(descriptor: TaskGroupDescriptor | string = {}): 
     for (const [key, child] of children) {
       const w = weights.get(key) ?? 1;
       totalWeight += w;
-      const p = child.status === 'success' ? 1 : child.progress ?? 0;
+      const p = child.status === "success" ? 1 : (child.progress ?? 0);
       weightedSum += p * w;
     }
     parent.setProgress(totalWeight > 0 ? weightedSum / totalWeight : 0);
@@ -345,7 +354,7 @@ export function createTaskGroup(descriptor: TaskGroupDescriptor | string = {}): 
     parent,
     task(keyOrDesc, maybeDesc = {}) {
       const childOpts: TaskDescriptor =
-        typeof keyOrDesc === 'string'
+        typeof keyOrDesc === "string"
           ? { ...maybeDesc, key: keyOrDesc, title: maybeDesc.title ?? keyOrDesc }
           : { ...keyOrDesc };
       const key = childOpts.key ?? childOpts.id ?? `child-${children.size + 1}`;
@@ -371,7 +380,7 @@ export function createTaskGroup(descriptor: TaskGroupDescriptor | string = {}): 
       recompute();
       return group;
     },
-    dismissAll(reason = 'group-dismiss') {
+    dismissAll(reason = "group-dismiss") {
       children.forEach((c) => c.dismiss(reason));
       parent.dismiss(reason);
     },

@@ -1,8 +1,8 @@
-import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
-import { QueryObserver } from '@tanstack/query-core';
-import type { QueryClient } from '@tanstack/query-core';
-import { getFormControlsQueryClient } from './query-client';
-import { normalizeOptions, type ControlOption, type OptionsSource } from './options';
+import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";
+import { QueryObserver } from "@tanstack/query-core";
+import type { QueryClient } from "@tanstack/query-core";
+import { getFormControlsQueryClient } from "./query-client";
+import { normalizeOptions, type ControlOption, type OptionsSource } from "./options";
 
 export interface AsyncOptionsState {
   options: Accessor<ControlOption[]>;
@@ -35,7 +35,7 @@ export function createAsyncOptions(
   let observer: QueryObserver<ControlOption[]> | undefined;
   let unsubscribe: (() => void) | undefined;
   let revision = 0;
-  const instanceKey = ['form-controls', 'suggestions', Math.random().toString(36).slice(2)];
+  const instanceKey = ["form-controls", "suggestions", Math.random().toString(36).slice(2)];
 
   createEffect(() => {
     const currentSource = source();
@@ -49,21 +49,20 @@ export function createAsyncOptions(
       enabled,
       staleTime: config.staleTime ?? 30_000,
       queryFn: async ({ signal }) => {
-        const result = typeof currentSource === 'function'
-          ? await currentSource(currentQuery, { signal })
-          : currentSource;
+        const result =
+          typeof currentSource === "function" ? await currentSource(currentQuery, { signal }) : currentSource;
         return normalizeOptions(result);
       },
     });
     unsubscribe = observer.subscribe((result) => {
       if (current !== revision) return;
       setOptions(result.data ?? []);
-      setLoading(result.isPending && result.fetchStatus === 'fetching');
+      setLoading(result.isPending && result.fetchStatus === "fetching");
       setError(result.error ?? null);
     });
     const initial = observer.getCurrentResult();
     setOptions(initial.data ?? []);
-    setLoading(initial.isPending && initial.fetchStatus === 'fetching');
+    setLoading(initial.isPending && initial.fetchStatus === "fetching");
     setError(initial.error ?? null);
   });
 

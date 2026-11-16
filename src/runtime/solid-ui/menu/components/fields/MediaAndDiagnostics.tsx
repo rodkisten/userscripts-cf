@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from "solid-js";
 import type {
   ChannelPickerField,
   DebugJsonField,
@@ -7,11 +7,12 @@ import type {
   ProviderStatusField,
   RequestLogField,
   RodMenuContext,
-} from '../../types';
-import styles from '../../styles/Fields.module.css';
+} from "../../types";
+import styles from "../../styles/Fields.module.css";
 
 export function MediaPreviewControl(props: { field: MediaPreviewField; context: RodMenuContext<any> }) {
-  const item = () => (typeof props.field.item === 'function' ? props.field.item(props.context) : props.field.item);
+  const item = () =>
+    typeof props.field.item === "function" ? props.field.item(props.context) : props.field.item;
   const meta = () => {
     const it = item();
     return [
@@ -22,7 +23,7 @@ export function MediaPreviewControl(props: { field: MediaPreviewField; context: 
       props.field.showSource !== false ? it.source : null,
     ]
       .filter(Boolean)
-      .join(' · ');
+      .join(" · ");
   };
 
   return (
@@ -31,14 +32,14 @@ export function MediaPreviewControl(props: { field: MediaPreviewField; context: 
         when={item().thumbnail}
         fallback={
           <div class={styles.mediaPlaceholder}>
-            {item().type === 'video' ? 'VIDEO' : item().type === 'audio' ? 'AUDIO' : 'MEDIA'}
+            {item().type === "video" ? "VIDEO" : item().type === "audio" ? "AUDIO" : "MEDIA"}
           </div>
         }
       >
         <img
           class={styles.mediaThumb}
           src={item().thumbnail}
-          alt={item().title || item().type || 'Media preview'}
+          alt={item().title || item().type || "Media preview"}
           loading="lazy"
         />
       </Show>
@@ -67,7 +68,7 @@ export function MediaPickerControl(props: {
   onCommit: (val: unknown) => void;
 }) {
   const items = () =>
-    typeof props.field.items === 'function' ? props.field.items(props.context) : props.field.items;
+    typeof props.field.items === "function" ? props.field.items(props.context) : props.field.items;
   const selected = () => new Set(Array.isArray(props.value) ? props.value.map(String) : []);
 
   const toggle = (id: string) => {
@@ -88,10 +89,7 @@ export function MediaPickerControl(props: {
   };
 
   return (
-    <div
-      class={styles.mediaPicker}
-      style={{ '--rm-media-columns': String(props.field.columns ?? 2) }}
-    >
+    <div class={styles.mediaPicker} style={{ "--rm-media-columns": String(props.field.columns ?? 2) }}>
       <Show when={props.field.selectAll !== false && items().length > 1}>
         <div class={styles.pickerToolbar}>
           <span>
@@ -114,7 +112,7 @@ export function MediaPickerControl(props: {
               item.provider,
             ]
               .filter(Boolean)
-              .join(' · ');
+              .join(" · ");
 
             return (
               <button
@@ -147,7 +145,9 @@ export function MediaPickerControl(props: {
 
 export function ProviderStatusControl(props: { field: ProviderStatusField; context: RodMenuContext<any> }) {
   const providers = () =>
-    typeof props.field.providers === 'function' ? props.field.providers(props.context) : props.field.providers;
+    typeof props.field.providers === "function"
+      ? props.field.providers(props.context)
+      : props.field.providers;
 
   return (
     <div class={styles.providerList}>
@@ -160,7 +160,7 @@ export function ProviderStatusControl(props: { field: ProviderStatusField; conte
               <small>{provider.error || provider.description || provider.state}</small>
             </span>
             <span class={styles.providerDuration}>
-              {provider.durationMs != null ? `${provider.durationMs} ms` : ''}
+              {provider.durationMs != null ? `${provider.durationMs} ms` : ""}
             </span>
           </div>
         )}
@@ -171,12 +171,12 @@ export function ProviderStatusControl(props: { field: ProviderStatusField; conte
 
 export function RequestLogControl(props: { field: RequestLogField; context: RodMenuContext<any> }) {
   const entries = () =>
-    typeof props.field.entries === 'function' ? props.field.entries(props.context) : props.field.entries;
+    typeof props.field.entries === "function" ? props.field.entries(props.context) : props.field.entries;
 
   return (
     <div
       class={styles.requestLog}
-      style={props.field.maxHeight ? { 'max-height': `${props.field.maxHeight}px` } : undefined}
+      style={props.field.maxHeight ? { "max-height": `${props.field.maxHeight}px` } : undefined}
     >
       <For each={entries()}>
         {(entry) => (
@@ -185,10 +185,12 @@ export function RequestLogControl(props: { field: RequestLogField; context: RodM
             class={styles.requestRow}
             onClick={() => props.field.onSelect?.(entry, props.context)}
           >
-            <span class={styles.requestMethod}>{entry.method || 'GET'}</span>
+            <span class={styles.requestMethod}>{entry.method || "GET"}</span>
             <span class={styles.requestUrl}>{entry.url}</span>
             <span class={styles.requestStatus}>
-              {[entry.status, entry.durationMs != null ? `${entry.durationMs}ms` : ''].filter(Boolean).join(' · ')}
+              {[entry.status, entry.durationMs != null ? `${entry.durationMs}ms` : ""]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </button>
         )}
@@ -204,7 +206,7 @@ export function DebugJsonControl(props: {
 }) {
   const [copied, setCopied] = createSignal(false);
   const text = () => {
-    const data = typeof props.field.data === 'function' ? props.field.data(props.context) : props.field.data;
+    const data = typeof props.field.data === "function" ? props.field.data(props.context) : props.field.data;
     try {
       return JSON.stringify(data, null, props.field.pretty === false ? 0 : 2);
     } catch {
@@ -227,10 +229,10 @@ export function DebugJsonControl(props: {
       <div class={styles.pickerToolbar}>
         <span>JSON</span>
         <button type="button" class={styles.miniButton} onClick={handleCopy}>
-          {copied() ? 'Copiado!' : 'Copiar'}
+          {copied() ? "Copiado!" : "Copiar"}
         </button>
       </div>
-      <pre style={props.field.maxHeight ? { 'max-height': `${props.field.maxHeight}px` } : undefined}>
+      <pre style={props.field.maxHeight ? { "max-height": `${props.field.maxHeight}px` } : undefined}>
         {text()}
       </pre>
     </div>
@@ -242,21 +244,21 @@ export function ChannelPickerControl(props: {
   value: unknown;
   onCommit: (val: unknown) => void;
 }) {
-  const [query, setQuery] = createSignal('');
+  const [query, setQuery] = createSignal("");
   const selected = () =>
     new Set(
       props.field.multiple
         ? Array.isArray(props.value)
           ? props.value.map(String)
           : []
-        : [String(props.value ?? '')].filter(Boolean),
+        : [String(props.value ?? "")].filter(Boolean),
     );
 
   const filtered = () => {
     const q = query().trim().toLowerCase();
     if (!q) return props.field.options;
     return props.field.options.filter((opt) =>
-      `${opt.label} ${opt.description || ''}`.toLowerCase().includes(q),
+      `${opt.label} ${opt.description || ""}`.toLowerCase().includes(q),
     );
   };
 
@@ -277,7 +279,7 @@ export function ChannelPickerControl(props: {
         <input
           type="search"
           class={styles.control}
-          placeholder={props.field.placeholder || 'Buscar…'}
+          placeholder={props.field.placeholder || "Buscar…"}
           value={query()}
           onInput={(e) => setQuery(e.currentTarget.value)}
         />
@@ -294,7 +296,7 @@ export function ChannelPickerControl(props: {
             >
               <Show when={option.icon}>
                 <span>
-                  {typeof option.icon === 'string' ? <span innerHTML={option.icon} /> : option.icon}
+                  {typeof option.icon === "string" ? <span innerHTML={option.icon} /> : option.icon}
                 </span>
               </Show>
               <span>

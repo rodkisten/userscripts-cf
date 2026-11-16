@@ -9,7 +9,13 @@ import { solidDOMTemplates } from "./build/solid-dom.mjs";
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
-  plugins: [runtimeHelpers(), inlineCSSModules(), inlineSVG(), solid({ refresh: false }), solidDOMTemplates()],
+  plugins: [
+    runtimeHelpers(),
+    inlineCSSModules(),
+    inlineSVG(),
+    solid({ refresh: false }),
+    solidDOMTemplates(),
+  ],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },

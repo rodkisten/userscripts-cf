@@ -12,8 +12,15 @@ describe("class references AST", () => {
       node.setAttribute("class", "ready");
     `);
     expect(result.classes).toEqual([
-      "active", "bar", "deleteButton", "foo", "icon", "menuButton",
-      "ready", "selected", "toolbar",
+      "active",
+      "bar",
+      "deleteButton",
+      "foo",
+      "icon",
+      "menuButton",
+      "ready",
+      "selected",
+      "toolbar",
     ]);
     expect(result.dynamic).toEqual([]);
   });

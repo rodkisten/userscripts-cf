@@ -1,7 +1,7 @@
-import { createSignal, For, Show } from 'solid-js';
-import type { RodMenuContext, RodMenuField, RodMenuSection, SolidFieldRenderer } from '../types';
-import { FieldRenderer } from './FieldRenderer';
-import styles from '../styles/Fields.module.css';
+import { createSignal, For, Show } from "solid-js";
+import type { RodMenuContext, RodMenuField, RodMenuSection, SolidFieldRenderer } from "../types";
+import { FieldRenderer } from "./FieldRenderer";
+import styles from "../styles/Fields.module.css";
 
 export interface SectionRendererProps {
   surfaceId: string;
@@ -19,7 +19,7 @@ export function SectionRenderer(props: SectionRendererProps) {
     !props.section.title &&
     !props.section.description &&
     props.section.fields.length > 0 &&
-    props.section.fields.every((f) => f.chrome === 'bare');
+    props.section.fields.every((f) => f.chrome === "bare");
 
   const isVisible = () => {
     if (!props.section.visibleWhen) return true;
@@ -49,11 +49,7 @@ export function SectionRenderer(props: SectionRendererProps) {
                 </div>
               }
             >
-              <button
-                type="button"
-                class={styles.sectionToggle}
-                onClick={() => setCollapsed((c) => !c)}
-              >
+              <button type="button" class={styles.sectionToggle} onClick={() => setCollapsed((c) => !c)}>
                 <div>
                   <Show when={props.section.title}>
                     <h3 class={styles.sectionTitle}>{props.section.title}</h3>
@@ -62,7 +58,7 @@ export function SectionRenderer(props: SectionRendererProps) {
                     <p class={styles.sectionDescription}>{props.section.description}</p>
                   </Show>
                 </div>
-                <span>{collapsed() ? '+' : '−'}</span>
+                <span>{collapsed() ? "+" : "−"}</span>
               </button>
             </Show>
           </div>

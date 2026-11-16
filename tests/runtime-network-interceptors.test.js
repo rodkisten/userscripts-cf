@@ -16,7 +16,9 @@ describe("context network interceptors", () => {
     const http = { request: vi.fn(async () => new Response("ok")) };
     const onError = vi.fn();
     const hooks = createNetworkInterceptors(http, { onError });
-    const off = hooks.interceptResponse(() => { throw Error("broken"); });
+    const off = hooks.interceptResponse(() => {
+      throw Error("broken");
+    });
     expect(await (await hooks.request("/")).text()).toBe("ok");
     expect(onError).toHaveBeenCalledOnce();
     off();

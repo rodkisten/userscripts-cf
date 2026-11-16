@@ -97,13 +97,7 @@ export interface PrototypeEntry {
   enumerable: false;
 }
 
-export type InspectorEntry =
-  | DataEntry
-  | EmptyEntry
-  | AccessorEntry
-  | MapEntry
-  | SetEntry
-  | PrototypeEntry;
+export type InspectorEntry = DataEntry | EmptyEntry | AccessorEntry | MapEntry | SetEntry | PrototypeEntry;
 
 export interface EntrySource {
   count: number;

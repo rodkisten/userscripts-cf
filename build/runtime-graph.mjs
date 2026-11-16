@@ -42,7 +42,10 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
       throw new Error(`Import outside project: ${filename}`);
     visited.add(filename);
     const source = await fs.readFile(filename, "utf8");
-    modules.push({ file: path.relative(rootPath, filename).split(path.sep).join("/"), sourceBytes: Buffer.byteLength(source) });
+    modules.push({
+      file: path.relative(rootPath, filename).split(path.sep).join("/"),
+      sourceBytes: Buffer.byteLength(source),
+    });
     const usage = analyzeRuntimeUsage(source, filename);
     for (const feature of usage.features) features.add(feature);
     if (usage.dynamic) dynamicFiles.push(path.relative(rootPath, filename));
@@ -51,12 +54,23 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     // TypeScript preprocessing does not consistently report import() and
     // require() calls. Include literal references in the feature graph.
     // Non-literal imports cannot be resolved statically, so keep all features.
-    const ast = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true,
-      filename.endsWith(".tsx") ? ts.ScriptKind.TSX : filename.endsWith(".jsx") ? ts.ScriptKind.JSX : ts.ScriptKind.TS);
+    const ast = ts.createSourceFile(
+      filename,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      filename.endsWith(".tsx")
+        ? ts.ScriptKind.TSX
+        : filename.endsWith(".jsx")
+          ? ts.ScriptKind.JSX
+          : ts.ScriptKind.TS,
+    );
     const inspectImports = (node) => {
-      if (ts.isCallExpression(node) &&
-          (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-           (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+      if (
+        ts.isCallExpression(node) &&
+        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+          (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+      ) {
         const argument = node.arguments[0];
         if (argument && ts.isStringLiteralLike(argument)) specifiers.add(argument.text);
         else if (argument) dynamicFiles.push(path.relative(rootPath, filename));

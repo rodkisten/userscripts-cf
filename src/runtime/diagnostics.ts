@@ -24,7 +24,12 @@ export function getDiagnostics(host: Window = window): DiagnosticRegistry | unde
   return (host as Window & { __rodScriptDiagnosticsV1?: DiagnosticRegistry }).__rodScriptDiagnosticsV1;
 }
 
-export function captureDiagnostic(error: unknown, source: string, script: string, host: Window = window): void {
+export function captureDiagnostic(
+  error: unknown,
+  source: string,
+  script: string,
+  host: Window = window,
+): void {
   try {
     getDiagnostics(host)?.capture(error, source, script);
   } catch {
@@ -50,11 +55,18 @@ export function observeNetworkDiagnostics(
     const message = event.error ? "Network failure" : `HTTP ${event.status}`;
     captureDiagnostic(new Error(`${message} (${kind}) at ${location}`), `network.${kind}`, "unknown", host);
   };
-  const stopFetch = observePageFetch(event => capture("fetch", event), {
-    host, signal, maxBodyCharacters: 0,
+  const stopFetch = observePageFetch((event) => capture("fetch", event), {
+    host,
+    signal,
+    maxBodyCharacters: 0,
   });
-  const stopXHR = observePageXHR(event => capture("xhr", event), {
-    host, signal, maxBodyCharacters: 0,
+  const stopXHR = observePageXHR((event) => capture("xhr", event), {
+    host,
+    signal,
+    maxBodyCharacters: 0,
   });
-  return () => { stopFetch(); stopXHR(); };
+  return () => {
+    stopFetch();
+    stopXHR();
+  };
 }

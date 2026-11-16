@@ -7,8 +7,11 @@ export function diagnosticPrelude(target, version, scripts) {
   let state = root[key];
   if (!state) {
     const history = (() => {
-      try { return JSON.parse(root.localStorage.getItem(storageKey) || "[]"); }
-      catch { return []; }
+      try {
+        return JSON.parse(root.localStorage.getItem(storageKey) || "[]");
+      } catch {
+        return [];
+      }
     })();
     state = { scripts: {}, history: Array.isArray(history) ? history : [], capture: null };
     // IndexedDB is the durable store; localStorage is a synchronous fallback.
@@ -49,12 +52,16 @@ export function diagnosticPrelude(target, version, scripts) {
         const request = root.indexedDB.open("rod-script-diagnostics", 2);
         request.onupgradeneeded = () => {
           const db = request.result;
-          if (!db.objectStoreNames.contains("snapshots")) db.createObjectStore("snapshots", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("snapshots"))
+            db.createObjectStore("snapshots", { keyPath: "id" });
           if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
         };
         request.onsuccess = () => {
           database = request.result;
-          database.onversionchange = () => { database.close(); database = null; };
+          database.onversionchange = () => {
+            database.close();
+            database = null;
+          };
           flushDurable();
           try {
             const tx = database.transaction("events", "readonly");
@@ -62,12 +69,20 @@ export function diagnosticPrelude(target, version, scripts) {
             read.onsuccess = () => {
               for (const item of read.result || []) {
                 if (!item || item.timestamp <= clearedAt) continue;
-                const existing = state.history.find(record => record.fingerprint === item.fingerprint);
+                const existing = state.history.find((record) => record.fingerprint === item.fingerprint);
                 if (existing) {
                   existing.writerCounts ||= {};
-                  existing.writerCounts[item.writer] = Math.max(existing.writerCounts[item.writer] || 0, item.sequence);
+                  existing.writerCounts[item.writer] = Math.max(
+                    existing.writerCounts[item.writer] || 0,
+                    item.sequence,
+                  );
                   existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
-                } else state.history.push({ ...item.record, writerCounts: { [item.writer]: item.sequence }, count: item.sequence });
+                } else
+                  state.history.push({
+                    ...item.record,
+                    writerCounts: { [item.writer]: item.sequence },
+                    count: item.sequence,
+                  });
               }
               state.history.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
               state.history.length = Math.min(state.history.length, 250);
@@ -80,12 +95,18 @@ export function diagnosticPrelude(target, version, scripts) {
             read.onsuccess = () => {
               if (revision === 0 && Array.isArray(read.result?.records)) {
                 merge(read.result.records);
-                try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
-                try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
+                try {
+                  root.localStorage.setItem(storageKey, JSON.stringify(state.history));
+                } catch {}
+                try {
+                  root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change"));
+                } catch {}
               } else persist();
             };
             read.onerror = persist;
-          } catch { persist(); }
+          } catch {
+            persist();
+          }
         };
       } catch {}
     }
@@ -96,33 +117,65 @@ export function diagnosticPrelude(target, version, scripts) {
     const seen = new Set();
     const bridgeEvent = "rod-diagnostics:bridge:v1";
     let clearedAt = (() => {
-      try { return Number(root.localStorage.getItem(storageKey + ":clearedAt")) || 0; } catch { return 0; }
+      try {
+        return Number(root.localStorage.getItem(storageKey + ":clearedAt")) || 0;
+      } catch {
+        return 0;
+      }
     })();
-    state.history.splice(0, state.history.length, ...state.history.filter(item => Date.parse(item.lastSeen) > clearedAt));
+    state.history.splice(
+      0,
+      state.history.length,
+      ...state.history.filter((item) => Date.parse(item.lastSeen) > clearedAt),
+    );
     const signalKey = storageKey + ":signal";
     let channel;
     const notify = () => {
-      try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
+      try {
+        root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change"));
+      } catch {}
     };
     const send = (payload) => {
-      const message = { ...payload, sender: tabId, id: tabId + ":" + (++sequence) };
-      try { channel?.postMessage(message); } catch {}
-      try { root.document.dispatchEvent(new CustomEvent(bridgeEvent, { detail: JSON.stringify(message) })); } catch {}
-      try { root.localStorage.setItem(signalKey, JSON.stringify(message)); } catch {}
+      const message = { ...payload, sender: tabId, id: tabId + ":" + ++sequence };
+      try {
+        channel?.postMessage(message);
+      } catch {}
+      try {
+        root.document.dispatchEvent(new CustomEvent(bridgeEvent, { detail: JSON.stringify(message) }));
+      } catch {}
+      try {
+        root.localStorage.setItem(signalKey, JSON.stringify(message));
+      } catch {}
     };
     const merge = (records) => {
       if (!Array.isArray(records)) return false;
       let changed = false;
       for (const item of records) {
-        if (!item || typeof item.fingerprint !== "string" || !item.lastSeen || Date.parse(item.lastSeen) <= clearedAt) continue;
-        const previous = state.history.find(value => value.fingerprint === item.fingerprint);
-        if (!previous) { state.history.push({ ...item }); changed = true; }
-        else if (item.writerCounts || previous.writerCounts || item.lastSeen > previous.lastSeen || item.count > previous.count) {
+        if (
+          !item ||
+          typeof item.fingerprint !== "string" ||
+          !item.lastSeen ||
+          Date.parse(item.lastSeen) <= clearedAt
+        )
+          continue;
+        const previous = state.history.find((value) => value.fingerprint === item.fingerprint);
+        if (!previous) {
+          state.history.push({ ...item });
+          changed = true;
+        } else if (
+          item.writerCounts ||
+          previous.writerCounts ||
+          item.lastSeen > previous.lastSeen ||
+          item.count > previous.count
+        ) {
           const counts = { ...(previous.writerCounts || {}) };
-          for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          for (const [writer, count] of Object.entries(item.writerCounts || {}))
+            counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
           if (!Object.keys(counts).length && previous.count) counts.legacy = previous.count;
           previous.writerCounts = counts;
-          previous.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(previous.count || 1, item.count || 1);
+          previous.count = Object.keys(counts).length
+            ? Object.values(counts).reduce((a, b) => a + b, 0)
+            : Math.max(previous.count || 1, item.count || 1);
           previous.lastSeen = item.lastSeen > previous.lastSeen ? item.lastSeen : previous.lastSeen;
           changed = true;
         }
@@ -134,41 +187,55 @@ export function diagnosticPrelude(target, version, scripts) {
       return changed;
     };
     const receive = (message) => {
-      if (!message || message.sender === tabId || typeof message.id !== "string" || seen.has(message.id)) return;
+      if (!message || message.sender === tabId || typeof message.id !== "string" || seen.has(message.id))
+        return;
       seen.add(message.id);
       if (seen.size > 1000) seen.clear();
       if (message.type === "clear") {
         if (!(message.at > clearedAt)) return;
         clearedAt = message.at;
-        try { root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt)); } catch {}
+        try {
+          root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt));
+        } catch {}
         state.history.length = 0;
         revision++;
-        try { root.localStorage.removeItem(storageKey); } catch {}
+        try {
+          root.localStorage.removeItem(storageKey);
+        } catch {}
         persist();
         durableQueue.length = 0;
-        try { if (database) database.transaction("events", "readwrite").objectStore("events").clear(); } catch {}
+        try {
+          if (database) database.transaction("events", "readwrite").objectStore("events").clear();
+        } catch {}
         notify();
       } else if (message.type === "capture") {
         const item = message.record;
         if (!item || Date.parse(item.lastSeen) <= clearedAt) return;
-        const existing = state.history.find(value => value.fingerprint === item.fingerprint);
+        const existing = state.history.find((value) => value.fingerprint === item.fingerprint);
         if (existing) {
           const counts = { ...(existing.writerCounts || {}) };
-          for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          for (const [writer, count] of Object.entries(item.writerCounts || {}))
+            counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
           if (!Object.keys(counts).length && existing.count) counts.legacy = existing.count;
           existing.writerCounts = counts;
-          existing.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(existing.count || 1, item.count || 1);
+          existing.count = Object.keys(counts).length
+            ? Object.values(counts).reduce((a, b) => a + b, 0)
+            : Math.max(existing.count || 1, item.count || 1);
           existing.lastSeen = item.lastSeen > existing.lastSeen ? item.lastSeen : existing.lastSeen;
         } else state.history.unshift({ ...item });
         state.history.length = Math.min(state.history.length, 250);
         revision++;
-        try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+        try {
+          root.localStorage.setItem(storageKey, JSON.stringify(state.history));
+        } catch {}
         persist();
         notify();
       } else if (message.type === "snapshot") {
         if (merge(message.records)) {
           revision++;
-          try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+          try {
+            root.localStorage.setItem(storageKey, JSON.stringify(state.history));
+          } catch {}
           persist();
           notify();
         }
@@ -177,71 +244,111 @@ export function diagnosticPrelude(target, version, scripts) {
     try {
       if (typeof root.BroadcastChannel === "function") {
         channel = new root.BroadcastChannel(storageKey);
-        channel.onmessage = event => receive(event.data);
+        channel.onmessage = (event) => receive(event.data);
       }
     } catch {}
-    root.document.addEventListener(bridgeEvent, event => {
+    root.document.addEventListener(bridgeEvent, (event) => {
       if (typeof event.detail !== "string") return;
-      try { receive(JSON.parse(event.detail)); } catch {}
+      try {
+        receive(JSON.parse(event.detail));
+      } catch {}
     });
-    root.addEventListener("storage", event => {
+    root.addEventListener("storage", (event) => {
       if (event.key === signalKey && event.newValue) {
-        try { receive(JSON.parse(event.newValue)); } catch {}
+        try {
+          receive(JSON.parse(event.newValue));
+        } catch {}
       }
       if (event.key === storageKey && event.newValue) {
-        try { if (merge(JSON.parse(event.newValue))) { revision++; persist(); notify(); } } catch {}
+        try {
+          if (merge(JSON.parse(event.newValue))) {
+            revision++;
+            persist();
+            notify();
+          }
+        } catch {}
       }
     });
     send({ type: "hello" });
-    const redact = (value) => String(value ?? "")
-      .replace(/(Bearer\s+)[\w.~-]+/gi, "$1[REDACTED]")
-      .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\s]+/gi, "$1[REDACTED]");
+    const redact = (value) =>
+      String(value ?? "")
+        .replace(/(Bearer\s+)[\w.~-]+/gi, "$1[REDACTED]")
+        .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\s]+/gi, "$1[REDACTED]");
     state.capture = (error, source = "manual", owner = null) => {
       try {
         const message = redact(error?.message || error || "Unknown error");
         const stack = redact(error?.stack || "");
         const script = owner || "unknown";
         const fingerprint = [script, source, message, stack.split("\n")[1] || ""].join("|");
-        const existing = state.history.find(item => item.fingerprint === fingerprint);
+        const existing = state.history.find((item) => item.fingerprint === fingerprint);
         if (existing) {
           existing.writerCounts ||= { legacy: existing.count || 1 };
           existing.writerCounts[tabId] = (existing.writerCounts[tabId] || 0) + 1;
           existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
           existing.lastSeen = new Date().toISOString();
-        }
-        else state.history.unshift({ fingerprint, script, source, message, stack,
-          count: 1, writerCounts: { [tabId]: 1 }, firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString(),
-          url: root.location?.origin + root.location?.pathname });
+        } else
+          state.history.unshift({
+            fingerprint,
+            script,
+            source,
+            message,
+            stack,
+            count: 1,
+            writerCounts: { [tabId]: 1 },
+            firstSeen: new Date().toISOString(),
+            lastSeen: new Date().toISOString(),
+            url: root.location?.origin + root.location?.pathname,
+          });
         state.history.length = Math.min(state.history.length, 250);
         revision++;
-        try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
+        try {
+          root.localStorage.setItem(storageKey, JSON.stringify(state.history));
+        } catch {}
         persist();
-        const record = state.history.find(item => item.fingerprint === fingerprint);
+        const record = state.history.find((item) => item.fingerprint === fingerprint);
         durableQueue.push({
-          id: tabId + ":" + (++sequence) + ":" + Date.now(),
-          fingerprint, writer: tabId, sequence: record.writerCounts[tabId],
-          timestamp: Date.now(), record: { ...record },
+          id: tabId + ":" + ++sequence + ":" + Date.now(),
+          fingerprint,
+          writer: tabId,
+          sequence: record.writerCounts[tabId],
+          timestamp: Date.now(),
+          record: { ...record },
         });
         flushDurable();
-        send({ type: "capture", record: { ...state.history.find(item => item.fingerprint === fingerprint) } });
+        send({
+          type: "capture",
+          record: { ...state.history.find((item) => item.fingerprint === fingerprint) },
+        });
         notify();
       } catch {}
     };
-    root.addEventListener("error", event => {
-      if (event.error) state.capture(event.error, "window.error");
-      else if (event.target !== root) state.capture("Resource failed: " + (event.target?.tagName || "unknown"), "resource.error");
-    }, true);
-    root.addEventListener("unhandledrejection", event => state.capture(event.reason, "unhandledrejection"));
-    state.export = () => JSON.stringify({ schema: 1, scripts: state.scripts, errors: state.history }, null, 2);
+    root.addEventListener(
+      "error",
+      (event) => {
+        if (event.error) state.capture(event.error, "window.error");
+        else if (event.target !== root)
+          state.capture("Resource failed: " + (event.target?.tagName || "unknown"), "resource.error");
+      },
+      true,
+    );
+    root.addEventListener("unhandledrejection", (event) => state.capture(event.reason, "unhandledrejection"));
+    state.export = () =>
+      JSON.stringify({ schema: 1, scripts: state.scripts, errors: state.history }, null, 2);
     state.clear = () => {
       state.history.length = 0;
       clearedAt = Date.now();
-      try { root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt)); } catch {}
+      try {
+        root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt));
+      } catch {}
       revision++;
-      try { root.localStorage.removeItem(storageKey); } catch {}
+      try {
+        root.localStorage.removeItem(storageKey);
+      } catch {}
       persist();
       durableQueue.length = 0;
-      try { if (database) database.transaction("events", "readwrite").objectStore("events").clear(); } catch {}
+      try {
+        if (database) database.transaction("events", "readwrite").objectStore("events").clear();
+      } catch {}
       send({ type: "clear", at: clearedAt });
       notify();
     };

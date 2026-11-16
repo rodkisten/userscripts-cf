@@ -22,10 +22,8 @@ export async function loadStepOutput(step: StepAddress, token = "", signal?: Abo
   if (!response.ok) {
     if (response.status === 401 || response.status === 403)
       throw Error("Configure um token GitHub com Actions: read no menu do userscript.");
-    if (response.status === 404)
-      throw Error("Log indisponível ou sem acesso. Tente após o step terminar.");
-    if (response.status === 410)
-      throw Error("Log expirado e não pode mais ser recuperado.");
+    if (response.status === 404) throw Error("Log indisponível ou sem acesso. Tente após o step terminar.");
+    if (response.status === 410) throw Error("Log expirado e não pode mais ser recuperado.");
     throw Error(`GitHub HTTP ${response.status}`);
   }
   const text = await response.text();

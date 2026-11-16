@@ -4,7 +4,11 @@ import { captureDiagnostic } from "../diagnostics.js";
 export function createErrorGuard(script: string, onError?: (error: unknown) => void) {
   const report = (error: unknown, source: string): void => {
     captureDiagnostic(error, source, script);
-    try { onError?.(error); } catch { /* never mask the original failure */ }
+    try {
+      onError?.(error);
+    } catch {
+      /* never mask the original failure */
+    }
   };
 
   return {
@@ -15,9 +19,11 @@ export function createErrorGuard(script: string, onError?: (error: unknown) => v
         try {
           const result = callback(event);
           if (result && typeof (result as PromiseLike<unknown>).then === "function") {
-            void Promise.resolve(result).catch(error => report(error, source));
+            void Promise.resolve(result).catch((error) => report(error, source));
           }
-        } catch (error) { report(error, source); }
+        } catch (error) {
+          report(error, source);
+        }
       };
     },
     /** For timers, observers and callbacks that do not receive an Event. */
@@ -26,15 +32,21 @@ export function createErrorGuard(script: string, onError?: (error: unknown) => v
         try {
           const result = callback(...args);
           if (result && typeof (result as PromiseLike<unknown>).then === "function") {
-            void Promise.resolve(result).catch(error => report(error, source));
+            void Promise.resolve(result).catch((error) => report(error, source));
           }
-        } catch (error) { report(error, source); }
+        } catch (error) {
+          report(error, source);
+        }
       };
     },
     /** Preserve rejection semantics for awaited work while reporting it once. */
     async promise<T>(operation: Promise<T> | (() => Promise<T>), source = "promise"): Promise<T> {
-      try { return await (typeof operation === "function" ? operation() : operation); }
-      catch (error) { report(error, source); throw error; }
+      try {
+        return await (typeof operation === "function" ? operation() : operation);
+      } catch (error) {
+        report(error, source);
+        throw error;
+      }
     },
   };
 }

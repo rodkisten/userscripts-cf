@@ -40,7 +40,9 @@ export async function bundleRuntime(root, definitions, options = {}) {
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
     __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
     __ROD_FEATURE_UI__: JSON.stringify(enabled("ui")),
-    __ROD_FEATURE_HTTP__: JSON.stringify(enabled("http") || enabled("interceptRequest") || enabled("interceptResponse")),
+    __ROD_FEATURE_HTTP__: JSON.stringify(
+      enabled("http") || enabled("interceptRequest") || enabled("interceptResponse"),
+    ),
   };
   const result = await build({
     root,
@@ -65,31 +67,42 @@ export async function bundleRuntime(root, definitions, options = {}) {
     const unexpected = output.map((item) => ({
       type: item.type,
       fileName: item.fileName,
-      bytes: item.type === "asset" ? Buffer.byteLength(item.source || "") : Buffer.byteLength(item.code || ""),
+      bytes:
+        item.type === "asset" ? Buffer.byteLength(item.source || "") : Buffer.byteLength(item.code || ""),
       imports: item.type === "chunk" ? item.imports : undefined,
       dynamicImports: item.type === "chunk" ? item.dynamicImports : undefined,
     }));
-    throw Error(`Userscript must be one self-contained JS chunk without CSS/assets. Output: ${JSON.stringify(unexpected, null, 2)}`);
+    throw Error(
+      `Userscript must be one self-contained JS chunk without CSS/assets. Output: ${JSON.stringify(unexpected, null, 2)}`,
+    );
   }
   // Rolldown reports rendered module lengths after tree-shaking. These are
   // uncompressed contributions, not independently gzipped module sizes.
   if (typeof options.onBundleStats === "function") {
-    const modules = Object.entries(chunks[0].modules || {}).map(([id, info]) => ({
-      id: path.isAbsolute(id) ? path.relative(root, id).split(path.sep).join("/") : id,
-      renderedBytes: info.renderedLength ?? 0,
-      originalBytes: info.originalLength ?? 0,
-      removedExportsCount: info.removedExports?.length ?? 0,
-    })).sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
+    const modules = Object.entries(chunks[0].modules || {})
+      .map(([id, info]) => ({
+        id: path.isAbsolute(id) ? path.relative(root, id).split(path.sep).join("/") : id,
+        renderedBytes: info.renderedLength ?? 0,
+        originalBytes: info.originalLength ?? 0,
+        removedExportsCount: info.removedExports?.length ?? 0,
+      }))
+      .sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
     options.onBundleStats({
       bytes: Buffer.byteLength(chunks[0].code),
       modules,
       totalRenderedModuleBytes: modules.reduce((sum, item) => sum + item.renderedBytes, 0),
       includedModuleCount: modules.filter((item) => item.renderedBytes > 0).length,
       topModules: modules.filter((item) => item.renderedBytes > 0).slice(0, 20),
-      featureDefines: Object.fromEntries(Object.entries(featureDefines).map(([key, value]) => [key, value === "true"])),
+      featureDefines: Object.fromEntries(
+        Object.entries(featureDefines).map(([key, value]) => [key, value === "true"]),
+      ),
     });
   }
   const cssText = cssAssets.map((item) => String(item.source || "")).join("\n");
-  const cssPrelude = cssText ? "(()=>{const s=document.createElement(\"style\");s.textContent=" + JSON.stringify(cssText) + ";(document.head||document.documentElement).append(s)})();\n" : "";
+  const cssPrelude = cssText
+    ? '(()=>{const s=document.createElement("style");s.textContent=' +
+      JSON.stringify(cssText) +
+      ";(document.head||document.documentElement).append(s)})();\n"
+    : "";
   return format(readableStrings(cssPrelude + chunks[0].code), { parser: "babel", printWidth: 110 });
 }

@@ -2,9 +2,15 @@
  * Shared events bridge. Uses document CustomEvent for same-page compatibility.
  * Cross-tab delivery is opt-in; never broadcast secrets or non-cloneable values.
  */
-export function createSharedEvents({ host = globalThis, namespace = "rod", signal, historyLimit = 100 } = {}) {
+export function createSharedEvents({
+  host = globalThis,
+  namespace = "rod",
+  signal,
+  historyLimit = 100,
+} = {}) {
   const target = host.document;
-  if (!target?.addEventListener || !target?.dispatchEvent) throw new TypeError("Document EventTarget required");
+  if (!target?.addEventListener || !target?.dispatchEvent)
+    throw new TypeError("Document EventTarget required");
   const subscriptions = new Set();
   const observers = new Set();
   const pending = new Set();
@@ -23,7 +29,11 @@ export function createSharedEvents({ host = globalThis, namespace = "rod", signa
     }
     target.dispatchEvent(new host.CustomEvent("rod-events:diagnostic", { detail: entry }));
     for (const observer of [...observers]) {
-      try { observer(entry); } catch (error) { console.warn("[Rod events observer]", error); }
+      try {
+        observer(entry);
+      } catch (error) {
+        console.warn("[Rod events observer]", error);
+      }
     }
   }
   function deliver(eventName, detail, transport) {
@@ -69,14 +79,17 @@ export function createSharedEvents({ host = globalThis, namespace = "rod", signa
     }
     return false;
   }
-  function once(name, handler, options) { return on(name, handler, { ...options, once: true }); }
+  function once(name, handler, options) {
+    return on(name, handler, { ...options, once: true });
+  }
   function onAny(observer) {
     if (closed) throw new Error("Shared events disposed");
     observers.add(observer);
     return () => observers.delete(observer);
   }
   function waitFor(name, { signal: externalSignal, timeout = 0 } = {}) {
-    if (closed || signal?.aborted || externalSignal?.aborted) return Promise.reject(new Error("Event bus unavailable"));
+    if (closed || signal?.aborted || externalSignal?.aborted)
+      return Promise.reject(new Error("Event bus unavailable"));
     return new Promise((resolve, reject) => {
       let timer;
       const cleanup = () => {
@@ -85,11 +98,21 @@ export function createSharedEvents({ host = globalThis, namespace = "rod", signa
         externalSignal?.removeEventListener("abort", abort);
         pending.delete(abort);
       };
-      const abort = () => { cleanup(); reject(externalSignal?.reason ?? new Error("Event wait aborted")); };
-      const unsubscribe = once(name, (detail) => { cleanup(); resolve(detail); });
+      const abort = () => {
+        cleanup();
+        reject(externalSignal?.reason ?? new Error("Event wait aborted"));
+      };
+      const unsubscribe = once(name, (detail) => {
+        cleanup();
+        resolve(detail);
+      });
       pending.add(abort);
       externalSignal?.addEventListener("abort", abort, { once: true });
-      if (timeout > 0) timer = setTimeout(() => { cleanup(); reject(new Error("Event timeout")); }, timeout);
+      if (timeout > 0)
+        timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("Event timeout"));
+        }, timeout);
     });
   }
   async function emitAsync(name, detail, options) {
@@ -119,5 +142,16 @@ export function createSharedEvents({ host = globalThis, namespace = "rod", signa
     signal?.removeEventListener("abort", dispose);
   }
   signal?.addEventListener("abort", dispose, { once: true });
-  return Object.freeze({ emit, emitAsync, on, once, off, onAny, waitFor, enableBroadcast, history: () => [...history], dispose });
+  return Object.freeze({
+    emit,
+    emitAsync,
+    on,
+    once,
+    off,
+    onAny,
+    waitFor,
+    enableBroadcast,
+    history: () => [...history],
+    dispose,
+  });
 }

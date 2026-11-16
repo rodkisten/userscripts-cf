@@ -50,7 +50,10 @@ test("missing, expired or unauthorized logs never silently copy a visible fragme
   await assert.rejects(loadStepOutput(step), /expirado/);
 });
 test("HTML errors and empty logs cannot be presented as successful output", async (t) => {
-  vi.stubGlobal("fetch", async () => new Response("<html>login</html>", { headers: { "content-type": "text/html" } }));
+  vi.stubGlobal(
+    "fetch",
+    async () => new Response("<html>login</html>", { headers: { "content-type": "text/html" } }),
+  );
   await assert.rejects(loadStepOutput(step), /arquivo de log/);
   vi.stubGlobal("fetch", async () => new Response("\n"));
   await assert.rejects(loadStepOutput(step), /ainda não possui output/);

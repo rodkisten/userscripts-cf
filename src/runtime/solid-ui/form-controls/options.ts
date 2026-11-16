@@ -22,19 +22,22 @@ export interface OptionGroup {
 
 export function normalizeOptions(options: readonly ControlOption[]): ControlOption[] {
   const seen = new Set<string>();
-  return options.filter((option) => {
-    if (!option.value || seen.has(option.value)) return false;
-    seen.add(option.value);
-    return true;
-  }).map((option) => ({ ...option, label: option.label || option.value }));
+  return options
+    .filter((option) => {
+      if (!option.value || seen.has(option.value)) return false;
+      seen.add(option.value);
+      return true;
+    })
+    .map((option) => ({ ...option, label: option.label || option.value }));
 }
 
 export function filterOptions(options: readonly ControlOption[], query: string): ControlOption[] {
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return [...options];
   return options.filter((option) =>
-    [option.label, option.value, option.description, ...(option.keywords ?? [])]
-      .some((value) => value?.toLocaleLowerCase().includes(needle)),
+    [option.label, option.value, option.description, ...(option.keywords ?? [])].some((value) =>
+      value?.toLocaleLowerCase().includes(needle),
+    ),
   );
 }
 
@@ -63,9 +66,7 @@ export function createOptionsLoader(source: OptionsSource) {
       const next = new AbortController();
       controller = next;
       try {
-        const options = typeof source === "function"
-          ? await source(query, { signal: next.signal })
-          : source;
+        const options = typeof source === "function" ? await source(query, { signal: next.signal }) : source;
         if (next.signal.aborted || current !== revision) return [];
         return filterOptions(normalizeOptions(options), query);
       } catch (error) {

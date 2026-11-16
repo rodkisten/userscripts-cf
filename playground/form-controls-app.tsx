@@ -1,26 +1,31 @@
-import { createEffect, createSignal, For, Show, onCleanup } from 'solid-js';
-import { EditorState } from '@codemirror/state';
-import { EditorView, drawSelection } from '@codemirror/view';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { render } from '@solidjs/web';
-import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
-import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
-import { StandaloneFieldRenderer } from '../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer';
-import { getFormControlsQueryClient } from '../src/runtime/solid-ui/form-controls/query-client';
-import { SHARED_FIELD_TYPES } from '../src/runtime/solid-ui/form-controls/field-types';
-import type { FormField } from '../src/runtime/solid-ui/form-controls/fields';
-import type { ControlOption } from '../src/runtime/solid-ui/form-controls/options';
-import { appendTwitterToken, parseTwitterSearch, removeTwitterToken, replaceTwitterToken } from '../src/runtime/solid-ui/form-controls/twitter-search';
+import { createEffect, createSignal, For, Show, onCleanup } from "solid-js";
+import { EditorState } from "@codemirror/state";
+import { EditorView, drawSelection } from "@codemirror/view";
+import { javascript } from "@codemirror/lang-javascript";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { render } from "@solidjs/web";
+import { Combobox } from "../src/runtime/solid-ui/form-controls/Combobox";
+import { TagsInput } from "../src/runtime/solid-ui/form-controls/TagsInput";
+import { StandaloneFieldRenderer } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer";
+import { getFormControlsQueryClient } from "../src/runtime/solid-ui/form-controls/query-client";
+import { SHARED_FIELD_TYPES } from "../src/runtime/solid-ui/form-controls/field-types";
+import type { FormField } from "../src/runtime/solid-ui/form-controls/fields";
+import type { ControlOption } from "../src/runtime/solid-ui/form-controls/options";
+import {
+  appendTwitterToken,
+  parseTwitterSearch,
+  removeTwitterToken,
+  replaceTwitterToken,
+} from "../src/runtime/solid-ui/form-controls/twitter-search";
 
 const options: ControlOption[] = [
-  { value: 'filter:videos', label: 'Vídeos', group: 'Mídia' },
-  { value: 'filter:images', label: 'Imagens', group: 'Mídia' },
-  { value: 'filter:native_video', label: 'Vídeo nativo', group: 'Mídia' },
-  { value: 'lang:pt', label: 'Português', group: 'Idioma' },
-  { value: 'lang:en', label: 'Inglês', group: 'Idioma' },
-  { value: '-filter:replies', label: 'Sem respostas', group: 'Filtros' },
-  { value: 'min_faves:100', label: '100+ curtidas', group: 'Engajamento' },
+  { value: "filter:videos", label: "Vídeos", group: "Mídia" },
+  { value: "filter:images", label: "Imagens", group: "Mídia" },
+  { value: "filter:native_video", label: "Vídeo nativo", group: "Mídia" },
+  { value: "lang:pt", label: "Português", group: "Idioma" },
+  { value: "lang:en", label: "Inglês", group: "Idioma" },
+  { value: "-filter:replies", label: "Sem respostas", group: "Filtros" },
+  { value: "min_faves:100", label: "100+ curtidas", group: "Engajamento" },
 ];
 
 function JsxPreview(props: { code: string }) {
@@ -40,9 +45,9 @@ function JsxPreview(props: { code: string }) {
             EditorView.editable.of(false),
             EditorView.lineWrapping,
             EditorView.theme({
-              '&': { 'font-size': '13px', 'border-radius': '12px', overflow: 'hidden' },
-              '.cm-scroller': { 'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace' },
-              '.cm-content': { 'padding': '14px 0' },
+              "&": { "font-size": "13px", "border-radius": "12px", overflow: "hidden" },
+              ".cm-scroller": { "font-family": "ui-monospace, SFMono-Regular, Menlo, monospace" },
+              ".cm-content": { padding: "14px 0" },
             }),
           ],
         }),
@@ -58,18 +63,35 @@ function JsxPreview(props: { code: string }) {
 }
 
 function App() {
-  const [variant, setVariant] = createSignal<string>('text');
-  const [variantValue, setVariantValue] = createSignal<unknown>('');
-  const exampleOptions = [{label:'Primeira',value:'first'},{label:'Segunda',value:'second'},{label:'Terceira',value:'third'}];
-  const exampleField = (): FormField => ({
-    name: 'demo', type: variant(), label: `Campo ${variant()}`, placeholder: 'Digite ou selecione…',
-    description: 'Exemplo interativo e independente do RodMenu', options: exampleOptions,
-    min: 0, max: 5, step: 1, rows: 3, text: 'Executar ação',
-    html: 'Exemplo HTML em texto seguro', render: () => <strong>Campo customizado</strong>,
-  } as unknown as FormField);
-  const exampleContext = { values: { demo: variantValue() }, set: (_name: string, next: unknown) => setVariantValue(next) };
-  const [selected, setSelected] = createSignal<string[]>(['filter:videos']);
-  const [tags, setTags] = createSignal<string[]>(['typescript']);
+  const [variant, setVariant] = createSignal<string>("text");
+  const [variantValue, setVariantValue] = createSignal<unknown>("");
+  const exampleOptions = [
+    { label: "Primeira", value: "first" },
+    { label: "Segunda", value: "second" },
+    { label: "Terceira", value: "third" },
+  ];
+  const exampleField = (): FormField =>
+    ({
+      name: "demo",
+      type: variant(),
+      label: `Campo ${variant()}`,
+      placeholder: "Digite ou selecione…",
+      description: "Exemplo interativo e independente do RodMenu",
+      options: exampleOptions,
+      min: 0,
+      max: 5,
+      step: 1,
+      rows: 3,
+      text: "Executar ação",
+      html: "Exemplo HTML em texto seguro",
+      render: () => <strong>Campo customizado</strong>,
+    }) as unknown as FormField;
+  const exampleContext = {
+    values: { demo: variantValue() },
+    set: (_name: string, next: unknown) => setVariantValue(next),
+  };
+  const [selected, setSelected] = createSignal<string[]>(["filter:videos"]);
+  const [tags, setTags] = createSignal<string[]>(["typescript"]);
   const [disabled, setDisabled] = createSignal(false);
   const [readonly, setReadonly] = createSignal(false);
   const [multiple, setMultiple] = createSignal(true);
@@ -78,13 +100,24 @@ function App() {
   const [fuzzy, setFuzzy] = createSignal(true);
   const [virtualize, setVirtualize] = createSignal(true);
   const [largeDataset, setLargeDataset] = createSignal(false);
-  const demoOptions = () => largeDataset() ? [...options, ...Array.from({ length: 1500 }, (_, i) => ({ value: `topic:${i}`, label: `Tópico ${i + 1}`, group: 'Tópicos' }))] : options;
-  const [placeholder, setPlaceholder] = createSignal('Pesquisar filtros…');
-  const [emptyMessage, setEmptyMessage] = createSignal('Nenhum filtro encontrado');
+  const demoOptions = () =>
+    largeDataset()
+      ? [
+          ...options,
+          ...Array.from({ length: 1500 }, (_, i) => ({
+            value: `topic:${i}`,
+            label: `Tópico ${i + 1}`,
+            group: "Tópicos",
+          })),
+        ]
+      : options;
+  const [placeholder, setPlaceholder] = createSignal("Pesquisar filtros…");
+  const [emptyMessage, setEmptyMessage] = createSignal("Nenhum filtro encontrado");
   const [maxTags, setMaxTags] = createSignal(8);
-  const [activeExample, setActiveExample] = createSignal<'combobox' | 'tags'>('combobox');
-  const jsx = () => activeExample() === 'combobox'
-    ? `<Combobox
+  const [activeExample, setActiveExample] = createSignal<"combobox" | "tags">("combobox");
+  const jsx = () =>
+    activeExample() === "combobox"
+      ? `<Combobox
   id="filters"
   options={options}
   value={selected()}
@@ -99,7 +132,7 @@ function App() {
   placeholder={${JSON.stringify(placeholder())}}
   emptyMessage={${JSON.stringify(emptyMessage())}}
 />`
-    : `<TagsInput
+      : `<TagsInput
   id="tags"
   options={options}
   value={tags()}
@@ -109,22 +142,45 @@ function App() {
   maxTags={${maxTags()}}
   placeholder={${JSON.stringify(placeholder())}}
 />`;
-  const [raw, setRaw] = createSignal('');
+  const [raw, setRaw] = createSignal("");
   const [editingToken, setEditingToken] = createSignal<number | null>(null);
-  const [tokenDraft, setTokenDraft] = createSignal('');
-  const [asyncValue, setAsyncValue] = createSignal('');
-  const [asyncValueTwo, setAsyncValueTwo] = createSignal('');
+  const [tokenDraft, setTokenDraft] = createSignal("");
+  const [asyncValue, setAsyncValue] = createSignal("");
+  const [asyncValueTwo, setAsyncValueTwo] = createSignal("");
   const [remoteRequests, setRemoteRequests] = createSignal(0);
-  const [cacheSnapshot, setCacheSnapshot] = createSignal('Clique em Inspecionar cache');
+  const [cacheSnapshot, setCacheSnapshot] = createSignal("Clique em Inspecionar cache");
   const queryClient = getFormControlsQueryClient();
-  const inspectCache = () => setCacheSnapshot(JSON.stringify(queryClient.getQueryCache().getAll().map((entry) => ({ key: entry.queryKey, status: entry.state.status, updatedAt: entry.state.dataUpdatedAt })), null, 2));
+  const inspectCache = () =>
+    setCacheSnapshot(
+      JSON.stringify(
+        queryClient
+          .getQueryCache()
+          .getAll()
+          .map((entry) => ({
+            key: entry.queryKey,
+            status: entry.state.status,
+            updatedAt: entry.state.dataUpdatedAt,
+          })),
+        null,
+        2,
+      ),
+    );
   const source = async (query: string, { signal }: { signal: AbortSignal }) => {
     setRemoteRequests((count) => count + 1);
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(resolve, 250);
-      signal.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Cancelled', 'AbortError')); }, { once: true });
+      signal.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer);
+          reject(new DOMException("Cancelled", "AbortError"));
+        },
+        { once: true },
+      );
     });
-    return options.filter((option) => (option.label + option.value).toLowerCase().includes(query.toLowerCase()));
+    return options.filter((option) =>
+      (option.label + option.value).toLowerCase().includes(query.toLowerCase()),
+    );
   };
   return (
     <main>
@@ -136,52 +192,205 @@ function App() {
         <section class="card">
           <h2>Combobox múltiplo</h2>
           <label for="filters">Filtros da pesquisa</label>
-          <Combobox id="filters" options={demoOptions()} fuzzy={fuzzy()} virtualize={virtualize()} value={multiple() ? selected() : (selected()[0] ?? '')} onChange={(value) => setSelected(Array.isArray(value) ? value : value ? [value] : [])} multiple={multiple()} grouped={grouped()} clearable={clearable()} disabled={disabled()} readonly={readonly()} placeholder={placeholder()} emptyMessage={emptyMessage()} />
+          <Combobox
+            id="filters"
+            options={demoOptions()}
+            fuzzy={fuzzy()}
+            virtualize={virtualize()}
+            value={multiple() ? selected() : (selected()[0] ?? "")}
+            onChange={(value) => setSelected(Array.isArray(value) ? value : value ? [value] : [])}
+            multiple={multiple()}
+            grouped={grouped()}
+            clearable={clearable()}
+            disabled={disabled()}
+            readonly={readonly()}
+            placeholder={placeholder()}
+            emptyMessage={emptyMessage()}
+          />
           <pre>{JSON.stringify(selected(), null, 2)}</pre>
         </section>
         <section class="card">
           <h2>TagsInput</h2>
           <label for="tags">Termos personalizados</label>
-          <TagsInput id="tags" options={options} value={tags()} onChange={setTags} disabled={disabled()} readonly={readonly()} maxTags={maxTags()} placeholder={placeholder()} />
+          <TagsInput
+            id="tags"
+            options={options}
+            value={tags()}
+            onChange={setTags}
+            disabled={disabled()}
+            readonly={readonly()}
+            maxTags={maxTags()}
+            placeholder={placeholder()}
+          />
           <pre>{JSON.stringify(tags(), null, 2)}</pre>
         </section>
         <section class="card">
           <h2>Async · TanStack Query</h2>
           <label for="async">Sugestões assíncronas simuladas</label>
-          <Combobox id="async" options={options} source={source} queryClient={queryClient} queryKey={['playground', 'async-options']} value={asyncValue()} onChange={(value) => setAsyncValue(String(value))} disabled={disabled()} clearable />
+          <Combobox
+            id="async"
+            options={options}
+            source={source}
+            queryClient={queryClient}
+            queryKey={["playground", "async-options"]}
+            value={asyncValue()}
+            onChange={(value) => setAsyncValue(String(value))}
+            disabled={disabled()}
+            clearable
+          />
           <label for="async-shared">Segundo controle, mesmo cache</label>
-          <Combobox id="async-shared" options={options} source={source} queryKey={['playground', 'async-options']} value={asyncValueTwo()} onChange={(value) => setAsyncValueTwo(String(value))} disabled={disabled()} clearable />
-          <small>Os dois controles compartilham o QueryClient do módulo e a mesma queryKey. Em userscripts, use ctx.query.client para compartilhar o cache da instância do runtime. Simula 250 ms de latência e suporta cancelamento.</small>
+          <Combobox
+            id="async-shared"
+            options={options}
+            source={source}
+            queryKey={["playground", "async-options"]}
+            value={asyncValueTwo()}
+            onChange={(value) => setAsyncValueTwo(String(value))}
+            disabled={disabled()}
+            clearable
+          />
+          <small>
+            Os dois controles compartilham o QueryClient do módulo e a mesma queryKey. Em userscripts, use
+            ctx.query.client para compartilhar o cache da instância do runtime. Simula 250 ms de latência e
+            suporta cancelamento.
+          </small>
           <output aria-live="polite">Requisições simuladas: {remoteRequests()}</output>
-          <button type="button" onClick={inspectCache}>Inspecionar cache compartilhado</button>
-          <button type="button" onClick={() => { queryClient.removeQueries({ queryKey: ['playground', 'async-options'] }); inspectCache(); }}>Limpar cache da demonstração</button>
+          <button type="button" onClick={inspectCache}>
+            Inspecionar cache compartilhado
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              queryClient.removeQueries({ queryKey: ["playground", "async-options"] });
+              inspectCache();
+            }}
+          >
+            Limpar cache da demonstração
+          </button>
           <pre aria-live="polite">{cacheSnapshot()}</pre>
           <pre>{JSON.stringify(asyncValue())}</pre>
         </section>
         <section class="card">
           <h2>Configurações</h2>
-          <label class="toggle"><input type="checkbox" checked={disabled()} onChange={(event) => setDisabled(event.currentTarget.checked)} /> Desabilitar controles</label>
-          <label class="toggle"><input type="checkbox" checked={readonly()} onChange={(event) => setReadonly(event.currentTarget.checked)} /> Somente leitura</label>
-          <label class="toggle"><input type="checkbox" checked={multiple()} onChange={(event) => setMultiple(event.currentTarget.checked)} /> Seleção múltipla</label>
-          <label class="toggle"><input type="checkbox" checked={grouped()} onChange={(event) => setGrouped(event.currentTarget.checked)} /> Agrupar opções</label>
-          <label class="toggle"><input type="checkbox" checked={clearable()} onChange={(event) => setClearable(event.currentTarget.checked)} /> Permitir limpar</label>
-          <label class="toggle"><input type="checkbox" checked={fuzzy()} onChange={(event) => setFuzzy(event.currentTarget.checked)} /> Busca fuzzy (Fuse.js)</label>
-          <label class="toggle"><input type="checkbox" checked={virtualize()} onChange={(event) => setVirtualize(event.currentTarget.checked)} /> Virtualização (TanStack Virtual)</label>
-          <label class="toggle"><input type="checkbox" checked={largeDataset()} onChange={(event) => { setLargeDataset(event.currentTarget.checked); setGrouped(false); }} /> Dataset de 1.500 opções (desativa grupos)</label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={disabled()}
+              onChange={(event) => setDisabled(event.currentTarget.checked)}
+            />{" "}
+            Desabilitar controles
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={readonly()}
+              onChange={(event) => setReadonly(event.currentTarget.checked)}
+            />{" "}
+            Somente leitura
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={multiple()}
+              onChange={(event) => setMultiple(event.currentTarget.checked)}
+            />{" "}
+            Seleção múltipla
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={grouped()}
+              onChange={(event) => setGrouped(event.currentTarget.checked)}
+            />{" "}
+            Agrupar opções
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={clearable()}
+              onChange={(event) => setClearable(event.currentTarget.checked)}
+            />{" "}
+            Permitir limpar
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={fuzzy()}
+              onChange={(event) => setFuzzy(event.currentTarget.checked)}
+            />{" "}
+            Busca fuzzy (Fuse.js)
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={virtualize()}
+              onChange={(event) => setVirtualize(event.currentTarget.checked)}
+            />{" "}
+            Virtualização (TanStack Virtual)
+          </label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={largeDataset()}
+              onChange={(event) => {
+                setLargeDataset(event.currentTarget.checked);
+                setGrouped(false);
+              }}
+            />{" "}
+            Dataset de 1.500 opções (desativa grupos)
+          </label>
           <label for="playground-placeholder">Placeholder</label>
-          <input id="playground-placeholder" value={placeholder()} onInput={(event) => setPlaceholder(event.currentTarget.value)} />
+          <input
+            id="playground-placeholder"
+            value={placeholder()}
+            onInput={(event) => setPlaceholder(event.currentTarget.value)}
+          />
           <label for="playground-empty">Mensagem sem resultados</label>
-          <input id="playground-empty" value={emptyMessage()} onInput={(event) => setEmptyMessage(event.currentTarget.value)} />
+          <input
+            id="playground-empty"
+            value={emptyMessage()}
+            onInput={(event) => setEmptyMessage(event.currentTarget.value)}
+          />
           <label for="playground-max-tags">Limite de tags: {maxTags()}</label>
-          <input id="playground-max-tags" type="range" min="1" max="20" value={maxTags()} onInput={(event) => setMaxTags(Number(event.currentTarget.value))} />
-          <button type="button" onClick={() => { setSelected([]); setTags([]); setAsyncValue(''); }}>Limpar todos</button>
+          <input
+            id="playground-max-tags"
+            type="range"
+            min="1"
+            max="20"
+            value={maxTags()}
+            onInput={(event) => setMaxTags(Number(event.currentTarget.value))}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setSelected([]);
+              setTags([]);
+              setAsyncValue("");
+            }}
+          >
+            Limpar todos
+          </button>
         </section>
         <section class="card wide">
           <h2>JSX ao vivo</h2>
           <div class="actions" role="group" aria-label="Exemplo de componente">
-            <button type="button" aria-pressed={activeExample() === 'combobox'} onClick={() => setActiveExample('combobox')}>Combobox</button>
-            <button type="button" aria-pressed={activeExample() === 'tags'} onClick={() => setActiveExample('tags')}>TagsInput</button>
-            <button type="button" onClick={() => void navigator.clipboard?.writeText(jsx())}>Copiar JSX</button>
+            <button
+              type="button"
+              aria-pressed={activeExample() === "combobox"}
+              onClick={() => setActiveExample("combobox")}
+            >
+              Combobox
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeExample() === "tags"}
+              onClick={() => setActiveExample("tags")}
+            >
+              TagsInput
+            </button>
+            <button type="button" onClick={() => void navigator.clipboard?.writeText(jsx())}>
+              Copiar JSX
+            </button>
           </div>
           <JsxPreview code={jsx()} />
         </section>
@@ -189,45 +398,133 @@ function App() {
           <h2>29 campos · Renderer independente</h2>
           <p>Experimente todas as variantes sem inicializar RodMenu. O valor muda em tempo real.</p>
           <label for="variant-type">Tipo do campo</label>
-          <select id="variant-type" value={variant()} onChange={(event) => { setVariant(event.currentTarget.value); setVariantValue(''); }}>
+          <select
+            id="variant-type"
+            value={variant()}
+            onChange={(event) => {
+              setVariant(event.currentTarget.value);
+              setVariantValue("");
+            }}
+          >
             <For each={SHARED_FIELD_TYPES}>{(type) => <option value={type}>{type}</option>}</For>
           </select>
-          <StandaloneFieldRenderer field={exampleField()} context={exampleContext} value={variantValue()} onChange={setVariantValue} id="variant-demo" />
-          <pre aria-live="polite">{JSON.stringify({type: variant(),value: variantValue()},null,2)}</pre>
-          <JsxPreview code={`<StandaloneFieldRenderer field={{ type: "${variant()}", name: "demo" }} value={value} onChange={setValue} context={context} />`} />
+          <StandaloneFieldRenderer
+            field={exampleField()}
+            context={exampleContext}
+            value={variantValue()}
+            onChange={setVariantValue}
+            id="variant-demo"
+          />
+          <pre aria-live="polite">{JSON.stringify({ type: variant(), value: variantValue() }, null, 2)}</pre>
+          <JsxPreview
+            code={`<StandaloneFieldRenderer field={{ type: "${variant()}", name: "demo" }} value={value} onChange={setValue} context={context} />`}
+          />
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
           <label for="raw">Consulta editável</label>
-          <textarea id="raw" rows="3" value={raw()} onInput={(event) => setRaw(event.currentTarget.value)} placeholder="filter:videos lang:pt typescript" />
+          <textarea
+            id="raw"
+            rows="3"
+            value={raw()}
+            onInput={(event) => setRaw(event.currentTarget.value)}
+            placeholder="filter:videos lang:pt typescript"
+          />
           <div class="actions">
-            <button type="button" onClick={() => setRaw([...selected(), ...tags()].join(' '))}>Gerar com filtros e tags</button>
-            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), 'filter:videos'))}>+ Vídeos</button>
-            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), '-filter:replies'))}>+ Sem respostas</button>
-            <button type="button" onClick={() => void navigator.clipboard?.writeText(raw())}>Copiar</button>
+            <button type="button" onClick={() => setRaw([...selected(), ...tags()].join(" "))}>
+              Gerar com filtros e tags
+            </button>
+            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), "filter:videos"))}>
+              + Vídeos
+            </button>
+            <button type="button" onClick={() => setRaw(appendTwitterToken(raw(), "-filter:replies"))}>
+              + Sem respostas
+            </button>
+            <button type="button" onClick={() => void navigator.clipboard?.writeText(raw())}>
+              Copiar
+            </button>
           </div>
           <div class="token-list" aria-label="Tokens da consulta">
             <For each={parseTwitterSearch(raw())}>
-              {(token, index) => <span class={`token token-${token.kind}`} style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '4px 8px', margin: '3px', 'border-radius': '8px', background: token.kind === 'negative' ? '#5c202e' : token.kind === 'operator' ? '#253e63' : '#30303b' }}>
-                <Show when={editingToken() === index()} fallback={<button type="button" title={`Editar ${token.value}`} onClick={() => { setEditingToken(index()); setTokenDraft(token.raw); }}>{token.value}</button>}>
-                  <input aria-label={`Editar token ${index() + 1}`} value={tokenDraft()} onInput={(event) => setTokenDraft(event.currentTarget.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') setEditingToken(null);
-                      if (event.key === 'Enter') { setRaw(replaceTwitterToken(raw(), token, tokenDraft())); setEditingToken(null); }
-                    }} />
-                  <button type="button" onClick={() => { setRaw(replaceTwitterToken(raw(), token, tokenDraft())); setEditingToken(null); }}>✓</button>
-                </Show>
-                <button type="button" aria-label={`Remover ${token.value}`} onClick={() => { setRaw(removeTwitterToken(raw(), token)); setEditingToken(null); }}>×</button>
-              </span>}
+              {(token, index) => (
+                <span
+                  class={`token token-${token.kind}`}
+                  style={{
+                    display: "inline-flex",
+                    "align-items": "center",
+                    gap: "5px",
+                    padding: "4px 8px",
+                    margin: "3px",
+                    "border-radius": "8px",
+                    background:
+                      token.kind === "negative"
+                        ? "#5c202e"
+                        : token.kind === "operator"
+                          ? "#253e63"
+                          : "#30303b",
+                  }}
+                >
+                  <Show
+                    when={editingToken() === index()}
+                    fallback={
+                      <button
+                        type="button"
+                        title={`Editar ${token.value}`}
+                        onClick={() => {
+                          setEditingToken(index());
+                          setTokenDraft(token.raw);
+                        }}
+                      >
+                        {token.value}
+                      </button>
+                    }
+                  >
+                    <input
+                      aria-label={`Editar token ${index() + 1}`}
+                      value={tokenDraft()}
+                      onInput={(event) => setTokenDraft(event.currentTarget.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") setEditingToken(null);
+                        if (event.key === "Enter") {
+                          setRaw(replaceTwitterToken(raw(), token, tokenDraft()));
+                          setEditingToken(null);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRaw(replaceTwitterToken(raw(), token, tokenDraft()));
+                        setEditingToken(null);
+                      }}
+                    >
+                      ✓
+                    </button>
+                  </Show>
+                  <button
+                    type="button"
+                    aria-label={`Remover ${token.value}`}
+                    onClick={() => {
+                      setRaw(removeTwitterToken(raw(), token));
+                      setEditingToken(null);
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
             </For>
           </div>
           <pre>{raw()}</pre>
-          <small>Tokens sincronizados com a consulta raw. Clique em um token para editá-lo, Enter para salvar, Escape para cancelar.</small>
+          <small>
+            Tokens sincronizados com a consulta raw. Clique em um token para editá-lo, Enter para salvar,
+            Escape para cancelar.
+          </small>
         </section>
       </div>
     </main>
   );
 }
 
-const target = document.getElementById('app');
+const target = document.getElementById("app");
 if (target) render(() => <App />, target);

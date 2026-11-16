@@ -9,7 +9,9 @@ function fixture() {
     removeEventListener: vi.fn((type) => listeners.delete(type)),
   };
   const host = {
-    indexedDB, document, crypto: { randomUUID: () => String(Math.random()) },
+    indexedDB,
+    document,
+    crypto: { randomUUID: () => String(Math.random()) },
     navigator: { clipboard: { readText: async () => "manual", writeText: vi.fn() } },
   };
   return { host, listeners };

@@ -1,5 +1,5 @@
-import { createSignal } from 'solid-js';
-import type { RodMenuHandle } from '../types';
+import { createSignal } from "solid-js";
+import type { RodMenuHandle } from "../types";
 
 export interface StackEntry {
   id: string;
@@ -20,7 +20,11 @@ export function registerSurface(entry: StackEntry) {
 export function unregisterSurface(id: string, handle?: RodMenuHandle<any>) {
   setStackSignal((prev) => {
     const next = prev.filter((item) => item.id !== id || (handle !== undefined && item.handle !== handle));
-    if (next.length > 0 && prev[prev.length - 1]?.id === id && (handle === undefined || prev[prev.length - 1]?.handle === handle)) {
+    if (
+      next.length > 0 &&
+      prev[prev.length - 1]?.id === id &&
+      (handle === undefined || prev[prev.length - 1]?.handle === handle)
+    ) {
       queueMicrotask(() => next[next.length - 1]?.focus());
     }
     return next;

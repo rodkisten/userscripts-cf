@@ -113,7 +113,10 @@
   box-shadow: var(--rod-shadow-raised);
   pointer-events: auto;
   cursor: pointer;
-  transition: transform 300ms var(--rod-ease-spring), background-color 180ms, border-color 180ms;
+  transition:
+    transform 300ms var(--rod-ease-spring),
+    background-color 180ms,
+    border-color 180ms;
 }
 
 .manager:hover,
@@ -363,7 +366,9 @@
   background: transparent;
   color: var(--rod-muted);
   cursor: pointer;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
 }
 
 .iconButton:hover {
@@ -450,7 +455,10 @@
   font-size: 12.5px;
   font-weight: 580;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms, opacity 150ms;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    opacity 150ms;
 }
 
 .actionButton:hover:not(:disabled) {
@@ -549,7 +557,9 @@
   border: 1px solid var(--rod-border);
   border-radius: 11px;
   background: var(--rod-overlay);
-  transition: opacity 300ms, transform 300ms;
+  transition:
+    opacity 300ms,
+    transform 300ms;
 }
 
 /* Interactive Dialogs (Confirm / Prompt / Select / Picker) */
@@ -656,7 +666,9 @@
   overflow: hidden;
   background: var(--rod-overlay);
   cursor: pointer;
-  transition: transform 180ms var(--rod-ease-spring), border-color 150ms;
+  transition:
+    transform 180ms var(--rod-ease-spring),
+    border-color 150ms;
 }
 
 .pickerItem[data-selected="true"] {
@@ -749,28 +761,62 @@
   padding: 0 3px;
 }
 
-.tokenString { color: #86efac; }
-.tokenNumber { color: #93c5fd; }
-.tokenBoolean { color: #fcd34d; }
-.tokenNull { color: #fda4af; }
-.tokenKey { color: #e2e8f0; font-weight: 600; }
+.tokenString {
+  color: #86efac;
+}
+.tokenNumber {
+  color: #93c5fd;
+}
+.tokenBoolean {
+  color: #fcd34d;
+}
+.tokenNull {
+  color: #fda4af;
+}
+.tokenKey {
+  color: #e2e8f0;
+  font-weight: 600;
+}
 
-[data-theme="light"] .tokenString { color: #15803d; }
-[data-theme="light"] .tokenNumber { color: #1d4ed8; }
-[data-theme="light"] .tokenBoolean { color: #b45309; }
-[data-theme="light"] .tokenNull { color: #be123c; }
-[data-theme="light"] .tokenKey { color: #1e293b; }
+[data-theme="light"] .tokenString {
+  color: #15803d;
+}
+[data-theme="light"] .tokenNumber {
+  color: #1d4ed8;
+}
+[data-theme="light"] .tokenBoolean {
+  color: #b45309;
+}
+[data-theme="light"] .tokenNull {
+  color: #be123c;
+}
+[data-theme="light"] .tokenKey {
+  color: #1e293b;
+}
 
 @keyframes rod-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes rod-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.55; transform: scale(0.92); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
 }
 
 @keyframes rod-indeterminate {
-  0% { transform: translateX(-110%); }
-  100% { transform: translateX(320%); }
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
 }

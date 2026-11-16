@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from "solid-js";
 import type {
   ActionVariant,
   AnyRecord,
@@ -17,10 +17,10 @@ import type {
   RodMenuStoreConfig,
   RodMenuTab,
   SurfaceSize,
-} from '../types';
-import { spawnSurface } from '../components/RodMenuProvider';
-import fieldStyles from '../styles/Fields.module.css';
-import surfaceStyles from '../styles/Surface.module.css';
+} from "../types";
+import { spawnSurface } from "../components/RodMenuProvider";
+import fieldStyles from "../styles/Fields.module.css";
+import surfaceStyles from "../styles/Surface.module.css";
 
 export interface RodMenuMediaPresetOptions<TValues extends AnyRecord = AnyRecord> {
   title?: string;
@@ -31,7 +31,7 @@ export interface RodMenuMediaPresetOptions<TValues extends AnyRecord = AnyRecord
   initialValues?: Partial<TValues>;
   store?: RodMenuStoreConfig<TValues>;
   presentation?: Presentation;
-  anchor?: RodMenuSchema<TValues>['anchor'];
+  anchor?: RodMenuSchema<TValues>["anchor"];
   extraFields?: readonly RodMenuField[];
   actions?: readonly RodMenuAction[];
 }
@@ -87,15 +87,17 @@ export interface RodMenuSavedSyncOptions {
 }
 
 export const presets = {
-  media<TValues extends AnyRecord = AnyRecord>(options: RodMenuMediaPresetOptions<TValues>): RodMenuHandle<TValues> {
+  media<TValues extends AnyRecord = AnyRecord>(
+    options: RodMenuMediaPresetOptions<TValues>,
+  ): RodMenuHandle<TValues> {
     const fields: RodMenuField[] = [];
     if (options.source) {
-      fields.push({ type: 'media-preview', name: 'sourcePreview', item: options.source, showSource: true });
+      fields.push({ type: "media-preview", name: "sourcePreview", item: options.source, showSource: true });
     }
     fields.push({
-      type: 'media-picker',
-      name: 'selectedMedia',
-      label: options.media.length === 1 ? 'Mídia' : 'Mídias',
+      type: "media-picker",
+      name: "selectedMedia",
+      label: options.media.length === 1 ? "Mídia" : "Mídias",
       items: options.media,
       value: options.media.filter((item) => !item.disabled).map((item) => item.id),
       selectAll: options.media.length > 1,
@@ -103,9 +105,9 @@ export const presets = {
     });
     if (options.channels?.length) {
       fields.push({
-        type: 'channel-picker',
-        name: 'channel',
-        label: 'Canal',
+        type: "channel-picker",
+        name: "channel",
+        label: "Canal",
         options: options.channels,
         searchable: options.channels.length > 8,
       });
@@ -113,14 +115,14 @@ export const presets = {
     if (options.extraFields?.length) fields.push(...options.extraFields);
 
     const actions: readonly RodMenuAction[] = options.actions || [
-      { id: 'cancel', label: 'Cancelar', role: 'cancel', variant: 'ghost' },
+      { id: "cancel", label: "Cancelar", role: "cancel", variant: "ghost" },
       {
-        id: 'run',
-        label: 'Executar',
-        role: 'submit',
-        variant: 'primary',
+        id: "run",
+        label: "Executar",
+        role: "submit",
+        variant: "primary",
         badge: (ctx) => {
-          const sel = ctx.get<unknown[]>('selectedMedia');
+          const sel = ctx.get<unknown[]>("selectedMedia");
           return Array.isArray(sel) && sel.length > 1 ? sel.length : null;
         },
         disabledWhen: (vals) => !Array.isArray(vals.selectedMedia) || vals.selectedMedia.length === 0,
@@ -128,9 +130,9 @@ export const presets = {
     ];
 
     return spawnSurface<TValues>({
-      title: options.title || 'Mídia detectada',
-      description: options.description || 'Escolha o que fazer com a mídia encontrada.',
-      presentation: options.presentation || 'auto',
+      title: options.title || "Mídia detectada",
+      description: options.description || "Escolha o que fazer com a mídia encontrada.",
+      presentation: options.presentation || "auto",
       anchor: options.anchor,
       fields,
       actions,
@@ -142,24 +144,33 @@ export const presets = {
   settings<TValues extends AnyRecord = AnyRecord>(schema: RodMenuSchema<TValues>): RodMenuHandle<TValues> {
     return spawnSurface<TValues>({
       ...schema,
-      title: schema.title || 'Configurações',
-      store: schema.store || { persist: { key: `rod-menu:settings:${schema.id || 'default'}`, storage: 'local' } },
+      title: schema.title || "Configurações",
+      store: schema.store || {
+        persist: { key: `rod-menu:settings:${schema.id || "default"}`, storage: "local" },
+      },
       actions: schema.actions || [
-        { id: 'reset', label: 'Restaurar', role: 'custom', variant: 'ghost', close: false, handler: (ctx) => ctx.reset() },
-        { id: 'done', label: 'Concluir', role: 'submit', variant: 'primary' },
+        {
+          id: "reset",
+          label: "Restaurar",
+          role: "custom",
+          variant: "ghost",
+          close: false,
+          handler: (ctx) => ctx.reset(),
+        },
+        { id: "done", label: "Concluir", role: "submit", variant: "primary" },
       ],
     });
   },
 
   history<T = unknown>(options: RodMenuHistoryPresetOptions<T>): RodMenuHandle {
     return spawnSurface({
-      title: options.title || 'Histórico',
+      title: options.title || "Histórico",
       description: options.description,
-      presentation: options.presentation || 'bottom-sheet',
+      presentation: options.presentation || "bottom-sheet",
       fields: [
         {
-          type: 'custom',
-          name: 'history',
+          type: "custom",
+          name: "history",
           render: (ctx) => (
             <div class={fieldStyles.historyList}>
               <For each={options.items}>
@@ -167,7 +178,7 @@ export const presets = {
                   <div class={fieldStyles.historyItem}>
                     {options.renderItem
                       ? options.renderItem(item, idx(), ctx)
-                      : typeof item === 'string'
+                      : typeof item === "string"
                         ? item
                         : JSON.stringify(item)}
                   </div>
@@ -177,7 +188,7 @@ export const presets = {
           ),
         },
       ],
-      actions: [{ id: 'close', label: 'Fechar', role: 'cancel', variant: 'secondary' }],
+      actions: [{ id: "close", label: "Fechar", role: "cancel", variant: "secondary" }],
     });
   },
 
@@ -186,16 +197,16 @@ export const presets = {
     const refresh = () => setTick((t) => t + 1);
 
     const handle = spawnSurface({
-      title: options.title || 'Saved / Bookmarks',
-      description: options.description || 'Selecione, confira e sincronize suas mídias.',
-      presentation: options.presentation || 'bottom-sheet',
-      size: options.size || 'md',
+      title: options.title || "Saved / Bookmarks",
+      description: options.description || "Selecione, confira e sincronize suas mídias.",
+      presentation: options.presentation || "bottom-sheet",
+      size: options.size || "md",
       store: { persist: false },
       fields: [
         {
-          type: 'custom',
-          name: 'savedSync',
-          chrome: 'bare',
+          type: "custom",
+          name: "savedSync",
+          chrome: "bare",
           render: () => {
             const snap = () => {
               tick();
@@ -203,12 +214,12 @@ export const presets = {
             };
 
             const stats = [
-              ['pending', 'Pendentes'],
-              ['selected', 'Selecionados'],
-              ['sent', 'Enviados'],
-              ['unknown', 'Sem check'],
-              ['visible', 'Na tela'],
-              ['total', 'Vistos'],
+              ["pending", "Pendentes"],
+              ["selected", "Selecionados"],
+              ["sent", "Enviados"],
+              ["unknown", "Sem check"],
+              ["visible", "Na tela"],
+              ["total", "Vistos"],
             ] as const;
 
             return (
@@ -238,13 +249,13 @@ export const presets = {
                       const disabled = () =>
                         busy() ||
                         Boolean(snap().syncing) ||
-                        (typeof cmd.disabled === 'function' ? cmd.disabled(snap()) : Boolean(cmd.disabled));
+                        (typeof cmd.disabled === "function" ? cmd.disabled(snap()) : Boolean(cmd.disabled));
 
                       return (
                         <button
                           type="button"
                           class={`${fieldStyles.fieldButton} ${surfaceStyles.action}`}
-                          data-variant={cmd.variant || 'secondary'}
+                          data-variant={cmd.variant || "secondary"}
                           disabled={disabled()}
                           onClick={async () => {
                             if (disabled()) return;
@@ -257,7 +268,7 @@ export const presets = {
                             }
                           }}
                         >
-                          {typeof cmd.label === 'function' ? cmd.label(snap()) : cmd.label}
+                          {typeof cmd.label === "function" ? cmd.label(snap()) : cmd.label}
                         </button>
                       );
                     }}
@@ -268,7 +279,7 @@ export const presets = {
           },
         },
       ],
-      actions: [{ id: 'close', label: 'Fechar', role: 'cancel', variant: 'secondary' }],
+      actions: [{ id: "close", label: "Fechar", role: "cancel", variant: "secondary" }],
       onClose: options.onClose,
     });
 
@@ -279,60 +290,64 @@ export const presets = {
     const tabs: RodMenuTab[] = [];
     if (options.summary !== undefined) {
       tabs.push({
-        id: 'summary',
-        label: 'Resumo',
-        fields: [{ type: 'debug-json', name: 'debugSummary', data: options.summary, maxHeight: 360 }],
+        id: "summary",
+        label: "Resumo",
+        fields: [{ type: "debug-json", name: "debugSummary", data: options.summary, maxHeight: 360 }],
       });
     }
     if (options.media?.length) {
       tabs.push({
-        id: 'media',
-        label: 'Mídia',
+        id: "media",
+        label: "Mídia",
         badge: options.media.length,
-        fields: [{ type: 'media-picker', name: 'debugMedia', items: options.media, selectAll: false }],
+        fields: [{ type: "media-picker", name: "debugMedia", items: options.media, selectAll: false }],
       });
     }
     if (options.providers?.length) {
       tabs.push({
-        id: 'providers',
-        label: 'Providers',
+        id: "providers",
+        label: "Providers",
         badge: options.providers.length,
-        fields: [{ type: 'provider-status', name: 'debugProviders', providers: options.providers }],
+        fields: [{ type: "provider-status", name: "debugProviders", providers: options.providers }],
       });
     }
     if (options.requests?.length) {
       tabs.push({
-        id: 'requests',
-        label: 'Requests',
+        id: "requests",
+        label: "Requests",
         badge: options.requests.length,
-        fields: [{ type: 'request-log', name: 'debugRequests', entries: options.requests, maxHeight: 420 }],
+        fields: [{ type: "request-log", name: "debugRequests", entries: options.requests, maxHeight: 420 }],
       });
     }
     if (options.relay !== undefined) {
       tabs.push({
-        id: 'relay',
-        label: 'Relay',
-        fields: [{ type: 'debug-json', name: 'debugRelay', data: options.relay, maxHeight: 420 }],
+        id: "relay",
+        label: "Relay",
+        fields: [{ type: "debug-json", name: "debugRelay", data: options.relay, maxHeight: 420 }],
       });
     }
     if (options.logs !== undefined) {
       tabs.push({
-        id: 'logs',
-        label: 'Logs',
-        fields: [{ type: 'debug-json', name: 'debugLogs', data: options.logs, maxHeight: 420 }],
+        id: "logs",
+        label: "Logs",
+        fields: [{ type: "debug-json", name: "debugLogs", data: options.logs, maxHeight: 420 }],
       });
     }
     if (!tabs.length) {
-      tabs.push({ id: 'summary', label: 'Resumo', fields: [{ type: 'html', name: 'empty', html: '<p>Sem dados de debug.</p>' }] });
+      tabs.push({
+        id: "summary",
+        label: "Resumo",
+        fields: [{ type: "html", name: "empty", html: "<p>Sem dados de debug.</p>" }],
+      });
     }
 
     return spawnSurface({
-      title: options.title || 'Debug',
+      title: options.title || "Debug",
       description: options.description,
-      presentation: options.presentation || 'bottom-sheet',
-      size: 'lg',
+      presentation: options.presentation || "bottom-sheet",
+      size: "lg",
       tabs,
-      actions: [{ id: 'close', label: 'Fechar', role: 'cancel', variant: 'secondary' }],
+      actions: [{ id: "close", label: "Fechar", role: "cancel", variant: "secondary" }],
     });
   },
 
@@ -344,17 +359,17 @@ export const presets = {
     searchable?: boolean;
     value?: T | readonly T[];
     presentation?: Presentation;
-    anchor?: RodMenuSchema['anchor'];
+    anchor?: RodMenuSchema["anchor"];
   }): Promise<T | T[] | null> {
     const result = await spawnSurface<{ channel: T | T[] }>({
-      title: options.title || 'Escolha o canal',
+      title: options.title || "Escolha o canal",
       description: options.description,
-      presentation: options.presentation || 'auto',
+      presentation: options.presentation || "auto",
       anchor: options.anchor,
       fields: [
         {
-          type: 'channel-picker',
-          name: 'channel',
+          type: "channel-picker",
+          name: "channel",
           options: options.channels,
           multiple: options.multiple,
           searchable: options.searchable,
@@ -363,10 +378,10 @@ export const presets = {
         },
       ],
       actions: [
-        { id: 'cancel', label: 'Cancelar', role: 'cancel', variant: 'ghost' },
-        { id: 'select', label: 'Selecionar', role: 'submit', variant: 'primary' },
+        { id: "cancel", label: "Cancelar", role: "cancel", variant: "ghost" },
+        { id: "select", label: "Selecionar", role: "submit", variant: "primary" },
       ],
     }).result;
-    return result.action === 'select' ? result.values.channel : null;
+    return result.action === "select" ? result.values.channel : null;
   },
 };

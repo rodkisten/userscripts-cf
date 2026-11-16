@@ -324,4 +324,6 @@ console.log(count + " checks passed");
 }
 console.log("TOTAL " + count + " checks passed");
 
-test("RodX legacy fixture assertions completed", () => { assert.ok(count > 0); });
+test("RodX legacy fixture assertions completed", () => {
+  assert.ok(count > 0);
+});

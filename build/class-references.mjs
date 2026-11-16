@@ -17,8 +17,7 @@ export function analyzeClassReferences(source) {
   const selectorNames = new Set(["querySelector", "querySelectorAll", "matches", "closest"]);
   const literal = (node) => {
     if (node?.type === "StringLiteral") return node.value;
-    if (node?.type === "TemplateLiteral" && node.expressions.length === 0)
-      return node.quasis[0].value.cooked;
+    if (node?.type === "TemplateLiteral" && node.expressions.length === 0) return node.quasis[0].value.cooked;
     return null;
   };
   const addClasses = (value) => {
@@ -39,21 +38,29 @@ export function analyzeClassReferences(source) {
     if (node.type === "JSXAttribute" && node.name?.name === "classList") {
       const object = node.value?.expression;
       if (object?.type !== "ObjectExpression") dynamic.push("jsx-classList");
-      else for (const property of object.properties) {
-        if (property.type !== "ObjectProperty") { dynamic.push("jsx-classList"); continue; }
-        const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
-        if (name === null) dynamic.push("jsx-classList");
-        else addClasses(name);
-      }
+      else
+        for (const property of object.properties) {
+          if (property.type !== "ObjectProperty") {
+            dynamic.push("jsx-classList");
+            continue;
+          }
+          const name = property.computed
+            ? literal(property.key)
+            : (property.key.name ?? literal(property.key));
+          if (name === null) dynamic.push("jsx-classList");
+          else addClasses(name);
+        }
     }
     if (node.type === "JSXAttribute" && ["class", "className"].includes(node.name?.name)) {
-      const value = node.value?.type === "JSXExpressionContainer"
-        ? literal(node.value.expression)
-        : literal(node.value);
+      const value =
+        node.value?.type === "JSXExpressionContainer" ? literal(node.value.expression) : literal(node.value);
       if (value === null) dynamic.push("jsx-class");
       else addClasses(value);
     }
-    if (node.type === "AssignmentExpression" && (node.left?.type === "MemberExpression" || node.left?.type === "OptionalMemberExpression")) {
+    if (
+      node.type === "AssignmentExpression" &&
+      (node.left?.type === "MemberExpression" || node.left?.type === "OptionalMemberExpression")
+    ) {
       const prop = node.left.computed ? literal(node.left.property) : node.left.property?.name;
       if (prop === "className" || prop === "class") {
         const value = literal(node.right);
@@ -61,12 +68,21 @@ export function analyzeClassReferences(source) {
         else addClasses(value);
       }
     }
-    if (node.type === "ObjectProperty" && !node.computed && (node.key?.name === "classList" || literal(node.key) === "classList")) {
+    if (
+      node.type === "ObjectProperty" &&
+      !node.computed &&
+      (node.key?.name === "classList" || literal(node.key) === "classList")
+    ) {
       // Solid classList={{ active: signal() }}: keys are behavioral selectors.
       if (node.value?.type === "ObjectExpression") {
         for (const property of node.value.properties) {
-          if (property.type !== "ObjectProperty") { dynamic.push("classList-object"); continue; }
-          const name = property.computed ? literal(property.key) : property.key.name ?? literal(property.key);
+          if (property.type !== "ObjectProperty") {
+            dynamic.push("classList-object");
+            continue;
+          }
+          const name = property.computed
+            ? literal(property.key)
+            : (property.key.name ?? literal(property.key));
           if (name === null) dynamic.push("classList-object");
           else addClasses(name);
         }
@@ -74,13 +90,17 @@ export function analyzeClassReferences(source) {
     }
     if (node.type === "CallExpression" || node.type === "OptionalCallExpression") {
       const callee = node.callee;
-      const method = callee?.type === "MemberExpression" || callee?.type === "OptionalMemberExpression"
-        ? callee.computed ? literal(callee.property) : callee.property?.name
-        : null;
+      const method =
+        callee?.type === "MemberExpression" || callee?.type === "OptionalMemberExpression"
+          ? callee.computed
+            ? literal(callee.property)
+            : callee.property?.name
+          : null;
       const object = callee?.object;
-      const classList = object?.type === "MemberExpression" || object?.type === "OptionalMemberExpression"
-        ? (object.computed ? literal(object.property) : object.property?.name) === "classList"
-        : false;
+      const classList =
+        object?.type === "MemberExpression" || object?.type === "OptionalMemberExpression"
+          ? (object.computed ? literal(object.property) : object.property?.name) === "classList"
+          : false;
       if (classList && methodNames.has(method)) {
         for (const argument of node.arguments) {
           const value = literal(argument);

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { instrumentErrorCallbacks } from "../build/instrument-errors.mjs";
 
-const instrument = (source) => instrumentErrorCallbacks(source, "/project/src/example.js", { root: "/project" });
+const instrument = (source) =>
+  instrumentErrorCallbacks(source, "/project/src/example.js", { root: "/project" });
 
 describe("AST callback instrumentation", () => {
   it("wraps inline event handlers and attributes source", () => {

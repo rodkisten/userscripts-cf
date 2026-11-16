@@ -36,7 +36,16 @@ test("build manifests hashes, IIFE outputs and installable metadata", async () =
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
   assert.deepEqual(
     manifest.scripts.map((item) => item.id),
-    ["standalone", "github-tools", "instagram-saved", "rodx-studio", "example-site", "page-repl", "gonewild", "unified"],
+    [
+      "standalone",
+      "github-tools",
+      "instagram-saved",
+      "rodx-studio",
+      "example-site",
+      "page-repl",
+      "gonewild",
+      "unified",
+    ],
   );
   for (const entry of manifest.scripts) {
     const source = await fs.readFile(new URL(entry.file, dist), "utf8");
@@ -86,14 +95,13 @@ test("RodX individual and unified preserve original Tampermonkey identity and de
     const header = source.slice(0, source.indexOf("// ==/UserScript=="));
     assert.match(header, /@name\s+RodX Studio — X\/Twitter mobile-first/);
     assert.match(header, /@namespace\s+https:\/\/rodx.local\/userscripts/);
-  assert.ok(header.includes("GM_xmlhttpRequest"));
-  assert.ok(header.includes("GM_xmlhttpRequest"));
-  assert.ok(header.includes("https://rod.migos.club/menu"));
-  assert.ok(header.includes("https://rod.migos.club/menu"));
+    assert.ok(header.includes("GM_xmlhttpRequest"));
+    assert.ok(header.includes("GM_xmlhttpRequest"));
+    assert.ok(header.includes("https://rod.migos.club/menu"));
+    assert.ok(header.includes("https://rod.migos.club/menu"));
     assert.ok(source.length > 800000);
   }
 });
-
 
 test("standalone includes all routes and preserves per-module excludes", async () => {
   const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", dist), "utf8"));
@@ -101,7 +109,13 @@ test("standalone includes all routes and preserves per-module excludes", async (
   assert.ok(standalone, "standalone distribution missing");
   const source = await fs.readFile(new URL(standalone.file, dist), "utf8");
   const header = source.slice(0, source.indexOf("// ==/UserScript=="));
-  for (const url of ["https://github.com/*", "https://www.instagram.com/*", "https://x.com/*", "https://www.reddit.com/*", "https://example.com/*"]) {
+  for (const url of [
+    "https://github.com/*",
+    "https://www.instagram.com/*",
+    "https://x.com/*",
+    "https://www.reddit.com/*",
+    "https://example.com/*",
+  ]) {
     assert.ok(standalone.matches.includes(url), url);
   }
   assert.ok(!header.includes("@exclude      https://example.com/disabled"));

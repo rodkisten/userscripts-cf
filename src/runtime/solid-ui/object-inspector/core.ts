@@ -12,18 +12,12 @@ const MAX_SAFE_ITEMS = 100_000;
 const VALID_THEMES = new Set<RodInspectorTheme>(["auto", "dark", "light"]);
 
 const objectToString = Object.prototype.toString;
-const mapSizeGetter = Object.getOwnPropertyDescriptor(
-  Map.prototype,
-  "size",
-)?.get as ((this: Map<unknown, unknown>) => number) | undefined;
-const setSizeGetter = Object.getOwnPropertyDescriptor(
-  Set.prototype,
-  "size",
-)?.get as ((this: Set<unknown>) => number) | undefined;
-const regexpSourceGetter = Object.getOwnPropertyDescriptor(
-  RegExp.prototype,
-  "source",
-)?.get as ((this: RegExp) => string) | undefined;
+const mapSizeGetter = Object.getOwnPropertyDescriptor(Map.prototype, "size")?.get as
+  ((this: Map<unknown, unknown>) => number) | undefined;
+const setSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, "size")?.get as
+  ((this: Set<unknown>) => number) | undefined;
+const regexpSourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source")?.get as
+  ((this: RegExp) => string) | undefined;
 
 export const DEFAULT_OPTIONS: NormalizedInspectorOptions = Object.freeze({
   inspectDepth: 80,
@@ -63,21 +57,14 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 export function isObjectLike(value: unknown): value is object {
-  return (
-    value !== null && (typeof value === "object" || typeof value === "function")
-  );
+  return value !== null && (typeof value === "object" || typeof value === "function");
 }
 
 export function isArray(value: unknown): value is unknown[] {
   return safeCall(() => Array.isArray(value), false);
 }
 
-function toInteger(
-  value: unknown,
-  fallback: number,
-  min: number,
-  max = Number.MAX_SAFE_INTEGER,
-): number {
+function toInteger(value: unknown, fallback: number, min: number, max = Number.MAX_SAFE_INTEGER): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return clamp(Math.trunc(numeric), min, max);
@@ -93,97 +80,28 @@ export function truncateText(value: unknown, maxLength: number): string {
   return `${text.slice(0, Math.max(0, maxLength - 1))}…`;
 }
 
-export function normalizeOptions(
-  options: RodInspectorOptions = {},
-): NormalizedInspectorOptions {
+export function normalizeOptions(options: RodInspectorOptions = {}): NormalizedInspectorOptions {
   const theme = VALID_THEMES.has(options.theme as RodInspectorTheme)
     ? (options.theme as RodInspectorTheme)
     : DEFAULT_OPTIONS.theme;
 
   return {
-    inspectDepth: toInteger(
-      options.inspectDepth,
-      DEFAULT_OPTIONS.inspectDepth,
-      0,
-      1_000,
-    ),
-    inspectItems: toInteger(
-      options.inspectItems,
-      DEFAULT_OPTIONS.inspectItems,
-      0,
-      MAX_SAFE_ITEMS,
-    ),
-    previewItems: toInteger(
-      options.previewItems,
-      DEFAULT_OPTIONS.previewItems,
-      0,
-      100,
-    ),
-    previewMaxLength: toInteger(
-      options.previewMaxLength,
-      DEFAULT_OPTIONS.previewMaxLength,
-      24,
-      10_000,
-    ),
-    expandDepth: toInteger(
-      options.expandDepth,
-      DEFAULT_OPTIONS.expandDepth,
-      0,
-      1_000,
-    ),
-    showPrototype: toBoolean(
-      options.showPrototype,
-      DEFAULT_OPTIONS.showPrototype,
-    ),
-    showNonEnumerable: toBoolean(
-      options.showNonEnumerable,
-      DEFAULT_OPTIONS.showNonEnumerable,
-    ),
-    showObjectLength: toBoolean(
-      options.showObjectLength,
-      DEFAULT_OPTIONS.showObjectLength,
-    ),
+    inspectDepth: toInteger(options.inspectDepth, DEFAULT_OPTIONS.inspectDepth, 0, 1_000),
+    inspectItems: toInteger(options.inspectItems, DEFAULT_OPTIONS.inspectItems, 0, MAX_SAFE_ITEMS),
+    previewItems: toInteger(options.previewItems, DEFAULT_OPTIONS.previewItems, 0, 100),
+    previewMaxLength: toInteger(options.previewMaxLength, DEFAULT_OPTIONS.previewMaxLength, 24, 10_000),
+    expandDepth: toInteger(options.expandDepth, DEFAULT_OPTIONS.expandDepth, 0, 1_000),
+    showPrototype: toBoolean(options.showPrototype, DEFAULT_OPTIONS.showPrototype),
+    showNonEnumerable: toBoolean(options.showNonEnumerable, DEFAULT_OPTIONS.showNonEnumerable),
+    showObjectLength: toBoolean(options.showObjectLength, DEFAULT_OPTIONS.showObjectLength),
     virtualize: toBoolean(options.virtualize, DEFAULT_OPTIONS.virtualize),
-    virtualizeAfter: toInteger(
-      options.virtualizeAfter,
-      DEFAULT_OPTIONS.virtualizeAfter,
-      1,
-      MAX_SAFE_ITEMS,
-    ),
-    virtualRowHeight: toInteger(
-      options.virtualRowHeight,
-      DEFAULT_OPTIONS.virtualRowHeight,
-      16,
-      1_000,
-    ),
-    virtualOverscan: toInteger(
-      options.virtualOverscan,
-      DEFAULT_OPTIONS.virtualOverscan,
-      1,
-      1_000,
-    ),
-    virtualMaxHeight: toInteger(
-      options.virtualMaxHeight,
-      DEFAULT_OPTIONS.virtualMaxHeight,
-      120,
-      100_000,
-    ),
-    virtualRowCache: toInteger(
-      options.virtualRowCache,
-      DEFAULT_OPTIONS.virtualRowCache,
-      0,
-      MAX_SAFE_ITEMS,
-    ),
-    unmountOnCollapse: toBoolean(
-      options.unmountOnCollapse,
-      DEFAULT_OPTIONS.unmountOnCollapse,
-    ),
-    highlightDuration: toInteger(
-      options.highlightDuration,
-      DEFAULT_OPTIONS.highlightDuration,
-      0,
-      60_000,
-    ),
+    virtualizeAfter: toInteger(options.virtualizeAfter, DEFAULT_OPTIONS.virtualizeAfter, 1, MAX_SAFE_ITEMS),
+    virtualRowHeight: toInteger(options.virtualRowHeight, DEFAULT_OPTIONS.virtualRowHeight, 16, 1_000),
+    virtualOverscan: toInteger(options.virtualOverscan, DEFAULT_OPTIONS.virtualOverscan, 1, 1_000),
+    virtualMaxHeight: toInteger(options.virtualMaxHeight, DEFAULT_OPTIONS.virtualMaxHeight, 120, 100_000),
+    virtualRowCache: toInteger(options.virtualRowCache, DEFAULT_OPTIONS.virtualRowCache, 0, MAX_SAFE_ITEMS),
+    unmountOnCollapse: toBoolean(options.unmountOnCollapse, DEFAULT_OPTIONS.unmountOnCollapse),
+    highlightDuration: toInteger(options.highlightDuration, DEFAULT_OPTIONS.highlightDuration, 0, 60_000),
     theme,
     syntaxHighlighting: toBoolean(options.syntaxHighlighting, DEFAULT_OPTIONS.syntaxHighlighting),
   };
@@ -216,20 +134,14 @@ export function safeKeyText(key: RodInspectorPropertyKey): string {
 }
 
 export function safeFunctionName(value: Function): string {
-  const descriptor = safeCall(
-    () => Object.getOwnPropertyDescriptor(value, "name"),
-    undefined,
-  );
+  const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, "name"), undefined);
   if (descriptor && typeof descriptor.value === "string") {
     return descriptor.value || "anonymous";
   }
   return "anonymous";
 }
 
-export function safePrimitiveText(
-  value: unknown,
-  quoteStrings: boolean,
-): string {
+export function safePrimitiveText(value: unknown, quoteStrings: boolean): string {
   if (value === null) return "null";
   if (value === undefined) return "undefined";
   if (typeof value === "string") {
@@ -259,10 +171,7 @@ export function safeGetConstructorName(value: object): string {
   let depth = 0;
 
   while (prototype && depth < 4) {
-    const descriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(prototype, "constructor"),
-      undefined,
-    );
+    const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(prototype, "constructor"), undefined);
     if (descriptor && typeof descriptor.value === "function") {
       const name = safeFunctionName(descriptor.value);
       if (name && name !== "anonymous") return name;
@@ -317,13 +226,16 @@ export function isError(value: unknown): value is Error {
   return tag === "[object Error]" || /Error$/.test(constructorName);
 }
 
-
-export type PreviewToken = { text: string; type: "string" | "number" | "boolean" | "null" | "undefined" | "symbol" | "function" | "key" | "meta" };
+export type PreviewToken = {
+  text: string;
+  type: "string" | "number" | "boolean" | "null" | "undefined" | "symbol" | "function" | "key" | "meta";
+};
 
 /** Lex compact previews without HTML injection or evaluating inspected values. */
 export function safePreviewTokens(source: string): PreviewToken[] {
   const tokens: PreviewToken[] = [];
-  const pattern = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:true|false|null|undefined|NaN|Infinity)\b|\b\d+(?:\.\d+)?n?\b|\b(?:Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError|Symbol)\b|ƒ|(?:[A-Za-z_$][\w$]*)(?=\s*:)|=>|[{}():,#])/g;
+  const pattern =
+    /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:true|false|null|undefined|NaN|Infinity)\b|\b\d+(?:\.\d+)?n?\b|\b(?:Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError|Symbol)\b|ƒ|(?:[A-Za-z_$][\w$]*)(?=\s*:)|=>|[{}():,#])/g;
   let offset = 0;
   for (const match of source.matchAll(pattern)) {
     const index = match.index ?? 0;
@@ -337,7 +249,8 @@ export function safePreviewTokens(source: string): PreviewToken[] {
     else if (/^\d|^(NaN|Infinity)$/.test(text)) type = "number";
     else if (text === "ƒ") type = "function";
     else if (/^(Symbol)$/.test(text)) type = "symbol";
-    else if (/^(Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError)$/.test(text)) type = "function";
+    else if (/^(Array|Map|Set|Date|RegExp|Error|TypeError|ReferenceError|SyntaxError)$/.test(text))
+      type = "function";
     else if (/^[A-Za-z_$]/.test(text)) type = "key";
     tokens.push({ text, type });
     offset = index + text.length;
@@ -372,11 +285,7 @@ export function isDomNode(value: unknown): value is Node {
 export function isDomElement(value: unknown): value is Element {
   return (
     isDomNode(value) &&
-    safeCall(
-      () =>
-        value.nodeType === 1 && typeof (value as Element).tagName === "string",
-      false,
-    )
+    safeCall(() => value.nodeType === 1 && typeof (value as Element).tagName === "string", false)
   );
 }
 
@@ -387,14 +296,8 @@ export function getElementPreviewParts(element: Element): {
   id: string;
   classes: string[];
 } {
-  const tagName = safeCall(
-    () => String(element.tagName || element.nodeName).toLowerCase(),
-    "element",
-  );
-  const id = safeCall(
-    () => (typeof element.id === "string" ? element.id : ""),
-    "",
-  );
+  const tagName = safeCall(() => String(element.tagName || element.nodeName).toLowerCase(), "element");
+  const id = safeCall(() => (typeof element.id === "string" ? element.id : ""), "");
   const classes = safeCall(() => {
     if (element.classList && typeof element.classList.length === "number") {
       return Array.from(element.classList).slice(0, 8);
@@ -412,11 +315,7 @@ export function getElementPreviewParts(element: Element): {
       "baseVal" in className &&
       typeof (className as { baseVal?: unknown }).baseVal === "string"
     ) {
-      return (className as { baseVal: string }).baseVal
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 8);
+      return (className as { baseVal: string }).baseVal.trim().split(/\s+/).filter(Boolean).slice(0, 8);
     }
     return [];
   }, [] as string[]);
@@ -446,10 +345,7 @@ export function getDomNodePreviewText(
   if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
     return "#document-fragment";
   }
-  return safeCall(
-    () => String(node.nodeName || "#node").toLowerCase(),
-    "#node",
-  );
+  return safeCall(() => String(node.nodeName || "#node").toLowerCase(), "#node");
 }
 
 export function getInlinePreview(
@@ -457,10 +353,7 @@ export function getInlinePreview(
   options: NormalizedInspectorOptions = DEFAULT_OPTIONS,
 ): string {
   if (!isObjectLike(value)) {
-    return truncateText(
-      safePrimitiveText(value, true),
-      options.previewMaxLength,
-    );
+    return truncateText(safePrimitiveText(value, true), options.previewMaxLength);
   }
   if (isDomNode(value)) return getDomNodePreviewText(value, options);
   if (typeof value === "function") return `ƒ ${safeFunctionName(value)}()`;
@@ -474,10 +367,7 @@ export function getInlinePreview(
 
   if (isError(value)) {
     return truncateText(
-      safeCall(
-        () => `${value.name || "Error"}: ${value.message || ""}`,
-        "Error",
-      ),
+      safeCall(() => `${value.name || "Error"}: ${value.message || ""}`, "Error"),
       options.previewMaxLength,
     );
   }
@@ -485,16 +375,10 @@ export function getInlinePreview(
     const time = getDateTime(value);
     return Number.isNaN(time)
       ? "Date(Invalid)"
-      : safeCall(
-          () => Reflect.apply(Date.prototype.toISOString, value, []),
-          "Date(?)",
-        );
+      : safeCall(() => Reflect.apply(Date.prototype.toISOString, value, []), "Date(?)");
   }
   if (isRegExp(value)) {
-    return safeCall(
-      () => Reflect.apply(RegExp.prototype.toString, value, []),
-      "/?/",
-    );
+    return safeCall(() => Reflect.apply(RegExp.prototype.toString, value, []), "/?/");
   }
   return `${safeGetConstructorName(value)} {…}`;
 }
@@ -505,10 +389,7 @@ function getPreviewOwnEntries(value: object, maxItems: number) {
   let hasMore = false;
 
   for (const key of keys) {
-    const descriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(value, key),
-      undefined,
-    );
+    const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
     if (!descriptor?.enumerable) continue;
     if (items.length >= maxItems) {
       hasMore = true;
@@ -525,10 +406,7 @@ export function getObjectPreview(
   options: NormalizedInspectorOptions = DEFAULT_OPTIONS,
 ): string {
   if (!isObjectLike(value)) {
-    return truncateText(
-      safePrimitiveText(value, true),
-      options.previewMaxLength,
-    );
+    return truncateText(safePrimitiveText(value, true), options.previewMaxLength);
   }
 
   const previewItems = options.previewItems;
@@ -559,10 +437,7 @@ export function getObjectPreview(
     const count = Math.min(length, previewItems);
 
     for (let index = 0; index < count; index += 1) {
-      const descriptor = safeCall(
-        () => Object.getOwnPropertyDescriptor(value, String(index)),
-        undefined,
-      );
+      const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, String(index)), undefined);
       if (!descriptor) parts.push("empty");
       else if (hasOwn(descriptor, "value")) {
         parts.push(getInlinePreview(descriptor.value, options));
@@ -585,12 +460,9 @@ export function getObjectPreview(
     );
     if (iterator) {
       for (let index = 0; index < previewItems; index += 1) {
-        const step = safeCall(
-          () => iterator.next(),
-          { done: true, value: undefined } as IteratorResult<
-            [unknown, unknown]
-          >,
-        );
+        const step = safeCall(() => iterator.next(), { done: true, value: undefined } as IteratorResult<
+          [unknown, unknown]
+        >);
         if (step.done) break;
         parts.push(
           `${getInlinePreview(step.value[0], options)} => ${getInlinePreview(step.value[1], options)}`,
@@ -613,10 +485,10 @@ export function getObjectPreview(
     );
     if (iterator) {
       for (let index = 0; index < previewItems; index += 1) {
-        const step = safeCall(
-          () => iterator.next(),
-          { done: true, value: undefined } as IteratorResult<unknown>,
-        );
+        const step = safeCall(() => iterator.next(), {
+          done: true,
+          value: undefined,
+        } as IteratorResult<unknown>);
         if (step.done) break;
         parts.push(getInlinePreview(step.value, options));
       }
@@ -631,25 +503,16 @@ export function getObjectPreview(
   if (isError(value)) {
     const name = safeCall(() => String(value.name || "Error"), "Error");
     const message = safeCall(() => String(value.message || ""), "");
-    return truncateText(
-      `${name}${idSuffix}${message ? `: ${message}` : ""}`,
-      options.previewMaxLength,
-    );
+    return truncateText(`${name}${idSuffix}${message ? `: ${message}` : ""}`, options.previewMaxLength);
   }
 
   if (isDate(value)) {
-    const text = safeCall(
-      () => Reflect.apply(Date.prototype.toISOString, value, []),
-      "Invalid Date",
-    );
+    const text = safeCall(() => Reflect.apply(Date.prototype.toISOString, value, []), "Invalid Date");
     return `Date${idSuffix} ${text}`;
   }
 
   if (isRegExp(value)) {
-    const text = safeCall(
-      () => Reflect.apply(RegExp.prototype.toString, value, []),
-      "/?/",
-    );
+    const text = safeCall(() => Reflect.apply(RegExp.prototype.toString, value, []), "/?/");
     return `RegExp${idSuffix} ${text}`;
   }
 
@@ -702,11 +565,7 @@ function createDataEntry(
   };
 }
 
-function createStaticDataEntry(
-  key: RodInspectorPropertyKey,
-  value: unknown,
-  enumerable = true,
-): DataEntry {
+function createStaticDataEntry(key: RodInspectorPropertyKey, value: unknown, enumerable = true): DataEntry {
   return {
     kind: "data",
     key,
@@ -717,10 +576,7 @@ function createStaticDataEntry(
   };
 }
 
-function createArraySource(
-  value: unknown[],
-  options: NormalizedInspectorOptions,
-): EntrySource {
+function createArraySource(value: unknown[], options: NormalizedInspectorOptions): EntrySource {
   const length = safeCall(() => value.length, 0);
   const numericCount = Math.min(length, options.inspectItems);
   const extraEntries: InspectorEntry[] = [];
@@ -732,18 +588,11 @@ function createArraySource(
     for (const key of keys) {
       if (key === "length") {
         if (!options.showNonEnumerable) continue;
-      } else if (
-        typeof key === "string" &&
-        /^(?:0|[1-9]\d*)$/.test(key) &&
-        Number(key) < length
-      ) {
+      } else if (typeof key === "string" && /^(?:0|[1-9]\d*)$/.test(key) && Number(key) < length) {
         continue;
       }
 
-      const descriptor = safeCall(
-        () => Object.getOwnPropertyDescriptor(value, key),
-        undefined,
-      );
+      const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
       if (!descriptor) continue;
       if (!options.showNonEnumerable && !descriptor.enumerable) continue;
 
@@ -763,10 +612,7 @@ function createArraySource(
     hasMore: length > numericCount || extraTotal > extraEntries.length,
     get(index) {
       if (index < numericCount) {
-        const descriptor = safeCall(
-          () => Object.getOwnPropertyDescriptor(value, String(index)),
-          undefined,
-        );
+        const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, String(index)), undefined);
         return createDataEntry(index, descriptor, value);
       }
       return extraEntries[index - numericCount];
@@ -774,19 +620,13 @@ function createArraySource(
   };
 }
 
-function createObjectSource(
-  value: object,
-  options: NormalizedInspectorOptions,
-): EntrySource {
+function createObjectSource(value: object, options: NormalizedInspectorOptions): EntrySource {
   const keys = safeCall(() => Reflect.ownKeys(value), [] as PropertyKey[]);
   const entries: InspectorEntry[] = [];
   let total = 0;
 
   for (const key of keys) {
-    const descriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(value, key),
-      undefined,
-    );
+    const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
     if (!descriptor) continue;
     if (!options.showNonEnumerable && !descriptor.enumerable) continue;
 
@@ -825,10 +665,10 @@ function createIteratorSource(
 
   if (iterator) {
     for (let index = 0; index < limit; index += 1) {
-      const step = safeCall(
-        () => iterator.next(),
-        { done: true, value: undefined } as IteratorResult<unknown>,
-      );
+      const step = safeCall(() => iterator.next(), {
+        done: true,
+        value: undefined,
+      } as IteratorResult<unknown>);
       if (step.done) break;
 
       if (kind === "map") {
@@ -861,10 +701,7 @@ function createIteratorSource(
   };
 }
 
-function createDomSource(
-  node: Node,
-  options: NormalizedInspectorOptions,
-): EntrySource {
+function createDomSource(node: Node, options: NormalizedInspectorOptions): EntrySource {
   const entries: InspectorEntry[] = [];
   let total = 0;
 
@@ -912,10 +749,7 @@ function createDomSource(
   };
 }
 
-function createErrorSource(
-  value: Error,
-  options: NormalizedInspectorOptions,
-): EntrySource {
+function createErrorSource(value: Error, options: NormalizedInspectorOptions): EntrySource {
   const preferred = ["name", "message", "stack", "cause", "errors"];
   const seen = new Set<PropertyKey>();
   const entries: InspectorEntry[] = [];
@@ -927,10 +761,7 @@ function createErrorSource(
   };
 
   for (const key of preferred) {
-    const ownDescriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(value, key),
-      undefined,
-    );
+    const ownDescriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
     if (ownDescriptor) {
       seen.add(key);
       add(createDataEntry(key, ownDescriptor, value));
@@ -938,10 +769,10 @@ function createErrorSource(
     }
 
     if (key === "name" || key === "message") {
-      const result = safeCall(
-        () => ({ found: key in value, value: value[key] }),
-        { found: false, value: undefined as unknown },
-      );
+      const result = safeCall(() => ({ found: key in value, value: value[key] }), {
+        found: false,
+        value: undefined as unknown,
+      });
       if (result.found) {
         seen.add(key);
         add(createStaticDataEntry(key, result.value, false));
@@ -952,10 +783,7 @@ function createErrorSource(
   const keys = safeCall(() => Reflect.ownKeys(value), [] as PropertyKey[]);
   for (const key of keys) {
     if (seen.has(key)) continue;
-    const descriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(value, key),
-      undefined,
-    );
+    const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
     if (!descriptor) continue;
     if (!options.showNonEnumerable && !descriptor.enumerable) continue;
     add(createDataEntry(key, descriptor, value));
@@ -971,11 +799,7 @@ function createErrorSource(
   };
 }
 
-function withPrototype(
-  source: EntrySource,
-  value: object,
-  options: NormalizedInspectorOptions,
-): EntrySource {
+function withPrototype(source: EntrySource, value: object, options: NormalizedInspectorOptions): EntrySource {
   if (!options.showPrototype) return source;
   const prototype = safeCall(() => Object.getPrototypeOf(value), null);
   if (!prototype) return source;
@@ -999,10 +823,7 @@ function withPrototype(
   };
 }
 
-export function createEntrySource(
-  value: object,
-  options: NormalizedInspectorOptions,
-): EntrySource {
+export function createEntrySource(value: object, options: NormalizedInspectorOptions): EntrySource {
   let source: EntrySource;
   if (isDomNode(value)) source = createDomSource(value, options);
   else if (isArray(value)) source = createArraySource(value, options);
@@ -1048,10 +869,7 @@ export function getRectRelativeToWindow(
     top = frameRect.top + (clientTop + top) * scaleY;
     width *= scaleX;
     height *= scaleY;
-    currentWindow = safeCall(
-      () => frameElement.ownerDocument.defaultView,
-      null,
-    );
+    currentWindow = safeCall(() => frameElement.ownerDocument.defaultView, null);
   }
 
   if (currentWindow !== targetWindow) return null;

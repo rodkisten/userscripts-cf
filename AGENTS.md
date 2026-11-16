@@ -21,22 +21,22 @@ These instructions apply to every agent, automation, and code contributor workin
 
 Before writing any userscript feature, inspect `src/core/runtime.js`, `src/runtime/`, and the relevant existing integration. Use the public `ctx` helpers instead of introducing duplicate browser APIs or ad-hoc infrastructure. Do not bypass an existing helper just because direct browser code is shorter.
 
-| Concern | Required API | Avoid in feature modules |
-| --- | --- | --- |
-| Local events | `ctx.events.on/once/off/emit/waitFor` | new custom event registries |
-| Cross-script events | `ctx.events.shared.emit/on/once/waitFor/onAny` | `document.dispatchEvent(new CustomEvent(...))` |
-| DOM event listeners | `ctx.listen` or `ctx.events.dom` | unmanaged `addEventListener` |
-| DOM queries and observation | `ctx.dom` | independent mutation observers, polling |
-| Requests and responses | `ctx.http`, `ctx.interceptRequest`, `ctx.interceptResponse` | direct fetch/XHR monkey patches |
-| Persistent settings | `ctx.storage` | direct localStorage |
-| IndexedDB collections | `ctx.db(name)` | separate indexedDB wrappers |
-| GM APIs | `ctx.gm` | direct GM_* calls |
-| Clipboard | `ctx.clipboard` | direct clipboard history implementations |
-| Menus and notifications | `ctx.menu`, `ctx.toaster` | ad-hoc menus and toasts |
-| Dock actions | `ctx.dock.register` | direct registry CustomEvents |
-| UI and CSS isolation | `ctx.ui.mountSolid`, CSS Modules, `ctx.ui.registerStyles` | global CSS, scattered DOM builders |
-| Lifecycle | `ctx.signal`, `ctx.onDispose` | orphan timers/listeners |
-| State | `ctx.state` or Solid signals/stores | duplicate global mutable state |
+| Concern                     | Required API                                                | Avoid in feature modules                       |
+| --------------------------- | ----------------------------------------------------------- | ---------------------------------------------- |
+| Local events                | `ctx.events.on/once/off/emit/waitFor`                       | new custom event registries                    |
+| Cross-script events         | `ctx.events.shared.emit/on/once/waitFor/onAny`              | `document.dispatchEvent(new CustomEvent(...))` |
+| DOM event listeners         | `ctx.listen` or `ctx.events.dom`                            | unmanaged `addEventListener`                   |
+| DOM queries and observation | `ctx.dom`                                                   | independent mutation observers, polling        |
+| Requests and responses      | `ctx.http`, `ctx.interceptRequest`, `ctx.interceptResponse` | direct fetch/XHR monkey patches                |
+| Persistent settings         | `ctx.storage`                                               | direct localStorage                            |
+| IndexedDB collections       | `ctx.db(name)`                                              | separate indexedDB wrappers                    |
+| GM APIs                     | `ctx.gm`                                                    | direct GM_* calls                              |
+| Clipboard                   | `ctx.clipboard`                                             | direct clipboard history implementations       |
+| Menus and notifications     | `ctx.menu`, `ctx.toaster`                                   | ad-hoc menus and toasts                        |
+| Dock actions                | `ctx.dock.register`                                         | direct registry CustomEvents                   |
+| UI and CSS isolation        | `ctx.ui.mountSolid`, CSS Modules, `ctx.ui.registerStyles`   | global CSS, scattered DOM builders             |
+| Lifecycle                   | `ctx.signal`, `ctx.onDispose`                               | orphan timers/listeners                        |
+| State                       | `ctx.state` or Solid signals/stores                         | duplicate global mutable state                 |
 
 These are feature-module rules. Runtime adapters and low-level helper implementations may use native APIs internally to implement the public abstraction.
 
@@ -58,7 +58,6 @@ When no existing helper covers a use case, document the gap, add or extend the s
 ## Event semantics
 
 `ctx.events` is scoped to one script. `ctx.events.shared` is for cross-script communication on the same page, using `rod-<name>` DOM events. BroadcastChannel is opt-in, works only in supported same-origin contexts, and should never carry secrets. See `docs/context-helpers.md`.
-
 
 ## Solid 2.0
 

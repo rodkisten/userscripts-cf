@@ -25,14 +25,23 @@ describe("AST errors playground", () => {
   });
 
   it.each([
-    ["ts", 'const wait = (ms: number): void => { setTimeout(() => console.log(ms), ms); };'],
-    ["tsx", 'export function Demo() { return <button onClick={() => setTimeout(() => console.log("hi"), 1)}>Hi</button>; }'],
+    ["ts", "const wait = (ms: number): void => { setTimeout(() => console.log(ms), ms); };"],
+    [
+      "tsx",
+      'export function Demo() { return <button onClick={() => setTimeout(() => console.log("hi"), 1)}>Hi</button>; }',
+    ],
   ])("compiles %s before AST instrumentation", (language, source) => {
     const compiled = ts.transpileModule(source, {
       fileName: language === "tsx" ? "example.tsx" : "example.ts",
-      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX },
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext,
+        jsx: ts.JsxEmit.ReactJSX,
+      },
     });
-    const result = instrumentErrorCallbacks(compiled.outputText, "/playground/example.js", { root: "/playground" });
+    const result = instrumentErrorCallbacks(compiled.outputText, "/playground/example.js", {
+      root: "/playground",
+    });
     expect(result.transformed).toBeGreaterThan(0);
     expect(result.code).toContain("__rodGuardCallback");
   });

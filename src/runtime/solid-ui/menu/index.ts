@@ -1,4 +1,4 @@
-import { render } from '@solidjs/web';
+import { render } from "@solidjs/web";
 import type {
   ActionRole,
   ActionVariant,
@@ -8,22 +8,22 @@ import type {
   RodMenuHandle,
   RodMenuResult,
   RodMenuSchema,
-} from './types';
-import { RodMenuHost, spawnSurface, closeAllSurfaces } from './components/RodMenuProvider';
-import { activateSurface, getAllHandles, getHandleById } from './store/stackManager';
-import { presets } from './presets/presets';
+} from "./types";
+import { RodMenuHost, spawnSurface, closeAllSurfaces } from "./components/RodMenuProvider";
+import { activateSurface, getAllHandles, getHandleById } from "./store/stackManager";
+import { presets } from "./presets/presets";
 
-export * from './types';
-export { Surface } from './components/Surface';
-export { RodMenuHost } from './components/RodMenuProvider';
+export * from "./types";
+export { Surface } from "./components/Surface";
+export { RodMenuHost } from "./components/RodMenuProvider";
 export { presets };
 
 let hostContainer: HTMLElement | undefined;
 let disposeHost: (() => void) | undefined;
 
 function ensureHostMounted() {
-  if (typeof document === 'undefined') {
-    throw new Error('[RodMenu] A DOM document is required to open a menu');
+  if (typeof document === "undefined") {
+    throw new Error("[RodMenu] A DOM document is required to open a menu");
   }
   if (hostContainer?.isConnected && disposeHost) return;
 
@@ -35,8 +35,8 @@ function ensureHostMounted() {
     disposeHost = undefined;
   }
   hostContainer?.remove();
-  const container = document.createElement('div');
-  container.id = 'rod-menu-solid-root';
+  const container = document.createElement("div");
+  container.id = "rod-menu-solid-root";
   document.documentElement.appendChild(container);
   try {
     disposeHost = render(() => RodMenuHost(), container);
@@ -50,7 +50,7 @@ function ensureHostMounted() {
 }
 
 export const RodMenu = {
-  version: '2.3.0' as const,
+  version: "2.3.0" as const,
   presets,
   aio: presets,
 
@@ -60,11 +60,11 @@ export const RodMenu = {
   },
 
   async form<TValues extends AnyRecord = AnyRecord>(
-    schema: Omit<RodMenuSchema<TValues>, 'actions'> & { actions?: readonly RodMenuAction[] },
+    schema: Omit<RodMenuSchema<TValues>, "actions"> & { actions?: readonly RodMenuAction[] },
   ): Promise<RodMenuResult<TValues>> {
     const actions = schema.actions || [
-      { id: 'cancel', label: 'Cancelar', role: 'cancel', variant: 'secondary' },
-      { id: 'submit', label: 'Continuar', role: 'submit', variant: 'primary' },
+      { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
+      { id: "submit", label: "Continuar", role: "submit", variant: "primary" },
     ];
     const handle = RodMenu.open<TValues>({ ...schema, actions });
     await handle.ready;
@@ -84,23 +84,23 @@ export const RodMenu = {
       description: options.description,
       presentation: options.presentation,
       actions: [
-        { id: 'cancel', label: options.cancelLabel || 'Cancelar', role: 'cancel', variant: 'secondary' },
+        { id: "cancel", label: options.cancelLabel || "Cancelar", role: "cancel", variant: "secondary" },
         {
-          id: 'confirm',
-          label: options.confirmLabel || 'Confirmar',
-          role: options.danger ? 'destructive' : 'submit',
-          variant: options.danger ? 'danger' : 'primary',
+          id: "confirm",
+          label: options.confirmLabel || "Confirmar",
+          role: options.danger ? "destructive" : "submit",
+          variant: options.danger ? "danger" : "primary",
         },
       ],
     }).result;
-    return result.action === 'confirm';
+    return result.action === "confirm";
   },
 
   async actions<T extends string = string>(options: {
     title?: string;
     description?: string;
     presentation?: Presentation;
-    anchor?: RodMenuSchema['anchor'];
+    anchor?: RodMenuSchema["anchor"];
     items: readonly {
       label: string;
       value: T;
@@ -122,14 +122,14 @@ export const RodMenu = {
           icon: item.icon,
           badge: item.badge,
           shortcut: item.shortcut,
-          variant: item.variant || ('secondary' as ActionVariant),
-          role: 'custom' as ActionRole,
+          variant: item.variant || ("secondary" as ActionVariant),
+          role: "custom" as ActionRole,
           close: true,
         })),
-        { id: 'cancel', label: 'Cancelar', variant: 'ghost', role: 'cancel' },
+        { id: "cancel", label: "Cancelar", variant: "ghost", role: "cancel" },
       ],
     }).result;
-    return result.action === 'dismiss' || result.action === 'cancel' ? null : (result.action as T);
+    return result.action === "dismiss" || result.action === "cancel" ? null : (result.action as T);
   },
 
   get: getHandleById,

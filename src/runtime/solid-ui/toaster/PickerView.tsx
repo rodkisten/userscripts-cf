@@ -1,30 +1,30 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from "solid-js";
 import type {
   PickerItemDescriptor,
   PickerNormalizedDescriptor,
   PickerOptions,
   PickerSelectionValue,
   PickerSource,
-} from './types';
-import { showActionDialog } from './ActionDialogView';
-import { SvgIcon } from './SvgIcon';
-import styles from './Toaster.module.css';
+} from "./types";
+import { showActionDialog } from "./ActionDialogView";
+import { SvgIcon } from "./SvgIcon";
+import styles from "./Toaster.module.css";
 
 function normalizeItems<T extends PickerSource>(
   sources: readonly T[],
   options: PickerOptions<T>,
 ): PickerNormalizedDescriptor<T>[] {
   return sources.map((raw, index) => {
-    if (typeof raw === 'string' || raw instanceof URL) {
+    if (typeof raw === "string" || raw instanceof URL) {
       const src = String(raw);
       const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src);
       return {
         id: `item-${index}`,
         index,
-        type: isVideo ? 'video' : options.defaultMediaType ?? 'image',
+        type: isVideo ? "video" : (options.defaultMediaType ?? "image"),
         src,
         poster: null,
-        label: src.split('/').pop()?.split('?')[0] ?? `Item ${index + 1}`,
+        label: src.split("/").pop()?.split("?")[0] ?? `Item ${index + 1}`,
         alt: `Item ${index + 1}`,
         disabled: false,
         original: raw,
@@ -32,11 +32,11 @@ function normalizeItems<T extends PickerSource>(
     }
     if (raw instanceof Blob) {
       const src = URL.createObjectURL(raw);
-      const isVideo = raw.type.startsWith('video/');
+      const isVideo = raw.type.startsWith("video/");
       return {
         id: `blob-${index}`,
         index,
-        type: isVideo ? 'video' : 'image',
+        type: isVideo ? "video" : "image",
         src,
         poster: null,
         label: raw instanceof File ? raw.name : `File ${index + 1}`,
@@ -46,12 +46,12 @@ function normalizeItems<T extends PickerSource>(
       };
     }
     const desc = raw as PickerItemDescriptor;
-    const src = String(desc.src ?? desc.url ?? '');
-    const isVideo = desc.isVideo || desc.type === 'video' || desc.mediaType === 'video';
+    const src = String(desc.src ?? desc.url ?? "");
+    const isVideo = desc.isVideo || desc.type === "video" || desc.mediaType === "video";
     return {
       id: String(desc.id ?? `item-${index}`),
       index,
-      type: isVideo ? 'video' : 'image',
+      type: isVideo ? "video" : "image",
       src,
       poster: desc.poster ? String(desc.poster) : desc.thumbnail ? String(desc.thumbnail) : null,
       label: String(desc.label ?? desc.title ?? `Item ${index + 1}`),
@@ -69,7 +69,7 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
   const items = normalizeItems(rawList, descriptor);
   const multiple = descriptor.multiple !== false;
   const minSelected = descriptor.minSelected ?? (descriptor.required === false ? 0 : 1);
-  const maxSelected = multiple ? descriptor.maxSelected ?? Infinity : 1;
+  const maxSelected = multiple ? (descriptor.maxSelected ?? Infinity) : 1;
 
   const initialIds = new Set<string>();
   if (descriptor.defaultAllSelected && multiple) {
@@ -94,11 +94,11 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
   const resolveOutput = (): PickerSelectionValue<T> => {
     const picked = items.filter((it) => selectedIds().has(it.id));
     switch (descriptor.returnType) {
-      case 'ids':
+      case "ids":
         return picked.map((it) => it.id);
-      case 'indexes':
+      case "indexes":
         return picked.map((it) => it.index);
-      case 'descriptors':
+      case "descriptors":
         return picked;
       default:
         return picked.map((it) => it.original);
@@ -106,11 +106,17 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
   };
 
   return showActionDialog(descriptor, {
-    kind: 'picker',
+    kind: "picker",
     dismissValue: null,
     fallbackActions: [
-      { id: 'cancel', label: descriptor.cancelLabel ?? 'Cancel', icon: 'circle-x', variant: 'secondary', value: null },
-      { id: 'confirm', label: descriptor.confirmLabel ?? 'Use selected', icon: 'check', variant: 'primary' },
+      {
+        id: "cancel",
+        label: descriptor.cancelLabel ?? "Cancel",
+        icon: "circle-x",
+        variant: "secondary",
+        value: null,
+      },
+      { id: "confirm", label: descriptor.confirmLabel ?? "Use selected", icon: "check", variant: "primary" },
     ],
     renderBody: () => (
       <div class={styles.pickerRoot}>
@@ -131,14 +137,14 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
                   setSelectedIds(next);
                 }}
               >
-                {descriptor.selectAllLabel ?? 'Select all'}
+                {descriptor.selectAllLabel ?? "Select all"}
               </button>
               <button
                 type="button"
                 class={styles.toolbarButton}
                 onClick={() => setSelectedIds(new Set<string>())}
               >
-                {descriptor.clearAllLabel ?? 'Clear'}
+                {descriptor.clearAllLabel ?? "Clear"}
               </button>
             </div>
           </Show>
@@ -146,15 +152,17 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
 
         <Show
           when={items.length > 0}
-          fallback={<div class={styles.description}>{descriptor.emptyMessage ?? 'No media items available.'}</div>}
+          fallback={
+            <div class={styles.description}>{descriptor.emptyMessage ?? "No media items available."}</div>
+          }
         >
           <div
             class={styles.pickerGrid}
             style={{
-              '--rod-picker-aspect': descriptor.aspectRatio ?? '1 / 1',
-              '--rod-picker-gap': `${descriptor.gap ?? 8}px`,
-              '--rod-picker-item-min': `${descriptor.itemMinWidth ?? 120}px`,
-              'grid-template-columns': descriptor.columns
+              "--rod-picker-aspect": descriptor.aspectRatio ?? "1 / 1",
+              "--rod-picker-gap": `${descriptor.gap ?? 8}px`,
+              "--rod-picker-item-min": `${descriptor.itemMinWidth ?? 120}px`,
+              "grid-template-columns": descriptor.columns
                 ? `repeat(${descriptor.columns}, minmax(0, 1fr))`
                 : undefined,
             }}
@@ -171,8 +179,10 @@ export function showPickerToast<T extends PickerSource = PickerSource>(
                     onClick={() => toggleItem(item)}
                   >
                     <Show
-                      when={item.type === 'video'}
-                      fallback={<img class={styles.pickerMedia} src={item.src} alt={item.alt} loading="lazy" />}
+                      when={item.type === "video"}
+                      fallback={
+                        <img class={styles.pickerMedia} src={item.src} alt={item.alt} loading="lazy" />
+                      }
                     >
                       <video
                         class={styles.pickerMedia}

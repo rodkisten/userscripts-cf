@@ -18,10 +18,26 @@ export function pendingSourceChanges(run) {
   // Build and deployment create untracked artifacts (including hosting/worker.mjs).
   // The release validates every published asset against its manifest and SHA-256.
   // Only modifications to already tracked source files should block publication.
-  return run("git", "status", "--porcelain", "--untracked-files=no", "--",
-    "src", "build", "tests", "studio", "hosting", "package.json", "package-lock.json",
-    "distribution.config.js", ".github", "tsconfig.repl.json", "tsconfig.rodx.json",
-    "tsconfig.instagram.json", "tsconfig.integrations.json");
+  return run(
+    "git",
+    "status",
+    "--porcelain",
+    "--untracked-files=no",
+    "--",
+    "src",
+    "build",
+    "tests",
+    "studio",
+    "hosting",
+    "package.json",
+    "package-lock.json",
+    "distribution.config.js",
+    ".github",
+    "tsconfig.repl.json",
+    "tsconfig.rodx.json",
+    "tsconfig.instagram.json",
+    "tsconfig.integrations.json",
+  );
 }
 
 export async function release(tag) {

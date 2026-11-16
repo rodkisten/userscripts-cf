@@ -4,16 +4,26 @@ import { initials, packageIcon, parseIconSpec } from "../build/package-icons.mjs
 describe("package icons", () => {
   it("parses custom icon declarations", async () => {
     expect(parseIconSpec("bgRed,icon:github-icon,size:40,iconColor:#ffffff")).toEqual({
-      background: "red", icon: "github-icon", size: 40, iconColor: "#ffffff",
+      background: "red",
+      icon: "github-icon",
+      size: 40,
+      iconColor: "#ffffff",
     });
     const fetcher = vi.fn(async () => ({ ok: false }));
-    const result = await packageIcon({ name: "GitHub", category: "github", spec: "bgRed,icon:github-icon,size:40,iconColor:#ffffff", fetcher });
+    const result = await packageIcon({
+      name: "GitHub",
+      category: "github",
+      spec: "bgRed,icon:github-icon,size:40,iconColor:#ffffff",
+      fetcher,
+    });
     expect(result.svg).toContain("#ef4444");
     expect(fetcher.mock.calls[0][0]).toContain("simple-icons/github.svg");
   });
 
   it("uses initials and deterministic colors without requiring network access", async () => {
-    const fetcher = vi.fn(async () => { throw Error("offline"); });
+    const fetcher = vi.fn(async () => {
+      throw Error("offline");
+    });
     const a = await packageIcon({ name: "GitHub Tools", category: "github", fetcher });
     const b = await packageIcon({ name: "GitHub Tools", category: "github", fetcher });
     expect(initials("GitHub Tools")).toBe("GT");

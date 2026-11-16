@@ -19,9 +19,17 @@ test("GM wrapper calls original and mirrors registration and removal", () => {
   const emitted = [];
   const native = [];
   const host = {
-    GM_registerMenuCommand: (...args) => { native.push(args); return 7; },
+    GM_registerMenuCommand: (...args) => {
+      native.push(args);
+      return 7;
+    },
     GM_unregisterMenuCommand: (id) => native.push(["remove", id]),
-    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+    CustomEvent: class {
+      constructor(type, options) {
+        this.type = type;
+        this.detail = options.detail;
+      }
+    },
     document: { dispatchEvent: (event) => emitted.push(event.detail) },
   };
   const gm = createGMBridge(host, "repl");

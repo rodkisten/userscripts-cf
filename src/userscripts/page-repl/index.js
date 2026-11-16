@@ -163,28 +163,37 @@ export default {
         };
       };
       const items = [
-        { label: "Execução", children: [
-          { label: "Executar código", onSelect: action("run") },
-          { label: "Parar execução", onSelect: action("stop") },
-          { label: "Executar em todos", onSelect: action("run-all") },
-          check(RODX_SELECTORS.replPersist, "Persistir variáveis"),
-          check(RODX_SELECTORS.replRawMode, "Script global"),
-        ] },
-        { label: "Editor", children: [
-          { label: "Selecionar tudo", onSelect: action("select-all") },
-          { label: "Copiar", onSelect: action("copy-code") },
-          { label: "Colar", onSelect: action("paste-code") },
-          { label: "Validar", onSelect: action("validate") },
-          { label: "Completar", onSelect: action("complete") },
-        ] },
-        { label: "Ferramentas", children: [
-          { label: "Testar compatibilidade", onSelect: action("probe") },
-          { label: "Limpar output", onSelect: action("clear") },
-          { label: "Nova sessão", onSelect: action("reset") },
-          { label: "Exportar", onSelect: action("export") },
-          { label: "Importar", onSelect: action("import") },
-          { label: "Copiar relatório", onSelect: action("copy-report") },
-        ] },
+        {
+          label: "Execução",
+          children: [
+            { label: "Executar código", onSelect: action("run") },
+            { label: "Parar execução", onSelect: action("stop") },
+            { label: "Executar em todos", onSelect: action("run-all") },
+            check(RODX_SELECTORS.replPersist, "Persistir variáveis"),
+            check(RODX_SELECTORS.replRawMode, "Script global"),
+          ],
+        },
+        {
+          label: "Editor",
+          children: [
+            { label: "Selecionar tudo", onSelect: action("select-all") },
+            { label: "Copiar", onSelect: action("copy-code") },
+            { label: "Colar", onSelect: action("paste-code") },
+            { label: "Validar", onSelect: action("validate") },
+            { label: "Completar", onSelect: action("complete") },
+          ],
+        },
+        {
+          label: "Ferramentas",
+          children: [
+            { label: "Testar compatibilidade", onSelect: action("probe") },
+            { label: "Limpar output", onSelect: action("clear") },
+            { label: "Nova sessão", onSelect: action("reset") },
+            { label: "Exportar", onSelect: action("export") },
+            { label: "Importar", onSelect: action("import") },
+            { label: "Copiar relatório", onSelect: action("copy-report") },
+          ],
+        },
         { type: "separator" },
         { label: "Métodos de execução", onSelect: () => tab("methods") },
         { label: "Histórico", onSelect: () => tab("history") },
@@ -510,7 +519,17 @@ export default {
     });
     if (typeof GM_registerMenuCommand === "function")
       GM_registerMenuCommand("Abrir REPL JavaScript", () => (panel.hidden = false));
-    ctx.dock?.register([{ id: "open", label: "Abrir REPL", run: () => { panel.hidden = false; editor.refresh(); editor.focus(); } }]);
+    ctx.dock?.register([
+      {
+        id: "open",
+        label: "Abrir REPL",
+        run: () => {
+          panel.hidden = false;
+          editor.refresh();
+          editor.focus();
+        },
+      },
+    ]);
     renderMethods();
     ctx.onDispose(() => {
       abort?.abort();

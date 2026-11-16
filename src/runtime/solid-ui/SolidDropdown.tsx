@@ -28,54 +28,127 @@ export function openSolidDropdown(options: DropdownOptions) {
   const position = () => {
     const rect = trigger.getBoundingClientRect();
     const width = mount.offsetWidth;
-    mount.style.left = Math.max(8, Math.min(innerWidth - width - 8, options.align === "start" ? rect.left : rect.right - width)) + "px";
-    mount.style.top = (rect.bottom + mount.offsetHeight > innerHeight - 8 ? Math.max(8, rect.top - mount.offsetHeight - 4) : rect.bottom + 4) + "px";
+    mount.style.left =
+      Math.max(
+        8,
+        Math.min(innerWidth - width - 8, options.align === "start" ? rect.left : rect.right - width),
+      ) + "px";
+    mount.style.top =
+      (rect.bottom + mount.offsetHeight > innerHeight - 8
+        ? Math.max(8, rect.top - mount.offsetHeight - 4)
+        : rect.bottom + 4) + "px";
   };
-  const dispose = render(() => (
-    <div role="menu" aria-label="Opções" data-rod-dropdown={options.id ?? "menu"}
-      style={{ "min-width": "220px", "max-width": "340px", "max-height": "70dvh", "overflow-y": "auto", "padding": "6px", "background": "#202b3d", "color": "#edf2fb", "border": "1px solid #435067", "border-radius": "12px", "box-shadow": "0 12px 32px #0009", "font": "14px system-ui" }}>
-      <For each={stack().length > 1 ? [true] : []}>
-        {() => <button type="button" role="menuitem" onClick={() => setStack(s => s.slice(0, -1))} style={buttonStyle}>‹ Voltar</button>}
-      </For>
-      <For each={stack().at(-1) ?? []}>
-        {(item) => item.type === "separator" ? <hr style={{ border: "0", "border-top": "1px solid #435067", margin: "6px 0" }} /> :
-          <button type="button" role={item.type === "checkbox" ? "menuitemcheckbox" : "menuitem"}
-            aria-checked={item.type === "checkbox" ? String(Boolean(item.checked)) : undefined}
-            disabled={item.disabled}
-            style={buttonStyle}
-            onClick={() => {
-              if (item.children?.length) { setStack(s => [...s, item.children!]); queueMicrotask(position); return; }
-              if (item.type === "checkbox") {
-                item.checked = !item.checked;
-                setVersion(v => v + 1);
-                void item.onCheckedChange?.(item.checked);
-                return;
-              }
-              void item.onSelect?.();
-              close();
-            }}>
-            {version() >= 0 && item.type === "checkbox" ? (item.checked ? "✓ " : "　") : ""}
-            {item.label}{item.children?.length ? " ›" : ""}
-          </button>}
-      </For>
-    </div>
-  ), mount);
-  trigger.ownerDocument.addEventListener("pointerdown", event => {
-    const path = event.composedPath();
-    if (!path.includes(mount) && !path.includes(trigger)) close();
-  }, { capture: true, signal: controller.signal });
-  trigger.ownerDocument.addEventListener("keydown", event => {
-    if (event.key === "Escape") { event.preventDefault(); close(); }
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      const buttons = [...mount.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
-      const index = buttons.indexOf((root instanceof ShadowRoot ? root.activeElement : document.activeElement) as HTMLButtonElement);
-      buttons[(index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
-      event.preventDefault();
-    }
-  }, { signal: controller.signal });
+  const dispose = render(
+    () => (
+      <div
+        role="menu"
+        aria-label="Opções"
+        data-rod-dropdown={options.id ?? "menu"}
+        style={{
+          "min-width": "220px",
+          "max-width": "340px",
+          "max-height": "70dvh",
+          "overflow-y": "auto",
+          padding: "6px",
+          background: "#202b3d",
+          color: "#edf2fb",
+          border: "1px solid #435067",
+          "border-radius": "12px",
+          "box-shadow": "0 12px 32px #0009",
+          font: "14px system-ui",
+        }}
+      >
+        <For each={stack().length > 1 ? [true] : []}>
+          {() => (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setStack((s) => s.slice(0, -1))}
+              style={buttonStyle}
+            >
+              ‹ Voltar
+            </button>
+          )}
+        </For>
+        <For each={stack().at(-1) ?? []}>
+          {(item) =>
+            item.type === "separator" ? (
+              <hr style={{ border: "0", "border-top": "1px solid #435067", margin: "6px 0" }} />
+            ) : (
+              <button
+                type="button"
+                role={item.type === "checkbox" ? "menuitemcheckbox" : "menuitem"}
+                aria-checked={item.type === "checkbox" ? String(Boolean(item.checked)) : undefined}
+                disabled={item.disabled}
+                style={buttonStyle}
+                onClick={() => {
+                  if (item.children?.length) {
+                    setStack((s) => [...s, item.children!]);
+                    queueMicrotask(position);
+                    return;
+                  }
+                  if (item.type === "checkbox") {
+                    item.checked = !item.checked;
+                    setVersion((v) => v + 1);
+                    void item.onCheckedChange?.(item.checked);
+                    return;
+                  }
+                  void item.onSelect?.();
+                  close();
+                }}
+              >
+                {version() >= 0 && item.type === "checkbox" ? (item.checked ? "✓ " : "　") : ""}
+                {item.label}
+                {item.children?.length ? " ›" : ""}
+              </button>
+            )
+          }
+        </For>
+      </div>
+    ),
+    mount,
+  );
+  trigger.ownerDocument.addEventListener(
+    "pointerdown",
+    (event) => {
+      const path = event.composedPath();
+      if (!path.includes(mount) && !path.includes(trigger)) close();
+    },
+    { capture: true, signal: controller.signal },
+  );
+  trigger.ownerDocument.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        const buttons = [...mount.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+        const index = buttons.indexOf(
+          (root instanceof ShadowRoot ? root.activeElement : document.activeElement) as HTMLButtonElement,
+        );
+        buttons[(index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+        event.preventDefault();
+      }
+    },
+    { signal: controller.signal },
+  );
   window.addEventListener("resize", position, { signal: controller.signal });
   position();
   mount.querySelector<HTMLButtonElement>("button")?.focus();
   return { close };
 }
-const buttonStyle = { display: "block", width: "100%", "min-height": "40px", "text-align": "left", padding: "9px 12px", border: "0", "border-radius": "7px", background: "transparent", color: "inherit", font: "inherit", cursor: "pointer" };
+const buttonStyle = {
+  display: "block",
+  width: "100%",
+  "min-height": "40px",
+  "text-align": "left",
+  padding: "9px 12px",
+  border: "0",
+  "border-radius": "7px",
+  background: "transparent",
+  color: "inherit",
+  font: "inherit",
+  cursor: "pointer",
+};

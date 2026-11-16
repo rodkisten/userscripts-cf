@@ -1,9 +1,9 @@
-import type { JSX } from 'solid-js';
-import type { SvgIconName } from './types';
+import type { JSX } from "solid-js";
+import type { SvgIconName } from "./types";
 
 const ICON_PATHS: Record<SvgIconName, JSX.Element> = {
   circle: <circle cx="12" cy="12" r="7.5" />,
-  'circle-x': (
+  "circle-x": (
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="m9 9 6 6" />
@@ -18,7 +18,7 @@ const ICON_PATHS: Record<SvgIconName, JSX.Element> = {
     </>
   ),
   check: <path d="m6.5 12.5 3.25 3.25L17.5 8" />,
-  'triangle-alert': (
+  "triangle-alert": (
     <>
       <path d="M10.3 3.8 2.4 18a2 2 0 0 0 1.75 3h15.7a2 2 0 0 0 1.75-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />
       <path d="M12 9v4" />
@@ -37,21 +37,21 @@ const ICON_PATHS: Record<SvgIconName, JSX.Element> = {
       <path d="M18 6 6 18" />
     </>
   ),
-  'chevron-down': <path d="m6 9 6 6 6-6" />,
-  'chevrons-up': (
+  "chevron-down": <path d="m6 9 6 6 6-6" />,
+  "chevrons-up": (
     <>
       <path d="m17 11-5-5-5 5" />
       <path d="m17 18-5-5-5 5" />
     </>
   ),
-  'x-circle': (
+  "x-circle": (
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="m9 9 6 6" />
       <path d="m15 9-6 6" />
     </>
   ),
-  'loader-circle': <path d="M21 12a9 9 0 1 1-6.22-8.56" />,
+  "loader-circle": <path d="M21 12a9 9 0 1 1-6.22-8.56" />,
   download: (
     <>
       <path d="M12 3v12" />

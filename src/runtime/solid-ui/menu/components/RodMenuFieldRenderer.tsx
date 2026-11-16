@@ -1,10 +1,10 @@
-import { createSignal, Match, Show, Switch } from 'solid-js';
-import { isSharedFieldType } from '../../form-controls/field-types';
-import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from '../types';
-import { SharedFieldRenderer } from './SharedFieldRenderer';
-import { StandaloneFieldRenderer } from '../../form-controls/StandaloneFieldRenderer';
-import type { FormField } from '../../form-controls/fields';
-import { isMenuFieldVisible, isMenuFieldDisabled } from '../rod-menu-solid/src/adapters/form-controls';
+import { createSignal, Match, Show, Switch } from "solid-js";
+import { isSharedFieldType } from "../../form-controls/field-types";
+import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from "../types";
+import { SharedFieldRenderer } from "./SharedFieldRenderer";
+import { StandaloneFieldRenderer } from "../../form-controls/StandaloneFieldRenderer";
+import type { FormField } from "../../form-controls/fields";
+import { isMenuFieldVisible, isMenuFieldDisabled } from "../rod-menu-solid/src/adapters/form-controls";
 import {
   ChannelPickerControl,
   DebugJsonControl,
@@ -12,8 +12,8 @@ import {
   MediaPreviewControl,
   ProviderStatusControl,
   RequestLogControl,
-} from './fields/MediaAndDiagnostics';
-import styles from '../styles/Fields.module.css';
+} from "./fields/MediaAndDiagnostics";
+import styles from "../styles/Fields.module.css";
 
 export interface RodMenuFieldRendererProps {
   surfaceId: string;
@@ -37,12 +37,29 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
   const commit = (val: unknown) => props.onCommit(props.field, val);
 
   const showLabelRow = () =>
-    props.field.chrome !== 'bare' &&
-    !['checkbox', 'switch', 'hidden', 'button', 'html', 'divider'].includes(props.field.type);
+    props.field.chrome !== "bare" &&
+    !["checkbox", "switch", "hidden", "button", "html", "divider"].includes(props.field.type);
 
   // Progressive adapter: retain legacy rendering for specialized fields until parity is verified.
-  const standaloneTypes = new Set(['text', 'email', 'password', 'search', 'url', 'tel', 'number', 'textarea', 'date', 'datetime-local', 'time', 'month', 'week', 'color', 'hidden']);
-  const useStandalone = () => standaloneTypes.has(props.field.type) && props.field.attributes?.['data-renderer'] === 'standalone';
+  const standaloneTypes = new Set([
+    "text",
+    "email",
+    "password",
+    "search",
+    "url",
+    "tel",
+    "number",
+    "textarea",
+    "date",
+    "datetime-local",
+    "time",
+    "month",
+    "week",
+    "color",
+    "hidden",
+  ]);
+  const useStandalone = () =>
+    standaloneTypes.has(props.field.type) && props.field.attributes?.["data-renderer"] === "standalone";
 
   const renderControl = () => {
     const customRenderer = props.customFieldTypes?.[props.field.type];
@@ -58,74 +75,87 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
     return (
       <Switch fallback={<div>Unsupported field: {(props.field as BaseField).type}</div>}>
         <Match when={isSharedFieldType(props.field.type) && useStandalone()}>
-          <StandaloneFieldRenderer field={{ ...props.field, chrome: 'bare', disabled: isDisabled() } as FormField<RodMenuContext<any>>}
-            context={props.context} value={fieldValue()} id={controlId()} onChange={commit} />
+          <StandaloneFieldRenderer
+            field={
+              { ...props.field, chrome: "bare", disabled: isDisabled() } as FormField<RodMenuContext<any>>
+            }
+            context={props.context}
+            value={fieldValue()}
+            id={controlId()}
+            onChange={commit}
+          />
         </Match>
         <Match when={isSharedFieldType(props.field.type) && !useStandalone()}>
-          <SharedFieldRenderer field={props.field} context={props.context} value={fieldValue()}
-            controlId={controlId()} disabled={isDisabled()} commit={commit} onError={props.onError} />
+          <SharedFieldRenderer
+            field={props.field}
+            context={props.context}
+            value={fieldValue()}
+            controlId={controlId()}
+            disabled={isDisabled()}
+            commit={commit}
+            onError={props.onError}
+          />
         </Match>
 
-        <Match when={props.field.type === 'media-preview'}>
+        <Match when={props.field.type === "media-preview"}>
           <MediaPreviewControl
-            field={props.field as Extract<RodMenuField, { type: 'media-preview' }>}
+            field={props.field as Extract<RodMenuField, { type: "media-preview" }>}
             context={props.context}
           />
         </Match>
 
-        <Match when={props.field.type === 'media-picker'}>
+        <Match when={props.field.type === "media-picker"}>
           <MediaPickerControl
-            field={props.field as Extract<RodMenuField, { type: 'media-picker' }>}
+            field={props.field as Extract<RodMenuField, { type: "media-picker" }>}
             value={fieldValue()}
             context={props.context}
             onCommit={commit}
           />
         </Match>
 
-        <Match when={props.field.type === 'provider-status'}>
+        <Match when={props.field.type === "provider-status"}>
           <ProviderStatusControl
-            field={props.field as Extract<RodMenuField, { type: 'provider-status' }>}
+            field={props.field as Extract<RodMenuField, { type: "provider-status" }>}
             context={props.context}
           />
         </Match>
 
-        <Match when={props.field.type === 'request-log'}>
+        <Match when={props.field.type === "request-log"}>
           <RequestLogControl
-            field={props.field as Extract<RodMenuField, { type: 'request-log' }>}
+            field={props.field as Extract<RodMenuField, { type: "request-log" }>}
             context={props.context}
           />
         </Match>
 
-        <Match when={props.field.type === 'debug-json'}>
+        <Match when={props.field.type === "debug-json"}>
           <DebugJsonControl
-            field={props.field as Extract<RodMenuField, { type: 'debug-json' }>}
+            field={props.field as Extract<RodMenuField, { type: "debug-json" }>}
             context={props.context}
             onError={props.onError}
           />
         </Match>
 
-        <Match when={props.field.type === 'channel-picker'}>
+        <Match when={props.field.type === "channel-picker"}>
           <ChannelPickerControl
-            field={props.field as Extract<RodMenuField, { type: 'channel-picker' }>}
+            field={props.field as Extract<RodMenuField, { type: "channel-picker" }>}
             value={fieldValue()}
             onCommit={commit}
           />
         </Match>
-
       </Switch>
     );
   };
 
   return (
     <div
-      class={`${styles.field} ${props.field.className || ''}`.trim()}
+      class={`${styles.field} ${props.field.className || ""}`.trim()}
       data-field={props.field.name}
       data-hidden={String(!isVisible())}
-      data-chrome={props.field.chrome || 'default'}
+      data-chrome={props.field.chrome || "default"}
       data-error={String(!!fieldError())}
     >
       <Show
-        when={props.field.type !== 'divider'}
+        when={props.field.type !== "divider"}
         fallback={<div class={styles.divider} aria-hidden="true" />}
       >
         <Show when={showLabelRow()}>
@@ -170,7 +200,7 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
                   }}
                 >
                   <Show when={trailing().icon}>
-                    {typeof trailing().icon === 'string' ? (
+                    {typeof trailing().icon === "string" ? (
                       <span innerHTML={trailing().icon as string} />
                     ) : (
                       trailing().icon

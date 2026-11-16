@@ -18,7 +18,9 @@ describe("Script Manager URL rules", () => {
     expect(matches(definition, "https://example.com/private/data", preference)).toBe(false);
   });
   it("prioritizes user exclusions and disabled state", () => {
-    expect(matches(definition, "https://example.com/home", { excludes: ["https://example.com/*"] })).toBe(false);
+    expect(matches(definition, "https://example.com/home", { excludes: ["https://example.com/*"] })).toBe(
+      false,
+    );
     expect(matches(definition, "https://example.com/home", { enabled: false })).toBe(false);
   });
   it("persists preferences and recovers malformed JSON", () => {

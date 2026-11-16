@@ -1,7 +1,7 @@
-import { createSignal, For } from 'solid-js';
-import type { AnyRecord, RodMenuHandle, RodMenuSchema } from '../types';
-import { Surface } from './Surface';
-import tokensCSS from '../styles/tokens.css?inline';
+import { createSignal, For } from "solid-js";
+import type { AnyRecord, RodMenuHandle, RodMenuSchema } from "../types";
+import { Surface } from "./Surface";
+import tokensCSS from "../styles/tokens.css?inline";
 
 interface ActiveSurfaceEntry {
   id: string;
@@ -50,21 +50,21 @@ export function RodMenuHost() {
     <>
       <style data-rod-menu-tokens>{tokensCSS}</style>
       <For each={surfaces()}>
-      {(entry) => (
-        <Surface
-          id={entry.id}
-          initialSchema={entry.schema}
-          onCreated={entry.onCreated}
-          onDestroy={(id) => {
-            // A previous instance may finish its exit animation after a new
-            // instance with the same ID has mounted. Never delete the newer one.
-            const current = surfaces().find((item) => item.id === id);
-            if (current !== entry) return;
-            activeHandles.delete(id);
-            setSurfaces((prev) => prev.filter((s) => s !== entry));
-          }}
-        />
-      )}
+        {(entry) => (
+          <Surface
+            id={entry.id}
+            initialSchema={entry.schema}
+            onCreated={entry.onCreated}
+            onDestroy={(id) => {
+              // A previous instance may finish its exit animation after a new
+              // instance with the same ID has mounted. Never delete the newer one.
+              const current = surfaces().find((item) => item.id === id);
+              if (current !== entry) return;
+              activeHandles.delete(id);
+              setSurfaces((prev) => prev.filter((s) => s !== entry));
+            }}
+          />
+        )}
       </For>
     </>
   );

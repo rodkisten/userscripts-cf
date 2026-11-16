@@ -1,4 +1,4 @@
-import type { BaseField, FieldContext, FieldValues, FieldValue, Awaitable } from './fields';
+import type { BaseField, FieldContext, FieldValues, FieldValue, Awaitable } from "./fields";
 
 export interface FieldRuntime<TContext = FieldContext> {
   field: BaseField<TContext>;
@@ -27,13 +27,10 @@ export function isFieldDisabled<TContext>(runtime: FieldRuntime<TContext>): bool
   }
 }
 
-export function resolveFieldValue<TContext>(
-  field: BaseField<TContext>,
-  values: FieldValues,
-): FieldValue {
+export function resolveFieldValue<TContext>(field: BaseField<TContext>, values: FieldValues): FieldValue {
   return Object.prototype.hasOwnProperty.call(values, field.name)
     ? values[field.name]
-    : field.value ?? field.defaultValue;
+    : (field.value ?? field.defaultValue);
 }
 
 export async function validateField<TContext>(
@@ -42,8 +39,8 @@ export async function validateField<TContext>(
   values: FieldValues,
   context: TContext,
 ): Promise<string | null> {
-  if (field.required && (value == null || value === '' || (Array.isArray(value) && value.length === 0))) {
-    return 'Required';
+  if (field.required && (value == null || value === "" || (Array.isArray(value) && value.length === 0))) {
+    return "Required";
   }
   return (await field.validate?.(value, values, context)) ?? null;
 }

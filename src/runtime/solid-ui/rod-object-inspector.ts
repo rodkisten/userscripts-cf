@@ -227,25 +227,14 @@ interface RodInspectorHighlightOptions {
 interface RodObjectInspectorRuntime {
   readonly version: string;
   readonly options: Readonly<NormalizedInspectorOptions>;
-  render(
-    value: unknown,
-    documentRef?: Document,
-    context?: RodInspectorRenderContext,
-  ): Node;
-  renderValue(
-    value: unknown,
-    documentRef?: Document,
-    context?: RodInspectorRenderContext,
-  ): Node;
+  render(value: unknown, documentRef?: Document, context?: RodInspectorRenderContext): Node;
+  renderValue(value: unknown, documentRef?: Document, context?: RodInspectorRenderContext): Node;
   getObjectPreview(value: unknown, options?: RodInspectorOptions): string;
   getInlinePreview(value: unknown, options?: RodInspectorOptions): string;
   isDomNode(value: unknown): value is Node;
   isDomElement(value: unknown): value is Element;
   inspectElement(element: Element): void;
-  highlightElement(
-    element: Element,
-    options?: RodInspectorHighlightOptions,
-  ): void;
+  highlightElement(element: Element, options?: RodInspectorHighlightOptions): void;
   clearHighlight(): void;
   ensureStyle(target?: StyleTarget): HTMLStyleElement;
   destroy(): void;
@@ -258,11 +247,7 @@ interface RodObjectInspectorApi {
   create(options?: RodInspectorRuntimeOptions): RodObjectInspectorRuntime;
   createStyle(documentRef?: Document): HTMLStyleElement;
   ensureStyle(target?: StyleTarget): HTMLStyleElement;
-  render(
-    value: unknown,
-    documentRef?: Document,
-    context?: RodInspectorRenderContext,
-  ): Node;
+  render(value: unknown, documentRef?: Document, context?: RodInspectorRenderContext): Node;
   getObjectPreview(value: unknown, options?: RodInspectorOptions): string;
   getInlinePreview(value: unknown, options?: RodInspectorOptions): string;
   getPublishedScopes(): readonly object[];
@@ -328,13 +313,7 @@ interface PrototypeEntry {
   enumerable: false;
 }
 
-type InspectorEntry =
-  | DataEntry
-  | EmptyEntry
-  | AccessorEntry
-  | MapEntry
-  | SetEntry
-  | PrototypeEntry;
+type InspectorEntry = DataEntry | EmptyEntry | AccessorEntry | MapEntry | SetEntry | PrototypeEntry;
 
 interface EntrySource {
   count: number;
@@ -369,26 +348,16 @@ interface HighlightState {
   const API_SYMBOL = Symbol.for("rod.object-inspector.api");
   const MAX_Z_INDEX = 2_147_483_647;
   const MAX_SAFE_ITEMS = 100_000;
-  const VALID_THEMES = new Set<RodInspectorTheme>([
-    "auto",
-    "dark",
-    "light",
-  ]);
+  const VALID_THEMES = new Set<RodInspectorTheme>(["auto", "dark", "light"]);
   const styledRoots = new WeakSet<object>();
 
   const objectToString = Object.prototype.toString;
-  const mapSizeGetter = Object.getOwnPropertyDescriptor(
-    Map.prototype,
-    "size",
-  )?.get as ((this: Map<unknown, unknown>) => number) | undefined;
-  const setSizeGetter = Object.getOwnPropertyDescriptor(
-    Set.prototype,
-    "size",
-  )?.get as ((this: Set<unknown>) => number) | undefined;
-  const regexpSourceGetter = Object.getOwnPropertyDescriptor(
-    RegExp.prototype,
-    "source",
-  )?.get as ((this: RegExp) => string) | undefined;
+  const mapSizeGetter = Object.getOwnPropertyDescriptor(Map.prototype, "size")?.get as
+    ((this: Map<unknown, unknown>) => number) | undefined;
+  const setSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, "size")?.get as
+    ((this: Set<unknown>) => number) | undefined;
+  const regexpSourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source")?.get as
+    ((this: RegExp) => string) | undefined;
 
   const DEFAULT_OPTIONS: NormalizedInspectorOptions = Object.freeze({
     inspectDepth: 80,
@@ -735,22 +704,14 @@ interface HighlightState {
   }
 
   function isObjectLike(value: unknown): value is object {
-    return (
-      value !== null &&
-      (typeof value === "object" || typeof value === "function")
-    );
+    return value !== null && (typeof value === "object" || typeof value === "function");
   }
 
   function isArray(value: unknown): value is unknown[] {
     return safeCall(() => Array.isArray(value), false);
   }
 
-  function toInteger(
-    value: unknown,
-    fallback: number,
-    min: number,
-    max = Number.MAX_SAFE_INTEGER,
-  ): number {
+  function toInteger(value: unknown, fallback: number, min: number, max = Number.MAX_SAFE_INTEGER): number {
     const numeric = Number(value);
 
     if (!Number.isFinite(numeric)) {
@@ -787,10 +748,7 @@ interface HighlightState {
   }
 
   function safeFunctionName(value: Function): string {
-    const descriptor = safeCall(
-      () => Object.getOwnPropertyDescriptor(value, "name"),
-      undefined,
-    );
+    const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, "name"), undefined);
 
     if (descriptor && typeof descriptor.value === "string") {
       return descriptor.value || "anonymous";
@@ -819,10 +777,7 @@ interface HighlightState {
     let depth = 0;
 
     while (prototype && depth < 4) {
-      const descriptor = safeCall(
-        () => Object.getOwnPropertyDescriptor(prototype, "constructor"),
-        undefined,
-      );
+      const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(prototype, "constructor"), undefined);
 
       if (descriptor && typeof descriptor.value === "function") {
         const name = safeFunctionName(descriptor.value);
@@ -859,10 +814,7 @@ interface HighlightState {
   }
 
   function getDateTime(value: unknown): number | null {
-    return safeCall(
-      () => Reflect.apply(Date.prototype.getTime, value, []),
-      null,
-    );
+    return safeCall(() => Reflect.apply(Date.prototype.getTime, value, []), null);
   }
 
   function isDate(value: unknown): value is Date {
@@ -888,134 +840,52 @@ interface HighlightState {
   function isDomNode(value: unknown): value is Node {
     if (!value || typeof value !== "object") return false;
 
-    return safeCall(
-      () => {
-        const candidate = value as Partial<Node>;
-        return (
-          typeof candidate.nodeType === "number" &&
-          typeof candidate.nodeName === "string" &&
-          Boolean(candidate.ownerDocument || candidate.nodeType === 9)
-        );
-      },
-      false,
-    );
+    return safeCall(() => {
+      const candidate = value as Partial<Node>;
+      return (
+        typeof candidate.nodeType === "number" &&
+        typeof candidate.nodeName === "string" &&
+        Boolean(candidate.ownerDocument || candidate.nodeType === 9)
+      );
+    }, false);
   }
 
   function isDomElement(value: unknown): value is Element {
     return (
       isDomNode(value) &&
-      safeCall(
-        () =>
-          value.nodeType === 1 &&
-          typeof (value as Element).tagName === "string",
-        false,
-      )
+      safeCall(() => value.nodeType === 1 && typeof (value as Element).tagName === "string", false)
     );
   }
 
-  function normalizeOptions(
-    options: RodInspectorOptions = {},
-  ): NormalizedInspectorOptions {
+  function normalizeOptions(options: RodInspectorOptions = {}): NormalizedInspectorOptions {
     const theme = VALID_THEMES.has(options.theme as RodInspectorTheme)
       ? (options.theme as RodInspectorTheme)
       : DEFAULT_OPTIONS.theme;
 
     return {
-      inspectDepth: toInteger(
-        options.inspectDepth,
-        DEFAULT_OPTIONS.inspectDepth,
-        0,
-        1_000,
-      ),
-      inspectItems: toInteger(
-        options.inspectItems,
-        DEFAULT_OPTIONS.inspectItems,
-        0,
-        MAX_SAFE_ITEMS,
-      ),
-      previewItems: toInteger(
-        options.previewItems,
-        DEFAULT_OPTIONS.previewItems,
-        0,
-        100,
-      ),
-      previewMaxLength: toInteger(
-        options.previewMaxLength,
-        DEFAULT_OPTIONS.previewMaxLength,
-        24,
-        10_000,
-      ),
-      expandDepth: toInteger(
-        options.expandDepth,
-        DEFAULT_OPTIONS.expandDepth,
-        0,
-        1_000,
-      ),
-      showPrototype: toBoolean(
-        options.showPrototype,
-        DEFAULT_OPTIONS.showPrototype,
-      ),
-      showNonEnumerable: toBoolean(
-        options.showNonEnumerable,
-        DEFAULT_OPTIONS.showNonEnumerable,
-      ),
-      showObjectLength: toBoolean(
-        options.showObjectLength,
-        DEFAULT_OPTIONS.showObjectLength,
-      ),
+      inspectDepth: toInteger(options.inspectDepth, DEFAULT_OPTIONS.inspectDepth, 0, 1_000),
+      inspectItems: toInteger(options.inspectItems, DEFAULT_OPTIONS.inspectItems, 0, MAX_SAFE_ITEMS),
+      previewItems: toInteger(options.previewItems, DEFAULT_OPTIONS.previewItems, 0, 100),
+      previewMaxLength: toInteger(options.previewMaxLength, DEFAULT_OPTIONS.previewMaxLength, 24, 10_000),
+      expandDepth: toInteger(options.expandDepth, DEFAULT_OPTIONS.expandDepth, 0, 1_000),
+      showPrototype: toBoolean(options.showPrototype, DEFAULT_OPTIONS.showPrototype),
+      showNonEnumerable: toBoolean(options.showNonEnumerable, DEFAULT_OPTIONS.showNonEnumerable),
+      showObjectLength: toBoolean(options.showObjectLength, DEFAULT_OPTIONS.showObjectLength),
       virtualize: toBoolean(options.virtualize, DEFAULT_OPTIONS.virtualize),
-      virtualizeAfter: toInteger(
-        options.virtualizeAfter,
-        DEFAULT_OPTIONS.virtualizeAfter,
-        1,
-        MAX_SAFE_ITEMS,
-      ),
-      virtualRowHeight: toInteger(
-        options.virtualRowHeight,
-        DEFAULT_OPTIONS.virtualRowHeight,
-        16,
-        1_000,
-      ),
-      virtualOverscan: toInteger(
-        options.virtualOverscan,
-        DEFAULT_OPTIONS.virtualOverscan,
-        1,
-        1_000,
-      ),
-      virtualMaxHeight: toInteger(
-        options.virtualMaxHeight,
-        DEFAULT_OPTIONS.virtualMaxHeight,
-        120,
-        100_000,
-      ),
-      virtualRowCache: toInteger(
-        options.virtualRowCache,
-        DEFAULT_OPTIONS.virtualRowCache,
-        0,
-        MAX_SAFE_ITEMS,
-      ),
-      unmountOnCollapse: toBoolean(
-        options.unmountOnCollapse,
-        DEFAULT_OPTIONS.unmountOnCollapse,
-      ),
-      highlightDuration: toInteger(
-        options.highlightDuration,
-        DEFAULT_OPTIONS.highlightDuration,
-        0,
-        60_000,
-      ),
+      virtualizeAfter: toInteger(options.virtualizeAfter, DEFAULT_OPTIONS.virtualizeAfter, 1, MAX_SAFE_ITEMS),
+      virtualRowHeight: toInteger(options.virtualRowHeight, DEFAULT_OPTIONS.virtualRowHeight, 16, 1_000),
+      virtualOverscan: toInteger(options.virtualOverscan, DEFAULT_OPTIONS.virtualOverscan, 1, 1_000),
+      virtualMaxHeight: toInteger(options.virtualMaxHeight, DEFAULT_OPTIONS.virtualMaxHeight, 120, 100_000),
+      virtualRowCache: toInteger(options.virtualRowCache, DEFAULT_OPTIONS.virtualRowCache, 0, MAX_SAFE_ITEMS),
+      unmountOnCollapse: toBoolean(options.unmountOnCollapse, DEFAULT_OPTIONS.unmountOnCollapse),
+      highlightDuration: toInteger(options.highlightDuration, DEFAULT_OPTIONS.highlightDuration, 0, 60_000),
       theme,
     };
   }
 
   function assertDocument(documentRef: unknown): Document {
-    if (
-      !documentRef ||
-      typeof (documentRef as Document).createElement !== "function"
-    ) {
-      throw new TypeError(
-        "RodObjectInspector requires a valid Document instance.",
-      );
+    if (!documentRef || typeof (documentRef as Document).createElement !== "function") {
+      throw new TypeError("RodObjectInspector requires a valid Document instance.");
     }
 
     return documentRef as Document;
@@ -1049,8 +919,7 @@ interface HighlightState {
 
   function createStyle(documentRef?: Document): HTMLStyleElement {
     const documentValue = assertDocument(
-      documentRef ??
-        safeCall(() => (globalThis as SafeGlobalScope).document, undefined),
+      documentRef ?? safeCall(() => (globalThis as SafeGlobalScope).document, undefined),
     );
     const style = documentValue.createElement("style");
     style.setAttribute("data-rod-object-inspector-style", VERSION);
@@ -1059,17 +928,11 @@ interface HighlightState {
   }
 
   function ensureStyle(target?: StyleTarget): HTMLStyleElement {
-    const fallbackDocument = safeCall(
-      () => (globalThis as SafeGlobalScope).document,
-      undefined,
-    );
+    const fallbackDocument = safeCall(() => (globalThis as SafeGlobalScope).document, undefined);
     const root = target ?? assertDocument(fallbackDocument);
     const documentValue = getOwnerDocument(root);
     const selector = "style[data-rod-object-inspector-style]";
-    const existing = safeCall(
-      () => root.querySelector<HTMLStyleElement>(selector),
-      null,
-    );
+    const existing = safeCall(() => root.querySelector<HTMLStyleElement>(selector), null);
 
     if (existing) {
       if (existing.textContent !== CSS_TEXT) existing.textContent = CSS_TEXT;
@@ -1086,9 +949,7 @@ interface HighlightState {
     if (styledRoots.has(root)) styledRoots.delete(root);
 
     const style = createStyle(documentValue);
-    const parent = isDocumentTarget(root)
-      ? root.head || root.documentElement || root.body
-      : root;
+    const parent = isDocumentTarget(root) ? root.head || root.documentElement || root.body : root;
 
     parent?.appendChild(style);
     if (style.isConnected || isShadowRootTarget(root)) styledRoots.add(root);
@@ -1269,10 +1130,7 @@ interface HighlightState {
   const existingApi = globalScopes
     .flatMap((scope) => {
       const record = scope as SafeGlobalScope;
-      return [
-        safeCall(() => record[API_SYMBOL], undefined),
-        safeCall(() => record[GLOBAL_NAME], undefined),
-      ];
+      return [safeCall(() => record[API_SYMBOL], undefined), safeCall(() => record[GLOBAL_NAME], undefined)];
     })
     .find(isInspectorApi);
 
@@ -1286,11 +1144,8 @@ interface HighlightState {
     return;
   }
 
-  function createInspector(
-    runtimeOptions: RodInspectorRuntimeOptions = {},
-  ): RodObjectInspectorRuntime {
-    const resolvedWindow =
-      runtimeOptions.window ?? globalScopes.find(isWindowLike);
+  function createInspector(runtimeOptions: RodInspectorRuntimeOptions = {}): RodObjectInspectorRuntime {
+    const resolvedWindow = runtimeOptions.window ?? globalScopes.find(isWindowLike);
 
     if (!resolvedWindow) {
       throw new TypeError(
@@ -1299,14 +1154,8 @@ interface HighlightState {
     }
 
     const defaultWindow: Window = resolvedWindow;
-    const defaultDocument = assertDocument(
-      runtimeOptions.document ?? defaultWindow.document,
-    );
-    const maxZIndex = clamp(
-      toInteger(runtimeOptions.maxZIndex, MAX_Z_INDEX, 1, MAX_Z_INDEX),
-      1,
-      MAX_Z_INDEX,
-    );
+    const defaultDocument = assertDocument(runtimeOptions.document ?? defaultWindow.document);
+    const maxZIndex = clamp(toInteger(runtimeOptions.maxZIndex, MAX_Z_INDEX, 1, MAX_Z_INDEX), 1, MAX_Z_INDEX);
     const baseOptions = normalizeOptions(runtimeOptions.options ?? {});
     const autoStyle = runtimeOptions.autoStyle !== false;
     const objectIds = new WeakMap<object, number>();
@@ -1349,22 +1198,15 @@ interface HighlightState {
       id: string;
       classes: string[];
     } {
-      const tagName = safeCall(
-        () => String(element.tagName || element.nodeName).toLowerCase(),
-        "element",
-      );
-      const id = safeCall(
-        () => (typeof element.id === "string" ? element.id : ""),
-        "",
-      );
+      const tagName = safeCall(() => String(element.tagName || element.nodeName).toLowerCase(), "element");
+      const id = safeCall(() => (typeof element.id === "string" ? element.id : ""), "");
       const classes = safeCall(() => {
         if (element.classList && typeof element.classList.length === "number") {
           return Array.from(element.classList).slice(0, 8);
         }
 
         const className: unknown = safeCall(
-          () =>
-            (element as unknown as { className?: unknown }).className,
+          () => (element as unknown as { className?: unknown }).className,
           undefined,
         );
 
@@ -1378,11 +1220,7 @@ interface HighlightState {
           "baseVal" in className &&
           typeof (className as { baseVal?: unknown }).baseVal === "string"
         ) {
-          return (className as { baseVal: string }).baseVal
-            .trim()
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, 8);
+          return (className as { baseVal: string }).baseVal.trim().split(/\s+/).filter(Boolean).slice(0, 8);
         }
 
         return [];
@@ -1398,10 +1236,7 @@ interface HighlightState {
       return `<${parts.tagName}${id}${classes}>`;
     }
 
-    function getDomNodePreviewText(
-      node: Node,
-      options: NormalizedInspectorOptions = baseOptions,
-    ): string {
+    function getDomNodePreviewText(node: Node, options: NormalizedInspectorOptions = baseOptions): string {
       if (isDomElement(node)) return getElementPreviewText(node);
 
       if (node.nodeType === Node.TEXT_NODE) {
@@ -1419,23 +1254,14 @@ interface HighlightState {
         return "#document-fragment";
       }
 
-      return safeCall(
-        () => String(node.nodeName || "#node").toLowerCase(),
-        "#node",
-      );
+      return safeCall(() => String(node.nodeName || "#node").toLowerCase(), "#node");
     }
 
-    function getInlinePreview(
-      value: unknown,
-      options: RodInspectorOptions = {},
-    ): string {
+    function getInlinePreview(value: unknown, options: RodInspectorOptions = {}): string {
       const normalized = normalizeOptions({ ...baseOptions, ...options });
 
       if (!isObjectLike(value)) {
-        return truncateText(
-          safePrimitiveText(value, true),
-          normalized.previewMaxLength,
-        );
+        return truncateText(safePrimitiveText(value, true), normalized.previewMaxLength);
       }
 
       if (isDomNode(value)) return getDomNodePreviewText(value, normalized);
@@ -1452,10 +1278,7 @@ interface HighlightState {
 
       if (isError(value)) {
         return truncateText(
-          safeCall(
-            () => `${value.name || "Error"}: ${value.message || ""}`,
-            "Error",
-          ),
+          safeCall(() => `${value.name || "Error"}: ${value.message || ""}`, "Error"),
           normalized.previewMaxLength,
         );
       }
@@ -1464,17 +1287,11 @@ interface HighlightState {
         const time = getDateTime(value);
         return Number.isNaN(time)
           ? "Date(Invalid)"
-          : safeCall(
-              () => Reflect.apply(Date.prototype.toISOString, value, []),
-              "Date(?)",
-            );
+          : safeCall(() => Reflect.apply(Date.prototype.toISOString, value, []), "Date(?)");
       }
 
       if (isRegExp(value)) {
-        return safeCall(
-          () => Reflect.apply(RegExp.prototype.toString, value, []),
-          "/?/",
-        );
+        return safeCall(() => Reflect.apply(RegExp.prototype.toString, value, []), "/?/");
       }
 
       return `${safeGetConstructorName(value)} {…}`;
@@ -1495,10 +1312,7 @@ interface HighlightState {
       let hasMore = false;
 
       for (const key of keys) {
-        const descriptor = safeCall(
-          () => Object.getOwnPropertyDescriptor(value, key),
-          undefined,
-        );
+        const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
 
         if (!descriptor?.enumerable) continue;
 
@@ -1513,17 +1327,11 @@ interface HighlightState {
       return { items, hasMore };
     }
 
-    function getObjectPreview(
-      value: unknown,
-      options: RodInspectorOptions = {},
-    ): string {
+    function getObjectPreview(value: unknown, options: RodInspectorOptions = {}): string {
       const normalized = normalizeOptions({ ...baseOptions, ...options });
 
       if (!isObjectLike(value)) {
-        return truncateText(
-          safePrimitiveText(value, true),
-          normalized.previewMaxLength,
-        );
+        return truncateText(safePrimitiveText(value, true), normalized.previewMaxLength);
       }
 
       const previewItems = normalized.previewItems;
@@ -1554,10 +1362,7 @@ interface HighlightState {
         const count = Math.min(length, previewItems);
 
         for (let index = 0; index < count; index += 1) {
-          const descriptor = safeCall(
-            () => Object.getOwnPropertyDescriptor(value, String(index)),
-            undefined,
-          );
+          const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, String(index)), undefined);
 
           if (!descriptor) parts.push("empty");
           else if (hasOwn(descriptor, "value")) {
@@ -1583,12 +1388,9 @@ interface HighlightState {
 
         if (iterator) {
           for (let index = 0; index < previewItems; index += 1) {
-            const step = safeCall(
-              () => iterator.next(),
-              { done: true, value: undefined } as IteratorResult<
-                [unknown, unknown]
-              >,
-            );
+            const step = safeCall(() => iterator.next(), { done: true, value: undefined } as IteratorResult<
+              [unknown, unknown]
+            >);
             if (step.done) break;
             parts.push(
               `${getInlinePreview(step.value[0], normalized)} => ${getInlinePreview(step.value[1], normalized)}`,
@@ -1614,10 +1416,10 @@ interface HighlightState {
 
         if (iterator) {
           for (let index = 0; index < previewItems; index += 1) {
-            const step = safeCall(
-              () => iterator.next(),
-              { done: true, value: undefined } as IteratorResult<unknown>,
-            );
+            const step = safeCall(() => iterator.next(), {
+              done: true,
+              value: undefined,
+            } as IteratorResult<unknown>);
             if (step.done) break;
             parts.push(getInlinePreview(step.value, normalized));
           }
@@ -1640,18 +1442,12 @@ interface HighlightState {
       }
 
       if (isDate(value)) {
-        const text = safeCall(
-          () => Reflect.apply(Date.prototype.toISOString, value, []),
-          "Invalid Date",
-        );
+        const text = safeCall(() => Reflect.apply(Date.prototype.toISOString, value, []), "Invalid Date");
         return `Date${idSuffix} ${text}`;
       }
 
       if (isRegExp(value)) {
-        const text = safeCall(
-          () => Reflect.apply(RegExp.prototype.toString, value, []),
-          "/?/",
-        );
+        const text = safeCall(() => Reflect.apply(RegExp.prototype.toString, value, []), "/?/");
         return `RegExp${idSuffix} ${text}`;
       }
 
@@ -1674,22 +1470,14 @@ interface HighlightState {
       );
     }
 
-    function createTextNode(
-      documentRef: Document,
-      text: string,
-      className = "",
-    ): HTMLSpanElement {
+    function createTextNode(documentRef: Document, text: string, className = ""): HTMLSpanElement {
       const node = documentRef.createElement("span");
       node.textContent = text;
       if (className) node.className = className;
       return node;
     }
 
-    function renderPrimitive(
-      value: unknown,
-      documentRef: Document,
-      quoteStrings: boolean,
-    ): HTMLSpanElement {
+    function renderPrimitive(value: unknown, documentRef: Document, quoteStrings: boolean): HTMLSpanElement {
       let className = "";
 
       if (value === null) className = "rod-token--null";
@@ -1704,11 +1492,7 @@ interface HighlightState {
         className = "rod-token--function";
       }
 
-      return createTextNode(
-        documentRef,
-        safePrimitiveText(value, quoteStrings),
-        className,
-      );
+      return createTextNode(documentRef, safePrimitiveText(value, quoteStrings), className);
     }
 
     function createDomPreviewNode(
@@ -1717,11 +1501,7 @@ interface HighlightState {
       options: NormalizedInspectorOptions,
     ): Node {
       if (!isDomElement(node)) {
-        return createTextNode(
-          documentRef,
-          getDomNodePreviewText(node, options),
-          "rod-token--meta",
-        );
+        return createTextNode(documentRef, getDomNodePreviewText(node, options), "rod-token--meta");
       }
 
       const wrapper = documentRef.createElement("span");
@@ -1732,24 +1512,16 @@ interface HighlightState {
       );
 
       if (parts.id) {
-        wrapper.appendChild(
-          createTextNode(documentRef, `#${parts.id}`, "rod-dom-id"),
-        );
+        wrapper.appendChild(createTextNode(documentRef, `#${parts.id}`, "rod-dom-id"));
       }
 
       for (const className of parts.classes) {
-        wrapper.appendChild(
-          createTextNode(documentRef, `.${className}`, "rod-dom-class"),
-        );
+        wrapper.appendChild(createTextNode(documentRef, `.${className}`, "rod-dom-class"));
       }
 
       wrapper.append(
         createTextNode(documentRef, ">", "rod-dom-tag"),
-        createTextNode(
-          documentRef,
-          ` #${getObjectId(node)}`,
-          "rod-token--meta",
-        ),
+        createTextNode(documentRef, ` #${getObjectId(node)}`, "rod-token--meta"),
       );
       return wrapper;
     }
@@ -1777,22 +1549,13 @@ interface HighlightState {
       let top = rect.top;
       let width = rect.width;
       let height = rect.height;
-      let currentWindow = safeCall(
-        () => element.ownerDocument.defaultView,
-        null,
-      );
+      let currentWindow = safeCall(() => element.ownerDocument.defaultView, null);
 
       while (currentWindow && currentWindow !== targetWindow) {
-        const frameElement = safeCall(
-          () => currentWindow?.frameElement,
-          null,
-        );
+        const frameElement = safeCall(() => currentWindow?.frameElement, null);
         if (!frameElement) return null;
 
-        const frameRect = safeCall(
-          () => frameElement.getBoundingClientRect(),
-          null,
-        );
+        const frameRect = safeCall(() => frameElement.getBoundingClientRect(), null);
         if (!frameRect) return null;
 
         const frameHtmlElement = frameElement as HTMLElement;
@@ -1807,20 +1570,14 @@ interface HighlightState {
         top = frameRect.top + (clientTop + top) * scaleY;
         width *= scaleX;
         height *= scaleY;
-        currentWindow = safeCall(
-          () => frameElement.ownerDocument.defaultView,
-          null,
-        );
+        currentWindow = safeCall(() => frameElement.ownerDocument.defaultView, null);
       }
 
       if (currentWindow !== targetWindow) return null;
       return { left, top, width, height };
     }
 
-    function highlightElement(
-      element: Element,
-      options: RodInspectorHighlightOptions = {},
-    ): void {
+    function highlightElement(element: Element, options: RodInspectorHighlightOptions = {}): void {
       clearHighlight();
       if (destroyed || !isDomElement(element) || !element.isConnected) return;
 
@@ -1830,12 +1587,7 @@ interface HighlightState {
 
       const overlay = host.document.createElement("div");
       const scheduler = createFrameScheduler(host.window);
-      const duration = toInteger(
-        options.duration,
-        baseOptions.highlightDuration,
-        0,
-        60_000,
-      );
+      const duration = toInteger(options.duration, baseOptions.highlightDuration, 0, 60_000);
 
       overlay.id = "__rod-object-inspector-highlight__";
       overlay.setAttribute("aria-hidden", "true");
@@ -1895,16 +1647,8 @@ interface HighlightState {
 
         overlay.style.setProperty("left", `${rect.left}px`, "important");
         overlay.style.setProperty("top", `${rect.top}px`, "important");
-        overlay.style.setProperty(
-          "width",
-          `${Math.max(0, rect.width)}px`,
-          "important",
-        );
-        overlay.style.setProperty(
-          "height",
-          `${Math.max(0, rect.height)}px`,
-          "important",
-        );
+        overlay.style.setProperty("width", `${Math.max(0, rect.width)}px`, "important");
+        overlay.style.setProperty("height", `${Math.max(0, rect.height)}px`, "important");
         current.frame = scheduler.request(update);
       };
 
@@ -1930,10 +1674,7 @@ interface HighlightState {
       highlightElement(element, { duration: baseOptions.highlightDuration });
     }
 
-    function createInspectButton(
-      element: Element,
-      documentRef: Document,
-    ): HTMLButtonElement {
+    function createInspectButton(element: Element, documentRef: Document): HTMLButtonElement {
       const button = documentRef.createElement("button");
       button.type = "button";
       button.className = "rod-inspector__inspect";
@@ -2005,10 +1746,7 @@ interface HighlightState {
       };
     }
 
-    function createArraySource(
-      value: unknown[],
-      options: NormalizedInspectorOptions,
-    ): EntrySource {
+    function createArraySource(value: unknown[], options: NormalizedInspectorOptions): EntrySource {
       const length = safeCall(() => value.length, 0);
       const numericCount = Math.min(length, options.inspectItems);
       const extraEntries: InspectorEntry[] = [];
@@ -2027,18 +1765,11 @@ interface HighlightState {
         for (const key of keys) {
           if (key === "length") {
             if (!options.showNonEnumerable) continue;
-          } else if (
-            typeof key === "string" &&
-            /^(?:0|[1-9]\d*)$/.test(key) &&
-            Number(key) < length
-          ) {
+          } else if (typeof key === "string" && /^(?:0|[1-9]\d*)$/.test(key) && Number(key) < length) {
             continue;
           }
 
-          const descriptor = safeCall(
-            () => Object.getOwnPropertyDescriptor(value, key),
-            undefined,
-          );
+          const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
           if (!descriptor) continue;
           if (!options.showNonEnumerable && !descriptor.enumerable) continue;
 
@@ -2059,10 +1790,7 @@ interface HighlightState {
         get(index) {
           if (index < numericCount) {
             const key = String(index);
-            const descriptor = safeCall(
-              () => Object.getOwnPropertyDescriptor(value, key),
-              undefined,
-            );
+            const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
             return createDataEntry(index, descriptor, value);
           }
 
@@ -2071,19 +1799,13 @@ interface HighlightState {
       };
     }
 
-    function createObjectSource(
-      value: object,
-      options: NormalizedInspectorOptions,
-    ): EntrySource {
+    function createObjectSource(value: object, options: NormalizedInspectorOptions): EntrySource {
       const keys = safeCall(() => Reflect.ownKeys(value), [] as PropertyKey[]);
       const entries: InspectorEntry[] = [];
       let total = 0;
 
       for (const key of keys) {
-        const descriptor = safeCall(
-          () => Object.getOwnPropertyDescriptor(value, key),
-          undefined,
-        );
+        const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
         if (!descriptor) continue;
         if (!options.showNonEnumerable && !descriptor.enumerable) continue;
 
@@ -2122,10 +1844,10 @@ interface HighlightState {
 
       if (iterator) {
         for (let index = 0; index < limit; index += 1) {
-          const step = safeCall(
-            () => iterator.next(),
-            { done: true, value: undefined } as IteratorResult<unknown>,
-          );
+          const step = safeCall(() => iterator.next(), {
+            done: true,
+            value: undefined,
+          } as IteratorResult<unknown>);
           if (step.done) break;
 
           if (kind === "map") {
@@ -2158,10 +1880,7 @@ interface HighlightState {
       };
     }
 
-    function createDomSource(
-      node: Node,
-      options: NormalizedInspectorOptions,
-    ): EntrySource {
+    function createDomSource(node: Node, options: NormalizedInspectorOptions): EntrySource {
       const entries: InspectorEntry[] = [];
       let total = 0;
 
@@ -2212,10 +1931,7 @@ interface HighlightState {
       };
     }
 
-    function createErrorSource(
-      value: Error,
-      options: NormalizedInspectorOptions,
-    ): EntrySource {
+    function createErrorSource(value: Error, options: NormalizedInspectorOptions): EntrySource {
       const preferred = ["name", "message", "stack", "cause", "errors"];
       const seen = new Set<PropertyKey>();
       const entries: InspectorEntry[] = [];
@@ -2227,10 +1943,7 @@ interface HighlightState {
       };
 
       for (const key of preferred) {
-        const ownDescriptor = safeCall(
-          () => Object.getOwnPropertyDescriptor(value, key),
-          undefined,
-        );
+        const ownDescriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
 
         if (ownDescriptor) {
           seen.add(key);
@@ -2239,10 +1952,10 @@ interface HighlightState {
         }
 
         if (key === "name" || key === "message") {
-          const result = safeCall(
-            () => ({ found: key in value, value: value[key] }),
-            { found: false, value: undefined as unknown },
-          );
+          const result = safeCall(() => ({ found: key in value, value: value[key] }), {
+            found: false,
+            value: undefined as unknown,
+          });
 
           if (result.found) {
             seen.add(key);
@@ -2255,10 +1968,7 @@ interface HighlightState {
 
       for (const key of keys) {
         if (seen.has(key)) continue;
-        const descriptor = safeCall(
-          () => Object.getOwnPropertyDescriptor(value, key),
-          undefined,
-        );
+        const descriptor = safeCall(() => Object.getOwnPropertyDescriptor(value, key), undefined);
         if (!descriptor) continue;
         if (!options.showNonEnumerable && !descriptor.enumerable) continue;
         add(createDataEntry(key, descriptor, value));
@@ -2303,10 +2013,7 @@ interface HighlightState {
       };
     }
 
-    function createEntrySource(
-      value: object,
-      options: NormalizedInspectorOptions,
-    ): EntrySource {
+    function createEntrySource(value: object, options: NormalizedInspectorOptions): EntrySource {
       let source: EntrySource;
 
       if (isDomNode(value)) source = createDomSource(value, options);
@@ -2321,10 +2028,7 @@ interface HighlightState {
       return withPrototype(source, value, options);
     }
 
-    function createPropertyKeyNode(
-      documentRef: Document,
-      key: RodInspectorPropertyKey,
-    ): HTMLSpanElement {
+    function createPropertyKeyNode(documentRef: Document, key: RodInspectorPropertyKey): HTMLSpanElement {
       const node = documentRef.createElement("span");
       node.className = "rod-inspector__key";
       node.textContent = safeKeyText(key);
@@ -2368,11 +2072,7 @@ interface HighlightState {
 
         if (didThrow) {
           wrapper.append(
-            createTextNode(
-              documentRef,
-              "[Getter threw] ",
-              "rod-token--warning",
-            ),
+            createTextNode(documentRef, "[Getter threw] ", "rod-token--warning"),
             renderValueInternal(thrown, documentRef, {
               ...context,
               depth: context.depth + 1,
@@ -2393,14 +2093,10 @@ interface HighlightState {
 
       wrapper.appendChild(button);
       if (entry.getter) {
-        wrapper.appendChild(
-          createTextNode(documentRef, "get", "rod-inspector__badge"),
-        );
+        wrapper.appendChild(createTextNode(documentRef, "get", "rod-inspector__badge"));
       }
       if (entry.setter) {
-        wrapper.appendChild(
-          createTextNode(documentRef, "set", "rod-inspector__badge"),
-        );
+        wrapper.appendChild(createTextNode(documentRef, "set", "rod-inspector__badge"));
       }
       return wrapper;
     }
@@ -2414,13 +2110,7 @@ interface HighlightState {
       row.className = "rod-inspector__row";
 
       if (!entry) {
-        row.appendChild(
-          createTextNode(
-            documentRef,
-            "[Property unavailable]",
-            "rod-token--warning",
-          ),
-        );
+        row.appendChild(createTextNode(documentRef, "[Property unavailable]", "rod-token--warning"));
         return row;
       }
 
@@ -2458,19 +2148,13 @@ interface HighlightState {
       if (entry.kind === "accessor") {
         row.appendChild(createAccessorValue(documentRef, entry, context));
       } else if (entry.kind === "empty") {
-        row.appendChild(
-          createTextNode(documentRef, "empty", "rod-inspector__meta"),
-        );
+        row.appendChild(createTextNode(documentRef, "empty", "rod-inspector__meta"));
       } else {
-        row.appendChild(
-          renderValueInternal(entry.value, documentRef, childContext),
-        );
+        row.appendChild(renderValueInternal(entry.value, documentRef, childContext));
       }
 
       if (entry.enumerable === false && entry.kind !== "prototype") {
-        row.appendChild(
-          createTextNode(documentRef, "non-enum", "rod-inspector__badge"),
-        );
+        row.appendChild(createTextNode(documentRef, "non-enum", "rod-inspector__badge"));
       }
       return row;
     }
@@ -2490,41 +2174,26 @@ interface HighlightState {
         return fragment;
       }
 
-      fragment.appendChild(
-        createTextNode(documentRef, getObjectPreview(value, options)),
-      );
+      fragment.appendChild(createTextNode(documentRef, getObjectPreview(value, options)));
       return fragment;
     }
 
-    function createRemainingMetaNode(
-      source: EntrySource,
-      documentRef: Document,
-    ): HTMLSpanElement | null {
+    function createRemainingMetaNode(source: EntrySource, documentRef: Document): HTMLSpanElement | null {
       if (!source.hasMore) return null;
 
-      const remaining =
-        source.total === null
-          ? null
-          : Math.max(0, source.total - source.count);
+      const remaining = source.total === null ? null : Math.max(0, source.total - source.count);
       const text =
         remaining === null
           ? "… more properties"
           : `… ${remaining} more ${remaining === 1 ? "property" : "properties"}`;
-      return createTextNode(
-        documentRef,
-        text,
-        "rod-inspector__meta rod-inspector__footer",
-      );
+      return createTextNode(documentRef, text, "rod-inspector__meta rod-inspector__footer");
     }
 
     function destroyVirtualizersWithin(root: ParentNode): void {
       const bodies: HTMLElement[] = [];
 
       const rootElement = safeCall(
-        () =>
-          (root as Node).nodeType === 1
-            ? (root as HTMLElement)
-            : null,
+        () => ((root as Node).nodeType === 1 ? (root as HTMLElement) : null),
         null,
       );
 
@@ -2533,9 +2202,7 @@ interface HighlightState {
       }
 
       for (const node of Array.from(
-        root.querySelectorAll<HTMLElement>(
-          '.rod-inspector__body[data-virtualized="true"]',
-        ),
+        root.querySelectorAll<HTMLElement>('.rod-inspector__body[data-virtualized="true"]'),
       )) {
         bodies.push(node);
       }
@@ -2564,10 +2231,7 @@ interface HighlightState {
       const windowNode = documentRef.createElement("div");
       const bottomSpacer = documentRef.createElement("div");
       const observedRows = new Map<Element, number>();
-      const rowCache = new Map<
-        number,
-        { node: HTMLDivElement; lastUsed: number }
-      >();
+      const rowCache = new Map<number, { node: HTMLDivElement; lastUsed: number }>();
       let resizeObserver: ResizeObserver | null = null;
       let bodyResizeObserver: ResizeObserver | null = null;
       let frame: FrameHandle | null = null;
@@ -2582,19 +2246,11 @@ interface HighlightState {
 
       heights.fill(estimatedHeight);
       body.dataset.virtualized = "true";
-      body.style.setProperty(
-        "--rod-inspector-virtual-max-height",
-        `${options.virtualMaxHeight}px`,
-      );
+      body.style.setProperty("--rod-inspector-virtual-max-height", `${options.virtualMaxHeight}px`);
       topSpacer.className = "rod-inspector__virtual-spacer";
       windowNode.className = "rod-inspector__virtual-window";
       bottomSpacer.className = "rod-inspector__virtual-spacer";
-      body.replaceChildren(
-        topSpacer,
-        windowNode,
-        bottomSpacer,
-        ...(footer ? [footer] : []),
-      );
+      body.replaceChildren(topSpacer, windowNode, bottomSpacer, ...(footer ? [footer] : []));
 
       const rebuildOffsets = (): void => {
         if (!offsetsDirty) return;
@@ -2642,10 +2298,7 @@ interface HighlightState {
         observedRows.clear();
       };
 
-      const getMeasuredHeight = (
-        row: Element,
-        resizeEntry?: ResizeObserverEntry,
-      ): number => {
+      const getMeasuredHeight = (row: Element, resizeEntry?: ResizeObserverEntry): number => {
         const borderBoxSize = resizeEntry?.borderBoxSize as unknown;
         const blockSize = Array.isArray(borderBoxSize)
           ? (borderBoxSize[0] as ResizeObserverSize | undefined)?.blockSize
@@ -2654,10 +2307,7 @@ interface HighlightState {
             : undefined;
         const measured = Number.isFinite(blockSize)
           ? Number(blockSize)
-          : safeCall(
-              () => row.getBoundingClientRect().height,
-              estimatedHeight,
-            );
+          : safeCall(() => row.getBoundingClientRect().height, estimatedHeight);
 
         return Math.max(estimatedHeight, Math.ceil(measured));
       };
@@ -2672,9 +2322,7 @@ interface HighlightState {
         frame = scheduler.request(() => render(force));
       };
 
-      const applyMeasurements = (
-        entries?: readonly ResizeObserverEntry[],
-      ): void => {
+      const applyMeasurements = (entries?: readonly ResizeObserverEntry[]): void => {
         if (destroyedVirtualizer) return;
 
         const anchorIndex = findIndexAtOffset(body.scrollTop);
@@ -2714,9 +2362,7 @@ interface HighlightState {
         const wrapper = documentRef.createElement("div");
         wrapper.className = "rod-inspector__virtual-row";
         wrapper.dataset.virtualIndex = String(index);
-        wrapper.appendChild(
-          createPropertyRow(documentRef, source.get(index), context),
-        );
+        wrapper.appendChild(createPropertyRow(documentRef, source.get(index), context));
         return wrapper;
       };
 
@@ -2758,10 +2404,7 @@ interface HighlightState {
         if (destroyedVirtualizer || count <= 0) return;
 
         const scrollTop = body.scrollTop;
-        const viewportHeight = Math.max(
-          estimatedHeight,
-          body.clientHeight || options.virtualMaxHeight,
-        );
+        const viewportHeight = Math.max(estimatedHeight, body.clientHeight || options.virtualMaxHeight);
         const firstVisible = findIndexAtOffset(scrollTop);
         const lastVisible = findIndexAtOffset(scrollTop + viewportHeight);
         const start = Math.max(0, firstVisible - overscan);
@@ -2787,10 +2430,7 @@ interface HighlightState {
 
         windowNode.appendChild(fragment);
         topSpacer.style.height = `${offsetFor(start)}px`;
-        bottomSpacer.style.height = `${Math.max(
-          0,
-          totalHeight() - offsetFor(end),
-        )}px`;
+        bottomSpacer.style.height = `${Math.max(0, totalHeight() - offsetFor(end))}px`;
         pruneRowCache(visibleIndexes);
 
         if (resizeObserver) {
@@ -2803,32 +2443,30 @@ interface HighlightState {
       const handleScroll = (): void => scheduleRender(false);
       const ResizeObserverCtor = safeCall(
         () =>
-          (windowRef as unknown as {
-            ResizeObserver?: typeof ResizeObserver;
-          }).ResizeObserver,
+          (
+            windowRef as unknown as {
+              ResizeObserver?: typeof ResizeObserver;
+            }
+          ).ResizeObserver,
         undefined,
       );
 
       if (typeof ResizeObserverCtor === "function") {
-        const rowObserver = new ResizeObserverCtor(
-          (entries: ResizeObserverEntry[]) => {
-            applyMeasurements(entries);
-          },
-        );
+        const rowObserver = new ResizeObserverCtor((entries: ResizeObserverEntry[]) => {
+          applyMeasurements(entries);
+        });
         resizeObserver = rowObserver;
 
-        const containerObserver = new ResizeObserverCtor(
-          (entries: ResizeObserverEntry[]) => {
-            const rect = entries[0]?.contentRect;
-            const width = Math.round(rect?.width ?? body.clientWidth);
-            const height = Math.round(rect?.height ?? body.clientHeight);
+        const containerObserver = new ResizeObserverCtor((entries: ResizeObserverEntry[]) => {
+          const rect = entries[0]?.contentRect;
+          const width = Math.round(rect?.width ?? body.clientWidth);
+          const height = Math.round(rect?.height ?? body.clientHeight);
 
-            if (width === lastBodyWidth && height === lastBodyHeight) return;
-            lastBodyWidth = width;
-            lastBodyHeight = height;
-            scheduleRender(true);
-          },
-        );
+          if (width === lastBodyWidth && height === lastBodyHeight) return;
+          lastBodyWidth = width;
+          lastBodyHeight = height;
+          scheduleRender(true);
+        });
         bodyResizeObserver = containerObserver;
         containerObserver.observe(body);
       }
@@ -2876,9 +2514,7 @@ interface HighlightState {
         body.replaceChildren(
           createTextNode(
             documentRef,
-            context.options.inspectItems === 0
-              ? "Inspection limit is 0"
-              : "No inspectable properties",
+            context.options.inspectItems === 0 ? "Inspection limit is 0" : "No inspectable properties",
             "rod-inspector__meta",
           ),
           ...(footer ? [footer] : []),
@@ -2886,10 +2522,7 @@ interface HighlightState {
         return null;
       }
 
-      if (
-        context.options.virtualize &&
-        source.count >= context.options.virtualizeAfter
-      ) {
+      if (context.options.virtualize && source.count >= context.options.virtualizeAfter) {
         return createVirtualList(body, source, documentRef, context, footer);
       }
 
@@ -2898,9 +2531,7 @@ interface HighlightState {
       const fragment = documentRef.createDocumentFragment();
 
       for (let index = 0; index < source.count; index += 1) {
-        fragment.appendChild(
-          createPropertyRow(documentRef, source.get(index), context),
-        );
+        fragment.appendChild(createPropertyRow(documentRef, source.get(index), context));
       }
       if (footer) fragment.appendChild(footer);
       body.appendChild(fragment);
@@ -2921,9 +2552,7 @@ interface HighlightState {
       details.className = "rod-inspector";
       details.dataset.theme = context.options.theme;
       body.className = "rod-inspector__body";
-      summary.appendChild(
-        createInspectorSummary(value, documentRef, context.options),
-      );
+      summary.appendChild(createInspectorSummary(value, documentRef, context.options));
       details.append(summary, body);
 
       const initialize = (): void => {
@@ -2975,11 +2604,7 @@ interface HighlightState {
       }
 
       if (context.depth >= context.options.inspectDepth) {
-        return createTextNode(
-          documentRef,
-          getObjectPreview(value, context.options),
-          "rod-token--meta",
-        );
+        return createTextNode(documentRef, getObjectPreview(value, context.options), "rod-token--meta");
       }
 
       const nextAncestors = new Set(context.ancestors);
@@ -3005,9 +2630,7 @@ interface HighlightState {
         ...baseOptions,
         ...(context.options ?? {}),
       });
-      const depth = Number.isFinite(context.depth)
-        ? Math.max(0, Math.trunc(Number(context.depth)))
-        : 0;
+      const depth = Number.isFinite(context.depth) ? Math.max(0, Math.trunc(Number(context.depth))) : 0;
       const ancestors = new Set<object>();
 
       for (const ancestor of context.ancestors ?? []) {
@@ -3067,11 +2690,7 @@ interface HighlightState {
     create: createInspector,
     createStyle,
     ensureStyle,
-    render(
-      value: unknown,
-      documentRef?: Document,
-      context?: RodInspectorRenderContext,
-    ) {
+    render(value: unknown, documentRef?: Document, context?: RodInspectorRenderContext) {
       return getDefaultRuntime().render(value, documentRef, context);
     },
     getObjectPreview(value: unknown, options?: RodInspectorOptions) {

@@ -1,4 +1,5 @@
-:root, .rm-theme-root {
+:root,
+.rm-theme-root {
   color-scheme: light dark;
   --rm-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   --rm-bg: color-mix(in srgb, Canvas 94%, transparent);
@@ -12,8 +13,8 @@
   --rm-danger: #ff453a;
   --rm-success: #30d158;
   --rm-radius: 26px;
-  --rm-shadow: 0 28px 90px rgba(0, 0, 0, .24), 0 10px 30px rgba(0, 0, 0, .14);
-  --rm-ease: cubic-bezier(.2, .8, .2, 1);
+  --rm-shadow: 0 28px 90px rgba(0, 0, 0, 0.24), 0 10px 30px rgba(0, 0, 0, 0.14);
+  --rm-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --rm-z: 2147482500;
   --rm-width: 640px;
 }

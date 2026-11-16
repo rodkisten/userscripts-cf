@@ -13,7 +13,11 @@ export function runtimeHelpers() {
     enforce: "pre",
     transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || /node_modules|\/vendor\//.test(id)) return null;
-      const kind = /\.tsx(?:\?|$)/.test(id) ? ts.ScriptKind.TSX : /\.jsx(?:\?|$)/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
+      const kind = /\.tsx(?:\?|$)/.test(id)
+        ? ts.ScriptKind.TSX
+        : /\.jsx(?:\?|$)/.test(id)
+          ? ts.ScriptKind.JSX
+          : ts.ScriptKind.TS;
       if (id.startsWith("\\0") || id.startsWith("\u0000")) return null;
       const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
       const edits = [];
@@ -24,7 +28,9 @@ export function runtimeHelpers() {
         const lineStart = code.lastIndexOf("\n", start - 1) + 1;
         const lineEnd = code.indexOf("\n", node.end);
         const trailing = code.slice(node.end, lineEnd < 0 ? code.length : lineEnd);
-        return /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start)) || /^\s*\/\/[^\n]*@keep\b/.test(trailing);
+        return (
+          /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start)) || /^\s*\/\/[^\n]*@keep\b/.test(trailing)
+        );
       };
       // Collect declarations before visiting expressions: let/const/var and function
       // declarations shadow globals even when declared later in the scope.
@@ -44,9 +50,11 @@ export function runtimeHelpers() {
         }
         const collect = (child) => {
           if (ts.isVariableDeclaration(child)) add(child.name);
-          if ((ts.isFunctionDeclaration(child) || ts.isClassDeclaration(child)) && child.name) add(child.name);
+          if ((ts.isFunctionDeclaration(child) || ts.isClassDeclaration(child)) && child.name)
+            add(child.name);
           // Do not cross lexical scope boundaries.
-          if (child !== node && (ts.isFunctionLike(child) || ts.isBlock(child) || ts.isClassLike(child))) return;
+          if (child !== node && (ts.isFunctionLike(child) || ts.isBlock(child) || ts.isClassLike(child)))
+            return;
           ts.forEachChild(child, collect);
         };
         if (ts.isSourceFile(node) || ts.isBlock(node) || ts.isFunctionLike(node)) {
@@ -61,12 +69,19 @@ export function runtimeHelpers() {
           if (ts.isVariableDeclaration(child) && ts.isIdentifier(child.name)) {
             const initializer = child.initializer;
             const declared = child.type?.getText(source) ?? "";
-            const fromQuery = initializer && ts.isCallExpression(initializer) &&
+            const fromQuery =
+              initializer &&
+              ts.isCallExpression(initializer) &&
               ts.isPropertyAccessExpression(initializer.expression) &&
-              ["querySelector", "getElementById", "createElement"].includes(initializer.expression.name.text) &&
+              ["querySelector", "getElementById", "createElement"].includes(
+                initializer.expression.name.text,
+              ) &&
               ts.isIdentifier(initializer.expression.expression) &&
               initializer.expression.expression.text === "document";
-            if (fromQuery || /^(?:HTMLElement|Element|SVGElement|HTML\\w+Element)(?:\\s*\\|\\s*null)?$/.test(declared)) {
+            if (
+              fromQuery ||
+              /^(?:HTMLElement|Element|SVGElement|HTML\\w+Element)(?:\\s*\\|\\s*null)?$/.test(declared)
+            ) {
               names.add(child.name.text);
             }
           }
@@ -84,15 +99,31 @@ export function runtimeHelpers() {
           const next = explicit ? first.name.text : local.has(contextName) ? null : contextName;
           const scope = new Set([...shadowed, ...local]);
           if (explicit) scope.delete(first.name.text);
-          ts.forEachChild(node, (child) => walk(child, next, scope, blocked || keep(node), new Set([...elements, ...elementBindings(node)])));
+          ts.forEachChild(node, (child) =>
+            walk(child, next, scope, blocked || keep(node), new Set([...elements, ...elementBindings(node)])),
+          );
           return;
         }
         if (ts.isBlock(node) || ts.isSourceFile(node)) {
           const scope = new Set([...shadowed, ...bindings(node)]);
-          ts.forEachChild(node, (child) => walk(child, contextName, scope, blocked || keep(node), new Set([...elements, ...elementBindings(node)])));
+          ts.forEachChild(node, (child) =>
+            walk(
+              child,
+              contextName,
+              scope,
+              blocked || keep(node),
+              new Set([...elements, ...elementBindings(node)]),
+            ),
+          );
           return;
         }
-        if (contextName && !shadowed.has(contextName) && !blocked && ts.isCallExpression(node) && !keep(node)) {
+        if (
+          contextName &&
+          !shadowed.has(contextName) &&
+          !blocked &&
+          ts.isCallExpression(node) &&
+          !keep(node)
+        ) {
           const callee = node.expression;
           let replacement;
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
@@ -100,48 +131,74 @@ export function runtimeHelpers() {
           }
           // Preserve the native EventTarget operation, while tracking lifecycle
           // only for explicit window/document targets. Unknown receivers remain untouched.
-          if (ts.isPropertyAccessExpression(callee) &&
-              ["addEventListener", "removeEventListener"].includes(callee.name.text) &&
-              ts.isIdentifier(callee.expression) &&
-              (["window", "document"].includes(callee.expression.text) ||
-                elements.has(callee.expression.text)) &&
-              (!shadowed.has(callee.expression.text) || elements.has(callee.expression.text))) {
+          if (
+            ts.isPropertyAccessExpression(callee) &&
+            ["addEventListener", "removeEventListener"].includes(callee.name.text) &&
+            ts.isIdentifier(callee.expression) &&
+            (["window", "document"].includes(callee.expression.text) ||
+              elements.has(callee.expression.text)) &&
+            (!shadowed.has(callee.expression.text) || elements.has(callee.expression.text))
+          ) {
             const operation = callee.name.text === "addEventListener" ? "add" : "remove";
-            replacement = contextName + ".events.dom." + operation + ".bind(null, " + callee.expression.text + ")";
+            replacement =
+              contextName + ".events.dom." + operation + ".bind(null, " + callee.expression.text + ")";
           }
           if (!replacement && ts.isPropertyAccessExpression(callee)) {
             const receiver = callee.expression;
             const method = callee.name.text;
             if (ts.isIdentifier(receiver)) {
-              if (elements.has(receiver.text) && (method === "querySelector" || method === "querySelectorAll")) {
+              if (
+                elements.has(receiver.text) &&
+                (method === "querySelector" || method === "querySelectorAll")
+              ) {
                 replacement = contextName + ".dom.scope(" + receiver.text + ")." + method;
               }
-              if (!shadowed.has(receiver.text) && receiver.text === "document" && method === "querySelector") replacement = contextName + ".dom.querySelector";
-              if (!shadowed.has(receiver.text) && receiver.text === "document" && method === "querySelectorAll") replacement = contextName + ".dom.querySelectorAll";
-              if (!shadowed.has(receiver.text) && receiver.text === "window" && method === "fetch") replacement = contextName + ".http.fetch";
+              if (!shadowed.has(receiver.text) && receiver.text === "document" && method === "querySelector")
+                replacement = contextName + ".dom.querySelector";
+              if (
+                !shadowed.has(receiver.text) &&
+                receiver.text === "document" &&
+                method === "querySelectorAll"
+              )
+                replacement = contextName + ".dom.querySelectorAll";
+              if (!shadowed.has(receiver.text) && receiver.text === "window" && method === "fetch")
+                replacement = contextName + ".http.fetch";
             }
           }
-          if (replacement) edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
+          if (replacement)
+            edits.push({ start: callee.getStart(source), end: callee.end, value: replacement });
         }
         // Rewrite GM references as well as calls, including optional chaining and aliases.
         // Avoid declarations, property keys and shorthand object members.
         if (contextName && !shadowed.has(contextName) && !blocked && !keep(node)) {
-          if (ts.isIdentifier(node) && !shadowed.has(node.text) &&
-              (node.text === "GM" || /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(node.text))) {
+          if (
+            ts.isIdentifier(node) &&
+            !shadowed.has(node.text) &&
+            (node.text === "GM" || /^GM_[A-Za-z][A-Za-z0-9_]*$/.test(node.text))
+          ) {
             const parent = node.parent;
-            const isName = (ts.isVariableDeclaration(parent) || ts.isParameter(parent) ||
-              ts.isFunctionDeclaration(parent) || ts.isClassDeclaration(parent) ||
-              ts.isImportSpecifier(parent) || ts.isPropertyAssignment(parent) ||
-              ts.isPropertyAccessExpression(parent) || ts.isMethodDeclaration(parent) ||
-              ts.isPropertyDeclaration(parent) || ts.isBindingElement(parent)) && parent.name === node;
+            const isName =
+              (ts.isVariableDeclaration(parent) ||
+                ts.isParameter(parent) ||
+                ts.isFunctionDeclaration(parent) ||
+                ts.isClassDeclaration(parent) ||
+                ts.isImportSpecifier(parent) ||
+                ts.isPropertyAssignment(parent) ||
+                ts.isPropertyAccessExpression(parent) ||
+                ts.isMethodDeclaration(parent) ||
+                ts.isPropertyDeclaration(parent) ||
+                ts.isBindingElement(parent)) &&
+              parent.name === node;
             const isShorthand = ts.isShorthandPropertyAssignment(parent);
             const isDeclaration = ts.isImportClause(parent) || ts.isNamespaceImport(parent);
             if (!isName && !isShorthand && !isDeclaration) {
               edits.push({
                 start: node.getStart(source),
                 end: node.end,
-                value: node.text === "GM" ? contextName + ".gm.modern" :
-                  contextName + ".gm.legacy." + node.text.slice(3),
+                value:
+                  node.text === "GM"
+                    ? contextName + ".gm.modern"
+                    : contextName + ".gm.legacy." + node.text.slice(3),
               });
             }
           }

@@ -4,9 +4,9 @@ import {
   resolveFieldValue,
   validateField,
   transformFieldValue,
-} from '../../../../form-controls';
-import type { BaseField as FormBaseField, FieldRuntime } from '../../../../form-controls';
-import type { BaseField, RodMenuContext, RodMenuField } from '../../../types';
+} from "../../../../form-controls";
+import type { BaseField as FormBaseField, FieldRuntime } from "../../../../form-controls";
+import type { BaseField, RodMenuContext, RodMenuField } from "../../../types";
 
 /**
  * Bridge between legacy RodMenu field callbacks and the independent
@@ -49,10 +49,7 @@ export function isMenuFieldDisabled(
   return isFieldDisabled(runtime(field, context, onError));
 }
 
-export function resolveMenuFieldValue(
-  field: RodMenuField,
-  context: RodMenuContext<any>,
-): unknown {
+export function resolveMenuFieldValue(field: RodMenuField, context: RodMenuContext<any>): unknown {
   return resolveFieldValue(toFormControlField(field), context.values);
 }
 

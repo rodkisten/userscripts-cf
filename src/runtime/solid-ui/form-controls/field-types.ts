@@ -30,9 +30,9 @@ export const SHARED_FIELD_TYPES = [
   "button",
   "html",
   "divider",
-  "custom"
+  "custom",
 ] as const;
-export type SharedFieldType = typeof SHARED_FIELD_TYPES[number];
+export type SharedFieldType = (typeof SHARED_FIELD_TYPES)[number];
 export function isSharedFieldType(type: string): type is SharedFieldType {
   return (SHARED_FIELD_TYPES as readonly string[]).includes(type);
 }

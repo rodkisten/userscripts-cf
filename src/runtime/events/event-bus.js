@@ -47,8 +47,13 @@ export function createEventBus({ namespace = "", signal, onDiagnostic = () => {}
       if (!set.has(callback)) continue;
       if (item.once) off(name, callback);
       count++;
-      try { callback(detail); }
-      catch (error) { queueMicrotask(() => { throw error; }); }
+      try {
+        callback(detail);
+      } catch (error) {
+        queueMicrotask(() => {
+          throw error;
+        });
+      }
     }
     return count;
   }
@@ -59,8 +64,14 @@ export function createEventBus({ namespace = "", signal, onDiagnostic = () => {}
     if (closed) return Promise.reject(new Error("Event bus disposed"));
     return new Promise((resolve, reject) => {
       let timer;
-      const stop = once(name, (detail) => { cleanup(); resolve(detail); });
-      const abort = () => { cleanup(); reject(waitSignal.reason || new Error("Aborted")); };
+      const stop = once(name, (detail) => {
+        cleanup();
+        resolve(detail);
+      });
+      const abort = () => {
+        cleanup();
+        reject(waitSignal.reason || new Error("Aborted"));
+      };
       function cleanup() {
         stop();
         if (timer) clearTimeout(timer);
@@ -68,7 +79,11 @@ export function createEventBus({ namespace = "", signal, onDiagnostic = () => {}
       }
       if (waitSignal?.aborted) return abort();
       waitSignal?.addEventListener("abort", abort, { once: true });
-      if (timeout > 0) timer = setTimeout(() => { cleanup(); reject(new Error("Event timeout")); }, timeout);
+      if (timeout > 0)
+        timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("Event timeout"));
+        }, timeout);
     });
   }
   function dispose() {
@@ -80,7 +95,15 @@ export function createEventBus({ namespace = "", signal, onDiagnostic = () => {}
     closed = true;
   }
   signal?.addEventListener("abort", dispose, { once: true });
-  return Object.freeze({ on, once, off, emit, waitFor, dispose, get size() {
-    return [...listeners.values()].reduce((total, set) => total + set.size, 0);
-  } });
+  return Object.freeze({
+    on,
+    once,
+    off,
+    emit,
+    waitFor,
+    dispose,
+    get size() {
+      return [...listeners.values()].reduce((total, set) => total + set.size, 0);
+    },
+  });
 }

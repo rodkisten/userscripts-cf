@@ -8,7 +8,13 @@ import { registerShadowStyles } from "./shadow-mount.tsx";
 export function mountPoint(
   target: Node,
   component: () => Element,
-  options: { before?: Node | null; id?: string; tag?: string; shadow?: boolean; styles?: readonly string[] } = {},
+  options: {
+    before?: Node | null;
+    id?: string;
+    tag?: string;
+    shadow?: boolean;
+    styles?: readonly string[];
+  } = {},
 ) {
   const host = document.createElement(options.tag || "div");
   host.dataset.solidMount = "";

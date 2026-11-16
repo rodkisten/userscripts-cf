@@ -1,20 +1,20 @@
-import type { JSX } from 'solid-js';
+import type { JSX } from "solid-js";
 
 export type Awaitable<T> = T | Promise<T>;
 export type AnyRecord = Record<string, unknown>;
 export type FieldValue = unknown;
 
-export type Presentation = 'bottom-sheet' | 'modal' | 'drawer' | 'popover' | 'auto';
-export type DrawerSide = 'left' | 'right' | 'top' | 'bottom';
-export type SurfaceSize = 'sm' | 'md' | 'lg' | 'xl' | 'fullscreen';
-export type ActionVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
-export type ActionRole = 'submit' | 'cancel' | 'destructive' | 'secondary' | 'custom';
-export type ErrorMode = 'inline' | 'toaster' | 'both' | 'silent';
-export type PersistTrigger = 'change' | 'submit' | 'close';
-export type BuiltinStorageName = 'local' | 'session';
-export type AnchorAlign = 'start' | 'center' | 'end';
-export type MediaKind = 'video' | 'photo' | 'audio' | 'unknown';
-export type ProviderState = 'idle' | 'loading' | 'success' | 'error' | 'skipped';
+export type Presentation = "bottom-sheet" | "modal" | "drawer" | "popover" | "auto";
+export type DrawerSide = "left" | "right" | "top" | "bottom";
+export type SurfaceSize = "sm" | "md" | "lg" | "xl" | "fullscreen";
+export type ActionVariant = "primary" | "secondary" | "ghost" | "danger" | "success";
+export type ActionRole = "submit" | "cancel" | "destructive" | "secondary" | "custom";
+export type ErrorMode = "inline" | "toaster" | "both" | "silent";
+export type PersistTrigger = "change" | "submit" | "close";
+export type BuiltinStorageName = "local" | "session";
+export type AnchorAlign = "start" | "center" | "end";
+export type MediaKind = "video" | "photo" | "audio" | "unknown";
+export type ProviderState = "idle" | "loading" | "success" | "error" | "skipped";
 
 export interface RodMenuStorageAdapter {
   getItem(key: string): Awaitable<string | null>;
@@ -37,7 +37,10 @@ export interface RodMenuPersistenceConfig<TValues extends AnyRecord = AnyRecord,
   persistOn?: PersistTrigger | readonly PersistTrigger[];
   version?: string | number;
   transform?: RodMenuPersistenceTransform<TValues, TStored>;
-  merge?: 'persisted-over-initial' | 'initial-over-persisted' | ((initial: TValues, persisted: Partial<TValues>) => TValues);
+  merge?:
+    | "persisted-over-initial"
+    | "initial-over-persisted"
+    | ((initial: TValues, persisted: Partial<TValues>) => TValues);
 }
 
 export interface RodMenuStoreConfig<TValues extends AnyRecord = AnyRecord> {
@@ -45,7 +48,7 @@ export interface RodMenuStoreConfig<TValues extends AnyRecord = AnyRecord> {
 }
 
 export interface RodMenuStoreHandle<TValues extends AnyRecord = AnyRecord> {
-  readonly persistence: 'disabled' | 'idle' | 'hydrating' | 'ready' | 'saving' | 'error';
+  readonly persistence: "disabled" | "idle" | "hydrating" | "ready" | "saving" | "error";
   readonly ready: Promise<void>;
   snapshot(): TValues;
   persist(): Promise<void>;
@@ -120,7 +123,7 @@ export interface BaseField {
   readonly?: boolean;
   hidden?: boolean;
   className?: string;
-  chrome?: 'default' | 'bare';
+  chrome?: "default" | "bare";
   value?: FieldValue;
   defaultValue?: FieldValue;
   autoFocus?: boolean;
@@ -128,14 +131,18 @@ export interface BaseField {
   attributes?: Record<string, string | number | boolean | null | undefined>;
   visibleWhen?: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean;
   disabledWhen?: (values: Readonly<AnyRecord>, context: RodMenuContext<any>) => boolean;
-  validate?: (value: FieldValue, values: Readonly<AnyRecord>, context: RodMenuContext<any>) => Awaitable<string | null | undefined>;
+  validate?: (
+    value: FieldValue,
+    values: Readonly<AnyRecord>,
+    context: RodMenuContext<any>,
+  ) => Awaitable<string | null | undefined>;
   transform?: (value: FieldValue, context: RodMenuContext<any>) => FieldValue;
   onChange?: (value: FieldValue, context: RodMenuContext<any>) => void;
   trailingAction?: RodMenuTrailingAction;
 }
 
 export interface TextLikeField extends BaseField {
-  type: 'text' | 'email' | 'password' | 'search' | 'url' | 'tel';
+  type: "text" | "email" | "password" | "search" | "url" | "tel";
   minLength?: number;
   maxLength?: number;
   pattern?: string;
@@ -145,22 +152,22 @@ export interface TextLikeField extends BaseField {
 }
 
 export interface NumberField extends BaseField {
-  type: 'number';
+  type: "number";
   min?: number;
   max?: number;
-  step?: number | 'any';
+  step?: number | "any";
 }
 
 export interface TextareaField extends BaseField {
-  type: 'textarea';
+  type: "textarea";
   rows?: number;
   minLength?: number;
   maxLength?: number;
-  resize?: 'none' | 'vertical' | 'horizontal' | 'both';
+  resize?: "none" | "vertical" | "horizontal" | "both";
 }
 
 export interface SelectField extends BaseField {
-  type: 'select';
+  type: "select";
   options: readonly OptionItem[];
   searchable?: boolean;
   searchPlaceholder?: string;
@@ -169,7 +176,7 @@ export interface SelectField extends BaseField {
 }
 
 export interface MultiSelectField extends BaseField {
-  type: 'multiselect';
+  type: "multiselect";
   options: readonly OptionItem[];
   searchable?: boolean;
   searchPlaceholder?: string;
@@ -177,23 +184,23 @@ export interface MultiSelectField extends BaseField {
 }
 
 export interface RadioField extends BaseField {
-  type: 'radio';
+  type: "radio";
   options: readonly OptionItem[];
-  direction?: 'horizontal' | 'vertical';
+  direction?: "horizontal" | "vertical";
 }
 
 export interface CheckboxGroupField extends BaseField {
-  type: 'checkbox-group';
+  type: "checkbox-group";
   options: readonly OptionItem[];
-  direction?: 'horizontal' | 'vertical';
+  direction?: "horizontal" | "vertical";
 }
 
 export interface BooleanField extends BaseField {
-  type: 'checkbox' | 'switch';
+  type: "checkbox" | "switch";
 }
 
 export interface RangeField extends BaseField {
-  type: 'range';
+  type: "range";
   min?: number;
   max?: number;
   step?: number;
@@ -201,69 +208,69 @@ export interface RangeField extends BaseField {
 }
 
 export interface DateLikeField extends BaseField {
-  type: 'date' | 'datetime-local' | 'time' | 'month' | 'week';
+  type: "date" | "datetime-local" | "time" | "month" | "week";
   min?: string;
   max?: string;
   step?: number;
 }
 
 export interface ColorField extends BaseField {
-  type: 'color';
+  type: "color";
   presets?: readonly string[];
 }
 
 export interface FileField extends BaseField {
-  type: 'file';
+  type: "file";
   accept?: string;
   multiple?: boolean;
   capture?: string;
 }
 
 export interface HiddenField extends BaseField {
-  type: 'hidden';
+  type: "hidden";
 }
 
 export interface SegmentedField extends BaseField {
-  type: 'segmented';
+  type: "segmented";
   options: readonly OptionItem[];
 }
 
 export interface RatingField extends BaseField {
-  type: 'rating';
+  type: "rating";
   max?: number;
   allowZero?: boolean;
 }
 
 export interface ButtonField extends BaseField {
-  type: 'button';
+  type: "button";
   text?: string;
   variant?: ActionVariant;
   onPress?: (context: RodMenuContext<any>) => Awaitable<void>;
 }
 
 export interface HtmlField extends BaseField {
-  type: 'html';
+  type: "html";
   html: string | ((context: RodMenuContext<any>) => string);
 }
 
 export interface DividerField extends BaseField {
-  type: 'divider';
+  type: "divider";
 }
 
 export interface CustomField extends BaseField {
-  type: 'custom';
+  type: "custom";
   render: (context: RodMenuContext<any>, field: CustomField) => JSX.Element;
 }
 
 export interface MediaPreviewField extends BaseField {
-  type: 'media-preview';
+  type: "media-preview";
   item: RodMenuMediaItem | ((context: RodMenuContext<any>) => RodMenuMediaItem);
   compact?: boolean;
   showSource?: boolean;
 }
 
 export interface MediaPickerField extends BaseField {
-  type: 'media-picker';
+  type: "media-picker";
   items: readonly RodMenuMediaItem[] | ((context: RodMenuContext<any>) => readonly RodMenuMediaItem[]);
   selectAll?: boolean;
   minSelected?: number;
@@ -272,26 +279,28 @@ export interface MediaPickerField extends BaseField {
 }
 
 export interface ProviderStatusField extends BaseField {
-  type: 'provider-status';
-  providers: readonly RodMenuProviderItem[] | ((context: RodMenuContext<any>) => readonly RodMenuProviderItem[]);
+  type: "provider-status";
+  providers:
+    readonly RodMenuProviderItem[] | ((context: RodMenuContext<any>) => readonly RodMenuProviderItem[]);
 }
 
 export interface RequestLogField extends BaseField {
-  type: 'request-log';
-  entries: readonly RodMenuRequestEntry[] | ((context: RodMenuContext<any>) => readonly RodMenuRequestEntry[]);
+  type: "request-log";
+  entries:
+    readonly RodMenuRequestEntry[] | ((context: RodMenuContext<any>) => readonly RodMenuRequestEntry[]);
   maxHeight?: number;
   onSelect?: (entry: RodMenuRequestEntry, context: RodMenuContext<any>) => void;
 }
 
 export interface DebugJsonField extends BaseField {
-  type: 'debug-json';
+  type: "debug-json";
   data: unknown | ((context: RodMenuContext<any>) => unknown);
   pretty?: boolean;
   maxHeight?: number;
 }
 
 export interface ChannelPickerField extends BaseField {
-  type: 'channel-picker';
+  type: "channel-picker";
   options: readonly OptionItem[];
   multiple?: boolean;
   searchable?: boolean;
@@ -367,7 +376,7 @@ export interface RodMenuStackConfig {
   maxVisible: number;
   offsetPx: number;
   scaleStep: number;
-  backdropClick: 'previous' | 'dismiss';
+  backdropClick: "previous" | "dismiss";
 }
 
 export interface RodMenuKeyboardConfig {
@@ -375,7 +384,7 @@ export interface RodMenuKeyboardConfig {
   preserveFocusOnHydrate: boolean;
   keepFocusedFieldVisible: boolean;
   focusScrollPaddingPx: number;
-  autoFocus: 'desktop' | 'always' | 'explicit' | 'never';
+  autoFocus: "desktop" | "always" | "explicit" | "never";
 }
 
 export interface RodMenuGestureConfig {
@@ -425,7 +434,10 @@ export interface RodMenuSchema<TValues extends AnyRecord = AnyRecord> {
   className?: string;
   submitOnEnter?: boolean;
   errorMode?: ErrorMode;
-  validate?: (values: Readonly<TValues>, context: RodMenuContext<TValues>) => Awaitable<Record<string, string> | string | null | undefined>;
+  validate?: (
+    values: Readonly<TValues>,
+    context: RodMenuContext<TValues>,
+  ) => Awaitable<Record<string, string> | string | null | undefined>;
   onOpen?: (context: RodMenuContext<TValues>) => void;
   onHydrate?: (context: RodMenuContext<TValues>) => void;
   onChange?: (context: RodMenuContext<TValues>) => void;
@@ -437,10 +449,10 @@ export interface RodMenuSchema<TValues extends AnyRecord = AnyRecord> {
 }
 
 export interface RodMenuResult<TValues extends AnyRecord = AnyRecord> {
-  action: string | 'dismiss';
+  action: string | "dismiss";
   values: TValues;
   data?: unknown;
-  reason?: 'action' | 'backdrop' | 'escape' | 'swipe' | 'api' | 'replaced';
+  reason?: "action" | "backdrop" | "escape" | "swipe" | "api" | "replaced";
 }
 
 export interface RodMenuContext<TValues extends AnyRecord = AnyRecord> {
@@ -456,7 +468,7 @@ export interface RodMenuContext<TValues extends AnyRecord = AnyRecord> {
   reset(): void;
   validate(): Promise<boolean>;
   close(data?: unknown): void;
-  dismiss(reason?: RodMenuResult['reason']): void;
+  dismiss(reason?: RodMenuResult["reason"]): void;
   setLoading(loading: boolean): void;
   setActionLoading(actionId: string, loading: boolean): void;
   setFieldError(name: string, error: string | null): void;
@@ -475,7 +487,7 @@ export interface RodMenuHandle<TValues extends AnyRecord = AnyRecord> {
   readonly store: RodMenuStoreHandle<TValues>;
   readonly context: RodMenuContext<TValues>;
   close(data?: unknown): void;
-  dismiss(reason?: RodMenuResult['reason']): void;
+  dismiss(reason?: RodMenuResult["reason"]): void;
   update(patch: Partial<RodMenuSchema<TValues>>): void;
   setValue(name: string, value: unknown): void;
   setValues(values: Partial<TValues>): void;

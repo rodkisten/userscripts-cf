@@ -79,12 +79,21 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
     { id: "rod-actions-hub", shadow: true, styles: [css] },
   );
   window.__RodActions = hub;
-  const clipboard = (window as Window & { __RodClipboard?: Parameters<typeof ClipboardPanel>[0]["clipboard"] }).__RodClipboard;
+  const clipboard = (
+    window as Window & { __RodClipboard?: Parameters<typeof ClipboardPanel>[0]["clipboard"] }
+  ).__RodClipboard;
   if (clipboard) {
     hub.register({
       id: "clipboard",
       title: "Clipboard",
-      tabs: [{ id: "history", title: "Histórico", icon: "▤", render: () => <ClipboardPanel clipboard={clipboard} /> }],
+      tabs: [
+        {
+          id: "history",
+          title: "Histórico",
+          icon: "▤",
+          render: () => <ClipboardPanel clipboard={clipboard} />,
+        },
+      ],
     });
   }
   return hub;

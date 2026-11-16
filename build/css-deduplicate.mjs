@@ -27,7 +27,10 @@ export function deduplicateCSS(css) {
       if (node.parent?.type === "atrule" && /^(scope|starting-style)$/i.test(node.parent.name)) continue;
       if (node.nodes.some((child) => child.type !== "decl")) continue;
       const signature = (rule) =>
-        rule.nodes.map((decl) => [decl.prop, decl.value, decl.important]).map(JSON.stringify).join(";");
+        rule.nodes
+          .map((decl) => [decl.prop, decl.value, decl.important])
+          .map(JSON.stringify)
+          .join(";");
       if (signature(previous) !== signature(node)) continue;
       // Keep both selectors: they can carry independent JS behavior.
       previous.selector += "," + node.selector;

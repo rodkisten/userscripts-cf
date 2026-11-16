@@ -22,11 +22,13 @@ describe("inspectable build artifacts", () => {
     expect(audit.summary.repeatedRenderedModules).toBe(audit.repeatedRenderedModules.length);
     for (const entry of audit.repeatedRenderedModules) {
       expect(entry.bundles.length).toBeGreaterThan(1);
-      expect(entry.aggregateRenderedBytes).toBe(entry.bundles.reduce((sum, item) => sum + item.renderedBytes, 0));
+      expect(entry.aggregateRenderedBytes).toBe(
+        entry.bundles.reduce((sum, item) => sum + item.renderedBytes, 0),
+      );
       expect(entry.maxRenderedBytes).toBe(Math.max(...entry.bundles.map((item) => item.renderedBytes)));
     }
     expect(audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)).toEqual(
-      [...audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)].sort((a, b) => b - a)
+      [...audit.repeatedRenderedModules.map((item) => item.aggregateRenderedBytes)].sort((a, b) => b - a),
     );
     const editors = JSON.parse(await fs.readFile(path.join(dist, "editor-dependency-audit.json"), "utf8"));
     expect(editors.schema).toBe(1);
@@ -36,7 +38,11 @@ describe("inspectable build artifacts", () => {
       const modules = Object.values(stats.families).flatMap((family) => family.modules);
       expect(stats.totalEditorRenderedBytes).toBe(modules.reduce((sum, item) => sum + item.renderedBytes, 0));
       for (const item of modules) {
-        expect(source.modules.some((module) => module.id === item.id && module.renderedBytes === item.renderedBytes)).toBe(true);
+        expect(
+          source.modules.some(
+            (module) => module.id === item.id && module.renderedBytes === item.renderedBytes,
+          ),
+        ).toBe(true);
       }
     }
     for (const script of manifest.scripts) {
@@ -66,8 +72,12 @@ describe("inspectable build artifacts", () => {
         expect(report).toBeDefined();
         for (const [flag, module] of Object.entries(optionalModules)) {
           if (runtime.featureDefines[flag] !== false) continue;
-          const retained = report.modules.filter((item) => item.id.endsWith(module) && item.renderedBytes > 0);
-          expect(retained, `Disabled ${flag} retained ${module} in ${script.id}:${runtime.world}`).toEqual([]);
+          const retained = report.modules.filter(
+            (item) => item.id.endsWith(module) && item.renderedBytes > 0,
+          );
+          expect(retained, `Disabled ${flag} retained ${module} in ${script.id}:${runtime.world}`).toEqual(
+            [],
+          );
         }
       }
       for (const runtime of target.output.runtimes) {

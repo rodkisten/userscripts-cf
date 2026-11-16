@@ -295,12 +295,19 @@ export default {
     let lastTarget = "";
     const shortcut = (event: MouseEvent) => {
       const element = event.target;
-      if (!(element instanceof Element)) { return; }
+      if (!(element instanceof Element)) {
+        return;
+      }
       const link = element.closest<HTMLElement>('a[href], [role="link"]');
-      const profile = link?.matches('a[href^="/"][href$="/"]') &&
+      const profile =
+        link?.matches('a[href^="/"][href$="/"]') &&
         !!link.querySelector('img[alt], img[src*="profile"], svg');
-      const logo = !!element.closest('a[href="/"], a[href="/home/"], svg[aria-label="Instagram"], [aria-label="Instagram"]');
-      if (!logo && !profile) { return; }
+      const logo = !!element.closest(
+        'a[href="/"], a[href="/home/"], svg[aria-label="Instagram"], [aria-label="Instagram"]',
+      );
+      if (!logo && !profile) {
+        return;
+      }
       const target = logo ? "logo" : "profile";
       const now = Date.now();
       taps = target === lastTarget && now - lastTap < 650 ? taps + 1 : 1;

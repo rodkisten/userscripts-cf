@@ -4,30 +4,44 @@ import styles, { css } from "./Settings.module.css";
 
 const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from saved)$/i;
 const SAVED = /unsave|remover dos salvos|remove from saved/i;
-const reelIsOpen = () => /\/(reel|reels)\//.test(location.pathname) || !!document.querySelector('video, [role="dialog"] video');
+const reelIsOpen = () =>
+  /\/(reel|reels)\//.test(location.pathname) || !!document.querySelector('video, [role="dialog"] video');
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const SAVE_LABEL = /save|salvar|guardar|saved|salvo|bookmark/i;
-const ACTION_LABEL = /like|curtir|comment|comentar|share|compartilhar|send|enviar|more options|mais opções|save|salvar/i;
+const ACTION_LABEL =
+  /like|curtir|comment|comentar|share|compartilhar|send|enviar|more options|mais opções|save|salvar/i;
 
 function controls(): HTMLElement[] {
   return [...document.querySelectorAll<HTMLElement>('button, [role="button"]')]
-    .filter((button) => !button.closest('[data-solid-mount], [data-rod-collection-action]'))
+    .filter((button) => !button.closest("[data-solid-mount], [data-rod-collection-action]"))
     .filter((button) => {
-      const label = [button.getAttribute("aria-label"), ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label"))].join(" ");
+      const label = [
+        button.getAttribute("aria-label"),
+        ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label")),
+      ].join(" ");
       return ACTION_LABEL.test(label);
     });
 }
 function nativeSave(): HTMLElement | null {
-  return controls().find((button) => SAVE_LABEL.test(
-    [button.getAttribute("aria-label"), ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label"))].join(" ")
-  )) || null;
+  return (
+    controls().find((button) =>
+      SAVE_LABEL.test(
+        [
+          button.getAttribute("aria-label"),
+          ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label")),
+        ].join(" "),
+      ),
+    ) || null
+  );
 }
 function actions(): HTMLElement | null {
   const save = nativeSave();
   if (save?.parentElement) return save.parentElement;
   const buttons = controls();
-  const video = [...document.querySelectorAll("video")].find((node) => node.getBoundingClientRect().width > 0);
+  const video = [...document.querySelectorAll("video")].find(
+    (node) => node.getBoundingClientRect().width > 0,
+  );
   const near = buttons.filter((button) => {
     const rect = button.getBoundingClientRect();
     if (!rect.width || !rect.height) return false;
@@ -35,15 +49,22 @@ function actions(): HTMLElement | null {
     const bounds = video.getBoundingClientRect();
     return rect.top >= bounds.top - 100 && rect.top <= bounds.bottom + 100;
   });
-  return (near.find((button) => /share|compartilhar|like|curtir/i.test(button.innerHTML.slice(0, 600))) || near[0])?.parentElement || null;
+  return (
+    (near.find((button) => /share|compartilhar|like|curtir/i.test(button.innerHTML.slice(0, 600))) || near[0])
+      ?.parentElement || null
+  );
 }
 
 function collectionOption(id: string): HTMLElement | null {
-  const candidates = document.querySelectorAll<HTMLElement>('[role="dialog"] [role="button"], [role="dialog"] button, [role="menuitem"], [role="option"]');
-  return [...candidates].find((node) => {
-    const text = (node.textContent || "").trim();
-    return text === id || node.getAttribute("data-collection-id") === id;
-  }) || null;
+  const candidates = document.querySelectorAll<HTMLElement>(
+    '[role="dialog"] [role="button"], [role="dialog"] button, [role="menuitem"], [role="option"]',
+  );
+  return (
+    [...candidates].find((node) => {
+      const text = (node.textContent || "").trim();
+      return text === id || node.getAttribute("data-collection-id") === id;
+    }) || null
+  );
 }
 
 async function saveToCollections(ids: string[], signal: AbortSignal) {
@@ -51,7 +72,13 @@ async function saveToCollections(ids: string[], signal: AbortSignal) {
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
   // Never toggle an already saved reel off just to access the collections menu.
-  if (SAVED.test(source.getAttribute("aria-label") || source.querySelector("[aria-label]")?.getAttribute("aria-label") || "")) {
+  if (
+    SAVED.test(
+      source.getAttribute("aria-label") ||
+        source.querySelector("[aria-label]")?.getAttribute("aria-label") ||
+        "",
+    )
+  ) {
     throw Error("Reel já salvo. Abra o bookmark nativo para gerenciar as coleções");
   }
   source.click();
@@ -59,7 +86,8 @@ async function saveToCollections(ids: string[], signal: AbortSignal) {
   for (const id of ids) {
     if (signal.aborted) return;
     const option = collectionOption(id);
-    if (!option) throw Error(`Coleção ${id} não apareceu no seletor nativo. Nenhuma seleção adicional foi confirmada`);
+    if (!option)
+      throw Error(`Coleção ${id} não apareceu no seletor nativo. Nenhuma seleção adicional foi confirmada`);
     option.click();
     await sleep(300);
   }
@@ -110,36 +138,66 @@ export function mountReelBookmark(
       cloned.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
       cloned.dataset.rodCollectionAction = "true";
       native.insertAdjacentElement("afterend", cloned);
-      mount = mountPoint(cloned, () => (
-        <button
-          type="button"
-          class={styles.bookmark}
-          aria-label="Enviar para coleções"
-          title="Enviar para coleções configuradas"
-          disabled={busy()}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            void send();
-          }}
-        >
-          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-            <path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" />
-          </svg>
-        </button>
-      ), { tag: "span" });
+      mount = mountPoint(
+        cloned,
+        () => (
+          <button
+            type="button"
+            class={styles.bookmark}
+            aria-label="Enviar para coleções"
+            title="Enviar para coleções configuradas"
+            disabled={busy()}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void send();
+            }}
+          >
+            <svg
+              aria-hidden="true"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            >
+              <path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" />
+            </svg>
+          </button>
+        ),
+        { tag: "span" },
+      );
     }
   }
   const observer = new MutationObserver((records) => {
-    if (records.some((record) => !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest("[data-solid-mount]"))) refresh();
+    if (
+      records.some(
+        (record) =>
+          !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
+            "[data-solid-mount]",
+          ),
+      )
+    )
+      refresh();
   });
-  observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-label"] });
+  observer.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["aria-label"],
+  });
   const interval = setInterval(refresh, 1200);
-  signal.addEventListener("abort", () => {
-    observer.disconnect();
-    clearInterval(interval);
-    mount?.dispose();
-    cloned?.remove();
-  }, { once: true });
+  signal.addEventListener(
+    "abort",
+    () => {
+      observer.disconnect();
+      clearInterval(interval);
+      mount?.dispose();
+      cloned?.remove();
+    },
+    { once: true },
+  );
   refresh();
 }

@@ -37,20 +37,20 @@ The inspector history is a bounded record of events emitted through the bridge; 
 
 ## Other helpers
 
-| Need | Use |
-| --- | --- |
-| DOM interaction and observation | `ctx.dom` |
-| Managed event listeners | `ctx.listen(target, name, handler)` or `ctx.events.dom.add(...)` |
-| HTTP | `ctx.http` |
-| Network interception | `ctx.interceptRequest(fn)`, `ctx.interceptResponse(fn)` |
-| GM operations | `ctx.gm` |
-| Settings | `ctx.storage.get/set/delete` |
-| Dedicated IndexedDB | `ctx.db("history")` |
-| Clipboard | `ctx.clipboard` |
-| Menu, toast and Dock | `ctx.menu`, `ctx.toaster`, `ctx.dock.register` |
-| UI with isolated styles | `ctx.ui.mountSolid`, `ctx.ui.registerStyles` |
-| Cleanup and cancellation | `ctx.onDispose`, `ctx.signal` |
-| Script state | `ctx.state.get/set/subscribe` |
+| Need                            | Use                                                              |
+| ------------------------------- | ---------------------------------------------------------------- |
+| DOM interaction and observation | `ctx.dom`                                                        |
+| Managed event listeners         | `ctx.listen(target, name, handler)` or `ctx.events.dom.add(...)` |
+| HTTP                            | `ctx.http`                                                       |
+| Network interception            | `ctx.interceptRequest(fn)`, `ctx.interceptResponse(fn)`          |
+| GM operations                   | `ctx.gm`                                                         |
+| Settings                        | `ctx.storage.get/set/delete`                                     |
+| Dedicated IndexedDB             | `ctx.db("history")`                                              |
+| Clipboard                       | `ctx.clipboard`                                                  |
+| Menu, toast and Dock            | `ctx.menu`, `ctx.toaster`, `ctx.dock.register`                   |
+| UI with isolated styles         | `ctx.ui.mountSolid`, `ctx.ui.registerStyles`                     |
+| Cleanup and cancellation        | `ctx.onDispose`, `ctx.signal`                                    |
+| Script state                    | `ctx.state.get/set/subscribe`                                    |
 
 Prefer Solid components, CSS Modules, and responsive mobile-first controls. The runtime internals may use browser primitives to implement these helpers; feature modules should not duplicate them.
 
@@ -61,12 +61,13 @@ The runtime exposes one lazy QueryClient per `createRuntime()` instance. All scr
 ```ts
 // Inside a userscript's init(ctx), with Solid signals created in a component/root:
 const suggestions = ctx.query.createAsyncOptions(
-  () => async (query, { signal }) => {
-    const response = await ctx.http.get('/api/suggest?q=' + encodeURIComponent(query), { signal });
-    return response;
-  },
+  () =>
+    async (query, { signal }) => {
+      const response = await ctx.http.get("/api/suggest?q=" + encodeURIComponent(query), { signal });
+      return response;
+    },
   search,
-  { queryKey: ['twitter', 'filters'], staleTime: 60_000 },
+  { queryKey: ["twitter", "filters"], staleTime: 60_000 },
 );
 ```
 

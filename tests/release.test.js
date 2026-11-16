@@ -52,10 +52,11 @@ test("release checks tracked source but ignores generated deployment artifacts",
     return "";
   };
   assert.equal(pendingSourceChanges(run), "");
-  assert.deepEqual(calls[0].slice(0, 5), [
-    "git", "status", "--porcelain", "--untracked-files=no", "--",
-  ]);
+  assert.deepEqual(calls[0].slice(0, 5), ["git", "status", "--porcelain", "--untracked-files=no", "--"]);
   assert.ok(calls[0].includes("src"));
   assert.ok(calls[0].includes("package.json"));
-  assert.equal(pendingSourceChanges(() => " M src/runtime/index.ts"), " M src/runtime/index.ts");
+  assert.equal(
+    pendingSourceChanges(() => " M src/runtime/index.ts"),
+    " M src/runtime/index.ts",
+  );
 });

@@ -83,25 +83,36 @@ test("persistent storage is created only on first use and reused across SPA navi
   const host = new Window({ url: "https://example.com/on" });
   const created = [];
   let activeContext;
-  const app = createRuntime([{
-    id: "lazy-storage",
-    matches: ["https://example.com/on"],
-    module: { init(ctx) { activeContext = ctx; } },
-  }], { call: async () => undefined }, host, (window) => {
-    const original = window.RodStorage;
-    window.RodStorage = {
-      ...original,
-      create(options) {
-        created.push(options.namespace);
-        return {
-          get: async () => undefined,
-          set: async () => {},
-          delete: async () => {},
-          close: () => {},
-        };
+  const app = createRuntime(
+    [
+      {
+        id: "lazy-storage",
+        matches: ["https://example.com/on"],
+        module: {
+          init(ctx) {
+            activeContext = ctx;
+          },
+        },
       },
-    };
-  });
+    ],
+    { call: async () => undefined },
+    host,
+    (window) => {
+      const original = window.RodStorage;
+      window.RodStorage = {
+        ...original,
+        create(options) {
+          created.push(options.namespace);
+          return {
+            get: async () => undefined,
+            set: async () => {},
+            delete: async () => {},
+            close: () => {},
+          };
+        },
+      };
+    },
+  );
   await app.ready;
   assert.deepEqual(created, [], "creating a context must not open persistent storage");
   await activeContext.storage.get("missing");
@@ -129,10 +140,21 @@ test("event infrastructure is lazy, shared, and disposed across SPA transitions"
     return nativeAdd.call(this, type, ...args);
   };
   try {
-    const app = createRuntime([{
-      id: "events-lazy", matches: ["https://example.com/on"],
-      module: { init(ctx) { context = ctx; } },
-    }], { call() {} }, host);
+    const app = createRuntime(
+      [
+        {
+          id: "events-lazy",
+          matches: ["https://example.com/on"],
+          module: {
+            init(ctx) {
+              context = ctx;
+            },
+          },
+        },
+      ],
+      { call() {} },
+      host,
+    );
     await app.ready;
     const beforeAccess = abortListeners;
     const first = context.events;
@@ -190,24 +212,28 @@ test("navigation during asynchronous initialization cleans the stale instance", 
   await host.happyDOM.abort();
 });
 
-
 test("mountSolid creates an isolated visible ShadowRoot and disposes it on navigation", async () => {
   const host = new Window({ url: "https://example.com/on" });
   const app = createRuntime(
-    [{
-      id: "inspector-fixture",
-      matches: ["https://example.com/on"],
-      module: {
-        init(ctx) {
-          ctx.ui.mountSolid(() => {
-            const button = host.document.createElement("button");
-            button.textContent = "Open Inspector";
-            button.addEventListener("click", () => button.dataset.clicked = "yes");
-            return button;
-          }, { styles: [":host { display: block; } button { pointer-events: auto; }"] });
+    [
+      {
+        id: "inspector-fixture",
+        matches: ["https://example.com/on"],
+        module: {
+          init(ctx) {
+            ctx.ui.mountSolid(
+              () => {
+                const button = host.document.createElement("button");
+                button.textContent = "Open Inspector";
+                button.addEventListener("click", () => (button.dataset.clicked = "yes"));
+                return button;
+              },
+              { styles: [":host { display: block; } button { pointer-events: auto; }"] },
+            );
+          },
         },
       },
-    }],
+    ],
     { call() {} },
     host,
   );
@@ -230,7 +256,6 @@ test("mountSolid creates an isolated visible ShadowRoot and disposes it on navig
   await app.dispose();
   await host.happyDOM.abort();
 });
-
 
 test("ctx.query shares a lazy QueryClient between scripts and disposes on runtime shutdown", async () => {
   const host = new Window({ url: "https://x.com/home" });

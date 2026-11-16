@@ -130,4 +130,3 @@ test("GitHub file toolbar stores preferences and renders copy progress from its 
     await host.happyDOM.abort();
   }
 });
-

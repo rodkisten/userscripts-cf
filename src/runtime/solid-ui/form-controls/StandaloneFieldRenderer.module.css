@@ -1,1 +1,46 @@
-.field{display:grid;gap:8px;min-width:0;padding:12px;border:1px solid var(--field-border,#4445);border-radius:12px}.field label{font-size:13px;font-weight:600}.field input:not([type=checkbox]):not([type=radio]),.field textarea,.field select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #8887;border-radius:8px;background:var(--field-bg,transparent);color:inherit}.field button{padding:8px 10px;border:1px solid #8887;border-radius:8px;background:transparent;color:inherit;cursor:pointer}.field [role=group]{display:flex;flex-wrap:wrap;gap:10px}.field small{opacity:.7}.field [aria-pressed=true]{background:#3974aa55}.field[data-disabled=true]{opacity:.6}
+.field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--field-border, #4445);
+  border-radius: 12px;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.field input:not([type="checkbox"]):not([type="radio"]),
+.field textarea,
+.field select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #8887;
+  border-radius: 8px;
+  background: var(--field-bg, transparent);
+  color: inherit;
+}
+.field button {
+  padding: 8px 10px;
+  border: 1px solid #8887;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.field [role="group"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.field small {
+  opacity: 0.7;
+}
+.field [aria-pressed="true"] {
+  background: #3974aa55;
+}
+.field[data-disabled="true"] {
+  opacity: 0.6;
+}

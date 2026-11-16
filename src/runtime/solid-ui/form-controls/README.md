@@ -26,13 +26,19 @@ RodMenu's existing `RodMenuField` includes app-specific media and diagnostic fie
 ## SolidJS Combobox
 
 ```tsx
-import { createSignal } from 'solid-js';
-import { Combobox } from './Combobox';
+import { createSignal } from "solid-js";
+import { Combobox } from "./Combobox";
 
 const [value, setValue] = createSignal<string[]>([]);
-<Combobox id="twitter-filters" multiple grouped clearable
-  options={[{ value: 'filter:videos', label: 'Vídeos', group: 'Mídia' }]}
-  value={value()} onChange={(next) => setValue(Array.isArray(next) ? next : [next])} />;
+<Combobox
+  id="twitter-filters"
+  multiple
+  grouped
+  clearable
+  options={[{ value: "filter:videos", label: "Vídeos", group: "Mídia" }]}
+  value={value()}
+  onChange={(next) => setValue(Array.isArray(next) ? next : [next])}
+/>;
 ```
 
 The component supports controlled selection, multiple pills, grouped options, loading and clearable state. It is mounted by RodMenu's `TypeaheadSelect` compatibility wrapper. Remote fetching, Fuse.js, virtualization, custom tags and Twitter highlighting remain planned. The HTML playground is a behavior mock, not a SolidJS component harness yet.
@@ -40,13 +46,18 @@ The component supports controlled selection, multiple pills, grouped options, lo
 ## SolidJS TagsInput
 
 ```tsx
-import { createSignal } from 'solid-js';
-import { TagsInput } from './TagsInput';
+import { createSignal } from "solid-js";
+import { TagsInput } from "./TagsInput";
 
-const [tags, setTags] = createSignal(['typescript']);
-<TagsInput id="search-tags" value={tags()} onChange={setTags}
-  options={[{ value: 'filter:videos', label: 'Vídeos' }]}
-  maxTags={20} separators={[',', ';']} />;
+const [tags, setTags] = createSignal(["typescript"]);
+<TagsInput
+  id="search-tags"
+  value={tags()}
+  onChange={setTags}
+  options={[{ value: "filter:videos", label: "Vídeos" }]}
+  maxTags={20}
+  separators={[",", ";"]}
+/>;
 ```
 
 Supports custom tags, suggestion selection, Enter/comma/semicolon creation, Backspace removal, maxTags, duplicate control, and readonly/disabled states.
@@ -64,8 +75,8 @@ Playground follow-up: replace HTML mocks with a compiled SolidJS example so thes
   id="remote-search"
   options={[]}
   source={async (query, { signal }) => {
-    const response = await fetch('/api/suggest?q=' + encodeURIComponent(query), { signal });
-    if (!response.ok) throw new Error('Suggestion request failed');
+    const response = await fetch("/api/suggest?q=" + encodeURIComponent(query), { signal });
+    if (!response.ok) throw new Error("Suggestion request failed");
     return (await response.json()) as ControlOption[];
   }}
   value={selected()}
@@ -88,17 +99,18 @@ Async suggestions now use `@tanstack/query-core` and `QueryObserver`, which avoi
 - No global provider is required when using the query-core adapter.
 
 ```tsx
-import { createAsyncOptions } from './createAsyncOptions';
+import { createAsyncOptions } from "./createAsyncOptions";
 
 // Uses the shared runtime cache automatically.
 const suggestions = createAsyncOptions(
-  () => async (query, { signal }) => {
-    const response = await fetch('/api/suggest?q=' + encodeURIComponent(query), { signal });
-    if (!response.ok) throw new Error('Failed to fetch suggestions');
-    return response.json();
-  },
+  () =>
+    async (query, { signal }) => {
+      const response = await fetch("/api/suggest?q=" + encodeURIComponent(query), { signal });
+      if (!response.ok) throw new Error("Failed to fetch suggestions");
+      return response.json();
+    },
   search,
-  { queryKey: ['twitter', 'filters'], staleTime: 60_000 },
+  { queryKey: ["twitter", "filters"], staleTime: 60_000 },
 );
 ```
 

@@ -1,11 +1,226 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090b"><title>AST Errors · Playground</title>
-<style>
-:root{color-scheme:dark;font:14px/1.5 system-ui,sans-serif;background:#09090b;color:#fafafa}*{box-sizing:border-box}body{margin:0}main{max-width:1250px;margin:auto;padding:24px 16px 80px}a{color:#c4b5fd}h1{font-size:clamp(30px,5vw,52px);letter-spacing:-.05em;margin:24px 0 4px}p{color:#a1a1aa}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.panel{background:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:16px;min-width:0}textarea,pre{width:100%;min-height:300px;margin:0;padding:14px;background:#0c0c10;color:#e9d5ff;border:1px solid #3f3f46;border-radius:10px;font:12px/1.65 ui-monospace,monospace;overflow:auto;tab-size:2}textarea{resize:vertical}pre{white-space:pre-wrap;overflow-wrap:anywhere}button,select{background:#27272a;border:1px solid #52525b;border-radius:10px;color:#fafafa;padding:10px;font:inherit;min-height:42px}button{cursor:pointer}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0}button.primary{background:#a78bfa;color:#18111f;font-weight:700}#status{color:#a1a1aa}label{display:block;margin:0 0 10px;font-weight:600}code{color:#c4b5fd}@media(max-width:750px){.grid{grid-template-columns:1fr}main{padding:16px 12px 60px}textarea,pre{min-height:220px}}
- .code-editor{min-height:300px;overflow:auto;border:1px solid #3f3f46;border-radius:10px;background:#282c34}.code-editor .cm-editor{min-height:300px;font-size:12px}.code-editor .cm-scroller{font-family:ui-monospace,monospace}.diff{max-height:480px;overflow:auto;background:#0c0c10;border-radius:10px;font:12px/1.65 ui-monospace,monospace;white-space:pre;tab-size:2}.diff-line{padding:0 12px;min-width:max-content}.diff-mark{display:inline-block;width:22px;user-select:none}.diff-line.added{background:#14532d66;color:#bbf7d0}.diff-line.removed{background:#7f1d1d66;color:#fecaca}.diff-line.same{color:#a1a1aa}@media(max-width:750px){.code-editor,.code-editor .cm-editor{min-height:220px}} </style></head>
-<body><main><nav><a href="/">← Catálogo</a> · <a href="/playground/diagnostics.html">Diagnósticos</a> · <a href="/design-system.html">Design System</a></nav><h1>🧬 AST Errors Lab</h1><p>Compare o código original com a instrumentação real do build. Este laboratório não executa o código digitado. Suporte a JavaScript, TypeScript e TSX com transpilação local, realce de sintaxe e diff por linhas. O código digitado não é executado.</p>
-<div class="toolbar"><select id="preset" aria-label="Exemplo"><option value="event">Evento assíncrono</option><option value="timer">Timer</option><option value="nested">Callbacks aninhados</option><option value="named">Listener nomeado</option><option value="ts">TypeScript</option><option value="tsx">TSX</option></select><select id="language" aria-label="Linguagem"><option value="js">JavaScript</option><option value="ts">TypeScript</option><option value="tsx">TSX</option></select><button class="primary" id="transform">Transformar AST</button><button id="copy">Copiar resultado</button><span id="status" role="status"></span></div>
-<div class="grid"><section class="panel"><label>Entrada · Editor</label><div id="input" class="code-editor"></div></section><section class="panel"><label>Saída · JavaScript instrumentado</label><div id="output" class="code-editor"></div></section></div><section class="panel"><label>Diff visual · JavaScript compilado → instrumentado</label><div id="diff" class="diff" aria-live="polite"></div></section>
-<p><small>Escopo atual: callbacks inline de eventos, timers, microtasks e animação. Callbacks nomeados permanecem inalterados para preservar identidade. Sourcemaps e instrumentação de callbacks nomeados ainda estão em evolução.</small></p>
-<script type="module" src="/playground/ast-errors.js"></script></main></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#09090b" />
+    <title>AST Errors · Playground</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+        background: #09090b;
+        color: #fafafa;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        max-width: 1250px;
+        margin: auto;
+        padding: 24px 16px 80px;
+      }
+      a {
+        color: #c4b5fd;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 52px);
+        letter-spacing: -0.05em;
+        margin: 24px 0 4px;
+      }
+      p {
+        color: #a1a1aa;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .panel {
+        background: #18181b;
+        border: 1px solid #3f3f46;
+        border-radius: 16px;
+        padding: 16px;
+        min-width: 0;
+      }
+      textarea,
+      pre {
+        width: 100%;
+        min-height: 300px;
+        margin: 0;
+        padding: 14px;
+        background: #0c0c10;
+        color: #e9d5ff;
+        border: 1px solid #3f3f46;
+        border-radius: 10px;
+        font:
+          12px/1.65 ui-monospace,
+          monospace;
+        overflow: auto;
+        tab-size: 2;
+      }
+      textarea {
+        resize: vertical;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      button,
+      select {
+        background: #27272a;
+        border: 1px solid #52525b;
+        border-radius: 10px;
+        color: #fafafa;
+        padding: 10px;
+        font: inherit;
+        min-height: 42px;
+      }
+      button {
+        cursor: pointer;
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 18px 0;
+      }
+      button.primary {
+        background: #a78bfa;
+        color: #18111f;
+        font-weight: 700;
+      }
+      #status {
+        color: #a1a1aa;
+      }
+      label {
+        display: block;
+        margin: 0 0 10px;
+        font-weight: 600;
+      }
+      code {
+        color: #c4b5fd;
+      }
+      @media (max-width: 750px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 16px 12px 60px;
+        }
+        textarea,
+        pre {
+          min-height: 220px;
+        }
+      }
+      .code-editor {
+        min-height: 300px;
+        overflow: auto;
+        border: 1px solid #3f3f46;
+        border-radius: 10px;
+        background: #282c34;
+      }
+      .code-editor .cm-editor {
+        min-height: 300px;
+        font-size: 12px;
+      }
+      .code-editor .cm-scroller {
+        font-family: ui-monospace, monospace;
+      }
+      .diff {
+        max-height: 480px;
+        overflow: auto;
+        background: #0c0c10;
+        border-radius: 10px;
+        font:
+          12px/1.65 ui-monospace,
+          monospace;
+        white-space: pre;
+        tab-size: 2;
+      }
+      .diff-line {
+        padding: 0 12px;
+        min-width: max-content;
+      }
+      .diff-mark {
+        display: inline-block;
+        width: 22px;
+        user-select: none;
+      }
+      .diff-line.added {
+        background: #14532d66;
+        color: #bbf7d0;
+      }
+      .diff-line.removed {
+        background: #7f1d1d66;
+        color: #fecaca;
+      }
+      .diff-line.same {
+        color: #a1a1aa;
+      }
+      @media (max-width: 750px) {
+        .code-editor,
+        .code-editor .cm-editor {
+          min-height: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav>
+        <a href="/">← Catálogo</a> · <a href="/playground/diagnostics.html">Diagnósticos</a> ·
+        <a href="/design-system.html">Design System</a>
+      </nav>
+      <h1>🧬 AST Errors Lab</h1>
+      <p>
+        Compare o código original com a instrumentação real do build. Este laboratório não executa o código
+        digitado. Suporte a JavaScript, TypeScript e TSX com transpilação local, realce de sintaxe e diff por
+        linhas. O código digitado não é executado.
+      </p>
+      <div class="toolbar">
+        <select id="preset" aria-label="Exemplo">
+          <option value="event">Evento assíncrono</option>
+          <option value="timer">Timer</option>
+          <option value="nested">Callbacks aninhados</option>
+          <option value="named">Listener nomeado</option>
+          <option value="ts">TypeScript</option>
+          <option value="tsx">TSX</option></select
+        ><select id="language" aria-label="Linguagem">
+          <option value="js">JavaScript</option>
+          <option value="ts">TypeScript</option>
+          <option value="tsx">TSX</option></select
+        ><button class="primary" id="transform">Transformar AST</button
+        ><button id="copy">Copiar resultado</button><span id="status" role="status"></span>
+      </div>
+      <div class="grid">
+        <section class="panel">
+          <label>Entrada · Editor</label>
+          <div id="input" class="code-editor"></div>
+        </section>
+        <section class="panel">
+          <label>Saída · JavaScript instrumentado</label>
+          <div id="output" class="code-editor"></div>
+        </section>
+      </div>
+      <section class="panel">
+        <label>Diff visual · JavaScript compilado → instrumentado</label>
+        <div id="diff" class="diff" aria-live="polite"></div>
+      </section>
+      <p>
+        <small
+          >Escopo atual: callbacks inline de eventos, timers, microtasks e animação. Callbacks nomeados
+          permanecem inalterados para preservar identidade. Sourcemaps e instrumentação de callbacks nomeados
+          ainda estão em evolução.</small
+        >
+      </p>
+      <script type="module" src="/playground/ast-errors.js"></script>
+    </main>
+  </body>
+</html>

@@ -47,7 +47,9 @@ export function createStudioMenus(Studio) {
     node.style.setProperty("z-index", "2147483499", "important");
     document.body.append(backdrop, node);
     let resolve;
-    const result = new Promise((done) => { resolve = done; });
+    const result = new Promise((done) => {
+      resolve = done;
+    });
     const handle = {
       result,
       close() {

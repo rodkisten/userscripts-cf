@@ -143,7 +143,10 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     attributes: true,
     attributeFilter: ["src"],
   });
-  const interval = setInterval(() => { refresh(); revealIfReady(); }, 500);
+  const interval = setInterval(() => {
+    refresh();
+    revealIfReady();
+  }, 500);
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {

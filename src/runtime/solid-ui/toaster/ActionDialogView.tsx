@@ -1,12 +1,12 @@
-import { createSignal, For, Show } from 'solid-js';
-import type { JSX } from 'solid-js';
-import type { SelectOptions, SvgIconName, ToastActionDescriptor, ToastOptions } from './types';
-import { createToast } from './toasterStore';
-import { SvgIcon } from './SvgIcon';
-import styles from './Toaster.module.css';
+import { createSignal, For, Show } from "solid-js";
+import type { JSX } from "solid-js";
+import type { SelectOptions, SvgIconName, ToastActionDescriptor, ToastOptions } from "./types";
+import { createToast } from "./toasterStore";
+import { SvgIcon } from "./SvgIcon";
+import styles from "./Toaster.module.css";
 
 interface DialogSettings {
-  kind: 'confirm' | 'prompt' | 'select' | 'picker';
+  kind: "confirm" | "prompt" | "select" | "picker";
   dismissValue?: unknown;
   fallbackActions: ToastActionDescriptor[];
   renderBody?: () => JSX.Element;
@@ -14,21 +14,20 @@ interface DialogSettings {
   validate?: (value: unknown) => Promise<boolean | string> | boolean | string;
 }
 
-export function showActionDialog(descriptor: ToastOptions | string, settings: DialogSettings): Promise<unknown> {
-  const opts: ToastOptions = typeof descriptor === 'string' ? { title: descriptor } : { ...descriptor };
+export function showActionDialog(
+  descriptor: ToastOptions | string,
+  settings: DialogSettings,
+): Promise<unknown> {
+  const opts: ToastOptions = typeof descriptor === "string" ? { title: descriptor } : { ...descriptor };
   const actions = opts.actions?.length ? opts.actions : settings.fallbackActions;
-  const dismissVal = opts.dismissValue !== undefined ? opts.dismissValue : settings.dismissValue ?? false;
+  const dismissVal = opts.dismissValue !== undefined ? opts.dismissValue : (settings.dismissValue ?? false);
 
   return new Promise((resolve) => {
     let settled = false;
     const [validationError, setValidationError] = createSignal<string | null>(null);
     const [checkedMap, setCheckedMap] = createSignal<Record<string, boolean>>({});
 
-    const checkboxes = Array.isArray(opts.checkbox)
-      ? opts.checkbox
-      : opts.checkbox
-        ? [opts.checkbox]
-        : [];
+    const checkboxes = Array.isArray(opts.checkbox) ? opts.checkbox : opts.checkbox ? [opts.checkbox] : [];
 
     const finish = (val: unknown, reason: string) => {
       if (settled) return;
@@ -41,10 +40,10 @@ export function showActionDialog(descriptor: ToastOptions | string, settings: Di
       [],
       {
         ...opts,
-        lane: 'interaction',
+        lane: "interaction",
         duration: opts.duration ?? 0,
         dedupe: false,
-        role: 'alertdialog',
+        role: "alertdialog",
         onDismiss: ({ reason }) => finish(dismissVal, reason),
       },
       () => (
@@ -88,25 +87,27 @@ export function showActionDialog(descriptor: ToastOptions | string, settings: Di
                 <button
                   type="button"
                   class={styles.actionButton}
-                  data-variant={act.variant ?? 'secondary'}
+                  data-variant={act.variant ?? "secondary"}
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const isCancel = act.id === 'cancel';
+                    const isCancel = act.id === "cancel";
                     const currentValue = settings.getValue ? settings.getValue() : true;
                     if (!isCancel && settings.validate) {
                       const valid = await settings.validate(currentValue);
                       if (valid !== true) {
-                        setValidationError(typeof valid === 'string' ? valid : opts.validationMessage ?? 'Invalid input');
+                        setValidationError(
+                          typeof valid === "string" ? valid : (opts.validationMessage ?? "Invalid input"),
+                        );
                         return;
                       }
                     }
                     setValidationError(null);
                     const finalVal =
                       act.value !== undefined ? act.value : isCancel ? dismissVal : currentValue;
-                    finish(finalVal, act.id ?? 'action');
+                    finish(finalVal, act.id ?? "action");
                   }}
                 >
-                  <Show when={typeof act.icon === 'string'}>
+                  <Show when={typeof act.icon === "string"}>
                     <SvgIcon name={act.icon as SvgIconName} size={14} />
                   </Show>
                   <span>{act.label}</span>
@@ -122,25 +123,31 @@ export function showActionDialog(descriptor: ToastOptions | string, settings: Di
 
 export function showConfirmToast(descriptor: ToastOptions | string = {}): Promise<unknown> {
   return showActionDialog(descriptor, {
-    kind: 'confirm',
+    kind: "confirm",
     dismissValue: false,
     fallbackActions: [
-      { id: 'cancel', label: 'Cancel', icon: 'circle-x', variant: 'secondary', value: false },
-      { id: 'confirm', label: 'Confirm', icon: 'check', variant: 'primary', value: true },
+      { id: "cancel", label: "Cancel", icon: "circle-x", variant: "secondary", value: false },
+      { id: "confirm", label: "Confirm", icon: "check", variant: "primary", value: true },
     ],
   });
 }
 
 export function showPromptToast(descriptor: ToastOptions | string = {}): Promise<unknown> {
-  const opts: ToastOptions = typeof descriptor === 'string' ? { title: descriptor } : { ...descriptor };
-  const [text, setText] = createSignal(opts.value == null ? '' : String(opts.value));
+  const opts: ToastOptions = typeof descriptor === "string" ? { title: descriptor } : { ...descriptor };
+  const [text, setText] = createSignal(opts.value == null ? "" : String(opts.value));
 
   return showActionDialog(opts, {
-    kind: 'prompt',
+    kind: "prompt",
     dismissValue: null,
     fallbackActions: [
-      { id: 'cancel', label: opts.cancelLabel ?? 'Cancel', icon: 'circle-x', variant: 'secondary', value: null },
-      { id: 'confirm', label: opts.confirmLabel ?? 'Save', icon: 'check', variant: 'primary' },
+      {
+        id: "cancel",
+        label: opts.cancelLabel ?? "Cancel",
+        icon: "circle-x",
+        variant: "secondary",
+        value: null,
+      },
+      { id: "confirm", label: opts.confirmLabel ?? "Save", icon: "check", variant: "primary" },
     ],
     renderBody: () => (
       <label class={styles.fieldLabel}>
@@ -151,10 +158,10 @@ export function showPromptToast(descriptor: ToastOptions | string = {}): Promise
           when={opts.multiline}
           fallback={
             <input
-              type={opts.inputType ?? 'text'}
+              type={opts.inputType ?? "text"}
               class={styles.input}
               value={text()}
-              placeholder={opts.placeholder ?? ''}
+              placeholder={opts.placeholder ?? ""}
               onInput={(e) => setText(e.currentTarget.value)}
             />
           }
@@ -162,7 +169,7 @@ export function showPromptToast(descriptor: ToastOptions | string = {}): Promise
           <textarea
             class={styles.textarea}
             value={text()}
-            placeholder={opts.placeholder ?? ''}
+            placeholder={opts.placeholder ?? ""}
             onInput={(e) => setText(e.currentTarget.value)}
           />
         </Show>
@@ -170,8 +177,8 @@ export function showPromptToast(descriptor: ToastOptions | string = {}): Promise
     ),
     getValue: () => text(),
     validate: async (val) => {
-      const str = String(val ?? '');
-      if (opts.required && !str.trim()) return opts.requiredMessage ?? 'A value is required.';
+      const str = String(val ?? "");
+      if (opts.required && !str.trim()) return opts.requiredMessage ?? "A value is required.";
       if (opts.validate) return opts.validate(str);
       return true;
     },
@@ -180,7 +187,7 @@ export function showPromptToast(descriptor: ToastOptions | string = {}): Promise
 
 export function showSelectToast<T = unknown>(descriptor: SelectOptions<T> = {}): Promise<T | T[] | null> {
   const choices = (descriptor.options ?? []).map((item, idx) => {
-    const isObj = item !== null && typeof item === 'object' && 'value' in item;
+    const isObj = item !== null && typeof item === "object" && "value" in item;
     return {
       token: `opt-${idx}`,
       label: isObj ? String((item as any).label) : String(item),
@@ -194,11 +201,17 @@ export function showSelectToast<T = unknown>(descriptor: SelectOptions<T> = {}):
   );
 
   return showActionDialog(descriptor as ToastOptions, {
-    kind: 'select',
+    kind: "select",
     dismissValue: null,
     fallbackActions: [
-      { id: 'cancel', label: descriptor.cancelLabel ?? 'Cancel', icon: 'circle-x', variant: 'secondary', value: null },
-      { id: 'confirm', label: descriptor.confirmLabel ?? 'Select', icon: 'check', variant: 'primary' },
+      {
+        id: "cancel",
+        label: descriptor.cancelLabel ?? "Cancel",
+        icon: "circle-x",
+        variant: "secondary",
+        value: null,
+      },
+      { id: "confirm", label: descriptor.confirmLabel ?? "Select", icon: "check", variant: "primary" },
     ],
     renderBody: () => (
       <label class={styles.fieldLabel}>
@@ -224,10 +237,8 @@ export function showSelectToast<T = unknown>(descriptor: SelectOptions<T> = {}):
       </label>
     ),
     getValue: () => {
-      const mapped = choices
-        .filter((c) => selectedTokens().includes(c.token))
-        .map((c) => c.value);
-      return descriptor.multiple ? mapped : mapped[0] ?? null;
+      const mapped = choices.filter((c) => selectedTokens().includes(c.token)).map((c) => c.value);
+      return descriptor.multiple ? mapped : (mapped[0] ?? null);
     },
   }) as Promise<T | T[] | null>;
 }

@@ -1,23 +1,23 @@
-import { createSignal, For, Show } from 'solid-js';
-import type { SvgIconName, ToastActionDescriptor, ToastType } from './types';
+import { createSignal, For, Show } from "solid-js";
+import type { SvgIconName, ToastActionDescriptor, ToastType } from "./types";
 import {
   dismissToast,
   pauseToastTimer,
   resumeToastTimer,
   useToasterState,
   type InternalToastEntry,
-} from './toasterStore';
-import { SvgIcon } from './SvgIcon';
-import { ObjectInspectorView } from './ObjectInspectorView';
-import styles from './Toaster.module.css';
+} from "./toasterStore";
+import { SvgIcon } from "./SvgIcon";
+import { ObjectInspectorView } from "./ObjectInspectorView";
+import styles from "./Toaster.module.css";
 
 const DEFAULT_ICON_BY_TYPE: Record<ToastType, SvgIconName> = {
-  default: 'circle',
-  success: 'check',
-  error: 'circle-x',
-  warning: 'triangle-alert',
-  info: 'info',
-  debug: 'terminal',
+  default: "circle",
+  success: "check",
+  error: "circle-x",
+  warning: "triangle-alert",
+  info: "info",
+  debug: "terminal",
 };
 
 export function ToastItem(props: {
@@ -37,9 +37,9 @@ export function ToastItem(props: {
 
   const iconName = (): SvgIconName => {
     const ic = opts().icon;
-    if (typeof ic === 'string') return ic as SvgIconName;
-    if (opts().loading && opts().loadingState === 'loading') return 'loader-circle';
-    return DEFAULT_ICON_BY_TYPE[opts().type] ?? 'circle';
+    if (typeof ic === "string") return ic as SvgIconName;
+    if (opts().loading && opts().loadingState === "loading") return "loader-circle";
+    return DEFAULT_ICON_BY_TYPE[opts().type] ?? "circle";
   };
 
   const progressPercent = () => {
@@ -59,7 +59,7 @@ export function ToastItem(props: {
           controller: props.entry.controller,
           event,
           toast: props.api,
-          close: (_val, reason = 'action') => dismissToast(rec().id, reason),
+          close: (_val, reason = "action") => dismissToast(rec().id, reason),
           update: (next) => props.entry.controller.update(next),
           setValidation: () => undefined,
           values: {},
@@ -67,7 +67,7 @@ export function ToastItem(props: {
         });
       }
       if (action.close !== false) {
-        dismissToast(rec().id, 'action');
+        dismissToast(rec().id, "action");
       }
     } finally {
       setBusyAction(null);
@@ -80,9 +80,9 @@ export function ToastItem(props: {
     const offset = props.stackIndex * 6;
     const opacity = Math.max(0.4, 1 - props.stackIndex * 0.22);
     return {
-      '--rod-stack-scale': String(scale),
-      '--rod-stack-offset': `${offset}px`,
-      '--rod-stack-opacity': String(opacity),
+      "--rod-stack-scale": String(scale),
+      "--rod-stack-offset": `${offset}px`,
+      "--rod-stack-opacity": String(opacity),
     };
   };
 
@@ -97,50 +97,57 @@ export function ToastItem(props: {
       data-success-exit={String(rec().successExit)}
       data-stack-collapsed={String(props.isCollapsedStack && props.stackIndex > 0)}
       data-stack-hidden={String(props.isCollapsedStack && props.stackIndex >= 3)}
-      onPointerEnter={() => opts().pauseOnInteraction && pauseToastTimer(rec().id, 'pointer')}
-      onPointerLeave={() => opts().pauseOnInteraction && resumeToastTimer(rec().id, 'pointer')}
+      onPointerEnter={() => opts().pauseOnInteraction && pauseToastTimer(rec().id, "pointer")}
+      onPointerLeave={() => opts().pauseOnInteraction && resumeToastTimer(rec().id, "pointer")}
     >
       <Show when={opts().icon !== false}>
         <div
           class={styles.icon}
-          data-spinning={String(opts().loading && opts().loadingState === 'loading' && opts().animation === 'spinner')}
-          data-pulsing={String(opts().loading && opts().loadingState === 'loading' && opts().animation === 'pulse')}
+          data-spinning={String(
+            opts().loading && opts().loadingState === "loading" && opts().animation === "spinner",
+          )}
+          data-pulsing={String(
+            opts().loading && opts().loadingState === "loading" && opts().animation === "pulse",
+          )}
         >
           <SvgIcon name={iconName()} size={18} />
         </div>
       </Show>
 
       <div class={styles.content}>
-        <Show when={rec().customContent} fallback={
-          <>
-            <Show when={opts().title}>
-              <div class={styles.title}>{opts().title}</div>
-            </Show>
-            <Show when={opts().description}>
-              <div class={styles.description}>{opts().description}</div>
-            </Show>
-            <Show when={rec().args.length > 0}>
-              <div class={styles.argsList}>
-                <For each={rec().args}>
-                  {(arg) =>
-                    typeof arg === 'object' && arg !== null ? (
-                      <ObjectInspectorView value={arg} />
-                    ) : (
-                      <span>{String(arg)}</span>
-                    )
-                  }
-                </For>
-              </div>
-            </Show>
-          </>
-        }>
+        <Show
+          when={rec().customContent}
+          fallback={
+            <>
+              <Show when={opts().title}>
+                <div class={styles.title}>{opts().title}</div>
+              </Show>
+              <Show when={opts().description}>
+                <div class={styles.description}>{opts().description}</div>
+              </Show>
+              <Show when={rec().args.length > 0}>
+                <div class={styles.argsList}>
+                  <For each={rec().args}>
+                    {(arg) =>
+                      typeof arg === "object" && arg !== null ? (
+                        <ObjectInspectorView value={arg} />
+                      ) : (
+                        <span>{String(arg)}</span>
+                      )
+                    }
+                  </For>
+                </div>
+              </Show>
+            </>
+          }
+        >
           {rec().customContent!()}
         </Show>
 
-        <Show when={opts().loading && opts().animation === 'progress'}>
+        <Show when={opts().loading && opts().animation === "progress"}>
           <div class={styles.progressWrap}>
             <div class={styles.progressMeta}>
-              <span>{opts().progressLabel ?? ''}</span>
+              <span>{opts().progressLabel ?? ""}</span>
               <Show when={progressPercent() !== null}>
                 <span>{progressPercent()}%</span>
               </Show>
@@ -160,11 +167,11 @@ export function ToastItem(props: {
 
         <Show when={opts().details || opts().error}>
           <details class={styles.detailsBox}>
-            <summary class={styles.detailsSummary}>{opts().detailsLabel ?? 'Details'}</summary>
+            <summary class={styles.detailsSummary}>{opts().detailsLabel ?? "Details"}</summary>
             <pre class={styles.detailsPre}>
               {opts().error instanceof Error
-                ? opts().error.stack ?? opts().error.message
-                : typeof opts().details === 'string'
+                ? (opts().error.stack ?? opts().error.message)
+                : typeof opts().details === "string"
                   ? opts().details
                   : JSON.stringify(opts().details ?? opts().error, null, 2)}
             </pre>
@@ -181,9 +188,9 @@ export function ToastItem(props: {
                 onClick={(e) =>
                   handleActionClick(
                     {
-                      id: 'undo',
-                      label: opts().actionLabel ?? 'Undo',
-                      icon: 'undo',
+                      id: "undo",
+                      label: opts().actionLabel ?? "Undo",
+                      icon: "undo",
                       handle: () => opts().undo?.(),
                     },
                     e,
@@ -191,7 +198,7 @@ export function ToastItem(props: {
                 }
               >
                 <SvgIcon name="undo" size={14} />
-                <span>{opts().actionLabel ?? 'Undo'}</span>
+                <span>{opts().actionLabel ?? "Undo"}</span>
               </button>
             </Show>
             <For each={opts().actions ?? []}>
@@ -199,11 +206,11 @@ export function ToastItem(props: {
                 <button
                   type="button"
                   class={styles.actionButton}
-                  data-variant={act.variant ?? 'secondary'}
+                  data-variant={act.variant ?? "secondary"}
                   disabled={act.disabled || busyAction() === (act.id ?? act.label)}
                   onClick={(e) => handleActionClick(act, e)}
                 >
-                  <Show when={typeof act.icon === 'string'}>
+                  <Show when={typeof act.icon === "string"}>
                     <SvgIcon name={act.icon as SvgIconName} size={14} />
                   </Show>
                   <span>{act.label}</span>
@@ -219,10 +226,10 @@ export function ToastItem(props: {
               <div class={styles.expandedHeading}>{opts().expanded!.title}</div>
             </Show>
             <div class={styles.expandedScroll}>
-              {typeof opts().expanded?.content === 'object' ? (
+              {typeof opts().expanded?.content === "object" ? (
                 <ObjectInspectorView value={opts().expanded?.content} />
               ) : (
-                String(opts().expanded?.content ?? '')
+                String(opts().expanded?.content ?? "")
               )}
             </div>
           </div>
@@ -233,7 +240,7 @@ export function ToastItem(props: {
         <Show when={rec().duplicateCount > 1}>
           <span class={styles.countBadge}>×{rec().duplicateCount}</span>
         </Show>
-        <Show when={opts().lane !== 'interaction'}>
+        <Show when={opts().lane !== "interaction"}>
           <button
             type="button"
             class={styles.iconButton}
@@ -250,7 +257,7 @@ export function ToastItem(props: {
           <button
             type="button"
             class={styles.iconButton}
-            title={contentExpanded() ? 'Collapse' : 'Expand'}
+            title={contentExpanded() ? "Collapse" : "Expand"}
             onClick={(e) => {
               e.stopPropagation();
               const next = !contentExpanded();
@@ -268,7 +275,7 @@ export function ToastItem(props: {
             title="Close"
             onClick={(e) => {
               e.stopPropagation();
-              dismissToast(rec().id, 'close');
+              dismissToast(rec().id, "close");
             }}
           >
             <SvgIcon name="x" size={15} />

@@ -1,6 +1,8 @@
 /* The workspace is embedded in the shared menu panel. Preserve its own
    accessible header, navigation and scrolling within the available viewport. */
-.scrim { display: none; }
+.scrim {
+  display: none;
+}
 .panel {
   position: relative;
   inset: auto;
@@ -15,9 +17,19 @@
   box-shadow: none;
   border-radius: 0;
 }
-.panel-head { flex: 0 0 auto; min-width: 0; }
-.head-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.head-row > * { min-width: 0; }
+.panel-head {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.head-row > * {
+  min-width: 0;
+}
 .tabs {
   display: flex;
   flex-wrap: nowrap;
@@ -27,8 +39,12 @@
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.tabs::-webkit-scrollbar { display: none; }
-.tabs > * { flex: 0 0 auto; }
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tabs > * {
+  flex: 0 0 auto;
+}
 .body {
   flex: 1 1 auto;
   min-height: 0;
@@ -38,7 +54,14 @@
   -webkit-overflow-scrolling: touch;
 }
 @media (max-width: 480px) {
-  .panel { height: min(78dvh, 760px); }
-  .head-row { font-size: 12px; }
-  .tabs > * { padding-inline: 9px; font-size: 12px; }
+  .panel {
+    height: min(78dvh, 760px);
+  }
+  .head-row {
+    font-size: 12px;
+  }
+  .tabs > * {
+    padding-inline: 9px;
+    font-size: 12px;
+  }
 }

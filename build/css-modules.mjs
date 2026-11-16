@@ -53,7 +53,9 @@ export function inlineCSSModules() {
       const optimized = deduplicateCSS(originalCSS);
       const savedBytes = Buffer.byteLength(originalCSS) - Buffer.byteLength(optimized.css);
       if (savedBytes > 0) {
-        console.info(`[css-dedup] ${path.basename(id)}: ${optimized.merged} merged rules, ${savedBytes} bytes saved`);
+        console.info(
+          `[css-dedup] ${path.basename(id)}: ${optimized.merged} merged rules, ${savedBytes} bytes saved`,
+        );
       }
       return `export const css = ${JSON.stringify(optimized.css)}; export default ${JSON.stringify(classes)};`;
     },

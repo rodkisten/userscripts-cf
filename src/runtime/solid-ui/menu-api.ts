@@ -37,7 +37,9 @@ let defaults: Record<string, unknown> = {};
 
 /** Compatibility facade: ctx.menu now delegates to RodMenu Solid 2. */
 export const menu = Object.freeze({
-  dropdown(options: DropdownOptions) { return openSolidDropdown(options); },
+  dropdown(options: DropdownOptions) {
+    return openSolidDropdown(options);
+  },
   configure(options: Record<string, unknown> = {}) {
     defaults = { ...defaults, ...options };
     return menu;
@@ -59,7 +61,10 @@ export const menu = Object.freeze({
       ...nativeSchema,
       description: schema.description ?? content,
       initialValues: schema.initialValues ?? values,
-      presentation: schema.presentation ?? (defaults.defaultPresentation as RodMenuSchema["presentation"]) ?? "bottom-sheet",
+      presentation:
+        schema.presentation ??
+        (defaults.defaultPresentation as RodMenuSchema["presentation"]) ??
+        "bottom-sheet",
       actions,
     });
   },
@@ -69,6 +74,10 @@ export const menu = Object.freeze({
   presets: RodMenu.presets,
   get: RodMenu.get,
   stack: RodMenu.stack,
-  close(id: string) { RodMenu.get(id)?.close(); },
-  closeAll() { RodMenu.closeAll(); },
+  close(id: string) {
+    RodMenu.get(id)?.close();
+  },
+  closeAll() {
+    RodMenu.closeAll();
+  },
 });

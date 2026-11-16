@@ -1,16 +1,7 @@
 import type { JSX } from "@solidjs/web";
-import {
-  createSignal,
-  For,
-  onCleanup,
-  createEffect,
-} from "solid-js";
+import { createSignal, For, onCleanup, createEffect } from "solid-js";
 import { clamp, safeCall } from "./core";
-import type {
-  EntrySource,
-  InspectorEntry,
-  InternalRenderContext,
-} from "./types";
+import type { EntrySource, InspectorEntry, InternalRenderContext } from "./types";
 
 interface VirtualListProps {
   source: EntrySource;
@@ -124,10 +115,7 @@ export function VirtualList(props: VirtualListProps) {
     rafId = requestAnimationFrame(() => updateViewport(force));
   };
 
-  const getMeasuredHeight = (
-    row: Element,
-    entry?: ResizeObserverEntry,
-  ): number => {
+  const getMeasuredHeight = (row: Element, entry?: ResizeObserverEntry): number => {
     const borderBoxSize = entry?.borderBoxSize as unknown;
     const blockSize = Array.isArray(borderBoxSize)
       ? (borderBoxSize[0] as ResizeObserverSize | undefined)?.blockSize
@@ -141,50 +129,53 @@ export function VirtualList(props: VirtualListProps) {
     return Math.max(estimatedHeight(), Math.ceil(measured));
   };
 
-  createEffect(() => bodyRef, () => {
-    if (typeof ResizeObserver === "function") {
-      rowObserver = new ResizeObserver((entries) => {
-        if (!bodyRef) return;
-        const anchorIndex = findIndexAtOffset(bodyRef.scrollTop);
-        const anchorDelta = bodyRef.scrollTop - getOffsetFor(anchorIndex);
-        let changed = false;
+  createEffect(
+    () => bodyRef,
+    () => {
+      if (typeof ResizeObserver === "function") {
+        rowObserver = new ResizeObserver((entries) => {
+          if (!bodyRef) return;
+          const anchorIndex = findIndexAtOffset(bodyRef.scrollTop);
+          const anchorDelta = bodyRef.scrollTop - getOffsetFor(anchorIndex);
+          let changed = false;
 
-        for (const entry of entries) {
-          const idx = observedRows.get(entry.target);
-          if (idx === undefined) continue;
-          const h = getMeasuredHeight(entry.target, entry);
-          if (Math.abs(heights[idx] - h) > 1) {
-            heights[idx] = h;
-            changed = true;
+          for (const entry of entries) {
+            const idx = observedRows.get(entry.target);
+            if (idx === undefined) continue;
+            const h = getMeasuredHeight(entry.target, entry);
+            if (Math.abs(heights[idx] - h) > 1) {
+              heights[idx] = h;
+              changed = true;
+            }
           }
-        }
 
-        if (changed) {
-          offsetsDirty = true;
-          const nextScrollTop = getOffsetFor(anchorIndex) + anchorDelta;
-          if (Math.abs(bodyRef.scrollTop - nextScrollTop) > 1) {
-            bodyRef.scrollTop = nextScrollTop;
+          if (changed) {
+            offsetsDirty = true;
+            const nextScrollTop = getOffsetFor(anchorIndex) + anchorDelta;
+            if (Math.abs(bodyRef.scrollTop - nextScrollTop) > 1) {
+              bodyRef.scrollTop = nextScrollTop;
+            }
+            scheduleUpdate(true);
           }
+        });
+
+        bodyObserver = new ResizeObserver((entries) => {
+          const rect = entries[0]?.contentRect;
+          const width = Math.round(rect?.width ?? bodyRef.clientWidth);
+          const height = Math.round(rect?.height ?? bodyRef.clientHeight);
+          if (width === lastBodyWidth && height === lastBodyHeight) return;
+          lastBodyWidth = width;
+          lastBodyHeight = height;
           scheduleUpdate(true);
-        }
-      });
+        });
 
-      bodyObserver = new ResizeObserver((entries) => {
-        const rect = entries[0]?.contentRect;
-        const width = Math.round(rect?.width ?? bodyRef.clientWidth);
-        const height = Math.round(rect?.height ?? bodyRef.clientHeight);
-        if (width === lastBodyWidth && height === lastBodyHeight) return;
-        lastBodyWidth = width;
-        lastBodyHeight = height;
-        scheduleUpdate(true);
-      });
+        bodyObserver.observe(bodyRef);
+      }
 
-      bodyObserver.observe(bodyRef);
-    }
-
-    updateViewport(true);
-    scheduleUpdate(true);
-  });
+      updateViewport(true);
+      scheduleUpdate(true);
+    },
+  );
 
   onCleanup(() => {
     if (rafId !== null) cancelAnimationFrame(rafId);
@@ -219,10 +210,7 @@ export function VirtualList(props: VirtualListProps) {
       }}
       onScroll={() => scheduleUpdate(false)}
     >
-      <div
-        class="rod-inspector__virtual-spacer"
-        style={{ height: `${spacers().top}px` }}
-      />
+      <div class="rod-inspector__virtual-spacer" style={{ height: `${spacers().top}px` }} />
       <div class="rod-inspector__virtual-window">
         <For each={visibleIndices()}>
           {(index) => (
@@ -236,10 +224,7 @@ export function VirtualList(props: VirtualListProps) {
           )}
         </For>
       </div>
-      <div
-        class="rod-inspector__virtual-spacer"
-        style={{ height: `${spacers().bottom}px` }}
-      />
+      <div class="rod-inspector__virtual-spacer" style={{ height: `${spacers().bottom}px` }} />
       {props.footer}
     </div>
   );

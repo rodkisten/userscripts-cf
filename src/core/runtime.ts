@@ -68,7 +68,11 @@ export interface ScriptContext {
   menu: any;
   query: {
     readonly client: QueryClient;
-    createAsyncOptions(source: Accessor<OptionsSource>, query: Accessor<string>, config?: Omit<AsyncOptionsConfig, 'queryClient'>): ReturnType<typeof createAsyncOptions>;
+    createAsyncOptions(
+      source: Accessor<OptionsSource>,
+      query: Accessor<string>,
+      config?: Omit<AsyncOptionsConfig, "queryClient">,
+    ): ReturnType<typeof createAsyncOptions>;
   };
   dock: {
     register(actions: DockAction[]): void;
@@ -82,7 +86,12 @@ export interface ScriptContext {
     subscribe: (callback: (value: any) => void) => () => void;
   };
   onDispose: (callback: () => void | Promise<void>) => void;
-  listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions): void;
+  listen(
+    target: EventTarget,
+    event: string,
+    callback: EventListenerOrEventListenerObject,
+    options?: AddEventListenerOptions,
+  ): void;
   ui: {
     readonly root: ShadowRoot;
     readonly host: HTMLDivElement;
@@ -97,8 +106,18 @@ export interface ScriptContext {
 }
 
 interface DomEventsEngine {
-  add(target: EventTarget | null, type: string, callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
-  remove(target: EventTarget | null, type: string, callback: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  add(
+    target: EventTarget | null,
+    type: string,
+    callback: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+  remove(
+    target: EventTarget | null,
+    type: string,
+    callback: EventListenerOrEventListenerObject,
+    options?: boolean | EventListenerOptions,
+  ): void;
   dispose(): void;
 }
 
@@ -109,68 +128,106 @@ export interface RuntimeAPI {
   dispose: () => Promise<void>;
 }
 
-
-export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
+export function createRuntime(
+  definitions: ScriptDefinition[],
+  bridge: any,
+  host: Window & typeof globalThis = window,
+): RuntimeAPI {
   const rod = {
-    menu: (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) ? createMenuFeature() : undefined,
-    toaster: (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) ? createToasterFeature(host) : undefined,
+    menu:
+      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
+    toaster:
+      typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
+        ? createToasterFeature(host)
+        : undefined,
     storage: createStorageFeature(host),
   };
-  const uiFeature = (typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__) ? createUIFeature() : null;
+  const uiFeature =
+    typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : null;
   const stores = new Map<string, any>();
   let queryClient: QueryClient | undefined;
-  const getQueryClient = () => queryClient ??= new QueryClient({ defaultOptions: { queries: { retry: 1, gcTime: 300_000 } } });
+  const getQueryClient = () =>
+    (queryClient ??= new QueryClient({ defaultOptions: { queries: { retry: 1, gcTime: 300_000 } } }));
   const queryService = Object.freeze({
-    get client() { return getQueryClient(); },
-    createAsyncOptions(source: Accessor<OptionsSource>, query: Accessor<string>, config: Omit<AsyncOptionsConfig, 'queryClient'> = {}) {
+    get client() {
+      return getQueryClient();
+    },
+    createAsyncOptions(
+      source: Accessor<OptionsSource>,
+      query: Accessor<string>,
+      config: Omit<AsyncOptionsConfig, "queryClient"> = {},
+    ) {
       return createAsyncOptions(source, query, { ...config, queryClient: getQueryClient() });
     },
   });
-  const clipboard = (typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__) ? createClipboardFeature(host) : null;
+  const clipboard =
+    typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__
+      ? createClipboardFeature(host)
+      : null;
   if (clipboard) (host as any).__RodClipboard = clipboard;
 
   function openClipboardMenu(): void {
     if (!clipboard) return;
     const entries = clipboard.list().slice(0, 30);
     rod.menu?.open({
-      id: "rod-clipboard-history", title: "📋 Clipboard", presentation: "bottom-sheet", size: "lg",
+      id: "rod-clipboard-history",
+      title: "📋 Clipboard",
+      presentation: "bottom-sheet",
+      size: "lg",
       description: "Histórico local. Selecione um item para copiar novamente.",
-      fields: [{ type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
-        { type: "select", name: "item", label: "Itens recentes", searchable: true,
-          options: entries.map((item: any) => ({ value: item.id, label: item.text.slice(0, 90) })) }],
+      fields: [
+        { type: "search", name: "query", label: "Buscar", placeholder: "Buscar no histórico" },
+        {
+          type: "select",
+          name: "item",
+          label: "Itens recentes",
+          searchable: true,
+          options: entries.map((item: any) => ({ value: item.id, label: item.text.slice(0, 90) })),
+        },
+      ],
       actions: [
         { id: "copy", label: "Copiar", handler: async (ctx: any) => clipboard.copy(ctx.values.item) },
         { id: "read", label: "Ler clipboard", handler: () => clipboard.read() },
-        { id: "clear", label: "Excluir item", variant: "danger", handler: (ctx: any) => clipboard.remove(ctx.values.item) },
+        {
+          id: "clear",
+          label: "Excluir item",
+          variant: "danger",
+          handler: (ctx: any) => clipboard.remove(ctx.values.item),
+        },
       ],
     });
   }
 
-  const clipboardModule = { 
-    id: "rod-clipboard", 
-    name: "Clipboard", 
+  const clipboardModule = {
+    id: "rod-clipboard",
+    name: "Clipboard",
     actions: [
-      { id: "open", label: "📋 Histórico", run: openClipboardMenu }, 
-      { id: "read", label: "Ler clipboard", run: () => clipboard?.read() }
-    ] 
+      { id: "open", label: "📋 Histórico", run: openClipboardMenu },
+      { id: "read", label: "Ler clipboard", run: () => clipboard?.read() },
+    ],
   };
 
   if (clipboard) {
-    host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }));
+    host.document.dispatchEvent(
+      new host.CustomEvent("rod-dock:registry", { detail: { type: "register", module: clipboardModule } }),
+    );
   }
 
   const clipboardKeydown = (event: KeyboardEvent): void => {
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "v") {
-      event.preventDefault(); 
+      event.preventDefault();
       openClipboardMenu();
     }
   };
 
   if (clipboard) host.document.addEventListener("keydown", clipboardKeydown as EventListener, true);
-  
+
   const rules = () => readScriptRules(host.localStorage);
-  const permitted = (definition: ScriptDefinition, url: string) => matches(definition, url, rules()[definition.id]);
-  const onRulesChange = () => { void navigate(); };
+  const permitted = (definition: ScriptDefinition, url: string) =>
+    matches(definition, url, rules()[definition.id]);
+  const onRulesChange = () => {
+    void navigate();
+  };
 
   host.addEventListener("storage", onRulesChange);
   host.document.addEventListener("rod-script-manager:change", onRulesChange);
@@ -180,7 +237,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
   const listeners = new Map<string, Set<(value: any) => void>>();
   const failures = new Map<string, string>();
   const undoHistory: Array<() => void> = [];
-  
+
   let desiredURL = host.location.href;
   let scheduled: Promise<void> | null = null;
   let closed = false;
@@ -201,7 +258,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     const abort = new host.AbortController();
     const cleanups: Array<() => void | Promise<void>> = [];
     const onDispose = (callback: () => void | Promise<void>) => cleanups.push(callback);
-    
+
     // Defer event infrastructure until a module accesses ctx.events.
     // Most scripts only use lifecycle, storage or UI APIs.
     let eventBus: ReturnType<typeof createEventBus> | undefined;
@@ -220,31 +277,38 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       return eventsValue;
     }
 
-    const domListeners = new Map<EventTarget, Map<string, Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: any }>>>>();
-    const captureOf = (options?: boolean | AddEventListenerOptions) => typeof options === "boolean" ? options : !!options?.capture;
-    
+    const domListeners = new Map<
+      EventTarget,
+      Map<
+        string,
+        Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: any }>>
+      >
+    >();
+    const captureOf = (options?: boolean | AddEventListenerOptions) =>
+      typeof options === "boolean" ? options : !!options?.capture;
+
     const domEvents: DomEventsEngine = Object.freeze({
       add(target, type, callback, options) {
-        if (!target || typeof target.addEventListener !== "function") throw new TypeError("Expected EventTarget");
+        if (!target || typeof target.addEventListener !== "function")
+          throw new TypeError("Expected EventTarget");
         let types = domListeners.get(target);
         if (!types) domListeners.set(target, (types = new Map()));
         let handlers = types.get(type);
         if (!handlers) types.set(type, (handlers = new Map()));
         let captures = handlers.get(callback);
         if (!captures) handlers.set(callback, (captures = new Map()));
-        
+
         const capture = captureOf(options);
         if (captures.has(capture)) return;
-        
+
         const once = typeof options === "object" && options?.once;
         const listener: EventListener = function (this: EventTarget, event: Event) {
           if (once) domEvents.remove(target, type, callback, options);
           try {
-            const result: unknown = typeof callback === "function"
-              ? callback.call(this, event)
-              : callback.handleEvent(event);
+            const result: unknown =
+              typeof callback === "function" ? callback.call(this, event) : callback.handleEvent(event);
             if (result && typeof (result as Promise<unknown>).then === "function") {
-              void Promise.resolve(result).catch(error => {
+              void Promise.resolve(result).catch((error) => {
                 captureDiagnostic(error, `dom.event:${type}`, definition.id, host);
                 console.error(`[Userscripts CF: ${definition.id}]`, error);
               });
@@ -279,7 +343,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
     });
 
     onDispose(() => domEvents.dispose());
-    
+
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;
 
@@ -287,7 +351,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       if (uiRoot?.isConnected) return uiRoot;
       const parent = host.document.body || host.document.documentElement;
       if (!parent) throw new Error("Document root is not available");
-      
+
       uiHost = host.document.createElement("div");
       uiHost.dataset.userscriptsCfUi = definition.id;
       // The runtime owns the stacking context for all mounted Solid components.
@@ -302,7 +366,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       uiHost.style.setProperty("visibility", "visible", "important");
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
-      
+
       onDispose(() => {
         uiHost?.remove();
         uiHost = undefined;
@@ -368,11 +432,20 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       },
     });
 
-    const gm = (typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__) ? createGMFeature(host, definition.id) : undefined as any;
-    const network = (typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__) ? createHttpFeature(host, abort.signal, storage, definition.id) : null;
+    const gm =
+      typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
+        ? createGMFeature(host, definition.id)
+        : (undefined as any);
+    const network =
+      typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__
+        ? createHttpFeature(host, abort.signal, storage, definition.id)
+        : null;
     if (network) onDispose(() => network.dispose());
 
-    const dom = (typeof __ROD_FEATURE_DOM__ === "undefined" || __ROD_FEATURE_DOM__) ? createDomFeature(host, abort.signal) : undefined as any;
+    const dom =
+      typeof __ROD_FEATURE_DOM__ === "undefined" || __ROD_FEATURE_DOM__
+        ? createDomFeature(host, abort.signal)
+        : (undefined as any);
     if (dom) onDispose(() => dom.dispose());
 
     return {
@@ -385,7 +458,9 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
           return stop;
         },
       }),
-      get events() { return getEvents(); },
+      get events() {
+        return getEvents();
+      },
       query: queryService,
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
@@ -408,12 +483,18 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
               run: action.run,
             })),
           };
-          host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
-            detail: { type: "register", module },
-          }));
-          onDispose(() => host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", {
-            detail: { type: "unregister", id: definition.id },
-          })));
+          host.document.dispatchEvent(
+            new host.CustomEvent("rod-dock:registry", {
+              detail: { type: "register", module },
+            }),
+          );
+          onDispose(() =>
+            host.document.dispatchEvent(
+              new host.CustomEvent("rod-dock:registry", {
+                detail: { type: "unregister", id: definition.id },
+              }),
+            ),
+          );
         },
       }),
       toast: rod.toaster,
@@ -440,9 +521,10 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       listen(target, event, callback, options = {}) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
-            const result: unknown = typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
+            const result: unknown =
+              typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
             if (result && typeof (result as Promise<unknown>).then === "function") {
-              void Promise.resolve(result).catch(error => {
+              void Promise.resolve(result).catch((error) => {
                 captureDiagnostic(error, `event:${event}`, definition.id, host);
                 console.error(`[Userscripts CF: ${definition.id}]`, error);
               });
@@ -527,11 +609,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       }
       for (const definition of definitions) {
         if (closed || desiredURL !== url) break;
-        if (
-          active.has(definition.id) ||
-          failures.get(definition.id) === url ||
-          !permitted(definition, url)
-        )
+        if (active.has(definition.id) || failures.get(definition.id) === url || !permitted(definition, url))
           continue;
         const ctx = context(definition);
         try {
@@ -594,7 +672,11 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
       if ((host as any).__RodClipboard === clipboard) delete (host as any).__RodClipboard;
       clipboard?.dispose();
       if (clipboard) {
-        host.document.dispatchEvent(new host.CustomEvent("rod-dock:registry", { detail: { type: "unregister", id: clipboardModule.id } }));
+        host.document.dispatchEvent(
+          new host.CustomEvent("rod-dock:registry", {
+            detail: { type: "unregister", id: clipboardModule.id },
+          }),
+        );
       }
       host.removeEventListener("storage", onRulesChange);
       host.document.removeEventListener("rod-script-manager:change", onRulesChange);

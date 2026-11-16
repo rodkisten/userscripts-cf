@@ -2,7 +2,12 @@ import { captureDiagnostic } from "../../diagnostics.js";
 import { createHttpClient } from "../../http-client.js";
 import { createNetworkInterceptors } from "../../network-interceptors.js";
 
-export function createHttpFeature(host: Window & typeof globalThis, signal: AbortSignal, storage: any, namespace: string) {
+export function createHttpFeature(
+  host: Window & typeof globalThis,
+  signal: AbortSignal,
+  storage: any,
+  namespace: string,
+) {
   const client = createHttpClient({ host, signal, storage, namespace });
   const interceptors = createNetworkInterceptors(client, {
     signal,

@@ -458,13 +458,29 @@ function startGitHub(ctx: any) {
       for (const item of group.items) {
         if (favoriteHosts.has(item.row)) continue;
         favoriteHosts.add(item.row);
-        const anchor = item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') || item.row.querySelector("a[href]");
+        const anchor =
+          item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') ||
+          item.row.querySelector("a[href]");
         if (!anchor) continue;
-        const mount = mountPoint(anchor.parentNode!, () => (
-          <button type="button" class={styles.button} title={"Favoritar " + item.name}
-            aria-label={"Favoritar " + item.name}
-            onClick={(event) => { event.preventDefault(); event.stopPropagation(); dashboard.toggleFile(item.name, item.href); }}>☆</button>
-        ), { tag: "span", before: anchor, shadow: true, styles: [css] });
+        const mount = mountPoint(
+          anchor.parentNode!,
+          () => (
+            <button
+              type="button"
+              class={styles.button}
+              title={"Favoritar " + item.name}
+              aria-label={"Favoritar " + item.name}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                dashboard.toggleFile(item.name, item.href);
+              }}
+            >
+              ☆
+            </button>
+          ),
+          { tag: "span", before: anchor, shadow: true, styles: [css] },
+        );
         mounts.set(mount.host, mount.dispose);
         if (item.type === "file") {
           // TODO(GITHUB-COMMITS): Resolve branch names containing slashes via
@@ -472,9 +488,11 @@ function startGitHub(ctx: any) {
           // Cache and batch commit lookups for large directories; test private
           // repositories, rate limits, and SPA branch switches.
           const path = displayPath(item);
-          const commitMount = mountPoint(item.row, () => (
-            <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />
-          ), { tag: "span", shadow: true, styles: [css] });
+          const commitMount = mountPoint(
+            item.row,
+            () => <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />,
+            { tag: "span", shadow: true, styles: [css] },
+          );
           mounts.set(commitMount.host, commitMount.dispose);
         }
       }

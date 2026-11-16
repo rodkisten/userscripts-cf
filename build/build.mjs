@@ -19,7 +19,7 @@ import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const requestedArg = process.argv.find(arg => arg.startsWith("--targets="));
+const requestedArg = process.argv.find((arg) => arg.startsWith("--targets="));
 const requestedTargets = requestedArg ? new Set(requestedArg.slice(10).split(",").filter(Boolean)) : null;
 const out = path.join(root, "dist");
 const iconSource = path.join(root, "assets", "icons");
@@ -73,7 +73,10 @@ const targets = [
     version,
   },
 ];
-if (requestedTargets && (!requestedTargets.size || [...requestedTargets].some(id => !targets.some(target => target.id === id)))) {
+if (
+  requestedTargets &&
+  (!requestedTargets.size || [...requestedTargets].some((id) => !targets.some((target) => target.id === id)))
+) {
   throw new Error("Invalid --targets: " + [...requestedTargets].join(","));
 }
 const manifest = { schema: 1, version, baseURL, scripts: [] };
@@ -87,19 +90,30 @@ for (const definition of definitions) {
 const moduleConsumers = new Map();
 for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
   for (const module of analysis.modules) {
-    const item = moduleConsumers.get(module.file) || { file: module.file, sourceBytes: module.sourceBytes, scripts: [] };
+    const item = moduleConsumers.get(module.file) || {
+      file: module.file,
+      sourceBytes: module.sourceBytes,
+      scripts: [],
+    };
     item.scripts.push(scriptId);
     moduleConsumers.set(module.file, item);
   }
 }
 runtimeFeatureAudit.sharedModules = [...moduleConsumers.values()]
   .filter((module) => module.scripts.length > 1)
-  .map((module) => ({ ...module, scripts: module.scripts.sort(), aggregateSourceBytes: module.sourceBytes * module.scripts.length }))
+  .map((module) => ({
+    ...module,
+    scripts: module.scripts.sort(),
+    aggregateSourceBytes: module.sourceBytes * module.scripts.length,
+  }))
   .sort((a, b) => b.aggregateSourceBytes - a.aggregateSourceBytes || a.file.localeCompare(b.file));
 runtimeFeatureAudit.summary = {
   uniqueModules: moduleConsumers.size,
   sharedModules: runtimeFeatureAudit.sharedModules.length,
-  sharedSourceBytesAcrossScripts: runtimeFeatureAudit.sharedModules.reduce((sum, module) => sum + module.aggregateSourceBytes, 0),
+  sharedSourceBytesAcrossScripts: runtimeFeatureAudit.sharedModules.reduce(
+    (sum, module) => sum + module.aggregateSourceBytes,
+    0,
+  ),
 };
 for (const target of targets) {
   const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
@@ -119,7 +133,23 @@ for (const target of targets) {
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
     if (!selected.length) continue;
-    const runtime = await bundleRuntime(root, selected, { dock: target.id === "standalone" && world === "sandbox", catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({ id, name, matches, exclude, excludeMatches, excludes, includes })), features: [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))], dynamic: selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic), onBundleStats: (stats) => { runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats; } });
+    const runtime = await bundleRuntime(root, selected, {
+      dock: target.id === "standalone" && world === "sandbox",
+      catalog: definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
+        id,
+        name,
+        matches,
+        exclude,
+        excludeMatches,
+        excludes,
+        includes,
+      })),
+      features: [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))],
+      dynamic: selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic),
+      onBundleStats: (stats) => {
+        runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats;
+      },
+    });
     if (world === "sandbox") {
       installers.push(
         `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`,
@@ -142,7 +172,11 @@ for (const target of targets) {
     icon = { svg };
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    icon = await packageIcon({ name: target.name, category: target.definitions[0]?.tags?.[0] || target.id, spec: iconSpec });
+    icon = await packageIcon({
+      name: target.name,
+      category: target.definitions[0]?.tags?.[0] || target.id,
+      spec: iconSpec,
+    });
     await fs.mkdir(iconSource, { recursive: true });
     await fs.writeFile(iconFile, icon.svg);
     console.log("Created icon source: " + path.relative(root, iconFile));
@@ -176,7 +210,7 @@ for (const target of targets) {
     ),
     "// ==/UserScript==",
   ].join("\n");
-  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({id})=>id))});`;
+  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
   const body = await format(stripBuildComments([diagnosticSource, ...installers].join("\n\n")), {
     parser: "babel",
     printWidth: 110,
@@ -207,15 +241,17 @@ for (const target of targets) {
     const chunks = await viteBuild({
       configFile: false,
       logLevel: "error",
-      plugins: [{
-        name: "userscript-runtime-minify",
-        resolveId(id) {
-          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+      plugins: [
+        {
+          name: "userscript-runtime-minify",
+          resolveId(id) {
+            if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+          },
+          load(id) {
+            if (id === "\0virtual:userscript-runtime") return body;
+          },
         },
-        load(id) {
-          if (id === "\0virtual:userscript-runtime") return body;
-        },
-      }],
+      ],
       build: {
         write: false,
         minify: "oxc",
@@ -252,7 +288,10 @@ for (const target of targets) {
   manifest.scripts.push({
     id: target.id,
     name: target.name,
-    description: target.id === "standalone" ? "Todos os módulos em uma instalação" : "Userscript independente com atualizações automáticas",
+    description:
+      target.id === "standalone"
+        ? "Todos os módulos em uma instalação"
+        : "Userscript independente com atualizações automáticas",
     file,
     debugFile,
     metaFile,
@@ -273,11 +312,19 @@ for (const [target, measurements] of Object.entries(classAudit)) {
     gzipBytes: measurements.gzipBytes,
     debugBytes: measurements.debugBytes,
     debugGzipBytes: measurements.debugGzipBytes,
-    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({ world, bytes, includedModuleCount, topModules, featureDefines })),
+    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({
+      world,
+      bytes,
+      includedModuleCount,
+      topModules,
+      featureDefines,
+    })),
   };
 }
 const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
-  (stats.topModules || []).slice(0, 5).map(({ id, renderedBytes }) => ({ target, module: id, renderedBytes }))
+  (stats.topModules || [])
+    .slice(0, 5)
+    .map(({ id, renderedBytes }) => ({ target, module: id, renderedBytes })),
 );
 // Rank dependencies by their aggregate rendered contribution across targets.
 // The aggregate is diagnostic: separately installed userscripts are not loaded
@@ -286,7 +333,12 @@ const retainedConsumers = new Map();
 for (const [bundle, stats] of Object.entries(runtimeFeatureAudit.bundles)) {
   for (const module of stats.modules) {
     if (module.renderedBytes <= 0) continue;
-    const current = retainedConsumers.get(module.id) || { module: module.id, bundles: [], aggregateRenderedBytes: 0, maxRenderedBytes: 0 };
+    const current = retainedConsumers.get(module.id) || {
+      module: module.id,
+      bundles: [],
+      aggregateRenderedBytes: 0,
+      maxRenderedBytes: 0,
+    };
     current.bundles.push({ bundle, renderedBytes: module.renderedBytes });
     current.aggregateRenderedBytes += module.renderedBytes;
     current.maxRenderedBytes = Math.max(current.maxRenderedBytes, module.renderedBytes);
@@ -298,9 +350,16 @@ runtimeFeatureAudit.repeatedRenderedModules = [...retainedConsumers.values()]
   .sort((a, b) => b.aggregateRenderedBytes - a.aggregateRenderedBytes || a.module.localeCompare(b.module));
 runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
 console.log("\\nLargest repeated dependencies (unminified rendered bytes, NOT estimated savings):");
-console.table(runtimeFeatureAudit.repeatedRenderedModules.slice(0, 20).map(({ module, bundles, aggregateRenderedBytes, maxRenderedBytes }) => ({
-  module, consumers: bundles.length, aggregateRenderedBytes, maxRenderedBytes,
-})));
+console.table(
+  runtimeFeatureAudit.repeatedRenderedModules
+    .slice(0, 20)
+    .map(({ module, bundles, aggregateRenderedBytes, maxRenderedBytes }) => ({
+      module,
+      consumers: bundles.length,
+      aggregateRenderedBytes,
+      maxRenderedBytes,
+    })),
+);
 console.log("\\nLargest retained runtime modules by target/world:");
 console.table(topRuntimeModules);
 // Editor dependency audit: attribute CodeMirror, Lezer and Acorn to the
@@ -314,35 +373,62 @@ const editorFamilies = [
 const editorAudit = {
   schema: 1,
   note: "renderedBytes are pre-minification Rolldown contributions, not gzip or estimated download savings",
-  bundles: Object.fromEntries(Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => {
-    const families = Object.fromEntries(editorFamilies.map(([family, pattern]) => {
-      const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern(item.id));
-      return [family, {
-        renderedBytes: modules.reduce((total, item) => total + item.renderedBytes, 0),
-        modules: modules.map(({ id, renderedBytes }) => ({ id, renderedBytes })),
-      }];
-    }));
-    return [target, { families, totalEditorRenderedBytes: Object.values(families).reduce((total, item) => total + item.renderedBytes, 0) }];
-  })),
+  bundles: Object.fromEntries(
+    Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => {
+      const families = Object.fromEntries(
+        editorFamilies.map(([family, pattern]) => {
+          const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern(item.id));
+          return [
+            family,
+            {
+              renderedBytes: modules.reduce((total, item) => total + item.renderedBytes, 0),
+              modules: modules.map(({ id, renderedBytes }) => ({ id, renderedBytes })),
+            },
+          ];
+        }),
+      );
+      return [
+        target,
+        {
+          families,
+          totalEditorRenderedBytes: Object.values(families).reduce(
+            (total, item) => total + item.renderedBytes,
+            0,
+          ),
+        },
+      ];
+    }),
+  ),
 };
-await fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n");
+await fs.writeFile(
+  path.join(out, "editor-dependency-audit.json"),
+  JSON.stringify(editorAudit, null, 2) + "\n",
+);
 console.log("\nEditor dependency footprint by target/world (pre-minification):");
-console.table(Object.entries(editorAudit.bundles).map(([target, report]) => ({
-  target, codemirror: report.families.codemirror.renderedBytes,
-  lezer: report.families.lezer.renderedBytes,
-  acorn: report.families.acorn.renderedBytes,
-})));
-await fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n");
+console.table(
+  Object.entries(editorAudit.bundles).map(([target, report]) => ({
+    target,
+    codemirror: report.families.codemirror.renderedBytes,
+    lezer: report.families.lezer.renderedBytes,
+    acorn: report.families.acorn.renderedBytes,
+  })),
+);
+await fs.writeFile(
+  path.join(out, "runtime-feature-audit.json"),
+  JSON.stringify(runtimeFeatureAudit, null, 2) + "\n",
+);
 await fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n");
-console.table(Object.entries(classAudit).map(([target, audit]) => ({
-  target,
-  bytes: audit.bytes,
-  gzip: audit.gzipBytes,
-  debug: audit.debugBytes,
-  debugGzip: audit.debugGzipBytes,
-  staticClasses: audit.staticClasses,
-  dynamicReferences: audit.dynamicReferences,
-})));
+console.table(
+  Object.entries(classAudit).map(([target, audit]) => ({
+    target,
+    bytes: audit.bytes,
+    gzip: audit.gzipBytes,
+    debug: audit.debugBytes,
+    debugGzip: audit.debugGzipBytes,
+    staticClasses: audit.staticClasses,
+    dynamicReferences: audit.dynamicReferences,
+  })),
+);
 
 execFileSync(process.execPath, [path.join(root, "build/audit-events.mjs")], { cwd: root, stdio: "inherit" });
 const sums = [];

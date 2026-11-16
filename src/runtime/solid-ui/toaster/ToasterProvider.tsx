@@ -1,12 +1,9 @@
-import { For, Show } from 'solid-js';
-import { Portal } from '@solidjs/web';
-import {
-  dismissAllToasts,
-  useToasterState,
-} from './toasterStore';
-import { SvgIcon } from './SvgIcon';
-import { ToastItem } from './ToastItem';
-import styles from './Toaster.module.css';
+import { For, Show } from "solid-js";
+import { Portal } from "@solidjs/web";
+import { dismissAllToasts, useToasterState } from "./toasterStore";
+import { SvgIcon } from "./SvgIcon";
+import { ToastItem } from "./ToastItem";
+import styles from "./Toaster.module.css";
 
 export function ToasterHost(props: { api?: any }) {
   const {
@@ -19,16 +16,13 @@ export function ToasterHost(props: { api?: any }) {
     setManagerMinimized,
   } = useToasterState();
 
-  const interactionToasts = () =>
-    toasts().filter((t) => t.record.options.lane === 'interaction');
+  const interactionToasts = () => toasts().filter((t) => t.record.options.lane === "interaction");
 
-  const stackToasts = () =>
-    toasts().filter((t) => t.record.options.lane !== 'interaction');
+  const stackToasts = () => toasts().filter((t) => t.record.options.lane !== "interaction");
 
   const activeLoadingCount = () =>
-    stackToasts().filter(
-      (t) => t.record.options.loading && t.record.options.loadingState === 'loading',
-    ).length;
+    stackToasts().filter((t) => t.record.options.loading && t.record.options.loadingState === "loading")
+      .length;
 
   return (
     <Portal>
@@ -59,9 +53,7 @@ export function ToasterHost(props: { api?: any }) {
               onClick={() => setManagerMinimized(false)}
             >
               <SvgIcon name="loader-circle" size={19} />
-              <span class={styles.managerCount}>
-                {activeLoadingCount() || stackToasts().length}
-              </span>
+              <span class={styles.managerCount}>{activeLoadingCount() || stackToasts().length}</span>
             </button>
           </Show>
 
@@ -69,11 +61,7 @@ export function ToasterHost(props: { api?: any }) {
             <div class={styles.toolbar}>
               <span class={styles.toolbarLabel}>{stackToasts().length} toasts</span>
               <div class={styles.toolbarActions}>
-                <button
-                  type="button"
-                  class={styles.toolbarButton}
-                  onClick={() => setManagerMinimized(true)}
-                >
+                <button type="button" class={styles.toolbarButton} onClick={() => setManagerMinimized(true)}>
                   <SvgIcon name="chevron-down" size={14} />
                   <span>Minimize</span>
                 </button>
@@ -83,13 +71,9 @@ export function ToasterHost(props: { api?: any }) {
                   onClick={() => setStackExpanded(!stackExpanded())}
                 >
                   <SvgIcon name="chevrons-up" size={14} />
-                  <span>{stackExpanded() ? 'Collapse' : 'Expand'}</span>
+                  <span>{stackExpanded() ? "Collapse" : "Expand"}</span>
                 </button>
-                <button
-                  type="button"
-                  class={styles.toolbarButton}
-                  onClick={() => dismissAllToasts(false)}
-                >
+                <button type="button" class={styles.toolbarButton} onClick={() => dismissAllToasts(false)}>
                   <SvgIcon name="x-circle" size={14} />
                   <span>Close all</span>
                 </button>

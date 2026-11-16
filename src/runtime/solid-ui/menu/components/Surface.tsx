@@ -1,5 +1,5 @@
-import { createSignal, createMemo, For, Show, onCleanup } from 'solid-js';
-import { Portal } from '@solidjs/web';
+import { createSignal, createMemo, For, Show, onCleanup } from "solid-js";
+import { Portal } from "@solidjs/web";
 import type {
   AnyRecord,
   Presentation,
@@ -10,51 +10,65 @@ import type {
   RodMenuResult,
   RodMenuSchema,
   SurfaceSize,
-} from '../types';
-import { buildInitialValues, cloneValue, createMenuStore, getAllFields } from '../store/createMenuStore';
+} from "../types";
+import { buildInitialValues, cloneValue, createMenuStore, getAllFields } from "../store/createMenuStore";
 import {
   activatePreviousSurface,
   registerSurface,
   unregisterSurface,
   useSurfaceStack,
-} from '../store/stackManager';
-import { SectionRenderer } from './SectionRenderer';
-import surfaceStyles from '../styles/Surface.module.css';
-import fieldStyles from '../styles/Fields.module.css';
+} from "../store/stackManager";
+import { SectionRenderer } from "./SectionRenderer";
+import surfaceStyles from "../styles/Surface.module.css";
+import fieldStyles from "../styles/Fields.module.css";
 
 function getSizeWidth(size: SurfaceSize | undefined): string {
   switch (size) {
-    case 'sm': return '440px';
-    case 'lg': return '760px';
-    case 'xl': return '960px';
-    case 'fullscreen': return 'calc(100vw - 16px)';
-    default: return '640px';
+    case "sm":
+      return "440px";
+    case "lg":
+      return "760px";
+    case "xl":
+      return "960px";
+    case "fullscreen":
+      return "calc(100vw - 16px)";
+    default:
+      return "640px";
   }
 }
 
-function normalizePresentation(value: Presentation | undefined, hasAnchor: boolean): Exclude<Presentation, 'auto'> {
-  const selected = value ?? 'bottom-sheet';
-  if (selected !== 'auto') return selected;
-  if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 720px)').matches) return 'bottom-sheet';
-  return hasAnchor ? 'popover' : 'modal';
+function normalizePresentation(
+  value: Presentation | undefined,
+  hasAnchor: boolean,
+): Exclude<Presentation, "auto"> {
+  const selected = value ?? "bottom-sheet";
+  if (selected !== "auto") return selected;
+  if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 720px)").matches)
+    return "bottom-sheet";
+  return hasAnchor ? "popover" : "modal";
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
-  const parts = shortcut.toLowerCase().split('+').map((p) => p.trim()).filter(Boolean);
+  const parts = shortcut
+    .toLowerCase()
+    .split("+")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (!parts.length) return false;
   const key = parts[parts.length - 1];
-  const wantsMod = parts.includes('mod') || parts.includes('meta') || parts.includes('cmd') || parts.includes('ctrl');
+  const wantsMod =
+    parts.includes("mod") || parts.includes("meta") || parts.includes("cmd") || parts.includes("ctrl");
   const modOk =
     !wantsMod ||
-    (parts.includes('ctrl')
+    (parts.includes("ctrl")
       ? event.ctrlKey
-      : parts.includes('meta') || parts.includes('cmd')
+      : parts.includes("meta") || parts.includes("cmd")
         ? event.metaKey
         : event.metaKey || event.ctrlKey);
   if (!modOk) return false;
-  if (parts.includes('shift') !== event.shiftKey) return false;
-  if (parts.includes('alt') !== event.altKey) return false;
-  const normalizedKey = event.key.toLowerCase() === ' ' ? 'space' : event.key.toLowerCase();
+  if (parts.includes("shift") !== event.shiftKey) return false;
+  if (parts.includes("alt") !== event.altKey) return false;
+  const normalizedKey = event.key.toLowerCase() === " " ? "space" : event.key.toLowerCase();
   return normalizedKey === key || event.code.toLowerCase() === key;
 }
 
@@ -71,7 +85,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
   const [loading, setLoading] = createSignal(false);
   const [actionLoadingMap, setActionLoadingMap] = createSignal<Record<string, boolean>>({});
   const [errors, setErrors] = createSignal<Record<string, string>>({});
-  const [globalError, setGlobalError] = createSignal('');
+  const [globalError, setGlobalError] = createSignal("");
   const [activeTabId, setActiveTabId] = createSignal<string | null>(
     props.initialSchema.initialTab || props.initialSchema.tabs?.[0]?.id || null,
   );
@@ -85,7 +99,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
   let closeTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingResult: RodMenuResult<TValues> | undefined;
   let finalized = false;
-  const previousOverflow = typeof document !== 'undefined' ? document.documentElement.style.overflow : '';
+  const previousOverflow = typeof document !== "undefined" ? document.documentElement.style.overflow : "";
   let ownsScrollLock = false;
   let resolveResult!: (res: RodMenuResult<TValues>) => void;
   const resultPromise = new Promise<RodMenuResult<TValues>>((res) => {
@@ -105,9 +119,9 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
       schema().onError?.(error, context);
     } catch {}
     const msg = error instanceof Error ? error.message : String(error);
-    const mode = schema().errorMode ?? 'inline';
-    if (mode === 'inline' || mode === 'both') setGlobalError(msg);
-    console.error('[RodMenu]', error);
+    const mode = schema().errorMode ?? "inline";
+    if (mode === "inline" || mode === "both") setGlobalError(msg);
+    console.error("[RodMenu]", error);
   };
 
   const initialValues = buildInitialValues(props.initialSchema);
@@ -136,7 +150,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   const clearErrors = () => {
     setErrors({});
-    setGlobalError('');
+    setGlobalError("");
   };
 
   const validate = async (): Promise<boolean> => {
@@ -146,21 +160,37 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     let hasError = false;
 
     for (const field of getAllFields(currentSchema)) {
-      if (['divider', 'html', 'button', 'hidden', 'media-preview', 'provider-status', 'request-log', 'debug-json'].includes(field.type)) {
+      if (
+        [
+          "divider",
+          "html",
+          "button",
+          "hidden",
+          "media-preview",
+          "provider-status",
+          "request-log",
+          "debug-json",
+        ].includes(field.type)
+      ) {
         continue;
       }
       if (field.hidden || (field.visibleWhen && !field.visibleWhen(currentValues, context))) continue;
 
       const val = currentValues[field.name];
-      const isEmpty = val == null || val === '' || (Array.isArray(val) && val.length === 0) || val === false;
+      const isEmpty = val == null || val === "" || (Array.isArray(val) && val.length === 0) || val === false;
 
       if (field.required && isEmpty) {
-        setFieldError(field.name, 'Campo obrigatório.');
+        setFieldError(field.name, "Campo obrigatório.");
         hasError = true;
         continue;
       }
 
-      if (field.type === 'media-picker' && field.minSelected && Array.isArray(val) && val.length < field.minSelected) {
+      if (
+        field.type === "media-picker" &&
+        field.minSelected &&
+        Array.isArray(val) &&
+        val.length < field.minSelected
+      ) {
         setFieldError(field.name, `Selecione pelo menos ${field.minSelected} item(ns).`);
         hasError = true;
         continue;
@@ -174,7 +204,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
             hasError = true;
           }
         } catch (err) {
-          setFieldError(field.name, err instanceof Error ? err.message : 'Valor inválido.');
+          setFieldError(field.name, err instanceof Error ? err.message : "Valor inválido.");
           hasError = true;
         }
       }
@@ -183,10 +213,10 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     if (currentSchema.validate) {
       try {
         const res = await currentSchema.validate(currentValues, context);
-        if (typeof res === 'string' && res) {
+        if (typeof res === "string" && res) {
           setGlobalError(res);
           hasError = true;
-        } else if (res && typeof res === 'object') {
+        } else if (res && typeof res === "object") {
           for (const [k, msg] of Object.entries(res)) {
             if (msg) {
               setFieldError(k, msg);
@@ -195,7 +225,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
           }
         }
       } catch (err) {
-        setGlobalError(err instanceof Error ? err.message : 'Não foi possível validar o formulário.');
+        setGlobalError(err instanceof Error ? err.message : "Não foi possível validar o formulário.");
         hasError = true;
       }
     }
@@ -203,10 +233,10 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     return !hasError;
   };
 
-  const finish = (action: string | 'dismiss', data: unknown, reason: RodMenuResult['reason']) => {
+  const finish = (action: string | "dismiss", data: unknown, reason: RodMenuResult["reason"]) => {
     if (settled) return;
     settled = true;
-    store.trigger('close');
+    store.trigger("close");
     const result: RodMenuResult<TValues> = {
       action,
       values: cloneValue(store.values()),
@@ -223,9 +253,15 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     finalized = true;
     if (closeTimer !== undefined) clearTimeout(closeTimer);
     const result = pendingResult ?? {
-      action: 'dismiss', values: cloneValue(store.values()), reason: 'api' as const,
+      action: "dismiss",
+      values: cloneValue(store.values()),
+      reason: "api" as const,
     };
-    try { schema().onClose?.(result); } catch (err) { reportError(err); }
+    try {
+      schema().onClose?.(result);
+    } catch (err) {
+      reportError(err);
+    }
     resolveResult(result);
     unregisterSurface(props.id, handle);
     props.onDestroy?.(props.id);
@@ -249,16 +285,17 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   const runAction = async (action: RodMenuAction) => {
     if (actionLoadingMap()[action.id] || loading()) return;
-    if (action.validate !== false && action.role !== 'cancel') {
+    if (action.validate !== false && action.role !== "cancel") {
       const valid = await validate();
       if (!valid) return;
     }
     setActionLoadingMap((prev) => ({ ...prev, [action.id]: true }));
     try {
       const data = action.handler ? await action.handler(context) : undefined;
-      if (action.role === 'submit') store.trigger('submit');
-      const shouldClose = action.close ?? ['submit', 'cancel', 'destructive'].includes(action.role || 'custom');
-      if (shouldClose) finish(action.id, data, 'action');
+      if (action.role === "submit") store.trigger("submit");
+      const shouldClose =
+        action.close ?? ["submit", "cancel", "destructive"].includes(action.role || "custom");
+      if (shouldClose) finish(action.id, data, "action");
     } catch (err) {
       reportError(err);
     } finally {
@@ -281,7 +318,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     get activeTab() {
       return activeTabId();
     },
-    get: <T = unknown>(name: string) => store.values()[name] as T,
+    get: <T = unknown,>(name: string) => store.values()[name] as T,
     set: (name: string, value: unknown) => {
       store.setFieldValue(name, value);
       try {
@@ -300,8 +337,8 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     },
     reset: () => store.resetValues(),
     validate,
-    close: (data?: unknown) => finish('dismiss', data, 'api'),
-    dismiss: (reason?: RodMenuResult['reason']) => finish('dismiss', undefined, reason ?? 'api'),
+    close: (data?: unknown) => finish("dismiss", data, "api"),
+    dismiss: (reason?: RodMenuResult["reason"]) => finish("dismiss", undefined, reason ?? "api"),
     setLoading,
     setActionLoading: (actionId: string, l: boolean) =>
       setActionLoadingMap((prev) => ({ ...prev, [actionId]: l })),
@@ -332,7 +369,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     persist: context.persist,
     hydrate: context.hydrate,
     clearPersisted: context.clearPersisted,
-    destroy: () => finish('dismiss', undefined, 'api'),
+    destroy: () => finish("dismiss", undefined, "api"),
   };
 
   {
@@ -345,7 +382,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
     if (schema().scrollLock !== false) {
       ownsScrollLock = true;
-      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.overflow = "hidden";
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -356,38 +393,38 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
         void runAction(shortcutAction);
         return;
       }
-      if (e.key === 'Escape' && schema().dismissible !== false && schema().closeOnEscape !== false) {
+      if (e.key === "Escape" && schema().dismissible !== false && schema().closeOnEscape !== false) {
         e.preventDefault();
-        finish('dismiss', undefined, 'escape');
+        finish("dismiss", undefined, "escape");
         return;
       }
-      if (e.key === 'Enter' && schema().submitOnEnter !== false) {
+      if (e.key === "Enter" && schema().submitOnEnter !== false) {
         const target = e.target as HTMLElement | null;
-        if (target?.tagName === 'TEXTAREA' || target?.isContentEditable) return;
-        const submit = schema().actions?.find((a) => a.role === 'submit');
+        if (target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+        const submit = schema().actions?.find((a) => a.role === "submit");
         if (submit) {
           e.preventDefault();
           void runAction(submit);
         }
       }
     };
-    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
 
     const vv = window.visualViewport;
     const syncViewport = () => {
       if (!vv) return;
       setVvStyles({
-        '--rm-vvh': `${Math.round(vv.height)}px`,
-        '--rm-vvw': `${Math.round(vv.width)}px`,
-        '--rm-vv-top': `${Math.round(vv.offsetTop)}px`,
-        '--rm-vv-left': `${Math.round(vv.offsetLeft)}px`,
+        "--rm-vvh": `${Math.round(vv.height)}px`,
+        "--rm-vvw": `${Math.round(vv.width)}px`,
+        "--rm-vv-top": `${Math.round(vv.offsetTop)}px`,
+        "--rm-vv-left": `${Math.round(vv.offsetLeft)}px`,
       });
       setKeyboardOpen(vv.height < window.innerHeight - 96);
     };
     if (vv) {
       syncViewport();
-      vv.addEventListener('resize', syncViewport);
-      vv.addEventListener('scroll', syncViewport);
+      vv.addEventListener("resize", syncViewport);
+      vv.addEventListener("scroll", syncViewport);
     }
 
     const animationFrame = requestAnimationFrame(() => {
@@ -403,14 +440,14 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
     onCleanup(() => {
       cancelAnimationFrame(animationFrame);
-      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
       if (vv) {
-        vv.removeEventListener('resize', syncViewport);
-        vv.removeEventListener('scroll', syncViewport);
+        vv.removeEventListener("resize", syncViewport);
+        vv.removeEventListener("scroll", syncViewport);
       }
       if (!settled) {
         settled = true;
-        pendingResult = { action: 'dismiss', values: cloneValue(store.values()), reason: 'api' };
+        pendingResult = { action: "dismiss", values: cloneValue(store.values()), reason: "api" };
       }
       finalize();
       if (ownsScrollLock && !stack().some((entry) => entry.id !== props.id)) {
@@ -435,7 +472,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     if (!isDragging()) return;
     setIsDragging(false);
     if (dragY() >= 110 && schema().swipeToDismiss !== false && schema().dismissible !== false) {
-      finish('dismiss', undefined, 'swipe');
+      finish("dismiss", undefined, "swipe");
     } else {
       setDragY(0);
     }
@@ -464,15 +501,15 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
     const baseZ = (schema().zIndex ?? 2147482500) + Math.max(0, stackIndex());
     const depth = Math.max(0, stackTotal() - 1 - Math.max(0, stackIndex()));
     const vars: Record<string, string> = {
-      '--rm-z': String(baseZ),
-      '--rm-width': getSizeWidth(schema().size),
-      '--rm-stack-y': !isStackTop() ? `${-Math.min(depth, 2) * 12}px` : '0px',
-      '--rm-stack-scale': !isStackTop() ? String(Math.max(0.9, 1 - Math.min(depth, 2) * 0.018)) : '1',
+      "--rm-z": String(baseZ),
+      "--rm-width": getSizeWidth(schema().size),
+      "--rm-stack-y": !isStackTop() ? `${-Math.min(depth, 2) * 12}px` : "0px",
+      "--rm-stack-scale": !isStackTop() ? String(Math.max(0.9, 1 - Math.min(depth, 2) * 0.018)) : "1",
       ...vvStyles(),
     };
     if (schema().theme) {
       for (const [k, v] of Object.entries(schema().theme!)) {
-        vars[k.startsWith('--') ? k : `--rm-${k}`] = String(v);
+        vars[k.startsWith("--") ? k : `--rm-${k}`] = String(v);
       }
     }
     return vars;
@@ -480,14 +517,14 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
   return (
     <Portal>
-      <div class={surfaceStyles.host} style={{ 'z-index': themeVars()['--rm-z'] }}>
+      <div class={surfaceStyles.host} style={{ "z-index": themeVars()["--rm-z"] }}>
         <div
-          class={`${surfaceStyles.root} rm-theme-root ${schema().className || ''}`.trim()}
+          class={`${surfaceStyles.root} rm-theme-root ${schema().className || ""}`.trim()}
           style={themeVars()}
           data-open={String(open())}
           data-loading={String(loading())}
           data-presentation={presentation()}
-          data-side={schema().drawerSide || 'right'}
+          data-side={schema().drawerSide || "right"}
           data-stack-active={String(isStackTop())}
           data-has-behind={String(isStackTop() && stackTotal() > 1)}
           data-visual-viewport={String(Object.keys(vvStyles()).length > 0)}
@@ -499,7 +536,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
               if (e.target !== e.currentTarget || !isStackTop()) return;
               if (stackTotal() > 1 && activatePreviousSurface(props.id)) return;
               if (schema().closeOnBackdrop !== false && schema().dismissible !== false) {
-                finish('dismiss', undefined, 'backdrop');
+                finish("dismiss", undefined, "backdrop");
               }
             }}
           />
@@ -509,14 +546,14 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
             class={surfaceStyles.shell}
             role="dialog"
             aria-modal="true"
-            aria-label={schema().title || 'Menu'}
+            aria-label={schema().title || "Menu"}
             tabIndex={-1}
             style={{
-              '--rm-drag-y': `${dragY()}px`,
-              transition: isDragging() ? 'none' : undefined,
+              "--rm-drag-y": `${dragY()}px`,
+              transition: isDragging() ? "none" : undefined,
             }}
           >
-            <Show when={schema().showHandle !== false && presentation() === 'bottom-sheet'}>
+            <Show when={schema().showHandle !== false && presentation() === "bottom-sheet"}>
               <div
                 class={surfaceStyles.handleWrap}
                 onPointerDown={onHandlePointerDown}
@@ -538,7 +575,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                   <div class={surfaceStyles.titleRow}>
                     <Show when={schema().icon}>
                       <div class={surfaceStyles.icon}>
-                        {typeof schema().icon === 'string' ? (
+                        {typeof schema().icon === "string" ? (
                           <span innerHTML={schema().icon as string} />
                         ) : (
                           schema().icon
@@ -561,7 +598,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                   type="button"
                   class={surfaceStyles.close}
                   aria-label="Fechar"
-                  onClick={() => finish('dismiss', undefined, 'api')}
+                  onClick={() => finish("dismiss", undefined, "api")}
                 >
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                     <path
@@ -623,7 +660,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             onClick={() => setActiveTabId(tab.id)}
                           >
                             <Show when={tab.icon}>
-                              {typeof tab.icon === 'string' ? (
+                              {typeof tab.icon === "string" ? (
                                 <span innerHTML={tab.icon as string} />
                               ) : (
                                 tab.icon
@@ -693,23 +730,21 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
 
                     const badgeText = () => {
                       if (action.badge == null) return null;
-                      return typeof action.badge === 'function'
-                        ? action.badge(context)
-                        : action.badge;
+                      return typeof action.badge === "function" ? action.badge(context) : action.badge;
                     };
 
                     const variant = () =>
                       action.variant ||
-                      (action.role === 'destructive'
-                        ? 'danger'
-                        : action.role === 'cancel'
-                          ? 'secondary'
-                          : 'primary');
+                      (action.role === "destructive"
+                        ? "danger"
+                        : action.role === "cancel"
+                          ? "secondary"
+                          : "primary");
 
                     return (
                       <Show when={isVisible()}>
                         <button
-                          type={action.role === 'submit' ? 'submit' : 'button'}
+                          type={action.role === "submit" ? "submit" : "button"}
                           class={surfaceStyles.action}
                           data-action={action.id}
                           data-variant={variant()}
@@ -721,14 +756,14 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             <span class={surfaceStyles.spinner} />
                           </Show>
                           <Show when={action.icon}>
-                            {typeof action.icon === 'string' ? (
+                            {typeof action.icon === "string" ? (
                               <span innerHTML={action.icon as string} />
                             ) : (
                               action.icon
                             )}
                           </Show>
                           <span>{action.label}</span>
-                          <Show when={badgeText() != null && badgeText() !== ''}>
+                          <Show when={badgeText() != null && badgeText() !== ""}>
                             <span class={surfaceStyles.badge}>{badgeText()}</span>
                           </Show>
                           <Show when={action.shortcut}>

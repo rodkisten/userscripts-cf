@@ -91,9 +91,7 @@ export default [
       "GM_download",
       "GM.download",
     ],
-    requires: [
-      "https://code.migos.club/api/cdn?package=@videojs/cdn@10.3.0/video.js%20(provider:jsdelivr)",
-    ],
+    requires: ["https://code.migos.club/api/cdn?package=@videojs/cdn@10.3.0/video.js%20(provider:jsdelivr)"],
     connect: [
       "xtelegram-cf.migos.club",
       "xtelegram.migos.club",

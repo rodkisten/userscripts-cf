@@ -7,8 +7,11 @@ type MethodItem = { id: string; label: string; world: string; result?: any };
 type HistoryItem = { code: string; at: string };
 const pretty = (value: unknown) => {
   if (typeof value === "string") return value;
-  try { return JSON.stringify(value, null, 2) ?? String(value); }
-  catch { return Object.prototype.toString.call(value); }
+  try {
+    return JSON.stringify(value, null, 2) ?? String(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
 };
 
 export function mountPanel(container: HTMLElement) {
@@ -16,96 +19,109 @@ export function mountPanel(container: HTMLElement) {
   const [methods, setMethods] = createSignal<MethodItem[]>([]);
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
 
-  const callbacks = { options: (_trigger: HTMLElement) => {}, method: (_id: string) => {}, history: (_code: string) => {} };
+  const callbacks = {
+    options: (_trigger: HTMLElement) => {},
+    method: (_id: string) => {},
+    history: (_code: string) => {},
+  };
   const dispose = render(
     () => (
-      <div class="repl-root" >
+      <div class="repl-root">
         <button class="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
         </button>
         <section class="panel" aria-label="REPL JavaScript" hidden={true}>
           <header>
             <strong>{"REPL · JavaScript"}</strong>
-            <button data-action="run" class="primary" title="Executar código">{"▶ Executar"}</button>
-            <button aria-label="Opções do REPL" aria-haspopup="menu" onClick={(event) => callbacks.options(event.currentTarget)}>{"⋯"}</button>
+            <button data-action="run" class="primary" title="Executar código">
+              {"▶ Executar"}
+            </button>
+            <button
+              aria-label="Opções do REPL"
+              aria-haspopup="menu"
+              onClick={(event) => callbacks.options(event.currentTarget)}
+            >
+              {"⋯"}
+            </button>
             <button data-action="close" aria-label="Fechar">
               {"×"}
             </button>
           </header>
           <div class="repl-menu" hidden role="group" aria-label="Opções avançadas do REPL">
-          <nav class="tabs">
-            <button data-tab="console" aria-selected="true">
-              {"Console"}
-            </button>
-            <button data-tab="methods">{"Métodos"}</button>
-            <button data-tab="history">{"Histórico"}</button>
-          </nav>
-          <div class="repl-menu-content">            <div class="toolbar execution-toolbar">
-              <select aria-label="Método" data-method="">
-                <option value="auto">{"Automático · testa antes, executa uma vez"}</option>
-              </select>
-              <button class="primary" data-action="run">
-                {"Executar"}
+            <nav class="tabs">
+              <button data-tab="console" aria-selected="true">
+                {"Console"}
               </button>
-              <button data-action="stop">{"Parar espera"}</button>
+              <button data-tab="methods">{"Métodos"}</button>
+              <button data-tab="history">{"Histórico"}</button>
+            </nav>
+            <div class="repl-menu-content">
+              {" "}
+              <div class="toolbar execution-toolbar">
+                <select aria-label="Método" data-method="">
+                  <option value="auto">{"Automático · testa antes, executa uma vez"}</option>
+                </select>
+                <button class="primary" data-action="run">
+                  {"Executar"}
+                </button>
+                <button data-action="stop">{"Parar espera"}</button>
+              </div>
+              <div class="editor-actions repl-settings" role="toolbar" aria-label="Edição">
+                <button data-action="select-all">Selecionar tudo</button>
+                <button data-action="copy-code">Copiar</button>
+                <button data-action="paste-code">Colar</button>
+                <button data-action="validate">Validar</button>
+              </div>
+              <div class="options repl-settings">
+                <label>
+                  <input type="checkbox" data-raw="" />
+                  Script global (sem wrapper)
+                </label>
+                <label>
+                  <input data-persist="" type="checkbox" checked={true} />
+                  {"Persistir variáveis"}
+                </label>
+                <label>
+                  {"Timeout "}
+                  <input data-timeout="" type="number" min="250" max="60000" step="250" />
+                  {"ms"}
+                </label>
+                <button data-action="complete">{"Completar"}</button>
+                <select aria-label="Exemplos" data-example="">
+                  <option value="">{"Exemplos…"}</option>
+                </select>
+              </div>
+              <p class="hint repl-settings" data-syntax="">
+                {
+                  "Await e última expressão retornam resultado. Use _, $, $, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
+                }
+              </p>
+              <div class="row repl-settings">
+                <input
+                  data-url=""
+                  type="url"
+                  placeholder="https://site.com/script.js"
+                  aria-label="URL do JavaScript"
+                />
+                <button data-action="fetch-url">{"URL → editor"}</button>
+                <button data-action="external">{"Script src"}</button>
+                <label>
+                  <input data-module="" type="checkbox" />
+                  {"Módulo"}
+                </label>
+              </div>
+              <p class="hint warning repl-settings">
+                {
+                  "Parar/timeout cancelam a espera, não interrompem loops síncronos nem desfazem efeitos. “Executar em todos” repete seu código."
+                }
+              </p>
+              <div class="toolbar repl-settings">
+                <button data-action="probe">{"Testar compatibilidade"}</button>
+                <button data-action="run-all">{"Executar em todos"}</button>
+                <button data-action="clear">{"Limpar saída"}</button>
+                <button data-action="reset">{"Nova sessão"}</button>
+              </div>
             </div>
-            <div class="editor-actions repl-settings" role="toolbar" aria-label="Edição">
-              <button data-action="select-all">Selecionar tudo</button>
-              <button data-action="copy-code">Copiar</button>
-              <button data-action="paste-code">Colar</button>
-              <button data-action="validate">Validar</button>
-            </div>
-
-            <div class="options repl-settings">
-              <label>
-                <input type="checkbox" data-raw="" />
-                Script global (sem wrapper)
-              </label>
-              <label>
-                <input data-persist="" type="checkbox" checked={true} />
-                {"Persistir variáveis"}
-              </label>
-              <label>
-                {"Timeout "}
-                <input data-timeout="" type="number" min="250" max="60000" step="250" />
-                {"ms"}
-              </label>
-              <button data-action="complete">{"Completar"}</button>
-              <select aria-label="Exemplos" data-example="">
-                <option value="">{"Exemplos…"}</option>
-              </select>
-            </div>
-            <p class="hint repl-settings" data-syntax="">
-              {
-                "Await e última expressão retornam resultado. Use _, $, $, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
-              }
-            </p>
-            <div class="row repl-settings">
-              <input
-                data-url=""
-                type="url"
-                placeholder="https://site.com/script.js"
-                aria-label="URL do JavaScript"
-              />
-              <button data-action="fetch-url">{"URL → editor"}</button>
-              <button data-action="external">{"Script src"}</button>
-              <label>
-                <input data-module="" type="checkbox" />
-                {"Módulo"}
-              </label>
-            </div>
-            <p class="hint warning repl-settings">
-              {
-                "Parar/timeout cancelam a espera, não interrompem loops síncronos nem desfazem efeitos. “Executar em todos” repete seu código."
-              }
-            </p>
-            <div class="toolbar repl-settings">
-              <button data-action="probe">{"Testar compatibilidade"}</button>
-              <button data-action="run-all">{"Executar em todos"}</button>
-              <button data-action="clear">{"Limpar saída"}</button>
-              <button data-action="reset">{"Nova sessão"}</button>
-            </div>
-</div>
           </div>
           <div class="view" data-view="console">
             <div class="editor-wrap">

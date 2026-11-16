@@ -41,8 +41,14 @@ export function composeRuntime<
       if (disposed) return;
       disposed = true;
       const results = await Promise.allSettled(cleanup.reverse().map((dispose) => dispose()));
-      const errors = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
-      if (errors.length) throw new AggregateError(errors.map((result) => result.reason), "Runtime disposal failed");
+      const errors = results.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      );
+      if (errors.length)
+        throw new AggregateError(
+          errors.map((result) => result.reason),
+          "Runtime disposal failed",
+        );
     },
   };
 }

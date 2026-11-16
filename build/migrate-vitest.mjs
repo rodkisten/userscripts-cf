@@ -11,7 +11,10 @@ for (const name of await readdir(directory)) {
   const before = await readFile(file, "utf8");
   const after = before
     .replace(/import test from ["']node:test["'];?/g, 'import { test } from "vitest";')
-    .replace(/import \{([^}]+)\} from ["']node:test["'];?/g, (_, names) => 'import {' + names + '} from "vitest";');
+    .replace(
+      /import \{([^}]+)\} from ["']node:test["'];?/g,
+      (_, names) => "import {" + names + '} from "vitest";',
+    );
   if (before !== after) {
     await writeFile(file, after);
     changed++;

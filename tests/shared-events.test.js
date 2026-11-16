@@ -4,7 +4,10 @@ import { createSharedEvents } from "../src/runtime/events/shared-events.js";
 function setup() {
   const document = new EventTarget();
   class CustomEvent extends Event {
-    constructor(type, options = {}) { super(type); this.detail = options.detail; }
+    constructor(type, options = {}) {
+      super(type);
+      this.detail = options.detail;
+    }
   }
   return { document, CustomEvent };
 }
