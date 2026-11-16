@@ -13,13 +13,16 @@ describe("Solid shadow mounting", () => {
   it("keeps component effects owned, reactive and disposed", async () => {
     const [value, setValue] = createSignal("first");
     const cleanup = vi.fn();
-    const dispose = mountSolidShadow(() => {
-      createEffect(() => {
-        document.body.dataset.reactiveValue = value();
-      });
-      onCleanup(cleanup);
-      return document.createElement("span");
-    }, { id: "reactive-owner" });
+    const dispose = mountSolidShadow(
+      () => {
+        createEffect(() => {
+          document.body.dataset.reactiveValue = value();
+        });
+        onCleanup(cleanup);
+        return document.createElement("span");
+      },
+      { id: "reactive-owner" },
+    );
     disposers.push(dispose);
     await Promise.resolve();
     expect(document.body.dataset.reactiveValue).toBe("first");

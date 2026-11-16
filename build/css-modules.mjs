@@ -18,10 +18,18 @@ export function inlineCSSModules() {
       if (!id.endsWith(".module.css.js") && !id.endsWith(".shadow.css.js")) return;
       id = id.slice(0, -3);
       const shadowScoped = id.endsWith(".shadow.css");
-      const processed = await postcss(stylesPipeline({ scope: shadowScoped ? "shadow" : "module" })).process(await fs.readFile(id, "utf8"), { from: id });
+      const processed = await postcss(stylesPipeline({ scope: shadowScoped ? "shadow" : "module" })).process(
+        await fs.readFile(id, "utf8"),
+        { from: id },
+      );
       if (shadowScoped) {
         // ShadowRoot provides isolation; no CSS Modules class rewriting is needed.
-        const result = transform({ filename: id, code: Buffer.from(processed.css), targets: { safari: 15 << 16 }, minify: true });
+        const result = transform({
+          filename: id,
+          code: Buffer.from(processed.css),
+          targets: { safari: 15 << 16 },
+          minify: true,
+        });
         return `export const css = ${JSON.stringify(result.code.toString())}; export default {};`;
       }
       // State flags are toggled by X integration handlers and keep public aliases.

@@ -24,7 +24,6 @@ describe("CSS Modules integration", () => {
   });
 });
 
-
 describe("Shadow-scoped CSS", () => {
   it("preserves ordinary class names without CSS Modules rewriting", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "rod-shadow-"));
