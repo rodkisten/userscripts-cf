@@ -66,5 +66,5 @@
     "fuse.js": "^7.1.0",
     "@tanstack/virtual-core": "^3.13.0"
   },
-  "version": "5.0.7"
+  "version": "5.1.0"
 }
