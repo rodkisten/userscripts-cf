@@ -204,10 +204,10 @@ export function mountReelBookmark(
   ctx.listen(document, "touchend", navigation, { passive: true });
   const interval = setInterval(scheduleRefresh, 600);
   ctx.onDispose(() => {
-      observer.disconnect();
-      clearInterval(interval);
-      cancelAnimationFrame(frame);
-      clear();
+    observer.disconnect();
+    clearInterval(interval);
+    cancelAnimationFrame(frame);
+    clear();
   });
   refresh();
 }
