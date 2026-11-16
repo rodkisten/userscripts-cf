@@ -430,7 +430,17 @@ if (buttonMount) {
     const [radius, setRadius] = createSignal(10);
     const [height, setHeight] = createSignal(38);
     return (
-      <div class="card" style={{ display: "grid", gap: "18px", "--button-radius": `${radius()}px`, "--button-height": `${height()}px`, "--button-height-sm": `${height()}px`, "--button-height-lg": `${height()}px` }}>
+      <div
+        class="card"
+        style={{
+          display: "grid",
+          gap: "18px",
+          "--button-radius": `${radius()}px`,
+          "--button-height": `${height()}px`,
+          "--button-height-sm": `${height()}px`,
+          "--button-height-lg": `${height()}px`,
+        }}
+      >
         <div class="flex">
           <label>
             Variante{" "}
@@ -455,13 +465,23 @@ if (buttonMount) {
           </label>
           <label>
             Raio {radius()}px{" "}
-            <input type="range" min="0" max="28" value={radius()}
-              onInput={(e) => setRadius(Number(e.currentTarget.value))} />
+            <input
+              type="range"
+              min="0"
+              max="28"
+              value={radius()}
+              onInput={(e) => setRadius(Number(e.currentTarget.value))}
+            />
           </label>
           <label>
             Altura {height()}px{" "}
-            <input type="range" min="28" max="64" value={height()}
-              onInput={(e) => setHeight(Number(e.currentTarget.value))} />
+            <input
+              type="range"
+              min="28"
+              max="64"
+              value={height()}
+              onInput={(e) => setHeight(Number(e.currentTarget.value))}
+            />
           </label>
           <label>
             <input type="checkbox" checked={busy()} onChange={(e) => setBusy(e.currentTarget.checked)} />{" "}
@@ -559,7 +579,18 @@ if (buttonMount) {
           </Button>
         </div>
         <pre class="code">
-          {JSON.stringify({ variant: variant(), size: size(), radius: radius(), height: height(), loading: busy(), badge: count() }, null, 2)}
+          {JSON.stringify(
+            {
+              variant: variant(),
+              size: size(),
+              radius: radius(),
+              height: height(),
+              loading: busy(),
+              badge: count(),
+            },
+            null,
+            2,
+          )}
         </pre>
       </div>
     );

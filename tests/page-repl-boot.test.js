@@ -108,7 +108,10 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     await host.__userscriptsCF["page-repl:sandbox"].dispose();
     assert.equal(host.document.getElementById("rodx-page-repl"), null);
   } catch (error) {
-    throw new Error(`REPL boot failed during ${stage}: ${error.message}; captured console: ${errors.join(" | ")}`, { cause: error });
+    throw new Error(
+      `REPL boot failed during ${stage}: ${error.message}; captured console: ${errors.join(" | ")}`,
+      { cause: error },
+    );
   } finally {
     await host.happyDOM.abort();
   }
