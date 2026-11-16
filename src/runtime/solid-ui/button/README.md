@@ -41,3 +41,7 @@ ctx.ui.registerStyles(buttonCss);
 ## New examples
 
 The live Design System Studio includes `IconButton` with notification count and standalone `Badge` success/dot variants. Import `Badge, badgeCss` from `../badge`; register `badgeCss` in the same isolated style root as `buttonCss`. These are initial primitives, not yet validated by build/typecheck.
+
+## SplitButton integration update
+
+The dropdown forwards its HTML button reference to the existing `menu.dropdown` positioning system. SplitButton keeps the primary action separate from the arrow-triggered menu and passes async/loading props only to the primary action. The Studio has a live SplitButton demo with async save and two menu actions. Typecheck/build and browser behavior remain unverified.
