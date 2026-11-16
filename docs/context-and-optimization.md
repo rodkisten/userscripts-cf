@@ -46,7 +46,7 @@ export default {
 
 ### Important limits and safe shared modules
 
-The AST **does not automatically inject context into arbitrary imported modules**. Module-top-level `useContext()` is ambiguous when two scripts import the same module. Do not create a mutable `currentContext` global or silently bind to the last initialized script. Pass the context explicitly to a shared factory:
+The AST **does not automatically inject context into arbitrary imported modules**. However, a shared factory with an explicit first `ctx` parameter can use import-free helpers in nested methods and async callbacks: the AST resolves them to that factory's lexical `ctx`. Explicitly imported helper names are preserved, not rewritten. Module-top-level `useContext()` is ambiguous when two scripts import the same module. Do not create a mutable `currentContext` global or silently bind to the last initialized script. Pass the context explicitly to a shared factory:
 
 ```ts
 // shared/bookmarks.ts
