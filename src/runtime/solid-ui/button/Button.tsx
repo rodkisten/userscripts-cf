@@ -16,6 +16,7 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
   autoLoading?: boolean;
   loadingText?: string;
   onClick?: (event: MouseEvent) => unknown;
+  ref?: HTMLButtonElement | ((element: HTMLButtonElement) => void);
 }
 export function Button(props: ButtonProps) {
   const [pending, setPending] = createSignal(false);
@@ -37,6 +38,7 @@ export function Button(props: ButtonProps) {
   return (
     <button
       {...props}
+      ref={props.ref}
       type={props.type ?? "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
       disabled={props.disabled || busy()}
@@ -76,10 +78,15 @@ export type DropdownButtonProps = ButtonProps & {
 };
 export function DropdownButton(props: DropdownButtonProps) {
   let trigger!: HTMLButtonElement;
+  const setTrigger = (element: HTMLButtonElement) => {
+    trigger = element;
+    if (typeof props.ref === "function") props.ref(element);
+  };
   return (
     <Button
       {...props}
-      ref={trigger}
+      ref={setTrigger}
+      aria-haspopup="menu"
       iconEnd={props.iconEnd ?? "▾"}
       onClick={() =>
         (props.menu ?? defaultMenu).dropdown({ trigger, items: props.items, align: props.align })
@@ -90,13 +97,26 @@ export function DropdownButton(props: DropdownButtonProps) {
 export function SplitButton(props: DropdownButtonProps) {
   return (
     <ButtonGroup attached>
-      <Button {...props} />
+      <Button
+        variant={props.variant}
+        size={props.size}
+        icon={props.icon}
+        badge={props.badge}
+        disabled={props.disabled}
+        loading={props.loading}
+        autoLoading={props.autoLoading}
+        loadingText={props.loadingText}
+        onClick={props.onClick}
+      >
+        {props.children}
+      </Button>
       <DropdownButton
         menu={props.menu}
         items={props.items}
         align={props.align}
         size={props.size}
         variant={props.variant}
+        disabled={props.disabled || props.loading}
         aria-label="Mais opções"
       >
         ▾
