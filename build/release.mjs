@@ -14,6 +14,12 @@ export function validateTag(tag, version) {
   }
 }
 
+export function pendingSourceChanges(run) {
+  // hosting.mjs generates this untracked deployment artifact after tests/build.
+  // All other source changes must still block publishing.
+  return run("git", "status", "--porcelain", "--untracked-files=normal", "--", ".", ":(exclude)hosting/worker.mjs");
+}
+
 export async function release(tag) {
   const { version } = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
   validateTag(tag, version);
@@ -25,7 +31,7 @@ export async function release(tag) {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
-  if (run("git", "status", "--porcelain")) throw Error("Commit source changes before releasing");
+  if (pendingSourceChanges(run)) throw Error("Commit source changes before releasing");
   const commit = run("git", "rev-parse", "HEAD");
   run("gh", "auth", "status");
   const files = ["manifest.json", "SHA256SUMS"];
