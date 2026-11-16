@@ -147,7 +147,12 @@ NODE
     if (( ${#selected_tests[@]} )); then
       mapfile -t unique_tests < <(printf '%s\\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
-      npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
+      if [[ "${SCRIPT_TESTS_SEPARATE:-false}" == true ]]; then
+        mapfile -t unique_tests < <(printf '%s\\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
+      fi
+      if (( ${#unique_tests[@]} )); then
+        npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
+      fi
     fi
     if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
     if [[ "$hosting_changed" == true ]]; then
