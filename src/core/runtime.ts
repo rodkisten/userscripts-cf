@@ -1,3 +1,4 @@
+import { createUpdateChecker } from "./update-checker.js";
 import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
@@ -77,6 +78,7 @@ export interface ScriptContext {
   dock: {
     register(actions: DockAction[]): void;
   };
+  updates: ReturnType<typeof createUpdateChecker> | null;
   toast: ReturnType<typeof createToasterFeature>;
   toaster: ReturnType<typeof createToasterFeature>;
   readonly url: URL;
@@ -132,6 +134,7 @@ export function createRuntime(
   definitions: ScriptDefinition[],
   bridge: any,
   host: Window & typeof globalThis = window,
+  release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
   const rod = {
     menu:
@@ -142,6 +145,24 @@ export function createRuntime(
         : undefined,
     storage: createStorageFeature(host),
   };
+  const updates = release ? createUpdateChecker({
+    id: release.id,
+    installedVersion: release.version,
+    manifestURL: release.manifestURL,
+    host,
+    storage: host.localStorage,
+    notify(update) {
+      rod.toaster?.warning({
+        id: `rod-update-${update.id}-${update.latestVersion}`,
+        title: `Atualização disponível · ${update.name}`,
+        description: `${update.installedVersion} → ${update.latestVersion}`,
+        duration: Infinity,
+        actions: [{ label: "Atualizar", handle: () => host.open(update.downloadURL, "_blank", "noopener,noreferrer") }],
+        onDismiss: () => updates?.dismiss(update.latestVersion),
+      });
+    },
+  }) : null;
+  updates?.start();
   const uiFeature =
     typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : null;
   const stores = new Map<string, any>();
@@ -497,6 +518,7 @@ export function createRuntime(
           );
         },
       }),
+      updates,
       toast: rod.toaster,
       toaster: rod.toaster,
       get url() {
@@ -668,6 +690,7 @@ export function createRuntime(
     },
     async dispose() {
       closed = true;
+      updates?.stop();
       host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
       if ((host as any).__RodClipboard === clipboard) delete (host as any).__RodClipboard;
       clipboard?.dispose();
