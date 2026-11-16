@@ -18,6 +18,70 @@ import { ForeignTags } from "../translation/foreign-tags.tsx";
 import { Seen } from "./seen.js";
 import { showRodxToast } from "../ui/toast.tsx";
 
+// ============================================================================
+// Constantes Semânticas e Mensagens
+// ============================================================================
+const SELECTORS_IDS = {
+  resultsStyle: "rodx-results-css",
+} as const;
+
+const CSS_CLASSES = {
+  resultActions: "rodx-result-actions",
+  nativeOnlyTags: "rodx-native-only-tags",
+  nativeTagTail: "rodx-native-tag-tail",
+  nativeTagSource: "rodx-native-tag-source",
+  hashtagsTray: "rodx-hashtags",
+  hashtagItem: "rodx-hashtag-item",
+  tagAdd: "rodx-tag-add",
+  tagExclude: "rodx-tag-exclude",
+  bookmarkBtn: "rodx-bookmark-btn",
+} as const;
+
+const DATA_ATTRS = {
+  seen: "rodx-read",
+  observed: "rodx-rodxObserved",
+  unmatched: "rodx-unmatched",
+  limited: "rodx-limited",
+  tight: "rodx-tight",
+  expand: "1",
+  readBtn: "1",
+  selected: "selected",
+  excluded: "excluded",
+  color: "color",
+  tag: "tag",
+  signature: "signature",
+  read: "seen",
+} as const;
+
+const SORT_MODES = {
+  live: "live",
+  top: "top",
+} as const;
+
+const UI_TEXTS = {
+  seenMark: "✓",
+  seenUnmark: "◦",
+  seenTitleMark: "Marcar como visto",
+  seenTitleUnmark: "Marcar como não visto",
+  expandSymbol: "↗",
+  expandTitle: "Expandir e abrir tweet",
+  hashtagsAriaLabel: "Hashtags do post",
+  bookmarkTitle: "Salvar nos Itens salvos do X",
+  bookmarkMenuError: "O X não mostrou o menu deste post",
+  toastAnchorError: "Não foi possível localizar o link nativo deste post.",
+  filterErrorLog: "[RodX] Filtro local inválido. Não esconder posts:",
+} as const;
+
+const REGEX_PATTERNS = {
+  uid: /\/status\/(\d{5,25})(?:\/|\?|$)/,
+  positiveHashtag: /(?<![\w#-])#[\p{L}\p{M}\p{N}_]+/gu,
+  negativeHashtag: /-#[\p{L}\p{M}\p{N}_]+/gu,
+  hashtagOnly: /^(?:\s*#[\\p{L}\\p{M}\\p{N}_]+[\s,;]*)+$/u,
+  hashtagMulti: /(?:#[\\p{L}\\p{M}\\p{N}_]+[\s,;]+){1,}#[\\p{L}\\p{M}\\p{N}_]+/u,
+  bookmarkMenuMatch: /^(?:bookmark|save to bookmarks|salvar nos itens salvos|adicionar aos itens salvos|remove bookmark|remover dos itens salvos|remover marcador)/i,
+  bookmarkTestIdMatch: /^(?:bookmark|removeBookmark)$/,
+} as const;
+
 export interface HashtagInfo {
   tag: string;
   href: string;
@@ -45,19 +109,16 @@ export function initializeDeckResultEnhancer(): void {
     let cachedSig = "";
     let rules: unknown[] = [];
     
-    const UID_RE = /\/status\/(\d{5,25})(?:\/|\?|$)/;
-    const actionClass = "rodx-result-actions";
-
     function postId(article: HTMLElement): string {
       const link =
         article.querySelector<HTMLAnchorElement>(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
         article.querySelector<HTMLAnchorElement>(NATIVE_X_SELECTORS.statusLinks);
-      return link?.getAttribute("href")?.match(UID_RE)?.[1] || "";
+      return link?.getAttribute("href")?.match(REGEX_PATTERNS.uid)?.[1] || "";
     }
 
     function ensureStyle(): void {
       if (style?.isConnected) return;
-      style = (<style id="rodx-results-css">{extractedCSS1}</style>) as HTMLStyleElement;
+      style = (<style id={SELECTORS_IDS.resultsStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
       (document.head || document.documentElement).append(style);
     }
 
@@ -69,7 +130,7 @@ export function initializeDeckResultEnhancer(): void {
         try {
           rules = parseLocalDirectives(full).local.map(compileLocalRule);
         } catch (err) {
-          console.warn("[RodX] Filtro local inválido. Não esconder posts:", err);
+          console.warn(UI_TEXTS.filterErrorLog, err);
           rules = [];
         }
       }
@@ -77,12 +138,12 @@ export function initializeDeckResultEnhancer(): void {
     }
 
     function seenButtonText(article: HTMLElement, id: string): void {
-      const btn = article.querySelector<HTMLElement>(RODX_SELECTORS.resultReadButtonByActionClass(actionClass));
+      const btn = article.querySelector<HTMLElement>(RODX_SELECTORS.resultReadButtonByActionClass(CSS_CLASSES.resultActions));
       if (btn) {
         const read = state.seen.has(id);
-        btn.textContent = read ? "✓" : "◦";
-        btn.dataset.seen = read ? "1" : "0";
-        btn.title = read ? "Marcar como não visto" : "Marcar como visto";
+        btn.textContent = read ? UI_TEXTS.seenMark : UI_TEXTS.seenUnmark;
+        btn.dataset[DATA_ATTRS.seen] = read ? "1" : "0";
+        btn.title = read ? UI_TEXTS.seenTitleUnmark : UI_TEXTS.seenTitleMark;
         btn.setAttribute("aria-label", btn.title);
       }
     }
@@ -106,9 +167,9 @@ export function initializeDeckResultEnhancer(): void {
     function queryHashtags(): { positive: Set<string>; negative: Set<string> } {
       const source = nativeQueryText();
       return {
-        positive: new Set((source.match(/(?<![\w#-])#[\p{L}\p{M}\p{N}_]+/gu) || []).map(normalizedTag)),
+        positive: new Set((source.match(REGEX_PATTERNS.positiveHashtag) || []).map(normalizedTag)),
         negative: new Set(
-          (source.match(/-#[\p{L}\p{M}\p{N}_]+/gu) || []).map((v) => normalizedTag(v.slice(1))),
+          (source.match(REGEX_PATTERNS.negativeHashtag) || []).map((v) => normalizedTag(v.slice(1))),
         ),
       };
     }
@@ -187,32 +248,31 @@ export function initializeDeckResultEnhancer(): void {
       const text = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) return;
       
-      text.classList.remove("rodx-native-only-tags");
+      text.classList.remove(CSS_CLASSES.nativeOnlyTags);
       for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
-        node.classList.remove("rodx-native-tag-tail", "rodx-native-tag-source");
+        node.classList.remove(CSS_CLASSES.nativeTagTail, CSS_CLASSES.nativeTagSource);
       }
       if (tags.length < 2) return;
       
-      const HASH = "#[\\p{L}\\p{M}\\p{N}_]+";
-      const onlyTags = new RegExp("^(?:\\s*" + HASH + "[\\s,;]*)+$", "u");
-      const multi = new RegExp("(?:" + HASH + "[\\s,;]+){1,}" + HASH, "u");
+      const onlyTags = REGEX_PATTERNS.hashtagOnly;
+      const multi = REGEX_PATTERNS.hashtagMulti;
       const full = (text.innerText || text.textContent || "").trim();
       
       if (onlyTags.test(full)) {
-        text.classList.add("rodx-native-only-tags");
+        text.classList.add(CSS_CLASSES.nativeOnlyTags);
         return;
       }
 
       const candidates = Array.from(text.querySelectorAll<HTMLElement>(DOM_SELECTORS.textContainers)).reverse();
       for (const node of candidates) {
-        if (node.classList.contains("rodx-native-tag-source")) continue;
+        if (node.classList.contains(CSS_CLASSES.nativeTagSource)) continue;
         if (node.closest(RODX_SELECTORS.nativeTagSource)) continue;
         const value = (node.innerText || node.textContent || "").trim();
         if (!value || !onlyTags.test(value) || !multi.test(value)) continue;
         const parent = node.parentElement;
         if (parent && parent !== text && onlyTags.test((parent.innerText || parent.textContent || "").trim()))
           continue;
-        node.classList.add("rodx-native-tag-source");
+        node.classList.add(CSS_CLASSES.nativeTagSource);
       }
       
       const lines = (text.innerText || text.textContent || "").split(/\n+/);
@@ -234,7 +294,7 @@ export function initializeDeckResultEnhancer(): void {
         const parentText = (anchor.parentElement?.textContent || "").trim();
         if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, "")))
           continue;
-        anchor.classList.add("rodx-native-tag-source");
+        anchor.classList.add(CSS_CLASSES.nativeTagSource);
       }
       
       const breaks = Array.from(text.querySelectorAll<HTMLElement>(DOM_SELECTORS.lineBreaks));
@@ -247,7 +307,7 @@ export function initializeDeckResultEnhancer(): void {
             continue;
           }
           if (previous.nodeType === Node.ELEMENT_NODE && (previous as HTMLElement).tagName === "BR") {
-            (previous as HTMLElement).classList.add("rodx-native-tag-tail");
+            (previous as HTMLElement).classList.add(CSS_CLASSES.nativeTagTail);
             previous = previous.previousSibling;
             continue;
           }
@@ -257,7 +317,7 @@ export function initializeDeckResultEnhancer(): void {
       
       for (const br of breaks.slice(-2)) {
         const following = (br.nextSibling?.textContent || "").trim();
-        if (following && onlyTags.test(following)) br.classList.add("rodx-native-tag-tail");
+        if (following && onlyTags.test(following)) br.classList.add(CSS_CLASSES.nativeTagTail);
       }
     }
 
@@ -272,7 +332,7 @@ export function initializeDeckResultEnhancer(): void {
       
       const actions = findActions(article);
       if (!tray) {
-        tray = (<div class="rodx-hashtags" aria-label="Hashtags do post" />) as HTMLDivElement;
+        tray = (<div class={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />) as HTMLDivElement;
       }
       
       if (actions?.parentElement) {
@@ -288,11 +348,11 @@ export function initializeDeckResultEnhancer(): void {
         tray.dataset.signature = signature;
         for (const { tag, href } of tags) {
           const item = (
-            <span class="rodx-hashtag-item" data-tag={tag}>
+            <span class={CSS_CLASSES.hashtagItem} data-tag={tag}>
               <a href={href || "/search?q=" + encodeURIComponent(tag)}>{tag}</a>
               <button
                 type="button"
-                class="rodx-tag-add"
+                class={CSS_CLASSES.tagAdd}
                 title={`Adicionar ${tag} à pesquisa nativa`}
                 aria-label={`Adicionar ${tag} à pesquisa nativa`}
                 onClick={(event: MouseEvent) => {
@@ -305,7 +365,7 @@ export function initializeDeckResultEnhancer(): void {
               </button>
               <button
                 type="button"
-                class="rodx-tag-exclude"
+                class={CSS_CLASSES.tagExclude}
                 title={`Excluir ${tag} da pesquisa`}
                 aria-label={`Excluir ${tag} da pesquisa`}
                 onClick={(event: MouseEvent) => {
@@ -353,9 +413,9 @@ export function initializeDeckResultEnhancer(): void {
       const btn = (
         <button
           type="button"
-          class="rodx-bookmark-btn"
-          title="Salvar nos Itens salvos do X"
-          aria-label="Salvar nos Itens salvos do X"
+          class={CSS_CLASSES.bookmarkBtn}
+          title={UI_TEXTS.bookmarkTitle}
+          aria-label={UI_TEXTS.bookmarkTitle}
           onClick={(event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
@@ -364,7 +424,7 @@ export function initializeDeckResultEnhancer(): void {
               article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
               
             if (!menuButton) {
-              btn.title = "O X não mostrou o menu deste post";
+              btn.title = UI_TEXTS.bookmarkMenuError;
               return;
             }
             
@@ -385,10 +445,10 @@ export function initializeDeckResultEnhancer(): void {
               
               const target =
                 options.find((el) =>
-                  /^(?:bookmark|save to bookmarks|salvar nos itens salvos|adicionar aos itens salvos|remove bookmark|remover dos itens salvos|remover marcador)/i.test(
+                  REGEX_PATTERNS.bookmarkMenuMatch.test(
                     (el.textContent || "").trim(),
                   ),
-                ) || options.find((el) => /^(?:bookmark|removeBookmark)$/.test(el.dataset.testid || ""));
+                ) || options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
                 
               if (!target) return;
               committed = true;
@@ -420,7 +480,7 @@ export function initializeDeckResultEnhancer(): void {
 
     function setSeen(article: HTMLElement, id: string): void {
       seenButtonText(article, id);
-      article.dataset.rodxRead = state.seen.has(id) ? "1" : "0";
+      article.dataset[DATA_ATTRS.seen] = state.seen.has(id) ? "1" : "0";
     }
 
     function setupReader(): void {
@@ -554,10 +614,10 @@ export function initializeDeckResultEnhancer(): void {
       
       document.body?.classList.toggle(
         "rodx-search-page",
-        Boolean(current && ["live", "top"].includes(current.sort)),
+        Boolean(current && [SORT_MODES.live, SORT_MODES.top].includes(current.sort as any)),
       );
 
-      if (!current || !["live", "top"].includes(current.sort)) {
+      if (!current || ![SORT_MODES.live, SORT_MODES.top].includes(current.sort as any)) {
         for (const article of Studio.dom.nodes(XDOM.tweet)) {
           article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
           article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
@@ -597,13 +657,13 @@ export function initializeDeckResultEnhancer(): void {
         addHashtagBtns(article);
         ensureBookmark(article);
         
-        let actions = article.querySelector<HTMLDivElement>(DOM_SELECTORS.resultActionsByClass(actionClass));
+        let actions = article.querySelector<HTMLDivElement>(DOM_SELECTORS.resultActionsByClass(CSS_CLASSES.resultActions));
         if (!actions) {
           actions = (
-            <div class={actionClass}>
+            <div class={CSS_CLASSES.resultActions}>
               <button
                 type="button"
-                data-rodx-expand="1"
+                data-rodx-expand={DATA_ATTRS.expand}
                 onClick={(event: MouseEvent) => {
                   event.preventDefault();
                   event.stopImmediatePropagation();
@@ -614,17 +674,17 @@ export function initializeDeckResultEnhancer(): void {
                     article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
                     
                   if (!anchor) {
-                    showRodxToast("Não foi possível localizar o link nativo deste post.", "error");
+                    showRodxToast(UI_TEXTS.toastAnchorError, "error");
                     return;
                   }
                   anchor.click();
                 }}
               >
-                ↗
+                {UI_TEXTS.expandSymbol}
               </button>
               <button
                 type="button"
-                data-rodx-read-btn="1"
+                data-rodx-read-btn={DATA_ATTRS.readBtn}
                 onClick={(event: MouseEvent) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -653,8 +713,8 @@ export function initializeDeckResultEnhancer(): void {
         
         const exp = actions.querySelector<HTMLElement>(RODX_SELECTORS.expandAction);
         if (exp) {
-          exp.textContent = "↗";
-          exp.title = "Expandir e abrir tweet";
+          exp.textContent = UI_TEXTS.expandSymbol;
+          exp.title = UI_TEXTS.expandTitle;
           exp.setAttribute("aria-label", exp.title);
         }
         
