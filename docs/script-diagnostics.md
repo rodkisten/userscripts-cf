@@ -21,7 +21,8 @@
 - [x] Handler Solid para falhas reativas na árvore de ownership
 - [x] Observação passiva opt-in de falhas fetch/XHR nativos com proprietário unknown
 - [x] Snapshot IndexedDB com retenção de 250 fingerprints e fallback localStorage
-- [ ] Isolamento e sincronização entre mundos e abas
+- [x] Sincronização best-effort entre abas da mesma origem (BroadcastChannel e storage events)
+- [ ] Sincronização entre mundos isolados do Tampermonkey e entre origens
 - [ ] Sanitização robusta de stack, URL e dados de exceção antes de persistir
 - [x] Painel inicial Solid no Dock com filtro por script, stack e exportação JSON
 - [x] Integrar Object Inspector existente ao Dock
@@ -88,3 +89,7 @@ Foi corrigida uma regressão em `src/core/runtime.ts`: `ctx.listen` atribuía in
 ## Playground
 
 Acesse `/playground/diagnostics.html` (linkado no catálogo e Design System). Inclui gerador de erros, simulação de recorrência, busca, filtros, ordenação, visualização de stack, importação e exportação JSON, modo local e integração ao coletor global quando disponível. O playground não executa código fornecido pelo usuário.
+
+## Sincronização entre abas
+
+O prelude compartilha eventos `capture`, `clear`, `hello` e `snapshot` via `BroadcastChannel("rod:script-diagnostics:v1")`, com fallback em `storage` events. Mensagens possuem IDs de origem e sequência para evitar processamento duplicado nos dois transportes. O histórico recebido é persistido em IndexedDB e localStorage; snapshots reconciliam fingerprints pelo maior contador conhecido. Um marcador persistente `:clearedAt` impede que um snapshot antigo do IndexedDB ressuscite registros apagados. A comunicação funciona somente entre contextos que compartilham origem e partição de armazenamento. Não sincroniza sandboxes isoladas, domínios diferentes ou dispositivos. Contagens de eventos simultâneos podem divergir sob concorrência e ainda precisam de reconciliação por origem para garantir precisão exata.
