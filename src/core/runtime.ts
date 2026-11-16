@@ -152,19 +152,26 @@ export function createRuntime(
         manifestURL: release.manifestURL,
         host,
         get storage() {
-      try { return host.localStorage; } catch { return undefined; }
-    },
+          try {
+            return host.localStorage;
+          } catch {
+            return undefined;
+          }
+        },
         notify(update) {
           rod.toaster?.warning({
             id: `rod-update-${update.id}-${update.latestVersion}`,
             title: `Atualização disponível · ${update.name}`,
             description: `${update.installedVersion} → ${update.latestVersion}`,
             duration: 0,
-        closeButton: true,
+            closeButton: true,
             actions: [
               {
                 label: "Atualizar",
-                handle: () => host.open(update.downloadURL, "_blank", "noopener,noreferrer"),
+                handle: () => {
+                  const opened = host.open(update.downloadURL, "_blank", "noopener,noreferrer");
+                  if (!opened) host.location.assign(update.downloadURL);
+                },
               },
             ],
             onDismiss: () => updates?.dismiss(update.latestVersion),
