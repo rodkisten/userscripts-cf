@@ -2,7 +2,6 @@
 
 > Estado documentado: PR #56, branch `feat/modular-runtime-tree-shaking`. Este documento distingue comportamento implementado, garantias testadas e trabalho planejado.
 
-
 ## Runtime context lifecycle: source of truth
 
 The **userscript instance** owns its context. No module, page, or mutable global variable owns the active context.
@@ -35,10 +34,12 @@ flowchart TD
 export default {
   init(ctx: ScriptContext) {
     const { storage, menu: actions } = useContext(); // compiled to: const { storage, menu: actions } = ctx
-    const { signal } = useRuntime();                  // compiled to: const { signal } = ctx
-    const shared = useRuntimeWorld();                 // compiled to: ctx.events.shared
+    const { signal } = useRuntime(); // compiled to: const { signal } = ctx
+    const shared = useRuntimeWorld(); // compiled to: ctx.events.shared
     const callback = async () => useContext().storage; // closes over this instance's ctx
-    ctx.onDispose(() => { /* release script-owned resources */ });
+    ctx.onDispose(() => {
+      /* release script-owned resources */
+    });
   },
 };
 ```
