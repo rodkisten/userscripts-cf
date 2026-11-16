@@ -104,3 +104,12 @@ export function SplitButton(props: DropdownButtonProps) {
     </ButtonGroup>
   );
 }
+
+
+/** Compact action with a required accessible name. */
+export type IconButtonProps = Omit<ButtonProps, "children" | "size"> & {
+  "aria-label": string;
+};
+export function IconButton(props: IconButtonProps) {
+  return <Button {...props} size="icon" />;
+}
