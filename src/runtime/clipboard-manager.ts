@@ -36,7 +36,7 @@ export function createClipboardManager({
   const listeners = new Set<ClipboardListener>();
   const channel =
     typeof host.BroadcastChannel === "function" ? new host.BroadcastChannel(namespace + ":changes") : null;
-    
+
   let items: ClipboardEntry[] = [];
   let database: Promise<IDBDatabase> | undefined;
   let queue: Promise<unknown> = Promise.resolve();
@@ -121,13 +121,13 @@ export function createClipboardManager({
       const unpinned = remaining.filter((item) => !item.pinned);
       const excess = Math.max(0, remaining.length + 1 - limit);
       const expired = unpinned.slice(-excess || unpinned.length).slice(0, excess);
-      
+
       await tx("readwrite", (store) => {
         if (previous) store.delete(previous.id);
         store.put(entry);
         for (const item of expired) store.delete(item.id);
       });
-      
+
       items = [entry, ...remaining.filter((item) => !expired.includes(item))];
       changed();
       return entry;
@@ -173,16 +173,16 @@ export function createClipboardManager({
       )
     )
       return;
-      
+
     const selected = host.getSelection?.()?.toString() || "";
     const isInputOrTextarea = target?.matches?.("textarea,input:not([type=password])");
     const inputElement = target as HTMLInputElement | HTMLTextAreaElement | null;
-    
+
     const field =
       isInputOrTextarea && inputElement && typeof inputElement.selectionStart === "number"
         ? inputElement.value.slice(inputElement.selectionStart, inputElement.selectionEnd)
         : "";
-        
+
     const text = event.clipboardData?.getData("text/plain") || field || selected;
     if (text) void save(text).catch(console.error);
   }
@@ -194,7 +194,7 @@ export function createClipboardManager({
   channel?.addEventListener("message", onChannel);
   host.document.addEventListener("copy", onCopy as EventListener, true);
   host.document.addEventListener("cut", onCopy as EventListener, true);
-  
+
   void load().catch(console.error);
 
   return Object.freeze({
@@ -204,7 +204,7 @@ export function createClipboardManager({
     pin,
     read,
     copy,
-    list: (query: string = ""): ClipboardEntry[] => 
+    list: (query: string = ""): ClipboardEntry[] =>
       items.filter((item) => item.text.toLowerCase().includes(query.toLowerCase())),
     subscribe(listener: ClipboardListener): () => void {
       listeners.add(listener);
