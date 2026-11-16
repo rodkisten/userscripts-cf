@@ -1,4 +1,4 @@
-name: "🧪 Validate userscripts"
+name: "📚 Design system and lockfile"
 run-name: "🧪 Userscripts · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}"
 
 on:
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    name: "🧪 Typecheck, build & Vitest"
+    name: "📚 Design system and lockfile checks"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,29 +81,5 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: npm run check:design-system
-      - name: "🔎 Recheck latest commit before tests"
-        if: steps.fresh.outputs.latest == 'true'
-        id: still_fresh
-        shell: bash
-        env:
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-        run: |
-          set -euo pipefail
-          LATEST="$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)"
-          CURRENT="$(git rev-parse HEAD)"
-          if [[ "$LATEST" == "$CURRENT" ]]; then
-            echo "latest=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "latest=false" >> "$GITHUB_OUTPUT"
-            echo "Newer commit detected; skipping tests." >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: "🧪 Run tests"
-        if: steps.still_fresh.outputs.latest == 'true'
-        run: npm test
-      - uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: userscripts-and-loader-lab
-          path: |
-            dist/
-            labs/remote-release/worker.mjs
+      # Tests, builds and artifacts are handled by diagnostics.yml.
+      # Do not run npm test here: it duplicates the selective validation workflow.
