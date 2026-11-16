@@ -81,10 +81,10 @@ O runtime inicializa o verificador para cada **instalável** (individual, `unifi
 
 - Verifica ao iniciar, depois a cada 6 horas enquanto a página estiver aberta, e quando a aba volta a ficar visível (respeitando o intervalo).
 - Só avisa quando a versão publicada for maior, com comparação SemVer incluindo prereleases.
-- Usa exclusivamente `runtime/solid-ui/toaster`, com botão **Atualizar** que abre o instalador em nova aba; quando o navegador bloqueia a abertura, navega para o instalador na aba atual.
+- Usa exclusivamente `runtime/solid-ui/toaster`, com botão **Atualizar** que solicita a abertura do instalador em nova aba, sem redirecionar a página atual. O Safari pode bloquear pop-ups dependendo do contexto.
 - O aviso pode ser fechado e não reaparece para a mesma versão descartada. Erros de rede não bloqueiam o userscript.
 - Cada carregamento de página consulta novamente o manifesto para não perder um aviso por causa do cache de outra aba.
 
 API do contexto: `ctx.updates?.check(true)` força uma consulta, `ctx.updates?.stop()` interrompe o polling e `ctx.updates?.configure({ enabled: false })` desativa o verificador durante a sessão.
 
-**Limitações:** o servidor precisa permitir CORS para o manifesto (o Worker de hosting envia `Access-Control-Allow-Origin: *`); o Safari/Tampermonkey pode bloquear novas abas abertas após uma resposta assíncrona, por isso existe o fallback na aba atual. O teste real no Safari ainda está pendente.
+**Limitações:** o servidor precisa permitir CORS para o manifesto (o Worker de hosting envia `Access-Control-Allow-Origin: *`); o Safari/Tampermonkey pode bloquear novas abas abertas após uma resposta assíncrona, por isso a instalação pode exigir abertura manual da URL caso o navegador bloqueie a nova aba. O teste real no Safari ainda está pendente.

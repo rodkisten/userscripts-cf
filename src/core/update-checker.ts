@@ -61,7 +61,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
   let lastNotified = "";
   const read = () => {
     try {
-      return JSON.parse(storage?.getItem(key) || "{}") as { checked?: number; dismissed?: string };
+      return storage ? (JSON.parse(storage.getItem(key) || "{}") as { checked?: number; dismissed?: string }) : { ...fallbackCache };
     } catch {
       return { ...fallbackCache };
     }
@@ -138,7 +138,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
     if (options.checkOnFocus !== false) host.document.addEventListener("visibilitychange", onFocus);
   }
   function stop() {
-    if (timer) host.clearInterval(timer);
+    if (timer !== undefined) host.clearInterval(timer);
     timer = undefined;
     host.document.removeEventListener("visibilitychange", onFocus);
   }

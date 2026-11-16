@@ -169,8 +169,10 @@ export function createRuntime(
               {
                 label: "Atualizar",
                 handle: () => {
-                  const opened = host.open(update.downloadURL, "_blank", "noopener,noreferrer");
-                  if (!opened) host.location.assign(update.downloadURL);
+                  // With noopener, window.open() may return null even when a tab opens.
+                  // Do not interpret that return value as a popup-blocker signal:
+                  // falling back to location.assign would navigate the current page too.
+                  host.open(update.downloadURL, "_blank", "noopener,noreferrer");
                 },
               },
             ],
