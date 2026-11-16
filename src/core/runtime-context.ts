@@ -1,11 +1,11 @@
-import { createContext, useContext as useSolidContext, type ParentComponent } from "solid-js";
+import { createComponent, createContext, useContext as useSolidContext, type ParentComponent } from "solid-js";
 import type { ScriptContext } from "./runtime.js";
 
 /** Solid context propagation without a mutable global current-script pointer. */
 const ScriptScope = createContext<ScriptContext>();
 
 export const RuntimeProvider: ParentComponent<{ context: ScriptContext }> = (props) =>
-  ScriptScope.Provider({ value: props.context, get children() { return props.children; } });
+  createComponent(ScriptScope.Provider, { get value() { return props.context; }, get children() { return props.children; } });
 
 export function useContext(): ScriptContext {
   const ctx = useSolidContext(ScriptScope);
