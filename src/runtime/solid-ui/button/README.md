@@ -71,3 +71,7 @@ The button CSS uses explicit font properties so the component inherits the host 
 ## Manual validation workflow
 
 Run [Button · Typecheck & Build](https://github.com/rodkisten/userscripts-cf/actions/workflows/button-validation.yml) using **Run workflow**, selecting the desired branch and scope. The default validates TypeScript and the Design System bundle; `full` also builds the repository. No tests, deployment, or formatting gate. Failures are shown as separate actionable steps. A workflow file alone is not evidence of a successful run.
+
+## Studio token controls
+
+The interactive Studio now exposes button size (sm/md/lg), border radius (0–28px) and height (28–64px). These are applied as CSS custom properties on the gallery container; the JSON preview reflects the current values. The preview requires a successful Studio build and is not yet browser-verified.

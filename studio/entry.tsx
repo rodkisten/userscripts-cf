@@ -426,8 +426,11 @@ if (buttonMount) {
     >("default");
     const [busy, setBusy] = createSignal(false);
     const [count, setCount] = createSignal(3);
+    const [size, setSize] = createSignal<"sm" | "md" | "lg">("md");
+    const [radius, setRadius] = createSignal(10);
+    const [height, setHeight] = createSignal(38);
     return (
-      <div class="card" style={{ display: "grid", gap: "18px" }}>
+      <div class="card" style={{ display: "grid", gap: "18px", "--button-radius": `${radius()}px`, "--button-height": `${height()}px`, "--button-height-sm": `${height()}px`, "--button-height-lg": `${height()}px` }}>
         <div class="flex">
           <label>
             Variante{" "}
@@ -441,6 +444,24 @@ if (buttonMount) {
                 <option value={v}>{v}</option>
               ))}
             </select>
+          </label>
+          <label>
+            Tamanho{" "}
+            <select value={size()} onChange={(e) => setSize(e.currentTarget.value as "sm" | "md" | "lg")}>
+              <option value="sm">Pequeno</option>
+              <option value="md">Médio</option>
+              <option value="lg">Grande</option>
+            </select>
+          </label>
+          <label>
+            Raio {radius()}px{" "}
+            <input type="range" min="0" max="28" value={radius()}
+              onInput={(e) => setRadius(Number(e.currentTarget.value))} />
+          </label>
+          <label>
+            Altura {height()}px{" "}
+            <input type="range" min="28" max="64" value={height()}
+              onInput={(e) => setHeight(Number(e.currentTarget.value))} />
           </label>
           <label>
             <input type="checkbox" checked={busy()} onChange={(e) => setBusy(e.currentTarget.checked)} />{" "}
@@ -458,6 +479,7 @@ if (buttonMount) {
         <div class="flex">
           <Button
             variant={variant()}
+            size={size()}
             icon="✓"
             badge={count()}
             loading={busy()}
@@ -466,6 +488,7 @@ if (buttonMount) {
             Salvar
           </Button>
           <SplitButton
+            size={size()}
             variant={variant()}
             icon="💾"
             badge={count()}
@@ -536,7 +559,7 @@ if (buttonMount) {
           </Button>
         </div>
         <pre class="code">
-          {JSON.stringify({ variant: variant(), loading: busy(), badge: count() }, null, 2)}
+          {JSON.stringify({ variant: variant(), size: size(), radius: radius(), height: height(), loading: busy(), badge: count() }, null, 2)}
         </pre>
       </div>
     );
