@@ -143,6 +143,14 @@ jobs:
           fi
           {
             echo "### Selective validation"
+            echo '| Check | Enabled |'
+            echo '|---|---|'
+            echo "| Typecheck and lint | $source_changed |"
+            echo "| Build | $build_needed |"
+            echo "| Vitest candidates | ${#selected_tests[@]} |"
+            echo "| Lab | $lab_changed |"
+            echo "| Hosting | $hosting_changed |"
+            echo ''
             echo 'Changed files:'
             sed 's/^/- `/; s/$/`/' changed-files.txt
           } >> "$GITHUB_STEP_SUMMARY"
