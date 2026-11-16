@@ -193,7 +193,7 @@ This section tracks the ongoing independent renderer work in PR #75 and subseque
 - [x] Keep optional `queryClient` injection for tests and explicit cache isolation.
 - [x] Add `disposeFormControlsQueryClient()` for explicit owner teardown; unmounting a field does not clear other fields' cache.
 - [ ] Expose a shared query service through the public `ctx` contract and invoke disposal at runtime teardown.
-- [ ] Add interactive Playground controls demonstrating cache hits and shared query keys.
+- [x] Add interactive Playground controls demonstrating shared query keys, cache inspection and manual cache clearing (module-scoped client).
 - [ ] Add tests for reuse, isolation, cancellation and disposal; validate Solid 2 effect lifecycle.
 
 Note: the singleton is shared **per bundled module instance**, not automatically across independently injected userscripts or tabs. Do not promise cross-bundle caching until the `ctx` service implements it.
@@ -203,9 +203,17 @@ Note: the singleton is shared **per bundled module instance**, not automatically
 - [x] `ctx.query.client` lazily exposes a QueryClient shared by scripts in the same `createRuntime()` instance.
 - [x] `ctx.query.createAsyncOptions(source, query, config)` injects that client automatically.
 - [x] Clear the runtime-scoped client on runtime disposal, not on individual field unmount.
-- [ ] Validate the runtime context implementation with typecheck/build and integration tests.
-- [ ] Add a Playground harness demonstrating the `ctx.query` facade directly (the existing dual Combobox demo demonstrates the module-local cache, not the runtime facade).
+- [ ] Validate runtime context implementation with typecheck/build and a passing integration test (test added in `tests/runtime.test.js`, CI not yet confirmed).
+- [ ] Add a Playground harness demonstrating the actual `ctx.query` facade directly (the dual Combobox demo and cache inspector currently use the module-local client).
 - [ ] Audit tree-shaking impact of importing query-core in the core runtime; consider a feature gate if the baseline bundle grows.
 - [ ] Confirm cancellation, error handling, Safari Shadow DOM and cross-script isolation.
 
 Use `ctx.query.createAsyncOptions` from a Solid component rather than importing TanStack Query. For a Combobox that accepts `queryClient`, pass `queryClient={ctx.query.client}`. Caches remain scoped to a runtime instance; independently bundled scripts do not automatically share them.
+
+### Latest verification work
+
+- [x] Add Vitest regression case in `tests/runtime.test.js` checking that two script contexts receive the same `ctx.query.client`, can read shared cached data, and that runtime disposal clears it.
+- [x] Add interactive cache inspector and clear button to the real SolidJS Playground, explicitly labeled as **module-scoped** rather than `ctx`-scoped.
+- [ ] Run the regression test and inspect failures; do not mark it verified until it passes.
+- [ ] Add a true runtime-context Playground harness and test async option observer cancellation.
+- [ ] Keep QueryClient out of baseline bundles that do not use `ctx.query` when the tree-shaking audit reveals unnecessary cost.
