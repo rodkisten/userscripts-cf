@@ -125,6 +125,19 @@ export function runtimeHelpers() {
           !keep(node)
         ) {
           const callee = node.expression;
+          // Runtime helper calls are resolved at build time against the
+          // nearest explicit init(ctx) binding. The call expression itself
+          // is replaced, so destructuring, aliases and nested patterns work
+          // without additional AST rewrites.
+          if (
+            ts.isIdentifier(callee) &&
+            ["useContext", "useRuntime"].includes(callee.text) &&
+            !shadowed.has(callee.text) &&
+            node.arguments.length === 0
+          ) {
+            edits.push({ start: node.getStart(source), end: node.end, value: contextName });
+            return;
+          }
           let replacement;
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
             replacement = contextName + ".http.fetch";
