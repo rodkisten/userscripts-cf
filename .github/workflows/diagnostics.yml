@@ -11,7 +11,8 @@ permissions:
 
 concurrency:
   group: userscripts-diagnostics-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve diagnostics until all shards finish, even if release pushes a version commit.
+  cancel-in-progress: false
 
 jobs:
   diagnose:
@@ -60,6 +61,8 @@ jobs:
           {
             echo "### ${{ matrix.check }}: $([[ "$status" == 0 ]] && echo PASS || echo FAIL)"
             echo '~~~text'
+            echo "Exit code: $status"
+            echo "Full logs are attached as artifacts; the excerpt below is only a quick index."
             grep -E 'error TS[0-9]+|\\[MISSING_EXPORT\\]|(^| )Error:|npm error|FAIL|failed|✗|AssertionError|Test Files|Tests ' "diagnostic-${{ matrix.check }}.log" | tail -120 || true
             echo '~~~'
           } >> "$GITHUB_STEP_SUMMARY"
