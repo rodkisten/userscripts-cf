@@ -58,6 +58,7 @@ export function diagnosticPrelude(target, version, scripts) {
     const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36);
     let sequence = 0;
     const seen = new Set();
+    const bridgeEvent = "rod-diagnostics:bridge:v1";
     let clearedAt = (() => {
       try { return Number(root.localStorage.getItem(storageKey + ":clearedAt")) || 0; } catch { return 0; }
     })();
@@ -70,6 +71,7 @@ export function diagnosticPrelude(target, version, scripts) {
     const send = (payload) => {
       const message = { ...payload, sender: tabId, id: tabId + ":" + (++sequence) };
       try { channel?.postMessage(message); } catch {}
+      try { root.document.dispatchEvent(new CustomEvent(bridgeEvent, { detail: JSON.stringify(message) })); } catch {}
       try { root.localStorage.setItem(signalKey, JSON.stringify(message)); } catch {}
     };
     const merge = (records) => {
@@ -80,7 +82,10 @@ export function diagnosticPrelude(target, version, scripts) {
         const previous = state.history.find(value => value.fingerprint === item.fingerprint);
         if (!previous) { state.history.push({ ...item }); changed = true; }
         else if (item.lastSeen > previous.lastSeen || item.count > previous.count) {
-          previous.count = Math.max(previous.count || 1, item.count || 1);
+          const counts = { ...(previous.writerCounts || {}) };
+          for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          previous.writerCounts = counts;
+          previous.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(previous.count || 1, item.count || 1);
           previous.lastSeen = item.lastSeen > previous.lastSeen ? item.lastSeen : previous.lastSeen;
           changed = true;
         }
@@ -109,9 +114,12 @@ export function diagnosticPrelude(target, version, scripts) {
         if (!item || Date.parse(item.lastSeen) <= clearedAt) return;
         const existing = state.history.find(value => value.fingerprint === item.fingerprint);
         if (existing) {
-          existing.count = (existing.count || 1) + 1;
+          const counts = { ...(existing.writerCounts || {}) };
+          for (const [writer, count] of Object.entries(item.writerCounts || {})) counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
+          existing.writerCounts = counts;
+          existing.count = Object.keys(counts).length ? Object.values(counts).reduce((a, b) => a + b, 0) : Math.max(existing.count || 1, item.count || 1);
           existing.lastSeen = item.lastSeen > existing.lastSeen ? item.lastSeen : existing.lastSeen;
-        } else state.history.unshift({ ...item, count: 1 });
+        } else state.history.unshift({ ...item });
         state.history.length = Math.min(state.history.length, 250);
         revision++;
         try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
@@ -132,6 +140,10 @@ export function diagnosticPrelude(target, version, scripts) {
         channel.onmessage = event => receive(event.data);
       }
     } catch {}
+    root.document.addEventListener(bridgeEvent, event => {
+      if (typeof event.detail !== "string") return;
+      try { receive(JSON.parse(event.detail)); } catch {}
+    });
     root.addEventListener("storage", event => {
       if (event.key === signalKey && event.newValue) {
         try { receive(JSON.parse(event.newValue)); } catch {}
@@ -151,9 +163,14 @@ export function diagnosticPrelude(target, version, scripts) {
         const script = owner || "unknown";
         const fingerprint = [script, source, message, stack.split("\n")[1] || ""].join("|");
         const existing = state.history.find(item => item.fingerprint === fingerprint);
-        if (existing) { existing.count++; existing.lastSeen = new Date().toISOString(); }
+        if (existing) {
+          existing.writerCounts ||= { legacy: existing.count || 1 };
+          existing.writerCounts[tabId] = (existing.writerCounts[tabId] || 0) + 1;
+          existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
+          existing.lastSeen = new Date().toISOString();
+        }
         else state.history.unshift({ fingerprint, script, source, message, stack,
-          count: 1, firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString(),
+          count: 1, writerCounts: { [tabId]: 1 }, firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString(),
           url: root.location?.origin + root.location?.pathname });
         state.history.length = Math.min(state.history.length, 250);
         revision++;
