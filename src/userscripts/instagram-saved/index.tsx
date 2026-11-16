@@ -1,4 +1,5 @@
-import { createStore, Show } from "solid-js";
+import { Show } from "solid-js";
+import type { ScriptContext } from "../../core/runtime";
 import { SavedPanel, SettingsDialog, css, type Form } from "./Settings.tsx";
 import type { MediaPayload, Page } from "./core.ts";
 import { mountReelBookmark } from "./reel-bookmark.tsx";
@@ -11,27 +12,6 @@ type Settings = {
   jitterMs: number;
   batchSize: number;
   maxItemsPerSession: number;
-};
-
-type RuntimeContext = {
-  dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
-  menu: { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void };
-  toaster: ((options: any) => any) & { success?: (options: any) => any };
-  signal: AbortSignal;
-  storage: {
-    get: (key: string, fallback: any) => Promise<any>;
-    set: (key: string, value: any) => Promise<void>;
-  };
-  style: (css: string) => void;
-  pageStyle: (css: string) => void;
-  ui: {
-    root: ShadowRoot;
-    mount: (node: Node) => Node;
-    registerStyles: (...css: string[]) => () => void;
-    mountSolid: (component: () => any, options?: { styles?: string[]; id?: string }) => () => void;
-  };
-  listen: (target: EventTarget, event: string, callback: () => void) => void;
-  onDispose: (callback: () => void) => void;
 };
 
 declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
@@ -53,11 +33,11 @@ const DEFAULTS = {
 const RELAY = "https://xtelegram-cf.migos.club/batch";
 
 export default {
-  init(ctx: RuntimeContext) {
+  init(ctx: ScriptContext) {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
 
-    const hub = installRodActions(ctx.menu);
+    const hub = installRodActions(ctx.menu!);
     const unregisterActions = hub.register({
       id: "instagram-saved",
       title: "Instagram",
@@ -78,7 +58,7 @@ export default {
       ],
     });
     ctx.onDispose(unregisterActions);
-    const [runtime, setRuntime] = createStore({
+    const [runtime, setRuntime] = ctx.store({
       running: false,
       lastRun: 0,
       lastError: "",
@@ -270,7 +250,7 @@ export default {
             draft.lastError = "";
           });
           if (count > 0) {
-            ctx.toaster.success?.({ title: `${count} mídias enviadas` });
+            ctx.toaster?.success?.({ title: `${count} mídias enviadas` });
           }
         });
       } catch (caught) {
@@ -324,7 +304,7 @@ export default {
     mountReelBookmark(
       ctx,
       async () => (await get("settings", DEFAULTS)).collectionIds || [],
-      (message) => ctx.toaster({ title: message }),
+      (message) => ctx.toaster?.({ title: message }),
     );
 
     const settingsApi = {
