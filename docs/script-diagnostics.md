@@ -20,7 +20,8 @@
 - [x] Captura de falhas síncronas no mount Solid
 - [ ] Error boundaries Solid e falhas reativas após o mount
 - [ ] Captura de erros de fetch/XHR nativos sem atribuição incorreta
-- [ ] Armazenamento IndexedDB com política de retenção e isolamento entre mundos
+- [x] Snapshot IndexedDB com retenção de 250 fingerprints e fallback localStorage
+- [ ] Isolamento e sincronização entre mundos e abas
 - [ ] Sanitização robusta de stack, URL e dados de exceção antes de persistir
 - [x] Painel inicial Solid no Dock com filtro por script, stack e exportação JSON
 - [x] Integrar Object Inspector existente ao Dock
@@ -58,3 +59,11 @@ O Dock mostra a seção Diagnósticos e permite exportar o JSON. A captura de ca
 ## Integrações HTTP e Solid
 
 O runtime captura erros de `ctx.http.request` (rejeições de rede e exceções), falhas dos interceptadores de requisição/resposta e exceções de `ctx.ui.mountSolid`. O comportamento original é preservado: requisições ainda rejeitam e exceções de montagem são relançadas. Cancelamentos esperados por `AbortError` não são registrados. Respostas HTTP 4xx/5xx não são automaticamente tratadas como exceções. Fetch/XHR nativos da página e falhas reativas do Solid após a montagem ainda não estão cobertos.
+
+## Persistência IndexedDB
+
+A versão atual abre o banco `rod-script-diagnostics` (v1), object store `snapshots`, chave `history`. Mantém um snapshot de até 250 fingerprints, com fallback síncrono em localStorage. A hidratação não sobrescreve novos erros capturados durante a abertura do banco. O armazenamento é por origem e mundo JavaScript, sem sincronização garantida entre abas. A limpeza remove os registros em ambos os backends quando o IndexedDB está disponível.
+
+## Captura de rede nativa
+
+Não se atribuem erros de `fetch`/XHR da página a um userscript sem evidência de propriedade. `ctx.http.request` e interceptadores do próprio script são atribuídos; chamadas nativas externas permanecem sem proprietário conhecido. Instrumentação passiva opt-in ainda pendente.
