@@ -1,4 +1,4 @@
-import { css as dockStyles } from "./rod-dock.module.css";
+import { css as dockStyles } from "./rod-dock.shadow.css";
 import { matches, readScriptRules, saveScriptRules } from "../../core/script-manager.js";
 import { createSignal, For, Show } from "solid-js";
 import { render } from "@solidjs/web";
@@ -33,6 +33,8 @@ export function installRodDock({
   // A userscript must not inherit layout/stacking from the host page.
   host.style.setProperty("position", "fixed", "important");
   host.style.setProperty("inset", "0", "important");
+  host.style.setProperty("width", "0", "important");
+  host.style.setProperty("height", "0", "important");
   host.style.setProperty("z-index", "2147483646", "important");
   host.style.setProperty("pointer-events", "none", "important");
   host.dataset.rodDock = "";

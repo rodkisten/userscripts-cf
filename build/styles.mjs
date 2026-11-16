@@ -3,7 +3,7 @@ import postcss from "postcss";
 import nesting from "postcss-nesting";
 
 const directory = new URL("../src/styles/", import.meta.url);
-export function stylesPipeline() {
+export function stylesPipeline({ scope = "module" } = {}) {
   return [
     {
       postcssPlugin: "rodx-shared-design-system",
@@ -31,6 +31,7 @@ export function stylesPipeline() {
     {
       postcssPlugin: "rodx-priority",
       OnceExit(root) {
+        if (scope === "shadow") return;
         root.walkDecls((declaration) => {
           let parent = declaration.parent;
           while (parent) {

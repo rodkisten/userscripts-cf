@@ -1,0 +1,20 @@
+name: "🔧 Audit codebase with fallow"
+run-name: "🔧 Fallow · audit · ${{ github.ref_name }}"
+
+on:
+  pull_request: 
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: fallow-rs/fallow@v3
+        with:
+          command: audit

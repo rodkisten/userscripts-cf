@@ -1,4 +1,4 @@
-:global(:host) {
+:host {
   all: initial;
   color-scheme: dark;
   font:
@@ -10,7 +10,7 @@
 * {
   box-sizing: border-box;
 }
-:global(.launcher) {
+.launcher {
   pointer-events: auto;
   position: fixed;
   right: 0;
@@ -26,7 +26,7 @@
   box-shadow: 0 8px 30px #0007;
   touch-action: none;
 }
-:global(.panel) {
+.panel {
   pointer-events: auto;
   position: fixed;
   right: 12px;
@@ -43,7 +43,7 @@
   box-shadow: 0 12px 45px #0009;
   overflow: hidden;
 }
-:global(.header) {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -51,26 +51,26 @@
   border-bottom: 1px solid #27272a;
   font-weight: 650;
 }
-:global(.close) {
+.close {
   border: 0;
   background: transparent;
   color: #a1a1aa;
   font-size: 22px;
   padding: 0 4px;
 }
-:global(.content) {
+.content {
   overflow-y: auto;
   min-height: 0;
   padding: 10px;
   overscroll-behavior: contain;
 }
-:global(.module) {
+.module {
   border: 1px solid #27272a;
   border-radius: 12px;
   margin: 0 0 8px;
   overflow: hidden;
 }
-:global(.module-title) {
+.module-title {
   width: 100%;
   text-align: left;
   background: #18181b;
@@ -81,13 +81,13 @@
   justify-content: space-between;
   font-weight: 600;
 }
-:global(.actions) {
+.actions {
   padding: 8px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
 }
-:global(.action) {
+.action {
   border: 1px solid #3f3f46;
   background: #27272a;
   color: #fafafa;
@@ -97,11 +97,11 @@
   text-align: left;
   overflow-wrap: anywhere;
 }
-:global(.manager-list) {
+.manager-list {
   display: grid;
   gap: 8px;
 }
-:global(.manager-item) {
+.manager-item {
   border: 1px solid #3f3f46;
   border-radius: 12px;
   padding: 10px;
@@ -109,19 +109,19 @@
   align-items: center;
   gap: 8px;
 }
-:global(.manager-details) {
+.manager-details {
   flex: 1;
   min-width: 0;
 }
-:global(.manager-name) {
+.manager-name {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-:global(.manager-status) {
+.manager-status {
   font-size: 11px;
   color: #a1a1aa;
 }
-:global(.manager-input) {
+.manager-input {
   width: 100%;
   min-height: 40px;
   border: 1px solid #52525b;
@@ -130,52 +130,52 @@
   color: white;
   padding: 8px;
 }
-:global(.manager-toolbar) {
+.manager-toolbar {
   display: flex;
   gap: 8px;
   margin-bottom: 10px;
 }
-:global(.manager-toolbar) button {
+.manager-toolbar button {
   flex: 1;
 }
-:global(.manager-rules) {
+.manager-rules {
   display: grid;
   gap: 8px;
   margin: 10px 0;
 }
-:global(.manager-rule) {
+.manager-rule {
   display: flex;
   align-items: center;
   gap: 8px;
   overflow-wrap: anywhere;
 }
-:global(.manager-rule) span {
+.manager-rule span {
   flex: 1;
   min-width: 0;
 }
-:global(.manager-checkbox) {
+.manager-checkbox {
   width: 20px;
   height: 20px;
 }
-:global(.action):focus-visible,
-:global(.close):focus-visible,
-:global(.module-title):focus-visible,
-:global(.launcher):focus-visible {
+.action:focus-visible,
+.close:focus-visible,
+.module-title:focus-visible,
+.launcher:focus-visible {
   outline: 2px solid #fafafa;
   outline-offset: 2px;
 }
 
-:global(.manager-field) {
+.manager-field {
   display: grid;
   gap: 6px;
 }
-:global(.manager-switch) {
+.manager-switch {
   display: flex;
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
 }
-:global(.manager-switch-control) {
+.manager-switch-control {
   position: relative;
   display: block;
   width: 38px;
@@ -189,7 +189,7 @@
   background: #a78bfa;
   border-color: #a78bfa;
 }
-:global(.manager-switch-thumb) {
+.manager-switch-thumb {
   display: block;
   width: 17px;
   height: 17px;
@@ -201,7 +201,7 @@
 :global(.manager-switch:has(.manager-checkbox:checked) .manager-switch-thumb) {
   transform: translate(17px, 2px);
 }
-:global(.manager-switch-label) {
+.manager-switch-label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -209,16 +209,16 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-:global(.manager-switch-control:focus-visible),
-:global(.manager-toolbar [aria-selected="true"]) {
+.manager-switch-control:focus-visible,
+.manager-toolbar [aria-selected="true"] {
   outline: 2px solid #a78bfa;
   outline-offset: 2px;
 }
-:global(.manager-toolbar [aria-selected="true"]) {
+.manager-toolbar [aria-selected="true"] {
   background: #3f3f46;
 }
 
-:global(.manager-checkbox) {
+.manager-checkbox {
   position: absolute;
   opacity: 0;
   width: 38px;
@@ -229,4 +229,60 @@
 :global(.manager-switch:has(.manager-checkbox:focus-visible) .manager-switch-control) {
   outline: 2px solid #a78bfa;
   outline-offset: 2px;
+}
+
+/* Mobile-first containment: never let a host page's viewport or styles squeeze the dock. */
+.panel {
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  contain: layout style;
+}
+.panel .content,
+.panel .module,
+.panel .event,
+.panel .manager-toolbar,
+.panel .manager-list {
+  min-width: 0;
+  max-width: 100%;
+}
+.panel .manager-toolbar {
+  flex-wrap: wrap;
+}
+.panel .manager-toolbar > * {
+  flex: 1 1 125px;
+  min-width: 0;
+}
+.panel .event .action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.panel .actions {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+.panel .action {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+@media (max-width: 480px) {
+  .panel {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    max-height: min(70dvh, 580px);
+    border-radius: 16px;
+  }
+  .panel .actions {
+    grid-template-columns: 1fr;
+  }
+  .panel .header {
+    flex-shrink: 0;
+  }
 }
