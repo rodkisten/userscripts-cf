@@ -120,6 +120,31 @@ jobs:
             npm run lint
           fi
           if [[ "$build_needed" == true ]]; then npm run build; fi
+          # Resolve transitive source dependencies using the same graph as the bundler.
+          # A shared source file can affect multiple independently installed scripts.
+          if [[ "$source_changed" == true ]]; then
+            node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import definitions from './userscripts.config.js';
+          import { analyzeRuntimeGraph } from './build/runtime-graph.mjs';
+          const changed = (await fs.readFile('changed-files.txt', 'utf8')).trim().split('\\n').filter(f => f.startsWith('src/'));
+          const affected = [];
+          const reasons = {};
+          for (const definition of definitions) {
+            const graph = await analyzeRuntimeGraph(definition.entry);
+            const matches = changed.filter(file => graph.files.includes(file));
+            if (matches.length) {
+              affected.push(definition.id);
+              reasons[definition.id] = matches;
+            }
+          }
+          const report = { changed, affected, reasons, targets: [...new Set(affected.flatMap(id => [id, 'standalone', ...(definitions.find(d => d.id === id)?.unified === false ? [] : ['unified'])]))] };
+          await fs.writeFile('affected-userscripts.json', JSON.stringify(report, null, 2) + '\\n');
+          console.log('Affected userscripts:', affected.join(', ') || '(no graph matches)');
+          const summary = ['#### Dependency graph', ...affected.map(id => '- \`' + id + '\` ← ' + reasons[id].map(f => '\`' + f + '\`').join(', '))];
+          await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, summary.join('\\n') + '\\n');
+          NODE
+          fi
           selected_tests=("${changed_tests[@]}")
           if [[ "$source_changed" == true ]]; then
             mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
