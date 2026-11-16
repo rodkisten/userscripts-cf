@@ -44,6 +44,7 @@ export function diagnosticPrelude(target, version, scripts) {
             read.onsuccess = () => {
               if (revision === 0 && Array.isArray(read.result?.records)) {
                 state.history.splice(0, state.history.length, ...read.result.records.slice(0, 250));
+                try { root.localStorage.setItem(storageKey, JSON.stringify(state.history)); } catch {}
                 try { root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change")); } catch {}
               } else persist();
             };
