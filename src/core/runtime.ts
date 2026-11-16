@@ -468,10 +468,16 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
         },
         mountSolid(component: any, options: Record<string, any> = {}) {
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
-          const release = uiFeature.mountSolidShadow(component, {
-            ...options,
-            target: ensureUIRoot(),
-          });
+          let release: () => void;
+          try {
+            release = uiFeature.mountSolidShadow(component, {
+              ...options,
+              target: ensureUIRoot(),
+            });
+          } catch (error) {
+            captureDiagnostic(error, "solid.mount", definition.id, host);
+            throw error;
+          }
           onDispose(release);
           return release;
         },
