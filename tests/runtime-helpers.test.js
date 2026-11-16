@@ -132,3 +132,28 @@ test("does not rewrite locally shadowed helpers", () => {
   }`);
   assert.match(output, /const \{ local \} = useContext\(\)/);
 });
+
+
+test("binds shared factory helpers to the factory context in nested async methods", () => {
+  const output = transform(`export function createBookmarks(ctx) {
+    return {
+      async start() {
+        const { storage: db, signal } = useContext();
+        await Promise.resolve();
+        return useRuntime().id + db + signal;
+      },
+    };
+  }`);
+  assert.match(output, /\{ storage: db, signal \} = ctx/);
+  assert.match(output, /return ctx\.id \+ db \+ signal/);
+});
+
+test("preserves explicitly imported runtime helper names", () => {
+  const output = transform(`import { useContext, useRuntime as localRuntime } from "./runtime-context";
+  function init(ctx) { return useContext() + localRuntime(); }`);
+  assert.match(output, /return useContext\(\) \+ localRuntime\(\)/);
+});
+
+test("rejects module-scope context without an owning script", () => {
+  assert.throws(() => transform("const shared = useContext();"), /Unbound useContext\(\).*example\.ts:1:16/);
+});
