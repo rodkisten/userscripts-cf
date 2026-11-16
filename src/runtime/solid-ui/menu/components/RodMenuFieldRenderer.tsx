@@ -2,6 +2,8 @@ import { createSignal, Match, Show, Switch } from 'solid-js';
 import { isSharedFieldType } from '../../form-controls/field-types';
 import type { AnyRecord, BaseField, RodMenuContext, RodMenuField, SolidFieldRenderer } from '../types';
 import { SharedFieldRenderer } from './SharedFieldRenderer';
+import { StandaloneFieldRenderer } from '../../form-controls/StandaloneFieldRenderer';
+import type { FormField } from '../../form-controls/fields';
 import { isMenuFieldVisible, isMenuFieldDisabled } from '../rod-menu-solid/src/adapters/form-controls';
 import {
   ChannelPickerControl,
@@ -38,6 +40,10 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
     props.field.chrome !== 'bare' &&
     !['checkbox', 'switch', 'hidden', 'button', 'html', 'divider'].includes(props.field.type);
 
+  // Progressive adapter: retain legacy rendering for specialized fields until parity is verified.
+  const standaloneTypes = new Set(['text', 'email', 'password', 'search', 'url', 'tel', 'number', 'textarea', 'date', 'datetime-local', 'time', 'month', 'week', 'color', 'hidden']);
+  const useStandalone = () => standaloneTypes.has(props.field.type) && props.field.attributes?.['data-renderer'] === 'standalone';
+
   const renderControl = () => {
     const customRenderer = props.customFieldTypes?.[props.field.type];
     if (customRenderer) {
@@ -51,7 +57,11 @@ export function RodMenuFieldRenderer(props: RodMenuFieldRendererProps) {
 
     return (
       <Switch fallback={<div>Unsupported field: {(props.field as BaseField).type}</div>}>
-        <Match when={isSharedFieldType(props.field.type)}>
+        <Match when={isSharedFieldType(props.field.type) && useStandalone()}>
+          <StandaloneFieldRenderer field={{ ...props.field, chrome: 'bare', disabled: isDisabled() } as FormField<RodMenuContext<any>>}
+            context={props.context} value={fieldValue()} id={controlId()} onChange={commit} />
+        </Match>
+        <Match when={isSharedFieldType(props.field.type) && !useStandalone()}>
           <SharedFieldRenderer field={props.field} context={props.context} value={fieldValue()}
             controlId={controlId()} disabled={isDisabled()} commit={commit} onError={props.onError} />
         </Match>

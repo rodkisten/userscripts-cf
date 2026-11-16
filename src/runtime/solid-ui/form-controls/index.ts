@@ -26,3 +26,6 @@ export type { SearchToken } from './twitter-search';
 
 export { SHARED_FIELD_TYPES, isSharedFieldType } from './field-types';
 export type { SharedFieldType } from './field-types';
+
+export { StandaloneFieldRenderer } from './StandaloneFieldRenderer';
+export type { StandaloneFieldRendererProps } from './StandaloneFieldRenderer';
