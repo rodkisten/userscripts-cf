@@ -74,3 +74,17 @@ const suggestions = ctx.query.createAsyncOptions(
 `ctx.query.client` exposes the shared QueryClient for advanced operations. Do not instantiate a new client per component. Use distinct query keys for different sources and never cache private credentials. The standalone form-controls helper also has a module-local shared fallback for consumers without `ctx`; these are **separate** caches until explicitly injected. The runtime-scoped service does not share cache across independent bundles or tabs.
 
 **Follow-up:** validate `ctx.http` response and abort semantics in this example, run typecheck/build, add integration tests and a Playground harness for runtime contexts.
+
+## Atualizações automáticas dos userscripts
+
+O runtime inicializa o verificador para cada **instalável** (individual, `unified` ou `standalone`), usando a versão embutida pelo build e `https://userscripts.migos.club/manifest.json`. O manifesto publicado contém a versão de release e o arquivo `.user.js` correspondente.
+
+- Verifica ao iniciar, depois a cada 6 horas enquanto a página estiver aberta, e quando a aba volta a ficar visível (respeitando o intervalo).
+- Só avisa quando a versão publicada for maior, com comparação SemVer incluindo prereleases.
+- Usa exclusivamente `runtime/solid-ui/toaster`, com botão **Atualizar** que solicita a abertura do instalador em nova aba, sem redirecionar a página atual. O Safari pode bloquear pop-ups dependendo do contexto.
+- O aviso pode ser fechado e não reaparece para a mesma versão descartada. Erros de rede não bloqueiam o userscript.
+- Cada carregamento de página consulta novamente o manifesto para não perder um aviso por causa do cache de outra aba.
+
+API do contexto: `ctx.updates?.check(true)` força uma consulta, `ctx.updates?.stop()` interrompe o polling e `ctx.updates?.configure({ enabled: false })` desativa o verificador durante a sessão.
+
+**Limitações:** o servidor precisa permitir CORS para o manifesto (o Worker de hosting envia `Access-Control-Allow-Origin: *`); o Safari/Tampermonkey pode bloquear novas abas abertas após uma resposta assíncrona, por isso a instalação pode exigir abertura manual da URL caso o navegador bloqueie a nova aba. O teste real no Safari ainda está pendente.

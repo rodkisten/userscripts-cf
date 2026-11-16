@@ -22,7 +22,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     ${dockImport}
     import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
     export function boot(bridge) {
-      const api = createRuntime([${entries.join(",")}], bridge);
+      const api = createRuntime([${entries.join(",")}], bridge, window, ${JSON.stringify(options.release || null)});
       ${dockBoot}
       return api;
     }
@@ -35,7 +35,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
   const clipboard = enabled("clipboard");
   const featureDefines = {
     __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
-    __ROD_FEATURE_TOASTER__: JSON.stringify(enabled("toaster")),
+    __ROD_FEATURE_TOASTER__: JSON.stringify(true),
     __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
     __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
