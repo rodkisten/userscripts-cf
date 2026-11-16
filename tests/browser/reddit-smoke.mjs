@@ -24,7 +24,11 @@ try {
     if (route.request().resourceType() === "document") {
       await route.fulfill({ status: 200, contentType: "text/html", body: html });
     } else {
-      await route.fulfill({ status: 200, contentType: "application/json", body: '{"data":{"children":[],"after":null}}' });
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: '{"data":{"children":[],"after":null}}',
+      });
     }
   });
   await page.goto("https://www.reddit.com/r/GoneWildAudioGay/");
