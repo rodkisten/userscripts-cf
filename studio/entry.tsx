@@ -1,3 +1,4 @@
+import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
 import sourceStyles, { css as sourceCss } from "./InspectorSource.module.css";
 import { render } from "@solidjs/web";
@@ -404,3 +405,40 @@ void loadSourceEditor().catch((error) => {
 const inspectorSourceStyle = document.createElement("style");
 inspectorSourceStyle.textContent = sourceCss;
 sourcePanel.prepend(inspectorSourceStyle);
+
+
+// Live Button playground uses the real Solid components and the shared RodMenu dropdown.
+const buttonStudio = document.createElement("section");
+buttonStudio.id = "buttons";
+buttonStudio.className = "section";
+buttonStudio.innerHTML = '<h2>Buttons & ButtonGroup</h2><p>Componentes reais: variantes, badges, loading e dropdown usando RodMenu.</p><div id="buttonStudioMount"></div>';
+document.querySelector("main.content")?.append(buttonStudio);
+const buttonStyle = document.createElement("style");
+buttonStyle.textContent = buttonCss;
+document.head.append(buttonStyle);
+const buttonMount = document.getElementById("buttonStudioMount");
+if (buttonMount) {
+  render(() => {
+    const [variant, setVariant] = createSignal<"default" | "secondary" | "outline" | "ghost" | "destructive" | "success" | "warning">("default");
+    const [busy, setBusy] = createSignal(false);
+    const [count, setCount] = createSignal(3);
+    return <div class="card" style={{display:"grid",gap:"18px"}}>
+      <div class="flex">
+        <label>Variante <select value={variant()} onChange={e => setVariant(e.currentTarget.value as ReturnType<typeof variant>)}>
+          {(["default","secondary","outline","ghost","destructive","success","warning"] as const).map(v => <option value={v}>{v}</option>)}
+        </select></label>
+        <label><input type="checkbox" checked={busy()} onChange={e => setBusy(e.currentTarget.checked)}/> Loading</label>
+        <label>Accent <input type="color" value="#7c3aed" onInput={e => buttonMount?.style.setProperty("--button-accent",e.currentTarget.value)}/></label>
+      </div>
+      <div class="flex">
+        <Button variant={variant()} icon="✓" badge={count()} loading={busy()} onClick={() => setCount(n=>n+1)}>Salvar</Button>
+        <ButtonGroup attached>
+          <Button variant="outline" onClick={() => setCount(n=>n+1)}>Adicionar</Button>
+          <Button variant="outline" onClick={() => setCount(0)}>Limpar</Button>
+        </ButtonGroup>
+        <DropdownButton variant={variant()} items={[{label:"Adicionar",onSelect:()=>setCount(n=>n+1)},{label:"Zerar",onSelect:()=>setCount(0)}]}>Mais ações</DropdownButton>
+      </div>
+      <pre class="code">{JSON.stringify({variant:variant(),loading:busy(),badge:count()},null,2)}</pre>
+    </div>;
+  }, buttonMount);
+}
