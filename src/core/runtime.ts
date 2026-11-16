@@ -444,8 +444,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
             if (result && typeof (result as Promise<unknown>).then === "function") {
               void Promise.resolve(result).catch(error => {
                 captureDiagnostic(error, `event:${event}`, definition.id, host);
-                captureDiagnostic(error, "module.init", definition.id, host);
-          console.error(`[Userscripts CF: ${definition.id}]`, error);
+                console.error(`[Userscripts CF: ${definition.id}]`, error);
               });
             }
           } catch (error) {
@@ -544,6 +543,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
             failures.delete(definition.id);
           }
         } catch (error) {
+          captureDiagnostic(error, "module.init", definition.id, host);
           await ctx.dispose();
           failures.set(definition.id, url);
           console.error(`[Userscripts CF: ${definition.id}]`, error);
