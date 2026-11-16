@@ -170,22 +170,26 @@ export function mountReelBookmark(
     mount.host.dataset.rodCollectionAction = "true";
     mount.host.style.display = "inline-flex";
   }
-  ctx.observe(document.documentElement, (records) => {
-    if (
-      records.some(
-        (record) =>
-          !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-            "[data-solid-mount]",
-          ),
+  ctx.observe(
+    document.documentElement,
+    (records) => {
+      if (
+        records.some(
+          (record) =>
+            !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
+              "[data-solid-mount]",
+            ),
+        )
       )
-    )
-      scheduleRefresh();
-  }, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ["aria-label"],
-  });
+        scheduleRefresh();
+    },
+    {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["aria-label"],
+    },
+  );
   // Instagram changes active reels without necessarily changing the URL.
   // Coalesce navigation, touch/swipe and DOM updates into one scan per frame.
   let frame = 0;
