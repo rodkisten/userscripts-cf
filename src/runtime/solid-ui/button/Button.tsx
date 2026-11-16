@@ -25,11 +25,13 @@ export function Button(props: ButtonProps) {
     const result = props.onClick?.(event);
     if (props.autoLoading && result && typeof (result as PromiseLike<unknown>).then === "function") {
       setPending(true);
-      try {
-        await result;
-      } finally {
-        setPending(false);
-      }
+      void Promise.resolve(result).then(
+        () => setPending(false),
+        (error) => {
+          setPending(false);
+          console.error("[Button] Async action failed", error);
+        },
+      );
     }
   };
   return (
