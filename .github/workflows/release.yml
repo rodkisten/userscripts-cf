@@ -41,6 +41,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # The release workflow can recover from package.json updates merged without
+      # a matching lockfile. The version commit below persists the repaired lock.
+      - name: Synchronize lockfile before clean install
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          if ! git diff --quiet -- package-lock.json; then
+            echo "::notice::package-lock.json was out of sync; it will be included in the release version commit."
+            git diff --stat -- package-lock.json
+          fi
       - name: Install locked dependencies
         run: npm ci --legacy-peer-deps
       - name: Skip dependency-bot commits
