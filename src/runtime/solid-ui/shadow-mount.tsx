@@ -75,6 +75,10 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   if (options.id) container.dataset.solidUi = options.id;
   owner.append(container);
   let dispose: (() => void) | undefined;
+  // Render the callback as a Solid component, not by eagerly invoking it inside
+  // Errored children. Reactive primitives created by the callback need a
+  // component owner, particularly with Solid 2 on WebKit.
+  const Content = component;
   try {
     dispose = render(
       () => (
@@ -119,7 +123,7 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
             );
           }}
         >
-          {component()}
+          <Content />
         </Errored>
       ),
       container,
