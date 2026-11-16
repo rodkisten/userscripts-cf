@@ -8,148 +8,470 @@ import { clipboardText } from "../../runtime/solid-ui/clipboard.tsx";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
 import styles, { css } from "./GitHub.module.css";
 
-// File listing extraction, bounded downloads and Markdown fencing preserve v1 behavior.
+// ============================================================================
+// Constantes Semânticas
+// ============================================================================
+const PREFERENCES_STORAGE_KEY = "gh-native-file-tools:preferences:v1";
+const DEFAULT_SORT_MODE = "name";
+const DEFAULT_DIRECTION_MODE = "asc";
+const DEFAULT_CONTENT_MODE = "content";
+const MODIFIED_SORT_VALUE = "modified";
+const DESC_DIRECTION_VALUE = "desc";
+const PATHS_MODE_VALUE = "paths";
+
+const DIRECTORY_ROW_SELECTOR = 'tr, [role="row"], .react-directory-row, .js-navigation-item';
+const TIME_ELEMENT_SELECTORS = "relative-time[datetime], time[datetime], [data-time], [data-timestamp], [datetime]";
+const BRANCH_PICKER_SELECTORS = [
+  "#branch-picker-repos-header-ref-selector",
+  '[data-testid="branch-selector"]',
+  'button[data-hotkey="w"]',
+  ".ref-selector",
+];
+
+const IGNORED_OWNER_SETTINGS = ["settings", "notifications", "search", "orgs", "topics", "marketplace"];
+const ALLOWED_REPO_SEGMENTS = ["tree", "blob"];
+const BLOB_SEGMENT = "blob";
+const TREE_SEGMENT = "tree";
+
+const CONTENT_LIMIT_BYTES = 12 * 1024 * 1024;
+const SINGLE_FILE_LIMIT_BYTES = 3 * 1024 * 1024;
+const FETCH_TIMEOUT_MS = 45000;
+const SCHEDULE_SCAN_DEBOUNCE_MS = 180;
+const URL_POLL_INTERVAL_MS = 1200;
+const PARALLEL_DOWNLOAD_POOL = 3;
+const MAX_STRING_SLICE_LIMIT = 160;
+const BINARY_CHECK_SLICE_SIZE = 500;
+const TIMESTAMP_LOWER_BOUND = 1e11;
+
+const GITHUB_DATE_LOCALE = "pt-BR";
+const ERROR_BINARY_OR_HTML = "binário ou página HTML";
+const ERROR_EXCEEDED_SINGLE_LIMIT = "arquivo acima de 3 MB";
+const ERROR_EXCEEDED_TOTAL_LIMIT = "limite total de 12 MB excedido";
+const ERROR_FETCH_FAILED = "Falha na requisição ao GitHub";
+const ERROR_TIMEOUT = "Tempo esgotado";
+
+const NAVIGATION_RETRY_EVENTS = ["turbo:load", "turbo:render", "pjax:end", "popstate"];
+
+// ============================================================================
+// Tipos e Interfaces Auxiliares
+// ============================================================================
+export interface GitHubPreferences {
+  sort: "name" | "modified";
+  direction: "asc" | "desc";
+  mode: "content" | "paths";
+}
+
+export interface RepositoryInfo {
+  owner: string;
+  repo: string;
+}
+
+export interface FileItemInfo {
+  row: Element;
+  name: string;
+  type: "file" | "folder";
+  href: string;
+  tail: string;
+  date: number | null;
+}
+
+export interface DirectoryGroup {
+  parent: Element;
+  items: FileItemInfo[];
+}
+
+export interface FileLinkResult {
+  anchor: HTMLAnchorElement;
+  url: URL;
+  type: "file" | "folder";
+}
+
+// ============================================================================
+// Módulo Principal (Default Export)
+// ============================================================================
 export default {
-  init(ctx: any) {
+  init(ctx: any): void {
     const start = () => startGitHub(ctx);
-    if (document.readyState === "loading") ctx.listen(document, "DOMContentLoaded", start, { once: true });
-    else start();
+    if (document.readyState === "loading") {
+      ctx.listen(document, "DOMContentLoaded", start, { once: true });
+    } else {
+      start();
+    }
   },
 };
-function startGitHub(ctx: any) {
-  const KEY = "gh-native-file-tools:preferences:v1";
-  const DEFAULTS = Object.freeze({ sort: "name", direction: "asc", mode: "content" });
-  const ROW_SELECTOR = 'tr, [role="row"], .react-directory-row, .js-navigation-item';
-  const CONTENT_LIMIT = 12 * 1024 * 1024;
-  const SINGLE_FILE_LIMIT = 3 * 1024 * 1024;
-  const RETRY_NAV_EVENTS = ["turbo:load", "turbo:render", "pjax:end", "popstate"];
-  const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+
+// ============================================================================
+// Funções Auxiliares Semânticas de Gerenciamento de Preferências
+// ============================================================================
+function readUserPreferences(): GitHubPreferences {
+  try {
+    const stored = typeof GM_getValue === "function" ? GM_getValue(PREFERENCES_STORAGE_KEY, "") : localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    const value = typeof stored === "string" ? JSON.parse(stored || "{}") : stored || {};
+    return {
+      sort: value.sort === MODIFIED_SORT_VALUE ? MODIFIED_SORT_VALUE : DEFAULT_SORT_MODE,
+      direction: value.direction === DESC_DIRECTION_VALUE ? DESC_DIRECTION_VALUE : DEFAULT_DIRECTION_MODE,
+      mode: value.mode === PATHS_MODE_VALUE ? PATHS_MODE_VALUE : DEFAULT_CONTENT_MODE,
+    };
+  } catch {
+    return {
+      sort: DEFAULT_SORT_MODE,
+      direction: DEFAULT_DIRECTION_MODE,
+      mode: DEFAULT_CONTENT_MODE,
+    };
+  }
+}
+
+function persistUserPreferences(changes: Partial<GitHubPreferences>, setPreferences: any, scheduleScan: () => void): void {
+  setPreferences((draft: GitHubPreferences) => {
+    Object.assign(draft, changes);
+    try {
+      const value = JSON.stringify({ ...draft });
+      if (typeof GM_setValue === "function") {
+        GM_setValue(PREFERENCES_STORAGE_KEY, value);
+      } else {
+        localStorage.setItem(PREFERENCES_STORAGE_KEY, value);
+      }
+    } catch (error) {
+      console.warn("[GitHub File Tools] Não foi possível salvar as preferências:", error);
+    }
+  });
+  scheduleScan();
+}
+
+// ============================================================================
+// Funções Auxiliares Semânticas de Extração do GitHub
+// ============================================================================
+function extractRepositoryFromLocation(): RepositoryInfo | null {
+  const parts = location.pathname.split("/").filter(Boolean);
+  if (parts.length < 2) return null;
+  const [owner, repo, segment] = parts;
+  if (IGNORED_OWNER_SETTINGS.includes(owner)) return null;
+  if (segment && !ALLOWED_REPO_SEGMENTS.includes(segment)) return null;
+  if (segment === BLOB_SEGMENT) return null;
+  return { owner, repo };
+}
+
+function extractFileLinkFromRow(row: Element, repo: RepositoryInfo): FileLinkResult | null {
+  const links = row.querySelectorAll("a[href]");
+  for (const anchor of links) {
+    let url: URL;
+    try {
+      url = new URL((anchor as HTMLAnchorElement).href, location.href);
+    } catch {
+      continue;
+    }
+    if (url.origin !== location.origin) continue;
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts[0] !== repo.owner || parts[1] !== repo.repo) continue;
+    if (!ALLOWED_REPO_SEGMENTS.includes(parts[2]) || parts.length < 5) continue;
+    return { anchor: anchor as HTMLAnchorElement, url, type: parts[2] === TREE_SEGMENT ? "folder" : "file" };
+  }
+  return null;
+}
+
+function extractRowLastModifiedTimestamp(row: Element): number | null {
+  for (const element of row.querySelectorAll(TIME_ELEMENT_SELECTORS)) {
+    const raw =
+      element.getAttribute("datetime") ||
+      element.getAttribute("data-time") ||
+      element.getAttribute("data-timestamp");
+    if (!raw) continue;
+    let timestamp = /^\d{10,13}$/.test(raw) ? Number(raw) : Date.parse(raw);
+    if (timestamp > 0 && timestamp < TIMESTAMP_LOWER_BOUND) timestamp *= 1000;
+    if (Number.isFinite(timestamp) && timestamp > 0) return timestamp;
+  }
+  return null;
+}
+
+function extractRowFileInfo(row: Element, repo: RepositoryInfo): FileItemInfo | null {
+  const link = extractFileLinkFromRow(row, repo);
+  if (!link) return null;
+  const name = link.anchor.textContent.trim() || decodeURIComponent(link.url.pathname.split("/").pop() || "");
+  if (!name || name === "..") return null;
+  const tail = link.url.pathname.slice(
+    `/${repo.owner}/${repo.repo}/${link.type === "file" ? BLOB_SEGMENT : TREE_SEGMENT}/`.length,
+  );
+  return { row, name, type: link.type, href: link.url.href, tail, date: extractRowLastModifiedTimestamp(row) };
+}
+
+function collectRepositoryDirectoryGroups(repo: RepositoryInfo): DirectoryGroup[] {
+  const main = document.querySelector("main") || document;
+  const groups = new Map<Element, Map<Element, FileItemInfo>>();
+  
+  for (const anchor of main.querySelectorAll<HTMLAnchorElement>('a[href*="/blob/"], a[href*="/tree/"]')) {
+    if (
+      anchor.closest(
+        'aside, nav, [role="tree"], [data-ghft-toolbar], .PRIVATE_TreeView, [data-testid="file-tree"]',
+      )
+    )
+      continue;
+    const row = anchor.closest(DIRECTORY_ROW_SELECTOR);
+    if (!row || !row.parentElement || !main.contains(row)) continue;
+    const info = extractRowFileInfo(row, repo);
+    if (!info || info.href !== anchor.href) continue;
+    const parent = row.parentElement;
+    const known =
+      parent.matches('tbody, [role="rowgroup"], .react-directory-list, .Box') ||
+      row.matches(".react-directory-row, .js-navigation-item") ||
+      !!row.closest('table, [role="table"]');
+    if (!known) continue;
+    if (!groups.has(parent)) groups.set(parent, new Map());
+    groups.get(parent)!.set(row, info);
+  }
+  
+  return [...groups.entries()]
+    .map(([parent, infoMap]) => ({ parent, items: [...infoMap.values()] }))
+    .filter((group) => group.items.length > 0);
+}
+
+function resolveCurrentRepositoryReference(): string {
+  for (const selector of BRANCH_PICKER_SELECTORS) {
+    const element = document.querySelector(selector);
+    const value = element?.textContent?.trim();
+    if (value && value.length < MAX_STRING_SLICE_LIMIT) return value.replace(/^Branch:\s*/i, "");
+  }
+  return "";
+}
+
+function formatDisplayPathForItem(item: FileItemInfo): string {
+  const decoded = decodeURIComponent(item.tail);
+  const ref = resolveCurrentRepositoryReference();
+  return ref && decoded.startsWith(`${ref}/`) ? decoded.slice(ref.length + 1) : decoded;
+}
+
+function buildRawFileUrl(item: FileItemInfo, repo: RepositoryInfo): string {
+  const path = new URL(item.href).pathname;
+  const needle = `/${repo.owner}/${repo.repo}/${BLOB_SEGMENT}/`;
+  if (!path.startsWith(needle)) throw new Error(`Link não reconhecido: ${item.name}`);
+  return `${location.origin}/${repo.owner}/${repo.repo}/raw/${path.slice(needle.length)}`;
+}
+
+function extractHttpHeaderContentType(headers: string): string {
+  const match = String(headers || "").match(/^content-type:\s*([^\r\n]+)/im);
+  return match?.[1]?.toLowerCase() || "";
+}
+
+// ============================================================================
+// Funções Auxiliares Semânticas de Download e Manipulação de Arquivos
+// ============================================================================
+function downloadRawTextContent(url: string): Promise<{ text: string; type: string }> {
+  return new Promise<{ text: string; type: string }>((resolve, reject) => {
+    const gmRequest =
+      typeof GM_xmlhttpRequest === "function"
+        ? GM_xmlhttpRequest
+        : typeof GM !== "undefined" && typeof (GM as any).xmlHttpRequest === "function"
+          ? (GM as any).xmlHttpRequest
+          : null;
+
+    if (gmRequest) {
+      gmRequest({
+        method: "GET",
+        url,
+        timeout: FETCH_TIMEOUT_MS,
+        responseType: "text",
+        onload: (result: any) => {
+          if (result.status < 200 || result.status >= 300) {
+            reject(new Error(`HTTP ${result.status}`));
+            return;
+          }
+          resolve({
+            text: result.responseText ?? result.response ?? "",
+            type: extractHttpHeaderContentType(result.responseHeaders),
+          });
+        },
+        ontimeout: () => reject(new Error(ERROR_TIMEOUT)),
+        onerror: () => reject(new Error(ERROR_FETCH_FAILED)),
+      });
+      return;
+    }
+
+    fetch(url, { credentials: "include", redirect: "follow" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        resolve({ text: await response.text(), type: response.headers.get("content-type") || "" });
+      })
+      .catch(reject);
+  });
+}
+
+function isContentBinaryOrGitHubErrorPage(text: string, mime: string): boolean {
+  if (/^(image\/|audio\/|video\/|application\/(pdf|zip|octet-stream|wasm))/.test(mime)) return true;
+  if (text.includes("\u0000")) return true;
+  if (
+    /^\s*<!doctype html|^\s*<html[\s>]/i.test(text.slice(0, BINARY_CHECK_SLICE_SIZE)) &&
+    /<title>[^<]*(?:GitHub · Sign in|Sign in to GitHub|404 · GitHub|Rate limit)[^<]*<\/title>/i.test(text)
+  )
+    return true;
+  return false;
+}
+
+async function fetchMultipleFileContents(
+  items: FileItemInfo[],
+  repo: RepositoryInfo,
+  progress: (done: number, total: number) => void
+): Promise<Array<{ item: FileItemInfo; text?: string; error?: string }>> {
+  const results: Array<{ item: FileItemInfo; text?: string; error?: string }> = Array(items.length);
+  let next = 0;
+  let finished = 0;
+  let totalBytes = 0;
+  const pool = Math.min(PARALLEL_DOWNLOAD_POOL, items.length);
+
+  await Promise.all(
+    Array.from({ length: pool }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        const item = items[index];
+        try {
+          const { text, type } = await downloadRawTextContent(buildRawFileUrl(item, repo));
+          if (isContentBinaryOrGitHubErrorPage(text, type)) throw new Error(ERROR_BINARY_OR_HTML);
+          const bytes = new Blob([text]).size;
+          if (bytes > SINGLE_FILE_LIMIT_BYTES) throw new Error(ERROR_EXCEEDED_SINGLE_LIMIT);
+          totalBytes += bytes;
+          if (totalBytes > CONTENT_LIMIT_BYTES) throw new Error(ERROR_EXCEEDED_TOTAL_LIMIT);
+          results[index] = { item, text };
+        } catch (error: any) {
+          results[index] = { item, error: error?.message || String(error) };
+        } finally {
+          progress(++finished, items.length);
+        }
+      }
+    }),
+  );
+  return results;
+}
+
+function detectCodeLanguageForFilename(filename: string): string {
+  const extension = filename.split(".").pop()?.toLowerCase();
+  return (
+    {
+      ts: "ts",
+      tsx: "tsx",
+      js: "js",
+      jsx: "jsx",
+      py: "python",
+      sh: "bash",
+      yml: "yaml",
+      yaml: "yaml",
+      md: "markdown",
+      json: "json",
+      css: "css",
+      html: "html",
+      rs: "rust",
+      go: "go",
+      rb: "ruby",
+      c: "c",
+      cpp: "cpp",
+      h: "c",
+      java: "java",
+      kt: "kotlin",
+      swift: "swift",
+      sql: "sql",
+      xml: "xml",
+      toml: "toml",
+      php: "php",
+      vue: "vue",
+      svelte: "svelte",
+      dockerfile: "dockerfile",
+    }[extension || ""] || ""
+  );
+}
+
+function calculateMarkdownCodeFence(text: string): string {
+  const sequences = text.match(/`{3,}/g) || [];
+  const maximum = sequences.reduce((n, sequence) => Math.max(n, sequence.length), 2);
+  return "`".repeat(maximum + 1);
+}
+
+async function buildCombinedClipboardText(
+  items: FileItemInfo[],
+  repo: RepositoryInfo,
+  mode: "content" | "paths",
+  progress: (done: number, total: number) => void
+): Promise<string> {
+  const header = `# ${repo.owner}/${repo.repo}\nFonte: ${location.href}\n`;
+  if (mode === PATHS_MODE_VALUE) {
+    return `${header}\n${items.map((item) => `${item.type === "folder" ? "📁" : "📄"} ${formatDisplayPathForItem(item)}`).join("\n")}\n`;
+  }
+  const files = items.filter((item) => item.type === "file");
+  const results = await fetchMultipleFileContents(files, repo, progress);
+  const successful = results.filter((item) => !item.error);
+  if (!successful.length)
+    throw new Error("Não consegui ler nenhum arquivo. Verifique o acesso ao repositório.");
+  const sections = results.map((result) => {
+    const path = formatDisplayPathForItem(result.item);
+    if (result.error) return `## ${path}\n[Não copiado: ${result.error}]`;
+    const fence = calculateMarkdownCodeFence(result.text!);
+    return `## ${path}\n${fence}${detectCodeLanguageForFilename(path)}\n${result.text!.replace(/\n*$/, "")}\n${fence}`;
+  });
+  const ignored = items.filter((item) => item.type === "folder").length;
+  return `${header}\n${sections.join("\n\n")}\n\n${ignored ? `> ${ignored} subpasta(s) não incluídas. Use “Caminhos” para copiá-las.\n` : ""}`;
+}
+
+async function writeTextToSystemClipboard(text: string): Promise<void> {
+  if (typeof GM_setClipboard === "function") {
+    await GM_setClipboard(text, "text");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {
+    /* fallback para Safari/gerenciadores sem permissão */
+  }
+  await clipboardText(text);
+}
+
+function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
+  if (
+    typeof GM_setClipboard !== "function" &&
+    typeof ClipboardItem !== "undefined" &&
+    navigator.clipboard?.write
+  ) {
+    try {
+      const item = new ClipboardItem({
+        "text/plain": textPromise.then((text) => new Blob([text], { type: "text/plain" })),
+      });
+      return navigator.clipboard.write([item]).catch(async () => writeTextToSystemClipboard(await textPromise));
+    } catch {
+      /* cair para o método alternativo */
+    }
+  }
+  return textPromise.then(writeTextToSystemClipboard);
+}
+
+function copyDirectoryItemsToClipboard(
+  items: FileItemInfo[],
+  repo: RepositoryInfo,
+  prefs: GitHubPreferences,
+  progress: (done: number, total: number) => void
+): Promise<void> {
+  if (!items.length) return Promise.resolve();
+  const mode = prefs.mode;
+  return handleClipboardWriteGesture(buildCombinedClipboardText(items, repo, mode, progress));
+}
+
+// ============================================================================
+// Função de Inicialização e Varredura do GitHub (StartGitHub)
+// ============================================================================
+function startGitHub(ctx: any): void {
+  const collator = new Intl.Collator(GITHUB_DATE_LOCALE, { numeric: true, sensitivity: "base" });
   const panels = new WeakMap<Element, any>();
-  const [prefs, setPreferences] = createStore(readPrefs());
+  const [prefs, setPreferences] = createStore(readUserPreferences());
   const mounts = new Map<HTMLElement, () => void>();
-  let timer;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let lastUrl = location.href;
 
-  function readPrefs() {
-    try {
-      const stored = typeof GM_getValue === "function" ? GM_getValue(KEY, "") : localStorage.getItem(KEY);
-      const value = typeof stored === "string" ? JSON.parse(stored || "{}") : stored || {};
-      return {
-        sort: value.sort === "modified" ? "modified" : "name",
-        direction: value.direction === "desc" ? "desc" : "asc",
-        mode: value.mode === "paths" ? "paths" : "content",
-      };
-    } catch {
-      return { ...DEFAULTS };
-    }
+  function savePrefs(changes: Partial<GitHubPreferences>) {
+    persistUserPreferences(changes, setPreferences, scheduleScan);
   }
 
-  function savePrefs(changes) {
-    setPreferences((draft) => {
-      Object.assign(draft, changes);
-      try {
-        const value = JSON.stringify({ ...draft });
-        if (typeof GM_setValue === "function") GM_setValue(KEY, value);
-        else localStorage.setItem(KEY, value);
-      } catch (error) {
-        console.warn("[GitHub File Tools] Não foi possível salvar as preferências:", error);
-      }
-    });
-    scheduleScan();
-  }
-
-  function repoFromLocation() {
-    const parts = location.pathname.split("/").filter(Boolean);
-    if (parts.length < 2) return null;
-    const [owner, repo, segment] = parts;
-    if (["settings", "notifications", "search", "orgs", "topics", "marketplace"].includes(owner)) return null;
-    if (segment && !["tree", "blob"].includes(segment)) return null;
-    if (segment === "blob") return null;
-    return { owner, repo };
-  }
-
-  function getFileLink(row, repo) {
-    const links = row.querySelectorAll("a[href]");
-    for (const anchor of links) {
-      let url;
-      try {
-        url = new URL(anchor.href, location.href);
-      } catch {
-        continue;
-      }
-      if (url.origin !== location.origin) continue;
-      const parts = url.pathname.split("/").filter(Boolean);
-      if (parts[0] !== repo.owner || parts[1] !== repo.repo) continue;
-      if (!["tree", "blob"].includes(parts[2]) || parts.length < 5) continue;
-      return { anchor, url, type: parts[2] === "tree" ? "folder" : "file" };
-    }
-    return null;
-  }
-
-  function lastModified(row) {
-    for (const element of row.querySelectorAll(
-      "relative-time[datetime], time[datetime], [data-time], [data-timestamp], [datetime]",
-    )) {
-      const raw =
-        element.getAttribute("datetime") ||
-        element.getAttribute("data-time") ||
-        element.getAttribute("data-timestamp");
-      if (!raw) continue;
-      let timestamp = /^\d{10,13}$/.test(raw) ? Number(raw) : Date.parse(raw);
-      if (timestamp > 0 && timestamp < 1e11) timestamp *= 1000;
-      if (Number.isFinite(timestamp) && timestamp > 0) return timestamp;
-    }
-    return null;
-  }
-
-  function getInfo(row, repo) {
-    const link = getFileLink(row, repo);
-    if (!link) return null;
-    const name =
-      link.anchor.textContent.trim() || decodeURIComponent(link.url.pathname.split("/").pop() || "");
-    if (!name || name === "..") return null;
-    const tail = link.url.pathname.slice(
-      `/${repo.owner}/${repo.repo}/${link.type === "file" ? "blob" : "tree"}/`.length,
-    );
-    return { row, name, type: link.type, href: link.url.href, tail, date: lastModified(row) };
-  }
-
-  function listGroups(repo) {
-    const main = document.querySelector("main") || document;
-    const groups = new Map();
-    for (const anchor of main.querySelectorAll<HTMLAnchorElement>('a[href*="/blob/"], a[href*="/tree/"]')) {
-      if (
-        anchor.closest(
-          'aside, nav, [role="tree"], [data-ghft-toolbar], .PRIVATE_TreeView, [data-testid="file-tree"]',
-        )
-      )
-        continue;
-      const row = anchor.closest(ROW_SELECTOR);
-      if (!row || !row.parentElement || !main.contains(row)) continue;
-      const info = getInfo(row, repo);
-      if (!info || info.href !== anchor.href) continue;
-      const parent = row.parentElement;
-      const known =
-        parent.matches('tbody, [role="rowgroup"], .react-directory-list, .Box') ||
-        row.matches(".react-directory-row, .js-navigation-item") ||
-        !!row.closest('table, [role="table"]');
-      if (!known) continue;
-      if (!groups.has(parent)) groups.set(parent, new Map());
-      groups.get(parent).set(row, info);
-    }
-    return [...groups.entries()]
-      .map(([parent, infoMap]) => ({ parent, items: [...infoMap.values()] }))
-      .filter((group) => group.items.length > 0);
-  }
-
-  function sortGroup(group) {
+  function sortDirectoryGroup(group: DirectoryGroup) {
     const items = group.items.filter((item) => item.row.parentElement === group.parent);
     if (!items.length) return;
-    const direction = prefs.direction === "asc" ? 1 : -1;
+    const direction = prefs.direction === DEFAULT_DIRECTION_MODE ? 1 : -1;
     const sorted = [...items].sort((a, b) => {
-      // Mantém a convenção nativa do GitHub: pastas antes de arquivos.
       if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
-      if (prefs.sort === "modified") {
+      if (prefs.sort === MODIFIED_SORT_VALUE) {
         if (a.date === null && b.date !== null) return 1;
         if (b.date === null && a.date !== null) return -1;
         if (a.date !== null && b.date !== null && a.date !== b.date) {
@@ -160,14 +482,12 @@ function startGitHub(ctx: any) {
     });
     if (items.every((item, i) => item.row === sorted[i].row)) return;
 
-    // Move os nós originais, preservando links, handlers, menus e a UI nativa.
-    // O observer reaplica a ordem quando o GitHub substitui a listagem via SPA.
     const original = [...group.parent.children].filter((el) => items.some((item) => item.row === el));
-    const followingSibling = original.at(-1).nextSibling;
-    for (const item of sorted) group.parent.insertBefore(item.row, followingSibling);
+    const followingSibling = original.at(-1)?.nextSibling;
+    for (const item of sorted) group.parent.insertBefore(item.row, followingSibling || null);
   }
 
-  function attachGroup(group, repo) {
+  function attachGroupToolbar(group: DirectoryGroup, repo: RepositoryInfo) {
     const previous = panels.get(group.parent);
     if (previous?.host.isConnected) return previous;
     let listContainer = group.parent;
@@ -182,17 +502,17 @@ function startGitHub(ctx: any) {
           info={info}
           save={savePrefs}
           copy={(progress) => {
-            const items = listGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
+            const items = collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
             const files = items.filter((item) => item.type === "file");
-            if (prefs.mode === "content" && !files.length)
+            if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length)
               return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
             if (
-              prefs.mode === "content" &&
+              prefs.mode === DEFAULT_CONTENT_MODE &&
               files.length > 100 &&
               !confirm(`Copiar ${files.length} arquivos?`)
             )
               return Promise.resolve();
-            return copyFiles(items, repo, progress);
+            return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
           }}
         />
       ),
@@ -205,7 +525,7 @@ function startGitHub(ctx: any) {
     const record = {
       host: mount.host,
       update(hint: string, title: string) {
-        setInfo((draft) => {
+        setInfo((draft: any) => {
           draft.hint = hint;
           draft.title = title;
         });
@@ -215,229 +535,11 @@ function startGitHub(ctx: any) {
     return record;
   }
 
-  function currentRef() {
-    const selectors = [
-      "#branch-picker-repos-header-ref-selector",
-      '[data-testid="branch-selector"]',
-      'button[data-hotkey="w"]',
-      ".ref-selector",
-    ];
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      const value = element?.textContent?.trim();
-      if (value && value.length < 160) return value.replace(/^Branch:\s*/i, "");
-    }
-    return "";
-  }
-
-  function displayPath(item) {
-    const decoded = decodeURIComponent(item.tail);
-    const ref = currentRef();
-    return ref && decoded.startsWith(`${ref}/`) ? decoded.slice(ref.length + 1) : decoded;
-  }
-
-  function rawUrl(item, repo) {
-    const path = new URL(item.href).pathname;
-    const needle = `/${repo.owner}/${repo.repo}/blob/`;
-    if (!path.startsWith(needle)) throw new Error(`Link não reconhecido: ${item.name}`);
-    return `${location.origin}/${repo.owner}/${repo.repo}/raw/${path.slice(needle.length)}`;
-  }
-
-  function parseHeaders(headers) {
-    const match = String(headers || "").match(/^content-type:\s*([^\r\n]+)/im);
-    return match?.[1]?.toLowerCase() || "";
-  }
-
-  function downloadText(url) {
-    return new Promise<{ text: string; type: string }>((resolve, reject) => {
-      const gmRequest =
-        typeof GM_xmlhttpRequest === "function"
-          ? GM_xmlhttpRequest
-          : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
-            ? GM.xmlHttpRequest
-            : null;
-
-      if (gmRequest) {
-        gmRequest({
-          method: "GET",
-          url,
-          timeout: 45000,
-          responseType: "text",
-          onload: (result) => {
-            if (result.status < 200 || result.status >= 300) {
-              reject(new Error(`HTTP ${result.status}`));
-              return;
-            }
-            resolve({
-              text: result.responseText ?? result.response ?? "",
-              type: parseHeaders(result.responseHeaders),
-            });
-          },
-          ontimeout: () => reject(new Error("Tempo esgotado")),
-          onerror: () => reject(new Error("Falha na requisição ao GitHub")),
-        });
-        return;
-      }
-
-      fetch(url, { credentials: "include", redirect: "follow" })
-        .then(async (response) => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          resolve({ text: await response.text(), type: response.headers.get("content-type") || "" });
-        })
-        .catch(reject);
-    });
-  }
-
-  function isBinaryOrHTML(text, mime) {
-    if (/^(image\/|audio\/|video\/|application\/(pdf|zip|octet-stream|wasm))/.test(mime)) return true;
-    if (text.includes("\u0000")) return true;
-    // Não descartar arquivos .html legítimos. Rejeitar páginas de login/erro do GitHub.
-    if (
-      /^\s*<!doctype html|^\s*<html[\s>]/i.test(text.slice(0, 500)) &&
-      /<title>[^<]*(?:GitHub · Sign in|Sign in to GitHub|404 · GitHub|Rate limit)[^<]*<\/title>/i.test(text)
-    )
-      return true;
-    return false;
-  }
-
-  async function fetchContents(items, repo, progress) {
-    const results = Array(items.length);
-    let next = 0;
-    let finished = 0;
-    let totalBytes = 0;
-    const pool = Math.min(3, items.length);
-
-    await Promise.all(
-      Array.from({ length: pool }, async () => {
-        while (next < items.length) {
-          const index = next++;
-          const item = items[index];
-          try {
-            const { text, type } = await downloadText(rawUrl(item, repo));
-            if (isBinaryOrHTML(text, type)) throw new Error("binário ou página HTML");
-            const bytes = new Blob([text]).size;
-            if (bytes > SINGLE_FILE_LIMIT) throw new Error("arquivo acima de 3 MB");
-            totalBytes += bytes;
-            if (totalBytes > CONTENT_LIMIT) throw new Error("limite total de 12 MB excedido");
-            results[index] = { item, text };
-          } catch (error) {
-            results[index] = { item, error: error.message || String(error) };
-          } finally {
-            progress(++finished, items.length);
-          }
-        }
-      }),
-    );
-    return results;
-  }
-
-  function languageFor(filename) {
-    const extension = filename.split(".").pop()?.toLowerCase();
-    return (
-      {
-        ts: "ts",
-        tsx: "tsx",
-        js: "js",
-        jsx: "jsx",
-        py: "python",
-        sh: "bash",
-        yml: "yaml",
-        yaml: "yaml",
-        md: "markdown",
-        json: "json",
-        css: "css",
-        html: "html",
-        rs: "rust",
-        go: "go",
-        rb: "ruby",
-        c: "c",
-        cpp: "cpp",
-        h: "c",
-        java: "java",
-        kt: "kotlin",
-        swift: "swift",
-        sql: "sql",
-        xml: "xml",
-        toml: "toml",
-        php: "php",
-        vue: "vue",
-        svelte: "svelte",
-        dockerfile: "dockerfile",
-      }[extension] || ""
-    );
-  }
-
-  function fenceFor(text) {
-    const sequences = text.match(/`{3,}/g) || [];
-    const maximum = sequences.reduce((n, sequence) => Math.max(n, sequence.length), 2);
-    return "`".repeat(maximum + 1);
-  }
-
-  async function makeCopyText(items, repo, mode, progress) {
-    const header = `# ${repo.owner}/${repo.repo}\nFonte: ${location.href}\n`;
-    if (mode === "paths") {
-      return `${header}\n${items.map((item) => `${item.type === "folder" ? "📁" : "📄"} ${displayPath(item)}`).join("\n")}\n`;
-    }
-    const files = items.filter((item) => item.type === "file");
-    const results = await fetchContents(files, repo, progress);
-    const successful = results.filter((item) => !item.error);
-    if (!successful.length)
-      throw new Error("Não consegui ler nenhum arquivo. Verifique o acesso ao repositório.");
-    const sections = results.map((result) => {
-      const path = displayPath(result.item);
-      if (result.error) return `## ${path}\n[Não copiado: ${result.error}]`;
-      const fence = fenceFor(result.text);
-      return `## ${path}\n${fence}${languageFor(path)}\n${result.text.replace(/\n*$/, "")}\n${fence}`;
-    });
-    const ignored = items.filter((item) => item.type === "folder").length;
-    return `${header}\n${sections.join("\n\n")}\n\n${ignored ? `> ${ignored} subpasta(s) não incluídas. Use “Caminhos” para copiá-las.\n` : ""}`;
-  }
-
-  async function setClipboard(text) {
-    if (typeof GM_setClipboard === "function") {
-      await GM_setClipboard(text, "text");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      return;
-    } catch {
-      /* fallback para Safari/gerenciadores sem permissão */
-    }
-    await clipboardText(text);
-  }
-
-  function writeClipboardOnGesture(textPromise) {
-    // Safari móvel exige que a escrita seja iniciada dentro do clique.
-    // O ClipboardItem recebe o Blob futuramente, depois dos downloads.
-    if (
-      typeof GM_setClipboard !== "function" &&
-      typeof ClipboardItem !== "undefined" &&
-      navigator.clipboard?.write
-    ) {
-      try {
-        const item = new ClipboardItem({
-          "text/plain": textPromise.then((text) => new Blob([text], { type: "text/plain" })),
-        });
-        return navigator.clipboard.write([item]).catch(async () => setClipboard(await textPromise));
-      } catch {
-        /* cair para o método alternativo */
-      }
-    }
-    return textPromise.then(setClipboard);
-  }
-
-  function copyFiles(items, repo, progress) {
-    if (!items.length) return Promise.resolve();
-    const mode = prefs.mode;
-    // The clipboard promise is created synchronously inside the click gesture.
-    return writeClipboardOnGesture(makeCopyText(items, repo, mode, progress));
-  }
-
   const dashboard = mountGitHubDashboard(ctx);
   decorateGitHubFiles(ctx);
   const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
+
   function scan() {
     fitNavigation();
     for (const [node, dispose] of mounts) {
@@ -448,12 +550,12 @@ function startGitHub(ctx: any) {
     }
     scanWorkflowSteps(ctx, mounts);
 
-    const repo = repoFromLocation();
+    const repo = extractRepositoryFromLocation();
     if (!repo) {
       document.querySelectorAll("[data-ghft-toolbar]").forEach((node) => node.remove());
       return;
     }
-    const groups = listGroups(repo);
+    const groups = collectRepositoryDirectoryGroups(repo);
     for (const group of groups) {
       for (const item of group.items) {
         if (favoriteHosts.has(item.row)) continue;
@@ -483,11 +585,7 @@ function startGitHub(ctx: any) {
         );
         mounts.set(mount.host, mount.dispose);
         if (item.type === "file") {
-          // TODO(GITHUB-COMMITS): Resolve branch names containing slashes via
-          // GitHub's ref metadata rather than assuming the first URL segment.
-          // Cache and batch commit lookups for large directories; test private
-          // repositories, rate limits, and SPA branch switches.
-          const path = displayPath(item);
+          const path = formatDisplayPathForItem(item);
           const commitMount = mountPoint(
             item.row,
             () => <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />,
@@ -496,21 +594,21 @@ function startGitHub(ctx: any) {
           mounts.set(commitMount.host, commitMount.dispose);
         }
       }
-      const toolbar = attachGroup(group, repo);
+      const toolbar = attachGroupToolbar(group, repo);
       const missingDates = group.items.filter((item) => item.date === null).length;
       toolbar.update(
-        prefs.sort === "modified" && missingDates
+        prefs.sort === MODIFIED_SORT_VALUE && missingDates
           ? `${missingDates} sem data`
           : `${group.items.length} itens`,
-        missingDates && prefs.sort === "modified" ? "Itens sem data aparecem por último em cada grupo." : "",
+        missingDates && prefs.sort === MODIFIED_SORT_VALUE ? "Itens sem data aparecem por último em cada grupo." : "",
       );
-      sortGroup(group);
+      sortDirectoryGroup(group);
     }
   }
 
   function scheduleScan() {
     clearTimeout(timer);
-    timer = setTimeout(scan, 180);
+    timer = setTimeout(scan, SCHEDULE_SCAN_DEBOUNCE_MS);
   }
 
   let tokenDialog: ReturnType<typeof mountPoint> | undefined;
@@ -562,13 +660,13 @@ function startGitHub(ctx: any) {
     attributeFilter: ["datetime", "data-time"],
   });
 
-  for (const event of RETRY_NAV_EVENTS) ctx.listen(window, event, scheduleScan);
+  for (const event of NAVIGATION_RETRY_EVENTS) ctx.listen(window, event, scheduleScan);
   const interval = setInterval(() => {
     if (lastUrl !== location.href) {
       lastUrl = location.href;
       scheduleScan();
     }
-  }, 1200);
+  }, URL_POLL_INTERVAL_MS);
   scheduleScan();
 
   ctx.onDispose(() => {
