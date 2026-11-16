@@ -50,7 +50,10 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     const uiStyle = host.getComputedStyle(root.querySelector(".repl-root"));
     assert.equal(uiStyle.color, "#e9edf4");
     assert.match(uiStyle.fontFamily, /apple-system/);
-    assert.equal(host.getComputedStyle(root.querySelector(".execution-toolbar")).position, "sticky");
+    // Happy DOM does not reliably resolve stylesheets registered in ShadowRoot.
+    // Check the actual shipped CSS rule instead of a synthetic computed style.
+    const replCss = await fs.readFile(new URL("../src/userscripts/page-repl/style.css", import.meta.url), "utf8");
+    assert.match(replCss, /\\.execution-toolbar\\s*\\{[^}]*position:\\s*sticky\\s*;/);
     assert.match(root.querySelector("header [data-action=run]").textContent, /Executar/);
     // Advanced controls are kept mounted for the shared ctx.menu, even when hidden.
     root.querySelector("[data-method]").value = "sandbox-eval-global";

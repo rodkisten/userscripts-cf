@@ -82,7 +82,7 @@
   "ui/menu.js:createStudioMenus": {
     "file": "ui/menu.js",
     "name": "createStudioMenus",
-    "sha256": "29aef2a0cd6e2bfca686b3c396ccf5410522121e13eef9e1ac40a6911cfafbb8"
+    "sha256": "e98edfc20899ed67da477825f55d22199224d83051c9775520cd5e1ba8535539"
   },
   "media/seek-preview.js:createSeekPreviews": {
     "file": "media/seek-preview.tsx",
@@ -512,7 +512,7 @@
   "telegram/relay.js:Relay": {
     "file": "telegram/relay.tsx",
     "name": "Relay",
-    "sha256": "6f16072e9ee80433331dcc286af1eda6d394b514bd3be05455ba19fbc7ab0ff4"
+    "sha256": "c52707fa85266ceedd2fdea549a725d7b0dff30a93c89986c328c73c362aaf80"
   },
   "tweets/publisher.js:XRepost": {
     "file": "tweets/publisher.tsx",
