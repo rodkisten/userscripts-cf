@@ -3,7 +3,7 @@ import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import type { Accessor } from "solid-js";
+import { createRoot, createStore, type Accessor } from "solid-js";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
@@ -134,6 +134,7 @@ export interface ScriptContext {
   onDispose: (callback: () => void | Promise<void>) => void;
   observe(target: Node, callback: MutationCallback, options: MutationObserverInit): MutationObserver;
   interval(callback: () => void, milliseconds: number): ReturnType<typeof setInterval>;
+  store<T extends object>(initial: T): ReturnType<typeof createStore<T>>;
   listen(
     target: EventTarget,
     event: string,
@@ -657,6 +658,13 @@ export function createRuntime(
         },
       }),
       onDispose,
+      store<T extends object>(initial: T) {
+        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
+        return createRoot((dispose) => {
+          onDispose(dispose);
+          return createStore(initial);
+        });
+      },
       observe(target, callback, options) {
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         const observer = new host.MutationObserver(callback);
