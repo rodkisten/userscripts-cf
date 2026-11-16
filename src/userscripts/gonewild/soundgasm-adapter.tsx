@@ -143,22 +143,26 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         draft.source = source;
       });
   };
-  ctx.observe(document.documentElement, (records: MutationRecord[]) => {
-    if (
-      records.some(
-        (record) =>
-          !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-            "[data-solid-mount]",
-          ),
+  ctx.observe(
+    document.documentElement,
+    (records: MutationRecord[]) => {
+      if (
+        records.some(
+          (record) =>
+            !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
+              "[data-solid-mount]",
+            ),
+        )
       )
-    )
-      refresh();
-  }, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["src"],
-  });
+        refresh();
+    },
+    {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src"],
+    },
+  );
   ctx.interval(() => {
     refresh();
     revealIfReady();

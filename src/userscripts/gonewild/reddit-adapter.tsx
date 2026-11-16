@@ -219,17 +219,21 @@ export function mountReddit(ctx: any, bridge: any) {
   }
   // Only this adapter touches native Reddit nodes. Every script-owned view is
   // rendered and updated by Solid; page observers never build UI children.
-  ctx.observe(document.documentElement, (records) => {
-    if (
-      records.some(
-        (record) =>
-          !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-            "[data-solid-mount]",
-          ),
+  ctx.observe(
+    document.documentElement,
+    (records) => {
+      if (
+        records.some(
+          (record) =>
+            !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
+              "[data-solid-mount]",
+            ),
+        )
       )
-    )
-      schedule();
-  }, { subtree: true, childList: true });
+        schedule();
+    },
+    { subtree: true, childList: true },
+  );
   const disposeEffects = createRoot((dispose) => {
     createEffect(
       () => ({
