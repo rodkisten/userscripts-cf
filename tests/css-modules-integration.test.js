@@ -32,7 +32,7 @@ describe("Shadow-scoped CSS", () => {
       const file = path.join(dir, "dock.shadow.css");
       await writeFile(file, ".panel { display: flex; } .action { padding: 8px; }");
       const output = await inlineCSSModules().load(file + ".js");
-      const css = JSON.parse(output.match(/export const css = ("(?:\\\\.|[^"\\\\])*");/)[1]);
+      const css = JSON.parse(output.slice("export const css = ".length).split("; export default")[0]);
       expect(css).toContain(".panel");
       expect(css).toContain(".action");
       expect(css).not.toContain("!important");
