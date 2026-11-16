@@ -3,7 +3,22 @@ import path from "node:path";
 import { parse } from "@babel/parser";
 
 const fix = process.argv.includes("--fix");
-const targets = ["src/userscripts/instagram-saved/index.tsx", "src/userscripts/instagram-saved/core.ts"];
+const script = process.argv.find((arg) => arg.startsWith("--script="))?.slice("--script=".length);
+const root = path.resolve("src/userscripts");
+const targets = [];
+async function discover(directory) {
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) await discover(absolute);
+    else if (entry.isFile() && /\\.[cm]?[jt]sx?$/.test(entry.name)) {
+      targets.push(path.relative(process.cwd(), absolute));
+    }
+  }
+}
+if (script && !/^[a-z0-9-]+$/.test(script)) throw new Error("Invalid userscript id");
+const selected = script ? path.join(root, script) : root;
+await discover(selected);
+targets.sort();
 let errors = 0;
 
 for (const filename of targets) {
