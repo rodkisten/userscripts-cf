@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, drawSelection } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
 import { StandaloneFieldRenderer } from '../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer';
