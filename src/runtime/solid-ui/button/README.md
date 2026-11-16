@@ -45,3 +45,14 @@ The live Design System Studio includes `IconButton` with notification count and 
 ## SplitButton integration update
 
 The dropdown forwards its HTML button reference to the existing `menu.dropdown` positioning system. SplitButton keeps the primary action separate from the arrow-triggered menu and passes async/loading props only to the primary action. The Studio has a live SplitButton demo with async save and two menu actions. Typecheck/build and browser behavior remain unverified.
+
+## DOM props and accessibility
+
+The Button filters component-only props before forwarding native HTML attributes. DropdownButton filters `items`, `menu`, and `align` and declares `aria-haspopup="menu"`. SplitButton separates its primary action from the menu trigger. This is a code-level correction, **not a confirmed build pass**.
+
+### Validation status
+
+- [ ] Typecheck: not run (GitHub connector has no command execution and this environment cannot reach GitHub to clone).
+- [ ] Build: not run for the same reason.
+- [ ] Safari iPhone and menu positioning: not manually verified.
+- [ ] Review native attributes, CSS precedence and async rejection behavior after compilation.
