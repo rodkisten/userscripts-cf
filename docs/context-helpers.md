@@ -100,3 +100,9 @@ The persistent native-page observer and periodic hydration refresh now use `ctx.
 ### GM menu commands
 
 Register native userscript menu commands through `ctx.gm.modern.registerMenuCommand` (fall back to `ctx.gm.legacy`), rather than directly calling `GM_registerMenuCommand`. The bridge mirrors commands into the shared Dock without creating duplicate native entries. Retain returned IDs and unregister through the same bridge during `ctx.onDispose`; these registrations are not automatically disposed by the bridge. Instagram Saved demonstrates this pattern.
+
+### Raw storage and listener migration audit
+
+**Rule:** scripts should not use raw `localStorage`, `sessionStorage`, `GM_getValue`/`GM_setValue`, `addEventListener`, `MutationObserver`, or `setInterval` for context-owned resources. Prefer `ctx.storage`, `ctx.listen`, `ctx.observe`, and `ctx.interval`. Native APIs are allowed only inside their dedicated runtime adapters, cross-world shims, or short-lived promise scopes with explicit cleanup. A direct substitution of synchronous `localStorage` with asynchronous `ctx.storage` is **not** safe without migrating initialization and dependent call sites to async.
+
+The RodX entrypoint now uses `ctx.listen` for DOM readiness and releases its global startup guard on disposal. **Still pending:** RodX studio runtime's synchronous config persistence, GoneWild's page-world Reddit network shim and sync store, GitHub Tools preferences, and other legacy modules. These require storage adapters with a defined migration strategy, not blind search-and-replace.
