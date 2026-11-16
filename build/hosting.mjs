@@ -10,6 +10,7 @@ const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
+assets["playground/diagnostics.html"] = await fs.readFile(path.join(root, "playground/diagnostics.html"), "utf8");
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 assets["playground/form-controls.html"] = await fs.readFile(path.join(root, "playground/form-controls.html"), "utf8");
 // Compile the actual SolidJS components instead of shipping a separate HTML mock.
