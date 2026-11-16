@@ -17,7 +17,7 @@ export const INSPECTOR_CONFIG = Object.freeze({
 });
 export default {
   init(ctx) {
-    const [open, setOpen] = createSignal(false);
+    const [open, setOpen] = createSignal<boolean>(false);
     const [tab, setTab] = createSignal("dom");
     const [selector, setSelector] = createSignal("");
     const [status, setStatus] = createSignal("");
@@ -26,8 +26,8 @@ export default {
     const [records, setRecords] = createSignal([]);
     const [depth, setDepth] = createSignal(0);
     const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
-    const [picking, setPicking] = createSignal(false);
-    const [live, setLive] = createSignal(false);
+    const [picking, setPicking] = createSignal<boolean>(false);
+    const [live, setLive] = createSignal<boolean>(false);
     let editor, editorRoot, selected, overlay, refreshTimer, pickerListener, pickerCancelListener, highlightTarget, highlightFrame = 0, lastRect = "", domObserver;
     const syntax = new Compartment();
     let editorMode;
