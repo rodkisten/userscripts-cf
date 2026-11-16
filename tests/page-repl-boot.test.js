@@ -30,20 +30,27 @@ test("complete REPL installable opens, runs async code, persists closure and cle
   host.GM_getValue = (key, fallback) => values.get(key) ?? fallback;
   host.GM_setValue = (key, value) => values.set(key, value);
   host.GM_deleteValue = (key) => values.delete(key);
-  host.GM_registerMenuCommand = () => {};
+  let openRepl;
+  host.GM_registerMenuCommand = (label, callback) => {
+    if (label === "Abrir REPL JavaScript") openRepl = callback;
+  };
   host.unsafeWindow = host;
   host.console.error = (...args) => errors.push(args.map(String).join(" "));
   try {
     host.eval(await fs.readFile(new URL("../dist/page-repl.user.js", import.meta.url), "utf8"));
     await sleep(100);
-    const root = host.document.getElementById("rodx-page-repl").shadowRoot;
-    root.querySelector(".launcher").click();
+    const replHost = host.document.getElementById("rodx-page-repl");
+    assert.ok(replHost, `REPL host missing; errors: ${errors.join(" | ")}`);
+    const root = replHost.shadowRoot;
+    assert.equal(typeof openRepl, "function", "REPL must expose its GM menu command");
+    openRepl();
     assert.equal(root.querySelector(".panel").hidden, false);
     const uiStyle = host.getComputedStyle(root.querySelector(".repl-root"));
     assert.equal(uiStyle.color, "#e9edf4");
     assert.match(uiStyle.fontFamily, /apple-system/);
     assert.equal(host.getComputedStyle(root.querySelector(".execution-toolbar")).position, "sticky");
-    assert.equal(root.querySelector(".execution-toolbar [data-action=run]").textContent, "Executar");
+    assert.match(root.querySelector("header [data-action=run]").textContent, /Executar/);
+    // Advanced controls are kept mounted for the shared ctx.menu, even when hidden.
     root.querySelector("[data-method]").value = "sandbox-eval-global";
     function pasteCode(code) {
       root.querySelector("[data-action=select-all]").click();
