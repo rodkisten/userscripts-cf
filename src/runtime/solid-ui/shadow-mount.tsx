@@ -74,15 +74,17 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   owner.append(container);
   let dispose: (() => void) | undefined;
   try {
-    dispose = render(() => {
-      try {
-        return component();
-      } catch (error) {
-        if (!options.onError) throw error;
-        options.onError(error);
-        return null;
-      }
-    }, container);
+    dispose = render(
+      () => component(),
+      container,
+      options.onError
+        ? {
+            // Solid 2 reports errors from reactive descendants, including async
+            // reads handled by a boundary. A render-time try/catch cannot do this.
+            onError: (error: unknown) => options.onError?.(error),
+          }
+        : undefined,
+    );
   } catch (error) {
     container.remove();
     releaseStyles();
