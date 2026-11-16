@@ -1,3 +1,4 @@
+import { observePageFetch, observePageXHR } from "./network-interceptors.js";
 export type DiagnosticRecord = {
   fingerprint: string;
   script: string;
@@ -29,4 +30,31 @@ export function captureDiagnostic(error: unknown, source: string, script: string
   } catch {
     // Diagnostics must never prevent application cleanup or navigation.
   }
+}
+
+/**
+ * Opt-in network failure telemetry. Observes only metadata, never request or
+ * response bodies, and never claims a page request belongs to a userscript.
+ */
+export function observeNetworkDiagnostics(
+  host: Window & typeof globalThis = window,
+  signal?: AbortSignal,
+): () => void {
+  const capture = (kind: "fetch" | "xhr", event: { url: string; status?: number; error?: string }) => {
+    if (!event.error && !(event.status && event.status >= 500)) return;
+    let location = "[unavailable]";
+    try {
+      const url = new URL(event.url, host.location.href);
+      location = url.origin + url.pathname;
+    } catch {}
+    const message = event.error ? "Network failure" : `HTTP ${event.status}`;
+    captureDiagnostic(new Error(`${message} (${kind}) at ${location}`), `network.${kind}`, "unknown", host);
+  };
+  const stopFetch = observePageFetch(event => capture("fetch", event), {
+    host, signal, maxBodyCharacters: 0,
+  });
+  const stopXHR = observePageXHR(event => capture("xhr", event), {
+    host, signal, maxBodyCharacters: 0,
+  });
+  return () => { stopFetch(); stopXHR(); };
 }
