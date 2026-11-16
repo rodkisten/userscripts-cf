@@ -68,8 +68,7 @@ jobs:
           fi
 
       - name: Verify formatting of commit-eligible files
-        run: npx prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path /dev/null
-        continue-on-error: true
+        run: git ls-files -z | grep -zv '^.github/workflows/' | xargs -0 -r npx prettier --check
 
       - name: Create formatting pull request
         if: steps.changes.outputs.changed == 'true' && inputs.create_pr
