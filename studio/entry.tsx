@@ -438,14 +438,32 @@ if (buttonMount) {
         touch: { size: "lg", radius: 16, height: 48, accent: "#0d9488" },
       } as const;
       const selected = presets[preset];
-      setSize(selected.size); setRadius(selected.radius); setHeight(selected.height); setAccent(selected.accent);
+      setSize(selected.size);
+      setRadius(selected.radius);
+      setHeight(selected.height);
+      setAccent(selected.accent);
       setCopyStatus("");
     };
     const exportTokens = async () => {
-      const tokens = { "--button-accent": accent(), "--button-radius": `${radius()}px`, "--button-height": `${height()}px`, "--button-height-sm": `${height()}px`, "--button-height-lg": `${height()}px` };
-      const cssText = ":root {\n" + Object.entries(tokens).map(([key, value]) => `  ${key}: ${value};`).join("\n") + "\n}";
-      try { await navigator.clipboard.writeText(cssText); setCopyStatus("CSS copiado"); }
-      catch { setCopyStatus("Falha ao copiar CSS. Verifique as permissões."); }
+      const tokens = {
+        "--button-accent": accent(),
+        "--button-radius": `${radius()}px`,
+        "--button-height": `${height()}px`,
+        "--button-height-sm": `${height()}px`,
+        "--button-height-lg": `${height()}px`,
+      };
+      const cssText =
+        ":root {\n" +
+        Object.entries(tokens)
+          .map(([key, value]) => `  ${key}: ${value};`)
+          .join("\n") +
+        "\n}";
+      try {
+        await navigator.clipboard.writeText(cssText);
+        setCopyStatus("CSS copiado");
+      } catch {
+        setCopyStatus("Falha ao copiar CSS. Verifique as permissões.");
+      }
     };
     return (
       <div
@@ -461,19 +479,27 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
-          <label>Preset{" "}
-            <select value="" onChange={(e) => {
-              const value = e.currentTarget.value;
-              if (value) applyPreset(value as "compact" | "default" | "touch");
-            }}>
+          <label>
+            Preset{" "}
+            <select
+              value=""
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                if (value) applyPreset(value as "compact" | "default" | "touch");
+              }}
+            >
               <option value="">Personalizado</option>
               <option value="compact">Compacto</option>
               <option value="default">Padrão</option>
               <option value="touch">Touch</option>
             </select>
           </label>
-          <button type="button" onClick={() => void exportTokens()}>Copiar CSS</button>
-          <span role="status" aria-live="polite">{copyStatus()}</span>
+          <button type="button" onClick={() => void exportTokens()}>
+            Copiar CSS
+          </button>
+          <span role="status" aria-live="polite">
+            {copyStatus()}
+          </span>
           <label>
             Variante{" "}
             <select
@@ -520,12 +546,7 @@ if (buttonMount) {
             Loading
           </label>
           <label>
-            Accent{" "}
-            <input
-              type="color"
-              value={accent()}
-              onInput={(e) => setAccent(e.currentTarget.value)}
-            />
+            Accent <input type="color" value={accent()} onInput={(e) => setAccent(e.currentTarget.value)} />
           </label>
         </div>
         <div class="flex">
