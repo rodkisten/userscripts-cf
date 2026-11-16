@@ -67,13 +67,22 @@ export async function release(tag) {
       files.push(file);
     }
   }
-  const sums = [];
-  for (const file of files.filter((file) => file !== "SHA256SUMS").sort()) {
-    const code = await fs.readFile(path.join(dist, file));
-    sums.push(`${createHash("sha256").update(code).digest("hex")}  ${file}`);
+  // SHA256SUMS covers the entire dist tree, not just GitHub Release assets.
+  const inventory = await fs.readFile(path.join(dist, "SHA256SUMS"), "utf8");
+  const seen = new Set();
+  for (const line of inventory.trimEnd().split("\n")) {
+    const match = /^([a-f0-9]{64})  (.+)$/.exec(line);
+    if (!match || match[2].startsWith("/") || match[2].split("/").includes("..") || seen.has(match[2])) {
+      throw Error(`Invalid checksum inventory entry: ${line}`);
+    }
+    seen.add(match[2]);
+    const code = await fs.readFile(path.join(dist, match[2]));
+    if (createHash("sha256").update(code).digest("hex") !== match[1]) {
+      throw Error(`Checksum mismatch: ${match[2]}`);
+    }
   }
-  if ((await fs.readFile(path.join(dist, "SHA256SUMS"), "utf8")) !== sums.join("\n") + "\n") {
-    throw Error("SHA256SUMS does not match release files");
+  for (const file of files.filter((file) => file !== "SHA256SUMS")) {
+    if (!seen.has(file)) throw Error(`Missing checksum entry: ${file}`);
   }
   const args = ["--repo", distribution.repository];
   let existing;

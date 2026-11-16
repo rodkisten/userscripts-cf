@@ -80,11 +80,19 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       if (!/^[a-z][a-z0-9.-]*$/.test(name)) throw Error("Invalid asset filename");
       files.push({ name, content: await fs.readFile(path.join(root, "dist", name), "utf8") });
     }
-    const sums =
-      files.map((f) => `${createHash("sha256").update(f.content).digest("hex")}  ${f.name}`).join("\n") +
-      "\n";
-    if (sums !== (await fs.readFile(path.join(root, "dist/SHA256SUMS"), "utf8")))
-      throw Error("Invalid release checksums");
+    // The checksum inventory includes design-system and playground assets too.
+    const sums = await fs.readFile(path.join(root, "dist/SHA256SUMS"), "utf8");
+    const inventory = new Map();
+    for (const line of sums.trimEnd().split("\n")) {
+      const match = /^([a-f0-9]{64})  (.+)$/.exec(line);
+      if (!match || inventory.has(match[2])) throw Error(`Invalid checksum entry: ${line}`);
+      inventory.set(match[2], match[1]);
+    }
+    for (const file of files) {
+      if (inventory.get(file.name) !== createHash("sha256").update(file.content).digest("hex")) {
+        throw Error(`Invalid release checksum: ${file.name}`);
+      }
+    }
     files.push({ name: "SHA256SUMS", content: sums });
     console.log(
       await publishGitHub({
