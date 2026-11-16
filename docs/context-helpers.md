@@ -96,3 +96,7 @@ Use `ctx.listen(target, event, callback)` instead of direct `addEventListener` w
 ### Soundgasm adapter
 
 The persistent native-page observer and periodic hydration refresh now use `ctx.observe` and `ctx.interval`, and are disposed by the script context. The short-lived observer and timeout inside the initial `Promise` deliberately retain explicit cleanup: they can finish before script disposal, so releasing them promptly avoids unnecessary work. Browser `sessionStorage` for temporary navigation hints is intentionally not replaced with persistent `ctx.storage`, since their lifetimes differ.
+
+### GM menu commands
+
+Register native userscript menu commands through `ctx.gm.modern.registerMenuCommand` (fall back to `ctx.gm.legacy`), rather than directly calling `GM_registerMenuCommand`. The bridge mirrors commands into the shared Dock without creating duplicate native entries. Retain returned IDs and unregister through the same bridge during `ctx.onDispose`; these registrations are not automatically disposed by the bridge. Instagram Saved demonstrates this pattern.

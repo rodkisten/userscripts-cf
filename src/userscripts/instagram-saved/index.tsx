@@ -15,8 +15,6 @@ type Settings = {
 };
 
 declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
-declare const GM_registerMenuCommand: ((label: string, callback: () => void) => any) | undefined;
-declare const GM_unregisterMenuCommand: ((id: any) => void) | undefined;
 declare const unsafeWindow: (Window & typeof globalThis & { __XRodSettingsInstagram?: any }) | undefined;
 declare const RodMenu:
   { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void } | undefined;
@@ -344,20 +342,28 @@ export default {
       typeof globalThis & { __XRodSettingsInstagram?: any };
     page.__XRodSettingsInstagram ||= { modules: {} };
     page.__XRodSettingsInstagram.modules.saved = settingsApi;
-    const menus: any[] = [];
-    if (typeof GM_registerMenuCommand === "function") {
-      menus.push(GM_registerMenuCommand("Instagram salvos · Configurar Relay", configure));
-      menus.push(GM_registerMenuCommand("Instagram salvos · Configurações", () => void settingsApi.open()));
-      menus.push(GM_registerMenuCommand("Instagram salvos · Sincronizar agora", () => void run(true)));
-      menus.push(
-        GM_registerMenuCommand("Instagram salvos · Diagnóstico", async () => {
+    // Use the runtime GM bridge: it mirrors native commands into the Dock.
+    // Prefer the modern API and fall back to the legacy Tampermonkey bridge.
+    const gmMenu = ctx.gm.modern.registerMenuCommand
+      ? ctx.gm.modern
+      : ctx.gm.legacy;
+    const menus: Array<number | string> = [];
+    const registerMenu = gmMenu.registerMenuCommand;
+    if (registerMenu) {
+      for (const [label, callback] of [
+        ["Instagram salvos · Configurar Relay", configure],
+        ["Instagram salvos · Configurações", () => void settingsApi.open()],
+        ["Instagram salvos · Sincronizar agora", () => void run(true)],
+        ["Instagram salvos · Diagnóstico", async () => {
           const error = await get("lastError", null);
           setRuntime((draft) => {
             draft.lastError = error?.message || "Nenhum erro registrado";
           });
           await settingsApi.open();
-        }),
-      );
+        }],
+      ] as const) {
+        menus.push(registerMenu(label, callback));
+      }
     }
     ctx.dock?.register([
       { id: "settings", label: "Configurações", run: () => void settingsApi.open() },
@@ -371,9 +377,7 @@ export default {
       if (page.__XRodSettingsInstagram?.modules?.saved === settingsApi) {
         delete page.__XRodSettingsInstagram.modules.saved;
       }
-      if (typeof GM_unregisterMenuCommand === "function") {
-        menus.forEach((id) => GM_unregisterMenuCommand(id));
-      }
+      menus.forEach((id) => gmMenu.unregisterMenuCommand?.(id));
     });
     void run();
   },
