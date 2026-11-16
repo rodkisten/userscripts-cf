@@ -79,18 +79,22 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   // Errored children. Reactive primitives created by the callback need a
   // component owner, particularly with Solid 2 on WebKit.
   const Content = component;
+  let reportedFailure: unknown;
   try {
     dispose = render(
       () => (
         <Errored
           fallback={(error, reset) => {
             const failure = error();
+            if (reportedFailure !== failure) {
+              reportedFailure = failure;
+              captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");
+            }
             try {
               options.onError?.(failure);
             } catch {
               /* diagnostic callbacks must not crash recovery */
             }
-            captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");
             return (
               <div
                 role="alert"
