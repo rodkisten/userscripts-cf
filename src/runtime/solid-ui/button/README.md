@@ -83,3 +83,7 @@ Presets: Compact (30px/6px/blue), Default (38px/10px/purple), Touch (48px/16px/t
 ## Consistency fixes
 
 Badge no longer forwards `variant`, `count`, `max` or `children` as native span attributes. The split dropdown trigger renders one visible chevron even when its button has no text. Preset selection stays controlled and changes to individual tokens switch the editor to **Personalizado**. Build/typecheck are still unverified.
+
+## SolidJS prop forwarding
+
+Button, ButtonGroup, DropdownButton and Badge now use Solid's `splitProps` for reactive prop forwarding, keeping component-only properties out of DOM attributes and preventing duplicate `class`/`ref` forwarding. Typecheck and browser validation remain pending.

@@ -1,4 +1,4 @@
-import { createSignal, omit, type JSX } from "solid-js";
+import { createSignal, splitProps, type JSX } from "solid-js";
 import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 
@@ -19,6 +19,7 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
   ref?: HTMLButtonElement | ((element: HTMLButtonElement) => void);
 }
 export function Button(props: ButtonProps) {
+  const [, nativeProps] = splitProps(props, ["variant", "size", "icon", "iconEnd", "badge", "loading", "autoLoading", "loadingText", "onClick", "children", "ref", "class", "disabled", "type"]);
   const [pending, setPending] = createSignal(false);
   const busy = () => !!props.loading || pending();
   const handleClick = (event: MouseEvent) => {
@@ -37,18 +38,7 @@ export function Button(props: ButtonProps) {
   };
   return (
     <button
-      {...omit(props, [
-        "variant",
-        "size",
-        "icon",
-        "iconEnd",
-        "badge",
-        "loading",
-        "autoLoading",
-        "loadingText",
-        "onClick",
-        "children",
-      ])}
+      {...nativeProps}
       ref={props.ref}
       type={props.type ?? "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
@@ -72,9 +62,10 @@ export interface ButtonGroupProps extends JSX.HTMLAttributes<HTMLDivElement> {
   attached?: boolean;
 }
 export function ButtonGroup(props: ButtonGroupProps) {
+  const [, nativeProps] = splitProps(props, ["orientation", "attached", "children", "class"]);
   return (
     <div
-      {...omit(props, ["orientation", "attached", "children"])}
+      {...nativeProps}
       role="group"
       class={`${styles.group} ${props.attached === false ? styles.detached : ""} ${props.orientation === "vertical" ? styles.vertical : ""} ${props.class ?? ""}`}
     >
@@ -88,6 +79,7 @@ export type DropdownButtonProps = ButtonProps & {
   align?: "start" | "end";
 };
 export function DropdownButton(props: DropdownButtonProps) {
+  const [, buttonProps] = splitProps(props, ["items", "menu", "align", "onClick", "ref"]);
   let trigger!: HTMLButtonElement;
   const setTrigger = (element: HTMLButtonElement) => {
     trigger = element;
@@ -95,7 +87,7 @@ export function DropdownButton(props: DropdownButtonProps) {
   };
   return (
     <Button
-      {...omit(props, ["items", "menu", "align", "onClick"])}
+      {...buttonProps}
       ref={setTrigger}
       aria-haspopup="menu"
       iconEnd={props.iconEnd ?? "▾"}
