@@ -17,17 +17,17 @@ export const INSPECTOR_CONFIG = Object.freeze({
 });
 export default {
   init(ctx) {
-    const [open, setOpen] = createSignal(false);
+    const [open, setOpen] = createSignal<boolean>(false);
     const [tab, setTab] = createSignal("dom");
     const [selector, setSelector] = createSignal("");
     const [status, setStatus] = createSignal("");
-    const [full, setFull] = createSignal(false);
+    const [full, setFull] = createSignal<boolean>(false);
     const [scroll, setScroll] = createSignal(INSPECTOR_CONFIG.autoScroll);
     const [records, setRecords] = createSignal([]);
     const [depth, setDepth] = createSignal(0);
     const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
-    const [picking, setPicking] = createSignal(false);
-    const [live, setLive] = createSignal(false);
+    const [picking, setPicking] = createSignal<boolean>(false);
+    const [live, setLive] = createSignal<boolean>(false);
     let editor, editorRoot, selected, overlay, refreshTimer, pickerListener, pickerCancelListener, highlightTarget, highlightFrame = 0, lastRect = "", domObserver;
     const syntax = new Compartment();
     let editorMode;
@@ -188,7 +188,7 @@ export default {
           editor = undefined;
           editorRoot = undefined;
         }
-      });
+      }, undefined);
       return <><Show when={!open() && !picking()}><button class={styles.launcher} type="button" aria-label="Abrir DOM Inspector" title="Abrir DOM Inspector" onClick={() => setOpen(true)}>🔬</button></Show><Show when={picking()}><button class={styles.cancelPicker} type="button" onClick={() => { cancelPicker(); setOpen(true); }}>Cancelar seleção ✕</button></Show><Show when={open()}>
       <section class={[styles.panel, { [styles.full]: full() }]} role="dialog" aria-modal="false" aria-label="DOM Inspector" onKeyDown={event => { if (event.key === "Escape") setOpen(false); }}>
         <header class={styles.header}><h2>Inspector</h2><small>{status()}</small><button type="button" aria-label="Alternar tela cheia" onClick={() => setFull(v => !v)}>⛶</button><button type="button" aria-label="Fechar" onClick={() => setOpen(false)}>✕</button></header>
