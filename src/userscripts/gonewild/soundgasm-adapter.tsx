@@ -143,7 +143,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         draft.source = source;
       });
   };
-  const observer = new MutationObserver((records) => {
+  ctx.observe(document.documentElement, (records: MutationRecord[]) => {
     if (
       records.some(
         (record) =>
@@ -153,22 +153,19 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
       )
     )
       refresh();
-  });
-  observer.observe(document.documentElement, {
+  }, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ["src"],
   });
-  const interval = setInterval(() => {
+  ctx.interval(() => {
     refresh();
     revealIfReady();
   }, 500);
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    observer.disconnect();
-    clearInterval(interval);
     mount.dispose();
     native(true);
     document.title = titleBefore;

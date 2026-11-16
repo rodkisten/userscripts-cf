@@ -92,3 +92,7 @@ API do contexto: `ctx.updates?.check(true)` força uma consulta, `ctx.updates?.s
 ## Migrating legacy listeners and timers
 
 Use `ctx.listen(target, event, callback)` instead of direct `addEventListener` when the listener belongs to a script; use `ctx.observe(target, callback, options)` instead of constructing a `MutationObserver`, and `ctx.interval(callback, ms)` instead of `setInterval` plus manual `clearInterval`. These resources are disposed with the owning script. Keep native listeners only for short-lived local promises or integration boundaries where explicit teardown is required. Never add duplicate manual disposal for context-owned resources. Instagram Saved and the Reddit adapter are examples of this migration.
+
+### Soundgasm adapter
+
+The persistent native-page observer and periodic hydration refresh now use `ctx.observe` and `ctx.interval`, and are disposed by the script context. The short-lived observer and timeout inside the initial `Promise` deliberately retain explicit cleanup: they can finish before script disposal, so releasing them promptly avoids unnecessary work. Browser `sessionStorage` for temporary navigation hints is intentionally not replaced with persistent `ctx.storage`, since their lifetimes differ.
