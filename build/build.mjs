@@ -13,6 +13,7 @@ import { matchURL } from "../src/core/match.js";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
+import { diagnosticPrelude } from "./diagnostics.mjs";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
@@ -169,7 +170,8 @@ for (const target of targets) {
     ),
     "// ==/UserScript==",
   ].join("\n");
-  const body = await format(stripBuildComments(installers.join("\n\n")), {
+  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({id})=>id))});`;
+  const body = await format(stripBuildComments([diagnosticSource, ...installers].join("\n\n")), {
     parser: "babel",
     printWidth: 110,
   });
