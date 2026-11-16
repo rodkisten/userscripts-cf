@@ -19,6 +19,7 @@ export interface RodInspectorOptions {
   unmountOnCollapse?: boolean;
   highlightDuration?: number;
   theme?: RodInspectorTheme;
+  syntaxHighlighting?: boolean;
 }
 
 export interface NormalizedInspectorOptions {
@@ -39,6 +40,7 @@ export interface NormalizedInspectorOptions {
   unmountOnCollapse: boolean;
   highlightDuration: number;
   theme: RodInspectorTheme;
+  syntaxHighlighting: boolean;
 }
 
 export interface RodInspectorHighlightOptions {

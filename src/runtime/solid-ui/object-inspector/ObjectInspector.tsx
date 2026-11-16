@@ -15,6 +15,7 @@ import {
   getElementPreviewParts,
   getObjectId,
   getObjectPreview,
+  safePreviewTokens,
   getPrimitiveClassName,
   getRectRelativeToWindow,
   isDomElement,
@@ -34,6 +35,7 @@ import type {
   RodInspectorPropertyKey,
 } from "./types";
 import { VirtualList } from "./VirtualList";
+import previewStyles, { css as previewCss } from "./Preview.module.css";
 
 
 interface HighlightTarget {
@@ -144,6 +146,16 @@ function PrimitiveNode(props: { value: unknown; quoteStrings: boolean }) {
       {safePrimitiveText(props.value, props.quoteStrings)}
     </span>
   );
+}
+
+function PreviewTokens(props: { value: object; context: InternalRenderContext }) {
+  const tokens = createMemo(() => safePreviewTokens(getObjectPreview(props.value, props.context.options)));
+  return <span class={previewStyles.preview} data-highlight={props.context.options.syntaxHighlighting}>
+    <style>{previewCss}</style>
+    <Show when={props.context.options.syntaxHighlighting} fallback={getObjectPreview(props.value, props.context.options)}>
+      <For each={tokens()}>{token => <span class={previewStyles[token.type]}>{token.text}</span>}</For>
+    </Show>
+  </span>;
 }
 
 function DomSummaryNode(props: {
@@ -394,7 +406,7 @@ function ObjectNode(props: {
         <Show
           when={isDomNode(props.value)}
           fallback={
-            <span>{getObjectPreview(props.value, props.context.options)}</span>
+            <PreviewTokens value={props.value} context={props.context} />
           }
         >
           <DomSummaryNode
@@ -481,9 +493,7 @@ function ValueNode(props: {
 
   if (props.context.depth >= props.context.options.inspectDepth) {
     return (
-      <span class="rod-token--meta">
-        {getObjectPreview(props.value, props.context.options)}
-      </span>
+      <PreviewTokens value={props.value} context={props.context} />
     );
   }
 

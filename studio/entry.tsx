@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import sourceStyles, { css as sourceCss } from "./InspectorSource.module.css";
 import { render } from "@solidjs/web";
 import { ObjectInspector } from "../src/runtime/solid-ui/object-inspector";
 import { RodMenu } from "../src/runtime/solid-ui/menu";
@@ -6,10 +7,23 @@ import { studioExamples, schemaForExample } from "./examples";
 import type { RodInspectorOptions } from "../src/runtime/solid-ui/object-inspector/types";
 import type { Presentation, RodMenuSchema } from "../src/runtime/solid-ui/menu/types";
 
-type InspectorSample = "response" | "dom" | "settings";
+type InspectorSample = "response" | "dom" | "settings" | "syntax";
 const samples: Record<InspectorSample, unknown> = {
   response: { ok: true, status: 200, data: { user: { id: 42, name: "Rod", roles: ["developer", "admin"] }, items: [{ id: "a", active: true }, { id: "b", active: false }] }, durationMs: 127 },
   dom: document.querySelector("main") ?? document.body,
+  syntax: (() => {
+    const circular: Record<string, unknown> = { label: "Circular" };
+    circular.self = circular;
+    return {
+      string: "Hello, syntax!", number: 42, bigint: 9007199254740993n,
+      boolean: true, nil: null, missing: undefined, symbol: Symbol("token"),
+      callable: function inspect() {}, array: [1, "two", false],
+      map: new Map([["key", 12]]), set: new Set(["one", "two"]),
+      date: new Date("2026-11-15T12:00:00Z"),
+      regexp: /syntax\s+highlight/gi,
+      error: new TypeError("Example error"), circular,
+    };
+  })(),
   settings: { theme: { accent: "#a78bfa", radius: 18 }, menu: { presentation: "bottom-sheet", size: "lg", scrollLock: true }, features: ["dock", "inspector", "menu"] },
 };
 const root = document.getElementById("tree");
@@ -24,7 +38,7 @@ render(() => {
     const selected = samples[sample()];
     const term = filter().trim().toLowerCase();
     if (!term || !selected || typeof selected !== "object" || selected instanceof Element) return selected;
-    return Object.fromEntries(Object.entries(selected).filter(([key, value]) => (key + " " + JSON.stringify(value)).toLowerCase().includes(term)));
+    return Object.fromEntries(Object.entries(selected).filter(([key, value]) => (key + " " + String(value instanceof Error ? value.message : typeof value === "object" ? Object.prototype.toString.call(value) : value)).toLowerCase().includes(term)));
   };
   return <div data-studio-inspector-revision={revision()}><ObjectInspector value={value()} options={{ ...inspectorOptions(), expandDepth: depth() }} /></div>;
 }, root);
@@ -38,7 +52,7 @@ document.getElementById("filter")?.addEventListener("input", event => setFilter(
 document.getElementById("depth")?.addEventListener("change", event => setDepth(Number((event.target as HTMLSelectElement).value)));
 document.getElementById("expand")?.addEventListener("click", () => setDepth(20));
 document.getElementById("collapse")?.addEventListener("click", () => { setDepth(0); setRevision(value => value + 1); });
-document.getElementById("copyObject")?.addEventListener("click", () => navigator.clipboard?.writeText(JSON.stringify(samples[sample()] instanceof Element ? { outerHTML: (samples[sample()] as Element).outerHTML } : samples[sample()], null, 2)));
+document.getElementById("copyObject")?.addEventListener("click", () => navigator.clipboard?.writeText(safeSource(samples[sample()] instanceof Element ? { outerHTML: (samples[sample()] as Element).outerHTML } : samples[sample()])));
 document.getElementById("menuLive")?.addEventListener("click", () => {
   const title = (document.getElementById("titleInput") as HTMLInputElement)?.value || "RodMenu";
   const presentation = (document.getElementById("presentation") as HTMLSelectElement)?.value as Presentation;
@@ -119,6 +133,7 @@ const inspectorControls: Array<{ key: keyof RodInspectorOptions; label: string; 
   { key: "unmountOnCollapse", label: "Desmontar ao recolher", kind: "boolean" },
   { key: "highlightDuration", label: "Duração do destaque (ms)", kind: "number", min: 0, max: 10000 },
   { key: "theme", label: "Tema", kind: "select" },
+  { key: "syntaxHighlighting", label: "Syntax highlighting", kind: "boolean" },
 ];
 const inspectorPanel = document.getElementById("inspectorAdvanced");
 if (inspectorPanel) {
@@ -166,3 +181,72 @@ document.getElementById("inspectorReset")?.addEventListener("click", () => {
     else (element as HTMLInputElement | HTMLSelectElement).value = value === undefined ? "" : String(value);
   });
 });
+
+/** The editor is loaded only by the Studio, never by the userscript inspector runtime. */
+const sourcePanel = document.createElement("section");
+sourcePanel.className = sourceStyles.panel;
+sourcePanel.innerHTML = `<div class="${sourceStyles.toolbar}"><strong>CodeMirror · Source / Stack trace</strong><select aria-label="Linguagem" id="inspectorSourceLanguage"><option value="json">JSON</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select><button type="button" id="inspectorShowStack">Stack trace</button><button type="button" id="inspectorCopySource">Copiar formatado</button></div><div id="inspectorSourceEditor" class="${sourceStyles.editor}" aria-label="Código destacado"></div>`;
+root.parentElement?.append(sourcePanel);
+
+function safeSource(value: unknown): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(value, (_key, item: unknown) => {
+    if (typeof item === "bigint") return String(item) + "n";
+    if (typeof item === "symbol") return String(item);
+    if (typeof item === "function") return String(item);
+    if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack };
+    if (item instanceof Map) return { type: "Map", entries: [...item.entries()] };
+    if (item instanceof Set) return { type: "Set", values: [...item.values()] };
+    if (typeof item === "object" && item !== null) {
+      if (seen.has(item)) return "[Circular]";
+      seen.add(item);
+    }
+    return item;
+  }, 2) ?? "undefined";
+}
+
+let sourceText = "";
+let showStack = false;
+let updateSource: ((text: string) => void) | undefined;
+const sourceLanguage = document.getElementById("inspectorSourceLanguage") as HTMLSelectElement;
+const sourceHost = document.getElementById("inspectorSourceEditor");
+async function loadSourceEditor() {
+  if (!sourceHost) return;
+  const [{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }] = await Promise.all([
+    import("@codemirror/state"), import("@codemirror/view"), import("@codemirror/lang-javascript"),
+    import("@codemirror/language"), import("@codemirror/theme-one-dark"),
+  ]);
+  let view: InstanceType<typeof EditorView>;
+  const build = (text: string) => {
+    view?.destroy();
+    view = new EditorView({
+      parent: sourceHost,
+      state: EditorState.create({
+        doc: text,
+        extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false),
+          javascript({ typescript: sourceLanguage.value === "typescript" }),
+          syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark],
+      }),
+    });
+  };
+  updateSource = build;
+  build(sourceText);
+  sourceLanguage.addEventListener("change", () => build(sourceText));
+}
+function refreshSource() {
+  const selected = samples[sample()];
+  const error = selected instanceof Error ? selected : selected && typeof selected === "object" && "error" in selected && selected.error instanceof Error ? selected.error : null;
+  sourceText = showStack && error ? (error.stack ?? error.message) : selected instanceof Element ? selected.outerHTML : safeSource(selected);
+  updateSource?.(sourceText);
+}
+document.querySelectorAll<HTMLButtonElement>("[data-object]").forEach(button => button.addEventListener("click", refreshSource));
+document.getElementById("inspectorShowStack")?.addEventListener("click", () => { showStack = !showStack; refreshSource(); });
+document.getElementById("inspectorCopySource")?.addEventListener("click", () => navigator.clipboard?.writeText(sourceText));
+refreshSource();
+void loadSourceEditor().catch(error => {
+  if (sourceHost) sourceHost.textContent = "CodeMirror unavailable: " + String(error);
+});
+
+const inspectorSourceStyle = document.createElement("style");
+inspectorSourceStyle.textContent = sourceCss;
+sourcePanel.prepend(inspectorSourceStyle);
