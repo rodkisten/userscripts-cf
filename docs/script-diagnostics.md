@@ -14,12 +14,14 @@
 ## Pendente
 
 - [x] Captura atribuída em module.init e ctx.listen (outros callbacks pendentes)
-- [ ] Instrumentação de eventos do ctx sem alterar removeEventListener, once ou AbortSignal
+- [x] Instrumentação de ctx.listen e ctx.events.dom com captura síncrona e assíncrona
+- [ ] Validar semântica de once, removeEventListener e AbortSignal em Safari
 - [ ] Integração com interceptadores HTTP e error boundaries Solid
 - [ ] Armazenamento IndexedDB com política de retenção e isolamento entre mundos
 - [ ] Sanitização robusta de stack, URL e dados de exceção antes de persistir
 - [x] Painel inicial Solid no Dock com filtro por script, stack e exportação JSON
-- [ ] Integrar Object Inspector e syntax highlighting
+- [x] Integrar Object Inspector existente ao Dock
+- [ ] Syntax highlighting especializado para stack traces
 - [ ] Playground interativo e link no design system
 - [ ] Sourcemaps validados para o bundle minificado
 - [ ] Validação de build, segurança e compatibilidade Safari/Tampermonkey
