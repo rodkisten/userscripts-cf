@@ -19,6 +19,8 @@ import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const requestedArg = process.argv.find(arg => arg.startsWith("--targets="));
+const requestedTargets = requestedArg ? new Set(requestedArg.slice(10).split(",").filter(Boolean)) : null;
 const out = path.join(root, "dist");
 const iconSource = path.join(root, "assets", "icons");
 const { version } = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
@@ -71,6 +73,9 @@ const targets = [
     version,
   },
 ];
+if (requestedTargets && (!requestedTargets.size || [...requestedTargets].some(id => !targets.some(target => target.id === id)))) {
+  throw new Error("Invalid --targets: " + [...requestedTargets].join(","));
+}
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
 const runtimeFeatureAudit = { scripts: {}, targets: {}, bundles: {} };
@@ -109,6 +114,7 @@ for (const target of targets) {
   };
 }
 for (const target of targets) {
+  if (requestedTargets && !requestedTargets.has(target.id)) continue;
   const installers = [];
   for (const world of ["sandbox", "page"]) {
     const selected = target.definitions.filter((item) => (item.world || "page") === world);
