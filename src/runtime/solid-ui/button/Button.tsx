@@ -1,7 +1,21 @@
-import { createSignal, splitProps, type JSX } from "solid-js";
+import { createSignal, type JSX } from "solid-js";
 import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 
+// Solid 2 no longer exports splitProps. Keep forwarded native attributes reactive.
+function omitProps<T extends object>(props: T, omitted: readonly (keyof T)[]): Partial<T> {
+  const excluded = new Set<PropertyKey>(omitted);
+  return new Proxy({} as Partial<T>, {
+    get: (_, key) => excluded.has(key) ? undefined : Reflect.get(props, key),
+    has: (_, key) => !excluded.has(key) && Reflect.has(props, key),
+    ownKeys: () => Reflect.ownKeys(props).filter((key) => !excluded.has(key)),
+    getOwnPropertyDescriptor: (_, key) => {
+      if (excluded.has(key)) return undefined;
+      const descriptor = Reflect.getOwnPropertyDescriptor(props, key);
+      return descriptor ? { ...descriptor, configurable: true } : undefined;
+    },
+  });
+}
 export { css as buttonCss };
 export type ButtonVariant =
   "default" | "secondary" | "outline" | "ghost" | "destructive" | "success" | "warning" | "link";
@@ -19,7 +33,7 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
   ref?: HTMLButtonElement | ((element: HTMLButtonElement) => void);
 }
 export function Button(props: ButtonProps) {
-  const [, nativeProps] = splitProps(props, [
+  const nativeProps = omitProps(props, [
     "variant",
     "size",
     "icon",
@@ -94,7 +108,7 @@ export type DropdownButtonProps = ButtonProps & {
   align?: "start" | "end";
 };
 export function DropdownButton(props: DropdownButtonProps) {
-  const [, buttonProps] = splitProps(props, ["items", "menu", "align", "onClick", "ref"]);
+  const buttonProps = omitProps(props, ["items", "menu", "align", "onClick", "ref"]);
   let trigger!: HTMLButtonElement;
   const setTrigger = (element: HTMLButtonElement) => {
     trigger = element;
