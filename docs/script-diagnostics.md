@@ -45,7 +45,7 @@ O coletor não garante que o objeto esteja acessível no console da página quan
 
 ## Limitações atuais
 
-Erros globais sem contexto de execução são marcados como `unknown`; não atribuir arbitrariamente a um módulo. O armazenamento utiliza IndexedDB com fallback localStorage. Erros de inicialização ocorridos antes da instalação do prelude não são recuperáveis. A implementação ainda não substitui instrumentação de callbacks, promises e handlers Solid. Não declarar o recurso completo até essas etapas serem implementadas e verificadas.
+Erros globais sem contexto de execução são marcados como `unknown`; não atribuir arbitrariamente a um módulo. O armazenamento utiliza IndexedDB com fallback localStorage. Erros de inicialização ocorridos antes da instalação do prelude não são recuperáveis. Callbacks externos ao runtime e falhas fora do ownership Solid não são cobertos automaticamente. Não declarar o recurso completo até o build e a compatibilidade serem verificados.
 
 ## API do contexto
 
@@ -80,3 +80,7 @@ const stop = ctx.diagnostics.observeNetwork();
 ```
 
 Somente falhas de transporte e status 5xx geram diagnósticos. O observador reutiliza os interceptadores passivos de fetch e XHR, sem ler os corpos quando `maxBodyCharacters` é zero. URLs são reduzidas a origin + pathname; a propriedade `script` permanece `unknown`, pois as chamadas podem pertencer à página. O observador é opt-in e não altera o resultado das requisições.
+
+## Revisão de integração (2026-11-16)
+
+Foi corrigida uma regressão em `src/core/runtime.ts`: `ctx.listen` atribuía indevidamente uma falha assíncrona também a `module.init`; a captura `module.init` foi restaurada ao bloco `catch` de inicialização. Não foi possível executar `npm run typecheck` nem `npm run build` neste ambiente porque o clone remoto não ficou acessível. A consulta de status do commit anterior não retornou checks. Portanto, a compilação continua **não validada**.
