@@ -1,5 +1,7 @@
 import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
-import { QueryClient, QueryObserver } from '@tanstack/query-core';
+import { QueryObserver } from '@tanstack/query-core';
+import type { QueryClient } from '@tanstack/query-core';
+import { getFormControlsQueryClient } from './query-client';
 import { normalizeOptions, type ControlOption, type OptionsSource } from './options';
 
 export interface AsyncOptionsState {
@@ -26,10 +28,7 @@ export function createAsyncOptions(
   query: Accessor<string>,
   config: AsyncOptionsConfig = {},
 ): AsyncOptionsState {
-  const ownedClient = !config.queryClient;
-  const client = config.queryClient ?? new QueryClient({
-    defaultOptions: { queries: { retry: 1, gcTime: 5 * 60_000 } },
-  });
+  const client = config.queryClient ?? getFormControlsQueryClient();
   const [options, setOptions] = createSignal<ControlOption[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<unknown | null>(null);
@@ -72,7 +71,6 @@ export function createAsyncOptions(
     revision++;
     unsubscribe?.();
     observer?.destroy();
-    if (ownedClient) client.clear();
   });
 
   return {
