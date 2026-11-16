@@ -1,4 +1,5 @@
-import { createSignal, type JSX } from "solid-js";
+import { createSignal } from "solid-js";
+import type { JSX } from "solid-js/jsx-runtime";
 import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 import { omitProps } from "../shared/omitProps";
@@ -135,7 +136,6 @@ export function SplitButton(props: DropdownButtonProps) {
         menu={props.menu}
         items={props.items}
         align={props.align}
-        size={props.size}
         variant={props.variant}
         disabled={props.disabled || props.loading}
         size="icon"

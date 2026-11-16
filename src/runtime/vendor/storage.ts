@@ -412,7 +412,7 @@
         if (payload?.__rodTransform !== "compression" || !payload.data) return value;
         if (!("DecompressionStream" in globalThis))
           throw new StorageUnavailableError("DecompressionStream is unavailable");
-        const input = new Blob([base64ToBytes(payload.data)])
+        const input = new Blob([Uint8Array.from(base64ToBytes(payload.data))])
           .stream()
           .pipeThrough(new DecompressionStream(payload.format ?? format));
         return JSON.parse(new TextDecoder().decode(await streamBytes(input)));
@@ -472,9 +472,9 @@
         if (payload?.__rodTransform !== "aes-gcm" || !payload.iv || !payload.data) return value;
         try {
           const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: base64ToBytes(payload.iv) },
+            { name: "AES-GCM", iv: Uint8Array.from(base64ToBytes(payload.iv)) },
             await key(),
-            base64ToBytes(payload.data),
+            Uint8Array.from(base64ToBytes(payload.data)),
           );
           return JSON.parse(new TextDecoder().decode(decrypted));
         } catch (error) {

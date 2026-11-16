@@ -76,7 +76,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .validation-cache/lint/${{ matrix.id }}/passed
-          key: script-lint-v1-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
+          key: script-lint-v2-${{ runner.os }}-node24-${{ matrix.id }}-${{ steps.fingerprint.outputs.hash }}
       - name: Restore userscript test result
         if: steps.fingerprint.outputs.tests != '0'
         id: cached

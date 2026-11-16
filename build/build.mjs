@@ -9,7 +9,7 @@ import { execFileSync } from "node:child_process";
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
 import distribution from "../distribution.config.js";
-import { matchURL } from "../src/core/match.js";
+import { matchURL } from "../src/core/match.ts";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";

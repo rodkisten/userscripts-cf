@@ -75,30 +75,47 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   if (options.id) container.dataset.solidUi = options.id;
   owner.append(container);
   let dispose: (() => void) | undefined;
+  // Render the callback as a Solid component, not by eagerly invoking it inside
+  // Errored children. Reactive primitives created by the callback need a
+  // component owner, particularly with Solid 2 on WebKit.
+  const Content = component;
+  let reportedFailure: unknown;
   try {
     dispose = render(
       () => (
         <Errored
           fallback={(error, reset) => {
             const failure = error();
+            if (reportedFailure !== failure) {
+              reportedFailure = failure;
+              captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");
+            }
             try {
               options.onError?.(failure);
             } catch {
               /* diagnostic callbacks must not crash recovery */
             }
-            captureDiagnostic(failure, "solid.boundary", options.id ?? "solid-ui");
             return (
               <div
                 role="alert"
                 style={{
                   "pointer-events": "auto",
+                  position: "fixed",
+                  right: "max(12px, env(safe-area-inset-right))",
+                  bottom: "calc(12px + env(safe-area-inset-bottom))",
+                  width: "min(320px, calc(100vw - 24px))",
+                  "max-height": "min(40dvh, 280px)",
+                  overflow: "auto",
+                  "box-sizing": "border-box",
+                  "overflow-wrap": "anywhere",
+                  font: "12px/1.4 system-ui, sans-serif",
                   padding: "12px",
                   "background-color": "#18181b",
                   color: "#fafafa",
                   "border-radius": "8px",
                 }}
               >
-                <span>Erro na interface: {String(failure)}</span>
+                <span>Falha na interface. Consulte os diagnósticos.</span>
                 <button
                   type="button"
                   onClick={reset}
@@ -110,7 +127,7 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
             );
           }}
         >
-          {component()}
+          <Content />
         </Errored>
       ),
       container,

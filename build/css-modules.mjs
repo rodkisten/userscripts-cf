@@ -11,12 +11,27 @@ export function inlineCSSModules() {
     name: "userscripts-inline-css-modules",
     enforce: "pre",
     resolveId(source, importer) {
-      if (source.endsWith(".module.css")) return path.resolve(path.dirname(importer), source) + ".js";
+      if (source.endsWith(".module.css") || source.endsWith(".shadow.css"))
+        return path.resolve(path.dirname(importer), source) + ".js";
     },
     async load(id) {
-      if (!id.endsWith(".module.css.js")) return;
+      if (!id.endsWith(".module.css.js") && !id.endsWith(".shadow.css.js")) return;
       id = id.slice(0, -3);
-      const processed = await postcss(stylesPipeline()).process(await fs.readFile(id, "utf8"), { from: id });
+      const shadowScoped = id.endsWith(".shadow.css");
+      const processed = await postcss(stylesPipeline({ scope: shadowScoped ? "shadow" : "module" })).process(
+        await fs.readFile(id, "utf8"),
+        { from: id },
+      );
+      if (shadowScoped) {
+        // ShadowRoot provides isolation; no CSS Modules class rewriting is needed.
+        const result = transform({
+          filename: id,
+          code: Buffer.from(processed.css),
+          targets: { safari: 15 << 16 },
+          minify: true,
+        });
+        return `export const css = ${JSON.stringify(result.code.toString())}; export default {};`;
+      }
       // State flags are toggled by X integration handlers and keep public aliases.
       const stateClasses = new Set([
         "open",
