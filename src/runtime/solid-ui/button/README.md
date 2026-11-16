@@ -91,3 +91,7 @@ Button, ButtonGroup, DropdownButton and Badge now use Solid's `splitProps` for r
 ## Solid 2 runtime correction
 
 Solid 2 RC does not export `splitProps`. Button, ButtonGroup, DropdownButton and Badge now share a reactive `omitProps` Proxy in `src/runtime/solid-ui/shared/omitProps.ts`, instead of importing `splitProps`. This resolves a source-level missing-symbol issue discovered after the earlier validation report; a new build is required to confirm the latest main.
+
+## Group layout and icon-only trigger
+
+ButtonGroup now reads `--button-radius` directly on the group, instead of relying on a private CSS variable defined only on individual child buttons. SplitButton uses a square icon-sized dropdown trigger with a visible chevron. Icon-sized buttons also display their children when no explicit icon is provided. Browser verification is still pending.

@@ -38,6 +38,7 @@ export function Button(props: ButtonProps) {
   ]);
   const [pending, setPending] = createSignal(false);
   const busy = () => !!props.loading || pending();
+  const hasIconOnlyContent = () => props.size === "icon" && props.icon == null && props.iconEnd == null;
   const handleClick = (event: MouseEvent) => {
     if (busy() || props.disabled) return;
     const result = props.onClick?.(event);
@@ -68,6 +69,7 @@ export function Button(props: ButtonProps) {
           <span>{busy() && props.loadingText ? props.loadingText : props.children}</span>
         )}
         {!busy() && props.iconEnd}
+        {hasIconOnlyContent() && !busy() && props.children}
         {props.badge != null && <span class={styles.badge}>{props.badge}</span>}
       </span>
     </button>
@@ -136,7 +138,9 @@ export function SplitButton(props: DropdownButtonProps) {
         size={props.size}
         variant={props.variant}
         disabled={props.disabled || props.loading}
-        iconEnd="▾"
+        size="icon"
+        icon="▾"
+        iconEnd={undefined}
         aria-label="Mais opções"
         aria-haspopup="menu"
       />
