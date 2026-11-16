@@ -68,7 +68,8 @@ export interface ScriptContext {
   dock: {
     register(actions: DockAction[]): void;
   };
-  toaster: any;
+  toast: ReturnType<typeof createToasterFeature>;
+  toaster: ReturnType<typeof createToasterFeature>;
   readonly url: URL;
   state: {
     get: () => any;
@@ -103,9 +104,6 @@ export interface RuntimeAPI {
   dispose: () => Promise<void>;
 }
 
-//@todo get toast from rodtoaster. source code is at rodkisten.github.ior repo
-function toast(): void {}
-function menu(): void {}
 
 export function createRuntime(definitions: ScriptDefinition[], bridge: any, host: Window & typeof globalThis = window): RuntimeAPI {
   const rod = {
@@ -395,6 +393,7 @@ export function createRuntime(definitions: ScriptDefinition[], bridge: any, host
           })));
         },
       }),
+      toast: rod.toaster,
       toaster: rod.toaster,
       get url() {
         return new URL(desiredURL);
