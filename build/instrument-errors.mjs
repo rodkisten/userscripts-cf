@@ -86,7 +86,7 @@ export function instrumentErrorsPlugin(root) {
     enforce: "post",
     transform(code, id) {
       // This module serializes pageNetworkShim via .toString() into a separate page world.\n      // Instrumentation adds an out-of-scope guard helper, which becomes an undefined\n      // identifier after bundling (for example "bd is not defined").\n      if (id.split("?")[0].replaceAll("\\\\", "/").endsWith("/src/userscripts/gonewild/network.js")) return null;\n      if (!id.startsWith(root + "/") || id.includes("node_modules") || !/\.[cm]?jsx?(?:\?|$)/.test(id))
-        return null;
+      return null;
       const result = instrumentErrorCallbacks(code, id, { root });
       return result.transformed ? { code: result.code, map: null } : null;
     },
