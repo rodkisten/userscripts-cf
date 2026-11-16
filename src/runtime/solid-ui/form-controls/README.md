@@ -144,3 +144,7 @@ The existing RodMenu field variants, trailing actions and media/diagnostic exten
 ## Extracted generic renderer
 
 The 29 generic field variants now render through `menu/components/SharedFieldRenderer.tsx`, invoked by `RodMenuFieldRenderer.tsx`. RodMenu retains its six media/diagnostic extensions and the public `FieldRenderer` compatibility re-export. The extracted component currently depends on RodMenu field/context types and menu styles; it is an intermediate migration stage, not yet a standalone `form-controls` renderer. Run typecheck, build and regression tests before merge.
+
+## Progressive RodMenu adapter (PR #75)
+
+RodMenu now supports an **opt-in** standalone renderer for text, email, password, search, url, tel, number, textarea, date, datetime-local, time, month, week, color, and hidden fields. Set `attributes: { 'data-renderer': 'standalone' }` on a RodMenu field to use the independent renderer. The adapter passes the existing context, current value, disabled state and commit callback, and forces bare chrome so RodMenu retains its label/error layout. Other variants, and fields without this attribute, keep the existing RodMenu renderer. This is a progressive compatibility bridge, not yet a full replacement; run typecheck, build, visual regression and mobile/Shadow DOM tests before enabling by default.
