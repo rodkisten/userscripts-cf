@@ -233,14 +233,14 @@ export function mountReddit(ctx: any, bridge: any) {
   observer.observe(document.documentElement, { subtree: true, childList: true });
   const disposeEffects = createRoot((dispose) => {
     createEffect(() => {
-      const snapshot = ({
+      const snapshot = {
         settings: { ...state.settings },
         seen: { ...state.seen },
         resolved: { ...state.resolved },
         active: state.search.active,
         include: [...state.search.include],
         exclude: [...state.search.exclude],
-      });
+      };
       void snapshot;
       schedule();
     });
