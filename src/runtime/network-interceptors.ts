@@ -178,7 +178,7 @@ export function observePageFetch(
         };
         try {
           const type = result.headers?.get("content-type") || "";
-          if (/json|text|xml|javascript|graphql|html/i.test(type)) {
+          if (maxBodyCharacters > 0 && /json|text|xml|javascript|graphql|html/i.test(type)) {
             const body = await result.clone().text();
             event.body = body.slice(0, maxBodyCharacters);
             event.truncated = body.length > maxBodyCharacters;
@@ -279,9 +279,9 @@ export function observePageXHR(
         const event: XHRObserverEvent = { ...info, status: this.status, durationMs: Date.now() - start, body: null };
         try {
           const type = this.getResponseHeader("content-type") || "";
-          if ((this.responseType === "" || this.responseType === "text") && /json|text|xml|javascript|graphql|html/i.test(type))
+          if (maxBodyCharacters > 0 && (this.responseType === "" || this.responseType === "text") && /json|text|xml|javascript|graphql|html/i.test(type))
             event.body = String(this.responseText).slice(0, maxBodyCharacters);
-          else if (this.responseType === "json") event.body = JSON.stringify(this.response).slice(0, maxBodyCharacters);
+          else if (maxBodyCharacters > 0 && this.responseType === "json") event.body = JSON.stringify(this.response).slice(0, maxBodyCharacters);
         } catch { /* Ignore opaque, binary, and inaccessible responses. */ }
         
         for (const listener of [...listeners]) { 
