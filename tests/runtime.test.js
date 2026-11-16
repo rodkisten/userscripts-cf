@@ -20,6 +20,7 @@ const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
 function createRuntime(definitions, bridge, host, beforeCreate) {
   host.happyDOM.settings.enableJavaScriptEvaluation = true;
   host.happyDOM.settings.suppressInsecureJavaScriptEnvironmentWarning = true;
+  host.process = process;
   host.eval(runtimeCode);
   beforeCreate?.(host);
   return host.RuntimeFixture.createRuntime(definitions, bridge, host);
