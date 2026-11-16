@@ -3,7 +3,8 @@ import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 
 export { css as buttonCss };
-export type ButtonVariant = "default" | "secondary" | "outline" | "ghost" | "destructive" | "success" | "warning" | "link";
+export type ButtonVariant =
+  "default" | "secondary" | "outline" | "ghost" | "destructive" | "success" | "warning" | "link";
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
   variant?: ButtonVariant;
@@ -24,25 +25,47 @@ export function Button(props: ButtonProps) {
     const result = props.onClick?.(event);
     if (props.autoLoading && result && typeof (result as PromiseLike<unknown>).then === "function") {
       setPending(true);
-      try { await result; } finally { setPending(false); }
+      try {
+        await result;
+      } finally {
+        setPending(false);
+      }
     }
   };
-  return <button {...props} type={props.type ?? "button"} class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
-    disabled={props.disabled || busy()} aria-busy={busy()} onClick={handleClick}>
-    <span class={styles.content}>
-      {busy() ? <span class={styles.spinner} aria-hidden="true" /> : props.icon}
-      {props.size !== "icon" && <span>{busy() && props.loadingText ? props.loadingText : props.children}</span>}
-      {!busy() && props.iconEnd}
-      {props.badge != null && <span class={styles.badge}>{props.badge}</span>}
-    </span>
-  </button>;
+  return (
+    <button
+      {...props}
+      type={props.type ?? "button"}
+      class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
+      disabled={props.disabled || busy()}
+      aria-busy={busy()}
+      onClick={handleClick}
+    >
+      <span class={styles.content}>
+        {busy() ? <span class={styles.spinner} aria-hidden="true" /> : props.icon}
+        {props.size !== "icon" && (
+          <span>{busy() && props.loadingText ? props.loadingText : props.children}</span>
+        )}
+        {!busy() && props.iconEnd}
+        {props.badge != null && <span class={styles.badge}>{props.badge}</span>}
+      </span>
+    </button>
+  );
 }
 export interface ButtonGroupProps extends JSX.HTMLAttributes<HTMLDivElement> {
   orientation?: "horizontal" | "vertical";
   attached?: boolean;
 }
 export function ButtonGroup(props: ButtonGroupProps) {
-  return <div {...props} role="group" class={`${styles.group} ${props.attached === false ? styles.detached : ""} ${props.orientation === "vertical" ? styles.vertical : ""} ${props.class ?? ""}`}>{props.children}</div>;
+  return (
+    <div
+      {...props}
+      role="group"
+      class={`${styles.group} ${props.attached === false ? styles.detached : ""} ${props.orientation === "vertical" ? styles.vertical : ""} ${props.class ?? ""}`}
+    >
+      {props.children}
+    </div>
+  );
 }
 export type DropdownButtonProps = ButtonProps & {
   items: DropdownItem[];
@@ -51,13 +74,31 @@ export type DropdownButtonProps = ButtonProps & {
 };
 export function DropdownButton(props: DropdownButtonProps) {
   let trigger!: HTMLButtonElement;
-  return <Button {...props} ref={trigger} iconEnd={props.iconEnd ?? "▾"}
-    onClick={() => (props.menu ?? defaultMenu).dropdown({ trigger, items: props.items, align: props.align })} />;
+  return (
+    <Button
+      {...props}
+      ref={trigger}
+      iconEnd={props.iconEnd ?? "▾"}
+      onClick={() =>
+        (props.menu ?? defaultMenu).dropdown({ trigger, items: props.items, align: props.align })
+      }
+    />
+  );
 }
 export function SplitButton(props: DropdownButtonProps) {
-  return <ButtonGroup attached>
-    <Button {...props} />
-    <DropdownButton menu={props.menu} items={props.items} align={props.align} size={props.size}
-      variant={props.variant} aria-label="Mais opções">▾</DropdownButton>
-  </ButtonGroup>;
+  return (
+    <ButtonGroup attached>
+      <Button {...props} />
+      <DropdownButton
+        menu={props.menu}
+        items={props.items}
+        align={props.align}
+        size={props.size}
+        variant={props.variant}
+        aria-label="Mais opções"
+      >
+        ▾
+      </DropdownButton>
+    </ButtonGroup>
+  );
 }
