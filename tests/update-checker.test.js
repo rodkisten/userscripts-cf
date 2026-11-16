@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { compareVersions, createUpdateChecker } from "../src/core/update-checker.ts";
 
+const host = { document: { addEventListener() {}, removeEventListener() {} }, setInterval, clearInterval };
+
 describe("runtime update checker", () => {
   it.each([
     ["1.0.0", "1.0.1", -1],
@@ -26,6 +28,7 @@ describe("runtime update checker", () => {
       manifestURL: "https://userscripts.migos.club/manifest.json",
       fetchManifest,
       notify,
+      host,
     });
     const update = await checker.check(true);
     expect(update?.downloadURL).toBe("https://userscripts.migos.club/instagram-saved.user.js");
@@ -46,6 +49,7 @@ describe("runtime update checker", () => {
         scripts: [{ id: "unified", file: "unified.user.js" }],
       }),
       notify,
+      host,
     });
     expect(await checker.check(true)).toBeNull();
     expect(notify).not.toHaveBeenCalled();
