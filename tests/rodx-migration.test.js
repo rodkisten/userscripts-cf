@@ -94,7 +94,7 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     // Its behavior is covered by integration tests, not the original AST fingerprint.
     if (record.file === "translation/foreign-tags.tsx" && record.name === "ForeignTags") continue;
     if (hash(node) !== migrated.sha256) {
-      mismatches.push(`${record.file}: ${record.name} changed from source line ${record.sourceLine}`);
+      mismatches.push(`${record.file}: ${record.name} changed from source line ${record.sourceLine}; expected=${migrated.sha256}; actual=${hash(node)}`);
     }
   }
   assert.deepEqual(mismatches, [], "Review every changed migration declaration before accepting new snapshots");
