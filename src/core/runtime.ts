@@ -145,23 +145,30 @@ export function createRuntime(
         : undefined,
     storage: createStorageFeature(host),
   };
-  const updates = release ? createUpdateChecker({
-    id: release.id,
-    installedVersion: release.version,
-    manifestURL: release.manifestURL,
-    host,
-    storage: host.localStorage,
-    notify(update) {
-      rod.toaster?.warning({
-        id: `rod-update-${update.id}-${update.latestVersion}`,
-        title: `Atualização disponível · ${update.name}`,
-        description: `${update.installedVersion} → ${update.latestVersion}`,
-        duration: Infinity,
-        actions: [{ label: "Atualizar", handle: () => host.open(update.downloadURL, "_blank", "noopener,noreferrer") }],
-        onDismiss: () => updates?.dismiss(update.latestVersion),
-      });
-    },
-  }) : null;
+  const updates = release
+    ? createUpdateChecker({
+        id: release.id,
+        installedVersion: release.version,
+        manifestURL: release.manifestURL,
+        host,
+        storage: host.localStorage,
+        notify(update) {
+          rod.toaster?.warning({
+            id: `rod-update-${update.id}-${update.latestVersion}`,
+            title: `Atualização disponível · ${update.name}`,
+            description: `${update.installedVersion} → ${update.latestVersion}`,
+            duration: Infinity,
+            actions: [
+              {
+                label: "Atualizar",
+                handle: () => host.open(update.downloadURL, "_blank", "noopener,noreferrer"),
+              },
+            ],
+            onDismiss: () => updates?.dismiss(update.latestVersion),
+          });
+        },
+      })
+    : null;
   updates?.start();
   const uiFeature =
     typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : null;
