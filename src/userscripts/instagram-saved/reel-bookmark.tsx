@@ -1,3 +1,4 @@
+import type { ScriptContext } from "../../core/runtime";
 import { createSignal } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import styles, { css } from "./Settings.module.css";
@@ -94,12 +95,12 @@ async function saveToCollections(ids: string[], signal: AbortSignal) {
 }
 
 export function mountReelBookmark(
-  signal: AbortSignal,
-  pageStyle: (css: string) => void,
+  ctx: Pick<ScriptContext, "signal" | "pageStyle" | "listen" | "onDispose">,
   getCollectionIds: () => Promise<string[]>,
   notify: (message: string) => void,
 ) {
-  pageStyle(css);
+  const { signal } = ctx;
+  ctx.pageStyle(css);
   const [busy, setBusy] = createSignal(false);
   let mount: ReturnType<typeof mountPoint> | undefined;
   let anchor: HTMLElement | null = null;
@@ -197,24 +198,16 @@ export function mountReelBookmark(
     });
   };
   const navigation = () => scheduleRefresh();
-  window.addEventListener("popstate", navigation);
-  window.addEventListener("pageshow", navigation);
-  window.addEventListener("hashchange", navigation);
-  document.addEventListener("touchend", navigation, { passive: true });
+  ctx.listen(window, "popstate", navigation);
+  ctx.listen(window, "pageshow", navigation);
+  ctx.listen(window, "hashchange", navigation);
+  ctx.listen(document, "touchend", navigation, { passive: true });
   const interval = setInterval(scheduleRefresh, 600);
-  signal.addEventListener(
-    "abort",
-    () => {
+  ctx.onDispose(() => {
       observer.disconnect();
       clearInterval(interval);
       cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", navigation);
-      window.removeEventListener("pageshow", navigation);
-      window.removeEventListener("hashchange", navigation);
-      document.removeEventListener("touchend", navigation);
       clear();
-    },
-    { once: true },
-  );
+  });
   refresh();
 }
