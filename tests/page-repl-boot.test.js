@@ -86,24 +86,40 @@ test("complete REPL installable opens, runs async code, persists closure and cle
     stage = "first async execution";
     pasteCode('let n=2; function next(){return ++n} console.log("ready"); await Promise.resolve(next())');
     root.querySelector("[data-action=run]").click();
-    await waitFor(() => /OK/.test(root.querySelector(".output")?.textContent || "") && /ready/.test(root.querySelector(".output")?.textContent || ""), "first REPL execution");
+    await waitFor(
+      () =>
+        /OK/.test(root.querySelector(".output")?.textContent || "") &&
+        /ready/.test(root.querySelector(".output")?.textContent || ""),
+      "first REPL execution",
+    );
     assert.match(root.querySelector(".output").textContent, /OK/);
     assert.match(root.querySelector(".output").textContent, /ready/);
     stage = "persistent closure";
     pasteCode("next() + n");
     root.querySelector("[data-action=run]").click();
-    await waitFor(() => /"value": 8/.test(root.querySelector(".output")?.lastElementChild?.textContent || ""), "persistent closure");
+    await waitFor(
+      () => /"value": 8/.test(root.querySelector(".output")?.lastElementChild?.textContent || ""),
+      "persistent closure",
+    );
     assert.match(root.querySelector(".output").lastElementChild.textContent, /"value": 8/);
     stage = "autocomplete";
     host.AfixtureGlobal = { availableProperty: 1 };
     pasteCode("window.Afixture");
     root.querySelector("[data-action=complete]").click();
-    await waitFor(() => /AfixtureGlobal/.test(root.querySelector(".cm-tooltip-autocomplete")?.textContent || ""), "autocomplete");
+    await waitFor(
+      () => /AfixtureGlobal/.test(root.querySelector(".cm-tooltip-autocomplete")?.textContent || ""),
+      "autocomplete",
+    );
     assert.match(root.querySelector(".cm-tooltip-autocomplete").textContent, /AfixtureGlobal/);
     stage = "syntax validation";
     pasteCode("const invalid = ;");
     root.querySelector("[data-action=validate]").click();
-    await waitFor(() => /Unexpected token/.test(root.querySelector("[data-syntax]")?.textContent || "") && !!root.querySelector(".cm-lintRange-error"), "syntax validation");
+    await waitFor(
+      () =>
+        /Unexpected token/.test(root.querySelector("[data-syntax]")?.textContent || "") &&
+        !!root.querySelector(".cm-lintRange-error"),
+      "syntax validation",
+    );
     assert.match(root.querySelector("[data-syntax]").textContent, /Unexpected token/);
     assert.ok(root.querySelector(".cm-lintRange-error"));
     assert.ok(root.querySelector(".cm-lineNumbers"));
