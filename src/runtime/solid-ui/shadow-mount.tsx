@@ -1,4 +1,5 @@
 import { render } from "@solidjs/web";
+import { onError } from "solid-js";
 import type { JSX } from "@solidjs/web";
 
 export type ShadowStyle = string | { css: string };
@@ -6,6 +7,7 @@ export interface ShadowMountOptions {
   target?: HTMLElement | ShadowRoot;
   styles?: readonly ShadowStyle[];
   id?: string;
+  onError?: (error: unknown) => void;
 }
 const sheets = new WeakMap<ShadowRoot, Map<string, { node: HTMLStyleElement; refs: number }>>();
 
@@ -73,7 +75,10 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   owner.append(container);
   let dispose: (() => void) | undefined;
   try {
-    dispose = render(component, container);
+    dispose = render(() => {
+      if (options.onError) onError(error => options.onError?.(error));
+      return component();
+    }, container);
   } catch (error) {
     container.remove();
     releaseStyles();
