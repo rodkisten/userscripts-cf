@@ -135,10 +135,42 @@ NODE
         selected_tests+=("tests/integrated-userscripts.test.js")
       fi
     fi
+    integration_filter=""
+    if [[ -f affected-userscripts.json ]]; then
+      integration_filter="$(node -p 'const a=require("./affected-userscripts.json").affected; const m={"github-tools":"GitHub","instagram-saved":"Instagram","gonewild":"Reddit|Soundgasm"}; a.length && a.every(x=>m[x]) ? a.map(x=>m[x]).join("|") : ""')"
+    fi
     if (( ${#selected_tests[@]} )); then
       mapfile -t unique_tests < <(printf '%s\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
+      if [[ -n "$integration_filter" ]] && printf '%s\n' "${unique_tests[@]}" | grep -qx 'tests/integrated-userscripts.test.js'; then
+        mapfile -t unit_tests < <(printf '%s\n' "${unique_tests[@]}" | grep -v '^tests/integrated-userscripts.test.js
+    fi
+    if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
+    if [[ "$hosting_changed" == true ]]; then
+      node build/hosting.mjs
+    fi
+    {
+      echo "### Selective validation"
+      echo '| Check | Enabled |'
+      echo '|---|---|'
+      echo "| Typecheck and lint | $source_changed |"
+      echo "| Build | $build_needed |"
+      echo "| Vitest candidates | ${#selected_tests[@]} |"
+      echo "| Lab | $lab_changed |"
+      echo "| Hosting | $hosting_changed |"
+      echo ''
+      echo 'Changed files:'
+      sed 's/^/- `/; s/$/`/' changed-files.txt
+    } >> "$GITHUB_STEP_SUMMARY"
+    ;;
+  *) echo "Usage: $0 plan|run" >&2; exit 2 ;;
+esac
+ || true)
+        if (( ${#unit_tests[@]} )); then npx vitest run "${unit_tests[@]}" --maxWorkers=2 --passWithNoTests; fi
+        npx vitest run tests/integrated-userscripts.test.js --testNamePattern "$integration_filter" --maxWorkers=2
+      else
       npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
+      fi
     fi
     if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
     if [[ "$hosting_changed" == true ]]; then
