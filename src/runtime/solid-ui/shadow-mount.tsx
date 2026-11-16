@@ -100,7 +100,7 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
                   overflow: "auto",
                   "box-sizing": "border-box",
                   "overflow-wrap": "anywhere",
-                  "font": "12px/1.4 system-ui, sans-serif",
+                  font: "12px/1.4 system-ui, sans-serif",
                   padding: "12px",
                   "background-color": "#18181b",
                   color: "#fafafa",

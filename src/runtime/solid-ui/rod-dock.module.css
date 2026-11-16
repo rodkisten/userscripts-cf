@@ -279,6 +279,10 @@
     max-height: min(70dvh, 580px);
     border-radius: 16px;
   }
-  :global(.panel .actions) { grid-template-columns: 1fr; }
-  :global(.panel .header) { flex-shrink: 0; }
+  :global(.panel .actions) {
+    grid-template-columns: 1fr;
+  }
+  :global(.panel .header) {
+    flex-shrink: 0;
+  }
 }
