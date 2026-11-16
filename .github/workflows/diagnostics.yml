@@ -1,0 +1,72 @@
+name: Diagnose all userscripts failures
+run-name: "Diagnostics · ${{ github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: userscripts-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    name: "${{ matrix.check }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: typecheck
+            command: npm run typecheck
+          - check: build
+            command: npm run build
+          - check: unit-tests
+            command: npx vitest run --exclude '**/runtime-startup-benchmark.test.js'
+          - check: lab
+            command: npm run test:lab
+          - check: hosting
+            command: node build/hosting.mjs
+          - check: lint
+            command: npm run lint
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          npm ci --legacy-peer-deps
+      - name: Run ${{ matrix.check }} and capture complete output
+        id: check
+        shell: bash
+        env:
+          CHECK_COMMAND: ${{ matrix.command }}
+        run: |
+          set +e
+          bash -o pipefail -c "$CHECK_COMMAND" 2>&1 | tee "diagnostic-${{ matrix.check }}.log"
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          {
+            echo "### ${{ matrix.check }}: $([[ "$status" == 0 ]] && echo PASS || echo FAIL)"
+            echo '~~~text'
+            grep -E 'error TS[0-9]+|\[MISSING_EXPORT\]|(^| )Error:|npm error|FAIL|failed|✗' "diagnostic-${{ matrix.check }}.log" | tail -80 || true
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - name: Upload full log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-${{ matrix.check }}
+          path: diagnostic-${{ matrix.check }}.log
+          if-no-files-found: ignore
+      - name: Mark check failed after collecting logs
+        if: steps.check.outputs.exit_code != '0'
+        run: exit 1
