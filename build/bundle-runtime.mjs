@@ -59,7 +59,9 @@ export async function bundleRuntime(root, definitions, options = {}) {
   });
   const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
   const chunks = output.filter((item) => item.type === "chunk");
-  if (chunks.length !== 1 || output.some((item) => item.type === "asset")) {
+  const assets = output.filter((item) => item.type === "asset");
+  const cssAssets = assets.filter((item) => item.fileName.endsWith(".css"));
+  if (chunks.length !== 1 || assets.length !== cssAssets.length) {
     const unexpected = output.map((item) => ({
       type: item.type,
       fileName: item.fileName,
@@ -87,5 +89,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
       featureDefines: Object.fromEntries(Object.entries(featureDefines).map(([key, value]) => [key, value === "true"])),
     });
   }
-  return format(readableStrings(chunks[0].code), { parser: "babel", printWidth: 110 });
+  const cssText = cssAssets.map((item) => String(item.source || "")).join("\n");
+  const cssPrelude = cssText ? "(()=>{const s=document.createElement(\"style\");s.textContent=" + JSON.stringify(cssText) + ";(document.head||document.documentElement).append(s)})();\n" : "";
+  return format(readableStrings(cssPrelude + chunks[0].code), { parser: "babel", printWidth: 110 });
 }
