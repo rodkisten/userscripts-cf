@@ -16,9 +16,10 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
-  group: userscripts-validate-${{ 'rod' || github.event.pull_request.number || github.ref }}
+  group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -44,10 +45,23 @@ jobs:
           SCOPE: ${{ inputs.scope || 'changed' }}
         run: bash build/validate-changed.sh plan
       - name: Install dependencies
+        id: install
         if: steps.plan.outputs.run == 'true'
+        continue-on-error: true
         run: npm ci --legacy-peer-deps
+      - name: Dispatch lockfile repair when installation fails
+        if: steps.install.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          gh workflow run repair-lockfile.yml --ref "$BRANCH"
+          echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail current validation on installation error
+        if: steps.install.outcome == 'failure'
+        run: exit 1
       - name: Validate affected code
-        if: steps.plan.outputs.run == 'true'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         shell: bash
         env:
           FULL: ${{ steps.plan.outputs.full }}
