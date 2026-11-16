@@ -1,11 +1,21 @@
+// Tipo recursivo para congelamento profundo em tempo de compilação
+export type DeepReadonly<T> = T extends (infer R)[]
+  ? ReadonlyArray<DeepReadonly<R>>
+  : T extends Function
+  ? T
+  : T extends object
+  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+  : T;
+
 // Operational limits, durations and protocol values. Numeric loop/index arithmetic stays local.
-const freeze = (value) => {
+const freeze = <T>(value: T): DeepReadonly<T> => {
   if (value && typeof value === "object") {
     Object.values(value).forEach(freeze);
     Object.freeze(value);
   }
-  return value;
+  return value as DeepReadonly<T>;
 };
+
 export const HTTP_STATUS = Object.freeze({
   ok: 200,
   created: 201,
@@ -17,7 +27,8 @@ export const HTTP_STATUS = Object.freeze({
   notFound: 404,
   conflict: 409,
   serverErrorBoundary: 500,
-});
+} as const);
+
 export const RUNTIME_LIMITS = freeze({
   searchHistory: { duplicateWindowMs: 900, exportPageSize: 100 },
   videoPlayback: { manualPauseDurationMs: 30000 },
