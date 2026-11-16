@@ -83,15 +83,14 @@ Async suggestions now use `@tanstack/query-core` and `QueryObserver`, which avoi
 
 - Requests use TanStack Query's AbortSignal and retry handling.
 - Cached suggestions are fresh for 30 seconds by default.
-- Pass a shared `QueryClient` and a unique `queryKey` when multiple controls should reuse cached results.
+- The runtime module owns one lazy shared `QueryClient` by default. Supply a source-specific `queryKey` for intentional cache sharing; pass `queryClient` only for isolated scopes or tests.
 - The `createAsyncOptions` helper accepts `{ queryClient, queryKey, staleTime, enabled }`.
 - No global provider is required when using the query-core adapter.
 
 ```tsx
-import { QueryClient } from '@tanstack/query-core';
 import { createAsyncOptions } from './createAsyncOptions';
 
-const queryClient = new QueryClient();
+// Uses the shared runtime cache automatically.
 const suggestions = createAsyncOptions(
   () => async (query, { signal }) => {
     const response = await fetch('/api/suggest?q=' + encodeURIComponent(query), { signal });
@@ -99,7 +98,7 @@ const suggestions = createAsyncOptions(
     return response.json();
   },
   search,
-  { queryClient, queryKey: ['twitter', 'filters'], staleTime: 60_000 },
+  { queryKey: ['twitter', 'filters'], staleTime: 60_000 },
 );
 ```
 
@@ -107,7 +106,7 @@ const suggestions = createAsyncOptions(
 
 ## Cache isolation and test coverage
 
-By default, each `createAsyncOptions` instance receives its own query-key namespace. This prevents unrelated remote sources from reusing each other's cached results. For intentional cache sharing, pass both a stable `queryClient` and a source-specific `queryKey` (for example `['twitter', 'search-filters']`).
+By default, each `createAsyncOptions` instance receives its own query-key namespace **within the shared runtime QueryClient**. This prevents unrelated remote sources from reusing each other's cached results. For intentional cache sharing, pass both a stable `queryClient` and a source-specific `queryKey` (for example `['twitter', 'search-filters']`).
 
 `tests/form-controls-options.test.js` covers normalization, grouping, filtering and cancellation in the headless options loader. TanStack Query observer integration, actual SolidJS rendering, and Safari behavior still require dedicated tests.
 
@@ -186,3 +185,15 @@ This section tracks the ongoing independent renderer work in PR #75 and subseque
 3. Add/update a **live interactive** example in `playground/form-controls-app.tsx`, reachable from the index.
 4. Add tests, run available checks, and record actual outcomes.
 5. Update **both** the implemented and pending checklists here in the same change; do not silently mark unfinished work complete.
+
+## Shared QueryClient lifecycle (2026-11-15)
+
+- [x] Add lazy shared `getFormControlsQueryClient()` in `query-client.ts`.
+- [x] Make `createAsyncOptions` use it by default; no TanStack import required by consumers.
+- [x] Keep optional `queryClient` injection for tests and explicit cache isolation.
+- [x] Add `disposeFormControlsQueryClient()` for explicit owner teardown; unmounting a field does not clear other fields' cache.
+- [ ] Expose a shared query service through the public `ctx` contract and invoke disposal at runtime teardown.
+- [ ] Add interactive Playground controls demonstrating cache hits and shared query keys.
+- [ ] Add tests for reuse, isolation, cancellation and disposal; validate Solid 2 effect lifecycle.
+
+Note: the singleton is shared **per bundled module instance**, not automatically across independently injected userscripts or tabs. Do not promise cross-bundle caching until the `ctx` service implements it.
