@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   repair:
-    if: github.ref == 'refs/heads/feat/shared-event-bridge'
+    #if: github.ref == 'refs/heads/feat/shared-event-bridge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
