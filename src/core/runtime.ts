@@ -151,13 +151,15 @@ export function createRuntime(
         installedVersion: release.version,
         manifestURL: release.manifestURL,
         host,
-        storage: host.localStorage,
+        get storage() {
+      try { return host.localStorage; } catch { return undefined; }
+    },
         notify(update) {
           rod.toaster?.warning({
             id: `rod-update-${update.id}-${update.latestVersion}`,
             title: `Atualização disponível · ${update.name}`,
             description: `${update.installedVersion} → ${update.latestVersion}`,
-            duration: Infinity,
+            duration: 0,\n        closeButton: true,
             actions: [
               {
                 label: "Atualizar",
