@@ -1,4 +1,5 @@
 import { render } from "@solidjs/web";
+import { Errored } from "solid-js";
 import type { JSX } from "@solidjs/web";
 
 export type ShadowStyle = string | { css: string };
@@ -75,7 +76,20 @@ export function mountSolidShadow(component: () => JSX.Element, options: ShadowMo
   let dispose: (() => void) | undefined;
   try {
     dispose = render(
-      () => component(),
+      () => (
+        <Errored
+          fallback={(error, reset) => (
+            <div role="alert" style={{ "pointer-events": "auto", padding: "12px", "background-color": "#18181b", color: "#fafafa", "border-radius": "8px" }}>
+              <span>Erro na interface: {String(error())}</span>
+              <button type="button" onClick={reset} style={{ "margin-left": "8px", "pointer-events": "auto" }}>
+                Tentar novamente
+              </button>
+            </div>
+          )}
+        >
+          {component()}
+        </Errored>
+      ),
       container,
       options.onError
         ? {
