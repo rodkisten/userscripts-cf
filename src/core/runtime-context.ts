@@ -10,7 +10,7 @@ import type { ScriptContext } from "./runtime.js";
 const ScriptScope = createContext<ScriptContext>();
 
 export const RuntimeProvider: ParentComponent<{ context: ScriptContext }> = (props) =>
-  createComponent(ScriptScope.Provider, {
+  createComponent(ScriptScope, {
     get value() {
       return props.context;
     },
