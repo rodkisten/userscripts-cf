@@ -42,7 +42,7 @@
     "typescript": "6.0.3",
     "vite": "8.3.8",
     "@solidjs/compiler": "2.0.0-rc.22",
-    "vitest": "^4.0.0"
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
