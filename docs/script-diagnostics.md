@@ -67,3 +67,7 @@ A versão atual abre o banco `rod-script-diagnostics` (v1), object store `snapsh
 ## Captura de rede nativa
 
 Não se atribuem erros de `fetch`/XHR da página a um userscript sem evidência de propriedade. `ctx.http.request` e interceptadores do próprio script são atribuídos; chamadas nativas externas permanecem sem proprietário conhecido. Instrumentação passiva opt-in ainda pendente.
+
+## Solid reativo
+
+`ctx.ui.mountSolid` instala um handler `onError` no owner Solid do componente, registrando erros reativos com o ID do userscript. Um callback opcional `options.onError` também é invocado. O handler não garante captura de erros fora da árvore de ownership Solid.
