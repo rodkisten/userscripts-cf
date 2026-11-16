@@ -6,6 +6,9 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { render } from 'solid-js/web';
 import { Combobox } from '../src/runtime/solid-ui/form-controls/Combobox';
 import { TagsInput } from '../src/runtime/solid-ui/form-controls/TagsInput';
+import { StandaloneFieldRenderer } from '../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer';
+import { SHARED_FIELD_TYPES } from '../src/runtime/solid-ui/form-controls/field-types';
+import type { FormField } from '../src/runtime/solid-ui/form-controls/fields';
 import type { ControlOption } from '../src/runtime/solid-ui/form-controls/options';
 import { appendTwitterToken, parseTwitterSearch, removeTwitterToken, replaceTwitterToken } from '../src/runtime/solid-ui/form-controls/twitter-search';
 
@@ -54,6 +57,16 @@ function JsxPreview(props: { code: string }) {
 }
 
 function App() {
+  const [variant, setVariant] = createSignal<string>('text');
+  const [variantValue, setVariantValue] = createSignal<unknown>('');
+  const exampleOptions = [{label:'Primeira',value:'first'},{label:'Segunda',value:'second'},{label:'Terceira',value:'third'}];
+  const exampleField = (): FormField => ({
+    name: 'demo', type: variant(), label: `Campo ${variant()}`, placeholder: 'Digite ou selecione…',
+    description: 'Exemplo interativo e independente do RodMenu', options: exampleOptions,
+    min: 0, max: 5, step: 1, rows: 3, text: 'Executar ação',
+    html: 'Exemplo HTML em texto seguro', render: () => <strong>Campo customizado</strong>,
+  } as unknown as FormField);
+  const exampleContext = { values: { demo: variantValue() }, set: (_name: string, next: unknown) => setVariantValue(next) };
   const [selected, setSelected] = createSignal<string[]>(['filter:videos']);
   const [tags, setTags] = createSignal<string[]>(['typescript']);
   const [disabled, setDisabled] = createSignal(false);
@@ -158,6 +171,17 @@ function App() {
             <button type="button" onClick={() => void navigator.clipboard?.writeText(jsx())}>Copiar JSX</button>
           </div>
           <JsxPreview code={jsx()} />
+        </section>
+        <section class="card wide">
+          <h2>29 campos · Renderer independente</h2>
+          <p>Experimente todas as variantes sem inicializar RodMenu. O valor muda em tempo real.</p>
+          <label for="variant-type">Tipo do campo</label>
+          <select id="variant-type" value={variant()} onChange={(event) => { setVariant(event.currentTarget.value); setVariantValue(''); }}>
+            <For each={SHARED_FIELD_TYPES}>{(type) => <option value={type}>{type}</option>}</For>
+          </select>
+          <StandaloneFieldRenderer field={exampleField()} context={exampleContext} value={variantValue()} onChange={setVariantValue} id="variant-demo" />
+          <pre aria-live="polite">{JSON.stringify({type: variant(),value: variantValue()},null,2)}</pre>
+          <JsxPreview code={`<StandaloneFieldRenderer field={{ type: "${variant()}", name: "demo" }} value={value} onChange={setValue} context={context} />`} />
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
