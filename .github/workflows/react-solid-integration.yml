@@ -39,12 +39,25 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
       - name: Validate JSX compiler isolation
         run: npx vitest run tests/react-jsx.test.js tests/vite-frameworks.test.js
-      - name: Typecheck userscripts
-        run: npm run typecheck
       - name: Build React, Solid, and mixed installers
+        id: build
+        continue-on-error: true
         run: node build/build.mjs --targets=react-runtime-demo,example-site,unified,standalone
+      - name: Typecheck userscripts
+        id: types
+        continue-on-error: true
+        run: npm run typecheck
+      - name: Enforce build and typecheck
+        if: always()
+        env:
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          TYPES_RESULT: ${{ steps.types.outcome }}
+        run: |
+          echo "Build: $BUILD_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Typecheck: $TYPES_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          test "$BUILD_RESULT" = success && test "$TYPES_RESULT" = success
       - name: Summarize integration
         if: always()
         run: |
           echo "### React + Solid integration" >> "$GITHUB_STEP_SUMMARY"
-          echo "Attempted JSX isolation, typecheck, and React/Solid/mixed installers; inspect step conclusions above." >> "$GITHUB_STEP_SUMMARY"
+          echo "Both build and typecheck are required; failures are collected independently." >> "$GITHUB_STEP_SUMMARY"
