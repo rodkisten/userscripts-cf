@@ -1,4 +1,3 @@
-import * as ts from "typescript";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -40,6 +39,7 @@ const output = editor($("#output"), "", true);
 const replace = (view, value) =>
   view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
 let last = "";
+let transformVersion = 0;
 function diffLines(before, after) {
   const a = before.split("\n"),
     b = after.split("\n");
@@ -75,10 +75,12 @@ function diffLines(before, after) {
   }
   root.append(fragment);
 }
-function transform() {
+async function transform() {
   const source = input.state.doc.toString();
   const lang = language.value;
+  const version = ++transformVersion;
   try {
+    const ts = lang === "js" ? null : await import("typescript");
     const compiled =
       lang === "js"
         ? source
@@ -91,6 +93,7 @@ function transform() {
             },
             reportDiagnostics: true,
           });
+    if (version !== transformVersion) return;
     const diagnostics = lang === "js" ? [] : compiled.diagnostics || [];
     const errors = diagnostics.filter((item) => item.category === ts.DiagnosticCategory.Error);
     if (errors.length)
@@ -106,6 +109,7 @@ function transform() {
       (lang === "js" ? "JavaScript" : lang.toUpperCase() + " → JavaScript") +
       " · diff calculado";
   } catch (error) {
+    if (version !== transformVersion) return;
     last = "";
     replace(output, "");
     $("#diff").textContent = "";

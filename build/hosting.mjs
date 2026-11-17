@@ -62,24 +62,31 @@ await viteBuild(
     },
   }),
 );
+// Use a normal ESM build so TypeScript is split into an on-demand chunk.
+// Library mode would otherwise force a single ~5 MB initial download.
+const astDir = path.join(dist, "ast-errors-playground");
 await viteBuild({
   configFile: false,
   root,
+  base: "/playground/",
   build: {
-    outDir: path.join(dist, "ast-errors-playground"),
+    outDir: astDir,
     emptyOutDir: true,
-    lib: {
-      entry: path.join(root, "playground/ast-errors-app.js"),
-      formats: ["es"],
-      fileName: () => "ast-errors.js",
+    rolldownOptions: {
+      input: path.join(root, "playground/ast-errors-app.js"),
+      output: {
+        entryFileNames: "ast-errors.js",
+        chunkFileNames: "ast-errors-[name]-[hash].js",
+        assetFileNames: "ast-errors-[name]-[hash][extname]",
+      },
     },
     minify: true,
   },
 });
-assets["playground/ast-errors.js"] = await fs.readFile(
-  path.join(dist, "ast-errors-playground/ast-errors.js"),
-  "utf8",
-);
+for (const file of await fs.readdir(astDir)) {
+  if (!/^ast-errors(?:-[a-zA-Z0-9_-]+)?(?:-[a-zA-Z0-9_-]+)?\.(?:js|css)$/.test(file)) continue;
+  assets["playground/" + file] = await fs.readFile(path.join(astDir, file), "utf8");
+}
 assets["playground/form-controls.js"] = await fs.readFile(
   path.join(playgroundDir, "form-controls.js"),
   "utf8",
