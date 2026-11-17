@@ -135,3 +135,7 @@ The actual RodMenu `Surface.module.css` and `Fields.module.css` now use compact 
 ## Shared controls integration progress
 
 `form-controls/index.ts` now exports `Select`, `Checkbox`, `Switch`, `Slider`, their props and `controlsCss`. The independent `StandaloneFieldRenderer` consumes these same controls as RodMenu for select, boolean and range fields. Consumers in Shadow Roots should register `controlsCss` once. No Studio-only components are involved. Native selects retain browser keyboard behavior. Build and Safari validation remain outstanding.
+
+## Studio uses runtime controls
+
+The Button Studio now imports `Slider`, `Switch`, and `controlsCss` from the public `form-controls` entrypoint. Radius, height and loading controls exercise the real primitives. The shared `ControlOption` type comes from `options.ts`, avoiding duplicate public contracts. The remaining native color pickers require a dedicated runtime ColorPicker before Studio migration. The automatic Cloudflare deployment path and build status still need confirmation.

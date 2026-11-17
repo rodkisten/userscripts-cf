@@ -1,4 +1,5 @@
 import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
+import { Slider, Switch as RodSwitch, controlsCss } from "../src/runtime/solid-ui/form-controls";
 import { IconButton, SplitButton } from "../src/runtime/solid-ui/button";
 import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
@@ -438,6 +439,10 @@ function StudioSelect(props: { label: string; value: string; choices: readonly S
     </div>
   );
 }
+const sharedControlStyles = document.createElement("style");
+sharedControlStyles.textContent = controlsCss;
+document.head.appendChild(sharedControlStyles);
+
 const buttonMount = document.getElementById("buttonStudioMount");
 if (buttonMount) {
   render(() => {
@@ -529,34 +534,15 @@ if (buttonMount) {
           <StudioSelect label="Variante" value={variant()} choices={["default","secondary","outline","ghost","destructive","success","warning"].map((value) => ({value,label:value}))} onChange={(value) => setVariant(value as ReturnType<typeof variant>)} />
           <StudioSelect label="Tamanho" value={size()} choices={[{value:"sm",label:"Pequeno"},{value:"md",label:"Médio"},{value:"lg",label:"Grande"}]} onChange={(value) => {setPreset("");setSize(value as "sm" | "md" | "lg");}} />
           <label>
-            Raio {radius()}px{" "}
-            <input
-              type="range"
-              min="0"
-              max="28"
-              value={radius()}
-              onInput={(e) => {
-                setPreset("");
-                setRadius(Number(e.currentTarget.value));
-              }}
-            />
+            Raio {radius()}px
+            <Slider value={radius()} min={0} max={28} onChange={(value) => { setPreset(""); setRadius(value); }} />
           </label>
           <label>
-            Altura {height()}px{" "}
-            <input
-              type="range"
-              min="28"
-              max="64"
-              value={height()}
-              onInput={(e) => {
-                setPreset("");
-                setHeight(Number(e.currentTarget.value));
-              }}
-            />
+            Altura {height()}px
+            <Slider value={height()} min={28} max={64} onChange={(value) => { setPreset(""); setHeight(value); }} />
           </label>
-          <label>
-            <input type="checkbox" checked={busy()} onChange={(e) => setBusy(e.currentTarget.checked)} />{" "}
-            Loading
+          <label style={{display:"flex","align-items":"center",gap:"10px"}}>
+            <RodSwitch checked={busy()} onChange={setBusy} aria-label="Loading" /> Loading
           </label>
           <label>
             Accent{" "}

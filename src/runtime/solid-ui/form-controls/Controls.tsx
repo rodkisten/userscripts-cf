@@ -1,6 +1,6 @@
 import styles, { css } from "./Controls.module.css";
 export { css as controlsCss };
-export interface ControlOption { value: string; label: string; disabled?: boolean }
+import type { ControlOption } from "./options";
 export interface SelectProps { id?: string; name?: string; value: string; options: readonly ControlOption[]; disabled?: boolean; onChange(value: string): void }
 export function Select(props: SelectProps) {
   return <select id={props.id} name={props.name} class={styles.select} value={props.value} disabled={props.disabled}
