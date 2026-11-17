@@ -206,7 +206,9 @@ export const isText = (node: Node): node is Text => node.nodeType === TEXT_NODE_
 export function getSelection(root: DocumentOrShadowRoot): Selection | null {
   let target: Document | Window | DocumentOrShadowRoot;
   if ((root as Node).nodeType === SHADOW_ROOT_NODE_TYPE) {
-    target = (root as ShadowRoot).getSelection ? (root as unknown as Document) : (root as ShadowRoot).ownerDocument;
+    target = (root as ShadowRoot).getSelection
+      ? (root as unknown as Document)
+      : (root as ShadowRoot).ownerDocument;
   } else {
     target = root as Document;
   }
@@ -219,7 +221,9 @@ export function getSelection(root: DocumentOrShadowRoot): Selection | null {
  * if (contains(parentElement, textNode)) { ... }
  */
 export function contains(dom: Node, node: Node | null): boolean {
-  return node ? dom === node || dom.contains(node.nodeType !== ELEMENT_NODE_TYPE ? node.parentNode : node) : false;
+  return node
+    ? dom === node || dom.contains(node.nodeType !== ELEMENT_NODE_TYPE ? node.parentNode : node)
+    : false;
 }
 
 /**
@@ -242,12 +246,9 @@ export function hasSelection(dom: HTMLElement, selection: SelectionRange): boole
  * const rects = clientRectsFor(node);
  */
 export function clientRectsFor(dom: Node): DOMRectList {
-  if (isText(dom))
-    return textRange(dom, 0, dom.nodeValue!.length).getClientRects();
-  else if (isElt(dom))
-    return dom.getClientRects();
-  else
-    return [] as unknown as DOMRectList;
+  if (isText(dom)) return textRange(dom, 0, dom.nodeValue!.length).getClientRects();
+  else if (isElt(dom)) return dom.getClientRects();
+  else return [] as unknown as DOMRectList;
 }
 
 /**
@@ -255,9 +256,16 @@ export function clientRectsFor(dom: Node): DOMRectList {
  * @example
  * const matches = isEquivalentPosition(node, offset, targetNode, targetOffset);
  */
-export function isEquivalentPosition(node: Node, off: number, targetNode: Node | null, targetOff: number): boolean {
-  return targetNode ? (scanFor(node, off, targetNode, targetOff, DIRECTION_BACKWARD) ||
-                       scanFor(node, off, targetNode, targetOff, DIRECTION_FORWARD)) : false;
+export function isEquivalentPosition(
+  node: Node,
+  off: number,
+  targetNode: Node | null,
+  targetOff: number,
+): boolean {
+  return targetNode
+    ? scanFor(node, off, targetNode, targetOff, DIRECTION_BACKWARD) ||
+        scanFor(node, off, targetNode, targetOff, DIRECTION_FORWARD)
+    : false;
 }
 
 /**
@@ -267,7 +275,7 @@ export function isEquivalentPosition(node: Node, off: number, targetNode: Node |
  */
 export function domIndex(node: Node): number {
   let currentNode: Node | null = node;
-  for (var index = 0;; index++) {
+  for (var index = 0; ; index++) {
     currentNode = currentNode.previousSibling;
     if (!currentNode) return index;
   }
@@ -298,8 +306,12 @@ function scanFor(node: Node, off: number, targetNode: Node, targetOff: number, d
       currentNode = parent;
     } else if (isElt(currentNode)) {
       currentNode = currentNode.childNodes[currentOff + (dir < 0 ? -1 : 0)];
-      if (isElt(currentNode) &&
-          (currentNode.nodeName === "IMG" || currentNode.nodeName === "BR" || currentNode.contentEditable === "false"))
+      if (
+        isElt(currentNode) &&
+        (currentNode.nodeName === "IMG" ||
+          currentNode.nodeName === "BR" ||
+          currentNode.contentEditable === "false")
+      )
         return false;
       currentOff = dir < 0 ? maxOffset(currentNode) : 0;
     } else {
@@ -360,13 +372,18 @@ export function clipMargins(rect: Rect, margins: readonly Partial<Rect>[]): Rect
  */
 function windowRect(win: Window): Rect {
   let vp = win.visualViewport;
-  if (vp) return {
-    left: 0, right: vp.width,
-    top: 0, bottom: vp.height,
-  };
+  if (vp)
+    return {
+      left: 0,
+      right: vp.width,
+      top: 0,
+      bottom: vp.height,
+    };
   return {
-    left: 0, right: win.innerWidth,
-    top: 0, bottom: win.innerHeight,
+    left: 0,
+    right: win.innerWidth,
+    top: 0,
+    bottom: win.innerHeight,
   };
 }
 
@@ -380,8 +397,18 @@ export type ScrollStrategy = "nearest" | "start" | "end" | "center";
 export function getScale(elt: HTMLElement, rect: DOMRect) {
   let scaleX = rect.width / elt.offsetWidth;
   let scaleY = rect.height / elt.offsetHeight;
-  if ((scaleX > SCALE_LOWER_BOUND && scaleX < SCALE_UPPER_BOUND) || !isFinite(scaleX) || Math.abs(rect.width - elt.offsetWidth) < DEFAULT_INDEX_INCREMENT) scaleX = 1;
-  if ((scaleY > SCALE_LOWER_BOUND && scaleY < SCALE_UPPER_BOUND) || !isFinite(scaleY) || Math.abs(rect.height - elt.offsetHeight) < DEFAULT_INDEX_INCREMENT) scaleY = 1;
+  if (
+    (scaleX > SCALE_LOWER_BOUND && scaleX < SCALE_UPPER_BOUND) ||
+    !isFinite(scaleX) ||
+    Math.abs(rect.width - elt.offsetWidth) < DEFAULT_INDEX_INCREMENT
+  )
+    scaleX = 1;
+  if (
+    (scaleY > SCALE_LOWER_BOUND && scaleY < SCALE_UPPER_BOUND) ||
+    !isFinite(scaleY) ||
+    Math.abs(rect.height - elt.offsetHeight) < DEFAULT_INDEX_INCREMENT
+  )
+    scaleY = 1;
   return { scaleX, scaleY };
 }
 
@@ -391,18 +418,27 @@ export function getScale(elt: HTMLElement, rect: DOMRect) {
  * scrollRectIntoView(element, rect, margins, 1, "nearest", "nearest", 0, 0, true);
  */
 export function scrollRectIntoView(
-  dom: HTMLElement, rect: Rect,
+  dom: HTMLElement,
+  rect: Rect,
   margins: readonly { left?: number; right?: number; top?: number; bottom?: number; elt: Element }[],
   side: -1 | 1,
-  x: ScrollStrategy, y: ScrollStrategy,
-  xMargin: number, yMargin: number, ltr: boolean
+  x: ScrollStrategy,
+  y: ScrollStrategy,
+  xMargin: number,
+  yMargin: number,
+  ltr: boolean,
 ): void {
-  let doc = dom.ownerDocument!, win = doc.defaultView || window;
+  let doc = dom.ownerDocument!,
+    win = doc.defaultView || window;
 
   for (let cur: Node = dom, stop = false; cur && !stop;) {
     if (isElt(cur)) {
-      let bounding: Rect, top = cur === doc.body;
-      let scaleX = 1, scaleY = 1, xScroll = true, yScroll = true;
+      let bounding: Rect,
+        top = cur === doc.body;
+      let scaleX = 1,
+        scaleY = 1,
+        xScroll = true,
+        yScroll = true;
       if (top) {
         bounding = windowRect(win);
       } else {
@@ -417,31 +453,35 @@ export function scrollRectIntoView(
         let eltRect = cur.getBoundingClientRect();
         ({ scaleX, scaleY } = getScale(cur, eltRect));
         bounding = {
-          left: eltRect.left, right: eltRect.left + cur.clientWidth * scaleX,
-          top: eltRect.top, bottom: eltRect.top + cur.clientHeight * scaleY,
+          left: eltRect.left,
+          right: eltRect.left + cur.clientWidth * scaleX,
+          top: eltRect.top,
+          bottom: eltRect.top + cur.clientHeight * scaleY,
         };
       }
 
       let clip = clipMargins(bounding, margins);
-      let moveX = 0, moveY = 0;
+      let moveX = 0,
+        moveY = 0;
       if (!yScroll) {
         // Skip vertical scrolling adjustment
       } else if (y === "nearest") {
         if (rect.top < clip.top + yMargin) {
           moveY = rect.top - (clip.top + yMargin);
-          if (side > 0 && rect.bottom > clip.bottom + moveY)
-            moveY = rect.bottom - clip.bottom + yMargin;
+          if (side > 0 && rect.bottom > clip.bottom + moveY) moveY = rect.bottom - clip.bottom + yMargin;
         } else if (rect.bottom > clip.bottom - yMargin) {
           moveY = rect.bottom - clip.bottom + yMargin;
-          if (side < 0 && (rect.top - moveY) < clip.top)
-            moveY = rect.top - (clip.top + yMargin);
+          if (side < 0 && rect.top - moveY < clip.top) moveY = rect.top - (clip.top + yMargin);
         }
       } else {
-        let rectHeight = rect.bottom - rect.top, boundingHeight = clip.bottom - clip.top;
+        let rectHeight = rect.bottom - rect.top,
+          boundingHeight = clip.bottom - clip.top;
         let targetTop =
-          y === "center" && rectHeight <= boundingHeight ? rect.top + rectHeight / 2 - boundingHeight / 2 :
-          y === "start" || (y === "center" && side < 0) ? rect.top - yMargin :
-          rect.bottom - boundingHeight + yMargin;
+          y === "center" && rectHeight <= boundingHeight
+            ? rect.top + rectHeight / 2 - boundingHeight / 2
+            : y === "start" || (y === "center" && side < 0)
+              ? rect.top - yMargin
+              : rect.bottom - boundingHeight + yMargin;
         moveY = targetTop - clip.top;
       }
       if (!xScroll) {
@@ -449,25 +489,26 @@ export function scrollRectIntoView(
       } else if (x === "nearest") {
         if (rect.left < clip.left + xMargin) {
           moveX = rect.left - (clip.left + xMargin);
-          if (side > 0 && rect.right > clip.right + moveX)
-            moveX = rect.right - clip.right + xMargin;
+          if (side > 0 && rect.right > clip.right + moveX) moveX = rect.right - clip.right + xMargin;
         } else if (rect.right > clip.right - xMargin) {
           moveX = rect.right - clip.right + xMargin;
-          if (side < 0 && rect.left < clip.left + moveX)
-            moveX = rect.left - (clip.left + xMargin);
+          if (side < 0 && rect.left < clip.left + moveX) moveX = rect.left - (clip.left + xMargin);
         }
       } else {
         let targetLeft =
-          x === "center" ? rect.left + (rect.right - rect.left) / 2 - (clip.right - clip.left) / 2 :
-          (x === "start") === ltr ? rect.left - xMargin :
-          rect.right - (clip.right - clip.left) + xMargin;
+          x === "center"
+            ? rect.left + (rect.right - rect.left) / 2 - (clip.right - clip.left) / 2
+            : (x === "start") === ltr
+              ? rect.left - xMargin
+              : rect.right - (clip.right - clip.left) + xMargin;
         moveX = targetLeft - clip.left;
       }
       if (moveX || moveY) {
         if (top) {
           win.scrollBy(moveX, moveY);
         } else {
-          let movedX = 0, movedY = 0;
+          let movedX = 0,
+            movedY = 0;
           if (moveY) {
             let start = cur.scrollTop;
             cur.scrollTop += moveY / scaleY;
@@ -479,21 +520,29 @@ export function scrollRectIntoView(
             movedX = (cur.scrollLeft - start) * scaleX;
           }
           rect = {
-            left: rect.left - movedX, top: rect.top - movedY,
-            right: rect.right - movedX, bottom: rect.bottom - movedY,
+            left: rect.left - movedX,
+            top: rect.top - movedY,
+            right: rect.right - movedX,
+            bottom: rect.bottom - movedY,
           };
           if (movedX && Math.abs(movedX - moveX) < DEFAULT_INDEX_INCREMENT) x = "nearest";
           if (movedY && Math.abs(movedY - moveY) < DEFAULT_INDEX_INCREMENT) y = "nearest";
         }
       }
       if (top) break;
-      if (rect.top < bounding.top || rect.bottom > bounding.bottom ||
-          rect.left < bounding.left || rect.right > bounding.right)
+      if (
+        rect.top < bounding.top ||
+        rect.bottom > bounding.bottom ||
+        rect.left < bounding.left ||
+        rect.right > bounding.right
+      )
         rect = {
-          left: Math.max(rect.left, bounding.left), right: Math.min(rect.right, bounding.right),
-          top: Math.max(rect.top, bounding.top), bottom: Math.min(rect.bottom, bounding.bottom),
+          left: Math.max(rect.left, bounding.left),
+          right: Math.min(rect.right, bounding.right),
+          top: Math.max(rect.top, bounding.top),
+          bottom: Math.min(rect.bottom, bounding.bottom),
         };
-      margins = margins.filter(m => !cur.contains(m.elt));
+      margins = margins.filter((m) => !cur.contains(m.elt));
       cur = cur.assignedSlot || cur.parentNode!;
     } else if (cur.nodeType === SHADOW_ROOT_NODE_TYPE) {
       cur = (cur as ShadowRoot).host;
@@ -509,16 +558,23 @@ export function scrollRectIntoView(
  * const parents = scrollableParents(element);
  */
 export function scrollableParents(dom: HTMLElement, getX = true) {
-  let doc = dom.ownerDocument, x: HTMLElement | null = null, y: HTMLElement | null = null;
+  let doc = dom.ownerDocument,
+    x: HTMLElement | null = null,
+    y: HTMLElement | null = null;
   for (let cur: Node | null = dom.parentNode; cur;) {
     if (cur === doc.body || ((!getX || x) && y)) {
       break;
     } else if (isElt(cur)) {
       if (!y && cur.scrollHeight > cur.clientHeight && /scroll|auto/.test(getComputedStyle(cur).overflowY))
         y = cur;
-      if (getX && !x && cur.scrollWidth > cur.clientWidth && /scroll|auto/.test(getComputedStyle(cur).overflowX))
+      if (
+        getX &&
+        !x &&
+        cur.scrollWidth > cur.clientWidth &&
+        /scroll|auto/.test(getComputedStyle(cur).overflowX)
+      )
         x = cur;
-      cur = cur.assignedSlot || cur.parentNode as HTMLElement | null;
+      cur = cur.assignedSlot || (cur.parentNode as HTMLElement | null);
     } else if (cur.nodeType === SHADOW_ROOT_NODE_TYPE) {
       cur = (cur as ShadowRoot).host;
     } else {
@@ -542,19 +598,29 @@ export class DOMSelectionState implements SelectionRange {
   focusOffset: number = 0;
 
   eq(domSel: SelectionRange): boolean {
-    return this.anchorNode === domSel.anchorNode && this.anchorOffset === domSel.anchorOffset &&
-      this.focusNode === domSel.focusNode && this.focusOffset === domSel.focusOffset;
+    return (
+      this.anchorNode === domSel.anchorNode &&
+      this.anchorOffset === domSel.anchorOffset &&
+      this.focusNode === domSel.focusNode &&
+      this.focusOffset === domSel.focusOffset
+    );
   }
 
   setRange(range: SelectionRange): void {
     let { anchorNode, focusNode } = range;
-    this.set(anchorNode, Math.min(range.anchorOffset, anchorNode ? maxOffset(anchorNode) : 0),
-             focusNode, Math.min(range.focusOffset, focusNode ? maxOffset(focusNode) : 0));
+    this.set(
+      anchorNode,
+      Math.min(range.anchorOffset, anchorNode ? maxOffset(anchorNode) : 0),
+      focusNode,
+      Math.min(range.focusOffset, focusNode ? maxOffset(focusNode) : 0),
+    );
   }
 
   set(anchorNode: Node | null, anchorOffset: number, focusNode: Node | null, focusOffset: number): void {
-    this.anchorNode = anchorNode; this.anchorOffset = anchorOffset;
-    this.focusNode = focusNode; this.focusOffset = focusOffset;
+    this.anchorNode = anchorNode;
+    this.anchorOffset = anchorOffset;
+    this.focusNode = focusNode;
+    this.focusOffset = focusOffset;
   }
 }
 
@@ -565,9 +631,17 @@ export class DOMSelectionState implements SelectionRange {
  */
 export function getScrollStack(target: Element | null) {
   let stack: { node: Element; left: number; top: number }[] = [];
-  for (let cur: Node | null = target; cur; cur = cur.nodeType === SHADOW_ROOT_NODE_TYPE ? (cur as ShadowRoot).host : cur.parentNode) {
+  for (
+    let cur: Node | null = target;
+    cur;
+    cur = cur.nodeType === SHADOW_ROOT_NODE_TYPE ? (cur as ShadowRoot).host : cur.parentNode
+  ) {
     if (isElt(cur))
-      stack.push({ node: cur as Element, left: (cur as Element).scrollLeft, top: (cur as Element).scrollTop });
+      stack.push({
+        node: cur as Element,
+        left: (cur as Element).scrollLeft,
+        top: (cur as Element).scrollTop,
+      });
   }
   return stack;
 }
@@ -594,12 +668,16 @@ export function focusPreventScroll(dom: HTMLElement): void {
   if (preventScrollSupported) return dom.focus(preventScrollSupported);
 
   let stack = getScrollStack(dom);
-  dom.focus(preventScrollSupported == null ? {
-    get preventScroll() {
-      preventScrollSupported = { preventScroll: true };
-      return true;
-    },
-  } : undefined);
+  dom.focus(
+    preventScrollSupported == null
+      ? {
+          get preventScroll() {
+            preventScrollSupported = { preventScroll: true };
+            return true;
+          },
+        }
+      : undefined,
+  );
   if (!preventScrollSupported) {
     preventScrollSupported = false;
     restoreScrollStack(stack);
@@ -624,12 +702,19 @@ export function textRange(node: Text, from: number, to = from): Range {
  * dispatchKey(element, "Enter", 13);
  */
 export function dispatchKey(
-  elt: HTMLElement, name: string, code: number,
-  mods?: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean }
+  elt: HTMLElement,
+  name: string,
+  code: number,
+  mods?: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean },
 ): boolean {
   let options: KeyboardEventInit = { key: name, code: name, keyCode: code, which: code, cancelable: true };
   if (mods)
-    ({ altKey: options.altKey, ctrlKey: options.ctrlKey, shiftKey: options.shiftKey, metaKey: options.metaKey } = mods);
+    ({
+      altKey: options.altKey,
+      ctrlKey: options.ctrlKey,
+      shiftKey: options.shiftKey,
+      metaKey: options.metaKey,
+    } = mods);
   let down = new KeyboardEvent("keydown", options);
   (down as any).synthetic = true;
   elt.dispatchEvent(down);
@@ -647,7 +732,11 @@ export function dispatchKey(
 export function getRoot(node: Node | null | undefined): DocumentOrShadowRoot | null {
   let currentNode: Node | null = node || null;
   while (currentNode) {
-    if (currentNode && (currentNode.nodeType === DOCUMENT_NODE_TYPE || currentNode.nodeType === SHADOW_ROOT_NODE_TYPE && (currentNode as ShadowRoot).host))
+    if (
+      currentNode &&
+      (currentNode.nodeType === DOCUMENT_NODE_TYPE ||
+        (currentNode.nodeType === SHADOW_ROOT_NODE_TYPE && (currentNode as ShadowRoot).host))
+    )
       return currentNode as unknown as DocumentOrShadowRoot;
     currentNode = (currentNode as HTMLElement).assignedSlot || currentNode.parentNode;
   }
@@ -669,7 +758,8 @@ export function clearAttributes(node: HTMLElement): void {
  * if (atElementStart(doc, selection)) { ... }
  */
 export function atElementStart(doc: HTMLElement, selection: SelectionRange): boolean {
-  let node = selection.focusNode, offset = selection.focusOffset;
+  let node = selection.focusNode,
+    offset = selection.focusOffset;
   if (!node || selection.anchorNode !== node || selection.anchorOffset !== offset) return false;
   offset = Math.min(offset, maxOffset(node));
   for (;;) {
@@ -677,7 +767,10 @@ export function atElementStart(doc: HTMLElement, selection: SelectionRange): boo
       if (!isElt(node)) return false;
       let prev: Node = node.childNodes[offset - DEFAULT_INDEX_INCREMENT];
       if ((prev as HTMLElement).contentEditable === "false") offset--;
-      else { node = prev; offset = maxOffset(node); }
+      else {
+        node = prev;
+        offset = maxOffset(node);
+      }
     } else if (node === doc) {
       return true;
     } else {
@@ -693,7 +786,11 @@ export function atElementStart(doc: HTMLElement, selection: SelectionRange): boo
  * if (isScrolledToBottom(container)) { ... }
  */
 export function isScrolledToBottom(elt: HTMLElement | Window): boolean {
-  if (elt instanceof Window) return elt.pageYOffset > Math.max(0, elt.document.documentElement.scrollHeight - elt.innerHeight - SCROLL_TOLERANCE_PX);
+  if (elt instanceof Window)
+    return (
+      elt.pageYOffset >
+      Math.max(0, elt.document.documentElement.scrollHeight - elt.innerHeight - SCROLL_TOLERANCE_PX)
+    );
   return elt.scrollTop > Math.max(1, elt.scrollHeight - elt.clientHeight - SCROLL_TOLERANCE_PX);
 }
 
@@ -703,7 +800,7 @@ export function isScrolledToBottom(elt: HTMLElement | Window): boolean {
  * const prevText = textNodeBefore(node, offset);
  */
 export function textNodeBefore(startNode: Node, startOffset: number): { node: Text; offset: number } | null {
-  for (let node = startNode, offset = startOffset;;) {
+  for (let node = startNode, offset = startOffset; ;) {
     if (isText(node) && offset > 0) {
       return { node: node, offset: offset };
     } else if (isElt(node) && offset > 0) {
@@ -725,7 +822,7 @@ export function textNodeBefore(startNode: Node, startOffset: number): { node: Te
  * const nextText = textNodeAfter(node, offset);
  */
 export function textNodeAfter(startNode: Node, startOffset: number): { node: Text; offset: number } | null {
-  for (let node = startNode, offset = startOffset;;) {
+  for (let node = startNode, offset = startOffset; ;) {
     if (isText(node) && offset < node.nodeValue!.length) {
       return { node: node, offset: offset };
     } else if (isElt(node) && offset < node.childNodes.length) {
@@ -742,10 +839,18 @@ export function textNodeAfter(startNode: Node, startOffset: number): { node: Tex
 }
 
 export class DOMPos {
-  constructor(readonly node: Node, readonly offset: number, readonly precise = true) {}
+  constructor(
+    readonly node: Node,
+    readonly offset: number,
+    readonly precise = true,
+  ) {}
 
-  static before(dom: Node, precise?: boolean) { return new DOMPos(dom.parentNode!, domIndex(dom), precise); }
-  static after(dom: Node, precise?: boolean) { return new DOMPos(dom.parentNode!, domIndex(dom) + DEFAULT_INDEX_INCREMENT, precise); }
+  static before(dom: Node, precise?: boolean) {
+    return new DOMPos(dom.parentNode!, domIndex(dom), precise);
+  }
+  static after(dom: Node, precise?: boolean) {
+    return new DOMPos(dom.parentNode!, domIndex(dom) + DEFAULT_INDEX_INCREMENT, precise);
+  }
 }
 
 // ============================================================================
