@@ -1,0 +1,124 @@
+name: "📝 Review · collect check annotations"
+run-name: "📝 Review annotations · ${{ github.event_name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number (optional; blank collects open PRs)"
+        required: false
+        type: string
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: review-check-annotations
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      REQUESTED_PR: ${{ inputs.pr_number }}
+    steps:
+      - name: Collect check-run annotations for pull requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import datetime
+          import json
+          import os
+          import subprocess
+          import sys
+
+          repo = os.environ["GH_REPO"]
+          requested = os.environ.get("REQUESTED_PR", "").strip()
+
+          def api(endpoint):
+              cmd = ["gh", "api", "--paginate", "--slurp", "-H", "Accept: application/vnd.github+json", endpoint]
+              result = subprocess.run(cmd, text=True, capture_output=True)
+              if result.returncode:
+                  raise RuntimeError(f"GitHub API request failed for {endpoint}: {result.stderr.strip()}")
+              pages = json.loads(result.stdout)
+              if not isinstance(pages, list):
+                  raise RuntimeError(f"Unexpected response for {endpoint}")
+              if all(isinstance(page, list) for page in pages):
+                  return [item for page in pages for item in page]
+              if len(pages) == 1 and isinstance(pages[0], dict):
+                  return pages[0]
+              return pages
+
+          try:
+              if requested:
+                  if not requested.isdecimal() or int(requested) < 1:
+                      raise ValueError("pr_number must be a positive integer")
+                  prs = [api(f"repos/{repo}/pulls/{requested}")]
+              else:
+                  prs = api(f"repos/{repo}/pulls?state=open&per_page=100")
+              results = []
+              for pr in prs:
+                  sha = pr["head"]["sha"]
+                  checks = api(f"repos/{repo}/commits/{sha}/check-runs?per_page=100")
+                  if not isinstance(checks, dict):
+                      raise RuntimeError(f"Unexpected check runs response for PR #{pr['number']}")
+                  entries = []
+                  for check in checks.get("check_runs", []):
+                      count = check.get("output", {}).get("annotations_count", 0)
+                      if not count:
+                          continue
+                      annotations = api(f"repos/{repo}/check-runs/{check['id']}/annotations?per_page=100")
+                      entries.append({
+                          "check_run_id": check["id"],
+                          "check_name": check["name"],
+                          "app": (check.get("app") or {}).get("slug"),
+                          "conclusion": check.get("conclusion"),
+                          "details_url": check.get("details_url"),
+                          "annotations": [{
+                              "path": a.get("path"),
+                              "start_line": a.get("start_line"),
+                              "end_line": a.get("end_line"),
+                              "annotation_level": a.get("annotation_level"),
+                              "title": a.get("title"),
+                              "message": a.get("message"),
+                              "raw_details": a.get("raw_details"),
+                          } for a in annotations],
+                      })
+                  results.append({
+                      "pr_number": pr["number"],
+                      "pr_url": pr["html_url"],
+                      "head_sha": sha,
+                      "checks_with_annotations": entries,
+                  })
+              output = {
+                  "repository": repo,
+                  "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  "pull_requests": results,
+              }
+              with open("artifacts/review-check-annotations.json", "w") as f:
+                  json.dump(output, f, indent=2, ensure_ascii=False)
+                  f.write("\n")
+              total = sum(len(c["annotations"]) for p in results for c in p["checks_with_annotations"])
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+                  f.write(f"### Check annotations collected\n\n- PRs: {len(results)}\n- Annotations: {total}\n- Artifact: \`review-check-annotations\`\n")
+              print(f"Collected {total} annotations from {len(results)} PRs")
+          except Exception as exc:
+              print(f"::error::{exc}", file=sys.stderr)
+              sys.exit(1)
+          PY
+      - name: Upload review annotations
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-check-annotations
+          path: artifacts/review-check-annotations.json
+          if-no-files-found: error
+          retention-days: 30
