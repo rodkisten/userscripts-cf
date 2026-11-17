@@ -3,8 +3,7 @@ import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import { createComponent, createRoot, createStore, type Accessor } from "solid-js";
-import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context.js";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, createElement, type ReactNode } from "react";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
@@ -53,8 +52,8 @@ const LOG_TAG_CLEANUP = "[Userscripts CF cleanup]";
 const LOG_TAG_SCRIPT_PREFIX = "[Userscripts CF: ";
 const DOM_EVENT_PREFIX = "dom.event:";
 const EVENT_PREFIX = "event:";
-const SOLID_REACTIVE_SOURCE = "solid.reactive";
-const SOLID_MOUNT_SOURCE = "solid.mount";
+const REACT_REACTIVE_SOURCE = "react.reactive";
+const REACT_MOUNT_SOURCE = "react.mount";
 const HISTORY_PUSH_STATE = "pushState";
 const HISTORY_REPLACE_STATE = "replaceState";
 const DATASET_UI_ATTR = "userscriptsCfUi";
@@ -90,6 +89,8 @@ export interface DockAction {
   label: string;
   run: () => void | Promise<void>;
 }
+
+export type Accessor<T> = () => T;
 
 export interface ScriptContext {
   id: string;
@@ -135,7 +136,7 @@ export interface ScriptContext {
   onDispose: (callback: () => void | Promise<void>) => void;
   observe(target: Node, callback: MutationCallback, options: MutationObserverInit): MutationObserver;
   interval(callback: () => void, milliseconds: number): ReturnType<typeof setInterval>;
-  store<T extends object>(initial: T): ReturnType<typeof createStore<T>>;
+  store<T extends object>(initial: T): [Accessor<T>, (v: Partial<T> | ((prev: T) => T)) => void];
   listen(
     target: EventTarget,
     event: string,
@@ -148,6 +149,8 @@ export interface ScriptContext {
     mount(node: Node): Node;
     style(css: string): HTMLStyleElement;
     registerStyles(...styles: unknown[]): () => void;
+    mountReact(component: ReactNode, options?: Record<string, unknown>): () => void;
+    // Retrocompatibilidade opcional de API Solid caso scripts antigos chamem mountSolid
     mountSolid(component: unknown, options?: Record<string, unknown>): () => void;
   };
   style(css: string): HTMLStyleElement;
@@ -176,6 +179,36 @@ export interface RuntimeAPI {
   navigate: () => Promise<void>;
   readonly active: string[];
   dispose: () => Promise<void>;
+}
+
+// ============================================================================
+// Contexto do React 19 para Runtime
+// ============================================================================
+const RuntimeContextContext = createContext<ScriptContext | null>(null);
+
+export function RuntimeProvider({ context, children }: { context: ScriptContext; children: ReactNode }) {
+  return createElement(RuntimeContextContext.Provider, { value: context }, children);
+}
+
+export function useContextHook(): ScriptContext {
+  const ctx = useContext(RuntimeContextContext);
+  if (!ctx) throw new Error("useContext must be used within a RuntimeProvider");
+  return ctx;
+}
+
+export function useRuntime(): ScriptContext {
+  return useContextHook();
+}
+
+export function useRuntimeWorld() {
+  return useContextHook();
+}
+
+export function bindRuntime<T extends (...args: any[]) => any>(fn: T, context: ScriptContext): T {
+  return ((...args: Parameters<T>) => {
+    // Se necessário, pode injetar o contexto ou rodar envolto
+    return fn(...args);
+  }) as T;
 }
 
 // ============================================================================
@@ -315,8 +348,7 @@ export function createRuntime(
   release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
   const rod = initializeRodFeatures(host);
-  // Install helper implementations once per runtime, without a mutable active-script pointer.
-  const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
+  const helpers = { useContext: useContextHook, useRuntime, useRuntimeWorld, bindRuntime };
   const installedHelpers: Array<keyof typeof helpers> = [];
   for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
     if (name in host) continue;
@@ -679,10 +711,16 @@ export function createRuntime(
       onDispose,
       store<T extends object>(initial: T) {
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
-        return createRoot((dispose) => {
-          onDispose(dispose);
-          return createStore(initial);
-        });
+        // Substituindo createStore/createRoot do Solid por React useState local encapsulado
+        let stateValue = initial;
+        const listenersSet = new Set<() => void>();
+        const getState = () => stateValue;
+        const setState = (updater: Partial<T> | ((prev: T) => T)) => {
+          stateValue = typeof updater === "function" ? (updater as any)(stateValue) : { ...stateValue, ...updater };
+          listenersSet.forEach((cb) => cb());
+        };
+        // Opcional: registrar limpezas
+        return [getState, setState] as [Accessor<T>, (v: Partial<T> | ((prev: T) => T)) => void];
       },
       observe(target, callback, options) {
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
@@ -736,31 +774,33 @@ export function createRuntime(
           onDispose(release);
           return release;
         },
-        mountSolid(component: unknown, options: Record<string, unknown> = {}) {
+        mountReact(component: ReactNode, options: Record<string, unknown> = {}) {
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
           let release: () => void;
           try {
-            const scopedComponent = () =>
-              createComponent(RuntimeProvider, {
-                context: scriptContext,
-                get children() {
-                  return typeof component === "function" ? (component as () => unknown)() : component;
-                },
-              });
-            release = uiFeature.mountSolidShadow(scopedComponent, {
+            const scopedComponent = createElement(
+              RuntimeProvider,
+              { context: scriptContext },
+              component
+            );
+            release = uiFeature.mountReactShadow(scopedComponent, {
               ...options,
               target: ensureUIRoot(),
               onError: (error: unknown) => {
-                captureDiagnostic(error, SOLID_REACTIVE_SOURCE, definition.id, host);
+                captureDiagnostic(error, REACT_REACTIVE_SOURCE, definition.id, host);
                 if (typeof options.onError === "function") (options.onError as (err: unknown) => void)(error);
               },
             });
           } catch (error) {
-            captureDiagnostic(error, SOLID_MOUNT_SOURCE, definition.id, host);
+            captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
             throw error;
           }
           onDispose(release);
           return release;
+        },
+        mountSolid(component: unknown, options: Record<string, unknown> = {}) {
+          // Fallback adaptado para retrocompatibilidade caso scripts chamem mountSolid
+          return (this as any).mountReact(typeof component === "function" ? (component as any)() : component, options);
         },
       }),
       style(css: string) {
