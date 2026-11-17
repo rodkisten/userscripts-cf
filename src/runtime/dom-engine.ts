@@ -133,7 +133,7 @@ export function createDomEngine({
 
       // Close the gap between the first query and observer registration.
       const immediate = scopeNode.querySelector(selector);
-      if (immediate) finish(resolve, immediate);
+      if (immediate) finish(immediate);
     });
   }
 
