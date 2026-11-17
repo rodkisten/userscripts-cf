@@ -188,7 +188,7 @@ function initializeRodFeatures(host: Window & typeof globalThis) {
       typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
     toaster:
       typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
-        ? createToasterFeature(host)
+        ? createToasterFeature()
         : undefined,
     storage: createStorageFeature(host),
   };
