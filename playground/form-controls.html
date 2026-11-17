@@ -104,17 +104,21 @@
     <div id="app">
       <main><p>Carregando componentes SolidJS…</p></main>
     </div>
-    <script type="module">
+    <script>
       const host = document.getElementById("app");
       const asset = "/playground/form-controls.js";
+      const startedAt = Date.now();
+      const status = { asset, userAgent: navigator.userAgent, page: location.href };
       let mounted = false;
+      let failed = false;
       const timeout = setTimeout(() => {
         if (!mounted)
-          showError(new Error("A inicialização excedeu 12 segundos. Verifique o bundle e a conexão."));
+          showError(new Error("Timeout de inicialização: o módulo não montou em 12 segundos."));
       }, 12000);
       const showError = (error) => {
         const message = error instanceof Error ? error.message : String(error);
-        if (!host || mounted || host.querySelector("[data-playground-error]")) return;
+        if (!host || mounted || failed) return;
+        failed = true;
         clearTimeout(timeout);
         host.replaceChildren();
         const main = document.createElement("main");
@@ -127,7 +131,7 @@
         const details = document.createElement("pre");
         details.style.whiteSpace = "pre-wrap";
         details.style.overflowWrap = "anywhere";
-        details.textContent = message;
+        details.textContent = JSON.stringify({ message, elapsedMs: Date.now() - startedAt, ...status }, null, 2);
         const retry = document.createElement("button");
         retry.type = "button";
         retry.textContent = "Tentar novamente";
@@ -135,7 +139,7 @@
         const copy = document.createElement("button");
         copy.type = "button";
         copy.textContent = "Copiar diagnóstico";
-        copy.addEventListener("click", () => navigator.clipboard?.writeText(message));
+        copy.addEventListener("click", () => navigator.clipboard?.writeText(details.textContent));
         main.append(heading, description, details, retry, document.createTextNode(" "), copy);
         host.append(main);
       };
@@ -145,17 +149,18 @@
       window.addEventListener("unhandledrejection", (event) => {
         if (!mounted) showError(event.reason);
       });
-      try {
-        await import(asset);
-        if (host?.textContent?.includes("Carregando componentes SolidJS")) {
-          showError(new Error("O módulo foi importado, mas a aplicação não montou."));
-        } else {
-          mounted = true;
-          clearTimeout(timeout);
-        }
-      } catch (error) {
-        showError(error);
-      }
+      // A classic bootstrap runs even when module loading fails before evaluation.
+      import(asset)
+        .then(() => {
+          if (failed) return;
+          if (host?.textContent?.includes("Carregando componentes SolidJS")) {
+            showError(new Error("Bundle carregado, mas SolidJS não montou a aplicação."));
+          } else {
+            mounted = true;
+            clearTimeout(timeout);
+          }
+        })
+        .catch(showError);
     </script>
   </body>
 </html>
