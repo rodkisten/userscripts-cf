@@ -220,7 +220,7 @@ function App() {
   maxTags={${maxTags()}}
   placeholder={${JSON.stringify(placeholder())}}
 />`;
-  const [raw, setRaw] = createSignal("");
+  const [raw, setRaw] = createSignal("filter:videos list:123456789 -filter:replies react");
   const [editingToken, setEditingToken] = createSignal<number | null>(null);
   const [tokenDraft, setTokenDraft] = createSignal("");
   const [asyncValue, setAsyncValue] = createSignal("");

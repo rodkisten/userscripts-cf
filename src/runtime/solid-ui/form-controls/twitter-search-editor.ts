@@ -69,147 +69,48 @@ class TokenWidget extends WidgetType {
   }
 }
 
-const editorCSS = `      .twitter-cm-pill {
-        border-color: #3f3f46 !important;
-        background: #18181b !important;
-        color: #fafafa !important;
-        border-radius: 8px !important;
-        gap: 2px !important;
-        padding: 2px 3px 2px 4px !important;
-      }
-      .twitter-cm-pill-trigger {
-        appearance: none;
-        background: transparent;
-        border: 0;
-        color: inherit;
-        font: inherit;
-        padding: 4px 6px;
-        max-width: 190px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .twitter-cm-pill-trigger[aria-haspopup="menu"]::after {
-        content: "⌄";
-        color: #a1a1aa;
-        padding-left: 7px;
-      }
-      .twitter-cm-pill-trigger:disabled {
-        opacity: 1;
-      }
-      .twitter-token-menu {
-        position: fixed;
-        z-index: 2147483647;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        padding: 5px;
-        border: 1px solid #303036;
-        border-radius: 12px;
-        background: #171717;
-        color: #fafafa;
-        box-shadow:
-          0 16px 48px #0009,
-          0 2px 8px #0006;
-        font:
-          14px/1.5 system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      .twitter-token-menu-label {
-        padding: 8px 9px 5px;
-        color: #a1a1aa;
-        font-size: 12px;
-        font-weight: 550;
-      }
-      .twitter-token-menu-search {
-        box-sizing: border-box;
-        width: calc(100% - 12px);
-        margin: 5px 6px 8px;
-        min-height: 36px;
-        border: 1px solid #3f3f46;
-        border-radius: 7px;
-        background: #262626;
-        color: #fafafa;
-        padding: 6px 10px;
-        font: inherit;
-        font-size: 16px;
-        outline: none;
-      }
-      .twitter-token-menu-search:focus {
-        border-color: #71717a;
-      }
-      .twitter-token-menu-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        min-height: 38px;
-        padding: 7px 9px;
-        border: 0;
-        border-radius: 6px;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-      }
-      .twitter-token-menu-item:active,
-      .twitter-token-menu-item:hover,
-      .twitter-token-menu-item:focus-visible {
-        background: #353535;
-        outline: none;
-      }
-      .twitter-token-menu-shortcut {
-        color: #a1a1aa;
-        font-size: 11px;
-        white-space: nowrap;
-      }
-      .twitter-token-menu-separator {
-        height: 1px;
-        margin: 5px -5px;
-        background: #303036;
-      }
-      .twitter-cm-pill {
-        display: inline-flex;
-        align-items: center;
-        vertical-align: middle;
-        gap: 5px;
-        max-width: 100%;
-        padding: 2px 4px 2px 10px;
-        border-radius: 999px;
-        border: 1px solid #496485;
-        background: #23354b;
-        color: #eff6ff;
-        font:
-          500 14px/1.5 system-ui,
-          sans-serif;
-      }
-      .twitter-cm-pill select {
-        display: inline-block !important;
-        width: auto !important;
-        max-width: 190px !important;
-        min-height: 30px !important;
-        padding: 3px 24px 3px 4px !important;
-        border: 0 !important;
-        background: transparent !important;
-        color: inherit !important;
-        font-size: 14px !important;
-      }
-      .twitter-cm-pill button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 28px;
-        min-height: 28px !important;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: #ffffff18;
-        color: inherit;
-        font-size: 20px;
-      }
-
+const editorCSS = `
+.twitter-cm-pill {
+  display: inline-flex; align-items: center; vertical-align: middle;
+  gap: 3px; max-width: 100%; padding: 2px 3px 2px 8px;
+  border: 1px solid #3f3f46; border-radius: 9px;
+  background: #18181b; color: #fafafa;
+  font: 500 13px/1.4 system-ui, sans-serif;
+}
+.twitter-cm-pill-trigger, .twitter-cm-pill > button {
+  appearance: none; border: 0; background: transparent; color: inherit;
+  font: inherit; cursor: pointer; border-radius: 6px;
+}
+.twitter-cm-pill-trigger { padding: 5px 6px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.twitter-cm-pill-trigger[aria-haspopup="menu"]::after { content: "⌄"; color: #a1a1aa; padding-left: 7px; }
+.twitter-cm-pill-trigger:disabled { opacity: 1; cursor: default; }
+.twitter-cm-pill > button:last-child { min-width: 26px; min-height: 26px; color: #a1a1aa; font-size: 19px; }
+.twitter-cm-pill > button:hover, .twitter-cm-pill > button:focus-visible { background: #ffffff16; outline: none; }
+.twitter-token-menu {
+  position: fixed; z-index: 2147483647; box-sizing: border-box;
+  overflow-y: auto; overscroll-behavior: contain; padding: 5px;
+  border: 1px solid #303036; border-radius: 12px; background: #171717;
+  color: #fafafa; box-shadow: 0 16px 48px #0009, 0 2px 8px #0006;
+  font: 14px/1.5 system-ui, -apple-system, sans-serif;
+}
+.twitter-token-menu-label { padding: 8px 9px 5px; color: #a1a1aa; font-size: 12px; font-weight: 550; }
+.twitter-token-menu-search {
+  box-sizing: border-box; width: calc(100% - 12px); margin: 5px 6px 8px;
+  min-height: 36px; border: 1px solid #3f3f46; border-radius: 7px;
+  background: #262626; color: #fafafa; padding: 6px 10px;
+  font: inherit; font-size: 16px; outline: none;
+}
+.twitter-token-menu-search:focus { border-color: #a78bfa; }
+.twitter-token-menu-item {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; width: 100%; min-height: 38px; padding: 7px 9px;
+  border: 0; border-radius: 6px; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.twitter-token-menu-item:hover, .twitter-token-menu-item:focus-visible { background: #353535; outline: none; }
+.twitter-token-menu-item[aria-checked="true"] { color: #c4b5fd; }
+.twitter-token-menu-shortcut { color: #a1a1aa; font-size: 11px; white-space: nowrap; }
+.twitter-token-menu-separator { height: 1px; margin: 5px -5px; background: #303036; }
 `;
 let editorStyle: HTMLStyleElement | undefined;
 function ensureEditorStyles() {
@@ -281,6 +182,7 @@ export function createTwitterSearchEditor(
       if (current !== value) view.dispatch({ changes: { from: 0, to: current.length, insert: value } });
     },
     destroy() {
+      dismissMenu?.();
       view.destroy();
     },
   };
@@ -394,6 +296,7 @@ function showTokenMenu(
         selection: { anchor: token.start + value.length },
       });
     close();
+    view.focus();
   };
   const render = () => {
     results.replaceChildren();
@@ -450,6 +353,7 @@ function showTokenMenu(
   render();
   position();
   requestAnimationFrame(() => {
+    if (!panel.isConnected) return;
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("keydown", keyboard, true);
     window.addEventListener("resize", position);
