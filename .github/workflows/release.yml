@@ -18,7 +18,7 @@ on:
       skip_tests:
         description: "Ignorar testes no deploy manual (build continua obrigatório)"
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
