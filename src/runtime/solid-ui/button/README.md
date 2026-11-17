@@ -119,3 +119,7 @@ The Button gallery now includes light/dark preview selection and live color pick
 ## Visual reset: shadcn-inspired density
 
 After mobile screenshots revealed oversized native controls, unbalanced dropdown surfaces and overly prominent badges, the Studio uses compact consistent select/input/color/range sizing, a restrained zinc surface palette, tighter cards and mobile spacing. Button defaults are 36px/8px with neutral count pills, and SolidDropdown uses a smaller zinc popover with CSS theme hooks (`--rod-menu-bg`, `--rod-menu-fg`, `--rod-menu-border`). This is a first corrective pass, not a claim of full shadcn parity. Build and Safari screenshot comparison are required.
+
+## Studio selects are shared Rod UI components
+
+The Button Studio now uses `StudioSelect`, a thin adapter around the existing `DropdownButton`/`SolidDropdown` stack, for theme, preset, variant and size. This removes iOS native select pickers from the Button panel without adding a second menu implementation. Selected values show a checkmark in the dropdown. The CSS-copy action uses the shared Button, and the settings grid has two columns on narrow screens. Remaining work: replace native sliders/color controls with dedicated shared Field/Slider/ColorPicker, align menu/inspector previews and verify the build/Safari.

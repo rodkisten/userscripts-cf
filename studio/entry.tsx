@@ -418,6 +418,26 @@ document.querySelector("main.content")?.append(buttonStudio);
 const buttonStyle = document.createElement("style");
 buttonStyle.textContent = buttonCss + "\n" + badgeCss;
 document.head.append(buttonStyle);
+type StudioChoice = { value: string; label: string };
+function StudioSelect(props: { label: string; value: string; choices: readonly StudioChoice[]; onChange: (value: string) => void }) {
+  const selected = () => props.choices.find((item) => item.value === props.value)?.label ?? "Personalizado";
+  return (
+    <div class="rod-studio-field">
+      <span class="rod-studio-field-label">{props.label}</span>
+      <DropdownButton
+        variant="outline"
+        size="sm"
+        aria-label={props.label + ": " + selected()}
+        items={props.choices.map((item) => ({
+          label: (item.value === props.value ? "✓  " : "    ") + item.label,
+          onSelect: () => props.onChange(item.value),
+        }))}
+      >
+        {selected()}
+      </DropdownButton>
+    </div>
+  );
+}
 const buttonMount = document.getElementById("buttonStudioMount");
 if (buttonMount) {
   render(() => {
@@ -497,64 +517,17 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
-          <label>
-            Tema{" "}
-            <select value={theme()} onChange={(e) => changeTheme(e.currentTarget.value as "light" | "dark")}>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
-            </select>
-          </label>
+          <StudioSelect label="Tema" value={theme()} choices={[{value:"light",label:"Claro"},{value:"dark",label:"Escuro"}]} onChange={(value) => changeTheme(value as "light" | "dark")} />
           <label>Fundo secondary <input type="color" value={secondaryBg()} onInput={(e) => setSecondaryBg(e.currentTarget.value)} /></label>
           <label>Texto secondary <input type="color" value={secondaryFg()} onInput={(e) => setSecondaryFg(e.currentTarget.value)} /></label>
           <label>Foco <input type="color" value={focusColor()} onInput={(e) => setFocusColor(e.currentTarget.value)} /></label>
-          <label>
-            Preset{" "}
-            <select
-              value={preset()}
-              onChange={(e) => {
-                const value = e.currentTarget.value;
-                if (value) applyPreset(value as "compact" | "default" | "touch");
-              }}
-            >
-              <option value="">Personalizado</option>
-              <option value="compact">Compacto</option>
-              <option value="default">Padrão</option>
-              <option value="touch">Touch</option>
-            </select>
-          </label>
-          <button type="button" onClick={() => void exportTokens()}>
-            Copiar CSS
-          </button>
+          <StudioSelect label="Preset" value={preset()} choices={[{value:"",label:"Personalizado"},{value:"compact",label:"Compacto"},{value:"default",label:"Padrão"},{value:"touch",label:"Touch"}]} onChange={(value) => value ? applyPreset(value as "compact" | "default" | "touch") : setPreset("")} />
+          <Button variant="outline" size="sm" onClick={() => void exportTokens()}>Copiar CSS</Button>
           <span role="status" aria-live="polite">
             {copyStatus()}
           </span>
-          <label>
-            Variante{" "}
-            <select
-              value={variant()}
-              onChange={(e) => setVariant(e.currentTarget.value as ReturnType<typeof variant>)}
-            >
-              {(
-                ["default", "secondary", "outline", "ghost", "destructive", "success", "warning"] as const
-              ).map((v) => (
-                <option value={v}>{v}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Tamanho{" "}
-            <select
-              value={size()}
-              onChange={(e) => {
-                setPreset("");
-                setSize(e.currentTarget.value as "sm" | "md" | "lg");
-              }}
-            >
-              <option value="sm">Pequeno</option>
-              <option value="md">Médio</option>
-              <option value="lg">Grande</option>
-            </select>
-          </label>
+          <StudioSelect label="Variante" value={variant()} choices={["default","secondary","outline","ghost","destructive","success","warning"].map((value) => ({value,label:value}))} onChange={(value) => setVariant(value as ReturnType<typeof variant>)} />
+          <StudioSelect label="Tamanho" value={size()} choices={[{value:"sm",label:"Pequeno"},{value:"md",label:"Médio"},{value:"lg",label:"Grande"}]} onChange={(value) => {setPreset("");setSize(value as "sm" | "md" | "lg");}} />
           <label>
             Raio {radius()}px{" "}
             <input
