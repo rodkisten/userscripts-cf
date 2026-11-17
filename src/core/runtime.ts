@@ -128,7 +128,7 @@ export function setupUpdateChecker(
   release: { id: string; version: string; manifestURL: string },
   host: Window & typeof globalThis,
   rod: ReturnType<typeof initializeRodFeatures>,
-  updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null }
+  updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null },
 ) {
   return createUpdateChecker({
     id: release.id,
@@ -163,7 +163,10 @@ export function setupUpdateChecker(
   });
 }
 
-export function createDomEventsEngine(definitionId: string, host: Window & typeof globalThis): DomEventsEngine {
+export function createDomEventsEngine(
+  definitionId: string,
+  host: Window & typeof globalThis,
+): DomEventsEngine {
   const domListeners = new Map<
     EventTarget,
     Map<
@@ -263,7 +266,7 @@ export function createCoreRuntime(
       listeners: Map<string, Set<(value: unknown) => void>>;
       publish: (id: string, value: unknown) => void;
     }) => any;
-  }
+  },
 ) {
   const rod = initializeRodFeatures(host);
   const updaterInstanceRef = { current: null as ReturnType<typeof createUpdateChecker> | null };
@@ -562,9 +565,10 @@ export function createCoreRuntime(
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),
-      gm: typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
-        ? createGMFeature(host, definition.id)
-        : undefined,
+      gm:
+        typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
+          ? createGMFeature(host, definition.id)
+          : undefined,
       clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
       db,

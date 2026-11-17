@@ -42,10 +42,10 @@ export function createRuntime(
             try {
               // Simulação/exemplo de renderização React 18+ em Shadow DOM
               // (Dependendo de como o ecossistema React do projeto consome renderização)
-              const ReactDomClient = (React as any).version?.startsWith("18") 
-                ? require("react-dom/client") 
+              const ReactDomClient = (React as any).version?.startsWith("18")
+                ? require("react-dom/client")
                 : null;
-              
+
               if (ReactDomClient) {
                 const root = ReactDomClient.createRoot(mountPoint);
                 root.render(component);

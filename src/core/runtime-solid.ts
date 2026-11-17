@@ -100,7 +100,8 @@ export function createRuntime(
                 target: ensureUIRoot(),
                 onError: (error: unknown) => {
                   captureDiagnostic(error, SOLID_REACTIVE_SOURCE, definition.id, host);
-                  if (typeof options.onError === "function") (options.onError as (err: unknown) => void)(error);
+                  if (typeof options.onError === "function")
+                    (options.onError as (err: unknown) => void)(error);
                 },
               });
             } catch (error) {
