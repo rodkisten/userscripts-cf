@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, Show, onCleanup, onSettled } from "solid-js";
+import { createMemo, createSignal, For, Show, onCleanup, onSettled } from "solid-js";
 import Fuse from "fuse.js";
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { ControlOption } from "./options";
@@ -90,7 +90,9 @@ export function Combobox(props: ComboboxProps) {
             .map((result) => result.item)
         : filterOptions(props.options, query()),
   );
-  createEffect(() => {
+  // Solid 2 evaluates components inside untrack; createEffect requires an
+  // effect scheduler that is unavailable during this render phase.
+  createMemo(() => {
     virtualizer.setOptions({
       count: filtered().length,
       getScrollElement: () => scrollElement ?? null,

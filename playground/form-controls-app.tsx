@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, Show, onCleanup } from "solid-js";
+import { createMemo, createSignal, For, Show, onCleanup } from "solid-js";
 import { EditorState } from "@codemirror/state";
 import { EditorView, drawSelection } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
@@ -40,7 +40,7 @@ const options: ControlOption[] = [
 function JsxPreview(props: { code: string }) {
   let host!: HTMLDivElement;
   let view: EditorView | undefined;
-  createEffect(() => {
+  createMemo(() => {
     const code = props.code;
     if (!view) {
       view = new EditorView({
