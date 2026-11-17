@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { format } from "prettier";
 import { execFileSync } from "node:child_process";
-import { build as viteBuild } from "vite";
-import solidPlugin from "@solidjs/vite-plugin";
+import { build as viteBuild, mergeConfig } from "vite";
+import baseViteConfig from "../vite.config.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
@@ -27,10 +27,9 @@ assets["playground/form-controls.html"] = await fs.readFile(
 );
 // Compile the actual SolidJS components instead of shipping a separate HTML mock.
 const playgroundDir = path.join(dist, "form-controls-playground");
-await viteBuild({
+await viteBuild(mergeConfig(baseViteConfig, {
   configFile: false,
   root,
-  plugins: [solidPlugin()],
   build: {
     outDir: playgroundDir,
     emptyOutDir: true,
@@ -43,7 +42,7 @@ await viteBuild({
     },
     minify: true,
   },
-});
+}));
 await viteBuild({
   configFile: false,
   root,
