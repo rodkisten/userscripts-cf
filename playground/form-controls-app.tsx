@@ -82,7 +82,7 @@ function TwitterSearchEditor(props: { value: string; onChange(value: string): vo
     if (!host.isConnected) return;
     editor = createTwitterSearchEditor(host, props.value, props.onChange);
   });
-  createMemo(() => editor?.setValue(props.value));
+  createMemo(() => { const value = props.value; editor?.setValue(value); });
   onCleanup(() => editor?.destroy());
   return <div ref={host} aria-label="Editor de busca do X com filtros interativos" />;
 }

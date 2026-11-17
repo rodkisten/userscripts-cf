@@ -10,8 +10,8 @@ const demoLists: TwitterList[] = [
 
 /** Replace demoLists with the authenticated X lists provider in the userscript. */
 class TokenWidget extends WidgetType {
-  constructor(readonly value: string, readonly lists: readonly TwitterList[]) { super(); }
-  eq(other: TokenWidget) { return this.value === other.value && this.lists === other.lists; }
+  constructor(readonly value: string, readonly start: number, readonly lists: readonly TwitterList[]) { super(); }
+  eq(other: TokenWidget) { return this.value === other.value && this.start === other.start && this.lists === other.lists; }
   toDOM(view: EditorView) {
     const pill = document.createElement("span");
     pill.className = "twitter-cm-pill";
@@ -48,7 +48,7 @@ class TokenWidget extends WidgetType {
     return pill;
   }
   private replace(view: EditorView, next: string) {
-    const token = parseTwitterSearch(view.state.doc.toString()).find((entry) => entry.raw === this.value);
+    const token = parseTwitterSearch(view.state.doc.toString()).find((entry) => entry.start === this.start && entry.raw === this.value);
     if (!token) return;
     const from = token.start;
     const to = token.end;
@@ -96,7 +96,7 @@ function computeDecorations(source: string, lists: readonly TwitterList[]) {
   const builder = new RangeSetBuilder<Decoration>();
   for (const token of parseTwitterSearch(source)) {
     if (token.kind !== "operator" && token.kind !== "negative") continue;
-    builder.add(token.start, token.end, Decoration.replace({ widget: new TokenWidget(token.raw, lists) }));
+    builder.add(token.start, token.end, Decoration.replace({ widget: new TokenWidget(token.raw, token.start, lists) }));
   }
   return builder.finish();
 }
