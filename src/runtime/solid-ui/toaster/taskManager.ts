@@ -277,9 +277,10 @@ export async function showPromiseToast<T>(
   const loadingOpts =
     typeof descriptor.loading === "string" ? { title: descriptor.loading } : (descriptor.loading ?? {});
 
+  const { success: _success, error: _error, loading: _loading, ...taskDescriptor } = descriptor;
   const task = createTaskController(
     {
-      ...descriptor,
+      ...taskDescriptor,
       ...loadingOpts,
       title: loadingOpts.title ?? descriptor.title ?? "Loading...",
       run: async (ctx) => (typeof input === "function" ? input(ctx) : input),

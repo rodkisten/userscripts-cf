@@ -95,12 +95,12 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
     multiLoading: (d) => toast.multiLoading(merge(d)),
     confirm: (d) => toast.confirm(merge(d)),
     prompt: (d) => toast.prompt(merge(d)),
-    select: (d) => toast.select(merge(d)),
+    select: <T = unknown>(d: SelectOptions<T> = {}) => toast.select<T>({ ...defaults, ...d, scope: name }),
     picker: (d) => toast.picker(merge(d)),
     undo: (d) => toast.undo(merge(d)),
     task: (d) => toast.task(merge(d)),
-    promise: (inp, d) => toast.promise(inp, merge(d)),
-    retry: (d) => toast.retry(merge(d)),
+    promise: <T>(inp: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>), d: PromiseDescriptor<T> = {}) => toast.promise<T>(inp, { ...defaults, ...d, scope: name }),
+    retry: <T>(d: RetryDescriptor<T>) => toast.retry<T>({ ...defaults, ...d, scope: name }),
     group: (d) => toast.group(merge(d)),
     dismissAll: (immediate = false) => {
       const { toasts } = useToasterState();
