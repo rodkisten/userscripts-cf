@@ -103,3 +103,7 @@ The shared `SolidDropdown` now prevents duplicate menus per trigger (reopening t
 ## Focus and touch refinement
 
 Keyboard handling is scoped to focused dropdown descendants; Tab dismisses without stealing focus. Mobile viewport resize/scroll events reposition the menu when the virtual keyboard or zoom changes. Buttons have touch-action manipulation and hover/pressed feedback. Build and Safari checks remain pending for this commit.
+
+## Button interaction polish
+
+The button now transitions pressed/hover feedback smoothly and suppresses pressed transforms during loading and disabled states. Spinner sizing is stable in flex layouts; badge decoration is hidden from screen readers to avoid duplicate spoken counts when the control has an accessible name. `prefers-reduced-motion` disables the press translation. This change requires a fresh build and real-device verification.
