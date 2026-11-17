@@ -18,9 +18,14 @@ export async function bundleRuntime(root, definitions, options = {}) {
        const disposeRuntime = api.dispose.bind(api);
        api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
     : "";
+  const frameworks = new Set(definitions.map((item) => item.framework || "solid"));
+  if (frameworks.size > 1) throw new Error("Mixed React/Solid definitions require separate runtime bundles");
+  const framework = [...frameworks][0] || "solid";
+  if (!["react", "solid"].includes(framework)) throw new Error(`Unsupported framework: ${framework}`);
+  const runtimeEntry = framework === "react" ? "runtime-react.ts" : "runtime-solid.ts";
   const entryCode = `${imports.join("\n")}
     ${dockImport}
-    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
+    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core", runtimeEntry))};
     export function boot(bridge) {
       const api = createRuntime([${entries.join(",")}], bridge, window, ${JSON.stringify(options.release || null)});
       ${dockBoot}

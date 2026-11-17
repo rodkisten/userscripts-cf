@@ -114,6 +114,7 @@ export default [
   },
   {
     id: "example-site",
+    framework: "solid",
     unified: false,
     name: "Example · Demonstração modular",
     entry: "src/userscripts/example-site/index.js",
