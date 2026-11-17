@@ -99,7 +99,10 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
     picker: (d) => toast.picker(merge(d)),
     undo: (d) => toast.undo(merge(d)),
     task: (d) => toast.task(merge(d)),
-    promise: <T>(inp: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>), d: PromiseDescriptor<T> = {}) => toast.promise<T>(inp, { ...defaults, ...d, scope: name }),
+    promise: <T>(
+      inp: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>),
+      d: PromiseDescriptor<T> = {},
+    ) => toast.promise<T>(inp, { ...defaults, ...d, scope: name }),
     retry: <T>(d: RetryDescriptor<T>) => toast.retry<T>({ ...defaults, ...d, scope: name }),
     group: (d) => toast.group(merge(d)),
     dismissAll: (immediate = false) => {
