@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";
+import { createMemo, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
 import { QueryObserver } from "@tanstack/query-core";
 import type { QueryClient } from "@tanstack/query-core";
 import { getFormControlsQueryClient } from "./query-client";
@@ -37,13 +37,18 @@ export function createAsyncOptions(
   let revision = 0;
   const instanceKey = ["form-controls", "suggestions", Math.random().toString(36).slice(2)];
 
-  createEffect(() => {
+  // Solid 2 invokes components under untrack during rendering. createEffect
+  // can access a missing effect scheduler there; a memo tracks dependencies
+  // synchronously without requiring that scheduler.
+  createMemo(() => {
     const currentSource = source();
     const currentQuery = query();
     const enabled = config.enabled?.() ?? true;
     const current = ++revision;
-    unsubscribe?.();
-    observer?.destroy();
+    untrack(() => {
+      unsubscribe?.();
+      observer?.destroy();
+    });
     observer = new QueryObserver<ControlOption[]>(client, {
       queryKey: [...(config.queryKey ?? instanceKey), currentQuery],
       enabled,
@@ -54,16 +59,18 @@ export function createAsyncOptions(
         return normalizeOptions(result);
       },
     });
-    unsubscribe = observer.subscribe((result) => {
-      if (current !== revision) return;
-      setOptions(result.data ?? []);
-      setLoading(result.isPending && result.fetchStatus === "fetching");
-      setError(result.error ?? null);
+    untrack(() => {
+      unsubscribe = observer!.subscribe((result) => {
+        if (current !== revision) return;
+        setOptions(result.data ?? []);
+        setLoading(result.isPending && result.fetchStatus === "fetching");
+        setError(result.error ?? null);
+      });
+      const initial = observer!.getCurrentResult();
+      setOptions(initial.data ?? []);
+      setLoading(initial.isPending && initial.fetchStatus === "fetching");
+      setError(initial.error ?? null);
     });
-    const initial = observer.getCurrentResult();
-    setOptions(initial.data ?? []);
-    setLoading(initial.isPending && initial.fetchStatus === "fetching");
-    setError(initial.error ?? null);
   });
 
   onCleanup(() => {
