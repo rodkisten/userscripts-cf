@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - "**/*.md"
       - ".github/ISSUE_TEMPLATE/**"
+      - "playground/**"
+      - ".github/workflows/playground.yml"
   workflow_dispatch:
     inputs:
       bump:
@@ -18,16 +20,16 @@ on:
       skip_tests:
         description: "Ignorar testes no deploy manual (build continua obrigatório)"
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
   contents: write
 
-# Only one release can bump and publish at a time. Do not cancel a release midway.
+# Only the newest push release should continue. Manual releases use a separate group.
 concurrency:
-  group: userscripts-releases
-  cancel-in-progress: false
+  group: userscripts-releases-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.run_id) || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
   release:

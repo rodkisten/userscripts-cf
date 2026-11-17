@@ -1,0 +1,56 @@
+name: Deploy playground
+run-name: "Playground · ${{ github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "playground/**"
+      - "src/runtime/solid-ui/**"
+      - "build/hosting.mjs"
+      - "build/design-system.mjs"
+      - "build/deploy-cloudflare.mjs"
+      - "hosting/**"
+      - "vite.config.js"
+      - ".github/workflows/playground.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: userscripts-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      # Build is necessary to generate the userscript assets embedded in the Worker.
+      # No lint, typecheck, unit tests, version bump or GitHub release.
+      - name: Build assets
+        run: npm run build
+      - name: Prepare preview installers
+        run: node build/preview-userscripts.mjs
+      - name: Bundle playground and hosting
+        env:
+          USERSCRIPTS_PREVIEW: "1"
+        run: node build/hosting.mjs
+      - name: Deploy Cloudflare Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run deploy:cloudflare
+      - name: Summary
+        if: success()
+        run: |
+          echo "### Playground deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://userscripts.migos.club/playground/form-controls.html" >> "$GITHUB_STEP_SUMMARY"
