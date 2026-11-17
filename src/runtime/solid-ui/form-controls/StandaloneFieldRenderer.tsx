@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js";
 import type { FormField, FieldContext } from "./fields";
 import { Combobox } from "./Combobox";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
@@ -56,7 +57,6 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           "month",
           "week",
           "color",
-          "range",
           "hidden",
         ].includes(kind())}
       >
@@ -116,21 +116,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         />
       </Show>
       <Show when={kind() === "select" && !prop<boolean>("searchable")}>
-        <select
-          {...common()}
-          value={stringValue()}
-          onChange={(e) => {
-            if (!readonly()) commit(e.currentTarget.value);
-          }}
-        >
-          <For each={choices()}>
-            {(option) => (
-              <option value={option.value} disabled={option.disabled}>
-                {option.label}
-              </option>
-            )}
-          </For>
-        </select>
+        <Select id={id()} name={field().name} options={choices()} value={stringValue()} disabled={disabled() || readonly()} onChange={commit} />
       </Show>
       <Show when={kind() === "multiselect" && !!prop<boolean>("searchable")}>
         <Combobox
@@ -168,17 +154,13 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         </div>
       </Show>
       <Show when={kind() === "checkbox" || kind() === "switch"}>
-        <label>
-          <input
-            {...common()}
-            type="checkbox"
-            role={kind() === "switch" ? "switch" : undefined}
-            checked={!!value()}
-            disabled={disabled() || readonly()}
-            onChange={(e) => commit(e.currentTarget.checked)}
-          />
-          {field().label ?? field().name}
+        <label class={styles.booleanRow}>
+          <span>{field().label ?? field().name}</span>
+          {kind() === "switch" ? <ToggleSwitch id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} /> : <Checkbox id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} />}
         </label>
+      </Show>
+      <Show when={kind() === "range"}>
+        <Slider id={id()} name={field().name} value={Number(value() ?? prop<number>("min", 0))} min={prop<number>("min", 0)} max={prop<number>("max", 100)} step={prop<number>("step", 1)} disabled={disabled() || readonly()} onChange={commit} />
       </Show>
       <Show when={kind() === "radio" || kind() === "checkbox-group"}>
         <div role="group" aria-label={field().label ?? field().name}>

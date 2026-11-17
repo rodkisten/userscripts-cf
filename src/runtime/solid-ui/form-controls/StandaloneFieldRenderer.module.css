@@ -10,7 +10,7 @@
   font-size: 13px;
   font-weight: 600;
 }
-.field input:not([type="checkbox"]):not([type="radio"]),
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .field textarea,
 .field select {
   width: 100%;
@@ -44,3 +44,5 @@
 .field[data-disabled="true"] {
   opacity: 0.6;
 }
+
+.booleanRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
