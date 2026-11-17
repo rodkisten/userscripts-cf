@@ -1,11 +1,6 @@
 import { createEffect, createMemo, createSignal, For, Show, onCleanup, onSettled } from "solid-js";
 import Fuse from "fuse.js";
-import {
-  Virtualizer,
-  elementScroll,
-  observeElementRect,
-  observeElementOffset,
-} from "@tanstack/virtual-core";
+import { Virtualizer, elementScroll, observeElementRect, observeElementOffset } from "@tanstack/virtual-core";
 import type { ControlOption } from "./options";
 import { filterOptions, groupOptions } from "./options";
 import type { OptionsSource } from "./options";
