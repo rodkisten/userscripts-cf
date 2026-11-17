@@ -39,8 +39,27 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+      - name: Restore installed dependencies
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: pages-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'package.json') }}
+      - name: Install dependencies (cache miss)
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
+      - name: Verify dependency cache
+        run: |
+          set -euo pipefail
+          test -f node_modules/vite/package.json
+          test -f node_modules/@solidjs/vite-plugin/package.json
+          test -f node_modules/@solidjs/compiler/package.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const plugin = JSON.parse(fs.readFileSync('node_modules/@solidjs/vite-plugin/package.json', 'utf8'));
+          const compiler = JSON.parse(fs.readFileSync('node_modules/@solidjs/compiler/package.json', 'utf8'));
+          console.log('Solid Vite plugin:', plugin.version, 'Solid compiler:', compiler.version);
+          NODE
       # Playground preview is independent of lint, typecheck and release checks.
       # Cache only the userscript distribution, not the playground assets.
       # UI-only changes can reuse these bundles without running the expensive
