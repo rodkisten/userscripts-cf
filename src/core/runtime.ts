@@ -70,6 +70,13 @@ export const Z_INDEX_MAX = "2147483647";
 // ============================================================================
 // Tipos e Interfaces Compartilhadas (Base)
 // ============================================================================
+export interface ScriptContext {
+  id: string;
+  signal: AbortSignal;
+  events: { shared: any };
+  [key: string]: any;
+}
+
 export interface ScriptDefinition {
   id: string;
   name: string;
@@ -683,7 +690,12 @@ export function createCoreRuntime(
       },
     };
 
-    return Object.assign(baseContext, specificContext);
+    const context = Object.assign(baseContext, specificContext);
+    if (typeof specificContext.__attachContext === "function") {
+      specificContext.__attachContext(context);
+      delete context.__attachContext;
+    }
+    return context;
   }
 
   async function reconcile(): Promise<void> {

@@ -40,6 +40,7 @@ export function createRuntime(
       }
     },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, queryService }) => {
+      let specificContextRef: import("./runtime.js").ScriptContext | undefined;
       const solidQueryService = Object.freeze({
         ...queryService,
         createAsyncOptions(
@@ -52,6 +53,9 @@ export function createRuntime(
       });
 
       return {
+        __attachContext(context: import("./runtime.js").ScriptContext) {
+          specificContextRef = context;
+        },
         query: solidQueryService,
         store<T extends object>(initial: T) {
           if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
@@ -90,7 +94,7 @@ export function createRuntime(
             try {
               const scopedComponent = () =>
                 createComponent(RuntimeProvider, {
-                  context: specificContextRef, // Referência injetada ou adaptada
+                  context: specificContextRef!,
                   get children() {
                     return typeof component === "function" ? (component as () => unknown)() : component;
                   },
@@ -116,6 +120,4 @@ export function createRuntime(
     },
   });
 
-  // Variável de apoio para fechamento de escopo se necessário
-  let specificContextRef: any = null;
 }

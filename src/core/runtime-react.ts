@@ -1,4 +1,6 @@
-import React from "react";
+import { createElement, type ReactElement } from "react";
+import { createRoot } from "react-dom/client";
+import { RuntimeProvider } from "./runtime-context-react.js";
 import { createCoreRuntime, ScriptDefinition, RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 
@@ -12,8 +14,11 @@ export function createRuntime(
 ): RuntimeAPI {
   return createCoreRuntime(definitions, bridge, host, release, {
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot }) => {
+      let scriptContext: import("./runtime.js").ScriptContext | undefined;
       return {
-        // Implementações exclusivas e ganchos específicos para React (se houver hooks, context, etc.)
+        __attachContext(context: import("./runtime.js").ScriptContext) {
+          scriptContext = context;
+        },
         ui: Object.freeze({
           get root() {
             return ensureUIRoot();
@@ -32,7 +37,7 @@ export function createRuntime(
             onDispose(() => node.remove());
             return node;
           },
-          mountReact(component: React.ReactElement, container?: HTMLElement) {
+          mountReact(component: ReactElement, container?: HTMLElement) {
             // Exemplo de integração nativa com ReactDOM para montagem em ShadowRoot
             if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
             const targetRoot = ensureUIRoot();
@@ -40,27 +45,15 @@ export function createRuntime(
             if (!container) targetRoot.append(mountPoint);
 
             try {
-              // Simulação/exemplo de renderização React 18+ em Shadow DOM
-              // (Dependendo de como o ecossistema React do projeto consome renderização)
-              const ReactDomClient = (React as any).version?.startsWith("18")
-                ? require("react-dom/client")
-                : null;
-
-              if (ReactDomClient) {
-                const root = ReactDomClient.createRoot(mountPoint);
-                root.render(component);
-                onDispose(() => {
-                  root.unmount();
-                  if (!container) mountPoint.remove();
-                });
-              } else {
-                const ReactDOM = require("react-dom");
-                ReactDOM.render(component, mountPoint);
-                onDispose(() => {
-                  ReactDOM.unmountComponentAtNode(mountPoint);
-                  if (!container) mountPoint.remove();
-                });
-              }
+              if (!scriptContext) throw new Error("React runtime context not initialized");
+              const root = createRoot(mountPoint);
+              root.render(createElement(RuntimeProvider, { context: scriptContext }, component));
+              const cleanup = () => {
+                root.unmount();
+                if (!container) mountPoint.remove();
+              };
+              onDispose(cleanup);
+              return cleanup;
             } catch (error) {
               captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
               throw error;
