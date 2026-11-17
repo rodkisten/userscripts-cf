@@ -111,7 +111,7 @@ if (isPreview) {
     await fs.mkdir(path.dirname(destination), { recursive: true });
     await fs.writeFile(destination, content);
   }
-  await fs.writeFile(path.join(pages, "CNAME"), "userscripts-playground.migos.club\\n");
+  await fs.writeFile(path.join(pages, "CNAME"), "userscripts-playground.migos.club\n");
   await fs.writeFile(path.join(pages, ".nojekyll"), "");
   console.log("Prepared static GitHub Pages preview at dist/pages.");
 }
