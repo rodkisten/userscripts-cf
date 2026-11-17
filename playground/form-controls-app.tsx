@@ -3,6 +3,7 @@ import { css as comboboxCSS } from "../src/runtime/solid-ui/form-controls/Combob
 import { css as controlsCSS } from "../src/runtime/solid-ui/form-controls/Controls.module.css";
 import { css as fieldRendererCSS } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer.module.css";
 import { EditorState } from "@codemirror/state";
+import { createTwitterSearchEditor } from "./twitter-search-editor";
 import { EditorView, drawSelection } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -72,6 +73,18 @@ function JsxPreview(props: { code: string }) {
   });
   onCleanup(() => view?.destroy());
   return <div ref={host} aria-label="Código JSX com syntax highlighting" />;
+}
+
+function TwitterSearchEditor(props: { value: string; onChange(value: string): void }) {
+  let host!: HTMLDivElement;
+  let editor: ReturnType<typeof createTwitterSearchEditor> | undefined;
+  queueMicrotask(() => {
+    if (!host.isConnected) return;
+    editor = createTwitterSearchEditor(host, props.value, props.onChange);
+  });
+  createMemo(() => editor?.setValue(props.value));
+  onCleanup(() => editor?.destroy());
+  return <div ref={host} aria-label="Editor de busca do X com filtros interativos" />;
 }
 
 function App() {
@@ -753,66 +766,9 @@ function App() {
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
-          <label for="raw-inline">Consulta editável</label>
-          <div class="twitter-query-editor" role="group" aria-label="Editor de busca com filtros interativos">
-            <For each={parseTwitterSearch(raw())}>
-              {(token, index) => (
-                <Show
-                  when={token.kind === "operator" || token.kind === "negative"}
-                  fallback={<span class="twitter-plain-token">{token.value}</span>}
-                >
-                  <span class="twitter-query-pill">
-                    <Show
-                      when={token.value.startsWith("list:")}
-                      fallback={<span class="twitter-pill-label">{token.value}</span>}
-                    >
-                      <select
-                        aria-label="Selecionar lista do X"
-                        value={token.value.slice(5)}
-                        onChange={(event) =>
-                          setRaw(replaceTwitterToken(raw(), token, "list:" + event.currentTarget.value))
-                        }
-                      >
-                        <option value={token.value.slice(5)}>{token.value}</option>
-                        <option value="123456789">Lista de tecnologia (exemplo)</option>
-                        <option value="987654321">Lista de vídeos (exemplo)</option>
-                      </select>
-                    </Show>
-                    <button
-                      type="button"
-                      aria-label={`Remover ${token.value}`}
-                      onClick={() => setRaw(removeTwitterToken(raw(), token))}
-                    >
-                      ×
-                    </button>
-                  </span>
-                </Show>
-              )}
-            </For>
-            <input
-              id="raw-inline"
-              class="twitter-query-input"
-              aria-label="Adicionar termos à consulta"
-              placeholder="Adicionar termos ou filtros…"
-              value={tokenDraft()}
-              onInput={(event) => setTokenDraft(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === "Tab") {
-                  if (!tokenDraft().trim()) return;
-                  event.preventDefault();
-                  setRaw(appendTwitterToken(raw(), tokenDraft().trim()));
-                  setTokenDraft("");
-                }
-              }}
-              onBlur={() => {
-                if (tokenDraft().trim()) {
-                  setRaw(appendTwitterToken(raw(), tokenDraft().trim()));
-                  setTokenDraft("");
-                }
-              }}
-            />
-          </div>
-          <small>Digite um termo e pressione Enter. Filtros e listas ficam dentro do editor.</small>
+          <label>Consulta editável</label>
+          <TwitterSearchEditor value={raw()} onChange={setRaw} />
+          <small>Cursor livre entre termos. Filtros são pills removíveis; list: abre o seletor.</small>
           <div class="actions">
             <button type="button" onClick={() => setRaw([...selected(), ...tags()].join(" "))}>
               Gerar com filtros e tags
