@@ -3,6 +3,7 @@ import { build } from "vite";
 import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
 import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
+import { reactJSX } from "./react-jsx.mjs";
 
 export async function bundleRuntime(root, definitions, options = {}) {
   const virtualID = "\0userscripts-cf-entry";
@@ -73,6 +74,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     logLevel: "warn",
     define: featureDefines,
     plugins: [
+      reactJSX(definitions.filter((item) => item.framework === "react").map((item) => path.resolve(root, item.entry))),
       instrumentErrorsPlugin(root),
       {
         name: "userscripts-cf-entry",
