@@ -137,6 +137,8 @@ jobs:
           set -euo pipefail
           test -s dist/pages/index.html
           test -s dist/pages/manifest.json
+          test -s dist/pages/playground/instagram-bookmark.html
+          test -s dist/pages/playground/instagram-bookmark.js
           test -s dist/pages/playground/form-controls.html
           test -s dist/pages/playground/form-controls.js
           test -s dist/pages/playground/form-controls.js.map
