@@ -6,12 +6,12 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
-const baseURL = manifest.baseURL.replace(/\/$/, "");
+const baseURL = (process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts-playground.migos.club").replace(/\/$/, "");
 const icon =
   '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="24" fill="#09090b"/><rect x="7" y="7" width="114" height="114" rx="18" fill="none" stroke="#71717a" stroke-width="3"/><text x="64" y="77" text-anchor="middle" font-family="Arial,sans-serif" font-size="39" font-weight="bold" fill="#fff">PRE</text></svg>';
 await fs.mkdir(path.join(dist, "icons"), { recursive: true });
 await fs.writeFile(path.join(dist, "icons", "preview.svg"), icon);
-const preview = { ...manifest, channel: "preview", scripts: [] };
+const preview = { ...manifest, baseURL, channel: "preview", scripts: [] };
 for (const item of manifest.scripts) {
   const file = item.id + ".preview.user.js";
   const metaFile = item.id + ".preview.meta.js";
