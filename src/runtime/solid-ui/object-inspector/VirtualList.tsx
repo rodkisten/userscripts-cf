@@ -132,48 +132,48 @@ export function VirtualList(props: VirtualListProps) {
   // The DOM ref exists only after mounting. Solid 2 effects are not a
   // two-argument (source, callback) API and can require an unavailable scheduler.
   onSettled(() => {
-      if (typeof ResizeObserver === "function") {
-        rowObserver = new ResizeObserver((entries) => {
-          if (!bodyRef) return;
-          const anchorIndex = findIndexAtOffset(bodyRef.scrollTop);
-          const anchorDelta = bodyRef.scrollTop - getOffsetFor(anchorIndex);
-          let changed = false;
+    if (typeof ResizeObserver === "function") {
+      rowObserver = new ResizeObserver((entries) => {
+        if (!bodyRef) return;
+        const anchorIndex = findIndexAtOffset(bodyRef.scrollTop);
+        const anchorDelta = bodyRef.scrollTop - getOffsetFor(anchorIndex);
+        let changed = false;
 
-          for (const entry of entries) {
-            const idx = observedRows.get(entry.target);
-            if (idx === undefined) continue;
-            const h = getMeasuredHeight(entry.target, entry);
-            if (Math.abs(heights[idx] - h) > 1) {
-              heights[idx] = h;
-              changed = true;
-            }
+        for (const entry of entries) {
+          const idx = observedRows.get(entry.target);
+          if (idx === undefined) continue;
+          const h = getMeasuredHeight(entry.target, entry);
+          if (Math.abs(heights[idx] - h) > 1) {
+            heights[idx] = h;
+            changed = true;
           }
+        }
 
-          if (changed) {
-            offsetsDirty = true;
-            const nextScrollTop = getOffsetFor(anchorIndex) + anchorDelta;
-            if (Math.abs(bodyRef.scrollTop - nextScrollTop) > 1) {
-              bodyRef.scrollTop = nextScrollTop;
-            }
-            scheduleUpdate(true);
+        if (changed) {
+          offsetsDirty = true;
+          const nextScrollTop = getOffsetFor(anchorIndex) + anchorDelta;
+          if (Math.abs(bodyRef.scrollTop - nextScrollTop) > 1) {
+            bodyRef.scrollTop = nextScrollTop;
           }
-        });
-
-        bodyObserver = new ResizeObserver((entries) => {
-          const rect = entries[0]?.contentRect;
-          const width = Math.round(rect?.width ?? bodyRef.clientWidth);
-          const height = Math.round(rect?.height ?? bodyRef.clientHeight);
-          if (width === lastBodyWidth && height === lastBodyHeight) return;
-          lastBodyWidth = width;
-          lastBodyHeight = height;
           scheduleUpdate(true);
-        });
+        }
+      });
 
-        bodyObserver.observe(bodyRef);
-      }
+      bodyObserver = new ResizeObserver((entries) => {
+        const rect = entries[0]?.contentRect;
+        const width = Math.round(rect?.width ?? bodyRef.clientWidth);
+        const height = Math.round(rect?.height ?? bodyRef.clientHeight);
+        if (width === lastBodyWidth && height === lastBodyHeight) return;
+        lastBodyWidth = width;
+        lastBodyHeight = height;
+        scheduleUpdate(true);
+      });
 
-      updateViewport(true);
-      scheduleUpdate(true);
+      bodyObserver.observe(bodyRef);
+    }
+
+    updateViewport(true);
+    scheduleUpdate(true);
   });
 
   onCleanup(() => {
