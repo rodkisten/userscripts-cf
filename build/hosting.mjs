@@ -41,7 +41,8 @@ await viteBuild(
         fileName: () => "form-controls.js",
         cssFileName: "form-controls",
       },
-      minify: true,
+      minify: false,
+      sourcemap: true,
     },
   }),
 );
