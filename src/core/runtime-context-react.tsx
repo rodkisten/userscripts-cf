@@ -7,11 +7,7 @@ const ScriptScope = createContext<ScriptContext | undefined>(undefined);
 export const RuntimeProvider: React.FC<{ context: ScriptContext; children: ReactNode }> = ({
   context,
   children,
-}) => (
-  <ScriptScope.Provider value={context}>
-    {children}
-  </ScriptScope.Provider>
-);
+}) => <ScriptScope.Provider value={context}>{children}</ScriptScope.Provider>;
 
 export function useContext(): ScriptContext {
   const ctx = useReactContext(ScriptScope);
