@@ -39,7 +39,11 @@
   filter: brightness(0.93);
   transform: translateY(1px);
 }
-@media (hover: hover) { .button:not(:disabled):hover { filter: brightness(1.08); } }
+@media (hover: hover) {
+  .button:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+}
 .button:disabled {
   opacity: 0.55;
   filter: none;
@@ -171,7 +175,6 @@
     transform: none !important;
   }
 }
-
 
 @media (prefers-color-scheme: dark) {
   .button {

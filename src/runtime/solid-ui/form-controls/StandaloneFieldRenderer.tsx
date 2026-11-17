@@ -70,9 +70,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           autocomplete={prop<string>("autocomplete")}
           spellcheck={prop<boolean>("spellcheck")}
           autofocus={field().autoFocus}
-          min={"min" in field() ? ((field() as { min?: string | number }).min) : undefined}
-          max={"max" in field() ? ((field() as { max?: string | number }).max) : undefined}
-          step={"step" in field() ? ((field() as { step?: string | number }).step) : undefined}
+          min={"min" in field() ? (field() as { min?: string | number }).min : undefined}
+          max={"max" in field() ? (field() as { max?: string | number }).max : undefined}
+          step={"step" in field() ? (field() as { step?: string | number }).step : undefined}
           readOnly={readonly()}
           onInput={(event) => {
             if (readonly()) return;
@@ -115,7 +115,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         />
       </Show>
       <Show when={kind() === "select" && !prop<boolean>("searchable")}>
-        <Select id={id()} name={field().name} options={choices()} value={stringValue()} disabled={disabled() || readonly()} onChange={commit} />
+        <Select
+          id={id()}
+          name={field().name}
+          options={choices()}
+          value={stringValue()}
+          disabled={disabled() || readonly()}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "multiselect" && !!prop<boolean>("searchable")}>
         <Combobox
@@ -155,15 +162,48 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       <Show when={kind() === "checkbox" || kind() === "switch"}>
         <label class={styles.booleanRow}>
           <span>{field().label ?? field().name}</span>
-          {kind() === "switch" ? <ToggleSwitch id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} /> : <Checkbox id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} />}
+          {kind() === "switch" ? (
+            <ToggleSwitch
+              id={id()}
+              name={field().name}
+              checked={!!value()}
+              disabled={disabled() || readonly()}
+              onChange={commit}
+            />
+          ) : (
+            <Checkbox
+              id={id()}
+              name={field().name}
+              checked={!!value()}
+              disabled={disabled() || readonly()}
+              onChange={commit}
+            />
+          )}
         </label>
       </Show>
       <Show when={kind() === "color"}>
-        <ColorPicker id={id()} name={field().name} value={stringValue()} disabled={disabled()} readonly={readonly()}
-          presets={prop<readonly string[]>("presets")} onChange={commit} aria-label={field().label ?? field().name} />
+        <ColorPicker
+          id={id()}
+          name={field().name}
+          value={stringValue()}
+          disabled={disabled()}
+          readonly={readonly()}
+          presets={prop<readonly string[]>("presets")}
+          onChange={commit}
+          aria-label={field().label ?? field().name}
+        />
       </Show>
       <Show when={kind() === "range"}>
-        <Slider id={id()} name={field().name} value={Number(value() ?? prop<number>("min", 0))} min={prop<number>("min", 0)} max={prop<number>("max", 100)} step={prop<number>("step", 1)} disabled={disabled() || readonly()} onChange={commit} />
+        <Slider
+          id={id()}
+          name={field().name}
+          value={Number(value() ?? prop<number>("min", 0))}
+          min={prop<number>("min", 0)}
+          max={prop<number>("max", 100)}
+          step={prop<number>("step", 1)}
+          disabled={disabled() || readonly()}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "radio" || kind() === "checkbox-group"}>
         <div role="group" aria-label={field().label ?? field().name}>
@@ -213,7 +253,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={kind() === "rating"}>
         <div role="group" aria-label={field().label ?? field().name}>
-          <For each={Array.from({ length: "max" in field() ? ((field() as { max?: number }).max ?? 5) : 5 }, (_, i) => i + 1)}>
+          <For
+            each={Array.from(
+              { length: "max" in field() ? ((field() as { max?: number }).max ?? 5) : 5 },
+              (_, i) => i + 1,
+            )}
+          >
             {(n) => (
               <button
                 type="button"
@@ -283,10 +328,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         {(() => {
           const f = field();
           return "render" in f
-            ? (f as { render: (ctx: TContext, field: typeof f) => import("@solidjs/web").JSX.Element }).render(
-                props.context,
-                f,
-              )
+            ? (
+                f as { render: (ctx: TContext, field: typeof f) => import("@solidjs/web").JSX.Element }
+              ).render(props.context, f)
             : null;
         })()}
       </Show>
