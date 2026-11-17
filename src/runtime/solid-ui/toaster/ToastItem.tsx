@@ -174,9 +174,7 @@ export function ToastItem(props: {
         <Show when={opts().details || opts().error}>
           <details class={styles.detailsBox}>
             <summary class={styles.detailsSummary}>{opts().detailsLabel ?? "Details"}</summary>
-            <pre class={styles.detailsPre}>
-              {errorDetails()}
-            </pre>
+            <pre class={styles.detailsPre}>{errorDetails()}</pre>
           </details>
         </Show>
 
