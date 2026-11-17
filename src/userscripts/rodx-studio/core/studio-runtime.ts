@@ -2,12 +2,13 @@ import type { ScriptContext } from "../../../core/runtime.js";
 import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-storage.js";
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
+import type { StudioConfig as DefaultStudioConfig } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
 
 // ============================================================================
 // Tipos e Interfaces
 // ============================================================================
-export type StudioConfig = ReturnType<typeof createDefaults>["studio"] & {
+export type StudioConfig = DefaultStudioConfig & {
   budgetMs: number;
   scanDelayMs: number;
   maintenanceMs: number;
