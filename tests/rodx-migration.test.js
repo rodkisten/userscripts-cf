@@ -61,6 +61,22 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     if (record.kind === "function") node = declarationsMap.get(record.name);
     else if (record.kind === "effect") node = declarationsMap.get(record.name)?.body.body[0];
     else {
+      // The timer is now module-scoped so the dirty-event handler and reset share one binding.
+      // Audit the declaration and reset explicitly rather than looking for the old initializer assignment.
+      if (record.file === "bootstrap/deck-events.js" && record.name === "databaseSaveTimer") {
+        const declaration = declarationsMap.get("databaseSaveTimer");
+        assert.equal(declaration?.type, "VariableDeclaration");
+        assert.equal(declaration.declarations[0]?.id?.name, "databaseSaveTimer");
+        assert.equal(declaration.declarations[0]?.init, null);
+        const reset = declarationsMap.get("resetDatabaseState");
+        assert.ok(reset?.body?.body?.some((statement) =>
+          statement.expression?.type === "AssignmentExpression" &&
+          statement.expression.left?.name === "databaseSaveTimer" &&
+          statement.expression.right?.type === "Identifier" &&
+          statement.expression.right.name === "undefined"
+        ), "databaseSaveTimer must be reset before initialization");
+        continue;
+      }
       const fn = declarationsMap.get(record.initFunction);
       const assignment = fn.body.body
         .map((statement) => statement.expression)
