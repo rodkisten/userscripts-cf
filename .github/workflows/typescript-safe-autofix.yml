@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   autofix:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_repository.full_name == github.repository)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,12 +105,30 @@ jobs:
           name: typescript-autofix-patch
           path: artifacts/typescript-autofix.patch
           if-no-files-found: error
+      - name: Check Rod Bot configuration
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          APP_ID: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          CLIENT_ID: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$APP_ID" =~ ^[0-9]+$ ]]; then
+            echo '::error::BOT_APP_ID must be the numeric GitHub App ID, not BOT_CLIENT_ID.'
+            echo 'Configure BOT_APP_ID in repository Actions variables or secrets.'
+            exit 1
+          fi
+          if [[ "$PRIVATE_KEY" != *'BEGIN RSA PRIVATE KEY'* && "$PRIVATE_KEY" != *'BEGIN PRIVATE KEY'* ]]; then
+            echo '::error::BOT_PRIVATE_KEY must contain the complete PEM private key generated in GitHub App settings.'
+            exit 1
+          fi
       - name: Authenticate Rod GitHub App
         id: app-token
         if: steps.diagnostics.outputs.has_typescript_errors == 'true' && steps.changes.outputs.changed == 'true'
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID || secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
