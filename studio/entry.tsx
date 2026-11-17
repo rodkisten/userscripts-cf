@@ -1,5 +1,5 @@
 import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
-import { Slider, Switch as RodSwitch, controlsCss } from "../src/runtime/solid-ui/form-controls";
+import { Slider, Switch as RodSwitch, ColorPicker, controlsCss } from "../src/runtime/solid-ui/form-controls";
 import { IconButton, SplitButton } from "../src/runtime/solid-ui/button";
 import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
@@ -523,9 +523,9 @@ if (buttonMount) {
       >
         <div class="flex">
           <StudioSelect label="Tema" value={theme()} choices={[{value:"light",label:"Claro"},{value:"dark",label:"Escuro"}]} onChange={(value) => changeTheme(value as "light" | "dark")} />
-          <label>Fundo secondary <input type="color" value={secondaryBg()} onInput={(e) => setSecondaryBg(e.currentTarget.value)} /></label>
-          <label>Texto secondary <input type="color" value={secondaryFg()} onInput={(e) => setSecondaryFg(e.currentTarget.value)} /></label>
-          <label>Foco <input type="color" value={focusColor()} onInput={(e) => setFocusColor(e.currentTarget.value)} /></label>
+          <label>Fundo secondary <ColorPicker value={secondaryBg()} onChange={setSecondaryBg} aria-label="Fundo secondary" /></label>
+          <label>Texto secondary <ColorPicker value={secondaryFg()} onChange={setSecondaryFg} aria-label="Texto secondary" /></label>
+          <label>Foco <ColorPicker value={focusColor()} onChange={setFocusColor} aria-label="Foco" /></label>
           <StudioSelect label="Preset" value={preset()} choices={[{value:"",label:"Personalizado"},{value:"compact",label:"Compacto"},{value:"default",label:"Padrão"},{value:"touch",label:"Touch"}]} onChange={(value) => value ? applyPreset(value as "compact" | "default" | "touch") : setPreset("")} />
           <Button variant="outline" size="sm" onClick={() => void exportTokens()}>Copiar CSS</Button>
           <span role="status" aria-live="polite">
@@ -546,14 +546,7 @@ if (buttonMount) {
           </label>
           <label>
             Accent{" "}
-            <input
-              type="color"
-              value={accent()}
-              onInput={(e) => {
-                setPreset("");
-                setAccent(e.currentTarget.value);
-              }}
-            />
+            <ColorPicker value={accent()} onChange={(value) => { setPreset(""); setAccent(value); }} aria-label="Accent" presets={["#7c3aed", "#2563eb", "#0d9488", "#dc2626"]} />
           </label>
         </div>
         <div class="flex" style={{ padding: "14px", "border-radius": "12px", background: theme() === "dark" ? "#18171d" : "#f7f7f9", color: theme() === "dark" ? "#fff" : "#211b2a" }}>

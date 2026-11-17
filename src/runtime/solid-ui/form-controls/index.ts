@@ -67,5 +67,5 @@ export type { StandaloneFieldRendererProps } from "./StandaloneFieldRenderer";
 export { getFormControlsQueryClient, disposeFormControlsQueryClient } from "./query-client";
 
 // Reusable runtime controls and Shadow DOM stylesheet
-export { Select, Checkbox, Switch, Slider, controlsCss } from "./Controls";
-export type { SelectProps, BooleanControlProps, SliderProps } from "./Controls";
+export { Select, Checkbox, Switch, Slider, ColorPicker, controlsCss } from "./Controls";
+export type { SelectProps, BooleanControlProps, SliderProps, ColorPickerProps } from "./Controls";

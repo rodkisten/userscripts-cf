@@ -9,7 +9,7 @@ import type {
   CheckboxGroupField,
 } from "../types";
 import { TypeaheadSelect } from "./fields/TypeaheadSelect";
-import { Select, Checkbox, Switch as ToggleSwitch, Slider } from "../../form-controls/Controls";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "../../form-controls/Controls";
 import styles from "../styles/Fields.module.css";
 
 /** Generic variants rendered independently of RodMenu's media/diagnostic extensions.
@@ -289,42 +289,12 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
       <Match when={props.field.type === "color"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "color" }>;
-          const hex = () => {
-            const v = fieldValue();
-            return typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : "#ff7a18";
-          };
-          return (
-            <div class={styles.colorRow}>
-              <input
-                id={controlId()}
-                name={f.name}
-                type="color"
-                class={styles.color}
-                disabled={isDisabled()}
-                value={hex()}
-                onInput={(e) => commit(e.currentTarget.value)}
-              />
-              <Show when={f.presets?.length}>
-                <div class={styles.presets}>
-                  <For each={f.presets}>
-                    {(color) => (
-                      <button
-                        type="button"
-                        class={styles.swatch}
-                        style={{ background: color }}
-                        aria-label={color}
-                        onClick={() => commit(color)}
-                      />
-                    )}
-                  </For>
-                </div>
-              </Show>
-            </div>
-          );
+          return <ColorPicker id={controlId()} name={f.name} value={String(fieldValue() ?? "")}
+            disabled={isDisabled()} presets={f.presets} onChange={commit} aria-label={f.label ?? f.name} />;
         })()}
       </Match>
 
-      <Match when={props.field.type === "file"}>
+            <Match when={props.field.type === "file"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "file" }>;
           return (

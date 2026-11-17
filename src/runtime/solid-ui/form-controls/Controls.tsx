@@ -23,3 +23,24 @@ export function Slider(props: SliderProps) {
     min={props.min ?? 0} max={props.max ?? 100} step={props.step ?? 1} disabled={props.disabled}
     onInput={(event) => props.onChange(event.currentTarget.valueAsNumber)} />;
 }
+
+/** Reusable color input with optional palette. The native picker remains accessible on iOS. */
+export interface ColorPickerProps {
+  id?: string; name?: string; value: string; disabled?: boolean; readonly?: boolean;
+  presets?: readonly string[]; onChange(value: string): void; "aria-label"?: string;
+}
+export function ColorPicker(props: ColorPickerProps) {
+  const valid = (color: string) => /^#[0-9a-f]{6}$/i.test(color);
+  const current = () => valid(props.value) ? props.value : "#7c3aed";
+  return <div class={styles.colorPicker}>
+    <input id={props.id} name={props.name} type="color" class={styles.colorInput}
+      value={current()} aria-label={props["aria-label"] ?? "Selecionar cor"}
+      disabled={props.disabled || props.readonly} onInput={(event) => props.onChange(event.currentTarget.value)} />
+    <output class={styles.colorValue} for={props.id}>{current().toUpperCase()}</output>
+    <div class={styles.colorPresets} role="group" aria-label="Cores predefinidas">
+      {(props.presets ?? []).filter(valid).map((color) => <button type="button" class={styles.colorPreset}
+        style={{ "background-color": color }} aria-label={color} aria-pressed={current().toLowerCase() === color.toLowerCase()}
+        disabled={props.disabled || props.readonly} onClick={() => props.onChange(color)} />)}
+    </div>
+  </div>;
+}

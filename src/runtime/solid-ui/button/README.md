@@ -139,3 +139,7 @@ The actual RodMenu `Surface.module.css` and `Fields.module.css` now use compact 
 ## Studio uses runtime controls
 
 The Button Studio now imports `Slider`, `Switch`, and `controlsCss` from the public `form-controls` entrypoint. Radius, height and loading controls exercise the real primitives. The shared `ControlOption` type comes from `options.ts`, avoiding duplicate public contracts. The remaining native color pickers require a dedicated runtime ColorPicker before Studio migration. The automatic Cloudflare deployment path and build status still need confirmation.
+
+## Runtime ColorPicker
+
+`form-controls/Controls.tsx` now exports `ColorPicker`, a compact native color input with accessible labeling, current hex value, optional selectable presets and disabled/readonly support. Both RodMenu `SharedFieldRenderer` and the independent `StandaloneFieldRenderer` use it; the Studio only consumes the same public export. The native iOS picker is intentionally retained. Validate build and Safari before marking production-ready.

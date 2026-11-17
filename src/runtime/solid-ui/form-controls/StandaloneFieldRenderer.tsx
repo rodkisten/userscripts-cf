@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import type { FormField, FieldContext } from "./fields";
 import { Combobox } from "./Combobox";
-import { Select, Checkbox, Switch as ToggleSwitch, Slider } from "./Controls";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
@@ -56,7 +56,6 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           "time",
           "month",
           "week",
-          "color",
           "hidden",
         ].includes(kind())}
       >
@@ -159,6 +158,10 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           {kind() === "switch" ? <ToggleSwitch id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} /> : <Checkbox id={id()} name={field().name} checked={!!value()} disabled={disabled() || readonly()} onChange={commit} />}
         </label>
       </Show>
+      <Show when={kind() === "color"}>
+        <ColorPicker id={id()} name={field().name} value={stringValue()} disabled={disabled()} readonly={readonly()}
+          presets={prop<readonly string[]>("presets")} onChange={commit} aria-label={field().label ?? field().name} />
+      </Show>
       <Show when={kind() === "range"}>
         <Slider id={id()} name={field().name} value={Number(value() ?? prop<number>("min", 0))} min={prop<number>("min", 0)} max={prop<number>("max", 100)} step={prop<number>("step", 1)} disabled={disabled() || readonly()} onChange={commit} />
       </Show>
@@ -258,23 +261,6 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             ? ((field() as { text?: string; label?: string }).text ?? field().label)
             : field().label}
         </button>
-      </Show>
-      <Show when={kind() === "color" && !!prop<readonly string[]>("presets")?.length}>
-        <div role="group" aria-label="Cores predefinidas">
-          <For each={prop<readonly string[]>("presets") ?? []}>
-            {(color) => (
-              <button
-                type="button"
-                aria-label={color}
-                title={color}
-                disabled={disabled() || readonly()}
-                onClick={() => commit(color)}
-              >
-                {color}
-              </button>
-            )}
-          </For>
-        </div>
       </Show>
       <Show when={kind() === "range" && prop<boolean>("showValue")}>
         <output for={id()}>{stringValue()}</output>
