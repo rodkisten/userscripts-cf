@@ -3,6 +3,10 @@ run-name: "🛠️ TS autofix · ${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/typescript-safe-autofix.yml
 
 permissions:
   contents: read
