@@ -344,7 +344,10 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           type="file"
           accept={"accept" in field() ? (field() as { accept?: string }).accept : undefined}
           multiple={prop<boolean>("multiple", false)}
-          capture={(() => { const capture = prop<string>("capture"); return capture === "user" || capture === "environment" ? capture : undefined; })()}
+          capture={(() => {
+            const capture = prop<string>("capture");
+            return capture === "user" || capture === "environment" ? capture : undefined;
+          })()}
           disabled={disabled() || readonly()}
           onChange={(e) =>
             commit(
