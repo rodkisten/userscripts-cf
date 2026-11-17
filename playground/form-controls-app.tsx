@@ -85,19 +85,33 @@ function App() {
   const [submitEmail, setSubmitEmail] = createSignal("");
   const [submitMessage, setSubmitMessage] = createSignal("");
   const submitFields = [
-    { type: "text" as const, name: "name", label: "Nome", required: true, validate: async (value: unknown) => {
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      return String(value ?? "").trim().length < 3 ? "Use pelo menos 3 caracteres." : null;
-    } },
-    { type: "email" as const, name: "email", label: "E-mail", required: true, validate: (value: unknown) =>
-      /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(value ?? "")) ? null : "Informe um e-mail válido." },
+    {
+      type: "text" as const,
+      name: "name",
+      label: "Nome",
+      required: true,
+      validate: async (value: unknown) => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return String(value ?? "").trim().length < 3 ? "Use pelo menos 3 caracteres." : null;
+      },
+    },
+    {
+      type: "email" as const,
+      name: "email",
+      label: "E-mail",
+      required: true,
+      validate: (value: unknown) =>
+        /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(value ?? "")) ? null : "Informe um e-mail válido.",
+    },
   ];
   const submitValues = () => ({ name: submitName(), email: submitEmail() });
   const formSubmit = createFormSubmit({
     fields: () => submitFields,
     values: submitValues,
     focusInvalid: (name) => document.getElementById(`submit-${name}`)?.focus(),
-    onSubmit: async () => { setSubmitMessage("Formulário enviado com sucesso!"); },
+    onSubmit: async () => {
+      setSubmitMessage("Formulário enviado com sucesso!");
+    },
     onError: () => setSubmitMessage("Falha ao enviar formulário."),
   });
   const [basicSelect, setBasicSelect] = createSignal("first");
@@ -350,16 +364,32 @@ function App() {
         </section>
         <section class="card wide" id="async-validation">
           <h2>Validação assíncrona do schema</h2>
-          <p>Digite um nome. O validador aguarda 400 ms e rejeita nomes curtos ou reservados. Respostas antigas não sobrescrevem as novas.</p>
+          <p>
+            Digite um nome. O validador aguarda 400 ms e rejeita nomes curtos ou reservados. Respostas antigas
+            não sobrescrevem as novas.
+          </p>
           <label class="toggle">
-            <input type="checkbox" checked={asyncValidation()} onChange={(event) => setAsyncValidation(event.currentTarget.checked)} />
+            <input
+              type="checkbox"
+              checked={asyncValidation()}
+              onChange={(event) => setAsyncValidation(event.currentTarget.checked)}
+            />
             Ativar validação assíncrona
           </label>
-          <label class="toggle"><input type="checkbox" checked={validationOnBlur()} onChange={(event) => setValidationOnBlur(event.currentTarget.checked)} /> Validar apenas após sair do campo</label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={validationOnBlur()}
+              onChange={(event) => setValidationOnBlur(event.currentTarget.checked)}
+            />{" "}
+            Validar apenas após sair do campo
+          </label>
           <StandaloneFieldRenderer
             validationMode={validationOnBlur() ? "blur" : "change"}
             field={{
-              type: "text", name: "async-demo", label: "Nome de usuário",
+              type: "text",
+              name: "async-demo",
+              label: "Nome de usuário",
               description: "Experimente admin, root ou um nome com menos de 3 letras",
               validate: async (value) => {
                 if (!asyncValidation()) return null;
@@ -378,15 +408,37 @@ function App() {
         <section class="card wide" id="submit-validation">
           <h2>Validação no envio</h2>
           <p>Valida todos os campos, aguarda regras assíncronas e foca o primeiro inválido.</p>
-          <form novalidate onSubmit={(event) => { event.preventDefault(); setSubmitMessage(""); void formSubmit.submit(); }}>
-            <Input id="submit-name" label="Nome" value={submitName()} onChange={setSubmitName}
-              error={formSubmit.errors().name} required />
-            <Input id="submit-email" type="email" label="E-mail" value={submitEmail()} onChange={setSubmitEmail}
-              error={formSubmit.errors().email} required />
+          <form
+            novalidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSubmitMessage("");
+              void formSubmit.submit();
+            }}
+          >
+            <Input
+              id="submit-name"
+              label="Nome"
+              value={submitName()}
+              onChange={setSubmitName}
+              error={formSubmit.errors().name}
+              required
+            />
+            <Input
+              id="submit-email"
+              type="email"
+              label="E-mail"
+              value={submitEmail()}
+              onChange={setSubmitEmail}
+              error={formSubmit.errors().email}
+              required
+            />
             <button type="submit" disabled={formSubmit.submitting()}>
               {formSubmit.submitting() ? "Validando e enviando…" : "Enviar formulário"}
             </button>
-            <Show when={submitMessage()}><p role="status">{submitMessage()}</p></Show>
+            <Show when={submitMessage()}>
+              <p role="status">{submitMessage()}</p>
+            </Show>
           </form>
         </section>
         <section class="card wide" id="basic-controls">

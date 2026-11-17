@@ -22,11 +22,20 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const field = () => props.field;
   const id = () => props.id ?? `field-${field().name}`;
   const value = () => props.value;
-  const commit = (next: unknown) => { validation.markChanged(); props.onChange(next); };
+  const commit = (next: unknown) => {
+    validation.markChanged();
+    props.onChange(next);
+  };
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
-  const validation = createFieldValidation({ field, value, context: () => props.context, mode: props.validationMode, onError: (reason) => props.onError?.(reason) });
+  const validation = createFieldValidation({
+    field,
+    value,
+    context: () => props.context,
+    mode: props.validationMode,
+    onError: (reason) => props.onError?.(reason),
+  });
   const error = () => (props.context as FieldContext).errors?.[field().name] ?? validation.error();
   const description = () => field().description ?? field().help;
   const choices = (): readonly OptionItem[] => {
@@ -49,7 +58,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
     required: !!field().required,
   });
   return (
-    <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())} data-touched={String(validation.touched())} data-dirty={String(validation.dirty())} data-validating={String(validation.pending())}>
+    <div
+      class={styles.field}
+      data-field-type={kind()}
+      data-disabled={String(disabled())}
+      data-touched={String(validation.touched())}
+      data-dirty={String(validation.dirty())}
+      data-validating={String(validation.pending())}
+    >
       <Show
         when={
           !["hidden", "divider", "button", "checkbox", "switch", "html", "custom"].includes(kind()) &&

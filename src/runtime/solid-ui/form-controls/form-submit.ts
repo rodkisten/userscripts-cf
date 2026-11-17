@@ -19,20 +19,35 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
     const values = options.values();
     submittedSnapshot = values;
     const context: FieldContext<TValues> = { values };
-    const fields = options.fields().filter((field) => !field.disabled && !field.hidden && field.type !== "button" && field.type !== "divider");
-    const results = await Promise.all(fields.map(async (field) => {
-      try {
-        if (field.required && (values[field.name] == null || values[field.name] === "" || (Array.isArray(values[field.name]) && values[field.name].length === 0))) {
-          return [field.name, "Campo obrigatório."] as const;
+    const fields = options
+      .fields()
+      .filter(
+        (field) => !field.disabled && !field.hidden && field.type !== "button" && field.type !== "divider",
+      );
+    const results = await Promise.all(
+      fields.map(async (field) => {
+        try {
+          if (
+            field.required &&
+            (values[field.name] == null ||
+              values[field.name] === "" ||
+              (Array.isArray(values[field.name]) && values[field.name].length === 0))
+          ) {
+            return [field.name, "Campo obrigatório."] as const;
+          }
+          const message = await field.validate?.(values[field.name], values, context);
+          return [field.name, message ?? undefined] as const;
+        } catch (reason) {
+          options.onError?.(reason);
+          return [field.name, "Não foi possível validar este campo."] as const;
         }
-        const message = await field.validate?.(values[field.name], values, context);
-        return [field.name, message ?? undefined] as const;
-      } catch (reason) {
-        options.onError?.(reason);
-        return [field.name, "Não foi possível validar este campo."] as const;
-      }
-    }));
-    if (current !== revision || options.values() !== values && JSON.stringify(options.values()) !== JSON.stringify(values)) return false;
+      }),
+    );
+    if (
+      current !== revision ||
+      (options.values() !== values && JSON.stringify(options.values()) !== JSON.stringify(values))
+    )
+      return false;
     const next: Record<string, string> = {};
     for (const [name, message] of results) if (message) next[name] = message;
     setErrors(next);

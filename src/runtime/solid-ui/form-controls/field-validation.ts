@@ -17,7 +17,10 @@ export function createFieldValidation<TContext = FieldContext>(options: {
   const [dirty, setDirty] = createSignal(false);
   const [blurRevision, setBlurRevision] = createSignal(0);
   const markChanged = () => setDirty(true);
-  const markBlurred = () => { setTouched(true); setBlurRevision((n) => n + 1); };
+  const markBlurred = () => {
+    setTouched(true);
+    setBlurRevision((n) => n + 1);
+  };
   let generation = 0;
   createEffect(() => {
     const field = options.field();
