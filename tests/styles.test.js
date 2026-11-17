@@ -55,7 +55,7 @@ test("component classes replace or extend styles and install in document and sha
     /^import[^;]+;/,
     "const coreCSS = " + JSON.stringify(compiled) + ";",
   );
-  const helper = (await transformWithOxc(source, "core/css.ts", { lang: "ts" })).code;
+  const helper = (await transformWithOxc(source, "core/css.ts", { lang: "ts" })).code.replace(/\bexport\s+(?=function\b)/g, "");
   window.eval(helper + ";window.applyStyle=applyComponentStyle;window.clearStyle=clearComponentStyle;");
   const host = window.document.createElement("div");
   window.document.body.append(host);
