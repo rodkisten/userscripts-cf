@@ -74,3 +74,6 @@ export { Input, Textarea, NumberInput } from "./TextControls";
 export type { TextControlProps, NumberInputProps } from "./TextControls";
 
 export { createFormSubmit } from "./form-submit";
+
+export { createTwitterSearchEditor } from "./twitter-search-editor";
+export type { TwitterList } from "./twitter-search-editor";

@@ -267,7 +267,89 @@
         outline: none;
       }
 
-      .twitter-cm-pill {
+      .cm-editor .cm-content {
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <main><p>Carregando componentes SolidJS…</p></main>
+    </div>
+    <script>
+      const host = document.getElementById("app");
+      const asset = "/playground/form-controls.js";
+      const startedAt = Date.now();
+      const status = { asset, userAgent: navigator.userAgent, page: location.href };
+      let mounted = false;
+      window.__rodPlaygroundReady = () => {
+        mounted = true;
+        clearTimeout(timeout);
+      };
+      let failed = false;
+      const timeout = setTimeout(() => {
+        if (!mounted) showError(new Error("Timeout de inicialização: o módulo não montou em 12 segundos."));
+      }, 12000);
+      const showError = (error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error?.stack ? String(error.stack) : "Stack indisponível";
+        if (!host || mounted || failed) return;
+        failed = true;
+        clearTimeout(timeout);
+        host.replaceChildren();
+        const main = document.createElement("main");
+        main.dataset.playgroundError = "true";
+        const heading = document.createElement("h1");
+        heading.textContent = "Não foi possível iniciar o playground";
+        const description = document.createElement("p");
+        description.textContent =
+          "O JavaScript não carregou ou falhou ao inicializar. Recarregue a página ou copie o diagnóstico abaixo.";
+        const details = document.createElement("pre");
+        details.style.whiteSpace = "pre-wrap";
+        details.style.overflowWrap = "anywhere";
+        details.textContent = JSON.stringify(
+          { message, stack, elapsedMs: Date.now() - startedAt, ...status },
+          null,
+          2,
+        );
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.textContent = "Tentar novamente";
+        retry.addEventListener("click", () => location.reload());
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.textContent = "Copiar diagnóstico";
+        copy.addEventListener("click", () => navigator.clipboard?.writeText(details.textContent));
+        main.append(heading, description, details, retry, document.createTextNode(" "), copy);
+        host.append(main);
+      };
+      window.addEventListener("error", (event) => {
+        if (!mounted)
+          showError(
+            event.error ?? new Error(`${event.message} at ${event.filename}:${event.lineno}:${event.colno}`),
+          );
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        if (!mounted) showError(event.reason);
+      });
+      // A classic bootstrap runs even when module loading fails before evaluation.
+      import(asset)
+        .then(() => {
+          if (failed) return;
+          // Rendering may finish in a microtask after the ESM import resolves.
+          // The application explicitly signals readiness after its root exists.
+          if (!mounted && !failed) {
+            setTimeout(() => {
+              if (!mounted && !failed && !host?.querySelector("main")) {
+                showError(new Error("Bundle carregado, mas SolidJS não criou a raiz da aplicação."));
+              }
+            }, 1500);
+          }
+        })
+        .catch(showError);
+    </script>
+  </body>
+</html>      .twitter-cm-pill {
         border-color: #3f3f46 !important;
         background: #18181b !important;
         color: #fafafa !important;

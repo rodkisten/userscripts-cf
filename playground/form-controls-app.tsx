@@ -3,7 +3,7 @@ import { css as comboboxCSS } from "../src/runtime/solid-ui/form-controls/Combob
 import { css as controlsCSS } from "../src/runtime/solid-ui/form-controls/Controls.module.css";
 import { css as fieldRendererCSS } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer.module.css";
 import { EditorState } from "@codemirror/state";
-import { createTwitterSearchEditor } from "./twitter-search-editor";
+import { createTwitterSearchEditor } from "../src/runtime/solid-ui/form-controls/twitter-search-editor";
 import { EditorView, drawSelection } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
