@@ -13,6 +13,15 @@ case "$mode" in
     : "${PR_HEAD_SHA:=}"
     : "${SCOPE:=changed}"
     set -euo pipefail
+    if [[ "$EVENT_NAME" == pull_request && -n "${PR_TITLE:-}" ]]; then
+      scope_json="$(node build/pr-ci-scope.mjs)"
+      if [[ "$(node -p 'JSON.parse(process.argv[1]).explicit' "$scope_json")" == true ]]; then
+        echo "full=false" >> "$GITHUB_OUTPUT"
+        echo "run=true" >> "$GITHUB_OUTPUT"
+        echo "Explicit PR-title CI scope detected."
+        exit 0
+      fi
+    fi
     if [[ "$EVENT_NAME" == workflow_dispatch && "$SCOPE" == all ]]; then
       echo "full=true" >> "$GITHUB_OUTPUT"
       echo "run=true" >> "$GITHUB_OUTPUT"
