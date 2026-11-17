@@ -20,7 +20,11 @@ export function parsePrCiScope(title) {
     const kind = section.slice(0, colon).trim().toLowerCase();
     if (!["test", "build"].includes(kind) || Object.hasOwn(result, kind))
       throw new Error("Duplicate or unknown PR CI scope: " + kind);
-    const values = section.slice(colon + 1).split(",").map((value) => value.trim()).filter(Boolean);
+    const values = section
+      .slice(colon + 1)
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
     if (!values.length) throw new Error("Empty PR CI scope: " + kind);
     if (values.includes("none") && values.length !== 1)
       throw new Error("'none' must be the only " + kind + " selector");
@@ -30,10 +34,17 @@ export function parsePrCiScope(title) {
           throw new Error("Unknown build target: " + value);
     } else {
       for (const value of values)
-        if (value !== "none" && value !== "all" &&
-            (!safeGlob.test(value) || value.includes("..") || value.startsWith("/") ||
-             !(value.startsWith("tests/") && allowedTestRoot.test(value))))
-          throw new Error("Unsafe or unsupported test selector: " + value + ". Use tests/**/*.test.js paths.");
+        if (
+          value !== "none" &&
+          value !== "all" &&
+          (!safeGlob.test(value) ||
+            value.includes("..") ||
+            value.startsWith("/") ||
+            !(value.startsWith("tests/") && allowedTestRoot.test(value)))
+        )
+          throw new Error(
+            "Unsafe or unsupported test selector: " + value + ". Use tests/**/*.test.js paths.",
+          );
     }
     result[kind] = [...new Set(values)];
   }

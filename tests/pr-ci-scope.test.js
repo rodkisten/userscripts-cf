@@ -6,7 +6,11 @@ describe("PR title CI scope", () => {
     expect(parsePrCiScope("fix: improve runtime")).toBeNull();
   });
   it("parses test and build selectors without splitting glob paths", () => {
-    expect(parsePrCiScope("feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,reddit)")).toEqual({
+    expect(
+      parsePrCiScope(
+        "feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,reddit)",
+      ),
+    ).toEqual({
       test: ["tests/runtime-helpers.test.js", "tests/*.test.js"],
       build: ["standalone", "reddit"],
     });
