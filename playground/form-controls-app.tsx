@@ -15,6 +15,7 @@ import {
 import { TagsInput } from "../src/runtime/solid-ui/form-controls/TagsInput";
 import { Input, Textarea, NumberInput } from "../src/runtime/solid-ui/form-controls/TextControls";
 import { StandaloneFieldRenderer } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer";
+import { createFormSubmit } from "../src/runtime/solid-ui/form-controls/form-submit";
 import { getFormControlsQueryClient } from "../src/runtime/solid-ui/form-controls/query-client";
 import { SHARED_FIELD_TYPES } from "../src/runtime/solid-ui/form-controls/field-types";
 import type { FormField } from "../src/runtime/solid-ui/form-controls/fields";
@@ -80,6 +81,25 @@ function App() {
   const [asyncValidation, setAsyncValidation] = createSignal(false);
   const [validationOnBlur, setValidationOnBlur] = createSignal(false);
   const [feedbackState, setFeedbackState] = createSignal<"default" | "warning" | "success">("default");
+  const [submitName, setSubmitName] = createSignal("");
+  const [submitEmail, setSubmitEmail] = createSignal("");
+  const [submitMessage, setSubmitMessage] = createSignal("");
+  const submitFields = [
+    { type: "text" as const, name: "name", label: "Nome", required: true, validate: async (value: unknown) => {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return String(value ?? "").trim().length < 3 ? "Use pelo menos 3 caracteres." : null;
+    } },
+    { type: "email" as const, name: "email", label: "E-mail", required: true, validate: (value: unknown) =>
+      /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(value ?? "")) ? null : "Informe um e-mail válido." },
+  ];
+  const submitValues = () => ({ name: submitName(), email: submitEmail() });
+  const formSubmit = createFormSubmit({
+    fields: () => submitFields,
+    values: submitValues,
+    focusInvalid: (name) => document.getElementById(`submit-${name}`)?.focus(),
+    onSubmit: async () => { setSubmitMessage("Formulário enviado com sucesso!"); },
+    onError: () => setSubmitMessage("Falha ao enviar formulário."),
+  });
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
   const [basicSwitch, setBasicSwitch] = createSignal(false);
@@ -354,6 +374,20 @@ function App() {
             value={textDemo()}
             onChange={setTextDemo}
           />
+        </section>
+        <section class="card wide" id="submit-validation">
+          <h2>Validação no envio</h2>
+          <p>Valida todos os campos, aguarda regras assíncronas e foca o primeiro inválido.</p>
+          <form novalidate onSubmit={(event) => { event.preventDefault(); setSubmitMessage(""); void formSubmit.submit(); }}>
+            <Input id="submit-name" label="Nome" value={submitName()} onChange={setSubmitName}
+              error={formSubmit.errors().name} required />
+            <Input id="submit-email" type="email" label="E-mail" value={submitEmail()} onChange={setSubmitEmail}
+              error={formSubmit.errors().email} required />
+            <button type="submit" disabled={formSubmit.submitting()}>
+              {formSubmit.submitting() ? "Validando e enviando…" : "Enviar formulário"}
+            </button>
+            <Show when={submitMessage()}><p role="status">{submitMessage()}</p></Show>
+          </form>
         </section>
         <section class="card wide" id="basic-controls">
           <h2>Controles básicos · Componentes reais</h2>
