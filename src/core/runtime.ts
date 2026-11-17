@@ -390,10 +390,10 @@ export function createRuntime(
           id: CLIPBOARD_ACTION_COPY,
           label: CLIPBOARD_ACTION_COPY_LABEL,
           handler: async (ctx) => {
-             const item = ctx.values.item;
-             if (typeof item !== "string") return false;
-             return clipboard.copy(item);
-           },
+            const item = ctx.values.item;
+            if (typeof item !== "string") return false;
+            return clipboard.copy(item);
+          },
         },
         { id: CLIPBOARD_ACTION_READ, label: CLIPBOARD_ACTION_READ_LABEL, handler: () => clipboard.read() },
         {
@@ -401,10 +401,10 @@ export function createRuntime(
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
           variant: "danger",
           handler: (ctx) => {
-             const item = ctx.values.item;
-             if (typeof item !== "string") return;
-             return clipboard.remove(item);
-           },
+            const item = ctx.values.item;
+            if (typeof item !== "string") return;
+            return clipboard.remove(item);
+          },
         },
       ],
     });
