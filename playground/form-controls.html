@@ -99,24 +99,104 @@
         font-size: 12px;
       }
 
-      html, body { width: 100%; overflow-x: clip; -webkit-text-size-adjust: 100%; }
-      #app, main, .grid, .card, .card > *, .grid > * { min-width: 0; max-width: 100%; }
-      main { width: 100%; padding: clamp(16px, 4vw, 28px); }
-      .grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-      .card { padding: clamp(16px, 4vw, 24px); overflow-wrap: anywhere; }
-      .card h2 { font-size: clamp(21px, 5.5vw, 28px); line-height: 1.2; margin: 0 0 12px; }
-      .card p { margin: 0 0 20px; }
-      .card label:not(.toggle) { margin-top: 12px; }
-      .card input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), .card select, .card textarea { font-size: 16px; max-width: 100%; }
-      .card select { display: block; width: 100%; min-height: 44px; padding: 10px 36px 10px 12px; border: 1px solid #52525b; border-radius: 10px; background-color: #27272a; color: #fafafa; }
-      .card button { min-height: 40px; }
-      .card pre { overflow-x: auto; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .toggle { min-height: 40px; line-height: 1.35; }
-      .toggle input { flex: none; width: 20px; height: 20px; }
-      .actions { align-items: center; }
-      .actions button { padding: 10px 12px; }
-      @media (min-width: 760px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wide { grid-column: 1 / -1; } }
-      @media (max-width: 600px) { h1 { font-size: 30px; line-height: 1.15; } .card { border-radius: 16px; } .card button { white-space: normal; } }
+      html,
+      body {
+        width: 100%;
+        overflow-x: clip;
+        -webkit-text-size-adjust: 100%;
+      }
+      #app,
+      main,
+      .grid,
+      .card,
+      .card > *,
+      .grid > * {
+        min-width: 0;
+        max-width: 100%;
+      }
+      main {
+        width: 100%;
+        padding: clamp(16px, 4vw, 28px);
+      }
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+      }
+      .card {
+        padding: clamp(16px, 4vw, 24px);
+        overflow-wrap: anywhere;
+      }
+      .card h2 {
+        font-size: clamp(21px, 5.5vw, 28px);
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+      .card p {
+        margin: 0 0 20px;
+      }
+      .card label:not(.toggle) {
+        margin-top: 12px;
+      }
+      .card input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+      .card select,
+      .card textarea {
+        font-size: 16px;
+        max-width: 100%;
+      }
+      .card select {
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 36px 10px 12px;
+        border: 1px solid #52525b;
+        border-radius: 10px;
+        background-color: #27272a;
+        color: #fafafa;
+      }
+      .card button {
+        min-height: 40px;
+      }
+      .card pre {
+        overflow-x: auto;
+        max-width: 100%;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .toggle {
+        min-height: 40px;
+        line-height: 1.35;
+      }
+      .toggle input {
+        flex: none;
+        width: 20px;
+        height: 20px;
+      }
+      .actions {
+        align-items: center;
+      }
+      .actions button {
+        padding: 10px 12px;
+      }
+      @media (min-width: 760px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .wide {
+          grid-column: 1 / -1;
+        }
+      }
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 30px;
+          line-height: 1.15;
+        }
+        .card {
+          border-radius: 16px;
+        }
+        .card button {
+          white-space: normal;
+        }
+      }
     </style>
   </head>
   <body>
