@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
   workflow_dispatch:
     inputs:
       scope:
@@ -26,6 +26,8 @@ jobs:
   validate:
     name: "Validate affected files"
     runs-on: ubuntu-latest
+    outputs:
+      scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,6 +45,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SCOPE: ${{ inputs.scope || 'changed' }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: bash build/validate-changed.sh plan
       - name: Install dependencies
         id: install
@@ -87,7 +90,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Restore exact-source validation result
         id: validation_cache
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && !contains(github.event.pull_request.title, '(test:') && !contains(github.event.pull_request.title, '(build:')
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
@@ -98,6 +101,8 @@ jobs:
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
+          SCOPED_BUILDS_MATRIX: true
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: bash build/validate-changed.sh run
       # The playground is a visual preview, not a typecheck gate.
       # Always attempt its single build even when TypeScript validation fails.
@@ -120,3 +125,24 @@ jobs:
         if: steps.validation_cache.outputs.cache-hit == 'true'
         run: echo "Reused successful validation for identical source, tests and configuration fingerprint." >> "$GITHUB_STEP_SUMMARY"
 
+
+  scoped-builds:
+    name: "Scoped build · ${{ matrix.target }}"
+    needs: validate
+    if: ${{ always() && github.event_name == 'pull_request' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.validate.outputs.scoped_matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Build selected userscript
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node build/build.mjs "--targets=$TARGET"

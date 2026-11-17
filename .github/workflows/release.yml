@@ -115,6 +115,15 @@ jobs:
         run: |
           node --input-type=module -e 'import fs from "node:fs"; const manifest=JSON.parse(fs.readFileSync("dist/manifest.json","utf8")); if(!manifest.scripts.length) throw Error("No scripts built"); for(const script of manifest.scripts) {const source=fs.readFileSync(`dist/${script.file}`,"utf8"); if(!source.startsWith("// ==UserScript==")) throw Error(`Missing metadata: ${script.file}`)}'
       # Formatting is handled separately and must not block publishing.
+      - name: Reject superseded automatic release before version commit
+        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$latest" != "$GITHUB_SHA" ]]; then
+            echo "::error::Outdated workflow: current main is $latest, run started at $GITHUB_SHA"
+            exit 1
+          fi
       - name: Commit version to main
         if: steps.source.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
         env:
@@ -129,6 +138,16 @@ jobs:
       - name: Prepare Cloudflare Worker with versioned assets
         if: steps.source.outputs.skip != 'true'
         run: node build/hosting.mjs
+      - name: Reject outdated release before Cloudflare publication
+        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          local_head="$(git rev-parse HEAD)"
+          if [[ "$latest" != "$local_head" ]]; then
+            echo "::error::Main moved after this release started: $latest (built from $local_head)"
+            exit 1
+          fi
       - name: Deploy versioned userscripts to Cloudflare
         if: steps.source.outputs.skip != 'true'
         env:

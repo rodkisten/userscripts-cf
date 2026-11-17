@@ -1,0 +1,96 @@
+name: Deploy playground to GitHub Pages
+run-name: "Playground Pages · ${{ github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "playground/**"
+      - "src/runtime/solid-ui/**"
+      - "build/hosting.mjs"
+      - "build/design-system.mjs"
+      - "build/preview-userscripts.mjs"
+      - "hosting/**"
+      - "vite.config.js"
+      - ".github/workflows/playground-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: userscripts-playground-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://userscripts-playground.migos.club/
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      # Playground preview is independent of lint, typecheck and release checks.
+      - name: Build userscripts
+        run: npm run build
+      - name: Prepare isolated preview installers
+        env:
+          USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
+        run: node build/preview-userscripts.mjs
+      - name: Generate static playground
+        env:
+          USERSCRIPTS_PREVIEW: "1"
+        run: node build/hosting.mjs
+      - name: Validate static Pages output
+        run: |
+          set -euo pipefail
+          test -s dist/pages/index.html
+          test -s dist/pages/manifest.json
+          test -s dist/pages/playground/form-controls.html
+          test -s dist/pages/playground/form-controls.js
+          test -s dist/pages/playground/form-controls.js.map
+          test -s dist/pages/icons/preview.svg
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const root = "dist/pages/";
+          const manifest = JSON.parse(fs.readFileSync(root + "manifest.json", "utf8"));
+          if (manifest.channel !== "preview" || !manifest.scripts.length) throw Error("Missing preview catalog");
+          for (const item of manifest.scripts) {
+            if (!item.file.endsWith(".preview.user.js") || !item.metaFile.endsWith(".preview.meta.js")) throw Error("Invalid preview filenames: " + item.id);
+            const source = fs.readFileSync(root + item.file, "utf8");
+            const meta = fs.readFileSync(root + item.metaFile, "utf8");
+            for (const [name, content] of [["script", source], ["metadata", meta]]) {
+              if (!/^\\/\\/ @name\\s+\\[PRE\\] /m.test(content)) throw Error("Missing PRE name in " + item.id + " " + name);
+              if (!content.includes("/" + item.file) || !content.includes("/" + item.metaFile)) throw Error("Incorrect preview links in " + item.id + " " + name);
+              if (!content.includes("/icons/preview.svg")) throw Error("Missing black preview icon in " + item.id + " " + name);
+            }
+          }
+          console.log("Verified " + manifest.scripts.length + " preview installers and static assets");
+          NODE
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/pages
+      - name: Reject outdated build before publishing
+        run: |
+          set -euo pipefail
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$latest" != "$GITHUB_SHA" ]]; then
+            echo "::error::Outdated workflow: current main is $latest, run started at $GITHUB_SHA"
+            exit 1
+          fi
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Summary
+        run: |
+          echo "### Playground published on GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://userscripts-playground.migos.club/" >> "$GITHUB_STEP_SUMMARY"

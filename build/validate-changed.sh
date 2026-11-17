@@ -13,6 +13,16 @@ case "$mode" in
     : "${PR_HEAD_SHA:=}"
     : "${SCOPE:=changed}"
     set -euo pipefail
+    if [[ "$EVENT_NAME" == pull_request && -n "${PR_TITLE:-}" ]]; then
+      scope_json="$(node build/pr-ci-scope.mjs)"
+      echo "matrix=$(node -p 'JSON.stringify(JSON.parse(process.argv[1]).matrix)' "$scope_json")" >> "$GITHUB_OUTPUT"
+      if [[ "$(node -p 'JSON.parse(process.argv[1]).explicit' "$scope_json")" == true ]]; then
+        echo "full=false" >> "$GITHUB_OUTPUT"
+        echo "run=true" >> "$GITHUB_OUTPUT"
+        echo "Explicit PR-title CI scope detected."
+        exit 0
+      fi
+    fi
     if [[ "$EVENT_NAME" == workflow_dispatch && "$SCOPE" == all ]]; then
       echo "full=true" >> "$GITHUB_OUTPUT"
       echo "run=true" >> "$GITHUB_OUTPUT"
@@ -51,6 +61,40 @@ case "$mode" in
   run)
     : "${GITHUB_STEP_SUMMARY:=/dev/null}"
     set -euo pipefail
+    # Explicit PR title scope replaces automatic test/build selection.
+    if [[ -n "${PR_TITLE:-}" ]]; then
+      scope_json="$(node build/pr-ci-scope.mjs)"
+      explicit="$(node -p 'JSON.parse(process.argv[1]).explicit' "$scope_json")"
+      if [[ "$explicit" == true ]]; then
+        echo "::group::PR title CI scope"
+        echo "$scope_json"
+        mapfile -t scoped_tests < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.tests||[])console.log(t)' "$scope_json")
+        mapfile -t scoped_builds < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.builds||[])console.log(t)' "$scope_json")
+        if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]] && [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
+          if [[ "${scoped_builds[0]}" == all ]]; then npm run build
+          else
+            targets="$(IFS=,; echo "${scoped_builds[*]}")"
+            node build/build.mjs "--targets=$targets"
+          fi
+        fi
+        if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
+          if [[ "${scoped_tests[0]}" == all ]]; then
+            npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+          else
+            npx vitest run "${scoped_tests[@]}" --maxWorkers=2 --passWithNoTests
+          fi
+        fi
+        {
+          echo "### Explicit PR-title validation"
+          echo '```json'
+          echo "$scope_json"
+          echo '```'
+          echo "Other required checks remain independently enforced."
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "::endgroup::"
+        exit 0
+      fi
+    fi
     if [[ "${FULL:-false}" == true ]]; then
       echo "Shared infrastructure changed: running full validation."
       npm run build

@@ -2,6 +2,21 @@
 
 These instructions apply to every agent, automation, and code contributor working in this repository.
 
+## PR title CI scope policy (MANDATORY for all agents)
+
+**Every PR created or edited by an agent in this repository MUST use the scoped CI title suffix** described in [docs/pr-ci-scopes.md](docs/pr-ci-scopes.md). Before opening or updating a PR, identify the tests and build targets relevant to the changed code, then append a final parenthesized directive:
+
+```text
+fix: improve bookmarks (test: tests/pr-ci-scope.test.js | build: reddit,standalone)
+```
+
+- Prefer exact `tests/**/*.test.js` paths and supported glob patterns; validate that each selector matches at least one test. `build:` accepts script IDs in `userscripts.config.js`, `standalone`, or `unified`.
+- Use `test: none` or `build: none` **only when genuinely inapplicable**; never use them to conceal failures. For broad changes, use `all` where appropriate. No scope suffix means automatic changed-file detection, but agents must normally provide an explicit scope.
+- When the PR's changed files or intent change, **recompute and update its title**, keeping the scope at the end. Check `build/pr-ci-scope.mjs` and its tests before modifying the syntax or workflow.
+- The title suffix controls focused feedback only. Required checks, full release validation and branch protections must not be bypassed. Do not claim a scoped green run proves the entire repository is green.
+- In the PR description, preserve all existing content and **include the originating ChatGPT conversation URL**. If unavailable, request it; never invent one.
+- In every user-facing completion report, include **what changed, the exact commit SHA and clickable commit link, PR link when applicable, and verified CI status**. Batch related changes into one work block when practical to avoid unnecessary CI runs.
+
 ## Runtime context lifecycle and documentation (MANDATORY)
 
 Before changing userscript entrypoints, runtime helpers, context-scoped stores, listeners, UI mounting or AST transforms, **read the lifecycle guide in [docs/context-and-optimization.md](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth)**. The context belongs to the **script instance**, not the page, module or a mutable global. `reconcile()` creates a fresh `ScriptContext` using `context(definition)` and passes it into `definition.module.init(ctx)`. The AST rewrites `useContext()`/`useRuntime()` in provably context-bound lexical scopes; `ctx.ui.mountSolid` provides that same instance through `RuntimeProvider` to Solid descendants. `ctx.dispose()` aborts and cleans up resources.
