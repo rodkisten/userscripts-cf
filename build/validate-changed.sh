@@ -56,6 +56,20 @@ case "$mode" in
       npm run build
       npm run typecheck
       npm run lint
+      # Print focused regression failures before running the entire suite.
+      # A superseding CI run can otherwise cancel Vitest before its summary.
+      regression_tests=(
+        tests/rodx-features.test.js
+        tests/rodx-migration.test.js
+        tests/rodx-solid-ui.test.js
+        tests/userscripts/github-tools/integration.test.js
+        tests/styles.test.js
+        tests/rodx-boot.test.js
+        tests/shadow-mount.test.js
+      )
+      echo "::group::Focused regression diagnostics"
+      npx vitest run "${regression_tests[@]}" --maxWorkers=2 --reporter=verbose
+      echo "::endgroup::"
       npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
       npm run test:lab
       node build/hosting.mjs
