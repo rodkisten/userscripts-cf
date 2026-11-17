@@ -753,14 +753,56 @@ function App() {
         </section>
         <section class="card wide">
           <h2>Twitter Search · Raw</h2>
-          <label for="raw">Consulta editável</label>
-          <textarea
-            id="raw"
-            rows="3"
-            value={raw()}
-            onInput={(event) => setRaw(event.currentTarget.value)}
-            placeholder="filter:videos lang:pt typescript"
-          />
+          <label for="raw-inline">Consulta editável</label>
+          <div class="twitter-query-editor" role="group" aria-label="Editor de busca com filtros interativos">
+            <For each={parseTwitterSearch(raw())}>
+              {(token, index) => (
+                <Show when={token.kind === "operator" || token.kind === "negative"} fallback={
+                  <span class="twitter-plain-token">{token.value}</span>
+                }>
+                  <span class="twitter-query-pill">
+                    <Show when={token.value.startsWith("list:")} fallback={
+                      <span class="twitter-pill-label">{token.value}</span>
+                    }>
+                      <select
+                        aria-label="Selecionar lista do X"
+                        value={token.value.slice(5)}
+                        onChange={(event) => setRaw(replaceTwitterToken(raw(), token, "list:" + event.currentTarget.value))}
+                      >
+                        <option value={token.value.slice(5)}>{token.value}</option>
+                        <option value="123456789">Lista de tecnologia (exemplo)</option>
+                        <option value="987654321">Lista de vídeos (exemplo)</option>
+                      </select>
+                    </Show>
+                    <button type="button" aria-label={`Remover ${token.value}`} onClick={() => setRaw(removeTwitterToken(raw(), token))}>×</button>
+                  </span>
+                </Show>
+              )}
+            </For>
+            <input
+              id="raw-inline"
+              class="twitter-query-input"
+              aria-label="Adicionar termos à consulta"
+              placeholder="Adicionar termos ou filtros…"
+              value={tokenDraft()}
+              onInput={(event) => setTokenDraft(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === "Tab") {
+                  if (!tokenDraft().trim()) return;
+                  event.preventDefault();
+                  setRaw(appendTwitterToken(raw(), tokenDraft().trim()));
+                  setTokenDraft("");
+                }
+              }}
+              onBlur={() => {
+                if (tokenDraft().trim()) {
+                  setRaw(appendTwitterToken(raw(), tokenDraft().trim()));
+                  setTokenDraft("");
+                }
+              }}
+            />
+          </div>
+          <small>Digite um termo e pressione Enter. Filtros e listas ficam dentro do editor.</small>
           <div class="actions">
             <button type="button" onClick={() => setRaw([...selected(), ...tags()].join(" "))}>
               Gerar com filtros e tags
@@ -774,77 +816,6 @@ function App() {
             <button type="button" onClick={() => void navigator.clipboard?.writeText(raw())}>
               Copiar
             </button>
-          </div>
-          <div class="token-list" aria-label="Tokens da consulta">
-            <For each={parseTwitterSearch(raw())}>
-              {(token, index) => (
-                <span
-                  class={`token token-${token.kind}`}
-                  style={{
-                    display: "inline-flex",
-                    "align-items": "center",
-                    gap: "5px",
-                    padding: "4px 8px",
-                    margin: "3px",
-                    "border-radius": "8px",
-                    background:
-                      token.kind === "negative"
-                        ? "#5c202e"
-                        : token.kind === "operator"
-                          ? "#253e63"
-                          : "#30303b",
-                  }}
-                >
-                  <Show
-                    when={editingToken() === index()}
-                    fallback={
-                      <button
-                        type="button"
-                        title={`Editar ${token.value}`}
-                        onClick={() => {
-                          setEditingToken(index());
-                          setTokenDraft(token.raw);
-                        }}
-                      >
-                        {token.value}
-                      </button>
-                    }
-                  >
-                    <input
-                      aria-label={`Editar token ${index() + 1}`}
-                      value={tokenDraft()}
-                      onInput={(event) => setTokenDraft(event.currentTarget.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Escape") setEditingToken(null);
-                        if (event.key === "Enter") {
-                          setRaw(replaceTwitterToken(raw(), token, tokenDraft()));
-                          setEditingToken(null);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRaw(replaceTwitterToken(raw(), token, tokenDraft()));
-                        setEditingToken(null);
-                      }}
-                    >
-                      ✓
-                    </button>
-                  </Show>
-                  <button
-                    type="button"
-                    aria-label={`Remover ${token.value}`}
-                    onClick={() => {
-                      setRaw(removeTwitterToken(raw(), token));
-                      setEditingToken(null);
-                    }}
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-            </For>
           </div>
           <pre>{raw()}</pre>
           <small>
