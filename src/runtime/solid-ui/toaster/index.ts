@@ -125,7 +125,7 @@ export const toast = Object.assign(toastFn, {
   success: (...args: unknown[]) => showSemantic("success", args),
   warning: (...args: unknown[]) => showSemantic("warning", args),
   message: (descriptor: ToastOptions | string = {}) =>
-    showBase([], typeof descriptor === "string" ? { title: descriptor } : descriptor),
+    showBase([], null, typeof descriptor === "string" ? { title: descriptor } : descriptor),
   copyError: (error: unknown, options: ToastOptions = {}) =>
     showSemantic("error", [error, { ...options, copyError: true }]),
   loading: (...args: unknown[]) => {
