@@ -148,7 +148,10 @@
         host.append(main);
       };
       window.addEventListener("error", (event) => {
-        if (!mounted) showError(event.error ?? new Error(`${event.message} at ${event.filename}:${event.lineno}:${event.colno}`));
+        if (!mounted)
+          showError(
+            event.error ?? new Error(`${event.message} at ${event.filename}:${event.lineno}:${event.colno}`),
+          );
       });
       window.addEventListener("unhandledrejection", (event) => {
         if (!mounted) showError(event.reason);
