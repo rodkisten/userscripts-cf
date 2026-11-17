@@ -256,15 +256,9 @@ export function FeedRoot(props: { controller: FeedController }) {
             }
           }}
         />
-        <button id="gws-search" onClick={() => void props.controller.search()}>
-          Buscar
-        </button>
-        <button id="gws-reset" onClick={props.controller.clear}>
-          Limpar
-        </button>
-        <button id="gws-settings" aria-label="Configurações do Studio" onClick={props.controller.settings}>
-          ⚙
-        </button>
+        <Button id="gws-search" variant="default" size="sm" loading={state.search.loading} onClick={() => void props.controller.search()}>Buscar</Button>
+        <Button id="gws-reset" variant="ghost" size="sm" onClick={props.controller.clear}>Limpar</Button>
+        <Button id="gws-settings" variant="outline" size="icon" aria-label="Configurações do Studio" onClick={props.controller.settings}>⚙</Button>
         <div id="gws-chips" class={styles["gws-searchchips"]}>
           <For each={[...state.search.include, ...state.search.exclude]}>
             {(tag) => <TagButton tag={tag} controller={props.controller} />}
