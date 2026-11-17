@@ -4,6 +4,8 @@ import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnos
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import { createComponent, createRoot, createStore, type Accessor } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import type { ShadowStyle } from "../runtime/solid-ui/shadow-mount.js";
 import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context.js";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
@@ -735,7 +737,11 @@ export function createRuntime(
         },
         registerStyles(...styles: unknown[]) {
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
-          const release = uiFeature.registerShadowStyles(ensureUIRoot(), styles.flat());
+          const normalized: ShadowStyle[] = styles.flat().filter((style): style is ShadowStyle =>
+            typeof style === "string" ||
+            (typeof style === "object" && style !== null && "css" in style && typeof style.css === "string"),
+          );
+          const release = uiFeature.registerShadowStyles(ensureUIRoot(), normalized);
           onDispose(release);
           return release;
         },
@@ -747,7 +753,7 @@ export function createRuntime(
               createComponent(RuntimeProvider, {
                 context: scriptContext,
                 get children() {
-                  return typeof component === "function" ? (component as () => unknown)() : component;
+                  return typeof component === "function" ? (component as () => JSX.Element)() : (component as JSX.Element);
                 },
               });
             release = uiFeature.mountSolidShadow(scopedComponent, {
