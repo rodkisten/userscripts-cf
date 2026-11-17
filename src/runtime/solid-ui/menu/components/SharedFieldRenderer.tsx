@@ -9,6 +9,7 @@ import type {
   CheckboxGroupField,
 } from "../types";
 import { TypeaheadSelect } from "./fields/TypeaheadSelect";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider } from "../../form-controls/Controls";
 import styles from "../styles/Fields.module.css";
 
 /** Generic variants rendered independently of RodMenu's media/diagnostic extensions.
@@ -129,22 +130,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                 />
               }
             >
-              <select
-                id={controlId()}
-                name={f.name}
-                class={styles.select}
-                disabled={isDisabled()}
-                value={String(fieldValue() ?? "")}
-                onChange={(e) => commit(e.currentTarget.value)}
-              >
-                <For each={f.options}>
-                  {(opt) => (
-                    <option value={opt.value} disabled={opt.disabled}>
-                      {opt.label}
-                    </option>
-                  )}
-                </For>
-              </select>
+              <Select id={controlId()} name={f.name} value={String(fieldValue() ?? "")} disabled={isDisabled()} options={f.options} onChange={commit} />
             </Show>
           );
         })()}
@@ -251,15 +237,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                   <div class={styles.descriptionField}>{f.description}</div>
                 </Show>
               </span>
-              <input
-                id={controlId()}
-                name={f.name}
-                type="checkbox"
-                checked={Boolean(fieldValue())}
-                disabled={isDisabled()}
-                class={f.type === "switch" ? styles.switch : styles.nativeCheck}
-                onChange={(e) => commit(e.currentTarget.checked)}
-              />
+              {f.type === "switch" ? <ToggleSwitch id={controlId()} name={f.name} checked={Boolean(fieldValue())} disabled={isDisabled()} onChange={commit} /> : <Checkbox id={controlId()} name={f.name} checked={Boolean(fieldValue())} disabled={isDisabled()} onChange={commit} />}
             </label>
           );
         })()}
@@ -271,18 +249,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const currentVal = () => String(fieldValue() ?? f.min ?? 0);
           return (
             <div class={styles.rangeWrap}>
-              <input
-                id={controlId()}
-                name={f.name}
-                type="range"
-                class={styles.range}
-                min={f.min ?? 0}
-                max={f.max ?? 100}
-                step={f.step ?? 1}
-                disabled={isDisabled()}
-                value={currentVal()}
-                onInput={(e) => commit(e.currentTarget.valueAsNumber)}
-              />
+              <Slider id={controlId()} name={f.name} value={Number(fieldValue() ?? f.min ?? 0)} min={f.min} max={f.max} step={f.step} disabled={isDisabled()} onChange={commit} />
               <Show when={f.showValue !== false}>
                 <output class={styles.rangeValue}>{currentVal()}</output>
               </Show>

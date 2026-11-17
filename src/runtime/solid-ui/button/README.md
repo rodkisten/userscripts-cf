@@ -127,3 +127,7 @@ The Button Studio now uses `StudioSelect`, a thin adapter around the existing `D
 ## Runtime-first visual pass
 
 The actual RodMenu `Surface.module.css` and `Fields.module.css` now use compact 8–10px radii, denser headers/sections/inputs/actions, and flat primary actions instead of gradients. The shared `SolidDropdown` uses the iOS visual viewport for placement and a tokenized separator. These are runtime changes consumed by userscripts, not Studio-only CSS. The Studio remains a consumer. Verify Cloudflare build, menu behavior and iPhone screenshots before considering the redesign finished.
+
+## Shared form controls: runtime-first
+
+`src/runtime/solid-ui/form-controls/Controls.tsx` exports real `Select`, `Checkbox`, `Switch`, `Slider` and `controlsCss`. RodMenu's `SharedFieldRenderer` consumes these directly, so its forms inherit their CSS Modules and accessible native input behavior. `Select` remains a styled native select for keyboard/form compatibility; a Radix-style popover select is a separate future enhancement. Consumers mounted in Shadow DOM must register `controlsCss` alongside their other runtime CSS. Build/typecheck/deploy not verified yet.
