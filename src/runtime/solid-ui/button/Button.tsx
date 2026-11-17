@@ -63,7 +63,7 @@ export function Button(props: ButtonProps) {
       type={props.type || "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
       disabled={props.disabled || busy()}
-      aria-busy={busy()}
+      aria-busy={busy() ? "true" : "false"}
       onClick={handleClick}
     >
       <span class={styles.content}>
