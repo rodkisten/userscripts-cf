@@ -44,6 +44,19 @@ export function runtimeHelpers() {
             }
           }
         };
+        if (ts.isSourceFile(node)) {
+          for (const statement of node.statements) {
+            if (ts.isImportDeclaration(statement) && statement.importClause) {
+              const clause = statement.importClause;
+              if (clause.name) names.add(clause.name.text);
+              if (clause.namedBindings) {
+                if (ts.isNamespaceImport(clause.namedBindings)) names.add(clause.namedBindings.name.text);
+                else for (const specifier of clause.namedBindings.elements) names.add(specifier.name.text);
+              }
+            }
+            if (ts.isImportEqualsDeclaration(statement)) names.add(statement.name.text);
+          }
+        }
         if (ts.isFunctionLike(node)) {
           for (const param of node.parameters) add(param.name);
           if (node.name && ts.isIdentifier(node.name)) names.add(node.name.text);
@@ -125,6 +138,23 @@ export function runtimeHelpers() {
           !keep(node)
         ) {
           const callee = node.expression;
+          // Runtime helper calls are resolved at build time against the
+          // nearest explicit init(ctx) binding. The call expression itself
+          // is replaced, so destructuring, aliases and nested patterns work
+          // without additional AST rewrites.
+          if (
+            ts.isIdentifier(callee) &&
+            ["useContext", "useRuntime", "useRuntimeWorld"].includes(callee.text) &&
+            !shadowed.has(callee.text) &&
+            node.arguments.length === 0
+          ) {
+            edits.push({
+              start: node.getStart(source),
+              end: node.end,
+              value: callee.text === "useRuntimeWorld" ? contextName + ".events.shared" : contextName,
+            });
+            return;
+          }
           let replacement;
           if (ts.isIdentifier(callee) && callee.text === "fetch" && !shadowed.has("fetch")) {
             replacement = contextName + ".http.fetch";
@@ -206,6 +236,34 @@ export function runtimeHelpers() {
         ts.forEachChild(node, (child) => walk(child, contextName, shadowed, blocked || keep(node), elements));
       }
       walk(source, null);
+      // Reject unresolved free helper calls. A shared module without an
+      // explicit context cannot safely guess which userscript owns it.
+      const covered = (node) =>
+        edits.some((edit) => edit.start <= node.getStart(source) && edit.end >= node.end);
+      const checkUnresolved = (node, shadowed = new Set()) => {
+        const scope = new Set([...shadowed, ...bindings(node)]);
+        if (
+          ts.isCallExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          ["useContext", "useRuntime", "useRuntimeWorld"].includes(node.expression.text) &&
+          !scope.has(node.expression.text) &&
+          !covered(node) &&
+          !keep(node)
+        ) {
+          const pos = source.getLineAndCharacterOfPosition(node.getStart(source));
+          const fail =
+            typeof this?.error === "function"
+              ? this.error.bind(this)
+              : (message) => {
+                  throw new Error(message);
+                };
+          fail(
+            `Unbound ${node.expression.text}() in ${id}:${pos.line + 1}:${pos.character + 1}. Move the call into init(ctx) or pass context explicitly to this module.`,
+          );
+        }
+        ts.forEachChild(node, (child) => checkUnresolved(child, scope));
+      };
+      checkUnresolved(source);
       if (!edits.length) return null;
       let output = code;
       for (const edit of edits.sort((a, b) => b.start - a.start)) {

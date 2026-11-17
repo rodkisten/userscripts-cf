@@ -88,3 +88,33 @@ O runtime inicializa o verificador para cada **instalável** (individual, `unifi
 API do contexto: `ctx.updates?.check(true)` força uma consulta, `ctx.updates?.stop()` interrompe o polling e `ctx.updates?.configure({ enabled: false })` desativa o verificador durante a sessão.
 
 **Limitações:** o servidor precisa permitir CORS para o manifesto (o Worker de hosting envia `Access-Control-Allow-Origin: *`); o Safari/Tampermonkey pode bloquear novas abas abertas após uma resposta assíncrona, por isso a instalação pode exigir abertura manual da URL caso o navegador bloqueie a nova aba. O teste real no Safari ainda está pendente.
+
+## Migrating legacy listeners and timers
+
+Use `ctx.listen(target, event, callback)` instead of direct `addEventListener` when the listener belongs to a script; use `ctx.observe(target, callback, options)` instead of constructing a `MutationObserver`, and `ctx.interval(callback, ms)` instead of `setInterval` plus manual `clearInterval`. These resources are disposed with the owning script. Keep native listeners only for short-lived local promises or integration boundaries where explicit teardown is required. Never add duplicate manual disposal for context-owned resources. Instagram Saved and the Reddit adapter are examples of this migration.
+
+### Soundgasm adapter
+
+The persistent native-page observer and periodic hydration refresh now use `ctx.observe` and `ctx.interval`, and are disposed by the script context. The short-lived observer and timeout inside the initial `Promise` deliberately retain explicit cleanup: they can finish before script disposal, so releasing them promptly avoids unnecessary work. Browser `sessionStorage` for temporary navigation hints is intentionally not replaced with persistent `ctx.storage`, since their lifetimes differ.
+
+### GM menu commands
+
+Register native userscript menu commands through `ctx.gm.modern.registerMenuCommand` (fall back to `ctx.gm.legacy`), rather than directly calling `GM_registerMenuCommand`. The bridge mirrors commands into the shared Dock without creating duplicate native entries. Retain returned IDs and unregister through the same bridge during `ctx.onDispose`; these registrations are not automatically disposed by the bridge. Instagram Saved demonstrates this pattern.
+
+### Raw storage and listener migration audit
+
+**Rule:** scripts should not use raw `localStorage`, `sessionStorage`, `GM_getValue`/`GM_setValue`, `addEventListener`, `MutationObserver`, or `setInterval` for context-owned resources. Prefer `ctx.storage`, `ctx.listen`, `ctx.observe`, and `ctx.interval`. Native APIs are allowed only inside their dedicated runtime adapters, cross-world shims, or short-lived promise scopes with explicit cleanup. A direct substitution of synchronous `localStorage` with asynchronous `ctx.storage` is **not** safe without migrating initialization and dependent call sites to async.
+
+The RodX entrypoint now uses `ctx.listen` for DOM readiness and releases its global startup guard on disposal. **Still pending:** RodX studio runtime's synchronous config persistence, GoneWild's page-world Reddit network shim and sync store, GitHub Tools preferences, and other legacy modules. These require storage adapters with a defined migration strategy, not blind search-and-replace.
+
+### GitHub Tools preferences migration
+
+GitHub Tools now hydrates preferences via `ctx.storage.get`, migrates a pre-existing Tampermonkey `GM_getValue` entry once through `ctx.gm.legacy`, and saves using `ctx.storage.set`. The UI starts from safe defaults, then refreshes after asynchronous hydration. User edits made during hydration win over the delayed read. Legacy data is left intact for rollback; no direct `localStorage` calls remain in this module. This does not migrate a historical page-localStorage-only fallback: that requires a dedicated, explicitly scoped legacy import at the runtime boundary.
+
+### RodX core runtime lifecycle
+
+RodX's core runtime now reads its owning `ScriptContext` from `Studio.ctx` at `start()`, uses `ctx.observe` for the page DOM, `ctx.listen` for SPA navigation and visibility events, and `ctx.interval` for the watchdog and maintenance timers. Disposal clears pending debounce timers and invalidation caches. Startup without an attached context is delayed instead of installing unmanaged native resources. This does **not** yet migrate synchronous RodX configuration persistence or its page-world storage bridge.
+
+### RodX core configuration persistence
+
+The core runtime no longer reads or writes raw `localStorage`: it hydrates configuration asynchronously through `ctx.storage.get`, persists ordered snapshots via `ctx.storage.set`, and prevents a delayed hydration result from overwriting edits. Both remaining maintenance/media intervals use `ctx.interval`. **Compatibility caveat:** preexisting page-localStorage-only RodX configuration is not imported yet; a dedicated one-time legacy adapter is required before releasing this change to users with older settings. Do not claim full backward compatibility until that adapter and integration tests are in place.

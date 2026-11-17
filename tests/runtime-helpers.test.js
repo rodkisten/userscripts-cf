@@ -111,3 +111,48 @@ test("rewrites GM object destructuring and preserves property names", () => {
   assert.match(output, /\{ GM_getValue: true \}/);
   assert.match(output, /const read = ctx\.gm\.legacy\.getValue/);
 });
+
+test("rewrites runtime helpers inside init, destructuring and nested callbacks", () => {
+  const output = transform(`function init(ctx) {
+    const { storage, menu: actions } = useContext();
+    const { signal } = useRuntime();
+    const { emit } = useRuntimeWorld();
+    async function sync() { return useContext().http; }
+  }`);
+  assert.match(output, /\{ storage, menu: actions \} = ctx/);
+  assert.match(output, /\{ signal \} = ctx/);
+  assert.match(output, /\{ emit \} = ctx\.events\.shared/);
+  assert.match(output, /return ctx\.http/);
+});
+
+test("does not rewrite locally shadowed helpers", () => {
+  const output = transform(`function init(ctx) {
+    const useContext = () => ({ local: true });
+    const { local } = useContext();
+  }`);
+  assert.match(output, /const \{ local \} = useContext\(\)/);
+});
+
+test("binds shared factory helpers to the factory context in nested async methods", () => {
+  const output = transform(`export function createBookmarks(ctx) {
+    return {
+      async start() {
+        const { storage: db, signal } = useContext();
+        await Promise.resolve();
+        return useRuntime().id + db + signal;
+      },
+    };
+  }`);
+  assert.match(output, /\{ storage: db, signal \} = ctx/);
+  assert.match(output, /return ctx\.id \+ db \+ signal/);
+});
+
+test("preserves explicitly imported runtime helper names", () => {
+  const output = transform(`import { useContext, useRuntime as localRuntime } from "./runtime-context";
+  function init(ctx) { return useContext() + localRuntime(); }`);
+  assert.match(output, /return useContext\(\) \+ localRuntime\(\)/);
+});
+
+test("rejects module-scope context without an owning script", () => {
+  assert.throws(() => transform("const shared = useContext();"), /Unbound useContext\(\).*example\.ts:1:16/);
+});

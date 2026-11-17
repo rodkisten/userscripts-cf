@@ -1,3 +1,5 @@
+import type { ScriptContext } from "../../../core/runtime.js";
+import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-storage.js";
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
@@ -82,6 +84,7 @@ export interface StudioRuntime {
   configure(patch: Partial<StudioConfig>): void;
   diagnostics(): DiagnosticInfo;
   services: Record<string, unknown>;
+  ctx?: ScriptContext;
 }
 
 // ============================================================================
@@ -111,12 +114,7 @@ const OWN_SELECTOR = [
 // TODO: create useRuntime() ou useContext() pra usar isso certo
 export function createStudioRuntime(): StudioRuntime {
   const defaults = createDefaults(STUDIO_SECTION_NAME);
-  let saved: Record<string, unknown> = {};
-
-  try {
-    const rawSaved = localStorage.getItem(CONFIG_STORAGE_KEY);
-    saved = rawSaved ? JSON.parse(rawSaved) : {};
-  } catch {}
+  const saved: Record<string, unknown> = {};
 
   const config: StudioConfig = {
     ...defaults,
@@ -166,6 +164,8 @@ export function createStudioRuntime(): StudioRuntime {
   let drainTimer = 0;
   let domTimer = 0;
   let started = false;
+  let configEdited = false;
+  let persistenceQueue: Promise<void> = Promise.resolve();
   let generation = 0;
 
   function on(type: string, fn: EventCallback): () => void {
@@ -344,33 +344,72 @@ export function createStudioRuntime(): StudioRuntime {
     if (started || !document.body) return;
     started = true;
 
-    new MutationObserver((records) => {
-      if (
-        !records.some(
-          (r) =>
-            !owned(r.target) &&
-            !(
-              r.type === "childList" &&
-              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).length &&
-              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
-            ),
+    const context = runtime.ctx;
+    if (!context) {
+      started = false;
+      console.warn("[RodX] ScriptContext unavailable; delaying runtime startup");
+      return;
+    }
+    // Hydrate the runtime configuration without blocking DOM startup.
+    // User changes made before hydration completes always take precedence.
+    void context.storage
+      .get(CONFIG_STORAGE_KEY)
+      .then(async (stored: unknown) => {
+        // Keep historical page storage access inside the compatibility adapter.
+        const legacy = stored === undefined ? readLegacyPageJSON(CONFIG_STORAGE_KEY) : undefined;
+        const value = stored === undefined ? legacy : stored;
+        if (
+          context.signal.aborted ||
+          configEdited ||
+          !value ||
+          typeof value !== "object" ||
+          Array.isArray(value)
         )
-      )
-        return;
+          return;
+        const loaded = value as Partial<StudioConfig>;
+        Object.assign(config, loaded, {
+          feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
+          modules: { ...defaults.modules, ...loaded.modules },
+        });
+        if (legacy !== undefined && !configEdited)
+          await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
+        if (!context.signal.aborted && !configEdited) invalidate("state");
+      })
+      .catch((error: unknown) => {
+        console.warn("[RodX] Could not hydrate runtime configuration", error);
+      });
 
-      if (!domTimer) {
-        domTimer = window.setTimeout(() => {
-          domTimer = 0;
-          invalidate("dom");
-        }, config.scanDelayMs);
-      }
-    }).observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["href"],
-    });
+    context.observe(
+      document.body,
+      (records) => {
+        if (
+          !records.some(
+            (r) =>
+              !owned(r.target) &&
+              !(
+                r.type === "childList" &&
+                Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).length &&
+                Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
+              ),
+          )
+        )
+          return;
+
+        if (!domTimer) {
+          domTimer = window.setTimeout(() => {
+            domTimer = 0;
+            invalidate("dom");
+          }, config.scanDelayMs);
+        }
+      },
+      {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["href"],
+      },
+    );
 
     let lastRoute = state.route;
     const route = () => {
@@ -381,14 +420,14 @@ export function createStudioRuntime(): StudioRuntime {
       invalidate("route");
     };
 
-    document.addEventListener("rodx:route", route);
-    window.addEventListener("popstate", route);
-    window.addEventListener("pageshow", () => {
+    context.listen(document, "rodx:route", route);
+    context.listen(window, "popstate", route);
+    context.listen(window, "pageshow", () => {
       route();
       invalidate("dom");
     });
 
-    document.addEventListener("visibilitychange", () => {
+    context.listen(document, "visibilitychange", () => {
       if (!document.hidden) {
         route();
         invalidate("dom");
@@ -397,26 +436,44 @@ export function createStudioRuntime(): StudioRuntime {
     });
 
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden) route();
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden) invalidate("maintenance");
     }, config.maintenanceMs);
 
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
     }, 500);
 
+    context.onDispose(() => {
+      started = false;
+      window.clearTimeout(domTimer);
+      window.clearTimeout(drainTimer);
+      domTimer = 0;
+      drainTimer = 0;
+      pending.clear();
+      cache.clear();
+    });
     invalidate("dom");
   }
 
   function configure(patch: Partial<StudioConfig>): void {
     Object.assign(config, patch);
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
-    } catch {}
+    configEdited = true;
+    const snapshot = JSON.parse(JSON.stringify(config)) as StudioConfig;
+    const context = runtime.ctx;
+    if (context && !context.signal.aborted) {
+      // Serialize writes to preserve the order of rapid UI changes.
+      persistenceQueue = persistenceQueue
+        .catch(() => {})
+        .then(() => context.storage.set(CONFIG_STORAGE_KEY, snapshot));
+      void persistenceQueue.catch((error: unknown) => {
+        console.warn("[RodX] Could not persist runtime configuration", error);
+      });
+    }
     invalidate("state");
   }
 
@@ -444,7 +501,7 @@ export function createStudioRuntime(): StudioRuntime {
     domGeneration: generation,
   });
 
-  return {
+  const runtime: StudioRuntime = {
     state,
     config,
     on,
@@ -462,4 +519,5 @@ export function createStudioRuntime(): StudioRuntime {
     diagnostics,
     services: {},
   };
+  return runtime;
 }

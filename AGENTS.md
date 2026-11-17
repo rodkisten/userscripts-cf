@@ -2,6 +2,14 @@
 
 These instructions apply to every agent, automation, and code contributor working in this repository.
 
+## Runtime context lifecycle and documentation (MANDATORY)
+
+Before changing userscript entrypoints, runtime helpers, context-scoped stores, listeners, UI mounting or AST transforms, **read the lifecycle guide in [docs/context-and-optimization.md](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth)**. The context belongs to the **script instance**, not the page, module or a mutable global. `reconcile()` creates a fresh `ScriptContext` using `context(definition)` and passes it into `definition.module.init(ctx)`. The AST rewrites `useContext()`/`useRuntime()` in provably context-bound lexical scopes; `ctx.ui.mountSolid` provides that same instance through `RuntimeProvider` to Solid descendants. `ctx.dispose()` aborts and cleans up resources.
+
+**Always** use the instance-owned `ctx` API. Never register events, stores or styles outside its lifecycle; never introduce a mutable global current-context pointer. For shared modules, pass `ctx` explicitly or use a per-script factory until automatic per-instance binding is implemented. Do not assume a module-top-level `useContext()` can resolve safely. `useRuntimeWorld()` currently exposes shared events, not the page/sandbox execution world.
+
+**Whenever any of these mechanisms changes, update the lifecycle guide and its Mermaid diagram in the same work block.** Keep examples, limitations, regression tests and interactive Playground examples (when user-visible) synchronized. Run relevant tests, typecheck and build; document failures instead of claiming unverified success. This instruction applies to all future agents and code changes.
+
 ## Repository-wide defaults: Solid-first and context-first (MANDATORY)
 
 **Everything interactive in this repository is SolidJS by default.** Do not introduce React, Vue, imperative DOM-rendered menus, manually assembled widgets, or another UI framework unless the user explicitly requests it. Use SolidJS components, signals/stores, and CSS Modules, including for shared runtime UI such as dropdowns, dialogs, inspectors, Dock controls, and toasts.

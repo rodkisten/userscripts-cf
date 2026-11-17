@@ -20,6 +20,8 @@ Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separa
 
 ## Arquitetura do contexto e otimização
 
+🧬 [Ciclo de vida do Runtime Context](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth): diagrama Mermaid, criação do `ctx`, transformação AST, propagação Solid, teardown, exemplos e limites para módulos compartilhados. A manutenção deste guia é obrigatória pelo `AGENTS.md`.
+
 📖 [Guia técnico de contexto, lifecycle, tree-shaking e estratégia de otimização](docs/context-and-optimization.md). Inclui contrato de `ctx`, análise de dependências, flags de build, auditoria de tamanho, prioridades e critérios de aceite.
 
 ## Como desenvolver

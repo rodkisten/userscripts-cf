@@ -143,32 +143,33 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         draft.source = source;
       });
   };
-  const observer = new MutationObserver((records) => {
-    if (
-      records.some(
-        (record) =>
-          !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-            "[data-solid-mount]",
-          ),
+  ctx.observe(
+    document.documentElement,
+    (records: MutationRecord[]) => {
+      if (
+        records.some(
+          (record) =>
+            !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
+              "[data-solid-mount]",
+            ),
+        )
       )
-    )
-      refresh();
-  });
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["src"],
-  });
-  const interval = setInterval(() => {
+        refresh();
+    },
+    {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src"],
+    },
+  );
+  ctx.interval(() => {
     refresh();
     revealIfReady();
   }, 500);
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    observer.disconnect();
-    clearInterval(interval);
     mount.dispose();
     native(true);
     document.title = titleBefore;

@@ -37,9 +37,9 @@ function markRodXAsStarted(win: Window & typeof globalThis): void {
   win[WINDOW_RODX_FLAG] = true;
 }
 
-function scheduleDeckInitialization(): void {
+function scheduleDeckInitialization(ctx: ScriptContext): void {
   if (document.readyState === DOCUMENT_LOADING_STATE) {
-    document.addEventListener(DOM_CONTENT_LOADED_EVENT, initializeDeck, { once: true });
+    ctx.listen(document, DOM_CONTENT_LOADED_EVENT, initializeDeck, { once: true });
   } else {
     initializeDeck();
   }
@@ -80,7 +80,11 @@ export function startRodX(ctx: ScriptContext): void {
 
   initializeNetwork();
   Studio.ctx = ctx;
-  scheduleDeckInitialization();
+  scheduleDeckInitialization(ctx);
+  // Release the startup guard when the script context is disposed (SPA navigation).
+  ctx.onDispose(() => {
+    delete window[WINDOW_RODX_FLAG];
+  });
 }
 
 export default {

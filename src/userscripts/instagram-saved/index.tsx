@@ -1,4 +1,5 @@
-import { createStore, Show } from "solid-js";
+import { Show } from "solid-js";
+import type { ScriptContext } from "../../core/runtime";
 import { SavedPanel, SettingsDialog, css, type Form } from "./Settings.tsx";
 import type { MediaPayload, Page } from "./core.ts";
 import { mountReelBookmark } from "./reel-bookmark.tsx";
@@ -13,30 +14,7 @@ type Settings = {
   maxItemsPerSession: number;
 };
 
-type RuntimeContext = {
-  dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
-  menu: { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void };
-  toaster: ((options: any) => any) & { success?: (options: any) => any };
-  signal: AbortSignal;
-  storage: {
-    get: (key: string, fallback: any) => Promise<any>;
-    set: (key: string, value: any) => Promise<void>;
-  };
-  style: (css: string) => void;
-  pageStyle: (css: string) => void;
-  ui: {
-    root: ShadowRoot;
-    mount: (node: Node) => Node;
-    registerStyles: (...css: string[]) => () => void;
-    mountSolid: (component: () => any, options?: { styles?: string[]; id?: string }) => () => void;
-  };
-  listen: (target: EventTarget, event: string, callback: () => void) => void;
-  onDispose: (callback: () => void) => void;
-};
-
 declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
-declare const GM_registerMenuCommand: ((label: string, callback: () => void) => any) | undefined;
-declare const GM_unregisterMenuCommand: ((id: any) => void) | undefined;
 declare const unsafeWindow: (Window & typeof globalThis & { __XRodSettingsInstagram?: any }) | undefined;
 declare const RodMenu:
   { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void } | undefined;
@@ -53,10 +31,11 @@ const DEFAULTS = {
 const RELAY = "https://xtelegram-cf.migos.club/batch";
 
 export default {
-  init(ctx: RuntimeContext) {
+  init(ctx: ScriptContext) {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
 
+    if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
     const hub = installRodActions(ctx.menu);
     const unregisterActions = hub.register({
       id: "instagram-saved",
@@ -78,7 +57,7 @@ export default {
       ],
     });
     ctx.onDispose(unregisterActions);
-    const [runtime, setRuntime] = createStore({
+    const [runtime, setRuntime] = ctx.store({
       running: false,
       lastRun: 0,
       lastError: "",
@@ -270,7 +249,7 @@ export default {
             draft.lastError = "";
           });
           if (count > 0) {
-            ctx.toaster.success?.({ title: `${count} mídias enviadas` });
+            ctx.toaster?.success?.({ title: `${count} mídias enviadas` });
           }
         });
       } catch (caught) {
@@ -320,13 +299,11 @@ export default {
         void settingsApi.open();
       }
     };
-    document.addEventListener("click", shortcut, true);
-    ctx.onDispose(() => document.removeEventListener("click", shortcut, true));
+    ctx.listen(document, "click", shortcut, { capture: true });
     mountReelBookmark(
-      abort,
-      ctx.pageStyle,
+      ctx,
       async () => (await get("settings", DEFAULTS)).collectionIds || [],
-      (message) => ctx.toaster({ title: message }),
+      (message) => ctx.toaster?.({ title: message }),
     );
 
     const settingsApi = {
@@ -365,36 +342,43 @@ export default {
       typeof globalThis & { __XRodSettingsInstagram?: any };
     page.__XRodSettingsInstagram ||= { modules: {} };
     page.__XRodSettingsInstagram.modules.saved = settingsApi;
-    const menus: any[] = [];
-    if (typeof GM_registerMenuCommand === "function") {
-      menus.push(GM_registerMenuCommand("Instagram salvos · Configurar Relay", configure));
-      menus.push(GM_registerMenuCommand("Instagram salvos · Configurações", () => void settingsApi.open()));
-      menus.push(GM_registerMenuCommand("Instagram salvos · Sincronizar agora", () => void run(true)));
-      menus.push(
-        GM_registerMenuCommand("Instagram salvos · Diagnóstico", async () => {
-          const error = await get("lastError", null);
-          setRuntime((draft) => {
-            draft.lastError = error?.message || "Nenhum erro registrado";
-          });
-          await settingsApi.open();
-        }),
-      );
+    // Use the runtime GM bridge: it mirrors native commands into the Dock.
+    // Prefer the modern API and fall back to the legacy Tampermonkey bridge.
+    const gmMenu = ctx.gm.modern.registerMenuCommand ? ctx.gm.modern : ctx.gm.legacy;
+    const menus: Array<number | string> = [];
+    const registerMenu = gmMenu.registerMenuCommand;
+    if (registerMenu) {
+      for (const [label, callback] of [
+        ["Instagram salvos · Configurar Relay", configure],
+        ["Instagram salvos · Configurações", () => void settingsApi.open()],
+        ["Instagram salvos · Sincronizar agora", () => void run(true)],
+        [
+          "Instagram salvos · Diagnóstico",
+          async () => {
+            const error = await get("lastError", null);
+            setRuntime((draft) => {
+              draft.lastError = error?.message || "Nenhum erro registrado";
+            });
+            await settingsApi.open();
+          },
+        ],
+      ] as const) {
+        menus.push(registerMenu(label, callback));
+      }
     }
     ctx.dock?.register([
       { id: "settings", label: "Configurações", run: () => void settingsApi.open() },
       { id: "sync", label: "Sincronizar", run: () => void run(true) },
       { id: "relay", label: "Configurar Relay", run: configure },
     ]);
-    const timer = setInterval(() => void run(), 60000);
+    // The script context owns the interval and cancels it on route disposal.
+    ctx.interval(() => void run(), 60000);
     ctx.listen(document, "visibilitychange", () => void run());
     ctx.onDispose(() => {
-      clearInterval(timer);
       if (page.__XRodSettingsInstagram?.modules?.saved === settingsApi) {
         delete page.__XRodSettingsInstagram.modules.saved;
       }
-      if (typeof GM_unregisterMenuCommand === "function") {
-        menus.forEach((id) => GM_unregisterMenuCommand(id));
-      }
+      menus.forEach((id) => gmMenu.unregisterMenuCommand?.(id));
     });
     void run();
   },
