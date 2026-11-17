@@ -17,3 +17,15 @@ feat: improve bookmarks (test: tests/runtime-helpers.test.js,tests/userscripts/r
 - Use full paths for individual tests; bare names such as `suite1` are intentionally not accepted because they are ambiguous.
 
 The selector is only recognized as the **last parenthesized expression** in the title.
+
+## Mandatory agent workflow
+
+All agents contributing to this repository must read this document and follow the PR title policy in [AGENTS.md](../AGENTS.md). For each PR creation or edit:
+
+1. Select actual test files and build targets relevant to the diff, using `all` for broad changes.
+2. Place the scope suffix **at the end** of the title. Do not append other parenthesized metadata after it.
+3. Recalculate the scope if files change. A PR title edit triggers another validation run.
+4. Preserve the originating conversation URL in the PR body. Never fabricate a URL.
+5. Report changes with commit SHA, commit URL, PR URL (if any), and observed CI status.
+
+Focused CI is a development convenience, never an authorization to bypass required release gates.
