@@ -857,12 +857,20 @@ function App() {
 const target = document.getElementById("app");
 if (target) {
   try {
+    // Solid render mounts into the supplied container; it does not own or
+    // remove server-rendered placeholders. Clear the bootstrap UI first.
+    target.replaceChildren();
     render(() => <App />, target);
-    if (target.querySelector("main") && !target.textContent?.includes("Carregando componentes SolidJS")) {
-      (window as typeof window & { __rodPlaygroundReady?: () => void }).__rodPlaygroundReady?.();
-    } else {
-      throw new Error("SolidJS render returned without replacing the loading placeholder");
-    }
+    queueMicrotask(() => {
+      if (target.querySelector("main")) {
+        (window as typeof window & { __rodPlaygroundReady?: () => void }).__rodPlaygroundReady?.();
+      } else {
+        window.dispatchEvent(new ErrorEvent("error", {
+          error: new Error("SolidJS did not create the application root"),
+          message: "SolidJS did not create the application root",
+        }));
+      }
+    });
   } catch (error) {
     window.dispatchEvent(new ErrorEvent("error", { error, message: String(error) }));
     throw error;

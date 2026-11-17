@@ -164,11 +164,14 @@
       import(asset)
         .then(() => {
           if (failed) return;
-          if (!mounted && host?.textContent?.includes("Carregando componentes SolidJS")) {
-            showError(new Error("Bundle carregado, mas SolidJS não montou a aplicação."));
-          } else {
-            mounted = true;
-            clearTimeout(timeout);
+          // Rendering may finish in a microtask after the ESM import resolves.
+          // The application explicitly signals readiness after its root exists.
+          if (!mounted && !failed) {
+            setTimeout(() => {
+              if (!mounted && !failed && !host?.querySelector("main")) {
+                showError(new Error("Bundle carregado, mas SolidJS não criou a raiz da aplicação."));
+              }
+            }, 1500);
           }
         })
         .catch(showError);
