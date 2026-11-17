@@ -48,7 +48,16 @@ jobs:
           tail -n 40 /tmp/rod-typescript-diagnostics.log >> "$GITHUB_STEP_SUMMARY"
       - name: Apply conservative TypeScript code fixes
         if: steps.diagnostics.outputs.has_typescript_errors == 'true'
+        id: repair
+        continue-on-error: true
         run: node build/typescript-safe-autofix.mjs
+      - name: Upload complete TypeScript diagnostics
+        if: always() && steps.diagnostics.outputs.has_typescript_errors == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-autofix-diagnostics
+          path: artifacts/typescript-autofix-diagnostics.json
+          if-no-files-found: warn
       - name: Format changed files
         if: steps.diagnostics.outputs.has_typescript_errors == 'true'
         run: |
@@ -88,3 +97,9 @@ jobs:
           add-paths: |
             src/**/*.ts
             src/**/*.tsx
+
+      - name: Report unrepaired TypeScript errors
+        if: steps.repair.outcome == 'failure' && steps.changes.outputs.changed != 'true'
+        run: |
+          echo '::error::TypeScript errors remain without a supported AST fix. See the diagnostics artifact.'
+          exit 1

@@ -78,6 +78,18 @@ const remaining = ts.getPreEmitDiagnostics(ts.createProgram(parsed.fileNames, pa
 const counts = new Map();
 for (const diagnostic of remaining) counts.set(diagnostic.code, (counts.get(diagnostic.code) ?? 0) + 1);
 const topErrors = [...counts].sort((a,b) => b[1]-a[1]).slice(0,12).map(([code,count]) => `- TS${code}: ${count}`).join("\\n");
+const diagnostics = remaining.map((d) => {
+  const location = d.file && d.start !== undefined ? d.file.getLineAndCharacterOfPosition(d.start) : null;
+  const file = d.file ? path.relative(process.cwd(), d.file.fileName) : "(project)";
+  return { file, line: location ? location.line + 1 : 0, column: location ? location.character + 1 : 0, code: d.code, message: ts.flattenDiagnosticMessageText(d.messageText, " ") };
+});
+fs.mkdirSync("artifacts", { recursive: true });
+fs.writeFileSync("artifacts/typescript-autofix-diagnostics.json", JSON.stringify({before,after,fixes:fixes.length,diagnostics},null,2));
 const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST JSX import repairs: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n\\n### Remaining diagnostic groups\\n${topErrors}\\n`;
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
 console.log(summary);
+
+if (remaining.length > 0 && fixes.length === 0) {
+  console.error(`::error::AST autofix made no changes; ${remaining.length} TypeScript errors remain. See artifacts/typescript-autofix-diagnostics.json`);
+  process.exitCode = 1;
+}
