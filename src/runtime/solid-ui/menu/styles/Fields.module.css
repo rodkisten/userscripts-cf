@@ -1,6 +1,6 @@
 .section {
-  margin: 0 0 14px;
-  border-radius: 20px;
+  margin: 0 0 12px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--rm-elevated) 58%, transparent);
   border: 1px solid var(--rm-border);
   overflow: hidden;
@@ -15,7 +15,7 @@
   gap: 12px;
 }
 .sectionHead {
-  padding: 14px 14px 6px;
+  padding: 12px 12px 5px;
 }
 .sectionTitle {
   margin: 0;
@@ -45,7 +45,7 @@
 }
 .field {
   position: relative;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-top: 1px solid var(--rm-border);
   min-width: 0;
 }
@@ -98,8 +98,8 @@
 .trailingAction,
 .miniButton {
   border: 1px solid var(--rm-border);
-  border-radius: 12px;
-  background: color-mix(in srgb, Canvas 86%, transparent);
+  border-radius: 8px;
+  background: var(--rm-elevated);
   color: var(--rm-text);
   min-height: 40px;
   padding: 8px 11px;
@@ -120,10 +120,10 @@
 .textarea,
 .select {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid var(--rm-border);
-  border-radius: 13px;
-  background: color-mix(in srgb, Canvas 87%, transparent);
+  border-radius: 8px;
+  background: var(--rm-panel);
   color: var(--rm-text);
   outline: none;
   padding: 10px 12px;
@@ -224,12 +224,12 @@
   gap: 4px;
   padding: 4px;
   background: var(--rm-elevated);
-  border-radius: 13px;
+  border-radius: 9px;
 }
 .segment {
   border: 0;
-  border-radius: 10px;
-  padding: 9px 10px;
+  border-radius: 7px;
+  padding: 8px 10px;
   color: var(--rm-muted);
   background: transparent;
   cursor: pointer;
@@ -339,10 +339,10 @@
 }
 .typeaheadInput {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid var(--rm-border);
-  border-radius: 13px;
-  background: color-mix(in srgb, Canvas 87%, transparent);
+  border-radius: 8px;
+  background: var(--rm-panel);
   color: var(--rm-text);
   outline: none;
   padding: 10px 38px 10px 12px;

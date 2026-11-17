@@ -37,16 +37,22 @@ export function openSolidDropdown(options: DropdownOptions) {
   activeDropdowns.set(trigger, () => close());
   const focusFirst = () => mount.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   const position = () => {
+    if (disposed || !trigger.isConnected) { close(false); return; }
+    const viewport = trigger.ownerDocument.defaultView?.visualViewport;
+    const vw = viewport?.width ?? innerWidth;
+    const vh = viewport?.height ?? innerHeight;
+    const vx = viewport?.offsetLeft ?? 0;
+    const vy = viewport?.offsetTop ?? 0;
     const rect = trigger.getBoundingClientRect();
     const width = mount.offsetWidth;
     mount.style.left =
       Math.max(
-        8,
-        Math.min(innerWidth - width - 8, options.align === "start" ? rect.left : rect.right - width),
+        vx + 8,
+        Math.min(vx + vw - width - 8, options.align === "start" ? rect.left : rect.right - width),
       ) + "px";
     mount.style.top =
-      (rect.bottom + mount.offsetHeight > innerHeight - 8
-        ? Math.max(8, rect.top - mount.offsetHeight - 4)
+      (rect.bottom + mount.offsetHeight > vy + vh - 8
+        ? Math.max(vy + 8, rect.top - mount.offsetHeight - 4)
         : rect.bottom + 4) + "px";
   };
   const dispose = render(
@@ -90,7 +96,7 @@ export function openSolidDropdown(options: DropdownOptions) {
         <For each={stack().at(-1) ?? []}>
           {(item) =>
             item.type === "separator" ? (
-              <hr style={{ border: "0", "border-top": "1px solid #435067", margin: "6px 0" }} />
+              <hr style={{ border: "0", "border-top": "1px solid var(--rod-menu-border, #3f3f46)", margin: "5px 0" }} />
             ) : (
               <button
                 type="button"

@@ -123,3 +123,7 @@ After mobile screenshots revealed oversized native controls, unbalanced dropdown
 ## Studio selects are shared Rod UI components
 
 The Button Studio now uses `StudioSelect`, a thin adapter around the existing `DropdownButton`/`SolidDropdown` stack, for theme, preset, variant and size. This removes iOS native select pickers from the Button panel without adding a second menu implementation. Selected values show a checkmark in the dropdown. The CSS-copy action uses the shared Button, and the settings grid has two columns on narrow screens. Remaining work: replace native sliders/color controls with dedicated shared Field/Slider/ColorPicker, align menu/inspector previews and verify the build/Safari.
+
+## Runtime-first visual pass
+
+The actual RodMenu `Surface.module.css` and `Fields.module.css` now use compact 8–10px radii, denser headers/sections/inputs/actions, and flat primary actions instead of gradients. The shared `SolidDropdown` uses the iOS visual viewport for placement and a tokenized separator. These are runtime changes consumed by userscripts, not Studio-only CSS. The Studio remains a consumer. Verify Cloudflare build, menu behavior and iPhone screenshots before considering the redesign finished.
