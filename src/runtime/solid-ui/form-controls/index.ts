@@ -69,3 +69,6 @@ export { getFormControlsQueryClient, disposeFormControlsQueryClient } from "./qu
 // Reusable runtime controls and Shadow DOM stylesheet
 export { Select, Checkbox, Switch, Slider, ColorPicker, controlsCss } from "./Controls";
 export type { SelectProps, BooleanControlProps, SliderProps, ColorPickerProps } from "./Controls";
+
+export { Input, Textarea, NumberInput } from "./TextControls";
+export type { TextControlProps, NumberInputProps } from "./TextControls";

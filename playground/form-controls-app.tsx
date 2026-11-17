@@ -13,6 +13,7 @@ import {
   ColorPicker,
 } from "../src/runtime/solid-ui/form-controls/Controls";
 import { TagsInput } from "../src/runtime/solid-ui/form-controls/TagsInput";
+import { Input, Textarea, NumberInput } from "../src/runtime/solid-ui/form-controls/TextControls";
 import { StandaloneFieldRenderer } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer";
 import { getFormControlsQueryClient } from "../src/runtime/solid-ui/form-controls/query-client";
 import { SHARED_FIELD_TYPES } from "../src/runtime/solid-ui/form-controls/field-types";
@@ -70,6 +71,10 @@ function JsxPreview(props: { code: string }) {
 }
 
 function App() {
+  const [textDemo, setTextDemo] = createSignal("");
+  const [textareaDemo, setTextareaDemo] = createSignal("");
+  const [numberDemo, setNumberDemo] = createSignal<number | "">(5);
+  const [showErrors, setShowErrors] = createSignal(false);
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
   const [basicSwitch, setBasicSwitch] = createSignal(false);
@@ -201,6 +206,17 @@ function App() {
       <h1>Form Controls Playground</h1>
       <p>Componentes reais do runtime SolidJS. Altere os valores para experimentar os estados e a API.</p>
       <div class="grid">
+        <section class="card wide" id="text-controls">
+          <h2>Input · Textarea · NumberInput</h2>
+          <p>Controles reutilizáveis, com erros acessíveis, estados e valores em tempo real.</p>
+          <label class="toggle"><input type="checkbox" checked={showErrors()} onChange={(event) => setShowErrors(event.currentTarget.checked)} /> Simular erros de validação</label>
+          <div class="grid">
+            <Input id="demo-input" label="Nome" placeholder="Digite seu nome" value={textDemo()} onChange={setTextDemo} disabled={disabled()} readonly={readonly()} description="Exemplo com descrição acessível" error={showErrors() && !textDemo().trim() ? "Preencha o nome." : undefined} />
+            <Textarea id="demo-textarea" label="Descrição" placeholder="Escreva uma descrição…" value={textareaDemo()} onChange={setTextareaDemo} disabled={disabled()} readonly={readonly()} maxLength={180} showCount rows={4} error={showErrors() && !textareaDemo().trim() ? "Adicione uma descrição." : undefined} />
+            <NumberInput id="demo-number" label="Quantidade" value={numberDemo()} onChange={setNumberDemo} disabled={disabled()} readonly={readonly()} min={1} max={10} step={1} description="Entre 1 e 10" error={showErrors() && (numberDemo() === "" || Number(numberDemo()) < 1 || Number(numberDemo()) > 10) ? "Escolha um valor entre 1 e 10." : undefined} />
+          </div>
+          <pre aria-live="polite">{JSON.stringify({ name: textDemo(), description: textareaDemo(), quantity: numberDemo() }, null, 2)}</pre>
+        </section>
         <section class="card wide" id="basic-controls">
           <h2>Controles básicos · Componentes reais</h2>
           <p>Os mesmos controles usados pelo runtime, com valores reativos e estados disabled/readonly.</p>
