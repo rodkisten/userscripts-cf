@@ -44,6 +44,11 @@ async function declarations(file) {
   for (const item of ast.program.body) {
     const node = item.type === "ExportNamedDeclaration" ? item.declaration : item;
     if (node?.id?.name) map.set(node.id.name, node);
+    if (node?.type === "VariableDeclaration") {
+      for (const declaration of node.declarations) {
+        if (declaration.id?.type === "Identifier") map.set(declaration.id.name, node);
+      }
+    }
   }
   files.set(file, map);
   return map;
