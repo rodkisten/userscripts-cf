@@ -12,3 +12,5 @@ Unified/standalone bundles can contain both frameworks. The installer starts a s
 - React JSX is compiled in `*.react.tsx` and `runtime-context-react.tsx`; Solid JSX retains its existing compiler.
 - Run typecheck, bundle build, and mount/unmount tests for both frameworks.
 - Verify independent framework lifecycles and browser routing before merging.
+
+React hooks are intentionally imported from the React context module, never installed as global helpers, to avoid collisions with Solid hooks in mixed bundles.
