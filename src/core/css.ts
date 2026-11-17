@@ -1,5 +1,4 @@
 import coreCSS from "../styles/core.css?inline";
-import browser from "./browser";
 
 // ============================================================================
 // Semantic Constants (Numeric / String magic values abstracted)
@@ -31,7 +30,11 @@ const managedClasses = new WeakMap<Element, string[]>();
 let scratchRange: Range | null = null;
 let preventScrollSupported: null | false | { preventScroll: boolean } = null;
 
-if (browser.safari && browser.safari_version >= 26) {
+// Safari 26+ does not support the preventScroll behavior expected here.
+// Detect the engine directly instead of importing a nonexistent browser module.
+const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+const safariMatch = /Version\\/(\\d+)(?:\\.\\d+)?/.exec(userAgent);
+if (/Safari\\//.test(userAgent) && !/(?:Chrome|CriOS|FxiOS|EdgiOS|OPiOS)\\//.test(userAgent) && Number(safariMatch?.[1] ?? 0) >= 26) {
   preventScrollSupported = false;
 }
 
