@@ -27,22 +27,24 @@ assets["playground/form-controls.html"] = await fs.readFile(
 );
 // Compile the actual SolidJS components instead of shipping a separate HTML mock.
 const playgroundDir = path.join(dist, "form-controls-playground");
-await viteBuild(mergeConfig(baseViteConfig, {
-  configFile: false,
-  root,
-  build: {
-    outDir: playgroundDir,
-    emptyOutDir: true,
-    cssCodeSplit: false,
-    lib: {
-      entry: path.join(root, "playground/form-controls-app.tsx"),
-      formats: ["es"],
-      fileName: () => "form-controls.js",
-      cssFileName: "form-controls",
+await viteBuild(
+  mergeConfig(baseViteConfig, {
+    configFile: false,
+    root,
+    build: {
+      outDir: playgroundDir,
+      emptyOutDir: true,
+      cssCodeSplit: false,
+      lib: {
+        entry: path.join(root, "playground/form-controls-app.tsx"),
+        formats: ["es"],
+        fileName: () => "form-controls.js",
+        cssFileName: "form-controls",
+      },
+      minify: true,
     },
-    minify: true,
-  },
-}));
+  }),
+);
 await viteBuild({
   configFile: false,
   root,

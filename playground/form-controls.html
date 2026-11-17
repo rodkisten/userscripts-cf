@@ -137,10 +137,18 @@
         const timer = setTimeout(() => {
           if (target?.textContent?.includes("Carregando componentes SolidJS")) {
             fetch(entry, { cache: "no-store" })
-              .then((response) => report(response.ok
-                ? "O arquivo JavaScript respondeu, mas o SolidJS não montou a interface. Verifique os erros do navegador."
-                : "O bundle do playground não está disponível (HTTP " + response.status + "). Confira o deploy do Worker."))
-              .catch(() => report("Não foi possível carregar o bundle JavaScript. Confira a conexão e o deploy."));
+              .then((response) =>
+                report(
+                  response.ok
+                    ? "O arquivo JavaScript respondeu, mas o SolidJS não montou a interface. Verifique os erros do navegador."
+                    : "O bundle do playground não está disponível (HTTP " +
+                        response.status +
+                        "). Confira o deploy do Worker.",
+                ),
+              )
+              .catch(() =>
+                report("Não foi possível carregar o bundle JavaScript. Confira a conexão e o deploy."),
+              );
           }
         }, 8000);
         new MutationObserver(() => {
@@ -162,7 +170,8 @@
         const heading = document.createElement("h1");
         heading.textContent = "Não foi possível iniciar o playground";
         const description = document.createElement("p");
-        description.textContent = "O JavaScript não carregou ou falhou ao inicializar. Recarregue a página ou copie o diagnóstico abaixo.";
+        description.textContent =
+          "O JavaScript não carregou ou falhou ao inicializar. Recarregue a página ou copie o diagnóstico abaixo.";
         const details = document.createElement("pre");
         details.style.whiteSpace = "pre-wrap";
         details.style.overflowWrap = "anywhere";
