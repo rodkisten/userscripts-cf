@@ -389,14 +389,22 @@ export function createRuntime(
         {
           id: CLIPBOARD_ACTION_COPY,
           label: CLIPBOARD_ACTION_COPY_LABEL,
-          handler: async (ctx: { values: { item: string } }) => clipboard.copy(ctx.values.item),
+          handler: async (ctx) => {
+             const item = ctx.values.item;
+             if (typeof item !== "string") return false;
+             return clipboard.copy(item);
+           },
         },
         { id: CLIPBOARD_ACTION_READ, label: CLIPBOARD_ACTION_READ_LABEL, handler: () => clipboard.read() },
         {
           id: CLIPBOARD_ACTION_CLEAR,
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
           variant: "danger",
-          handler: (ctx: { values: { item: string } }) => clipboard.remove(ctx.values.item),
+          handler: (ctx) => {
+             const item = ctx.values.item;
+             if (typeof item !== "string") return;
+             return clipboard.remove(item);
+           },
         },
       ],
     });
@@ -477,7 +485,7 @@ export function createRuntime(
         eventBus = createEventBus({
           namespace: definition.id,
           signal: abort.signal,
-          onDiagnostic: (diagnostic: unknown) => console.warn(LOG_TAG_EVENTS, diagnostic),
+          onDiagnostic: () => console.warn(LOG_TAG_EVENTS, "Event bus diagnostic"),
         });
         sharedEvents = createSharedEvents({ host, signal: abort.signal });
         domEventsEngine = createDomEventsEngine(definition.id, host);
