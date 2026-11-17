@@ -21,11 +21,11 @@ export function Select(props: SelectProps) {
       onChange={(event) => props.onChange(event.currentTarget.value)}
     >
       <For each={props.options}>
-          {(option) => (
-            <option value={option.value} disabled={option.disabled}>
-              {option.label}
-            </option>
-          )}
+        {(option) => (
+          <option value={option.value} disabled={option.disabled}>
+            {option.label}
+          </option>
+        )}
       </For>
     </select>
   );
@@ -125,17 +125,17 @@ export function ColorPicker(props: ColorPickerProps) {
       </output>
       <div class={styles.colorPresets} role="group" aria-label="Cores predefinidas">
         <For each={(props.presets ?? []).filter(valid)}>
-            {(color) => (
-              <button
-                type="button"
-                class={styles.colorPreset}
-                style={{ "background-color": color }}
-                aria-label={color}
-                aria-pressed={current().toLowerCase() === color.toLowerCase()}
-                disabled={props.disabled || props.readonly}
-                onClick={() => props.onChange(color)}
-              />
-            )}
+          {(color) => (
+            <button
+              type="button"
+              class={styles.colorPreset}
+              style={{ "background-color": color }}
+              aria-label={color}
+              aria-pressed={current().toLowerCase() === color.toLowerCase()}
+              disabled={props.disabled || props.readonly}
+              onClick={() => props.onChange(color)}
+            />
+          )}
         </For>
       </div>
     </div>
