@@ -153,7 +153,10 @@ export function mountReddit(ctx: any, bridge: any) {
         const post = readPost(node, sub());
         if (!post || !state.settings.subreddits.some((name) => normalize(name) === normalize(post.sub)))
           continue;
-        const title = ctx.dom.one('[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]', node);
+        const title = ctx.dom.one(
+          '[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]',
+          node,
+        );
         const mount = mountPoint(node, () => (
           <PostCard
             post={post}
