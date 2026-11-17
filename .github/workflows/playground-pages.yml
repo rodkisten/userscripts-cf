@@ -68,7 +68,7 @@ jobs:
             const source = fs.readFileSync(root + item.file, "utf8");
             const meta = fs.readFileSync(root + item.metaFile, "utf8");
             for (const [name, content] of [["script", source], ["metadata", meta]]) {
-              if (!content.split("\\n").some(line => line.startsWith("// @name") && line.includes("[PRE] "))) throw Error("Missing PRE name in " + item.id + " " + name);
+              if (!content.split("\n").some(line => line.startsWith("// @name") && line.includes("[PRE] "))) throw Error("Missing PRE name in " + item.id + " " + name);
               if (!content.includes("/" + item.file) || !content.includes("/" + item.metaFile)) throw Error("Incorrect preview links in " + item.id + " " + name);
               if (!content.includes("/icons/preview.svg")) throw Error("Missing black preview icon in " + item.id + " " + name);
             }

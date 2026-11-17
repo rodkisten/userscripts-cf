@@ -94,6 +94,7 @@ if (isPreview) {
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:(?:preview\.)?(?:user|meta))\.js|manifest\.json|SHA256SUMS)$/.test(file))
     continue;
+  if (isPreview && file === "manifest.json") continue; // Keep the preview catalog, not the production manifest.
   if (isPreview && /\.(?:user|meta)\.js$/.test(file) && !file.includes(".preview.")) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
 }
