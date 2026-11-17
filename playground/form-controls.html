@@ -112,8 +112,7 @@
       let mounted = false;
       let failed = false;
       const timeout = setTimeout(() => {
-        if (!mounted)
-          showError(new Error("Timeout de inicialização: o módulo não montou em 12 segundos."));
+        if (!mounted) showError(new Error("Timeout de inicialização: o módulo não montou em 12 segundos."));
       }, 12000);
       const showError = (error) => {
         const message = error instanceof Error ? error.message : String(error);
@@ -131,7 +130,11 @@
         const details = document.createElement("pre");
         details.style.whiteSpace = "pre-wrap";
         details.style.overflowWrap = "anywhere";
-        details.textContent = JSON.stringify({ message, elapsedMs: Date.now() - startedAt, ...status }, null, 2);
+        details.textContent = JSON.stringify(
+          { message, elapsedMs: Date.now() - startedAt, ...status },
+          null,
+          2,
+        );
         const retry = document.createElement("button");
         retry.type = "button";
         retry.textContent = "Tentar novamente";
