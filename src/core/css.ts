@@ -34,7 +34,11 @@ let preventScrollSupported: null | false | { preventScroll: boolean } = null;
 // Detect the engine directly instead of importing a nonexistent browser module.
 const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
 const safariMatch = /Version\/(\d+)(?:\.\d+)?/.exec(userAgent);
-if (/Safari\//.test(userAgent) && !/(?:Chrome|CriOS|FxiOS|EdgiOS|OPiOS)\//.test(userAgent) && Number(safariMatch?.[1] ?? 0) >= 26) {
+if (
+  /Safari\//.test(userAgent) &&
+  !/(?:Chrome|CriOS|FxiOS|EdgiOS|OPiOS)\//.test(userAgent) &&
+  Number(safariMatch?.[1] ?? 0) >= 26
+) {
   preventScrollSupported = false;
 }
 
