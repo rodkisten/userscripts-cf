@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import type { FormField, FieldContext } from "./fields";
+import type { FormField, FieldContext, OptionItem, RangeField, ColorField } from "./fields";
 import { Combobox } from "./Combobox";
 import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
@@ -23,15 +23,15 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
-  const choices = () =>
-    "options" in field()
-      ? (field() as { options: readonly { value: string; label: string; disabled?: boolean }[] }).options
-      : [];
+  const choices = (): readonly OptionItem[] => {
+    const current = field();
+    return "options" in current ? current.options : [];
+  };
   const stringValue = () => String(value() ?? "");
   const prop = <T,>(name: string, fallback?: T): T | undefined =>
     (field() as unknown as Record<string, T>)[name] ?? fallback;
-  const selectedValues = () => (Array.isArray(value()) ? (value() as string[]).map(String) : []);
-  const common = () => ({ id: id(), name: field().name, disabled: disabled(), required: !!field().required });
+  const selectedValues = () => (Array.isArray(value()) ? (value() as unknown[]).map(String) : []);
+  const common = () => ({ id: id(), name: field().name, disabled: disabled() || readonly(), required: !!field().required });
   return (
     <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())}>
       <Show
@@ -77,7 +77,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           onInput={(event) => {
             if (readonly()) return;
             commit(
-              ["number", "range"].includes(kind())
+              kind() === "number"
                 ? event.currentTarget.value === ""
                   ? ""
                   : event.currentTarget.valueAsNumber
@@ -188,7 +188,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           value={stringValue()}
           disabled={disabled()}
           readonly={readonly()}
-          presets={prop<readonly string[]>("presets")}
+          presets={(field() as ColorField<TContext>).presets}
           onChange={commit}
           aria-label={field().label ?? field().name}
         />
@@ -197,10 +197,10 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         <Slider
           id={id()}
           name={field().name}
-          value={Number(value() ?? prop<number>("min", 0))}
-          min={prop<number>("min", 0)}
-          max={prop<number>("max", 100)}
-          step={prop<number>("step", 1)}
+          value={Number(value() ?? (field() as RangeField<TContext>).min ?? 0)}
+          min={(field() as RangeField<TContext>).min}
+          max={(field() as RangeField<TContext>).max}
+          step={(field() as RangeField<TContext>).step}
           disabled={disabled() || readonly()}
           onChange={commit}
         />
@@ -217,12 +217,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
                   checked={
                     kind() === "radio"
                       ? value() === option.value
-                      : Array.isArray(value()) && (value() as string[]).includes(option.value)
+                      : selectedValues().includes(option.value)
                   }
                   onChange={(e) => {
                     if (kind() === "radio") commit(option.value);
                     else {
-                      const next = new Set(Array.isArray(value()) ? (value() as string[]) : []);
+                      const next = new Set(selectedValues());
                       if (e.currentTarget.checked) next.add(option.value);
                       else next.delete(option.value);
                       commit([...next]);

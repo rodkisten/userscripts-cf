@@ -17,7 +17,7 @@ import styles from "../styles/Fields.module.css";
  */
 export interface SharedFieldRendererProps {
   field: RodMenuField;
-  context: RodMenuContext<any>;
+  context: RodMenuContext;
   value: unknown;
   controlId: string;
   disabled: boolean;

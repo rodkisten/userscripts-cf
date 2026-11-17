@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import styles, { css } from "./Controls.module.css";
 export { css as controlsCss };
 import type { ControlOption } from "./options";
@@ -19,11 +20,11 @@ export function Select(props: SelectProps) {
       disabled={props.disabled}
       onChange={(event) => props.onChange(event.currentTarget.value)}
     >
-      {props.options.map((option) => (
+      {<For each={props.options}>{(option) => (
         <option value={option.value} disabled={option.disabled}>
           {option.label}
         </option>
-      ))}
+      )}</For>}
     </select>
   );
 }
@@ -121,7 +122,7 @@ export function ColorPicker(props: ColorPickerProps) {
         {current().toUpperCase()}
       </output>
       <div class={styles.colorPresets} role="group" aria-label="Cores predefinidas">
-        {(props.presets ?? []).filter(valid).map((color) => (
+        {<For each={(props.presets ?? []).filter(valid)}>{(color) => (
           <button
             type="button"
             class={styles.colorPreset}
@@ -131,7 +132,7 @@ export function ColorPicker(props: ColorPickerProps) {
             disabled={props.disabled || props.readonly}
             onClick={() => props.onChange(color)}
           />
-        ))}
+        )}</For>}
       </div>
     </div>
   );
