@@ -104,69 +104,20 @@
     <div id="app">
       <main><p>Carregando componentes SolidJS…</p></main>
     </div>
-    <script>
-      (() => {
-        const entry = "/playground/form-controls.js";
-        const target = document.getElementById("app");
-        let finished = false;
-        const report = (message) => {
-          if (finished || !target || !target.textContent?.includes("Carregando componentes SolidJS")) return;
-          finished = true;
-          const main = document.createElement("main");
-          const heading = document.createElement("h1");
-          heading.textContent = "Não foi possível abrir o playground";
-          const detail = document.createElement("p");
-          detail.textContent = message;
-          const retry = document.createElement("button");
-          retry.type = "button";
-          retry.textContent = "Tentar novamente";
-          retry.onclick = () => location.reload();
-          const link = document.createElement("a");
-          link.href = entry;
-          link.textContent = "Verificar arquivo JavaScript";
-          link.style.marginLeft = "16px";
-          main.append(heading, detail, retry, link);
-          target.replaceChildren(main);
-        };
-        window.addEventListener("error", (event) => {
-          report(event.message || "Falha ao carregar o JavaScript do playground.");
-        });
-        window.addEventListener("unhandledrejection", (event) => {
-          report(String(event.reason?.message || event.reason || "Falha na inicialização."));
-        });
-        const timer = setTimeout(() => {
-          if (target?.textContent?.includes("Carregando componentes SolidJS")) {
-            fetch(entry, { cache: "no-store" })
-              .then((response) =>
-                report(
-                  response.ok
-                    ? "O arquivo JavaScript respondeu, mas o SolidJS não montou a interface. Verifique os erros do navegador."
-                    : "O bundle do playground não está disponível (HTTP " +
-                        response.status +
-                        "). Confira o deploy do Worker.",
-                ),
-              )
-              .catch(() =>
-                report("Não foi possível carregar o bundle JavaScript. Confira a conexão e o deploy."),
-              );
-          }
-        }, 8000);
-        new MutationObserver(() => {
-          if (!target?.textContent?.includes("Carregando componentes SolidJS")) {
-            finished = true;
-            clearTimeout(timer);
-          }
-        }).observe(target, { childList: true, subtree: true });
-      })();
-    </script>
     <script type="module">
       const host = document.getElementById("app");
       const asset = "/playground/form-controls.js";
+      let mounted = false;
+      const timeout = setTimeout(() => {
+        if (!mounted) showError(new Error("A inicialização excedeu 12 segundos. Verifique o bundle e a conexão."));
+      }, 12000);
       const showError = (error) => {
         const message = error instanceof Error ? error.message : String(error);
-        if (!host) return;
+        if (!host || mounted || host.querySelector("[data-playground-error]")) return;
+        clearTimeout(timeout);
         host.replaceChildren();
         const main = document.createElement("main");
+        main.dataset.playgroundError = "true";
         const heading = document.createElement("h1");
         heading.textContent = "Não foi possível iniciar o playground";
         const description = document.createElement("p");
@@ -187,12 +138,15 @@
         main.append(heading, description, details, retry, document.createTextNode(" "), copy);
         host.append(main);
       };
-      window.addEventListener("error", (event) => showError(event.error ?? event.message));
-      window.addEventListener("unhandledrejection", (event) => showError(event.reason));
+      window.addEventListener("error", (event) => { if (!mounted) showError(event.error ?? event.message); });
+      window.addEventListener("unhandledrejection", (event) => { if (!mounted) showError(event.reason); });
       try {
         await import(asset);
         if (host?.textContent?.includes("Carregando componentes SolidJS")) {
           showError(new Error("O módulo foi importado, mas a aplicação não montou."));
+        } else {
+          mounted = true;
+          clearTimeout(timeout);
         }
       } catch (error) {
         showError(error);
