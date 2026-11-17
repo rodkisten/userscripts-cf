@@ -90,16 +90,28 @@ for (const d of errors2347) {
   edits.push({start:receiver.getStart(ast),end:receiver.end,text:`(${receiver.getText(ast)} as ParentNode)`});
   domEdits.set(file,edits);
 }
-for (const [file,edits] of domEdits) {
+for (const [file, edits] of domEdits) {
   const existing = fixes.find((fix) => path.resolve(fix.file) === file);
-  const original = existing?.original ?? ts.sys.readFile(file);
-  let updated = existing?.updated ?? original;
-  // Apply only when no earlier JSX codemod shifted offsets.
   if (existing) continue;
-  for (const edit of edits.sort((a,b)=>b.start-a.start)) {
-    updated = updated.slice(0,edit.start)+edit.text+updated.slice(edit.end);
+  const original = ts.sys.readFile(file);
+  if (original === undefined) continue;
+  // Deduplicate repeated diagnostics on the same receiver, then reject overlapping spans.
+  const unique = [...new Map(edits.map((edit) => [`${edit.start}:${edit.end}`, edit])).values()]
+    .sort((a, b) => a.start - b.start);
+  if (unique.some((edit, i) => i > 0 && edit.start < unique[i - 1].end)) {
+    console.warn(`Skipping overlapping AST edits in ${file}`);
+    continue;
   }
-  if (updated !== original) fixes.push({file,original,updated,count:edits.length});
+  let updated = original;
+  for (const edit of [...unique].reverse()) {
+    updated = updated.slice(0, edit.start) + edit.text + updated.slice(edit.end);
+  }
+  const parsedSource = ts.createSourceFile(file, updated, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  if (parsedSource.parseDiagnostics.length) {
+    console.warn(`Skipping AST edits producing syntax errors in ${file}`);
+    continue;
+  }
+  if (updated !== original) fixes.push({ file, original, updated, count: unique.length });
 }
 const countErrors = () => {
   const program = ts.createProgram(parsed.fileNames, parsed.options);
@@ -107,8 +119,9 @@ const countErrors = () => {
 };
 const before = countErrors();
 for (const fix of fixes) fs.writeFileSync(fix.file,fix.updated);
+const syntaxErrors = fixes.flatMap(({file}) => ts.createSourceFile(file, ts.sys.readFile(file), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS).parseDiagnostics);
 const after = countErrors();
-if (after >= before && fixes.length > 0) {
+if ((after >= before || syntaxErrors.length > 0) && fixes.length > 0) {
   for (const fix of fixes) fs.writeFileSync(fix.file,fix.original);
   throw new Error(`AST autofix rejected: errors did not decrease from ${before} to ${after}`);
 }
