@@ -96,9 +96,9 @@ export function Combobox(props: ComboboxProps) {
       getScrollElement: () => scrollElement ?? null,
       estimateSize: () => 46,
       overscan: 6,
-    scrollToFn: elementScroll,
-    observeElementRect,
-    observeElementOffset,
+      scrollToFn: elementScroll,
+      observeElementRect,
+      observeElementOffset,
       onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
     });
     virtualizer._willUpdate();
