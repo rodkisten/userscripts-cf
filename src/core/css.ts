@@ -1,5 +1,10 @@
 import coreCSS from "../styles/core.css?inline";
-import browser from "./browser";
+const safariVersion = (() => {
+  if (typeof navigator === "undefined") return 0;
+  const ua = navigator.userAgent;
+  if (!/Safari\//.test(ua) || /(?:Chrome|Chromium|CriOS|FxiOS|Edg)\//.test(ua)) return 0;
+  return Number(ua.match(/Version\/(\d+)/)?.[1] || 0);
+})();
 
 // ============================================================================
 // Semantic Constants (Numeric / String magic values abstracted)
@@ -31,7 +36,7 @@ const managedClasses = new WeakMap<Element, string[]>();
 let scratchRange: Range | null = null;
 let preventScrollSupported: null | false | { preventScroll: boolean } = null;
 
-if (browser.safari && browser.safari_version >= 26) {
+if (safariVersion >= 26) {
   preventScrollSupported = false;
 }
 
@@ -205,8 +210,8 @@ export const isText = (node: Node): node is Text => node.nodeType === TEXT_NODE_
  */
 export function getSelection(root: DocumentOrShadowRoot): Selection | null {
   let target: Document | Window | DocumentOrShadowRoot;
-  if ((root as Node).nodeType === SHADOW_ROOT_NODE_TYPE) {
-    target = (root as ShadowRoot).getSelection
+  if ((root as unknown as Node).nodeType === SHADOW_ROOT_NODE_TYPE) {
+    target = typeof (root as ShadowRoot & { getSelection?: () => Selection | null }).getSelection === "function"
       ? (root as unknown as Document)
       : (root as ShadowRoot).ownerDocument;
   } else {

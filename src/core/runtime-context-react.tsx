@@ -1,4 +1,4 @@
-import React, { createContext, useContext as useReactContext, type ReactNode } from "react";
+import { createContext, createElement, useContext as useReactContext, type ReactNode } from "react";
 import type { ScriptContext } from "./runtime.js";
 
 /** React context propagation without a mutable global current-script pointer. */
@@ -7,7 +7,7 @@ const ScriptScope = createContext<ScriptContext | undefined>(undefined);
 export const RuntimeProvider: React.FC<{ context: ScriptContext; children: ReactNode }> = ({
   context,
   children,
-}) => <ScriptScope.Provider value={context}>{children}</ScriptScope.Provider>;
+}) => createElement(ScriptScope.Provider, { value: context }, children);
 
 export function useContext(): ScriptContext {
   const ctx = useReactContext(ScriptScope);
