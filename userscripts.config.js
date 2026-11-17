@@ -113,6 +113,15 @@ export default [
     ],
   },
   {
+    id: "react-runtime-demo",
+    framework: "react",
+    unified: false,
+    name: "React runtime demo",
+    entry: "src/userscripts/react-runtime-demo/index.react.tsx",
+    matches: ["https://example.com/*"],
+    grants: [],
+  },
+  {
     id: "example-site",
     framework: "solid",
     unified: false,

@@ -43,7 +43,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
         navigate: async () => { await Promise.all(runtimes.map((runtime) => runtime.navigate())); },
         get active() { return runtimes.flatMap((runtime) => runtime.active); },
         dispose: async () => {
-          try { await Promise.all(runtimes.map((runtime) => runtime.dispose())); }
+          try { const results = await Promise.allSettled([...runtimes].reverse().map((runtime) => runtime.dispose())); const failed = results.filter((result) => result.status === "rejected"); if (failed.length) throw new AggregateError(failed.map((result) => result.reason), "Runtime disposal failed"); }
           finally { bridge.dispose?.(); }
         },
       };

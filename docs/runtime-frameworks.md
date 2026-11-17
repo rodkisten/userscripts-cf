@@ -14,3 +14,5 @@ Unified/standalone bundles can contain both frameworks. The installer starts a s
 - Verify independent framework lifecycles and browser routing before merging.
 
 React hooks are intentionally imported from the React context module, never installed as global helpers, to avoid collisions with Solid hooks in mixed bundles.
+
+The `react-runtime-demo` userscript is a small React context smoke fixture on example.com. Run `node build/build.mjs --targets=react-runtime-demo,example-site,unified,standalone` to verify React-only, Solid-only, and mixed bundles. The dedicated `react-solid-integration.yml` workflow runs on pushes to this feature branch and can be dispatched manually.

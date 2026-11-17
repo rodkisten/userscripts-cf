@@ -1,0 +1,50 @@
+name: ⚛️ React + Solid runtime integration
+
+on:
+  push:
+    branches:
+      - feat/multi-framework-runtime-react-solid
+    paths:
+      - "src/core/**"
+      - "src/userscripts/react-runtime-demo/**"
+      - "build/**"
+      - "tests/react-jsx.test.js"
+      - "tests/vite-frameworks.test.js"
+      - "vite.config.js"
+      - "userscripts.config.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/react-solid-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: react-solid-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: React / Solid / unified build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Validate JSX compiler isolation
+        run: npx vitest run tests/react-jsx.test.js tests/vite-frameworks.test.js
+      - name: Typecheck userscripts
+        run: npm run typecheck
+      - name: Build React, Solid, and mixed installers
+        run: node build/build.mjs --targets=react-runtime-demo,example-site,unified,standalone
+      - name: Summarize integration
+        if: always()
+        run: |
+          echo "### React + Solid integration" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated JSX isolation, typecheck, and React/Solid/mixed installers." >> "$GITHUB_STEP_SUMMARY"
