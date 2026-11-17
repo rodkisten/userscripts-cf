@@ -188,7 +188,7 @@ function initializeRodFeatures(host: Window & typeof globalThis) {
       typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
     toaster:
       typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
-        ? createToasterFeature(host)
+        ? createToasterFeature()
         : undefined,
     storage: createStorageFeature(host),
   };
@@ -399,7 +399,6 @@ export function createRuntime(
         {
           id: CLIPBOARD_ACTION_CLEAR,
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
-          variant: "danger",
           handler: (ctx) => {
             const item = ctx.values.item;
             if (typeof item !== "string") return;
@@ -436,7 +435,7 @@ export function createRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches(definition, url, rules()[definition.id]);
+    matches({ ...definition, matches: definition.match ? [definition.match].flat() : undefined }, url, rules()[definition.id]);
 
   const onRulesChange = () => {
     void navigate();
