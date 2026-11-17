@@ -21,17 +21,17 @@ jobs:
     if: github.ref == 'refs/heads/feat/form-controls-foundation'
     runs-on: ubuntu-latest
     steps:
-      - name: "🔐 Require token with workflow permission"
-        env:
-          SYNC_TOKEN: ${{ secrets.SYNC_WORKFLOW_TOKEN }}
-        run: |
-          if [[ -z "$SYNC_TOKEN" ]]; then
-            echo 'Missing SYNC_WORKFLOW_TOKEN. Configure a token with Contents: Read and write and Workflows: Read and write.' >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.SYNC_WORKFLOW_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           ref: feat/form-controls-foundation
           fetch-depth: 0
           persist-credentials: true
@@ -39,8 +39,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git fetch origin main feat/form-controls-foundation
           git checkout feat/form-controls-foundation
           git reset --hard origin/feat/form-controls-foundation
@@ -59,6 +59,6 @@ jobs:
             echo "Unexpected uncommitted changes after merge." >&2
             exit 1
           fi
-          # Checkout persists SYNC_WORKFLOW_TOKEN credentials for this push.
+          # Checkout persists Rod GitHub App credentials for this push.
           git push origin HEAD:feat/form-controls-foundation
           echo "Merged main into feature branch at $(git rev-parse --short HEAD)." >> "$GITHUB_STEP_SUMMARY"

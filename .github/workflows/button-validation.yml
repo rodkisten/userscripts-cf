@@ -34,10 +34,11 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
-      - name: TypeScript typecheck
-        run: npm run typecheck
       - name: Build live Design System
         run: node build/design-system.mjs
+      - name: TypeScript typecheck (independent)
+        if: always()
+        run: npm run typecheck
       - name: Full repository build
         if: inputs.scope == 'full'
         run: npm run build

@@ -71,9 +71,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           autocomplete={prop<string>("autocomplete")}
           spellcheck={prop<boolean>("spellcheck")}
           autofocus={field().autoFocus}
-          min={"min" in field() ? (field().min as string | number) : undefined}
-          max={"max" in field() ? (field().max as string | number) : undefined}
-          step={"step" in field() ? (field().step as string | number) : undefined}
+          min={"min" in field() ? ((field() as { min?: string | number }).min) : undefined}
+          max={"max" in field() ? ((field() as { max?: string | number }).max) : undefined}
+          step={"step" in field() ? ((field() as { step?: string | number }).step) : undefined}
           readOnly={readonly()}
           onInput={(event) => {
             if (readonly()) return;
@@ -228,7 +228,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={kind() === "rating"}>
         <div role="group" aria-label={field().label ?? field().name}>
-          <For each={Array.from({ length: "max" in field() ? (field().max ?? 5) : 5 }, (_, i) => i + 1)}>
+          <For each={Array.from({ length: "max" in field() ? ((field() as { max?: number }).max ?? 5) : 5 }, (_, i) => i + 1)}>
             {(n) => (
               <button
                 type="button"
@@ -315,7 +315,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         {(() => {
           const f = field();
           return "render" in f
-            ? (f as { render: (ctx: TContext, field: typeof f) => import("solid-js").JSX.Element }).render(
+            ? (f as { render: (ctx: TContext, field: typeof f) => import("@solidjs/web").JSX.Element }).render(
                 props.context,
                 f,
               )
