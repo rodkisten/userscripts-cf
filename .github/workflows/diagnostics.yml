@@ -1,5 +1,5 @@
 name: Validate changed userscripts
-run-name: "Validate changed · ${{ github.ref_name }} · ${{ github.sha }}"
+run-name: "Validate changed · ${{ github.ref_name }}"
 
 on:
   push:
