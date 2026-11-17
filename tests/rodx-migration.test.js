@@ -33,7 +33,7 @@ async function declarations(file) {
   try {
     await fs.access(new URL(file, root));
   } catch {
-    file = file.replace(/\.js$/, ".tsx");
+    file = file.replace(/\.js$/, ".ts");
   }
   if (files.has(file)) return files.get(file);
   const ast = parse(await fs.readFile(new URL(file, root), "utf8"), {

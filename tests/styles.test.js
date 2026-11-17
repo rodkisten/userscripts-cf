@@ -50,7 +50,7 @@ test("priority processing leaves animation declarations usable", async () => {
 test("component classes replace or extend styles and install in document and shadow scopes", async () => {
   const window = new Window({ settings: { enableJavaScriptEvaluation: true } });
   const compiled = await compile("styles/core.css");
-  const helper = (await fs.readFile(new URL("core/css.js", src), "utf8"))
+  const helper = (await fs.readFile(new URL("core/css.ts", src), "utf8"))
     .replace(/^import[^;]+;/, "const coreCSS = " + JSON.stringify(compiled) + ";")
     .replaceAll("export function", "function");
   window.eval(helper + ";window.applyStyle=applyComponentStyle;window.clearStyle=clearComponentStyle;");

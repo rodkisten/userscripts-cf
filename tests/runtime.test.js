@@ -8,7 +8,7 @@ const fixture = await build({
   build: {
     write: false,
     lib: {
-      entry: new URL("../src/core/runtime.js", import.meta.url).pathname,
+      entry: new URL("../src/core/runtime.ts", import.meta.url).pathname,
       name: "RuntimeFixture",
       formats: ["iife"],
     },
