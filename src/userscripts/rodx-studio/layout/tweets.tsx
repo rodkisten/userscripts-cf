@@ -311,7 +311,7 @@ export function initializeDeckCompactLayout(): void {
     }
 
     function author(article: HTMLElement) {
-      const user = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAuthorName);
+      const user = (article as ParentNode).querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAuthorName);
       const link = Array.from(
         user?.querySelectorAll<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref) || [],
       ).find((a) => REGEX_PATTERNS.handleValidation.test(a.getAttribute("href") || ""));
@@ -334,7 +334,7 @@ export function initializeDeckCompactLayout(): void {
 
         const { user, link, key } = author(article);
         const context =
-          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
+          (article as ParentNode).querySelector<HTMLElement>(NATIVE_X_SELECTORS.socialContext)?.textContent || "";
         const identity = key ? key + ":" + context : "";
 
         article.dataset[DATA_ATTRS.repeat] = identity && identity === previous ? "1" : "0";
@@ -342,7 +342,7 @@ export function initializeDeckCompactLayout(): void {
         article.dataset[DATA_ATTRS.long] =
           article.getBoundingClientRect().height > innerHeight * 0.9 ? "1" : "0";
 
-        article
+        (article as ParentNode)
           .querySelectorAll<HTMLElement>(RODX_SELECTORS.repeatedAuthor)
           .forEach((el) => el.classList.remove(CSS_CLASSES.repeatAuthor));
 
@@ -355,8 +355,8 @@ export function initializeDeckCompactLayout(): void {
         }
 
         const avatar =
-          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAvatarContainers) ||
-          article
+          (article as ParentNode).querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetAvatarContainers) ||
+          (article as ParentNode)
             .querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileImages)
             ?.closest<HTMLElement>(DOM_SELECTORS.anchors);
 
@@ -375,7 +375,7 @@ export function initializeDeckCompactLayout(): void {
           }
         }
 
-        const like = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.likeToggleButtons);
+        const like = (article as ParentNode).querySelector<HTMLElement>(NATIVE_X_SELECTORS.likeToggleButtons);
         const bar = like?.closest<HTMLElement>(DOM_SELECTORS.actionGroups);
         if (!bar || bar.closest(DOM_SELECTORS.articles) !== article) continue;
 
@@ -388,7 +388,7 @@ export function initializeDeckCompactLayout(): void {
         }
         if (!column || column === article) continue;
 
-        let top = article.querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
+        let top = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
           top = (<div class={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />) as HTMLDivElement;
         }
@@ -403,7 +403,7 @@ export function initializeDeckCompactLayout(): void {
           link?.getAttribute("href") ||
           key;
 
-        let mini = top.querySelector<HTMLAnchorElement>(RODX_SELECTORS.miniAvatar);
+        let mini = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.miniAvatar);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
           mini = (
@@ -416,7 +416,7 @@ export function initializeDeckCompactLayout(): void {
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 const native = Array.from(
-                  article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+                  (article as ParentNode).querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
                 ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
                 if (native) native.click();
                 else location.assign(mini!.href);
@@ -444,7 +444,7 @@ export function initializeDeckCompactLayout(): void {
           top.prepend(mini);
         }
 
-        let authorLink = top.querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
+        let authorLink = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
         if (!authorLink) {
           authorLink = (<a class={CSS_CLASSES.topbarAuthor} />) as HTMLAnchorElement;
           top.insertBefore(authorLink, top.querySelector(RODX_SELECTORS.proxyActions));
@@ -471,7 +471,7 @@ export function initializeDeckCompactLayout(): void {
             event.preventDefault();
             event.stopImmediatePropagation();
             const native = Array.from(
-              article.querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+              (article as ParentNode).querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
             ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
             if (native) native.click();
             else location.assign(authorLink!.href);
@@ -481,7 +481,7 @@ export function initializeDeckCompactLayout(): void {
         article.classList.add(CSS_CLASSES.authorInTopbar);
 
         for (const { action, label, selector, icon } of PROXY_ACTIONS) {
-          let proxy = top.querySelector<HTMLButtonElement>(RODX_SELECTORS.proxyActionByName(action));
+          let proxy = (top as ParentNode).querySelector<HTMLButtonElement>(RODX_SELECTORS.proxyActionByName(action));
           if (!proxy) {
             proxy = (
               <button
@@ -492,7 +492,7 @@ export function initializeDeckCompactLayout(): void {
                 onClick={(event: MouseEvent) => {
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  const nativeEl = Array.from(article.querySelectorAll<HTMLElement>(selector)).find(
+                  const nativeEl = Array.from((article as ParentNode).querySelectorAll<HTMLElement>(selector)).find(
                     (el) => !top.contains(el),
                   );
                   nativeEl?.click();
@@ -502,7 +502,7 @@ export function initializeDeckCompactLayout(): void {
             top.append(proxy);
           }
 
-          const native = Array.from(article.querySelectorAll<HTMLElement>(selector)).find(
+          const native = Array.from((article as ParentNode).querySelectorAll<HTMLElement>(selector)).find(
             (el) => !top.contains(el),
           );
           proxy.hidden = !native;
