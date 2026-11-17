@@ -8,6 +8,7 @@ export function createFieldValidation<TContext = FieldContext>(options: {
   context(): TContext;
   debounceMs?: number;
   mode?: "change" | "blur";
+  getMode?(): "change" | "blur";
   enabled?(): boolean;
   onError?(error: unknown): void;
 }) {
@@ -29,7 +30,7 @@ export function createFieldValidation<TContext = FieldContext>(options: {
     const validate = field.validate;
     const revision = blurRevision();
     const enabled = options.enabled?.() ?? true;
-    const shouldValidate = options.mode !== "blur" || (touched() && revision > 0);
+    const shouldValidate = (options.getMode?.() ?? options.mode) !== "blur" || (touched() && revision > 0);
     const current = ++generation;
     setError(undefined);
     setPending(false);

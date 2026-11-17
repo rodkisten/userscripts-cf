@@ -14,6 +14,10 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
   const [submitted, setSubmitted] = createSignal(false);
   let revision = 0;
   let submittedSnapshot: TValues | undefined;
+  const matchesSnapshot = (before: TValues, after: TValues) => {
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    return [...keys].every((key) => Object.is(before[key], after[key]));
+  };
   const validate = async () => {
     const current = ++revision;
     const values = options.values();
@@ -45,7 +49,7 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
     );
     if (
       current !== revision ||
-      (options.values() !== values && JSON.stringify(options.values()) !== JSON.stringify(values))
+      (!matchesSnapshot(values, options.values()))
     )
       return false;
     const next: Record<string, string> = {};
@@ -63,7 +67,7 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
     setSubmitting(true);
     try {
       if (!(await validate())) return false;
-      if (!submittedSnapshot) return false;
+      if (!submittedSnapshot || !matchesSnapshot(submittedSnapshot, options.values())) return false;
       await options.onSubmit(submittedSnapshot);
       return true;
     } catch (reason) {
