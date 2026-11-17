@@ -80,7 +80,9 @@ export interface ScriptDefinition {
 }
 
 /** Instance-owned context assembled by createCoreRuntime; no global active context. */
-export type ScriptContext = ReturnType<NonNullable<Parameters<typeof createCoreRuntime>[4]>["createSpecificContext"]> & {
+export type ScriptContext = ReturnType<
+  NonNullable<Parameters<typeof createCoreRuntime>[4]>["createSpecificContext"]
+> & {
   id: string;
   signal: AbortSignal;
   events: any;
