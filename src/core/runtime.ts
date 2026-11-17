@@ -693,7 +693,7 @@ export function createRuntime(
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         return createRoot((dispose) => {
           onDispose(dispose);
-          return createStore(initial as Exclude<T, Function>);
+          return createStore(initial as Exclude<T, Function>) as ReturnType<typeof createStore<T>>;
         });
       },
       observe(target, callback, options) {

@@ -42,6 +42,7 @@ import { showMultiLoadingToast } from "./MultiLoadingView";
 import { showConfirmToast, showPromptToast, showSelectToast } from "./ActionDialogView";
 import { showPickerToast } from "./PickerView";
 import { ToasterHost } from "./ToasterProvider";
+// @ts-ignore CSS side-effect import is handled by the bundler.
 import "./tokens.css";
 
 export * from "./types";
@@ -110,7 +111,7 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
       return toast.promise<T>(inp, { ...base, ...d, scope: name });
     },
     retry: <T>(d: RetryDescriptor<T>) => {
-      const { loading: _loading, success: _success, error: _error, ...base } = defaults;
+      const { loading: _loading, error: _error, ...base } = defaults;
       return toast.retry<T>({ ...base, ...d, scope: name });
     },
     group: (d) => toast.group(merge(d)),
