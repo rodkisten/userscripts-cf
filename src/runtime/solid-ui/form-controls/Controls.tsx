@@ -22,7 +22,7 @@ export function Select(props: SelectProps) {
     >
       <For each={props.options}>
         {(option) => (
-          <option value={option.value} disabled={option.disabled}>
+          <option value={option.value} selected={option.value === props.value} disabled={option.disabled}>
             {option.label}
           </option>
         )}
