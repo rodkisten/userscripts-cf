@@ -7,6 +7,7 @@ import { POST_SELECTOR, searchPosts } from "./services.ts";
 import { readPost } from "./native.ts";
 import { installNetwork } from "./network.js";
 import styles, { css } from "./Feed.module.css";
+import { buttonCss } from "../../runtime/solid-ui/button";
 export function mountReddit(ctx: any, bridge: any) {
   const store = createStudioStore();
   const { state, setState, actions } = store;
@@ -95,7 +96,7 @@ export function mountReddit(ctx: any, bridge: any) {
     settings: () => setOpen(true),
     tagMenu: setTag,
   };
-  ctx.pageStyle(css);
+  ctx.pageStyle(css + "\n" + buttonCss);
   const shell = mountPoint(
     document.body,
     () => (
@@ -112,7 +113,7 @@ export function mountReddit(ctx: any, bridge: any) {
         clear={clear}
       />
     ),
-    { id: "gws-shell", shadow: true, styles: [css] },
+    { id: "gws-shell", shadow: true, styles: [css, buttonCss] },
   );
   let root: ReturnType<typeof mountPoint> | undefined;
   const setHidden = (node: Element, wanted: boolean) => {

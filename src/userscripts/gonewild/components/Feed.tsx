@@ -3,6 +3,7 @@ import { categoryTag, cleanTitle, normalize, type AudioItem, type Post, type Set
 import type { StudioStore } from "../store.ts";
 import { resolvePostAudio } from "../services.ts";
 import styles from "../Feed.module.css";
+import { Button } from "../../../runtime/solid-ui/button";
 import shell, { css as shellCSS } from "../Shell.module.css";
 export type FeedController = {
   store: StudioStore;
@@ -146,7 +147,8 @@ export function PostCard(props: {
         </div>
       </Show>
       <div class={styles["gws-controls"]}>
-        <button
+        <Button
+          variant="secondary" size="sm"
           class={styles["gws-action"]}
           onClick={() =>
             props.controller.store.actions.seen(
@@ -156,14 +158,14 @@ export function PostCard(props: {
           }
         >
           {props.controller.store.state.seen[props.post.id] ? "✓ Visto" : "Marcar visto"}
-        </button>
+        </Button>
         <a class={styles["gws-action"]} href={props.post.href} target="_blank" rel="noopener noreferrer">
           Abrir post ↗
         </a>
         <Show when={props.controller.store.state.settings.audio}>
-          <button class={styles["gws-action"]} disabled={audio.loading} onClick={() => void load(true)}>
+          <Button variant="outline" size="sm" class={styles["gws-action"]} loading={audio.loading} onClick={() => void load(true)}>
             {audio.loading ? "Buscando…" : "↻ Atualizar áudio"}
-          </button>
+          </Button>
         </Show>
       </div>
       <Show when={props.controller.store.state.settings.audio}>
