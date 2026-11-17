@@ -23,14 +23,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
-      - name: Authenticate Rod GitHub App
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -64,8 +56,22 @@ jobs:
           if (( ${#files[@]} )); then
             npx prettier --write "${files[@]}"
           fi
-      - name: Create reviewable autofix PR as Rod bot
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true' && steps.changes.outputs.changed == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID || secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Detect changes
+        id: changes
         if: steps.diagnostics.outputs.has_typescript_errors == 'true'
+        run: |
+          if [[ -n "$(git status --porcelain -- src/)" ]]; then echo 'changed=true' >> "$GITHUB_OUTPUT"; else echo 'changed=false' >> "$GITHUB_OUTPUT"; fi
+      - name: Create reviewable autofix PR as Rod bot
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true' && steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
