@@ -21,6 +21,7 @@ export interface TextControlProps {
   inputMode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
   spellcheck?: boolean;
   autoFocus?: boolean;
+  onBlur?(): void;
   onChange(value: string): void;
 }
 
@@ -89,6 +90,7 @@ export function Input(
         aria-invalid={props.error ? "true" : undefined}
         data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
+        onBlur={() => props.onBlur?.()}
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
       <FieldHelp
@@ -132,6 +134,7 @@ export function Textarea(
         aria-invalid={props.error ? "true" : undefined}
         data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
+        onBlur={() => props.onBlur?.()}
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
       <Show when={props.showCount && props.maxLength !== undefined}>
@@ -182,6 +185,7 @@ export function NumberInput(props: NumberInputProps) {
         aria-invalid={props.error ? "true" : undefined}
         data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
+        onBlur={() => props.onBlur?.()}
         onInput={(event) =>
           props.onChange(event.currentTarget.value === "" ? "" : event.currentTarget.valueAsNumber)
         }

@@ -78,6 +78,7 @@ function App() {
   const [showErrors, setShowErrors] = createSignal(false);
   const [contextError, setContextError] = createSignal(false);
   const [asyncValidation, setAsyncValidation] = createSignal(false);
+  const [validationOnBlur, setValidationOnBlur] = createSignal(false);
   const [feedbackState, setFeedbackState] = createSignal<"default" | "warning" | "success">("default");
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
@@ -334,7 +335,9 @@ function App() {
             <input type="checkbox" checked={asyncValidation()} onChange={(event) => setAsyncValidation(event.currentTarget.checked)} />
             Ativar validação assíncrona
           </label>
+          <label class="toggle"><input type="checkbox" checked={validationOnBlur()} onChange={(event) => setValidationOnBlur(event.currentTarget.checked)} /> Validar apenas após sair do campo</label>
           <StandaloneFieldRenderer
+            validationMode={validationOnBlur() ? "blur" : "change"}
             field={{
               type: "text", name: "async-demo", label: "Nome de usuário",
               description: "Experimente admin, root ou um nome com menos de 3 letras",
