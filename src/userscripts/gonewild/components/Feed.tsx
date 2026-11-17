@@ -148,7 +148,8 @@ export function PostCard(props: {
       </Show>
       <div class={styles["gws-controls"]}>
         <Button
-          variant="secondary" size="sm"
+          variant="secondary"
+          size="sm"
           class={styles["gws-action"]}
           onClick={() =>
             props.controller.store.actions.seen(
@@ -163,7 +164,13 @@ export function PostCard(props: {
           Abrir post ↗
         </a>
         <Show when={props.controller.store.state.settings.audio}>
-          <Button variant="outline" size="sm" class={styles["gws-action"]} loading={audio.loading} onClick={() => void load(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            class={styles["gws-action"]}
+            loading={audio.loading}
+            onClick={() => void load(true)}
+          >
             {audio.loading ? "Buscando…" : "↻ Atualizar áudio"}
           </Button>
         </Show>
