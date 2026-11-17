@@ -7,20 +7,34 @@ export function createFieldValidation<TContext = FieldContext>(options: {
   value(): unknown;
   context(): TContext;
   debounceMs?: number;
+  mode?: "change" | "blur";
+  getMode?(): "change" | "blur";
+  enabled?(): boolean;
   onError?(error: unknown): void;
 }) {
   const [error, setError] = createSignal<string | undefined>();
   const [pending, setPending] = createSignal(false);
+  const [touched, setTouched] = createSignal(false);
+  const [dirty, setDirty] = createSignal(false);
+  const [blurRevision, setBlurRevision] = createSignal(0);
+  const markChanged = () => setDirty(true);
+  const markBlurred = () => {
+    setTouched(true);
+    setBlurRevision((n) => n + 1);
+  };
   let generation = 0;
   createEffect(() => {
     const field = options.field();
     const value = options.value();
     const context = options.context();
     const validate = field.validate;
+    const revision = blurRevision();
+    const enabled = options.enabled?.() ?? true;
+    const shouldValidate = (options.getMode?.() ?? options.mode) !== "blur" || (touched() && revision > 0);
     const current = ++generation;
     setError(undefined);
     setPending(false);
-    if (!validate || field.disabled || field.readonly) return;
+    if (!validate || !enabled || !shouldValidate || field.disabled || field.readonly) return;
     setPending(true);
     const timer = setTimeout(() => {
       Promise.resolve()
@@ -43,5 +57,5 @@ export function createFieldValidation<TContext = FieldContext>(options: {
       clearTimeout(timer);
     });
   }, undefined);
-  return { error, pending };
+  return { error, pending, touched, dirty, markChanged, markBlurred };
 }

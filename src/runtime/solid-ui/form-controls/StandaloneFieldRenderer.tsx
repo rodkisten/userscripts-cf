@@ -13,6 +13,15 @@ export interface StandaloneFieldRendererProps<TContext = FieldContext> {
   onChange(value: unknown): void;
   id?: string;
   onError?: (error: unknown) => void;
+  validationMode?: "change" | "blur";
+  controller?: {
+    errors(): Readonly<Record<string, string>>;
+    validating(): boolean;
+    touched(): Readonly<Record<string, boolean>>;
+    dirty(): Readonly<Record<string, boolean>>;
+    markChanged(name: string): void;
+    markBlurred(name: string): void;
+  };
 }
 /** Framework-neutral form renderer: no RodMenu imports, global styles or portal assumptions. */
 export function StandaloneFieldRenderer<TContext = FieldContext>(
@@ -21,7 +30,11 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const field = () => props.field;
   const id = () => props.id ?? `field-${field().name}`;
   const value = () => props.value;
-  const commit = (next: unknown) => props.onChange(next);
+  const commit = (next: unknown) => {
+    if (props.controller) props.controller.markChanged(field().name);
+    else validation.markChanged();
+    props.onChange(next);
+  };
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
@@ -29,9 +42,15 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
     field,
     value,
     context: () => props.context,
+    getMode: () => props.validationMode ?? "change",
+    enabled: () => !props.controller,
     onError: (reason) => props.onError?.(reason),
   });
-  const error = () => (props.context as FieldContext).errors?.[field().name] ?? validation.error();
+  const error = () => props.controller?.errors()[field().name] ?? (props.context as FieldContext).errors?.[field().name] ?? validation.error();
+  const markBlurred = () => props.controller ? props.controller.markBlurred(field().name) : validation.markBlurred();
+  const pending = () => props.controller?.validating() ?? validation.pending();
+  const touched = () => props.controller?.touched()[field().name] ?? validation.touched();
+  const dirty = () => props.controller?.dirty()[field().name] ?? validation.dirty();
   const description = () => field().description ?? field().help;
   const choices = (): readonly OptionItem[] => {
     const current = field();
@@ -53,7 +72,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
     required: !!field().required,
   });
   return (
-    <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())}>
+    <div
+      class={styles.field}
+      data-field-type={kind()}
+      data-disabled={String(disabled())}
+      data-touched={String(touched())}
+      data-dirty={String(dirty())}
+      data-validating={String(pending())}
+    >
       <Show
         when={
           !["hidden", "divider", "button", "checkbox", "switch", "html", "custom"].includes(kind()) &&
@@ -65,7 +91,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       <Show when={["text", "email", "password", "search", "url", "tel"].includes(kind())}>
         <Input
           error={error()}
-          warning={validation.pending() && !error() ? "Validando…" : undefined}
+          onBlur={markBlurred}
+          warning={pending() && !error() ? "Validando…" : undefined}
           description={description()}
           id={id()}
           name={field().name}
@@ -90,6 +117,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       <Show when={kind() === "number"}>
         <NumberInput
           error={error()}
+          onBlur={markBlurred}
           description={description()}
           id={id()}
           name={field().name}
@@ -107,6 +135,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       <Show when={kind() === "textarea"}>
         <Textarea
           error={error()}
+          onBlur={markBlurred}
           description={description()}
           id={id()}
           name={field().name}
