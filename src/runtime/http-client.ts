@@ -66,7 +66,7 @@ interface CacheEntry {
 
 // Central transport boundary for userscripts. Never patch global fetch or XMLHttpRequest.
 export function createHttpClient({
-  host = globalThis,
+  host = window,
   signal,
   storage: _storage,
   namespace: _namespace = "runtime",
