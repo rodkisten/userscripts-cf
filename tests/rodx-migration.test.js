@@ -69,12 +69,16 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
         assert.equal(declaration.declarations[0]?.id?.name, "databaseSaveTimer");
         assert.equal(declaration.declarations[0]?.init, null);
         const reset = declarationsMap.get("resetDatabaseState");
-        assert.ok(reset?.body?.body?.some((statement) =>
-          statement.expression?.type === "AssignmentExpression" &&
-          statement.expression.left?.name === "databaseSaveTimer" &&
-          statement.expression.right?.type === "Identifier" &&
-          statement.expression.right.name === "undefined"
-        ), "databaseSaveTimer must be reset before initialization");
+        assert.ok(
+          reset?.body?.body?.some(
+            (statement) =>
+              statement.expression?.type === "AssignmentExpression" &&
+              statement.expression.left?.name === "databaseSaveTimer" &&
+              statement.expression.right?.type === "Identifier" &&
+              statement.expression.right.name === "undefined",
+          ),
+          "databaseSaveTimer must be reset before initialization",
+        );
         continue;
       }
       const fn = declarationsMap.get(record.initFunction);
