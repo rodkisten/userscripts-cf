@@ -89,10 +89,19 @@ if (isPreview) {
   assets["preview-manifest.json"] = JSON.stringify(preview);
   // Version the module URL so Safari cannot reuse a stale ESM module after deploy.
   // GitHub Pages has no per-file Cache-Control configuration.
-  const buildRevision = (process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim()).slice(0, 12);
+  const buildRevision = (
+    process.env.GITHUB_SHA ||
+    execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim()
+  ).slice(0, 12);
   assets["playground/form-controls.html"] = assets["playground/form-controls.html"]
-    .replace('const asset = "/playground/form-controls.js";', 'const asset = "/playground/form-controls.js?v=' + buildRevision + '";')
-    .replace('const status = { asset, userAgent:', 'const status = { buildRevision: "' + buildRevision + '", asset, userAgent:');
+    .replace(
+      'const asset = "/playground/form-controls.js";',
+      'const asset = "/playground/form-controls.js?v=' + buildRevision + '";',
+    )
+    .replace(
+      "const status = { asset, userAgent:",
+      'const status = { buildRevision: "' + buildRevision + '", asset, userAgent:',
+    );
   assets["preview/index.html"] = assets["index.html"]
     .replaceAll("/manifest.json", "/preview/manifest.json")
     .replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
