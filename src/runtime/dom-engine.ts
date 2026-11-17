@@ -108,18 +108,19 @@ export function createDomEngine({
 
       const watcher = new MutationObserver(() => {
         const value = scopeNode.querySelector(selector);
-        if (value) finish(resolve, value);
+        if (value) finish(value);
       });
 
-      const abort = () => finish(reject, new DOMException("Aborted", "AbortError"));
+      const abort = () => finish(new DOMException("Aborted", "AbortError"));
 
-      function finish<T extends Element | Error>(fn: (value: T) => void, value: T): void {
+      function finish(value: Element | Error): void {
         if (done) return;
         done = true;
         watcher.disconnect();
         if (timer !== undefined) clearTimeout(timer);
         ownSignal?.removeEventListener("abort", abort);
-        fn(value);
+        if (value instanceof Error) reject(value);
+        else resolve(value);
       }
 
       if (ownSignal?.aborted) return abort();
@@ -127,7 +128,7 @@ export function createDomEngine({
       watcher.observe(scopeNode as Node, { childList: true, subtree: true, attributes: true });
 
       if (timeoutMs > 0) {
-        timer = setTimeout(() => finish(reject, new Error("DOM query timeout")), timeoutMs);
+        timer = setTimeout(() => finish(new Error("DOM query timeout")), timeoutMs);
       }
 
       // Close the gap between the first query and observer registration.

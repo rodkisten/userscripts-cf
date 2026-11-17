@@ -100,14 +100,15 @@ export function createHttpClient({
 
       const stop = () => {
         handle?.abort?.();
-        finish(reject, abortError());
+        finish(abortError());
       };
 
-      function finish<T extends Response | Error>(fn: (value: T) => void, value: T): void {
+      function finish(value: Response | Error): void {
         if (done) return;
         done = true;
         options.signal?.removeEventListener("abort", stop);
-        fn(value);
+        if (value instanceof Response) resolve(value);
+        else reject(value);
       }
 
       if (options.signal?.aborted) return reject(abortError());
@@ -129,20 +130,20 @@ export function createHttpClient({
             }
             const status = Number(response.status);
             if (status < 200 || status > 599) {
-              return finish(reject, new TypeError("Invalid GM HTTP status: " + status));
+              return finish(new TypeError("Invalid GM HTTP status: " + status));
             }
             const body =
               options.method?.toUpperCase() === "HEAD" || status === 204 || status === 205 || status === 304
                 ? null
                 : response.response;
-            finish(resolve, new Response(body, { status, statusText: response.statusText, headers }));
+            finish(new Response(body, { status, statusText: response.statusText, headers }));
           },
-          onerror: () => finish(reject, new TypeError("GM request failed")),
-          ontimeout: () => finish(reject, new DOMException("Request timed out", "TimeoutError")),
-          onabort: () => finish(reject, abortError()),
+          onerror: () => finish(new TypeError("GM request failed")),
+          ontimeout: () => finish(new DOMException("Request timed out", "TimeoutError")),
+          onabort: () => finish(abortError()),
         });
       } catch (error) {
-        finish(reject, error as Error);
+        finish(error as Error);
       }
     });
   }

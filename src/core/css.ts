@@ -211,15 +211,8 @@ export const isText = (node: Node): node is Text => node.nodeType === TEXT_NODE_
  * const sel = getSelection(shadowRoot);
  */
 export function getSelection(root: DocumentOrShadowRoot): Selection | null {
-  let target: Document | Window | DocumentOrShadowRoot;
-  if ((root as Node).nodeType === SHADOW_ROOT_NODE_TYPE) {
-    target = (root as ShadowRoot).getSelection
-      ? (root as unknown as Document)
-      : (root as ShadowRoot).ownerDocument;
-  } else {
-    target = root as Document;
-  }
-  return (target as Document).getSelection();
+  if (root instanceof ShadowRoot) return root.ownerDocument.getSelection();
+  return (root as Document).getSelection();
 }
 
 /**
