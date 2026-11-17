@@ -531,18 +531,22 @@ export function createRuntime(
 
       uiHost = host.document.createElement("div");
       uiHost.dataset[DATASET_UI_ATTR] = definition.id;
-      
+
       // Aplicando estilos via utilitários tipados exportados de css.js
-      setCssProperties(uiHost, {
-        all: "initial",
-        position: "fixed",
-        inset: "0",
-        width: "0",
-        height: "0",
-        zIndex: Z_INDEX_MAX,
-        pointerEvents: "none",
-        visibility: "visible",
-      }, { important: true });
+      setCssProperties(
+        uiHost,
+        {
+          all: "initial",
+          position: "fixed",
+          inset: "0",
+          width: "0",
+          height: "0",
+          zIndex: Z_INDEX_MAX,
+          pointerEvents: "none",
+          visibility: "visible",
+        },
+        { important: true },
+      );
 
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
