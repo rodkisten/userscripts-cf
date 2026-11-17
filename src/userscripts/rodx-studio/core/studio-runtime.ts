@@ -1,4 +1,5 @@
 import type { ScriptContext } from "../../../core/runtime.js";
+import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-storage.js";
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
@@ -351,27 +352,21 @@ export function createStudioRuntime(): StudioRuntime {
     }
     // Hydrate the runtime configuration without blocking DOM startup.
     // User changes made before hydration completes always take precedence.
-    void context.storage
-      .get(CONFIG_STORAGE_KEY)
-      .then((value: unknown) => {
-        if (
-          context.signal.aborted ||
-          configEdited ||
-          !value ||
-          typeof value !== "object" ||
-          Array.isArray(value)
-        )
-          return;
-        const loaded = value as Partial<StudioConfig>;
-        Object.assign(config, loaded, {
-          feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
-          modules: { ...defaults.modules, ...loaded.modules },
-        });
-        invalidate("state");
-      })
-      .catch((error: unknown) => {
-        console.warn("[RodX] Could not hydrate runtime configuration", error);
+    void context.storage.get(CONFIG_STORAGE_KEY).then(async (stored: unknown) => {
+      // Keep historical page storage access inside the compatibility adapter.
+      const legacy = stored === undefined ? readLegacyPageJSON(CONFIG_STORAGE_KEY) : undefined;
+      const value = stored === undefined ? legacy : stored;
+      if (context.signal.aborted || configEdited || !value || typeof value !== "object" || Array.isArray(value)) return;
+      const loaded = value as Partial<StudioConfig>;
+      Object.assign(config, loaded, {
+        feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
+        modules: { ...defaults.modules, ...loaded.modules },
       });
+      if (legacy !== undefined && !configEdited) await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
+      if (!context.signal.aborted && !configEdited) invalidate("state");
+    }).catch((error: unknown) => {
+      console.warn("[RodX] Could not hydrate runtime configuration", error);
+    });
 
     context.observe(
       document.body,
@@ -438,7 +433,7 @@ export function createStudioRuntime(): StudioRuntime {
       if (!document.hidden) invalidate("maintenance");
     }, config.maintenanceMs);
 
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
     }, 500);
 
