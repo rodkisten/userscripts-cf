@@ -68,6 +68,10 @@ assets["playground/form-controls.js"] = await fs.readFile(
   path.join(playgroundDir, "form-controls.js"),
   "utf8",
 );
+assets["playground/form-controls.js.map"] = await fs.readFile(
+  path.join(playgroundDir, "form-controls.js.map"),
+  "utf8",
+);
 // CSS may be inlined by the shared Vite CSS Modules pipeline. Do not fail the release\n// when no standalone stylesheet is emitted. Keep the URL valid for the playground.\nassets["playground/form-controls.css"] = await fs.readFile(\n  path.join(playgroundDir, "form-controls.css"),\n  "utf8",\n).catch((error) => {\n  if (error?.code !== "ENOENT") throw error;\n  console.log("Form controls CSS is inlined; no standalone stylesheet emitted.");\n  return "";\n});
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;

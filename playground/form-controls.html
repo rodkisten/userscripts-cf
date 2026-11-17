@@ -116,6 +116,7 @@
       }, 12000);
       const showError = (error) => {
         const message = error instanceof Error ? error.message : String(error);
+        const stack = error?.stack ? String(error.stack) : "Stack indisponível";
         if (!host || mounted || failed) return;
         failed = true;
         clearTimeout(timeout);
@@ -131,7 +132,7 @@
         details.style.whiteSpace = "pre-wrap";
         details.style.overflowWrap = "anywhere";
         details.textContent = JSON.stringify(
-          { message, elapsedMs: Date.now() - startedAt, ...status },
+          { message, stack, elapsedMs: Date.now() - startedAt, ...status },
           null,
           2,
         );
@@ -147,7 +148,7 @@
         host.append(main);
       };
       window.addEventListener("error", (event) => {
-        if (!mounted) showError(event.error ?? event.message);
+        if (!mounted) showError(event.error ?? new Error(`${event.message} at ${event.filename}:${event.lineno}:${event.colno}`));
       });
       window.addEventListener("unhandledrejection", (event) => {
         if (!mounted) showError(event.reason);
