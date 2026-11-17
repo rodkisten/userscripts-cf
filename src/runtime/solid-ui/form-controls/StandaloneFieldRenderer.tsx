@@ -46,8 +46,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
     enabled: () => !props.controller,
     onError: (reason) => props.onError?.(reason),
   });
-  const error = () => props.controller?.errors()[field().name] ?? (props.context as FieldContext).errors?.[field().name] ?? validation.error();
-  const markBlurred = () => props.controller ? props.controller.markBlurred(field().name) : validation.markBlurred();
+  const error = () =>
+    props.controller?.errors()[field().name] ??
+    (props.context as FieldContext).errors?.[field().name] ??
+    validation.error();
+  const markBlurred = () =>
+    props.controller ? props.controller.markBlurred(field().name) : validation.markBlurred();
   const pending = () => props.controller?.validating() ?? validation.pending();
   const touched = () => props.controller?.touched()[field().name] ?? validation.touched();
   const dirty = () => props.controller?.dirty()[field().name] ?? validation.dirty();
