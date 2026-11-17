@@ -59,9 +59,17 @@ function actions(): HTMLElement | null {
 
 function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown" {
   if (!source) return "unknown";
-  const label = [source.getAttribute("aria-label"), source.getAttribute("title"),
-    ...[...source.querySelectorAll("[aria-label], [title]")].flatMap(node => [node.getAttribute("aria-label"), node.getAttribute("title")])]
-    .filter(Boolean).join(" ").trim();
+  const label = [
+    source.getAttribute("aria-label"),
+    source.getAttribute("title"),
+    ...[...source.querySelectorAll("[aria-label], [title]")].flatMap((node) => [
+      node.getAttribute("aria-label"),
+      node.getAttribute("title"),
+    ]),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
   if (SAVED.test(label)) return "saved";
   if (UNSAVED.test(label)) return "unsaved";
   return "unknown";
@@ -93,10 +101,12 @@ async function saveToCollections(ids: string[], signal: AbortSignal): Promise<vo
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
   if (nativeState(source) === "saved") return;
-  if (nativeState(source) !== "unsaved") throw Error("Não foi possível confirmar o estado do bookmark nativo");
+  if (nativeState(source) !== "unsaved")
+    throw Error("Não foi possível confirmar o estado do bookmark nativo");
   if (signal.aborted) throw Error("Operação cancelada");
   source.click();
-  if (!(await waitForSaved(signal))) throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
+  if (!(await waitForSaved(signal)))
+    throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
   for (const id of ids) {
     if (signal.aborted) throw Error("Operação cancelada");
     const option = collectionOption(id);
