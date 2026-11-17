@@ -53,6 +53,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist/pages
+      - name: Reject outdated build before publishing
+        run: |
+          set -euo pipefail
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$latest" != "$GITHUB_SHA" ]]; then
+            echo "::error::Outdated workflow: current main is $latest, run started at $GITHUB_SHA"
+            exit 1
+          fi
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
