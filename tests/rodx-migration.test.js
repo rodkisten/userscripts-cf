@@ -68,21 +68,24 @@ test("migration retains 462 declarations and audits extracted CSS and selectors"
     else {
       // The timer is now module-scoped so the dirty-event handler and reset share one binding.
       // Audit the declaration and reset explicitly rather than looking for the old initializer assignment.
-      if (record.file === "bootstrap/deck-events.js" && record.name === "databaseSaveTimer") {
-        const declaration = declarationsMap.get("databaseSaveTimer");
+      if (record.file === "bootstrap/deck-events.js" && ["databaseSaveTimer", "refreshingCloud"].includes(record.name)) {
+        const declaration = declarationsMap.get(record.name);
         assert.equal(declaration?.type, "VariableDeclaration");
-        assert.equal(declaration.declarations[0]?.id?.name, "databaseSaveTimer");
-        assert.equal(declaration.declarations[0]?.init, null);
+        assert.equal(declaration.declarations[0]?.id?.name, record.name);
+        const isTimer = record.name === "databaseSaveTimer";
+        if (isTimer) assert.equal(declaration.declarations[0]?.init, null);
+        else assert.equal(declaration.declarations[0]?.init?.value, false);
         const reset = declarationsMap.get("resetDatabaseState");
         assert.ok(
           reset?.body?.body?.some(
             (statement) =>
               statement.expression?.type === "AssignmentExpression" &&
-              statement.expression.left?.name === "databaseSaveTimer" &&
-              statement.expression.right?.type === "Identifier" &&
-              statement.expression.right.name === "undefined",
+              statement.expression.left?.name === record.name &&
+              (isTimer
+                ? statement.expression.right?.type === "Identifier" && statement.expression.right.name === "undefined"
+                : statement.expression.right?.type === "BooleanLiteral" && statement.expression.right.value === false),
           ),
-          "databaseSaveTimer must be reset before initialization",
+          `${record.name} must be reset before initialization`,
         );
         continue;
       }
