@@ -71,7 +71,11 @@ export function Button(props: ButtonProps) {
         )}
         {!busy() && props.iconEnd}
         {hasIconOnlyContent() && !busy() && props.children}
-        {props.badge != null && <span class={styles.badge} aria-hidden="true">{props.badge}</span>}
+        {props.badge != null && (
+          <span class={styles.badge} aria-hidden="true">
+            {props.badge}
+          </span>
+        )}
       </span>
     </button>
   );

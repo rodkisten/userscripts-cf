@@ -130,7 +130,14 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                 />
               }
             >
-              <Select id={controlId()} name={f.name} value={String(fieldValue() ?? "")} disabled={isDisabled()} options={f.options} onChange={commit} />
+              <Select
+                id={controlId()}
+                name={f.name}
+                value={String(fieldValue() ?? "")}
+                disabled={isDisabled()}
+                options={f.options}
+                onChange={commit}
+              />
             </Show>
           );
         })()}
@@ -237,7 +244,23 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                   <div class={styles.descriptionField}>{f.description}</div>
                 </Show>
               </span>
-              {f.type === "switch" ? <ToggleSwitch id={controlId()} name={f.name} checked={Boolean(fieldValue())} disabled={isDisabled()} onChange={commit} /> : <Checkbox id={controlId()} name={f.name} checked={Boolean(fieldValue())} disabled={isDisabled()} onChange={commit} />}
+              {f.type === "switch" ? (
+                <ToggleSwitch
+                  id={controlId()}
+                  name={f.name}
+                  checked={Boolean(fieldValue())}
+                  disabled={isDisabled()}
+                  onChange={commit}
+                />
+              ) : (
+                <Checkbox
+                  id={controlId()}
+                  name={f.name}
+                  checked={Boolean(fieldValue())}
+                  disabled={isDisabled()}
+                  onChange={commit}
+                />
+              )}
             </label>
           );
         })()}
@@ -249,7 +272,16 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const currentVal = () => String(fieldValue() ?? f.min ?? 0);
           return (
             <div class={styles.rangeWrap}>
-              <Slider id={controlId()} name={f.name} value={Number(fieldValue() ?? f.min ?? 0)} min={f.min} max={f.max} step={f.step} disabled={isDisabled()} onChange={commit} />
+              <Slider
+                id={controlId()}
+                name={f.name}
+                value={Number(fieldValue() ?? f.min ?? 0)}
+                min={f.min}
+                max={f.max}
+                step={f.step}
+                disabled={isDisabled()}
+                onChange={commit}
+              />
               <Show when={f.showValue !== false}>
                 <output class={styles.rangeValue}>{currentVal()}</output>
               </Show>
@@ -289,12 +321,21 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
       <Match when={props.field.type === "color"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "color" }>;
-          return <ColorPicker id={controlId()} name={f.name} value={String(fieldValue() ?? "")}
-            disabled={isDisabled()} presets={f.presets} onChange={commit} aria-label={f.label ?? f.name} />;
+          return (
+            <ColorPicker
+              id={controlId()}
+              name={f.name}
+              value={String(fieldValue() ?? "")}
+              disabled={isDisabled()}
+              presets={f.presets}
+              onChange={commit}
+              aria-label={f.label ?? f.name}
+            />
+          );
         })()}
       </Match>
 
-            <Match when={props.field.type === "file"}>
+      <Match when={props.field.type === "file"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "file" }>;
           return (

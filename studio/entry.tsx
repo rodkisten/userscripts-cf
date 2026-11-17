@@ -420,7 +420,12 @@ const buttonStyle = document.createElement("style");
 buttonStyle.textContent = buttonCss + "\n" + badgeCss;
 document.head.append(buttonStyle);
 type StudioChoice = { value: string; label: string };
-function StudioSelect(props: { label: string; value: string; choices: readonly StudioChoice[]; onChange: (value: string) => void }) {
+function StudioSelect(props: {
+  label: string;
+  value: string;
+  choices: readonly StudioChoice[];
+  onChange: (value: string) => void;
+}) {
   const selected = () => props.choices.find((item) => item.value === props.value)?.label ?? "Personalizado";
   return (
     <div class="rod-studio-field">
@@ -522,34 +527,115 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
-          <StudioSelect label="Tema" value={theme()} choices={[{value:"light",label:"Claro"},{value:"dark",label:"Escuro"}]} onChange={(value) => changeTheme(value as "light" | "dark")} />
-          <label>Fundo secondary <ColorPicker value={secondaryBg()} onChange={setSecondaryBg} aria-label="Fundo secondary" /></label>
-          <label>Texto secondary <ColorPicker value={secondaryFg()} onChange={setSecondaryFg} aria-label="Texto secondary" /></label>
-          <label>Foco <ColorPicker value={focusColor()} onChange={setFocusColor} aria-label="Foco" /></label>
-          <StudioSelect label="Preset" value={preset()} choices={[{value:"",label:"Personalizado"},{value:"compact",label:"Compacto"},{value:"default",label:"Padrão"},{value:"touch",label:"Touch"}]} onChange={(value) => value ? applyPreset(value as "compact" | "default" | "touch") : setPreset("")} />
-          <Button variant="outline" size="sm" onClick={() => void exportTokens()}>Copiar CSS</Button>
+          <StudioSelect
+            label="Tema"
+            value={theme()}
+            choices={[
+              { value: "light", label: "Claro" },
+              { value: "dark", label: "Escuro" },
+            ]}
+            onChange={(value) => changeTheme(value as "light" | "dark")}
+          />
+          <label>
+            Fundo secondary{" "}
+            <ColorPicker value={secondaryBg()} onChange={setSecondaryBg} aria-label="Fundo secondary" />
+          </label>
+          <label>
+            Texto secondary{" "}
+            <ColorPicker value={secondaryFg()} onChange={setSecondaryFg} aria-label="Texto secondary" />
+          </label>
+          <label>
+            Foco <ColorPicker value={focusColor()} onChange={setFocusColor} aria-label="Foco" />
+          </label>
+          <StudioSelect
+            label="Preset"
+            value={preset()}
+            choices={[
+              { value: "", label: "Personalizado" },
+              { value: "compact", label: "Compacto" },
+              { value: "default", label: "Padrão" },
+              { value: "touch", label: "Touch" },
+            ]}
+            onChange={(value) =>
+              value ? applyPreset(value as "compact" | "default" | "touch") : setPreset("")
+            }
+          />
+          <Button variant="outline" size="sm" onClick={() => void exportTokens()}>
+            Copiar CSS
+          </Button>
           <span role="status" aria-live="polite">
             {copyStatus()}
           </span>
-          <StudioSelect label="Variante" value={variant()} choices={["default","secondary","outline","ghost","destructive","success","warning"].map((value) => ({value,label:value}))} onChange={(value) => setVariant(value as ReturnType<typeof variant>)} />
-          <StudioSelect label="Tamanho" value={size()} choices={[{value:"sm",label:"Pequeno"},{value:"md",label:"Médio"},{value:"lg",label:"Grande"}]} onChange={(value) => {setPreset("");setSize(value as "sm" | "md" | "lg");}} />
+          <StudioSelect
+            label="Variante"
+            value={variant()}
+            choices={["default", "secondary", "outline", "ghost", "destructive", "success", "warning"].map(
+              (value) => ({ value, label: value }),
+            )}
+            onChange={(value) => setVariant(value as ReturnType<typeof variant>)}
+          />
+          <StudioSelect
+            label="Tamanho"
+            value={size()}
+            choices={[
+              { value: "sm", label: "Pequeno" },
+              { value: "md", label: "Médio" },
+              { value: "lg", label: "Grande" },
+            ]}
+            onChange={(value) => {
+              setPreset("");
+              setSize(value as "sm" | "md" | "lg");
+            }}
+          />
           <label>
             Raio {radius()}px
-            <Slider value={radius()} min={0} max={28} onChange={(value) => { setPreset(""); setRadius(value); }} />
+            <Slider
+              value={radius()}
+              min={0}
+              max={28}
+              onChange={(value) => {
+                setPreset("");
+                setRadius(value);
+              }}
+            />
           </label>
           <label>
             Altura {height()}px
-            <Slider value={height()} min={28} max={64} onChange={(value) => { setPreset(""); setHeight(value); }} />
+            <Slider
+              value={height()}
+              min={28}
+              max={64}
+              onChange={(value) => {
+                setPreset("");
+                setHeight(value);
+              }}
+            />
           </label>
-          <label style={{display:"flex","align-items":"center",gap:"10px"}}>
+          <label style={{ display: "flex", "align-items": "center", gap: "10px" }}>
             <RodSwitch checked={busy()} onChange={setBusy} aria-label="Loading" /> Loading
           </label>
           <label>
             Accent{" "}
-            <ColorPicker value={accent()} onChange={(value) => { setPreset(""); setAccent(value); }} aria-label="Accent" presets={["#7c3aed", "#2563eb", "#0d9488", "#dc2626"]} />
+            <ColorPicker
+              value={accent()}
+              onChange={(value) => {
+                setPreset("");
+                setAccent(value);
+              }}
+              aria-label="Accent"
+              presets={["#7c3aed", "#2563eb", "#0d9488", "#dc2626"]}
+            />
           </label>
         </div>
-        <div class="flex" style={{ padding: "14px", "border-radius": "12px", background: theme() === "dark" ? "#18171d" : "#f7f7f9", color: theme() === "dark" ? "#fff" : "#211b2a" }}>
+        <div
+          class="flex"
+          style={{
+            padding: "14px",
+            "border-radius": "12px",
+            background: theme() === "dark" ? "#18171d" : "#f7f7f9",
+            color: theme() === "dark" ? "#fff" : "#211b2a",
+          }}
+        >
           <Button
             variant={variant()}
             size={size()}

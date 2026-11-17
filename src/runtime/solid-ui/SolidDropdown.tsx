@@ -37,7 +37,10 @@ export function openSolidDropdown(options: DropdownOptions) {
   activeDropdowns.set(trigger, () => close());
   const focusFirst = () => mount.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   const position = () => {
-    if (disposed || !trigger.isConnected) { close(false); return; }
+    if (disposed || !trigger.isConnected) {
+      close(false);
+      return;
+    }
     const viewport = trigger.ownerDocument.defaultView?.visualViewport;
     const vw = viewport?.width ?? innerWidth;
     const vh = viewport?.height ?? innerHeight;
@@ -96,7 +99,13 @@ export function openSolidDropdown(options: DropdownOptions) {
         <For each={stack().at(-1) ?? []}>
           {(item) =>
             item.type === "separator" ? (
-              <hr style={{ border: "0", "border-top": "1px solid var(--rod-menu-border, #3f3f46)", margin: "5px 0" }} />
+              <hr
+                style={{
+                  border: "0",
+                  "border-top": "1px solid var(--rod-menu-border, #3f3f46)",
+                  margin: "5px 0",
+                }}
+              />
             ) : (
               <button
                 type="button"
@@ -179,8 +188,12 @@ export function openSolidDropdown(options: DropdownOptions) {
     { signal: controller.signal },
   );
   window.addEventListener("resize", position, { signal: controller.signal });
-  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", position, { signal: controller.signal });
-  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", position, { signal: controller.signal });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", position, {
+    signal: controller.signal,
+  });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", position, {
+    signal: controller.signal,
+  });
   // Capture scrolling from nested containers, including mobile overflow panes.
   trigger.ownerDocument.addEventListener("scroll", position, {
     capture: true,

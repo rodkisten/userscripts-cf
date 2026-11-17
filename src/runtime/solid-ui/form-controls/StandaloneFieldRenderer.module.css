@@ -45,4 +45,9 @@
   opacity: 0.6;
 }
 
-.booleanRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.booleanRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
