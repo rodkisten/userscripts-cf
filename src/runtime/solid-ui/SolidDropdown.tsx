@@ -2,8 +2,16 @@ import { createSignal, For, onCleanup } from "solid-js";
 import { render } from "@solidjs/web";
 import type { DropdownOptions, DropdownItem } from "./menu-api";
 
+const activeDropdowns = new WeakMap<HTMLElement, () => void>();
+
 export function openSolidDropdown(options: DropdownOptions) {
   const trigger = options.trigger;
+  // Opening the same trigger again toggles the existing dropdown closed.
+  const existing = activeDropdowns.get(trigger);
+  if (existing) {
+    existing();
+    return { close: existing };
+  }
   const root = trigger.getRootNode();
   const parent = root instanceof ShadowRoot ? root : trigger.ownerDocument.body;
   const mount = trigger.ownerDocument.createElement("div");
@@ -18,6 +26,7 @@ export function openSolidDropdown(options: DropdownOptions) {
   const close = () => {
     if (disposed) return;
     disposed = true;
+    activeDropdowns.delete(trigger);
     controller.abort();
     dispose();
     mount.remove();
@@ -25,6 +34,8 @@ export function openSolidDropdown(options: DropdownOptions) {
     else trigger.setAttribute("aria-expanded", previous);
     if (trigger.isConnected) trigger.focus();
   };
+  activeDropdowns.set(trigger, close);
+  const focusFirst = () => mount.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   const position = () => {
     const rect = trigger.getBoundingClientRect();
     const width = mount.offsetWidth;
@@ -63,7 +74,7 @@ export function openSolidDropdown(options: DropdownOptions) {
             <button
               type="button"
               role="menuitem"
-              onClick={() => setStack((s) => s.slice(0, -1))}
+              onClick={() => { setStack((s) => s.slice(0, -1)); queueMicrotask(() => { position(); focusFirst(); }); }}
               style={buttonStyle}
             >
               ‹ Voltar
@@ -84,7 +95,7 @@ export function openSolidDropdown(options: DropdownOptions) {
                 onClick={() => {
                   if (item.children?.length) {
                     setStack((s) => [...s, item.children!]);
-                    queueMicrotask(position);
+                    queueMicrotask(() => { position(); focusFirst(); });
                     return;
                   }
                   if (item.type === "checkbox") {
@@ -123,6 +134,20 @@ export function openSolidDropdown(options: DropdownOptions) {
         event.preventDefault();
         close();
       }
+      if (event.key === "Tab") {
+        close();
+        return;
+      }
+      if (event.key === "Home" || event.key === "End") {
+        const buttons = [...mount.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+        buttons[event.key === "Home" ? 0 : buttons.length - 1]?.focus();
+        event.preventDefault();
+      }
+      if (event.key === "ArrowLeft" && stack().length > 1) {
+        setStack((items) => items.slice(0, -1));
+        queueMicrotask(() => { position(); focusFirst(); });
+        event.preventDefault();
+      }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         const buttons = [...mount.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
         const index = buttons.indexOf(
@@ -135,8 +160,10 @@ export function openSolidDropdown(options: DropdownOptions) {
     { signal: controller.signal },
   );
   window.addEventListener("resize", position, { signal: controller.signal });
+  // Capture scrolling from nested containers, including mobile overflow panes.
+  trigger.ownerDocument.addEventListener("scroll", position, { capture: true, passive: true, signal: controller.signal });
   position();
-  mount.querySelector<HTMLButtonElement>("button")?.focus();
+  focusFirst();
   return { close };
 }
 const buttonStyle = {

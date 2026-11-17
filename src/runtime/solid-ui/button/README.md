@@ -95,3 +95,7 @@ Solid 2 RC does not export `splitProps`. Button, ButtonGroup, DropdownButton and
 ## Group layout and icon-only trigger
 
 ButtonGroup now reads `--button-radius` directly on the group, instead of relying on a private CSS variable defined only on individual child buttons. SplitButton uses a square icon-sized dropdown trigger with a visible chevron. Icon-sized buttons also display their children when no explicit icon is provided. Browser verification is still pending.
+
+## Dropdown keyboard and mobile behavior
+
+The shared `SolidDropdown` now prevents duplicate menus per trigger (reopening toggles closed), supports Home/End, ArrowUp/ArrowDown, Escape, ArrowLeft for submenu back navigation, and closes on Tab or pointerdown outside. It restores trigger focus on close and repositions on scroll/resize for mobile overflow layouts. Submenu transitions focus their first enabled item. These are source changes; Safari and assistive technology verification remain outstanding.
