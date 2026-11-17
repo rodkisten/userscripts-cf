@@ -58,17 +58,17 @@ function ensureMounted() {
   render(() => ToasterHost({ api: toast }), root);
 }
 
-function showBase(args: unknown[], forcedType: ToastType | null) {
+function showBase(args: unknown[], forcedType: ToastType | null = null, overrides?: ToastOptions) {
   ensureMounted();
   const parsed = parseArguments(args, forcedType);
-  return createToast(parsed.args, parsed.options);
+  return createToast(parsed.args, { ...parsed.options, ...overrides });
 }
 
 function showSemantic(type: ToastType, args: unknown[]) {
   if (args[0] instanceof Error) {
     const err = args[0];
     const extra = isOptionsCandidate(args[1]) ? args[1] : {};
-    return showBase([], {
+    return showBase([], type, {
       ...extra,
       type,
       title: extra.title ?? err.message ?? "Error",
@@ -131,7 +131,7 @@ export const toast = Object.assign(toastFn, {
   loading: (...args: unknown[]) => {
     const parsed = parseArguments(args, null);
     const title = typeof parsed.args[0] === "string" ? parsed.args[0] : parsed.options.title;
-    return showBase([], { ...parsed.options, title, loading: true, loadingState: "loading" });
+    return showBase([], null, { ...parsed.options, title, loading: true, loadingState: "loading" });
   },
   multiLoading: (descriptor: MultiLoadingDescriptor = {}) => {
     ensureMounted();
@@ -155,7 +155,7 @@ export const toast = Object.assign(toastFn, {
   },
   undo: (descriptor: ToastOptions | string = {}) => {
     const opts = typeof descriptor === "string" ? { title: descriptor } : descriptor;
-    return showBase([], { ...opts, actionLabel: opts.actionLabel ?? "Undo" });
+    return showBase([], null, { ...opts, actionLabel: opts.actionLabel ?? "Undo" });
   },
   task: (descriptor: TaskDescriptor | string = {}) => {
     ensureMounted();
