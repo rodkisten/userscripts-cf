@@ -3,6 +3,7 @@ import type { FormField, FieldContext, OptionItem, RangeField, ColorField } from
 import { Combobox } from "./Combobox";
 import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
+import { Input, Textarea, NumberInput } from "./TextControls";
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
   field: FormField<TContext>;
@@ -52,63 +53,17 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       >
         <label for={id()}>{field().label ?? field().name}</label>
       </Show>
-      <Show
-        when={[
-          "text",
-          "email",
-          "password",
-          "search",
-          "url",
-          "tel",
-          "number",
-          "date",
-          "datetime-local",
-          "time",
-          "month",
-          "week",
-          "hidden",
-        ].includes(kind())}
-      >
-        <input
-          {...common()}
-          type={kind()}
-          value={stringValue()}
-          placeholder={field().placeholder}
-          minLength={prop<number>("minLength")}
-          maxLength={prop<number>("maxLength")}
-          pattern={prop<string>("pattern")}
-          autocomplete={prop<string>("autocomplete")}
-          spellcheck={prop<boolean>("spellcheck")}
-          autofocus={field().autoFocus}
-          min={"min" in field() ? (field() as { min?: string | number }).min : undefined}
-          max={"max" in field() ? (field() as { max?: string | number }).max : undefined}
-          step={"step" in field() ? (field() as { step?: string | number }).step : undefined}
-          readOnly={readonly()}
-          onInput={(event) => {
-            if (readonly()) return;
-            commit(
-              kind() === "number"
-                ? event.currentTarget.value === ""
-                  ? ""
-                  : event.currentTarget.valueAsNumber
-                : event.currentTarget.value,
-            );
-          }}
-        />
+      <Show when={["text", "email", "password", "search", "url", "tel"].includes(kind())}>
+        <Input id={id()} name={field().name} type={kind() as "text" | "email" | "password" | "search" | "url" | "tel"} value={stringValue()} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} maxLength={prop<number>("maxLength")} onChange={commit} />
+      </Show>
+      <Show when={kind() === "number"}>
+        <NumberInput id={id()} name={field().name} value={value() === "" || value() == null ? "" : Number(value())} min={prop<number>("min")} max={prop<number>("max")} step={prop<number>("step")} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} onChange={commit} />
       </Show>
       <Show when={kind() === "textarea"}>
-        <textarea
-          {...common()}
-          rows={prop<number>("rows", 4)}
-          minLength={prop<number>("minLength")}
-          maxLength={prop<number>("maxLength")}
-          placeholder={field().placeholder}
-          value={stringValue()}
-          readOnly={!!field().readonly}
-          onInput={(e) => {
-            if (!readonly()) commit(e.currentTarget.value);
-          }}
-        />
+        <Textarea id={id()} name={field().name} value={stringValue()} rows={prop<number>("rows", 4)} maxLength={prop<number>("maxLength")} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} onChange={commit} />
+      </Show>
+      <Show when={["date", "datetime-local", "time", "month", "week", "hidden"].includes(kind())}>
+        <input {...common()} type={kind()} value={stringValue()} placeholder={field().placeholder} readOnly={readonly()} onInput={(event) => { if (!readonly()) commit(event.currentTarget.value); }} />
       </Show>
       <Show when={kind() === "select" && !!prop<boolean>("searchable")}>
         <Combobox

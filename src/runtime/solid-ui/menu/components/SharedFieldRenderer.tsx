@@ -11,6 +11,7 @@ import type {
 import { TypeaheadSelect } from "./fields/TypeaheadSelect";
 import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "../../form-controls/Controls";
 import styles from "../styles/Fields.module.css";
+import { Input, Textarea, NumberInput } from "../../form-controls/TextControls";
 
 /** Generic variants rendered independently of RodMenu's media/diagnostic extensions.
  * The RodMenu context bridge will be replaced with the shared FieldContext in a follow-up.
@@ -31,88 +32,24 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
   const commit = props.commit;
   return (
     <Switch fallback={null}>
-      <Match
-        when={
-          props.field.type === "text" ||
-          props.field.type === "email" ||
-          props.field.type === "password" ||
-          props.field.type === "search" ||
-          props.field.type === "url" ||
-          props.field.type === "tel"
-        }
-      >
+      <Match when={["text", "email", "password", "search", "url", "tel"].includes(props.field.type)}>
         {(() => {
           const f = props.field as TextLikeField;
-          return (
-            <input
-              id={controlId()}
-              name={f.name}
-              type={f.type}
-              class={styles.control}
-              placeholder={f.placeholder || ""}
-              disabled={isDisabled()}
-              readOnly={f.readonly}
-              required={f.required}
-              autofocus={f.autoFocus}
-              minLength={f.minLength}
-              maxLength={f.maxLength}
-              pattern={f.pattern}
-              autocomplete={f.autocomplete}
-              spellcheck={f.spellcheck}
-              value={String(fieldValue() ?? "")}
-              onInput={(e) => commit(e.currentTarget.value)}
-            />
-          );
+          return <Input id={controlId()} name={f.name} type={f.type} value={String(fieldValue() ?? "")} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} maxLength={f.maxLength} onChange={commit} />;
         })()}
       </Match>
-
       <Match when={props.field.type === "number"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "number" }>;
-          const val = fieldValue();
-          return (
-            <input
-              id={controlId()}
-              name={f.name}
-              type="number"
-              class={styles.control}
-              placeholder={f.placeholder || ""}
-              disabled={isDisabled()}
-              readOnly={f.readonly}
-              required={f.required}
-              min={f.min}
-              max={f.max}
-              step={f.step}
-              value={val === "" || val == null ? "" : String(val)}
-              onInput={(e) => commit(e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber)}
-            />
-          );
+          return <NumberInput id={controlId()} name={f.name} value={fieldValue() === "" || fieldValue() == null ? "" : Number(fieldValue())} min={f.min} max={f.max} step={f.step} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} onChange={commit} />;
         })()}
       </Match>
-
       <Match when={props.field.type === "textarea"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "textarea" }>;
-          return (
-            <textarea
-              id={controlId()}
-              name={f.name}
-              class={styles.textarea}
-              placeholder={f.placeholder || ""}
-              rows={f.rows ?? 4}
-              disabled={isDisabled()}
-              readOnly={f.readonly}
-              required={f.required}
-              minLength={f.minLength}
-              maxLength={f.maxLength}
-              style={{ resize: f.resize || "vertical" }}
-              value={String(fieldValue() ?? "")}
-              onInput={(e) => commit(e.currentTarget.value)}
-            />
-          );
+          return <Textarea id={controlId()} name={f.name} value={String(fieldValue() ?? "")} rows={f.rows ?? 4} maxLength={f.maxLength} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} onChange={commit} />;
         })()}
       </Match>
-
       <Match when={props.field.type === "select"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "select" }>;
