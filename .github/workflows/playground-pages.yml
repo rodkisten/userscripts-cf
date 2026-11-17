@@ -106,9 +106,16 @@ jobs:
         env:
           USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
         run: node build/preview-userscripts.mjs
+      - name: Restore design-system build
+        id: design-system
+        uses: actions/cache@v4
+        with:
+          path: dist/design-system.js
+          key: pages-design-system-v1-${{ hashFiles('studio/**', 'src/**', 'build/design-system.mjs', 'build/css-modules.mjs', 'build/solid-dom.mjs', 'build/styles.mjs', 'build/runtime-helpers.mjs', 'build/svg.mjs', 'vite.config.js', 'package.json', 'package-lock.json') }}
       - name: Generate static playground
         env:
           USERSCRIPTS_PREVIEW: "1"
+          USERSCRIPTS_REUSE_DESIGN_SYSTEM: "${{ steps.design-system.outputs.cache-hit }}"
         run: node build/hosting.mjs
       - name: Validate static Pages output
         run: |

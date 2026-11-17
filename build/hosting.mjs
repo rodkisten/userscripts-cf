@@ -9,7 +9,19 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 const isPreview = process.env.USERSCRIPTS_PREVIEW === "1";
-execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
+// A matching workflow cache already contains the compiled Studio. Do not
+// rebuild it for changes limited to the playground or hosting templates.
+const cachedStudio = path.join(dist, "design-system.js");
+const reuseStudio = process.env.USERSCRIPTS_REUSE_DESIGN_SYSTEM === "true";
+if (reuseStudio) {
+  const stats = await fs.stat(cachedStudio).catch(() => null);
+  if (!stats?.isFile() || stats.size === 0) {
+    throw new Error("Design-system cache reported a hit without a valid bundle");
+  }
+  console.log("⚡ Reusing cached design-system.js");
+} else {
+  execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
+}
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design-system.html"), "utf8");
 assets["design-system.js"] = await fs.readFile(path.join(dist, "design-system.js"), "utf8");
