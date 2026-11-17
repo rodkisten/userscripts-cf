@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, untrack } from "solid-js";
+import { createMemo, createSignal, onCleanup, untrack } from "solid-js";
 import type { BaseField, FieldContext, FieldValues } from "./fields";
 
 /** Async field validation with stale-result protection and optional debounce. */
@@ -23,7 +23,9 @@ export function createFieldValidation<TContext = FieldContext>(options: {
     setBlurRevision((n) => n + 1);
   };
   let generation = 0;
-  createEffect(() => {
+  // Solid 2 can invoke field components while rendering under untrack. A memo
+  // tracks the validation inputs without requiring an effect scheduler on that owner.
+  createMemo(() => {
     const field = options.field();
     const value = options.value();
     const context = options.context();
