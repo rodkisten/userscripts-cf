@@ -20,7 +20,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     : "";
   const entryCode = `${imports.join("\n")}
     ${dockImport}
-    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime.js"))};
+    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core/runtime-solid.js"))};
     export function boot(bridge) {
       const api = createRuntime([${entries.join(",")}], bridge, window, ${JSON.stringify(options.release || null)});
       ${dockBoot}
