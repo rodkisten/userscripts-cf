@@ -16,6 +16,15 @@ import { createToasterFeature } from "../runtime/modular/features/toaster.js";
 import { createStorageFeature } from "../runtime/modular/features/storage.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
 
+// Compile-time feature switches supplied by the runtime bundler.
+// Declare them for TypeScript without assigning runtime values.
+declare const __ROD_FEATURE_MENU__: boolean;
+declare const __ROD_FEATURE_TOASTER__: boolean;
+declare const __ROD_FEATURE_CLIPBOARD__: boolean;
+declare const __ROD_FEATURE_HTTP__: boolean;
+declare const __ROD_FEATURE_DOM__: boolean;
+declare const __ROD_FEATURE_GM__: boolean;
+
 // Importações dos utilitários de CSS do arquivo css.js
 import {
   installCoreStyles,
