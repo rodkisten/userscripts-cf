@@ -28,9 +28,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
     return "options" in current ? current.options : [];
   };
   const stringValue = () => String(value() ?? "");
-  const prop = <T,>(name: string, fallback?: T): T | undefined =>
-    (field() as unknown as Record<string, T>)[name] ?? fallback;
-  const selectedValues = () => (Array.isArray(value()) ? (value() as unknown[]).map(String) : []);
+  const prop = <T,>(name: string, fallback?: T): T | undefined => {
+    const current = field();
+    return (current as unknown as Record<string, T | undefined>)[name] ?? fallback;
+  };
+  const selectedValues = (): string[] => {
+    const current = value();
+    return Array.isArray(current) ? (current as unknown[]).map(String) : [];
+  };
   const common = () => ({
     id: id(),
     name: field().name,
