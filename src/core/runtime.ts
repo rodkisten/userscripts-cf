@@ -489,10 +489,13 @@ export function createRuntime(
       if (!eventsValue) {
         eventBus = createEventBus({
           namespace: definition.id,
-          signal: abort.signal,
           onDiagnostic: () => console.warn(LOG_TAG_EVENTS, "Event bus diagnostic"),
         });
-        sharedEvents = createSharedEvents({ host, signal: abort.signal });
+        sharedEvents = createSharedEvents({ host });
+        abort.signal.addEventListener("abort", () => {
+          eventBus?.dispose();
+          sharedEvents?.dispose();
+        }, { once: true });
         domEventsEngine = createDomEventsEngine(definition.id, host);
         eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEventsEngine });
       }
@@ -686,7 +689,7 @@ export function createRuntime(
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         return createRoot((dispose) => {
           onDispose(dispose);
-          return createStore(initial);
+          return createStore(initial as Exclude<T, Function>);
         });
       },
       observe(target, callback, options) {

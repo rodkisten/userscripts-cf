@@ -106,7 +106,7 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
       inp: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>),
       d: PromiseDescriptor<T> = {},
     ) => {
-      const { loading: _loading, success: _success, error: _error, ...base } = defaults;
+      const { loading: _loading, error: _error, ...base } = defaults;
       return toast.promise<T>(inp, { ...base, ...d, scope: name });
     },
     retry: <T>(d: RetryDescriptor<T>) => {
