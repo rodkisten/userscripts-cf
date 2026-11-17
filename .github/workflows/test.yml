@@ -29,6 +29,7 @@ jobs:
           permission-pull-requests: write
       - uses: actions/checkout@v4
         with:
+          token: ${{ steps.app-token.outputs.token }}
           ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
       - name: "🔎 Skip outdated branch commits"
