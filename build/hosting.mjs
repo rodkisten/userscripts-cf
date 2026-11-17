@@ -85,6 +85,7 @@ assets["playground/form-controls.css"] = await fs
 if (isPreview) {
   const preview = JSON.parse(await fs.readFile(path.join(dist, "preview-manifest.json"), "utf8"));
   assets["preview/manifest.json"] = JSON.stringify(preview);
+  assets["preview-manifest.json"] = JSON.stringify(preview);
   assets["preview/index.html"] = assets["index.html"]
     .replaceAll("/manifest.json", "/preview/manifest.json")
     .replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
