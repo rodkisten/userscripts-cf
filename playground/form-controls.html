@@ -110,6 +110,10 @@
       const startedAt = Date.now();
       const status = { asset, userAgent: navigator.userAgent, page: location.href };
       let mounted = false;
+      window.__rodPlaygroundReady = () => {
+        mounted = true;
+        clearTimeout(timeout);
+      };
       let failed = false;
       const timeout = setTimeout(() => {
         if (!mounted) showError(new Error("Timeout de inicialização: o módulo não montou em 12 segundos."));
@@ -160,7 +164,7 @@
       import(asset)
         .then(() => {
           if (failed) return;
-          if (host?.textContent?.includes("Carregando componentes SolidJS")) {
+          if (!mounted && host?.textContent?.includes("Carregando componentes SolidJS")) {
             showError(new Error("Bundle carregado, mas SolidJS não montou a aplicação."));
           } else {
             mounted = true;

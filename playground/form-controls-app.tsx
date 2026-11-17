@@ -855,4 +855,16 @@ function App() {
 }
 
 const target = document.getElementById("app");
-if (target) render(() => <App />, target);
+if (target) {
+  try {
+    render(() => <App />, target);
+    if (target.querySelector("main") && !target.textContent?.includes("Carregando componentes SolidJS")) {
+      (window as typeof window & { __rodPlaygroundReady?: () => void }).__rodPlaygroundReady?.();
+    } else {
+      throw new Error("SolidJS render returned without replacing the loading placeholder");
+    }
+  } catch (error) {
+    window.dispatchEvent(new ErrorEvent("error", { error, message: String(error) }));
+    throw error;
+  }
+}
