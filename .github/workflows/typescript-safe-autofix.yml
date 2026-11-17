@@ -3,6 +3,9 @@ run-name: "🛠️ TS autofix · ${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Validate changed userscripts", "🧩 Button · Typecheck & Build"]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -17,6 +20,7 @@ concurrency:
 
 jobs:
   autofix:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate Rod GitHub App
@@ -30,20 +34,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
+      - name: Confirm TypeScript diagnostics (not an unrelated CI failure)
+        id: diagnostics
+        shell: bash
+        run: |
+          set +e
+          npm run typecheck > /tmp/rod-typescript-diagnostics.log 2>&1
+          code=$?
+          set -e
+          if [[ $code -ne 0 ]] && grep -Eq 'error TS[0-9]+' /tmp/rod-typescript-diagnostics.log; then
+            echo 'has_typescript_errors=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_typescript_errors=false' >> "$GITHUB_OUTPUT"
+          fi
+          tail -n 40 /tmp/rod-typescript-diagnostics.log >> "$GITHUB_STEP_SUMMARY"
       - name: Apply conservative TypeScript code fixes
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true'
         run: node build/typescript-safe-autofix.mjs
       - name: Format changed files
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true'
         run: |
           mapfile -d '' files < <(git diff --name-only -z -- '*.ts' '*.tsx')
           if (( ${#files[@]} )); then
             npx prettier --write "${files[@]}"
           fi
       - name: Create reviewable autofix PR as Rod bot
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ steps.app-token.outputs.token }}

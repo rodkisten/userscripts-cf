@@ -30,46 +30,50 @@ const host = {
   getDirectories: ts.sys.getDirectories,
 };
 const service = ts.createLanguageService(host, ts.createDocumentRegistry());
-const before = service.getProgram()?.getSemanticDiagnostics() ?? [];
-const allowed = new Set([6133, 6192, 6196, 6198]);
-const changes = new Map();
-let fixes = 0;
-for (const file of parsed.fileNames) {
-  const diagnostics = service.getSemanticDiagnostics(file).filter((d) => allowed.has(d.code));
-  for (const diagnostic of diagnostics) {
-    if (diagnostic.start === undefined || diagnostic.length === undefined) continue;
-    const candidates = service.getCodeFixesAtPosition(file, diagnostic.start, diagnostic.start + diagnostic.length, [diagnostic.code], {}, {});
-    const safe = candidates.find((fix) =>
-      /remove unused|delete unused/i.test(fix.description) &&
-      fix.changes.length === 1 &&
-      path.resolve(fix.changes[0].fileName) === path.resolve(file)
-    );
-    if (!safe) continue;
-    const current = changes.get(file) ?? ts.sys.readFile(file);
-    if (current === undefined) continue;
-    const edits = safe.changes[0].textChanges;
-    // Only apply non-overlapping edits from the original snapshot once per file.
-    if (changes.has(file)) continue;
-    let updated = current;
-    for (const edit of [...edits].sort((a,b) => b.span.start - a.span.start)) {
-      updated = updated.slice(0, edit.span.start) + edit.newText + updated.slice(edit.span.start + edit.span.length);
+const sourceFiles = parsed.fileNames.filter((file) => /\\.tsx?$/.test(file));
+const fixes = [];
+for (const file of sourceFiles) {
+  const original = ts.sys.readFile(file);
+  if (!original) continue;
+  const ast = ts.createSourceFile(file, original, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const replacements = [];
+  for (const node of ast.statements) {
+    if (!ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) continue;
+    const moduleName = node.moduleSpecifier.text;
+    const clause = node.importClause;
+    if (!clause?.isTypeOnly || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) continue;
+    if (clause.name || clause.namedBindings.elements.length !== 1) continue;
+    const spec = clause.namedBindings.elements[0];
+    if (spec.name.text !== "JSX" || spec.propertyName) continue;
+    if (!["solid-js", "solid-js/jsx", "solid-js/jsx-runtime"].includes(moduleName)) continue;
+    replacements.push({ start: node.moduleSpecifier.getStart(ast), end: node.moduleSpecifier.end, text: '"@solidjs/web"' });
+  }
+  const visit = (node) => {
+    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument) && ts.isStringLiteral(node.argument.literal) &&
+        node.argument.literal.text === "solid-js" && node.qualifier?.getText(ast) === "JSX") {
+      replacements.push({start: node.argument.literal.getStart(ast),end:node.argument.literal.end,text:'"@solidjs/web"'});
     }
-    changes.set(file, updated);
-    fixes++;
+    ts.forEachChild(node, visit);
+  };
+  visit(ast);
+  if (!replacements.length) continue;
+  let updated = original;
+  for (const change of replacements.sort((a,b) => b.start-a.start)) {
+    updated = updated.slice(0,change.start)+change.text+updated.slice(change.end);
   }
+  fixes.push({file,original,updated,count:replacements.length});
 }
-for (const [file, content] of changes) {
-  fs.writeFileSync(file, content);
-  files.get(path.resolve(file)).version++;
+const countErrors = () => {
+  const program = ts.createProgram(parsed.fileNames, parsed.options);
+  return ts.getPreEmitDiagnostics(program).filter((d) => d.category === ts.DiagnosticCategory.Error).length;
+};
+const before = countErrors();
+for (const fix of fixes) fs.writeFileSync(fix.file,fix.updated);
+const after = countErrors();
+if (after > before) {
+  for (const fix of fixes) fs.writeFileSync(fix.file,fix.original);
+  throw new Error(`AST autofix rejected: errors increased from ${before} to ${after}`);
 }
-const after = service.getProgram()?.getSemanticDiagnostics() ?? [];
-if (after.length > before.length) {
-  for (const [file] of changes) {
-    // Refuse to leave a regression: the workflow will not publish these edits.
-    console.error(`::error file=${file}::Automatic fixes increased TypeScript errors (${before.length} -> ${after.length})`);
-  }
-  process.exitCode = 1;
-}
-const summary = `### TypeScript safe autofix\n\n- Before: ${before.length} semantic errors\n- After: ${after.length} semantic errors\n- Candidate files: ${changes.size}\n- Applied fixes: ${fixes}\n- Scope: unused declarations only (TS6133/6192/6196/6198)\n\nOther type errors require manual review; no type assertions or suppression comments are generated.\n`;
-if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST JSX import repairs: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n`;
+if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
 console.log(summary);
