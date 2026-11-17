@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX } from "solid-js/jsx";
 
 export type Awaitable<T> = T | Promise<T>;
 export type AnyRecord = Record<string, unknown>;

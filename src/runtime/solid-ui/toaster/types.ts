@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX } from "solid-js/jsx";
 
 export type ToastType = "default" | "error" | "info" | "success" | "warning" | "debug";
 export type Theme = "auto" | "dark" | "light";
@@ -367,7 +367,7 @@ export interface TaskController {
   snapshot: () => TaskSnapshot;
 }
 
-export interface PromiseDescriptor<T = unknown> extends TaskDescriptor {
+export interface PromiseDescriptor<T = unknown> extends Omit<TaskDescriptor, "loading"> {
   loading?: string | ToastOptions;
   success?: string | ((data: T) => string | ToastOptions);
   error?: string | ((err: unknown) => string | ToastOptions);

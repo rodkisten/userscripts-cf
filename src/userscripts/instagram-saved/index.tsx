@@ -89,8 +89,9 @@ export default {
       ),
       { styles: [css], id: "instagram-settings" },
     );
-    const get = async (key: string, fallback: any) => ctx.storage.get(key, fallback);
-    const set = async (key: string, value: any) => ctx.storage.set(key, value);
+    const get = async <T>(key: string, fallback: T): Promise<T> =>
+      (await ctx.storage.get(key, fallback)) as T;
+    const set = async <T>(key: string, value: T): Promise<void> => ctx.storage.set(key, value);
     const pause = (ms: number) =>
       new Promise<void>((resolve, reject) => {
         abort.throwIfAborted();
