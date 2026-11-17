@@ -349,36 +349,40 @@ export function createStudioRuntime(): StudioRuntime {
     const context = runtime.ctx;
     if (!context) {
       started = false;
-      console.warn('[RodX] ScriptContext unavailable; delaying runtime startup');
+      console.warn("[RodX] ScriptContext unavailable; delaying runtime startup");
       return;
     }
-    context.observe(document.body, (records) => {
-      if (
-        !records.some(
-          (r) =>
-            !owned(r.target) &&
-            !(
-              r.type === "childList" &&
-              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).length &&
-              Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
-            ),
+    context.observe(
+      document.body,
+      (records) => {
+        if (
+          !records.some(
+            (r) =>
+              !owned(r.target) &&
+              !(
+                r.type === "childList" &&
+                Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).length &&
+                Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
+              ),
+          )
         )
-      )
-        return;
+          return;
 
-      if (!domTimer) {
-        domTimer = window.setTimeout(() => {
-          domTimer = 0;
-          invalidate("dom");
-        }, config.scanDelayMs);
-      }
-    }, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["href"],
-    });
+        if (!domTimer) {
+          domTimer = window.setTimeout(() => {
+            domTimer = 0;
+            invalidate("dom");
+          }, config.scanDelayMs);
+        }
+      },
+      {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["href"],
+      },
+    );
 
     let lastRoute = state.route;
     const route = () => {
