@@ -20,7 +20,10 @@ if (reuseStudio) {
   }
   console.log("⚡ Reusing cached design-system.js");
 } else {
-  execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
+  execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], {
+    cwd: root,
+    stdio: "inherit",
+  });
 }
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design-system.html"), "utf8");
