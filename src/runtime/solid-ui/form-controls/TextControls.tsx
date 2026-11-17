@@ -12,7 +12,13 @@ export interface TextControlProps {
   disabled?: boolean;
   readonly?: boolean;
   required?: boolean;
+  minLength?: number;
   maxLength?: number;
+  pattern?: string;
+  autocomplete?: string;
+  inputMode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
+  spellcheck?: boolean;
+  autoFocus?: boolean;
   onChange(value: string): void;
 }
 
@@ -57,7 +63,13 @@ export function Input(
         disabled={props.disabled}
         readOnly={props.readonly}
         required={props.required}
+        minLength={props.minLength}
         maxLength={props.maxLength}
+        pattern={props.pattern}
+        autocomplete={props.autocomplete}
+        inputMode={props.inputMode}
+        spellcheck={props.spellcheck}
+        autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
         aria-describedby={describedBy(props)}
         onInput={(event) => props.onChange(event.currentTarget.value)}
@@ -67,7 +79,7 @@ export function Input(
   );
 }
 
-export function Textarea(props: TextControlProps & { rows?: number; showCount?: boolean }) {
+export function Textarea(props: TextControlProps & { rows?: number; showCount?: boolean; resize?: "none" | "vertical" | "horizontal" | "both" }) {
   return (
     <div class={styles.textField}>
       <Show when={props.label}>
@@ -79,11 +91,15 @@ export function Textarea(props: TextControlProps & { rows?: number; showCount?: 
         class={styles.textInput}
         value={props.value}
         rows={props.rows ?? 3}
+        style={{ resize: props.resize ?? "vertical" }}
         placeholder={props.placeholder}
         disabled={props.disabled}
         readOnly={props.readonly}
         required={props.required}
+        minLength={props.minLength}
         maxLength={props.maxLength}
+        spellcheck={props.spellcheck}
+        autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
         aria-describedby={describedBy(props)}
         onInput={(event) => props.onChange(event.currentTarget.value)}
@@ -117,7 +133,8 @@ export function NumberInput(props: NumberInputProps) {
         name={props.name}
         class={styles.textInput}
         type="number"
-        inputMode="decimal"
+        inputMode={props.inputMode ?? "decimal"}
+        autofocus={props.autoFocus}
         value={props.value}
         min={props.min}
         max={props.max}

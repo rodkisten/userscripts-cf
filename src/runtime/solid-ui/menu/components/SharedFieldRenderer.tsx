@@ -45,7 +45,13 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
               disabled={isDisabled()}
               readonly={f.readonly}
               required={f.required}
+              minLength={f.minLength}
               maxLength={f.maxLength}
+              pattern={f.pattern}
+              autocomplete={f.autocomplete}
+              inputMode={f.inputmode as "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none" | undefined}
+              spellcheck={f.spellcheck}
+              autoFocus={f.autoFocus}
               onChange={commit}
             />
           );
@@ -80,7 +86,10 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
               name={f.name}
               value={String(fieldValue() ?? "")}
               rows={f.rows ?? 4}
+              minLength={f.minLength}
               maxLength={f.maxLength}
+              resize={f.resize}
+              autoFocus={f.autoFocus}
               placeholder={f.placeholder}
               disabled={isDisabled()}
               readonly={f.readonly}

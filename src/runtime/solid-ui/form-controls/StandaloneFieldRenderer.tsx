@@ -63,7 +63,13 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           disabled={disabled()}
           readonly={readonly()}
           required={!!field().required}
+          minLength={prop<number>("minLength")}
           maxLength={prop<number>("maxLength")}
+          pattern={prop<string>("pattern")}
+          autocomplete={prop<string>("autocomplete")}
+          inputMode={prop<"text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none">("inputmode")}
+          spellcheck={prop<boolean>("spellcheck")}
+          autoFocus={field().autoFocus}
           onChange={commit}
         />
       </Show>
@@ -88,7 +94,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           name={field().name}
           value={stringValue()}
           rows={prop<number>("rows", 4)}
+          minLength={prop<number>("minLength")}
           maxLength={prop<number>("maxLength")}
+          autoFocus={field().autoFocus}
           placeholder={field().placeholder}
           disabled={disabled()}
           readonly={readonly()}

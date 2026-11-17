@@ -72,6 +72,7 @@ function JsxPreview(props: { code: string }) {
 
 function App() {
   const [textDemo, setTextDemo] = createSignal("");
+  const [advancedText, setAdvancedText] = createSignal(false);
   const [textareaDemo, setTextareaDemo] = createSignal("");
   const [numberDemo, setNumberDemo] = createSignal<number | "">(5);
   const [showErrors, setShowErrors] = createSignal(false);
