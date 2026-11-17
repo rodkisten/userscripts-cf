@@ -1,4 +1,7 @@
 import { createMemo, createSignal, For, Show, onCleanup } from "solid-js";
+import { css as comboboxCSS } from "../src/runtime/solid-ui/form-controls/Combobox.module.css";
+import { css as controlsCSS } from "../src/runtime/solid-ui/form-controls/Controls.module.css";
+import { css as fieldRendererCSS } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer.module.css";
 import { EditorState } from "@codemirror/state";
 import { EditorView, drawSelection } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
@@ -853,6 +856,13 @@ function App() {
     </main>
   );
 }
+
+// The userscript CSS Modules pipeline exports styles as strings rather than
+// injecting stylesheets. A standalone playground must install them explicitly.
+const playgroundStyles = document.createElement("style");
+playgroundStyles.dataset.rodPlaygroundStyles = "true";
+playgroundStyles.textContent = [comboboxCSS, controlsCSS, fieldRendererCSS].join("\n");
+document.head.append(playgroundStyles);
 
 const target = document.getElementById("app");
 if (target) {
