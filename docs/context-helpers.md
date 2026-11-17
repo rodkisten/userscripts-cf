@@ -114,3 +114,7 @@ GitHub Tools now hydrates preferences via `ctx.storage.get`, migrates a pre-exis
 ### RodX core runtime lifecycle
 
 RodX's core runtime now reads its owning `ScriptContext` from `Studio.ctx` at `start()`, uses `ctx.observe` for the page DOM, `ctx.listen` for SPA navigation and visibility events, and `ctx.interval` for the watchdog and maintenance timers. Disposal clears pending debounce timers and invalidation caches. Startup without an attached context is delayed instead of installing unmanaged native resources. This does **not** yet migrate synchronous RodX configuration persistence or its page-world storage bridge.
+
+### RodX core configuration persistence
+
+The core runtime no longer reads or writes raw `localStorage`: it hydrates configuration asynchronously through `ctx.storage.get`, persists ordered snapshots via `ctx.storage.set`, and prevents a delayed hydration result from overwriting edits. Both remaining maintenance/media intervals use `ctx.interval`. **Compatibility caveat:** preexisting page-localStorage-only RodX configuration is not imported yet; a dedicated one-time legacy adapter is required before releasing this change to users with older settings. Do not claim full backward compatibility until that adapter and integration tests are in place.

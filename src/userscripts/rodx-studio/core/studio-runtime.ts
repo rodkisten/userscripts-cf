@@ -113,12 +113,7 @@ const OWN_SELECTOR = [
 // TODO: create useRuntime() ou useContext() pra usar isso certo
 export function createStudioRuntime(): StudioRuntime {
   const defaults = createDefaults(STUDIO_SECTION_NAME);
-  let saved: Record<string, unknown> = {};
-
-  try {
-    const rawSaved = localStorage.getItem(CONFIG_STORAGE_KEY);
-    saved = rawSaved ? JSON.parse(rawSaved) : {};
-  } catch {}
+  const saved: Record<string, unknown> = {};
 
   const config: StudioConfig = {
     ...defaults,
@@ -168,6 +163,8 @@ export function createStudioRuntime(): StudioRuntime {
   let drainTimer = 0;
   let domTimer = 0;
   let started = false;
+  let configEdited = false;
+  let persistenceQueue: Promise<void> = Promise.resolve();
   let generation = 0;
 
   function on(type: string, fn: EventCallback): () => void {
@@ -352,6 +349,20 @@ export function createStudioRuntime(): StudioRuntime {
       console.warn("[RodX] ScriptContext unavailable; delaying runtime startup");
       return;
     }
+    // Hydrate the runtime configuration without blocking DOM startup.
+    // User changes made before hydration completes always take precedence.
+    void context.storage.get(CONFIG_STORAGE_KEY).then((value: unknown) => {
+      if (context.signal.aborted || configEdited || !value || typeof value !== "object" || Array.isArray(value)) return;
+      const loaded = value as Partial<StudioConfig>;
+      Object.assign(config, loaded, {
+        feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
+        modules: { ...defaults.modules, ...loaded.modules },
+      });
+      invalidate("state");
+    }).catch((error: unknown) => {
+      console.warn("[RodX] Could not hydrate runtime configuration", error);
+    });
+
     context.observe(
       document.body,
       (records) => {
@@ -413,7 +424,7 @@ export function createStudioRuntime(): StudioRuntime {
       if (!document.hidden) route();
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden) invalidate("maintenance");
     }, config.maintenanceMs);
 
@@ -435,9 +446,18 @@ export function createStudioRuntime(): StudioRuntime {
 
   function configure(patch: Partial<StudioConfig>): void {
     Object.assign(config, patch);
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
-    } catch {}
+    configEdited = true;
+    const snapshot = JSON.parse(JSON.stringify(config)) as StudioConfig;
+    const context = runtime.ctx;
+    if (context && !context.signal.aborted) {
+      // Serialize writes to preserve the order of rapid UI changes.
+      persistenceQueue = persistenceQueue.catch(() => {}).then(() =>
+        context.storage.set(CONFIG_STORAGE_KEY, snapshot)
+      );
+      void persistenceQueue.catch((error: unknown) => {
+        console.warn("[RodX] Could not persist runtime configuration", error);
+      });
+    }
     invalidate("state");
   }
 
