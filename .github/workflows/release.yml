@@ -37,6 +37,14 @@ jobs:
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@v6
         with:
           ref: main
@@ -75,7 +83,7 @@ jobs:
         if: steps.source.outputs.skip != 'true'
         id: version
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
         run: |
           set -euo pipefail
@@ -111,8 +119,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package.json package-lock.json
           git commit -m "chore(release): v$VERSION [skip ci]"
           git push origin HEAD:main
@@ -135,7 +143,7 @@ jobs:
       - name: Publish GitHub Release with userscripts and checksums
         if: steps.source.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: npm run release
       - name: Release summary
