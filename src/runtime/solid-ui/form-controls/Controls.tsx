@@ -1,4 +1,3 @@
-import type { JSX } from "@solidjs/web";
 import styles, { css } from "./Controls.module.css";
 export { css as controlsCss };
 export interface ControlOption { value: string; label: string; disabled?: boolean }
