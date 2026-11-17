@@ -865,10 +865,12 @@ if (target) {
       if (target.querySelector("main")) {
         (window as typeof window & { __rodPlaygroundReady?: () => void }).__rodPlaygroundReady?.();
       } else {
-        window.dispatchEvent(new ErrorEvent("error", {
-          error: new Error("SolidJS did not create the application root"),
-          message: "SolidJS did not create the application root",
-        }));
+        window.dispatchEvent(
+          new ErrorEvent("error", {
+            error: new Error("SolidJS did not create the application root"),
+            message: "SolidJS did not create the application root",
+          }),
+        );
       }
     });
   } catch (error) {
