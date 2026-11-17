@@ -104,46 +104,21 @@ export default {
 // ============================================================================
 // Funções Auxiliares Semânticas de Gerenciamento de Preferências
 // ============================================================================
-function readUserPreferences(): GitHubPreferences {
+function normalizeUserPreferences(stored: unknown): GitHubPreferences {
+  let value: Record<string, unknown> = {};
   try {
-    const stored =
-      typeof GM_getValue === "function"
-        ? GM_getValue(PREFERENCES_STORAGE_KEY, "")
-        : localStorage.getItem(PREFERENCES_STORAGE_KEY);
-    const value = typeof stored === "string" ? JSON.parse(stored || "{}") : stored || {};
-    return {
-      sort: value.sort === MODIFIED_SORT_VALUE ? MODIFIED_SORT_VALUE : DEFAULT_SORT_MODE,
-      direction: value.direction === DESC_DIRECTION_VALUE ? DESC_DIRECTION_VALUE : DEFAULT_DIRECTION_MODE,
-      mode: value.mode === PATHS_MODE_VALUE ? PATHS_MODE_VALUE : DEFAULT_CONTENT_MODE,
-    };
-  } catch {
-    return {
-      sort: DEFAULT_SORT_MODE,
-      direction: DEFAULT_DIRECTION_MODE,
-      mode: DEFAULT_CONTENT_MODE,
-    };
-  }
-}
-
-function persistUserPreferences(
-  changes: Partial<GitHubPreferences>,
-  setPreferences: any,
-  scheduleScan: () => void,
-): void {
-  setPreferences((draft: GitHubPreferences) => {
-    Object.assign(draft, changes);
-    try {
-      const value = JSON.stringify({ ...draft });
-      if (typeof GM_setValue === "function") {
-        GM_setValue(PREFERENCES_STORAGE_KEY, value);
-      } else {
-        localStorage.setItem(PREFERENCES_STORAGE_KEY, value);
-      }
-    } catch (error) {
-      console.warn("[GitHub File Tools] Não foi possível salvar as preferências:", error);
+    const parsed = typeof stored === "string" ? JSON.parse(stored || "{}") : stored;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      value = parsed as Record<string, unknown>;
     }
-  });
-  scheduleScan();
+  } catch {
+    // Corrupt legacy preferences must not prevent GitHub Tools from loading.
+  }
+  return {
+    sort: value.sort === MODIFIED_SORT_VALUE ? MODIFIED_SORT_VALUE : DEFAULT_SORT_MODE,
+    direction: value.direction === DESC_DIRECTION_VALUE ? DESC_DIRECTION_VALUE : DEFAULT_DIRECTION_MODE,
+    mode: value.mode === PATHS_MODE_VALUE ? PATHS_MODE_VALUE : DEFAULT_CONTENT_MODE,
+  };
 }
 
 // ============================================================================
@@ -473,13 +448,42 @@ function copyDirectoryItemsToClipboard(
 function startGitHub(ctx: any): void {
   const collator = new Intl.Collator(GITHUB_DATE_LOCALE, { numeric: true, sensitivity: "base" });
   const panels = new WeakMap<Element, any>();
-  const [prefs, setPreferences] = createStore(readUserPreferences());
+  const [prefs, setPreferences] = ctx.store(normalizeUserPreferences(null));
+  let preferencesChanged = false;
+  // Hydrate asynchronously; never overwrite edits made while loading.
+  void (async () => {
+    try {
+      let saved = await ctx.storage.get(PREFERENCES_STORAGE_KEY);
+      if (saved === undefined) {
+        // One-time migration from the older Tampermonkey key.
+        const legacy = ctx.gm?.legacy?.getValue;
+        if (typeof legacy === "function") {
+          saved = await Promise.resolve(legacy(PREFERENCES_STORAGE_KEY, ""));
+          if (saved !== "" && saved !== undefined) {
+            await ctx.storage.set(PREFERENCES_STORAGE_KEY, normalizeUserPreferences(saved));
+          }
+        }
+      }
+      if (!ctx.signal.aborted && !preferencesChanged) {
+        setPreferences(normalizeUserPreferences(saved));
+        scheduleScan();
+      }
+    } catch (error) {
+      console.warn("[GitHub File Tools] Falha ao carregar preferências:", error);
+    }
+  })();
   const mounts = new Map<HTMLElement, () => void>();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastUrl = location.href;
 
   function savePrefs(changes: Partial<GitHubPreferences>) {
-    persistUserPreferences(changes, setPreferences, scheduleScan);
+    preferencesChanged = true;
+    const next = { ...prefs, ...changes };
+    setPreferences(next);
+    void ctx.storage.set(PREFERENCES_STORAGE_KEY, next).catch((error: unknown) => {
+      console.warn("[GitHub File Tools] Falha ao salvar preferências:", error);
+    });
+    scheduleScan();
   }
 
   function sortDirectoryGroup(group: DirectoryGroup) {
