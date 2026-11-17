@@ -48,12 +48,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            dist
-            assets/icons
-          key: pages-bundles-v1-${{ hashFiles('src/**', 'build/**', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
+            dist/*.user.js
+            dist/*.meta.js
+            dist/manifest.json
+            dist/SHA256SUMS
+            dist/icons/*.svg
+          key: pages-bundles-v2-${{ hashFiles('src/**', 'build/**', '!build/hosting.mjs', '!build/design-system.mjs', '!build/preview-userscripts.mjs', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
       - name: Build userscripts (cache miss)
         if: steps.bundles.outputs.cache-hit != 'true'
         run: npm run build
+      - name: Report bundle cache
+        run: |
+          if [[ "${{ steps.bundles.outputs.cache-hit }}" == "true" ]]; then
+            echo "⚡ Reusing cached userscript installers; skipping full Vite distribution build" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "📦 Distribution cache miss; built userscripts from source" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Prepare isolated preview installers
         env:
           USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
