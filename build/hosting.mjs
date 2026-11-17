@@ -84,6 +84,7 @@ assets["playground/form-controls.css"] = await fs
   });
 if (isPreview) {
   const preview = JSON.parse(await fs.readFile(path.join(dist, "preview-manifest.json"), "utf8"));
+  assets["manifest.json"] = JSON.stringify(preview);
   assets["preview/manifest.json"] = JSON.stringify(preview);
   assets["preview-manifest.json"] = JSON.stringify(preview);
   assets["preview/index.html"] = assets["index.html"]
@@ -91,12 +92,27 @@ if (isPreview) {
     .replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
 }
 for (const file of await fs.readdir(dist)) {
-  if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
+  if (!/^(?:[a-z][a-z0-9-]*\.(?:(?:preview\.)?(?:user|meta))\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
+  if (isPreview && /\.(?:user|meta)\.js$/.test(file) && !file.includes(".preview.")) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
 }
 for (const file of await fs.readdir(path.join(dist, "icons"))) {
   if (!/^[a-z][a-z0-9-]*\.svg$/.test(file)) continue;
   assets["icons/" + file] = await fs.readFile(path.join(dist, "icons", file), "utf8");
+}
+if (isPreview) {
+  // GitHub Pages serves files directly, without the Cloudflare Worker handler.
+  const pages = path.join(dist, "pages");
+  await fs.rm(pages, { recursive: true, force: true });
+  await fs.mkdir(pages, { recursive: true });
+  for (const [name, content] of Object.entries(assets)) {
+    const destination = path.join(pages, name);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.writeFile(destination, content);
+  }
+  await fs.writeFile(path.join(pages, "CNAME"), "userscripts-playground.migos.club\\n");
+  await fs.writeFile(path.join(pages, ".nojekyll"), "");
+  console.log("Prepared static GitHub Pages preview at dist/pages.");
 }
 const code = `import {createHandler} from './handler.js';
 const assets=${JSON.stringify(assets)};
