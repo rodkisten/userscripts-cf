@@ -74,7 +74,13 @@ export function openSolidDropdown(options: DropdownOptions) {
             <button
               type="button"
               role="menuitem"
-              onClick={() => { setStack((s) => s.slice(0, -1)); queueMicrotask(() => { position(); focusFirst(); }); }}
+              onClick={() => {
+                setStack((s) => s.slice(0, -1));
+                queueMicrotask(() => {
+                  position();
+                  focusFirst();
+                });
+              }}
               style={buttonStyle}
             >
               ‹ Voltar
@@ -95,7 +101,10 @@ export function openSolidDropdown(options: DropdownOptions) {
                 onClick={() => {
                   if (item.children?.length) {
                     setStack((s) => [...s, item.children!]);
-                    queueMicrotask(() => { position(); focusFirst(); });
+                    queueMicrotask(() => {
+                      position();
+                      focusFirst();
+                    });
                     return;
                   }
                   if (item.type === "checkbox") {
@@ -145,7 +154,10 @@ export function openSolidDropdown(options: DropdownOptions) {
       }
       if (event.key === "ArrowLeft" && stack().length > 1) {
         setStack((items) => items.slice(0, -1));
-        queueMicrotask(() => { position(); focusFirst(); });
+        queueMicrotask(() => {
+          position();
+          focusFirst();
+        });
         event.preventDefault();
       }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -161,7 +173,11 @@ export function openSolidDropdown(options: DropdownOptions) {
   );
   window.addEventListener("resize", position, { signal: controller.signal });
   // Capture scrolling from nested containers, including mobile overflow panes.
-  trigger.ownerDocument.addEventListener("scroll", position, { capture: true, passive: true, signal: controller.signal });
+  trigger.ownerDocument.addEventListener("scroll", position, {
+    capture: true,
+    passive: true,
+    signal: controller.signal,
+  });
   position();
   focusFirst();
   return { close };
