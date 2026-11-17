@@ -111,3 +111,7 @@ The button now transitions pressed/hover feedback smoothly and suppresses presse
 ## Theme tokens (light and dark)
 
 Button variants now expose `--button-on-accent`, `--button-secondary-bg`, `--button-secondary-fg`, `--button-focus`, `--button-danger`, `--button-success`, and `--button-warning` alongside the existing accent/radius/height tokens. The secondary surface uses a readable light default and switches to dark defaults under `prefers-color-scheme: dark`; explicit tokens always override those defaults. Destructive and success backgrounds use darker shades for readable white labels. `focus-visible` has its own configurable ring color. Verify the final contrast against the actual host themes and in Safari.
+
+## Studio theme editor
+
+The Button gallery now includes light/dark preview selection and live color pickers for secondary background, secondary foreground and focus ring. Preview applies the same custom properties as the Button component; **Copiar CSS** exports these theme tokens alongside size, radius and accent. Changing the theme updates the default color values, while manual color edits remain possible. Verify build and Safari rendering on the latest commit.

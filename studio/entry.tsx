@@ -431,6 +431,16 @@ if (buttonMount) {
     const [height, setHeight] = createSignal(38);
     const [accent, setAccent] = createSignal("#7c3aed");
     const [copyStatus, setCopyStatus] = createSignal("");
+    const [theme, setTheme] = createSignal<"light" | "dark">("dark");
+    const [secondaryBg, setSecondaryBg] = createSignal("#35313e");
+    const [secondaryFg, setSecondaryFg] = createSignal("#ffffff");
+    const [focusColor, setFocusColor] = createSignal("#a5b4fc");
+    const changeTheme = (value: "light" | "dark") => {
+      setTheme(value);
+      setSecondaryBg(value === "dark" ? "#35313e" : "#e9e7ee");
+      setSecondaryFg(value === "dark" ? "#ffffff" : "#211b2a");
+      setFocusColor(value === "dark" ? "#a5b4fc" : "#2563eb");
+    };
     const [preset, setPreset] = createSignal<"compact" | "default" | "touch" | "">("default");
     const applyPreset = (preset: "compact" | "default" | "touch") => {
       const presets = {
@@ -449,6 +459,9 @@ if (buttonMount) {
     const exportTokens = async () => {
       const tokens = {
         "--button-accent": accent(),
+        "--button-secondary-bg": secondaryBg(),
+        "--button-secondary-fg": secondaryFg(),
+        "--button-focus": focusColor(),
         "--button-radius": `${radius()}px`,
         "--button-height": `${height()}px`,
         "--button-height-sm": `${height()}px`,
@@ -474,6 +487,9 @@ if (buttonMount) {
           display: "grid",
           gap: "18px",
           "--button-accent": accent(),
+          "--button-secondary-bg": secondaryBg(),
+          "--button-secondary-fg": secondaryFg(),
+          "--button-focus": focusColor(),
           "--button-radius": `${radius()}px`,
           "--button-height": `${height()}px`,
           "--button-height-sm": `${height()}px`,
@@ -481,6 +497,16 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
+          <label>
+            Tema{" "}
+            <select value={theme()} onChange={(e) => changeTheme(e.currentTarget.value as "light" | "dark")}>
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+            </select>
+          </label>
+          <label>Fundo secondary <input type="color" value={secondaryBg()} onInput={(e) => setSecondaryBg(e.currentTarget.value)} /></label>
+          <label>Texto secondary <input type="color" value={secondaryFg()} onInput={(e) => setSecondaryFg(e.currentTarget.value)} /></label>
+          <label>Foco <input type="color" value={focusColor()} onInput={(e) => setFocusColor(e.currentTarget.value)} /></label>
           <label>
             Preset{" "}
             <select
@@ -571,7 +597,7 @@ if (buttonMount) {
             />
           </label>
         </div>
-        <div class="flex">
+        <div class="flex" style={{ padding: "14px", "border-radius": "12px", background: theme() === "dark" ? "#18171d" : "#f7f7f9", color: theme() === "dark" ? "#fff" : "#211b2a" }}>
           <Button
             variant={variant()}
             size={size()}
@@ -657,6 +683,10 @@ if (buttonMount) {
           {JSON.stringify(
             {
               variant: variant(),
+              theme: theme(),
+              secondaryBg: secondaryBg(),
+              secondaryFg: secondaryFg(),
+              focusColor: focusColor(),
               size: size(),
               radius: radius(),
               height: height(),
