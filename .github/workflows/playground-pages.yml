@@ -5,13 +5,15 @@ on:
   push:
     branches: [main]
     paths:
-      - "*"
+      - "src/**"
       - "playground/**"
-      - "src/runtime/solid-ui/**"
-      - "build/hosting.mjs"
-      - "build/design-system.mjs"
-      - "build/preview-userscripts.mjs"
+      - "build/**"
       - "hosting/**"
+      - "assets/**"
+      - "userscripts.config.js"
+      - "distribution.config.js"
+      - "package.json"
+      - "package-lock.json"
       - "vite.config.js"
       - ".github/workflows/playground-pages.yml"
   workflow_dispatch:
@@ -57,6 +59,23 @@ jobs:
       - name: Build userscripts (cache miss)
         if: steps.bundles.outputs.cache-hit != 'true'
         run: npm run build
+      - name: Verify cached distribution before preview
+        run: |
+          set -euo pipefail
+          test -s dist/manifest.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const manifest = JSON.parse(fs.readFileSync("dist/manifest.json", "utf8"));
+          if (!Array.isArray(manifest.scripts) || !manifest.scripts.length) throw Error("Empty distribution cache");
+          for (const script of manifest.scripts) {
+            for (const name of [script.file, script.metaFile]) {
+              if (!name || !fs.existsSync("dist/" + name) || fs.statSync("dist/" + name).size === 0) {
+                throw Error("Missing distribution artifact: " + name);
+              }
+            }
+          }
+          console.log("Verified " + manifest.scripts.length + " installers");
+          NODE
       - name: Report bundle cache
         run: |
           if [[ "${{ steps.bundles.outputs.cache-hit }}" == "true" ]]; then
