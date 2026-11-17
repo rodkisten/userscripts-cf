@@ -35,19 +35,59 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
       <Match when={["text", "email", "password", "search", "url", "tel"].includes(props.field.type)}>
         {(() => {
           const f = props.field as TextLikeField;
-          return <Input id={controlId()} name={f.name} type={f.type} value={String(fieldValue() ?? "")} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} maxLength={f.maxLength} onChange={commit} />;
+          return (
+            <Input
+              id={controlId()}
+              name={f.name}
+              type={f.type}
+              value={String(fieldValue() ?? "")}
+              placeholder={f.placeholder}
+              disabled={isDisabled()}
+              readonly={f.readonly}
+              required={f.required}
+              maxLength={f.maxLength}
+              onChange={commit}
+            />
+          );
         })()}
       </Match>
       <Match when={props.field.type === "number"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "number" }>;
-          return <NumberInput id={controlId()} name={f.name} value={fieldValue() === "" || fieldValue() == null ? "" : Number(fieldValue())} min={f.min} max={f.max} step={f.step} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} onChange={commit} />;
+          return (
+            <NumberInput
+              id={controlId()}
+              name={f.name}
+              value={fieldValue() === "" || fieldValue() == null ? "" : Number(fieldValue())}
+              min={f.min}
+              max={f.max}
+              step={f.step}
+              placeholder={f.placeholder}
+              disabled={isDisabled()}
+              readonly={f.readonly}
+              required={f.required}
+              onChange={commit}
+            />
+          );
         })()}
       </Match>
       <Match when={props.field.type === "textarea"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "textarea" }>;
-          return <Textarea id={controlId()} name={f.name} value={String(fieldValue() ?? "")} rows={f.rows ?? 4} maxLength={f.maxLength} placeholder={f.placeholder} disabled={isDisabled()} readonly={f.readonly} required={f.required} onChange={commit} />;
+          return (
+            <Textarea
+              id={controlId()}
+              name={f.name}
+              value={String(fieldValue() ?? "")}
+              rows={f.rows ?? 4}
+              maxLength={f.maxLength}
+              placeholder={f.placeholder}
+              disabled={isDisabled()}
+              readonly={f.readonly}
+              required={f.required}
+              onChange={commit}
+            />
+          );
         })()}
       </Match>
       <Match when={props.field.type === "select"}>

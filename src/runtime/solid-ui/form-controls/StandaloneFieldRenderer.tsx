@@ -54,16 +54,59 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         <label for={id()}>{field().label ?? field().name}</label>
       </Show>
       <Show when={["text", "email", "password", "search", "url", "tel"].includes(kind())}>
-        <Input id={id()} name={field().name} type={kind() as "text" | "email" | "password" | "search" | "url" | "tel"} value={stringValue()} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} maxLength={prop<number>("maxLength")} onChange={commit} />
+        <Input
+          id={id()}
+          name={field().name}
+          type={kind() as "text" | "email" | "password" | "search" | "url" | "tel"}
+          value={stringValue()}
+          placeholder={field().placeholder}
+          disabled={disabled()}
+          readonly={readonly()}
+          required={!!field().required}
+          maxLength={prop<number>("maxLength")}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "number"}>
-        <NumberInput id={id()} name={field().name} value={value() === "" || value() == null ? "" : Number(value())} min={prop<number>("min")} max={prop<number>("max")} step={prop<number>("step")} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} onChange={commit} />
+        <NumberInput
+          id={id()}
+          name={field().name}
+          value={value() === "" || value() == null ? "" : Number(value())}
+          min={prop<number>("min")}
+          max={prop<number>("max")}
+          step={prop<number>("step")}
+          placeholder={field().placeholder}
+          disabled={disabled()}
+          readonly={readonly()}
+          required={!!field().required}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "textarea"}>
-        <Textarea id={id()} name={field().name} value={stringValue()} rows={prop<number>("rows", 4)} maxLength={prop<number>("maxLength")} placeholder={field().placeholder} disabled={disabled()} readonly={readonly()} required={!!field().required} onChange={commit} />
+        <Textarea
+          id={id()}
+          name={field().name}
+          value={stringValue()}
+          rows={prop<number>("rows", 4)}
+          maxLength={prop<number>("maxLength")}
+          placeholder={field().placeholder}
+          disabled={disabled()}
+          readonly={readonly()}
+          required={!!field().required}
+          onChange={commit}
+        />
       </Show>
       <Show when={["date", "datetime-local", "time", "month", "week", "hidden"].includes(kind())}>
-        <input {...common()} type={kind()} value={stringValue()} placeholder={field().placeholder} readOnly={readonly()} onInput={(event) => { if (!readonly()) commit(event.currentTarget.value); }} />
+        <input
+          {...common()}
+          type={kind()}
+          value={stringValue()}
+          placeholder={field().placeholder}
+          readOnly={readonly()}
+          onInput={(event) => {
+            if (!readonly()) commit(event.currentTarget.value);
+          }}
+        />
       </Show>
       <Show when={kind() === "select" && !!prop<boolean>("searchable")}>
         <Combobox
