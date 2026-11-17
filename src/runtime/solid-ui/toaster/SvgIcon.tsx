@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js/jsx";
+import type { JSX } from "@solidjs/web";
 import type { SvgIconName } from "./types";
 
 const ICON_PATHS: Record<SvgIconName, JSX.Element> = {

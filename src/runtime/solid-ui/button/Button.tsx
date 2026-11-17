@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import type { JSX } from "solid-js/jsx-runtime";
+import type { JSX } from "@solidjs/web";
 import { menu as defaultMenu, type DropdownItem } from "../menu-api";
 import styles, { css } from "./Button.module.css";
 import { omitProps } from "../shared/omitProps";

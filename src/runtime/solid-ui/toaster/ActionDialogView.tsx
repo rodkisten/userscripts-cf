@@ -1,5 +1,5 @@
 import { createSignal, For, Show } from "solid-js";
-import type { JSX } from "solid-js/jsx";
+import type { JSX } from "@solidjs/web";
 import type { SelectOptions, SvgIconName, ToastActionDescriptor, ToastOptions } from "./types";
 import { createToast } from "./toasterStore";
 import { SvgIcon } from "./SvgIcon";

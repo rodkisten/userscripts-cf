@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js/jsx";
+import type { JSX } from "@solidjs/web";
 
 export type ToastType = "default" | "error" | "info" | "success" | "warning" | "debug";
 export type Theme = "auto" | "dark" | "light";
