@@ -435,7 +435,11 @@ export function createRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches({ ...definition, matches: definition.match ? [definition.match].flat() : undefined }, url, rules()[definition.id]);
+    matches(
+      { ...definition, matches: definition.match ? [definition.match].flat() : undefined },
+      url,
+      rules()[definition.id],
+    );
 
   const onRulesChange = () => {
     void navigate();
