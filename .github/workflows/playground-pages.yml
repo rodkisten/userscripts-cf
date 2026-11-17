@@ -39,6 +39,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Start build timing
+        run: echo "PAGES_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
       - name: Restore installed dependencies
         id: node-modules
         uses: actions/cache@v4
@@ -117,6 +119,19 @@ jobs:
           USERSCRIPTS_PREVIEW: "1"
           USERSCRIPTS_REUSE_DESIGN_SYSTEM: "${{ steps.design-system.outputs.cache-hit }}"
         run: node build/hosting.mjs
+      - name: Report pipeline timings
+        if: always()
+        run: |
+          {
+            echo "### ⚡ Playground build diagnostics"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|---|---|"
+            echo "| Dependencies cache | ${{ steps.node-modules.outputs.cache-hit || 'miss' }} |"
+            echo "| Distribution cache | ${{ steps.bundles.outputs.cache-hit || 'miss' }} |"
+            echo "| Design system cache | ${{ steps.design-system.outputs.cache-hit || 'miss' }} |"
+            echo "| Time to static output | $(( $(date +%s) - PAGES_STARTED_AT )) seconds |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Validate static Pages output
         run: |
           set -euo pipefail
