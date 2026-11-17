@@ -154,13 +154,13 @@ if (isPreview) {
   console.log("Prepared static GitHub Pages preview at dist/pages.");
 }
 if (!isPreview) {
-const code = `import {createHandler} from './handler.js';
+  const code = `import {createHandler} from './handler.js';
 const assets=${JSON.stringify(assets)};
 const info=${JSON.stringify({ name: "Userscripts CF", version: manifest.version, baseURL: manifest.baseURL, downloads: manifest.scripts.map((s) => ({ id: s.id, install: manifest.baseURL + "/" + s.file, update: manifest.baseURL + "/" + s.metaFile })) })};
 export default createHandler(assets,info);`;
-await fs.writeFile(
-  path.join(root, "hosting/worker.mjs"),
-  await format(code, { parser: "babel", printWidth: 110 }),
-);
-console.log("Prepared Cloudflare Worker with installable bundles.");
+  await fs.writeFile(
+    path.join(root, "hosting/worker.mjs"),
+    await format(code, { parser: "babel", printWidth: 110 }),
+  );
+  console.log("Prepared Cloudflare Worker with installable bundles.");
 }
