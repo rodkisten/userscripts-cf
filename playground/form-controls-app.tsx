@@ -5,7 +5,13 @@ import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { render } from "@solidjs/web";
 import { Combobox } from "../src/runtime/solid-ui/form-controls/Combobox";
-import { Select, Checkbox, Switch, Slider, ColorPicker } from "../src/runtime/solid-ui/form-controls/Controls";
+import {
+  Select,
+  Checkbox,
+  Switch,
+  Slider,
+  ColorPicker,
+} from "../src/runtime/solid-ui/form-controls/Controls";
 import { TagsInput } from "../src/runtime/solid-ui/form-controls/TagsInput";
 import { StandaloneFieldRenderer } from "../src/runtime/solid-ui/form-controls/StandaloneFieldRenderer";
 import { getFormControlsQueryClient } from "../src/runtime/solid-ui/form-controls/query-client";
@@ -201,31 +207,60 @@ function App() {
           <div class="grid">
             <div>
               <label for="basic-select">Select</label>
-              <Select id="basic-select" options={exampleOptions} value={basicSelect()} onChange={setBasicSelect} disabled={disabled() || readonly()} />
+              <Select
+                id="basic-select"
+                options={exampleOptions}
+                value={basicSelect()}
+                onChange={setBasicSelect}
+                disabled={disabled() || readonly()}
+              />
               <pre>{JSON.stringify(basicSelect())}</pre>
             </div>
             <div>
               <label class="toggle">
-                <Checkbox checked={basicCheckbox()} onChange={setBasicCheckbox} disabled={disabled() || readonly()} />
+                <Checkbox
+                  checked={basicCheckbox()}
+                  onChange={setBasicCheckbox}
+                  disabled={disabled() || readonly()}
+                />
                 Checkbox · Notificações
               </label>
               <pre>{JSON.stringify(basicCheckbox())}</pre>
             </div>
             <div>
               <label class="toggle">
-                <Switch checked={basicSwitch()} onChange={setBasicSwitch} disabled={disabled() || readonly()} />
+                <Switch
+                  checked={basicSwitch()}
+                  onChange={setBasicSwitch}
+                  disabled={disabled() || readonly()}
+                />
                 Switch · Ativar recurso
               </label>
               <pre>{JSON.stringify(basicSwitch())}</pre>
             </div>
             <div>
               <label for="basic-slider">Slider · {basicSlider()}</label>
-              <Slider id="basic-slider" value={basicSlider()} min={0} max={100} step={5} onChange={setBasicSlider} disabled={disabled() || readonly()} />
+              <Slider
+                id="basic-slider"
+                value={basicSlider()}
+                min={0}
+                max={100}
+                step={5}
+                onChange={setBasicSlider}
+                disabled={disabled() || readonly()}
+              />
               <pre>{JSON.stringify(basicSlider())}</pre>
             </div>
             <div>
               <label for="basic-color">ColorPicker</label>
-              <ColorPicker id="basic-color" value={basicColor()} onChange={setBasicColor} presets={["#7c3aed", "#2563eb", "#059669", "#f97316", "#e11d48"]} disabled={disabled()} readonly={readonly()} />
+              <ColorPicker
+                id="basic-color"
+                value={basicColor()}
+                onChange={setBasicColor}
+                presets={["#7c3aed", "#2563eb", "#059669", "#f97316", "#e11d48"]}
+                disabled={disabled()}
+                readonly={readonly()}
+              />
               <pre>{JSON.stringify(basicColor())}</pre>
             </div>
           </div>
