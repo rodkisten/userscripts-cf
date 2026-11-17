@@ -31,7 +31,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const prop = <T,>(name: string, fallback?: T): T | undefined =>
     (field() as unknown as Record<string, T>)[name] ?? fallback;
   const selectedValues = () => (Array.isArray(value()) ? (value() as unknown[]).map(String) : []);
-  const common = () => ({ id: id(), name: field().name, disabled: disabled() || readonly(), required: !!field().required });
+  const common = () => ({
+    id: id(),
+    name: field().name,
+    disabled: disabled() || readonly(),
+    required: !!field().required,
+  });
   return (
     <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())}>
       <Show
@@ -215,9 +220,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
                   name={field().name}
                   disabled={disabled() || readonly() || option.disabled}
                   checked={
-                    kind() === "radio"
-                      ? value() === option.value
-                      : selectedValues().includes(option.value)
+                    kind() === "radio" ? value() === option.value : selectedValues().includes(option.value)
                   }
                   onChange={(e) => {
                     if (kind() === "radio") commit(option.value);
