@@ -1,6 +1,18 @@
 name: "🧩 Button · Typecheck & Build"
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/runtime/solid-ui/**"
+      - "studio/**"
+      - "hosting/design-system.html"
+      - "build/design-system.mjs"
+      - "playground/**"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/button-validation.yml"
   workflow_dispatch:
     inputs:
       scope:
@@ -16,12 +28,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: button-validation-${{ github.ref }}
+  group: button-validation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
-    name: "Solid 2 · ${{ inputs.scope }}"
+    name: "Solid 2 · ${{ github.event_name == 'pull_request' && 'PR' || inputs.scope }}"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -33,14 +45,14 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
       - name: Build live Design System
         run: node build/design-system.mjs
       - name: TypeScript typecheck (independent)
         if: always()
         run: npm run typecheck
       - name: Full repository build
-        if: inputs.scope == 'full'
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'full'
         run: npm run build
       - name: Summary
         if: always()
@@ -50,7 +62,7 @@ jobs:
             echo "## 🧩 Button validation"
             echo "- Ref: \`${GITHUB_REF_NAME}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Scope: \`${{ inputs.scope }}\`"
+            echo "- Scope: \`${{ github.event_name == 'pull_request' && 'pull-request' || inputs.scope }}\`"
             echo "- Typecheck and build errors appear in their own steps."
             echo "- No test suite is run."
           } >> "$GITHUB_STEP_SUMMARY"
