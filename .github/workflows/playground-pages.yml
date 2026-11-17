@@ -1,0 +1,62 @@
+name: Deploy playground to GitHub Pages
+run-name: "Playground Pages · ${{ github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "playground/**"
+      - "src/runtime/solid-ui/**"
+      - "build/hosting.mjs"
+      - "build/design-system.mjs"
+      - "build/preview-userscripts.mjs"
+      - "hosting/**"
+      - "vite.config.js"
+      - ".github/workflows/playground-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: userscripts-playground-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://userscripts-playground.migos.club/
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      # Playground preview is independent of lint, typecheck and release checks.
+      - name: Build userscripts
+        run: npm run build
+      - name: Prepare isolated preview installers
+        env:
+          USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
+        run: node build/preview-userscripts.mjs
+      - name: Generate static playground
+        env:
+          USERSCRIPTS_PREVIEW: "1"
+        run: node build/hosting.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/pages
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Summary
+        run: |
+          echo "### Playground published on GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://userscripts-playground.migos.club/" >> "$GITHUB_STEP_SUMMARY"
