@@ -757,24 +757,34 @@ function App() {
           <div class="twitter-query-editor" role="group" aria-label="Editor de busca com filtros interativos">
             <For each={parseTwitterSearch(raw())}>
               {(token, index) => (
-                <Show when={token.kind === "operator" || token.kind === "negative"} fallback={
-                  <span class="twitter-plain-token">{token.value}</span>
-                }>
+                <Show
+                  when={token.kind === "operator" || token.kind === "negative"}
+                  fallback={<span class="twitter-plain-token">{token.value}</span>}
+                >
                   <span class="twitter-query-pill">
-                    <Show when={token.value.startsWith("list:")} fallback={
-                      <span class="twitter-pill-label">{token.value}</span>
-                    }>
+                    <Show
+                      when={token.value.startsWith("list:")}
+                      fallback={<span class="twitter-pill-label">{token.value}</span>}
+                    >
                       <select
                         aria-label="Selecionar lista do X"
                         value={token.value.slice(5)}
-                        onChange={(event) => setRaw(replaceTwitterToken(raw(), token, "list:" + event.currentTarget.value))}
+                        onChange={(event) =>
+                          setRaw(replaceTwitterToken(raw(), token, "list:" + event.currentTarget.value))
+                        }
                       >
                         <option value={token.value.slice(5)}>{token.value}</option>
                         <option value="123456789">Lista de tecnologia (exemplo)</option>
                         <option value="987654321">Lista de vídeos (exemplo)</option>
                       </select>
                     </Show>
-                    <button type="button" aria-label={`Remover ${token.value}`} onClick={() => setRaw(removeTwitterToken(raw(), token))}>×</button>
+                    <button
+                      type="button"
+                      aria-label={`Remover ${token.value}`}
+                      onClick={() => setRaw(removeTwitterToken(raw(), token))}
+                    >
+                      ×
+                    </button>
                   </span>
                 </Show>
               )}
