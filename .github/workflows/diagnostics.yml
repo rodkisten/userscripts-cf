@@ -129,7 +129,7 @@ jobs:
   scoped-builds:
     name: "Scoped build · ${{ matrix.target }}"
     needs: validate
-    if: ${{ github.event_name == 'pull_request' && needs.validate.outputs.scoped_matrix != '[]' }}
+    if: ${{ always() && github.event_name == 'pull_request' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
