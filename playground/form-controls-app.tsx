@@ -209,13 +209,64 @@ function App() {
         <section class="card wide" id="text-controls">
           <h2>Input · Textarea · NumberInput</h2>
           <p>Controles reutilizáveis, com erros acessíveis, estados e valores em tempo real.</p>
-          <label class="toggle"><input type="checkbox" checked={showErrors()} onChange={(event) => setShowErrors(event.currentTarget.checked)} /> Simular erros de validação</label>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              checked={showErrors()}
+              onChange={(event) => setShowErrors(event.currentTarget.checked)}
+            />{" "}
+            Simular erros de validação
+          </label>
           <div class="grid">
-            <Input id="demo-input" label="Nome" placeholder="Digite seu nome" value={textDemo()} onChange={setTextDemo} disabled={disabled()} readonly={readonly()} description="Exemplo com descrição acessível" error={showErrors() && !textDemo().trim() ? "Preencha o nome." : undefined} />
-            <Textarea id="demo-textarea" label="Descrição" placeholder="Escreva uma descrição…" value={textareaDemo()} onChange={setTextareaDemo} disabled={disabled()} readonly={readonly()} maxLength={180} showCount rows={4} error={showErrors() && !textareaDemo().trim() ? "Adicione uma descrição." : undefined} />
-            <NumberInput id="demo-number" label="Quantidade" value={numberDemo()} onChange={setNumberDemo} disabled={disabled()} readonly={readonly()} min={1} max={10} step={1} description="Entre 1 e 10" error={showErrors() && (numberDemo() === "" || Number(numberDemo()) < 1 || Number(numberDemo()) > 10) ? "Escolha um valor entre 1 e 10." : undefined} />
+            <Input
+              id="demo-input"
+              label="Nome"
+              placeholder="Digite seu nome"
+              value={textDemo()}
+              onChange={setTextDemo}
+              disabled={disabled()}
+              readonly={readonly()}
+              description="Exemplo com descrição acessível"
+              error={showErrors() && !textDemo().trim() ? "Preencha o nome." : undefined}
+            />
+            <Textarea
+              id="demo-textarea"
+              label="Descrição"
+              placeholder="Escreva uma descrição…"
+              value={textareaDemo()}
+              onChange={setTextareaDemo}
+              disabled={disabled()}
+              readonly={readonly()}
+              maxLength={180}
+              showCount
+              rows={4}
+              error={showErrors() && !textareaDemo().trim() ? "Adicione uma descrição." : undefined}
+            />
+            <NumberInput
+              id="demo-number"
+              label="Quantidade"
+              value={numberDemo()}
+              onChange={setNumberDemo}
+              disabled={disabled()}
+              readonly={readonly()}
+              min={1}
+              max={10}
+              step={1}
+              description="Entre 1 e 10"
+              error={
+                showErrors() && (numberDemo() === "" || Number(numberDemo()) < 1 || Number(numberDemo()) > 10)
+                  ? "Escolha um valor entre 1 e 10."
+                  : undefined
+              }
+            />
           </div>
-          <pre aria-live="polite">{JSON.stringify({ name: textDemo(), description: textareaDemo(), quantity: numberDemo() }, null, 2)}</pre>
+          <pre aria-live="polite">
+            {JSON.stringify(
+              { name: textDemo(), description: textareaDemo(), quantity: numberDemo() },
+              null,
+              2,
+            )}
+          </pre>
         </section>
         <section class="card wide" id="basic-controls">
           <h2>Controles básicos · Componentes reais</h2>

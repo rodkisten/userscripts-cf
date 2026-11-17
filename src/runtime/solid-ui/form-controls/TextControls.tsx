@@ -20,10 +20,14 @@ function FieldHelp(props: { id?: string; description?: string; error?: string })
   return (
     <>
       <Show when={props.description && !props.error}>
-        <small id={props.id ? `${props.id}-description` : undefined} class={styles.fieldHelp}>{props.description}</small>
+        <small id={props.id ? `${props.id}-description` : undefined} class={styles.fieldHelp}>
+          {props.description}
+        </small>
       </Show>
       <Show when={props.error}>
-        <small id={props.id ? `${props.id}-error` : undefined} class={styles.fieldError} role="alert">{props.error}</small>
+        <small id={props.id ? `${props.id}-error` : undefined} class={styles.fieldError} role="alert">
+          {props.error}
+        </small>
       </Show>
     </>
   );
@@ -35,10 +39,14 @@ function describedBy(props: TextControlProps): string | undefined {
     : undefined;
 }
 
-export function Input(props: TextControlProps & { type?: "text" | "email" | "password" | "search" | "url" | "tel" }) {
+export function Input(
+  props: TextControlProps & { type?: "text" | "email" | "password" | "search" | "url" | "tel" },
+) {
   return (
     <div class={styles.textField}>
-      <Show when={props.label}><label for={props.id}>{props.label}</label></Show>
+      <Show when={props.label}>
+        <label for={props.id}>{props.label}</label>
+      </Show>
       <input
         id={props.id}
         name={props.name}
@@ -62,7 +70,9 @@ export function Input(props: TextControlProps & { type?: "text" | "email" | "pas
 export function Textarea(props: TextControlProps & { rows?: number; showCount?: boolean }) {
   return (
     <div class={styles.textField}>
-      <Show when={props.label}><label for={props.id}>{props.label}</label></Show>
+      <Show when={props.label}>
+        <label for={props.id}>{props.label}</label>
+      </Show>
       <textarea
         id={props.id}
         name={props.name}
@@ -79,7 +89,9 @@ export function Textarea(props: TextControlProps & { rows?: number; showCount?: 
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
       <Show when={props.showCount && props.maxLength !== undefined}>
-        <output class={styles.fieldCount}>{props.value.length} / {props.maxLength}</output>
+        <output class={styles.fieldCount}>
+          {props.value.length} / {props.maxLength}
+        </output>
       </Show>
       <FieldHelp id={props.id} description={props.description} error={props.error} />
     </div>
@@ -97,7 +109,9 @@ export interface NumberInputProps extends Omit<TextControlProps, "value" | "onCh
 export function NumberInput(props: NumberInputProps) {
   return (
     <div class={styles.textField}>
-      <Show when={props.label}><label for={props.id}>{props.label}</label></Show>
+      <Show when={props.label}>
+        <label for={props.id}>{props.label}</label>
+      </Show>
       <input
         id={props.id}
         name={props.name}
@@ -114,7 +128,9 @@ export function NumberInput(props: NumberInputProps) {
         required={props.required}
         aria-invalid={props.error ? "true" : undefined}
         aria-describedby={describedBy(props)}
-        onInput={(event) => props.onChange(event.currentTarget.value === "" ? "" : event.currentTarget.valueAsNumber)}
+        onInput={(event) =>
+          props.onChange(event.currentTarget.value === "" ? "" : event.currentTarget.valueAsNumber)
+        }
       />
       <FieldHelp id={props.id} description={props.description} error={props.error} />
     </div>
