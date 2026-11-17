@@ -101,7 +101,7 @@ function App() {
       label: "E-mail",
       required: true,
       validate: (value: unknown) =>
-        /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(value ?? "")) ? null : "Informe um e-mail válido.",
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value ?? "")) ? null : "Informe um e-mail válido.",
     },
   ];
   const submitValues = () => ({ name: submitName(), email: submitEmail() });
@@ -420,7 +420,8 @@ function App() {
               id="submit-name"
               label="Nome"
               value={submitName()}
-              onChange={setSubmitName}
+              onChange={(value) => { formSubmit.markChanged("name"); setSubmitName(value); }}
+              onBlur={() => formSubmit.markBlurred("name")}
               error={formSubmit.errors().name}
               required
             />
@@ -429,10 +430,12 @@ function App() {
               type="email"
               label="E-mail"
               value={submitEmail()}
-              onChange={setSubmitEmail}
+              onChange={(value) => { formSubmit.markChanged("email"); setSubmitEmail(value); }}
+              onBlur={() => formSubmit.markBlurred("email")}
               error={formSubmit.errors().email}
               required
             />
+            <p aria-live="polite">Nome: {formSubmit.dirty().name ? "alterado" : "intocado"} · E-mail: {formSubmit.touched().email ? "visitado" : "não visitado"}</p>
             <button type="submit" disabled={formSubmit.submitting()}>
               {formSubmit.submitting() ? "Validando e enviando…" : "Enviar formulário"}
             </button>
