@@ -1,7 +1,8 @@
 import type { ScriptContext } from "../../core/runtime";
 import { createSignal } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
-import styles, { css } from "./Settings.module.css";
+import { css } from "./Settings.module.css";
+import { ReelBookmarkButton } from "./ReelBookmarkButton";
 
 const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from saved)$/i;
 const SAVED = /unsave|remover dos salvos|remove from saved/i;
@@ -138,33 +139,7 @@ export function mountReelBookmark(
     // No imperative DOM construction belongs in the view component.
     mount = mountPoint(
       native.parentNode!,
-      () => (
-        <button
-          type="button"
-          class={styles.bookmark}
-          aria-label="Enviar para coleções"
-          title="Enviar para coleções configuradas"
-          disabled={busy()}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            void send();
-          }}
-        >
-          <svg
-            aria-hidden="true"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linejoin="round"
-          >
-            <path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" />
-          </svg>
-        </button>
-      ),
+      () => <ReelBookmarkButton state={busy() ? "loading" : "unsaved"} onActivate={() => void send()} />,
       { tag: "span", before: native.nextSibling },
     );
     mount.host.dataset.rodCollectionAction = "true";
