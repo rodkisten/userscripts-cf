@@ -56,6 +56,11 @@ jobs:
           if (( ${#files[@]} )); then
             npx prettier --write "${files[@]}"
           fi
+      - name: Detect changes
+        id: changes
+        if: steps.diagnostics.outputs.has_typescript_errors == 'true'
+        run: |
+          if [[ -n "$(git status --porcelain -- src/)" ]]; then echo 'changed=true' >> "$GITHUB_OUTPUT"; else echo 'changed=false' >> "$GITHUB_OUTPUT"; fi
       - name: Authenticate Rod GitHub App
         id: app-token
         if: steps.diagnostics.outputs.has_typescript_errors == 'true' && steps.changes.outputs.changed == 'true'
@@ -65,11 +70,6 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-      - name: Detect changes
-        id: changes
-        if: steps.diagnostics.outputs.has_typescript_errors == 'true'
-        run: |
-          if [[ -n "$(git status --porcelain -- src/)" ]]; then echo 'changed=true' >> "$GITHUB_OUTPUT"; else echo 'changed=false' >> "$GITHUB_OUTPUT"; fi
       - name: Create reviewable autofix PR as Rod bot
         if: steps.diagnostics.outputs.has_typescript_errors == 'true' && steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7

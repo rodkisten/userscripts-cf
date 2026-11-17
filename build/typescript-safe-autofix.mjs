@@ -30,7 +30,7 @@ const host = {
   getDirectories: ts.sys.getDirectories,
 };
 const service = ts.createLanguageService(host, ts.createDocumentRegistry());
-const sourceFiles = parsed.fileNames.filter((file) => /\\.tsx?$/.test(file));
+const sourceFiles = parsed.fileNames.filter((file) => /\.tsx?$/.test(file));
 const fixes = [];
 for (const file of sourceFiles) {
   const original = ts.sys.readFile(file);
@@ -74,6 +74,10 @@ if (after > before) {
   for (const fix of fixes) fs.writeFileSync(fix.file,fix.original);
   throw new Error(`AST autofix rejected: errors increased from ${before} to ${after}`);
 }
-const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST JSX import repairs: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n`;
+const remaining = ts.getPreEmitDiagnostics(ts.createProgram(parsed.fileNames, parsed.options)).filter((d) => d.category === ts.DiagnosticCategory.Error);
+const counts = new Map();
+for (const diagnostic of remaining) counts.set(diagnostic.code, (counts.get(diagnostic.code) ?? 0) + 1);
+const topErrors = [...counts].sort((a,b) => b[1]-a[1]).slice(0,12).map(([code,count]) => `- TS${code}: ${count}`).join("\\n");
+const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST JSX import repairs: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n\\n### Remaining diagnostic groups\\n${topErrors}\\n`;
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
 console.log(summary);
