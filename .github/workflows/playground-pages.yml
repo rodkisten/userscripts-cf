@@ -40,7 +40,19 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
       # Playground preview is independent of lint, typecheck and release checks.
-      - name: Build userscripts
+      # Cache only the userscript distribution, not the playground assets.
+      # UI-only changes can reuse these bundles without running the expensive
+      # multi-target Vite build. Changes to source/build/config invalidate it.
+      - name: Restore compiled userscripts
+        id: bundles
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            assets/icons
+          key: pages-bundles-v1-${{ hashFiles('src/**', 'build/**', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
+      - name: Build userscripts (cache miss)
+        if: steps.bundles.outputs.cache-hit != 'true'
         run: npm run build
       - name: Prepare isolated preview installers
         env:
