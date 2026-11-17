@@ -1,11 +1,6 @@
 import { createUpdateChecker } from "./update-checker.js";
 import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
-import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import { createComponent, createRoot, createStore, type Accessor } from "solid-js";
-import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context.js";
-import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
@@ -33,64 +28,54 @@ import {
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
-const STORAGE_NAMESPACE_PREFIX = "userscripts-cf/";
-const DB_NAMESPACE_SEGMENT = "/db/";
-const CLIPBOARD_ID = "rod-clipboard";
-const CLIPBOARD_TITLE = "📋 Clipboard";
-const CLIPBOARD_DESCRIPTION = "Histórico local. Selecione um item para copiar novamente.";
-const CLIPBOARD_SEARCH_NAME = "query";
-const CLIPBOARD_SEARCH_LABEL = "Buscar";
-const CLIPBOARD_SEARCH_PLACEHOLDER = "Buscar no histórico";
-const CLIPBOARD_ITEM_NAME = "item";
-const CLIPBOARD_ITEM_LABEL = "Itens recentes";
-const CLIPBOARD_ACTION_COPY = "copy";
-const CLIPBOARD_ACTION_COPY_LABEL = "Copiar";
-const CLIPBOARD_ACTION_READ = "read";
-const CLIPBOARD_ACTION_READ_LABEL = "Ler clipboard";
-const CLIPBOARD_ACTION_CLEAR = "clear";
-const CLIPBOARD_ACTION_CLEAR_LABEL = "Excluir item";
-const UPDATE_PREFIX = "rod-update-";
-const UPDATE_LABEL = "Atualizar";
-const DOCK_REGISTRY_EVENT = "rod-dock:registry";
-const SCRIPT_MANAGER_CHANGE_EVENT = "rod-script-manager:change";
-const SOURCE_MANUAL = "manual";
-const SOURCE_STATE_SUBSCRIBER = "state.subscriber";
-const SOURCE_MODULE_INIT = "module.init";
-const LOG_TAG_EVENTS = "[Userscripts CF events]";
-const LOG_TAG_SUBSCRIBER = "[Userscripts CF subscriber]";
-const LOG_TAG_CLEANUP = "[Userscripts CF cleanup]";
-const LOG_TAG_SCRIPT_PREFIX = "[Userscripts CF: ";
-const DOM_EVENT_PREFIX = "dom.event:";
-const EVENT_PREFIX = "event:";
-const SOLID_REACTIVE_SOURCE = "solid.reactive";
-const SOLID_MOUNT_SOURCE = "solid.mount";
-const HISTORY_PUSH_STATE = "pushState";
-const HISTORY_REPLACE_STATE = "replaceState";
-const DATASET_UI_ATTR = "userscriptsCfUi";
-const DEFAULT_DATABASE_NAME = "default";
-const CLIPBOARD_HISTORY_LIMIT = 30;
-const CLIPBOARD_SNIPPET_LENGTH = 90;
-const QUERY_RETRY_COUNT = 1;
-const QUERY_GC_TIME = 300_000;
-const Z_INDEX_MAX = "2147483647";
-
-declare const __ROD_FEATURE_MENU__: boolean;
-declare const __ROD_FEATURE_TOASTER__: boolean;
-declare const __ROD_FEATURE_CLIPBOARD__: boolean;
-declare const __ROD_FEATURE_GM__: boolean;
-declare const __ROD_FEATURE_DOM__: boolean;
-declare const __ROD_FEATURE_HTTP__: boolean;
-declare const __ROD_FEATURE_UI__: boolean;
+export const STORAGE_NAMESPACE_PREFIX = "userscripts-cf/";
+export const DB_NAMESPACE_SEGMENT = "/db/";
+export const CLIPBOARD_ID = "rod-clipboard";
+export const CLIPBOARD_TITLE = "📋 Clipboard";
+export const CLIPBOARD_DESCRIPTION = "Histórico local. Selecione um item para copiar novamente.";
+export const CLIPBOARD_SEARCH_NAME = "query";
+export const CLIPBOARD_SEARCH_LABEL = "Buscar";
+export const CLIPBOARD_SEARCH_PLACEHOLDER = "Buscar no histórico";
+export const CLIPBOARD_ITEM_NAME = "item";
+export const CLIPBOARD_ITEM_LABEL = "Itens recentes";
+export const CLIPBOARD_ACTION_COPY = "copy";
+export const CLIPBOARD_ACTION_COPY_LABEL = "Copiar";
+export const CLIPBOARD_ACTION_READ = "read";
+export const CLIPBOARD_ACTION_READ_LABEL = "Ler clipboard";
+export const CLIPBOARD_ACTION_CLEAR = "clear";
+export const CLIPBOARD_ACTION_CLEAR_LABEL = "Excluir item";
+export const UPDATE_PREFIX = "rod-update-";
+export const UPDATE_LABEL = "Atualizar";
+export const DOCK_REGISTRY_EVENT = "rod-dock:registry";
+export const SCRIPT_MANAGER_CHANGE_EVENT = "rod-script-manager:change";
+export const SOURCE_MANUAL = "manual";
+export const SOURCE_STATE_SUBSCRIBER = "state.subscriber";
+export const SOURCE_MODULE_INIT = "module.init";
+export const LOG_TAG_EVENTS = "[Userscripts CF events]";
+export const LOG_TAG_SUBSCRIBER = "[Userscripts CF subscriber]";
+export const LOG_TAG_CLEANUP = "[Userscripts CF cleanup]";
+export const LOG_TAG_SCRIPT_PREFIX = "[Userscripts CF: ";
+export const DOM_EVENT_PREFIX = "dom.event:";
+export const EVENT_PREFIX = "event:";
+export const HISTORY_PUSH_STATE = "pushState";
+export const HISTORY_REPLACE_STATE = "replaceState";
+export const DATASET_UI_ATTR = "userscriptsCfUi";
+export const DEFAULT_DATABASE_NAME = "default";
+export const CLIPBOARD_HISTORY_LIMIT = 30;
+export const CLIPBOARD_SNIPPET_LENGTH = 90;
+export const QUERY_RETRY_COUNT = 1;
+export const QUERY_GC_TIME = 300_000;
+export const Z_INDEX_MAX = "2147483647";
 
 // ============================================================================
-// Tipos Fortes e Interfaces
+// Tipos e Interfaces Compartilhadas (Base)
 // ============================================================================
 export interface ScriptDefinition {
   id: string;
   name: string;
   match?: string | string[];
   module: {
-    init: (ctx: ScriptContext) => void | (() => void) | Promise<void | (() => void)>;
+    init: (ctx: any) => void | (() => void) | Promise<void | (() => void)>;
   };
 }
 
@@ -100,87 +85,7 @@ export interface DockAction {
   run: () => void | Promise<void>;
 }
 
-export interface ScriptContext {
-  id: string;
-  diagnostics: {
-    capture(error: unknown, source?: string): void;
-    observeNetwork(): () => void;
-  };
-  events: Readonly<Record<string, unknown> & { dom: DomEventsEngine }>;
-  http: ReturnType<typeof createHttpFeature>["http"] | undefined;
-  interceptRequest: (handler: unknown) => void;
-  interceptResponse: (handler: unknown) => void;
-  gm: ReturnType<typeof createGMFeature>;
-  clipboard: (ReturnType<typeof createClipboardManager> & { open: () => void }) | null;
-  dom: ReturnType<typeof createDomFeature>;
-  db: (name?: string, options?: Record<string, unknown>) => unknown;
-  signal: AbortSignal;
-  storage: {
-    get(key: string, fallback?: unknown): Promise<unknown>;
-    set(key: string, value: unknown): Promise<void>;
-    delete(key: string): Promise<void>;
-  };
-  menu: ReturnType<typeof createMenuFeature> | undefined;
-  query: {
-    readonly client: QueryClient;
-    createAsyncOptions(
-      source: Accessor<OptionsSource>,
-      query: Accessor<string>,
-      config?: Omit<AsyncOptionsConfig, "queryClient">,
-    ): ReturnType<typeof createAsyncOptions>;
-  };
-  dock: {
-    register(actions: DockAction[]): void;
-  };
-  updates: ReturnType<typeof createUpdateChecker> | null;
-  toast: ReturnType<typeof createToasterFeature> | undefined;
-  toaster: ReturnType<typeof createToasterFeature> | undefined;
-  readonly url: URL;
-  state: {
-    get: () => unknown;
-    set: (value: unknown) => void;
-    subscribe: (callback: (value: unknown) => void) => () => void;
-  };
-  onDispose: (callback: () => void | Promise<void>) => void;
-  observe(target: Node, callback: MutationCallback, options: MutationObserverInit): MutationObserver;
-  interval(callback: () => void, milliseconds: number): ReturnType<typeof setInterval>;
-  store<T extends object>(initial: T): ReturnType<typeof createStore<T>>;
-  listen(
-    target: EventTarget,
-    event: string,
-    callback: EventListenerOrEventListenerObject,
-    options?: AddEventListenerOptions,
-  ): void;
-  ui: {
-    readonly root: ShadowRoot;
-    readonly host: HTMLDivElement;
-    mount(node: Node): Node;
-    style(css: string): HTMLStyleElement;
-    registerStyles(...styles: unknown[]): () => void;
-    mountSolid(component: unknown, options?: Record<string, unknown>): () => void;
-  };
-  style(css: string): HTMLStyleElement;
-  pageStyle(css: string): HTMLStyleElement;
-  css: {
-    installCoreStyles(root: Document | ShadowRoot | Element): void;
-    applyComponentStyle(element: HTMLElement | Element, className: string, append?: boolean): void;
-    clearComponentStyle(element: HTMLElement | Element): void;
-    setCssProperty<K extends keyof CSSStyleDeclaration>(
-      element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
-      property: K,
-      value: CSSStyleDeclaration[K] | string,
-      options?: { important?: boolean },
-    ): void;
-    setCssProperties(
-      element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
-      styles: Partial<Record<keyof CSSStyleDeclaration, string | number>>,
-      options?: { important?: boolean },
-    ): void;
-  };
-  dispose(): Promise<void>;
-}
-
-interface DomEventsEngine {
+export interface DomEventsEngine {
   add(
     target: EventTarget | null,
     type: string,
@@ -204,10 +109,10 @@ export interface RuntimeAPI {
 }
 
 // ============================================================================
-// Funções Auxiliares e Arquitetura Modular
+// Funções Auxiliares Comuns
 // ============================================================================
 
-function initializeRodFeatures(host: Window & typeof globalThis) {
+export function initializeRodFeatures(host: Window & typeof globalThis) {
   return {
     menu:
       typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
@@ -219,10 +124,11 @@ function initializeRodFeatures(host: Window & typeof globalThis) {
   };
 }
 
-function setupUpdateChecker(
+export function setupUpdateChecker(
   release: { id: string; version: string; manifestURL: string },
   host: Window & typeof globalThis,
   rod: ReturnType<typeof initializeRodFeatures>,
+  updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null }
 ) {
   return createUpdateChecker({
     id: release.id,
@@ -251,15 +157,13 @@ function setupUpdateChecker(
             },
           },
         ],
-        onDismiss: () => updaterInstance?.dismiss(update.latestVersion),
+        onDismiss: () => updaterInstanceRef.current?.dismiss(update.latestVersion),
       });
     },
   });
 }
 
-let updaterInstance: ReturnType<typeof createUpdateChecker> | null = null;
-
-function createDomEventsEngine(definitionId: string, host: Window & typeof globalThis): DomEventsEngine {
+export function createDomEventsEngine(definitionId: string, host: Window & typeof globalThis): DomEventsEngine {
   const domListeners = new Map<
     EventTarget,
     Map<
@@ -329,31 +233,45 @@ function createDomEventsEngine(definitionId: string, host: Window & typeof globa
   return engine;
 }
 
-// ============================================================================
-// Função Principal de Criação do Runtime
-// ============================================================================
-
-export function createRuntime(
+// Classe/Fábrica base abstrata para o núcleo do Runtime
+export function createCoreRuntime(
   definitions: ScriptDefinition[],
   bridge: { call: (method: string, payload: unknown) => Promise<unknown>; dispose?: () => void },
   host: Window & typeof globalThis = window,
   release?: { id: string; version: string; manifestURL: string },
-): RuntimeAPI {
-  const rod = initializeRodFeatures(host);
-  // Install helper implementations once per runtime, without a mutable active-script pointer.
-  const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
-  const installedHelpers: Array<keyof typeof helpers> = [];
-  for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
-    if (name in host) continue;
-    Object.defineProperty(host, name, { configurable: true, value: helpers[name], writable: false });
-    installedHelpers.push(name);
+  options?: {
+    installHelpers?: () => Array<string>;
+    removeHelpers?: (installedHelpers: Array<string>) => void;
+    createSpecificContext: (params: {
+      definition: ScriptDefinition;
+      abort: AbortController;
+      onDispose: (cb: () => void | Promise<void>) => void;
+      ensureUIRoot: () => ShadowRoot;
+      addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
+      storage: any;
+      db: any;
+      clipboard: any;
+      openClipboardMenu: () => void;
+      dom: any;
+      network: any;
+      rod: any;
+      queryService: any;
+      updaterInstance: any;
+      host: Window & typeof globalThis;
+      desiredURL: string;
+      stateValues: Map<string, unknown>;
+      listeners: Map<string, Set<(value: unknown) => void>>;
+      publish: (id: string, value: unknown) => void;
+    }) => any;
   }
+) {
+  const rod = initializeRodFeatures(host);
+  const updaterInstanceRef = { current: null as ReturnType<typeof createUpdateChecker> | null };
 
-  updaterInstance = release ? setupUpdateChecker(release, host, rod) : null;
-  updaterInstance?.start();
+  updaterInstanceRef.current = release ? setupUpdateChecker(release, host, rod, updaterInstanceRef) : null;
+  updaterInstanceRef.current?.start();
 
-  const uiFeature =
-    typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : null;
+  const installedHelpers = options?.installHelpers ? options.installHelpers() : [];
 
   const stores = new Map<string, ReturnType<typeof rod.storage.create>>();
   let queryClient: QueryClient | undefined;
@@ -366,13 +284,6 @@ export function createRuntime(
   const queryService = Object.freeze({
     get client() {
       return getQueryClient();
-    },
-    createAsyncOptions(
-      source: Accessor<OptionsSource>,
-      query: Accessor<string>,
-      config: Omit<AsyncOptionsConfig, "queryClient"> = {},
-    ) {
-      return createAsyncOptions(source, query, { ...config, queryClient: getQueryClient() });
     },
   });
 
@@ -414,7 +325,7 @@ export function createRuntime(
         {
           id: CLIPBOARD_ACTION_COPY,
           label: CLIPBOARD_ACTION_COPY_LABEL,
-          handler: async (ctx) => {
+          handler: async (ctx: any) => {
             const item = ctx.values.item;
             if (typeof item !== "string") return false;
             return clipboard.copy(item);
@@ -425,7 +336,7 @@ export function createRuntime(
           id: CLIPBOARD_ACTION_CLEAR,
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
           variant: "danger",
-          handler: (ctx) => {
+          handler: (ctx: any) => {
             const item = ctx.values.item;
             if (typeof item !== "string") return;
             return clipboard.remove(item);
@@ -470,7 +381,7 @@ export function createRuntime(
   host.addEventListener("storage", onRulesChange);
   host.document.addEventListener("rod-script-manager:change", onRulesChange);
 
-  const active = new Map<string, { definition: ScriptDefinition; context: ScriptContext }>();
+  const active = new Map<string, { definition: ScriptDefinition; context: any }>();
   const stateValues = new Map<string, unknown>();
   const listeners = new Map<string, Set<(value: unknown) => void>>();
   const failures = new Map<string, string>();
@@ -495,31 +406,10 @@ export function createRuntime(
     }
   }
 
-  function context(definition: ScriptDefinition): ScriptContext {
+  function createContext(definition: ScriptDefinition) {
     const abort = new host.AbortController();
     const cleanups: Array<() => void | Promise<void>> = [];
     const onDispose = (callback: () => void | Promise<void>) => cleanups.push(callback);
-
-    let eventBus: ReturnType<typeof createEventBus> | undefined;
-    let sharedEvents: ReturnType<typeof createSharedEvents> | undefined;
-    let eventsValue: ScriptContext["events"] | undefined;
-    let domEventsEngine: DomEventsEngine | undefined;
-
-    function getEvents(): ScriptContext["events"] {
-      if (!eventsValue) {
-        eventBus = createEventBus({
-          namespace: definition.id,
-          signal: abort.signal,
-          onDiagnostic: () => console.warn(LOG_TAG_EVENTS, "Event bus diagnostic"),
-        });
-        sharedEvents = createSharedEvents({ host, signal: abort.signal });
-        domEventsEngine = createDomEventsEngine(definition.id, host);
-        eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEventsEngine });
-      }
-      return eventsValue;
-    }
-
-    onDispose(() => domEventsEngine?.dispose());
 
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;
@@ -532,7 +422,6 @@ export function createRuntime(
       uiHost = host.document.createElement("div");
       uiHost.dataset[DATASET_UI_ATTR] = definition.id;
 
-      // Aplicando estilos via utilitários tipados exportados de css.js
       setCssProperties(
         uiHost,
         {
@@ -618,11 +507,6 @@ export function createRuntime(
       },
     });
 
-    const gm =
-      typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
-        ? createGMFeature(host, definition.id)
-        : (undefined as unknown as ReturnType<typeof createGMFeature>);
-
     const network =
       typeof __ROD_FEATURE_HTTP__ === "undefined" || __ROD_FEATURE_HTTP__
         ? createHttpFeature(host, abort.signal, storage, definition.id)
@@ -637,7 +521,31 @@ export function createRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    const scriptContext: ScriptContext = {
+    const specificContext = options?.createSpecificContext
+      ? options.createSpecificContext({
+          definition,
+          abort,
+          onDispose,
+          ensureUIRoot,
+          addStyle,
+          storage,
+          db,
+          clipboard,
+          openClipboardMenu,
+          dom,
+          network,
+          rod,
+          queryService,
+          updaterInstance: updaterInstanceRef.current,
+          host,
+          desiredURL,
+          stateValues,
+          listeners,
+          publish,
+        })
+      : {};
+
+    const baseContext = {
       id: definition.id,
       diagnostics: Object.freeze({
         capture: (error: unknown, source = SOURCE_MANUAL) =>
@@ -648,14 +556,15 @@ export function createRuntime(
           return stop;
         },
       }),
-      get events() {
-        return getEvents();
+      query: {
+        ...queryService,
       },
-      query: queryService,
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),
-      gm,
+      gm: typeof __ROD_FEATURE_GM__ === "undefined" || __ROD_FEATURE_GM__
+        ? createGMFeature(host, definition.id)
+        : undefined,
       clipboard: clipboard && Object.freeze({ ...clipboard, open: openClipboardMenu }),
       dom,
       db,
@@ -687,7 +596,7 @@ export function createRuntime(
           });
         },
       }),
-      updates: updaterInstance,
+      updates: updaterInstanceRef.current,
       toast: rod.toaster,
       toaster: rod.toaster,
       get url() {
@@ -711,27 +620,20 @@ export function createRuntime(
         },
       }),
       onDispose,
-      store<T extends object>(initial: T) {
-        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
-        return createRoot((dispose) => {
-          onDispose(dispose);
-          return createStore(initial);
-        });
-      },
-      observe(target, callback, options) {
+      observe(target: Node, callback: MutationCallback, options: MutationObserverInit) {
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         const observer = new host.MutationObserver(callback);
         observer.observe(target, options);
         onDispose(() => observer.disconnect());
         return observer;
       },
-      interval(callback, milliseconds) {
+      interval(callback: () => void, milliseconds: number) {
         if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         const timer = host.setInterval(callback, milliseconds);
         onDispose(() => host.clearInterval(timer));
         return timer;
       },
-      listen(target, event, callback, options = {}) {
+      listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options = {}) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
             const result: unknown =
@@ -749,59 +651,11 @@ export function createRuntime(
         };
         target.addEventListener(event, wrapped, { ...options, signal: abort.signal });
       },
-      ui: Object.freeze({
-        get root() {
-          return ensureUIRoot();
-        },
-        get host() {
-          ensureUIRoot();
-          return uiHost!;
-        },
-        mount(node: Node) {
-          ensureUIRoot().append(node);
-          return node;
-        },
-        style(css: string) {
-          return addStyle(css, ensureUIRoot());
-        },
-        registerStyles(...styles: unknown[]) {
-          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
-          const release = uiFeature.registerShadowStyles(ensureUIRoot(), styles.flat());
-          onDispose(release);
-          return release;
-        },
-        mountSolid(component: unknown, options: Record<string, unknown> = {}) {
-          if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
-          let release: () => void;
-          try {
-            const scopedComponent = () =>
-              createComponent(RuntimeProvider, {
-                context: scriptContext,
-                get children() {
-                  return typeof component === "function" ? (component as () => unknown)() : component;
-                },
-              });
-            release = uiFeature.mountSolidShadow(scopedComponent, {
-              ...options,
-              target: ensureUIRoot(),
-              onError: (error: unknown) => {
-                captureDiagnostic(error, SOLID_REACTIVE_SOURCE, definition.id, host);
-                if (typeof options.onError === "function") (options.onError as (err: unknown) => void)(error);
-              },
-            });
-          } catch (error) {
-            captureDiagnostic(error, SOLID_MOUNT_SOURCE, definition.id, host);
-            throw error;
-          }
-          onDispose(release);
-          return release;
-        },
-      }),
-      style(css: string) {
-        return addStyle(css, ensureUIRoot());
+      style(cssContent: string) {
+        return addStyle(cssContent, ensureUIRoot());
       },
-      pageStyle(css: string) {
-        return addStyle(css, host.document.head || host.document.documentElement);
+      pageStyle(cssContent: string) {
+        return addStyle(cssContent, host.document.head || host.document.documentElement);
       },
       css: Object.freeze({
         installCoreStyles,
@@ -824,7 +678,8 @@ export function createRuntime(
         stateValues.delete(definition.id);
       },
     };
-    return scriptContext;
+
+    return Object.assign(baseContext, specificContext);
   }
 
   async function reconcile(): Promise<void> {
@@ -839,7 +694,7 @@ export function createRuntime(
         if (closed || desiredURL !== url) break;
         if (active.has(definition.id) || failures.get(definition.id) === url || !permitted(definition, url))
           continue;
-        const ctx = context(definition);
+        const ctx = createContext(definition);
         try {
           const cleanup = await definition.module.init(ctx);
           if (typeof cleanup === "function") ctx.onDispose(cleanup);
@@ -896,11 +751,10 @@ export function createRuntime(
     },
     async dispose() {
       closed = true;
-      for (const name of installedHelpers) {
-        if ((host as unknown as Record<string, unknown>)[name] === helpers[name])
-          delete (host as unknown as Record<string, unknown>)[name];
+      if (options?.removeHelpers) {
+        options.removeHelpers(installedHelpers);
       }
-      updaterInstance?.stop();
+      updaterInstanceRef.current?.stop();
       host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
       if ((host as unknown as Record<string, unknown>).__RodClipboard === clipboard)
         delete (host as unknown as Record<string, unknown>).__RodClipboard;
