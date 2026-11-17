@@ -107,3 +107,7 @@ Keyboard handling is scoped to focused dropdown descendants; Tab dismisses witho
 ## Button interaction polish
 
 The button now transitions pressed/hover feedback smoothly and suppresses pressed transforms during loading and disabled states. Spinner sizing is stable in flex layouts; badge decoration is hidden from screen readers to avoid duplicate spoken counts when the control has an accessible name. `prefers-reduced-motion` disables the press translation. This change requires a fresh build and real-device verification.
+
+## Theme tokens (light and dark)
+
+Button variants now expose `--button-on-accent`, `--button-secondary-bg`, `--button-secondary-fg`, `--button-focus`, `--button-danger`, `--button-success`, and `--button-warning` alongside the existing accent/radius/height tokens. The secondary surface uses a readable light default and switches to dark defaults under `prefers-color-scheme: dark`; explicit tokens always override those defaults. Destructive and success backgrounds use darker shades for readable white labels. `focus-visible` has its own configurable ring color. Verify the final contrast against the actual host themes and in Safari.
