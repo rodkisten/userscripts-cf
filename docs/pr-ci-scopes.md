@@ -11,6 +11,7 @@ feat: improve bookmarks (test: tests/runtime-helpers.test.js,tests/userscripts/r
 - Either section can use `all` or `none` alone. Sections can be specified independently. Unspecified categories are skipped when a title scope is present.
 - Without a scope suffix, existing changed-file detection runs unchanged.
 - Editing the title triggers validation again. Invalid selectors fail rather than silently running the wrong jobs.
+- Explicit test scopes run in the validation job. Explicit named build targets run as **separate matrix jobs**, one per target, and are not duplicated in the validation job. `build: all` remains a single full build.
 - Explicit scopes affect the **Validate changed userscripts** workflow's build/test execution, not independently defined required checks, release gates, or branch protections.
 - This is intended for focused PR feedback, **not** a substitute for full validation before release. Run the full workflow or remove the suffix before release.
 - Use full paths for individual tests; bare names such as `suite1` are intentionally not accepted because they are ambiguous.
