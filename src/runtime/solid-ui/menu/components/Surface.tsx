@@ -551,7 +551,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
             role="dialog"
             aria-modal="true"
             aria-label={schema().title || "Menu"}
-            tabIndex={-1}
+            tabindex={-1}
             style={{
               "--rm-drag-y": `${dragY()}px`,
               transition: isDragging() ? "none" : undefined,
@@ -659,7 +659,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             type="button"
                             class={fieldStyles.tab}
                             role="tab"
-                            aria-selected={active()}
+                            aria-selected={active() ? "true" : "false"}
                             data-active={String(active())}
                             onClick={() => setActiveTabId(tab.id)}
                           >

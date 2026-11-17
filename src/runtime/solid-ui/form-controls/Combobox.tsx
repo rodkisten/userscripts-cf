@@ -103,7 +103,7 @@ export function Combobox(props: ComboboxProps) {
     });
     virtualizer._willUpdate();
     virtualizer.measure();
-  });
+  }, undefined);
   const virtualRows = createMemo(() => {
     scrollTop();
     viewportHeight();
@@ -207,7 +207,7 @@ export function Combobox(props: ComboboxProps) {
           aria-controls={listId()}
           aria-activedescendant={open() && enabled()[active()] ? `${props.id}-option-${active()}` : undefined}
           disabled={props.disabled}
-          readOnly={!!props.readonly}
+          readonly={!!props.readonly}
           placeholder={props.placeholder ?? "Pesquisar…"}
           autocomplete="off"
           value={displayed()}
@@ -236,9 +236,9 @@ export function Combobox(props: ComboboxProps) {
           ref={scrollElement}
           id={listId()}
           role="listbox"
-          aria-multiselectable={!!props.multiple}
+          aria-multiselectable={props.multiple ? "true" : "false"}
           class={styles.list}
-          onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+          onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); }}
         >
           <Show
             when={!loading()}
