@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import postcss from "postcss";
 import { transform } from "lightningcss";
+import { transform as transformTypeScript } from "esbuild";
 import { Window } from "happy-dom";
 import { stylesPipeline } from "../build/styles.mjs";
 import {
@@ -50,9 +51,9 @@ test("priority processing leaves animation declarations usable", async () => {
 test("component classes replace or extend styles and install in document and shadow scopes", async () => {
   const window = new Window({ settings: { enableJavaScriptEvaluation: true } });
   const compiled = await compile("styles/core.css");
-  const helper = (await fs.readFile(new URL("core/css.ts", src), "utf8"))
-    .replace(/^import[^;]+;/, "const coreCSS = " + JSON.stringify(compiled) + ";")
-    .replaceAll("export function", "function");
+  const source = (await fs.readFile(new URL("core/css.ts", src), "utf8"))
+    .replace(/^import[^;]+;/, "const coreCSS = " + JSON.stringify(compiled) + ";");
+  const helper = (await transformTypeScript(source, { loader: "ts", format: "iife" })).code;
   window.eval(helper + ";window.applyStyle=applyComponentStyle;window.clearStyle=clearComponentStyle;");
   const host = window.document.createElement("div");
   window.document.body.append(host);
