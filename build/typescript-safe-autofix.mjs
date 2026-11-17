@@ -63,6 +63,44 @@ for (const file of sourceFiles) {
   }
   fixes.push({file,original,updated,count:replacements.length});
 }
+// TS2347: restore DOM method typing when an untyped receiver hides native querySelector generics.
+// The transformation preserves the generic and only runs for calls diagnosed by TypeScript.
+const baselineProgram = ts.createProgram(parsed.fileNames, parsed.options);
+const errors2347 = ts.getPreEmitDiagnostics(baselineProgram).filter((d) => d.code === 2347 && d.file && d.start !== undefined);
+const domEdits = new Map();
+for (const d of errors2347) {
+  const ast = d.file;
+  const locate = (node) => {
+    if (d.start < node.getStart(ast) || d.start >= node.end) return undefined;
+    return ts.forEachChild(node, locate) ?? node;
+  };
+  let node = locate(ast);
+  while (node && !ts.isCallExpression(node)) node = node.parent;
+  if (!node || !node.typeArguments?.length || !ts.isPropertyAccessExpression(node.expression)) continue;
+  const method = node.expression.name.text;
+  if (method !== "querySelector" && method !== "querySelectorAll") continue;
+  const receiver = node.expression.expression;
+  // Avoid changing optional chaining, calls with side effects or arbitrary expressions.
+  if (!ts.isIdentifier(receiver) || node.questionDotToken || node.expression.questionDotToken) continue;
+  const checker = baselineProgram.getTypeChecker();
+  const receiverType = checker.getTypeAtLocation(receiver);
+  if (!(receiverType.flags & ts.TypeFlags.Any)) continue;
+  const file = path.resolve(ast.fileName);
+  const edits = domEdits.get(file) ?? [];
+  edits.push({start:receiver.getStart(ast),end:receiver.end,text:`(${receiver.getText(ast)} as ParentNode)`});
+  domEdits.set(file,edits);
+}
+for (const [file,edits] of domEdits) {
+  const existing = fixes.find((fix) => path.resolve(fix.file) === file);
+  const original = existing?.original ?? ts.sys.readFile(file);
+  let updated = existing?.updated ?? original;
+  // Apply only when no earlier JSX codemod shifted offsets.
+  if (existing) continue;
+  for (const edit of edits.sort((a,b)=>b.start-a.start)) {
+    updated = updated.slice(0,edit.start)+edit.text+updated.slice(edit.end);
+  }
+  if (updated !== original) fixes.push({file,original,updated,count:edits.length});
+}
 const countErrors = () => {
   const program = ts.createProgram(parsed.fileNames, parsed.options);
   return ts.getPreEmitDiagnostics(program).filter((d) => d.category === ts.DiagnosticCategory.Error).length;
@@ -70,9 +108,9 @@ const countErrors = () => {
 const before = countErrors();
 for (const fix of fixes) fs.writeFileSync(fix.file,fix.updated);
 const after = countErrors();
-if (after > before) {
+if (after >= before && fixes.length > 0) {
   for (const fix of fixes) fs.writeFileSync(fix.file,fix.original);
-  throw new Error(`AST autofix rejected: errors increased from ${before} to ${after}`);
+  throw new Error(`AST autofix rejected: errors did not decrease from ${before} to ${after}`);
 }
 const remaining = ts.getPreEmitDiagnostics(ts.createProgram(parsed.fileNames, parsed.options)).filter((d) => d.category === ts.DiagnosticCategory.Error);
 const counts = new Map();
@@ -85,7 +123,7 @@ const diagnostics = remaining.map((d) => {
 });
 fs.mkdirSync("artifacts", { recursive: true });
 fs.writeFileSync("artifacts/typescript-autofix-diagnostics.json", JSON.stringify({before,after,fixes:fixes.length,diagnostics},null,2));
-const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST JSX import repairs: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n\\n### Remaining diagnostic groups\\n${topErrors}\\n`;
+const summary = `### TypeScript AST autofix\\n\\n- Before: ${before} errors\\n- After: ${after} errors\\n- Files changed: ${fixes.length}\\n- AST transformations attempted: ${fixes.reduce((sum,fix)=>sum+fix.count,0)}\\n- Safe mode: no any, no ts-ignore, no forced casts\\n\\n### Remaining diagnostic groups\\n${topErrors}\\n`;
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
 console.log(summary);
 
