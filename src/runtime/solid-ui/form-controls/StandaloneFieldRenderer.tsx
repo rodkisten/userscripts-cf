@@ -71,7 +71,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           maxLength={prop<number>("maxLength")}
           pattern={prop<string>("pattern")}
           autocomplete={prop<string>("autocomplete")}
-          inputMode={prop<"text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none">("inputmode")}
+          inputMode={prop<"text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none">(
+            "inputmode",
+          )}
           spellcheck={prop<boolean>("spellcheck")}
           autoFocus={field().autoFocus}
           onChange={commit}
@@ -356,7 +358,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             : null;
         })()}
       </Show>
-      <Show when={field().description && !["text", "email", "password", "search", "url", "tel", "number", "textarea"].includes(kind())}>
+      <Show
+        when={
+          field().description &&
+          !["text", "email", "password", "search", "url", "tel", "number", "textarea"].includes(kind())
+        }
+      >
         <small>{field().description}</small>
       </Show>
     </div>

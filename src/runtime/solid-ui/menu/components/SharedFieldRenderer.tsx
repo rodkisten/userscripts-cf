@@ -54,7 +54,10 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
               maxLength={f.maxLength}
               pattern={f.pattern}
               autocomplete={f.autocomplete}
-              inputMode={f.inputmode as "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none" | undefined}
+              inputMode={
+                f.inputmode as
+                  "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url" | "none" | undefined
+              }
               spellcheck={f.spellcheck}
               autoFocus={f.autoFocus}
               onChange={commit}
