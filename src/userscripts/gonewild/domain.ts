@@ -11,10 +11,13 @@ const DEFAULT_TIME_FORMAT_ZERO = "0:00";
 const SAFE_URL_PROTOCOLS_REGEX = /^https?:$/;
 const HOSTNAME_MATCH_REGEX = /(?:^|\.)(?:soundgasm\.net|audiochan\.(?:com|net)|audioerotica\.(?:com|net))$/i;
 const AUDIO_EXTENSION_REGEX = /\.(?:mp3|m4a|aac|ogg|opus|wav)(?:[?#]|$)/i;
-const CATEGORY_TAG_REGEX = /^(?:(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM){1,3}4(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM|B|NB){1,3}|NSFW|SFW|MDOM|MSUB|18\+)|\[\s*(?:Script\s+(?:Offer|Fill)|Improv|OC|Verification)\s*\]|\[\s*(?:gentle\s+\w*)\]|\[(?:mdom|msub)\s*(?:\w*)\]|\[\w*\s*(?:speaker)]|\[\w*\s*(?:listener)\]/gi;
+const CATEGORY_TAG_REGEX =
+  /^(?:(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM){1,3}4(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM|B|NB){1,3}|NSFW|SFW|MDOM|MSUB|18\+)|\[\s*(?:Script\s+(?:Offer|Fill)|Improv|OC|Verification)\s*\]|\[\s*(?:gentle\s+\w*)\]|\[(?:mdom|msub)\s*(?:\w*)\]|\[\w*\s*(?:speaker)]|\[\w*\s*(?:listener)\]/gi;
 const BRACKET_MATCH_REGEX = /\[([^\[\]\r\n]{1,180})\]/g;
-const TAG_KEYWORDS_MATCH_REGEX = /\b(?:tags?|keywords?|kinks?|themes?|genres?)\s*:\s*((?:\s*\[[^\[\]\r\n]{1,180}\])+)/gi;
-const TAG_GROUP_MATCH_REGEX = /(?:\b(?:tags?|keywords?|kinks?|themes?|genres?)\s*:\s*)?((?:\s*\[[^\[\]\r\n]{1,180}\]){2,})/gi;
+const TAG_KEYWORDS_MATCH_REGEX =
+  /\b(?:tags?|keywords?|kinks?|themes?|genres?)\s*:\s*((?:\s*\[[^\[\]\r\n]{1,180}\])+)/gi;
+const TAG_GROUP_MATCH_REGEX =
+  /(?:\b(?:tags?|keywords?|kinks?|themes?|genres?)\s*:\s*)?((?:\s*\[[^\[\]\r\n]{1,180}\]){2,})/gi;
 const URL_EXTRACT_REGEX = /https?:\/\/[^\s<>"'\])}]+/gi;
 const URL_CLEANUP_PUNCTUATION_REGEX = /[.,;:!?]+$/;
 const TIMESTAMP_DIGITS_REGEX = /^\d{10,13}$/;
@@ -100,7 +103,7 @@ export function categoryTag(tag: string): boolean {
 
 export function parseTags(title: string, description = ""): string[] {
   const tags: string[] = [];
-  
+
   const extractBrackets = (text: string, whole = text, offset = 0) => {
     for (const matchResult of text.matchAll(BRACKET_MATCH_REGEX)) {
       if (/^\s*\(/.test(whole.slice(offset + matchResult.index! + matchResult[0].length))) continue;
@@ -131,12 +134,7 @@ export function parseTags(title: string, description = ""): string[] {
 }
 
 export function cleanTitle(title: string): string {
-  return (
-    title
-      .replace(BRACKET_MATCH_REGEX, " ")
-      .replace(/\s+/g, " ")
-      .trim() || title
-  );
+  return title.replace(BRACKET_MATCH_REGEX, " ").replace(/\s+/g, " ").trim() || title;
 }
 
 export function formatTime(value: number): string {
