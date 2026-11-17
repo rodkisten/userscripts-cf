@@ -25,17 +25,17 @@ export function setCssProperty<K extends keyof CSSStyleDeclaration>(
   element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
   property: K,
   value: CSSStyleDeclaration[K] | string,
-  options?: SetStyleOptions
+  options?: SetStyleOptions,
 ): void {
   const priority = options?.important ? "important" : "";
-  
+
   // Garantimos a compatibilidade de tipos convertendo a propriedade para string limpa
   element.style.setProperty(property as string, String(value), priority);
 }
 
 /**
  * Aplica múltiplas propriedades de estilo de uma só vez a um elemento de forma tipada.
- * 
+ *
  * @param element - O elemento de destino.
  * @param styles - Um objeto contendo pares de propriedades e valores CSS.
  * @param options - Opções globais de aplicação (ex: important).
@@ -43,16 +43,11 @@ export function setCssProperty<K extends keyof CSSStyleDeclaration>(
 export function setCssProperties(
   element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
   styles: Partial<Record<keyof CSSStyleDeclaration, string | number>>,
-  options?: SetStyleOptions
+  options?: SetStyleOptions,
 ): void {
   for (const [property, value] of Object.entries(styles)) {
     if (value !== undefined && value !== null) {
-      setCssProperty(
-        element,
-        property as keyof CSSStyleDeclaration,
-        String(value),
-        options
-      );
+      setCssProperty(element, property as keyof CSSStyleDeclaration, String(value), options);
     }
   }
 }
