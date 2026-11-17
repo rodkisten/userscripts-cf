@@ -82,6 +82,11 @@ export interface ScriptDefinition {
   id: string;
   name: string;
   match?: string | string[];
+  matches?: string[];
+  includes?: string[];
+  exclude?: string[];
+  excludeMatches?: string[];
+  excludes?: string[];
   module: {
     init: (ctx: ScriptContext) => void | (() => void) | Promise<void | (() => void)>;
   };
@@ -438,7 +443,10 @@ export function createRuntime(
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
     matches(
-      { ...definition, matches: definition.match ? [definition.match].flat() : undefined },
+      {
+        ...definition,
+        matches: [...(definition.matches ?? []), ...(definition.match ? [definition.match].flat() : [])],
+      },
       url,
       rules()[definition.id],
     );
