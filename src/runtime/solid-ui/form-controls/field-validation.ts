@@ -42,6 +42,6 @@ export function createFieldValidation<TContext = FieldContext>(options: {
       ++generation;
       clearTimeout(timer);
     });
-  });
+  }, undefined);
   return { error, pending };
 }

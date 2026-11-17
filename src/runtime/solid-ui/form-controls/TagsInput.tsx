@@ -72,12 +72,12 @@ export function TagsInput(props: TagsInputProps) {
           aria-controls={`${props.id}-suggestions`}
           autocomplete="off"
           disabled={props.disabled}
-          readOnly={props.readonly}
+          readonly={props.readonly}
           placeholder={props.placeholder ?? "Adicionar tag…"}
           value={query()}
-          onInput={(event) => setQuery(event.currentTarget.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onInput={(event) => { setQuery(event.currentTarget.value); }}
+          onFocus={() => { setFocused(true); }}
+          onBlur={() => { setFocused(false); }}
           onKeyDown={onKeyDown}
         />
       </div>
@@ -89,7 +89,7 @@ export function TagsInput(props: TagsInputProps) {
                 type="button"
                 class={styles.option}
                 role="option"
-                aria-selected={props.value.includes(option.value)}
+                aria-selected={props.value.includes(option.value) ? "true" : "false"}
                 onPointerDown={(event) => event.preventDefault()}
                 onClick={() => {
                   add(option.value);

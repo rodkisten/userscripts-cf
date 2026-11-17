@@ -64,7 +64,7 @@ export function createAsyncOptions(
     setOptions(initial.data ?? []);
     setLoading(initial.isPending && initial.fetchStatus === "fetching");
     setError(initial.error ?? null);
-  });
+  }, undefined);
 
   onCleanup(() => {
     revision++;
