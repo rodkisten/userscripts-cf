@@ -79,6 +79,17 @@ export interface ScriptDefinition {
   };
 }
 
+/** Instance-owned context assembled by createCoreRuntime; no global active context. */
+export type ScriptContext = ReturnType<NonNullable<Parameters<typeof createCoreRuntime>[4]>["createSpecificContext"]> & {
+  id: string;
+  signal: AbortSignal;
+  events: any;
+  storage: any;
+  dom: any;
+  ui: any;
+  onDispose: (cleanup: () => void | Promise<void>) => void;
+};
+
 export interface DockAction {
   id: string;
   label: string;
