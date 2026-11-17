@@ -2,15 +2,15 @@ import type { ScriptContext } from "../../core/runtime";
 import { createSignal } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import { css } from "./Settings.module.css";
-import { ReelBookmarkButton } from "./ReelBookmarkButton";
+import { ReelBookmarkButton, type BookmarkState } from "./ReelBookmarkButton";
 
-const LABELS = /^(save|salvar|guardar|unsave|remover dos salvos|remove from saved)$/i;
-const SAVED = /unsave|remover dos salvos|remove from saved/i;
+const SAVED = /unsave|remover dos salvos|remove from saved|remover dos itens salvos|remove from collection/i;
+const UNSAVED = /^(save|salvar|guardar|save post|salvar publicação)$/i;
 const reelIsOpen = () =>
   /\/(reel|reels)\//.test(location.pathname) || !!document.querySelector('video, [role="dialog"] video');
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const SAVE_LABEL = /save|salvar|guardar|saved|salvo|bookmark/i;
+const SAVE_LABEL = /save|salvar|guardar|saved|salvo|bookmark|remover dos salvos/i;
 const ACTION_LABEL =
   /like|curtir|comment|comentar|share|compartilhar|send|enviar|more options|mais opções|save|salvar/i;
 
@@ -57,6 +57,25 @@ function actions(): HTMLElement | null {
   );
 }
 
+function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown" {
+  if (!source) return "unknown";
+  const label = [source.getAttribute("aria-label"), source.getAttribute("title"),
+    ...[...source.querySelectorAll("[aria-label], [title]")].flatMap(node => [node.getAttribute("aria-label"), node.getAttribute("title")])]
+    .filter(Boolean).join(" ").trim();
+  if (SAVED.test(label)) return "saved";
+  if (UNSAVED.test(label)) return "unsaved";
+  return "unknown";
+}
+
+async function waitForSaved(signal: AbortSignal, timeout = 2200): Promise<boolean> {
+  const end = Date.now() + timeout;
+  while (!signal.aborted && Date.now() < end) {
+    if (nativeState(nativeSave()) === "saved") return true;
+    await sleep(120);
+  }
+  return false;
+}
+
 function collectionOption(id: string): HTMLElement | null {
   const candidates = document.querySelectorAll<HTMLElement>(
     '[role="dialog"] [role="button"], [role="dialog"] button, [role="menuitem"], [role="option"]',
@@ -69,27 +88,19 @@ function collectionOption(id: string): HTMLElement | null {
   );
 }
 
-async function saveToCollections(ids: string[], signal: AbortSignal) {
+async function saveToCollections(ids: string[], signal: AbortSignal): Promise<void> {
   const source = nativeSave();
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
-  // Never toggle an already saved reel off just to access the collections menu.
-  if (
-    SAVED.test(
-      source.getAttribute("aria-label") ||
-        source.querySelector("[aria-label]")?.getAttribute("aria-label") ||
-        "",
-    )
-  ) {
-    throw Error("Reel já salvo. Abra o bookmark nativo para gerenciar as coleções");
-  }
+  if (nativeState(source) === "saved") return;
+  if (nativeState(source) !== "unsaved") throw Error("Não foi possível confirmar o estado do bookmark nativo");
+  if (signal.aborted) throw Error("Operação cancelada");
   source.click();
-  await sleep(350);
+  if (!(await waitForSaved(signal))) throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
   for (const id of ids) {
-    if (signal.aborted) return;
+    if (signal.aborted) throw Error("Operação cancelada");
     const option = collectionOption(id);
-    if (!option)
-      throw Error(`Coleção ${id} não apareceu no seletor nativo. Nenhuma seleção adicional foi confirmada`);
+    if (!option) throw Error(`Reel salvo, mas a coleção ${id} não apareceu no seletor nativo`);
     option.click();
     await sleep(300);
   }
@@ -102,19 +113,25 @@ export function mountReelBookmark(
 ) {
   const { signal } = ctx;
   ctx.pageStyle(css);
-  const [busy, setBusy] = createSignal(false);
+  const [state, setState] = createSignal<BookmarkState>("unsaved");
+  let activeReel = location.pathname;
+  let operation = 0;
   let mount: ReturnType<typeof mountPoint> | undefined;
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (busy()) return;
-    setBusy(true);
+    if (state() === "loading" || state() === "saved" || signal.aborted) return;
+    const token = ++operation;
+    const reel = location.pathname;
+    setState("loading");
     try {
       await saveToCollections(await getCollectionIds(), signal);
-      notify("Seleção de coleções enviada ao Instagram");
+      if (token !== operation || signal.aborted || reel !== location.pathname) return;
+      setState("saved");
+      notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
+      if (token !== operation || signal.aborted || reel !== location.pathname) return;
+      setState(nativeState(nativeSave()) === "saved" ? "saved" : "error");
       notify((error as Error).message);
-    } finally {
-      setBusy(false);
     }
   };
   function clear() {
@@ -124,6 +141,17 @@ export function mountReelBookmark(
   }
 
   function refresh() {
+    if (activeReel !== location.pathname) {
+      activeReel = location.pathname;
+      operation++;
+      setState("unsaved");
+      clear();
+    }
+    if (state() !== "loading") {
+      const observed = nativeState(nativeSave());
+      if (observed === "saved" && state() !== "saved") setState("saved");
+      if (observed === "unsaved" && state() === "saved") setState("unsaved");
+    }
     const target = reelIsOpen() ? actions() : null;
     const native = target && (nativeSave() || target.querySelector<HTMLElement>('button, [role="button"]'));
     if (!target || !native || !native.isConnected) {
@@ -139,7 +167,7 @@ export function mountReelBookmark(
     // No imperative DOM construction belongs in the view component.
     mount = mountPoint(
       native.parentNode!,
-      () => <ReelBookmarkButton state={busy() ? "loading" : "unsaved"} onActivate={() => void send()} />,
+      () => <ReelBookmarkButton state={state()} onActivate={() => void send()} />,
       { tag: "span", before: native.nextSibling },
     );
     mount.host.dataset.rodCollectionAction = "true";
@@ -182,6 +210,7 @@ export function mountReelBookmark(
   ctx.listen(document, "touchend", navigation, { passive: true });
   ctx.interval(scheduleRefresh, 600);
   ctx.onDispose(() => {
+    operation++;
     cancelAnimationFrame(frame);
     clear();
   });
