@@ -737,10 +737,16 @@ export function createRuntime(
         },
         registerStyles(...styles: unknown[]) {
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
-          const normalized: ShadowStyle[] = styles.flat().filter((style): style is ShadowStyle =>
-            typeof style === "string" ||
-            (typeof style === "object" && style !== null && "css" in style && typeof style.css === "string"),
-          );
+          const normalized: ShadowStyle[] = styles
+            .flat()
+            .filter(
+              (style): style is ShadowStyle =>
+                typeof style === "string" ||
+                (typeof style === "object" &&
+                  style !== null &&
+                  "css" in style &&
+                  typeof style.css === "string"),
+            );
           const release = uiFeature.registerShadowStyles(ensureUIRoot(), normalized);
           onDispose(release);
           return release;
@@ -753,7 +759,9 @@ export function createRuntime(
               createComponent(RuntimeProvider, {
                 context: scriptContext,
                 get children() {
-                  return typeof component === "function" ? (component as () => JSX.Element)() : (component as JSX.Element);
+                  return typeof component === "function"
+                    ? (component as () => JSX.Element)()
+                    : (component as JSX.Element);
                 },
               });
             release = uiFeature.mountSolidShadow(scopedComponent, {
