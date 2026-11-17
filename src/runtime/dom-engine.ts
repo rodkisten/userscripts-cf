@@ -113,7 +113,7 @@ export function createDomEngine({
 
       const abort = () => finish(reject, new DOMException("Aborted", "AbortError"));
 
-      function finish(fn: (value: Element | Error) => void, value: Element | Error): void {
+      function finish<T extends Element | Error>(fn: (value: T) => void, value: T): void {
         if (done) return;
         done = true;
         watcher.disconnect();
