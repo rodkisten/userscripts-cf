@@ -19,7 +19,7 @@ export interface MenuCommandItem {
 }
 
 export interface DockMenuDetail {
-  moduleId: string;
+  moduleId?: string;
   type?: "register" | "unregister";
   id?: MenuCommandId;
   label?: string;
@@ -132,7 +132,7 @@ export function createGMBridge(host: Window & typeof globalThis = window, module
             id,
           );
       }
-      const value = (host as Record<string, unknown>)["GM_" + property];
+      const value = (host as unknown as Record<string, unknown>)["GM_" + property];
       return typeof value === "function" ? (value as Function).bind(host) : value;
     },
   });

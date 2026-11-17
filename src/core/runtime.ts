@@ -83,6 +83,11 @@ export interface ScriptDefinition {
   id: string;
   name: string;
   match?: string | string[];
+  matches?: string[];
+  includes?: string[];
+  exclude?: string[];
+  excludeMatches?: string[];
+  excludes?: string[];
   module: {
     init: (ctx: any) => void | (() => void) | Promise<void | (() => void)>;
   };
