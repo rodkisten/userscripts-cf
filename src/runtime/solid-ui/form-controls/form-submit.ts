@@ -47,11 +47,7 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
         }
       }),
     );
-    if (
-      current !== revision ||
-      (!matchesSnapshot(values, options.values()))
-    )
-      return false;
+    if (current !== revision || !matchesSnapshot(values, options.values())) return false;
     const next: Record<string, string> = {};
     for (const [name, message] of results) if (message) next[name] = message;
     setErrors(next);
