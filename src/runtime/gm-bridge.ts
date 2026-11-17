@@ -51,7 +51,7 @@ export interface GMBridge {
 export function createGMBridge(host: Window & typeof globalThis = window, moduleId: string = ""): GMBridge {
   const menuCommands = new Map<MenuCommandId, MenuCommandItem>();
 
-  const notify = (detail: DockMenuDetail): void => {
+  const notify = (detail: Omit<DockMenuDetail, "moduleId">): void => {
     if (host.document?.dispatchEvent && typeof host.CustomEvent === "function") {
       host.document.dispatchEvent(new host.CustomEvent("rod-dock:menu", { detail: { moduleId, ...detail } }));
     }
@@ -132,7 +132,7 @@ export function createGMBridge(host: Window & typeof globalThis = window, module
             id,
           );
       }
-      const value = (host as Record<string, unknown>)["GM_" + property];
+      const value = (host as unknown as Record<string, unknown>)["GM_" + property];
       return typeof value === "function" ? (value as Function).bind(host) : value;
     },
   });

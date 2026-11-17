@@ -108,7 +108,7 @@ export function createDomEngine({
 
       const watcher = new MutationObserver(() => {
         const value = scopeNode.querySelector(selector);
-        if (value) finish(resolve, value);
+        if (value) finish((element: Element) => resolve(element), value);
       });
 
       const abort = () => finish(reject, new DOMException("Aborted", "AbortError"));
@@ -132,7 +132,7 @@ export function createDomEngine({
 
       // Close the gap between the first query and observer registration.
       const immediate = scopeNode.querySelector(selector);
-      if (immediate) finish(resolve, immediate);
+      if (immediate) finish((element: Element) => resolve(element), immediate);
     });
   }
 
