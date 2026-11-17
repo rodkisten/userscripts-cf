@@ -60,5 +60,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const parsed = parsePrCiScope(process.env.PR_TITLE || "");
   const tests = parsed?.test ? await resolveTestSelectors(parsed.test) : null;
   const builds = parsed?.build ? (parsed.build.includes("all") ? ["all"] : parsed.build) : null;
-  process.stdout.write(JSON.stringify({ explicit: Boolean(parsed), tests, builds }) + "\n");
+  const matrix = builds?.filter((item) => item !== "none" && item !== "all") ?? [];
+  process.stdout.write(JSON.stringify({ explicit: Boolean(parsed), tests, builds, matrix }) + "\n");
 }
