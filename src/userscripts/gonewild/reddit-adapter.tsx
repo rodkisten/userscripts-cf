@@ -137,13 +137,13 @@ export function mountReddit(ctx: any, bridge: any) {
   const scan = () => {
     if (ctx.signal.aborted) return;
     for (const [node] of mounts) if (!node.isConnected || !enabled()) remove(node);
-    const main = document.querySelector("main") || document.body;
+    const main = ctx.dom.one("main") || document.body;
     if (/^(?:www\.|old\.|new\.|sh\.)?reddit\.com$/i.test(location.hostname)) {
       if (!root?.host.isConnected) {
         root?.dispose();
         root = mountPoint(main, () => <FeedRoot controller={controller} />, { before: main.firstChild });
       }
-      for (const node of enabled() ? document.querySelectorAll(POST_SELECTOR) : []) {
+      for (const node of enabled() ? ctx.dom.all(POST_SELECTOR) : []) {
         if (
           node.closest("[data-solid-mount]") ||
           mounts.has(node) ||
@@ -153,9 +153,7 @@ export function mountReddit(ctx: any, bridge: any) {
         const post = readPost(node, sub());
         if (!post || !state.settings.subreddits.some((name) => normalize(name) === normalize(post.sub)))
           continue;
-        const title = node.querySelector(
-          '[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]',
-        );
+        const title = ctx.dom.one('[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]', node);
         const mount = mountPoint(node, () => (
           <PostCard
             post={post}
@@ -164,7 +162,7 @@ export function mountReddit(ctx: any, bridge: any) {
             onAudio={(items) => {
               // Rewriting native source links is an adapter responsibility; the
               // component only publishes resolved media, never queries site DOM.
-              for (const anchor of node.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+              for (const anchor of ctx.dom.all("a[href]", node) as HTMLAnchorElement[]) {
                 if (anchor.closest("[data-solid-mount]")) continue;
                 const item = items.find((item) => {
                   try {
@@ -205,7 +203,7 @@ export function mountReddit(ctx: any, bridge: any) {
       root?.dispose();
       root = undefined;
     }
-    for (const node of document.querySelectorAll(
+    for (const node of ctx.dom.all(
       'shreddit-ad-post, shreddit-ad, reddit-ad, ad-unit, [data-promoted="true"], shreddit-post[promoted], shreddit-post[is-promoted], shreddit-post[ad-type]',
     ))
       setHidden(node, state.settings.removeAds);
