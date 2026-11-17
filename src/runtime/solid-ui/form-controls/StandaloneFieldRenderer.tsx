@@ -4,6 +4,7 @@ import { Combobox } from "./Combobox";
 import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
 import { Input, Textarea, NumberInput } from "./TextControls";
+import { createFieldValidation } from "./field-validation";
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
   field: FormField<TContext>;
@@ -24,7 +25,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
-  const error = () => (props.context as FieldContext).errors?.[field().name];
+  const validation = createFieldValidation({ field, value, context: () => props.context, onError: (reason) => props.onError?.(reason) });
+  const error = () => (props.context as FieldContext).errors?.[field().name] ?? validation.error();
   const description = () => field().description ?? field().help;
   const choices = (): readonly OptionItem[] => {
     const current = field();
@@ -58,6 +60,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       <Show when={["text", "email", "password", "search", "url", "tel"].includes(kind())}>
         <Input
           error={error()}
+          warning={validation.pending() && !error() ? "Validando…" : undefined}
           description={description()}
           id={id()}
           name={field().name}

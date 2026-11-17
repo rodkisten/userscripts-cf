@@ -77,6 +77,7 @@ function App() {
   const [numberDemo, setNumberDemo] = createSignal<number | "">(5);
   const [showErrors, setShowErrors] = createSignal(false);
   const [contextError, setContextError] = createSignal(false);
+  const [asyncValidation, setAsyncValidation] = createSignal(false);
   const [feedbackState, setFeedbackState] = createSignal<"default" | "warning" | "success">("default");
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
@@ -324,6 +325,31 @@ function App() {
             context={exampleContext}
             value={variantValue()}
             onChange={setVariantValue}
+          />
+        </section>
+        <section class="card wide" id="async-validation">
+          <h2>Validação assíncrona do schema</h2>
+          <p>Digite um nome. O validador aguarda 400 ms e rejeita nomes curtos ou reservados. Respostas antigas não sobrescrevem as novas.</p>
+          <label class="toggle">
+            <input type="checkbox" checked={asyncValidation()} onChange={(event) => setAsyncValidation(event.currentTarget.checked)} />
+            Ativar validação assíncrona
+          </label>
+          <StandaloneFieldRenderer
+            field={{
+              type: "text", name: "async-demo", label: "Nome de usuário",
+              description: "Experimente admin, root ou um nome com menos de 3 letras",
+              validate: async (value) => {
+                if (!asyncValidation()) return null;
+                await new Promise((resolve) => setTimeout(resolve, 400));
+                const name = String(value ?? "").trim();
+                if (name.length < 3) return "Digite pelo menos 3 caracteres.";
+                if (["admin", "root"].includes(name.toLowerCase())) return "Este nome está reservado.";
+                return null;
+              },
+            }}
+            context={{ values: { "async-demo": textDemo() } }}
+            value={textDemo()}
+            onChange={setTextDemo}
           />
         </section>
         <section class="card wide" id="basic-controls">
