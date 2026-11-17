@@ -1,13 +1,14 @@
 import ts from "typescript";
 
-// Compile React JSX before Solid's JSX compiler sees these modules.
+// React modules use the automatic JSX runtime; Solid modules keep their own compiler.
 export function reactJSX() {
   return {
     name: "userscripts-cf:react-jsx",
     enforce: "pre",
     transform(code, id) {
-      const filename = id.split("?", 1)[0].replaceAll("\\\\", "/");
-      if (!/(?:\\.react\\.tsx|\\/runtime-context-react\\.tsx)$/.test(filename)) return null;
+      const filename = id.split("?", 1)[0];
+      if (!filename.endsWith(".react.tsx") && !filename.endsWith("/runtime-context-react.tsx"))
+        return null;
       const result = ts.transpileModule(code, {
         fileName: filename,
         compilerOptions: {

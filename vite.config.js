@@ -20,7 +20,7 @@ export default defineConfig({
     reactJSX(),
     inlineCSSModules(),
     inlineSVG(),
-    solid({ refresh: false, include: /^(?!.*(?:\\.react\\.tsx|\\/runtime-context-react\\.tsx)(?:\\?.*)?$).*\\.[jt]sx(?:\\?.*)?$/ }),
+    solid({ refresh: false, include: /^(?!.*(?:\.react\.tsx|\/runtime-context-react\.tsx)(?:\?.*)?$).*\.[jt]sx(?:\?.*)?$/ }),
     solidDOMTemplates(),
   ],
   css: {
