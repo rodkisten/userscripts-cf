@@ -79,7 +79,7 @@ jobs:
           key: pages-bundles-v2-${{ hashFiles('src/**', 'build/**', '!build/hosting.mjs', '!build/design-system.mjs', '!build/preview-userscripts.mjs', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
       - name: Build userscripts (cache miss)
         if: steps.bundles.outputs.cache-hit != 'true'
-        run: npm run build
+        run: DEBUG=vite:* npm run build
       - name: Verify cached distribution before preview
         run: |
           set -euo pipefail
