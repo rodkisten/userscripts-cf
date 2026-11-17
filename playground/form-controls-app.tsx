@@ -76,6 +76,7 @@ function App() {
   const [textareaDemo, setTextareaDemo] = createSignal("");
   const [numberDemo, setNumberDemo] = createSignal<number | "">(5);
   const [showErrors, setShowErrors] = createSignal(false);
+  const [feedbackState, setFeedbackState] = createSignal<"default" | "warning" | "success">("default");
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
   const [basicSwitch, setBasicSwitch] = createSignal(false);
@@ -218,6 +219,16 @@ function App() {
             />{" "}
             Simular erros de validação
           </label>
+          <label class="toggle">
+            <input type="checkbox" checked={advancedText()} onChange={(event) => setAdvancedText(event.currentTarget.checked)} />
+            Atributos avançados
+          </label>
+          <label for="demo-feedback-state">Estado visual</label>
+          <select id="demo-feedback-state" value={feedbackState()} onChange={(event) => setFeedbackState(event.currentTarget.value as "default" | "warning" | "success")}>
+            <option value="default">Padrão</option>
+            <option value="warning">Aviso</option>
+            <option value="success">Sucesso</option>
+          </select>
           <div class="grid">
             <Input
               id="demo-input"
@@ -225,6 +236,11 @@ function App() {
               placeholder="Digite seu nome"
               value={textDemo()}
               onChange={setTextDemo}
+              minLength={advancedText() ? 3 : undefined}
+              pattern={advancedText() ? "[A-Za-zÀ-ÿ ]+" : undefined}
+              autocomplete={advancedText() ? "name" : undefined}
+              warning={!showErrors() && feedbackState() === "warning" ? "Confira o nome antes de salvar." : undefined}
+              success={!showErrors() && feedbackState() === "success" ? "Nome verificado." : undefined}
               disabled={disabled()}
               readonly={readonly()}
               description="Exemplo com descrição acessível"
@@ -236,6 +252,8 @@ function App() {
               placeholder="Escreva uma descrição…"
               value={textareaDemo()}
               onChange={setTextareaDemo}
+              minLength={advancedText() ? 10 : undefined}
+              resize={advancedText() ? "none" : "vertical"}
               disabled={disabled()}
               readonly={readonly()}
               maxLength={180}

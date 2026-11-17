@@ -192,3 +192,9 @@ textarea.textInput {
   color: var(--rm-muted, #a1a1aa);
   font-size: 12px;
 }
+
+.textInput[data-state="warning"] { border-color: var(--rm-warning, #f59e0b); }
+.textInput[data-state="success"] { border-color: var(--rm-success, #22c55e); }
+.fieldWarning { color: var(--rm-warning, #fbbf24); font-size: 12px; }
+.fieldSuccess { color: var(--rm-success, #4ade80); font-size: 12px; }
+@media (forced-colors: active) { .textInput[data-state="error"] { outline: 1px solid Mark; } }

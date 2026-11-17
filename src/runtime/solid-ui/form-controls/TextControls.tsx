@@ -8,6 +8,8 @@ export interface TextControlProps {
   label?: string;
   description?: string;
   error?: string;
+  warning?: string;
+  success?: string;
   placeholder?: string;
   disabled?: boolean;
   readonly?: boolean;
@@ -22,27 +24,35 @@ export interface TextControlProps {
   onChange(value: string): void;
 }
 
-function FieldHelp(props: { id?: string; description?: string; error?: string }) {
+type FieldFeedback = Pick<TextControlProps, "id" | "description" | "error" | "warning" | "success">;
+
+function feedbackId(props: FieldFeedback): string | undefined {
+  if (!props.id) return undefined;
+  if (props.error) return `${props.id}-error`;
+  if (props.warning) return `${props.id}-warning`;
+  if (props.success) return `${props.id}-success`;
+  return props.description ? `${props.id}-description` : undefined;
+}
+
+function FieldHelp(props: FieldFeedback) {
   return (
-    <>
-      <Show when={props.description && !props.error}>
-        <small id={props.id ? `${props.id}-description` : undefined} class={styles.fieldHelp}>
-          {props.description}
-        </small>
-      </Show>
-      <Show when={props.error}>
-        <small id={props.id ? `${props.id}-error` : undefined} class={styles.fieldError} role="alert">
-          {props.error}
-        </small>
-      </Show>
-    </>
+    <Show
+      when={props.error || props.warning || props.success || props.description}
+    >
+      <small
+        id={feedbackId(props)}
+        class={props.error ? styles.fieldError : props.warning ? styles.fieldWarning : props.success ? styles.fieldSuccess : styles.fieldHelp}
+        role={props.error ? "alert" : "status"}
+        aria-live={props.error ? "assertive" : "polite"}
+      >
+        {props.error || props.warning || props.success || props.description}
+      </small>
+    </Show>
   );
 }
 
-function describedBy(props: TextControlProps): string | undefined {
-  return props.id && (props.error || props.description)
-    ? `${props.id}-${props.error ? "error" : "description"}`
-    : undefined;
+function describedBy(props: FieldFeedback): string | undefined {
+  return feedbackId(props);
 }
 
 export function Input(
@@ -71,10 +81,11 @@ export function Input(
         spellcheck={props.spellcheck}
         autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
+        data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
-      <FieldHelp id={props.id} description={props.description} error={props.error} />
+      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
     </div>
   );
 }
@@ -101,15 +112,16 @@ export function Textarea(props: TextControlProps & { rows?: number; showCount?: 
         spellcheck={props.spellcheck}
         autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
+        data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
       <Show when={props.showCount && props.maxLength !== undefined}>
-        <output class={styles.fieldCount}>
+        <output class={styles.fieldCount} aria-label="Contagem de caracteres">
           {props.value.length} / {props.maxLength}
         </output>
       </Show>
-      <FieldHelp id={props.id} description={props.description} error={props.error} />
+      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
     </div>
   );
 }
@@ -144,12 +156,13 @@ export function NumberInput(props: NumberInputProps) {
         readOnly={props.readonly}
         required={props.required}
         aria-invalid={props.error ? "true" : undefined}
+        data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}
         aria-describedby={describedBy(props)}
         onInput={(event) =>
           props.onChange(event.currentTarget.value === "" ? "" : event.currentTarget.valueAsNumber)
         }
       />
-      <FieldHelp id={props.id} description={props.description} error={props.error} />
+      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
     </div>
   );
 }
