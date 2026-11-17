@@ -1,7 +1,7 @@
 import { createElement, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { RuntimeProvider } from "./runtime-context-react.js";
-import { createCoreRuntime, ScriptDefinition, RuntimeAPI } from "./runtime.js";
+import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 
 const REACT_MOUNT_SOURCE = "react.mount";
@@ -38,23 +38,31 @@ export function createRuntime(
             return node;
           },
           mountReact(component: ReactElement, container?: HTMLElement) {
-            // Exemplo de integração nativa com ReactDOM para montagem em ShadowRoot
             if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
             const targetRoot = ensureUIRoot();
+            if (container && container.getRootNode() !== targetRoot)
+              throw new Error("React mount container must belong to this script ShadowRoot");
             const mountPoint = container || host.document.createElement("div");
             if (!container) targetRoot.append(mountPoint);
 
             try {
               if (!scriptContext) throw new Error("React runtime context not initialized");
-              const root = createRoot(mountPoint);
+              const root = createRoot(mountPoint, {
+                onUncaughtError: (error) => captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host),
+                onCaughtError: (error) => captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host),
+              });
               root.render(createElement(RuntimeProvider, { context: scriptContext }, component));
+              let disposed = false;
               const cleanup = () => {
+                if (disposed) return;
+                disposed = true;
                 root.unmount();
                 if (!container) mountPoint.remove();
               };
               onDispose(cleanup);
               return cleanup;
             } catch (error) {
+              if (!container) mountPoint.remove();
               captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
               throw error;
             }

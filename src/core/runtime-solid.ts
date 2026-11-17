@@ -5,7 +5,7 @@ import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/creat
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
-import { createCoreRuntime, ScriptDefinition, RuntimeAPI } from "./runtime.js";
+import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 
 const SOLID_REACTIVE_SOURCE = "solid.reactive";
 const SOLID_MOUNT_SOURCE = "solid.mount";
@@ -89,6 +89,7 @@ export function createRuntime(
             return releaseStyle;
           },
           mountSolid(component: unknown, options: Record<string, unknown> = {}) {
+            if (!specificContextRef) throw new Error("Solid runtime context not initialized");
             if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
             let releaseStyle: () => void;
             try {
