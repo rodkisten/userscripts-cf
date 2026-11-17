@@ -203,7 +203,7 @@ export function Combobox(props: ComboboxProps) {
           role="combobox"
           aria-autocomplete="list"
           aria-haspopup="listbox"
-          aria-expanded={open()}
+          aria-expanded={open() ? "true" : "false"}
           aria-controls={listId()}
           aria-activedescendant={open() && enabled()[active()] ? `${props.id}-option-${active()}` : undefined}
           disabled={props.disabled}
@@ -287,7 +287,7 @@ export function Combobox(props: ComboboxProps) {
                                   type="button"
                                   role="option"
                                   id={index() >= 0 ? `${props.id}-option-${index()}` : undefined}
-                                  aria-selected={selected().has(option.value)}
+                                  aria-selected={selected().has(option.value) ? "true" : "false"}
                                   class={styles.option}
                                   data-active={index() === active()}
                                   disabled={option.disabled}
@@ -328,7 +328,7 @@ export function Combobox(props: ComboboxProps) {
                               transform: `translateY(${row.start}px)`,
                             }}
                             data-active={row.index === active()}
-                            aria-selected={selected().has(option().value)}
+                            aria-selected={selected().has(option().value) ? "true" : "false"}
                             disabled={option().disabled}
                             onMouseEnter={() => setActive(row.index)}
                             onClick={() => select(option())}

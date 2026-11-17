@@ -68,7 +68,7 @@ export function TagsInput(props: TagsInputProps) {
           id={props.id}
           role="combobox"
           aria-autocomplete="list"
-          aria-expanded={focused() && options().length > 0}
+          aria-expanded={focused() && options().length > 0 ? "true" : "false"}
           aria-controls={`${props.id}-suggestions`}
           autocomplete="off"
           disabled={props.disabled}
