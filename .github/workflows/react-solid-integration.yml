@@ -47,4 +47,4 @@ jobs:
         if: always()
         run: |
           echo "### React + Solid integration" >> "$GITHUB_STEP_SUMMARY"
-          echo "Validated JSX isolation, typecheck, and React/Solid/mixed installers." >> "$GITHUB_STEP_SUMMARY"
+          echo "Attempted JSX isolation, typecheck, and React/Solid/mixed installers; inspect step conclusions above." >> "$GITHUB_STEP_SUMMARY"
