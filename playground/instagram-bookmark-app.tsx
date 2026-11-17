@@ -13,7 +13,7 @@ return <main><small>INSTAGRAM · COMPONENT PREVIEW</small><h1>Reel Bookmark</h1>
 <section class="card"><div class="reel"><div class="reelInfo"><span class="avatar">IG</span><strong>Reel de demonstração</strong><span>Prévia local</span></div>
 <aside class="reelActions"><span>♡</span><span>↗</span><ReelBookmarkButton state={state()} onActivate={activate}/></aside></div>
 <p role="status" aria-live="polite">{message()}</p></section>
-<section class="card"><h2>Estados</h2><div class="choices"><For each={states}>{value=><button classList={{selected:state()===value}} onClick={()=>{clearTimeout(pending);setState(value);setMessage("Estado: "+value);}}>{value}</button>}</For></div>
+<section class="card"><h2>Estados</h2><div class="choices"><For each={states}>{value=><button class={{selected:state()===value}} onClick={()=>{clearTimeout(pending);setState(value);setMessage("Estado: "+value);}}>{value}</button>}</For></div>
 <div class="examples"><For each={states}>{value=><div class="example"><ReelBookmarkButton state={value} onActivate={()=>setState(value)}/><span>{value}</span></div>}</For></div></section>
 <footer>Sem login, sem API, sem alterações nos seus Reels.</footer></main>;}
 const style=document.createElement("style");style.textContent=css;document.head.append(style);
