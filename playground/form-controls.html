@@ -109,7 +109,8 @@
       const asset = "/playground/form-controls.js";
       let mounted = false;
       const timeout = setTimeout(() => {
-        if (!mounted) showError(new Error("A inicialização excedeu 12 segundos. Verifique o bundle e a conexão."));
+        if (!mounted)
+          showError(new Error("A inicialização excedeu 12 segundos. Verifique o bundle e a conexão."));
       }, 12000);
       const showError = (error) => {
         const message = error instanceof Error ? error.message : String(error);
@@ -138,8 +139,12 @@
         main.append(heading, description, details, retry, document.createTextNode(" "), copy);
         host.append(main);
       };
-      window.addEventListener("error", (event) => { if (!mounted) showError(event.error ?? event.message); });
-      window.addEventListener("unhandledrejection", (event) => { if (!mounted) showError(event.reason); });
+      window.addEventListener("error", (event) => {
+        if (!mounted) showError(event.error ?? event.message);
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        if (!mounted) showError(event.reason);
+      });
       try {
         await import(asset);
         if (host?.textContent?.includes("Carregando componentes SolidJS")) {

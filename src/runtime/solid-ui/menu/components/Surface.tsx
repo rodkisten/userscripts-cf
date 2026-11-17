@@ -661,7 +661,9 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             role="tab"
                             aria-selected={active()}
                             data-active={String(active())}
-                            onClick={() => { setActiveTabId(tab.id); }}
+                            onClick={() => {
+                              setActiveTabId(tab.id);
+                            }}
                           >
                             <Show when={tab.icon}>
                               {typeof tab.icon === "string" ? (
