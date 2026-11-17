@@ -389,14 +389,14 @@ export function createRuntime(
         {
           id: CLIPBOARD_ACTION_COPY,
           label: CLIPBOARD_ACTION_COPY_LABEL,
-          handler: async (ctx: { values: { item: string } }) => clipboard.copy(ctx.values.item),
+          handler: async (ctx) => clipboard.copy(String(ctx.values.item ?? "")),
         },
         { id: CLIPBOARD_ACTION_READ, label: CLIPBOARD_ACTION_READ_LABEL, handler: () => clipboard.read() },
         {
           id: CLIPBOARD_ACTION_CLEAR,
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
           variant: "danger",
-          handler: (ctx: { values: { item: string } }) => clipboard.remove(ctx.values.item),
+          handler: (ctx) => clipboard.remove(String(ctx.values.item ?? "")),
         },
       ],
     });
@@ -477,7 +477,7 @@ export function createRuntime(
         eventBus = createEventBus({
           namespace: definition.id,
           signal: abort.signal,
-          onDiagnostic: (diagnostic: unknown) => console.warn(LOG_TAG_EVENTS, diagnostic),
+          onDiagnostic: () => console.warn(LOG_TAG_EVENTS, "Event bus diagnostic reported"),
         });
         sharedEvents = createSharedEvents({ host, signal: abort.signal });
         domEventsEngine = createDomEventsEngine(definition.id, host);
@@ -636,13 +636,13 @@ export function createRuntime(
               detail: { type: "register", module },
             }),
           );
-          onDispose(() =>
+          onDispose(() => {
             host.document.dispatchEvent(
               new host.CustomEvent(DOCK_REGISTRY_EVENT, {
                 detail: { type: "unregister", id: definition.id },
               }),
-            ),
-          );
+            );
+          });
         },
       }),
       updates: updaterInstance,
