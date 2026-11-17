@@ -329,14 +329,23 @@ function App() {
         </section>
         <section class="card wide" id="async-validation">
           <h2>Validação assíncrona do schema</h2>
-          <p>Digite um nome. O validador aguarda 400 ms e rejeita nomes curtos ou reservados. Respostas antigas não sobrescrevem as novas.</p>
+          <p>
+            Digite um nome. O validador aguarda 400 ms e rejeita nomes curtos ou reservados. Respostas antigas
+            não sobrescrevem as novas.
+          </p>
           <label class="toggle">
-            <input type="checkbox" checked={asyncValidation()} onChange={(event) => setAsyncValidation(event.currentTarget.checked)} />
+            <input
+              type="checkbox"
+              checked={asyncValidation()}
+              onChange={(event) => setAsyncValidation(event.currentTarget.checked)}
+            />
             Ativar validação assíncrona
           </label>
           <StandaloneFieldRenderer
             field={{
-              type: "text", name: "async-demo", label: "Nome de usuário",
+              type: "text",
+              name: "async-demo",
+              label: "Nome de usuário",
               description: "Experimente admin, root ou um nome com menos de 3 letras",
               validate: async (value) => {
                 if (!asyncValidation()) return null;

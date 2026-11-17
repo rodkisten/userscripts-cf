@@ -25,7 +25,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
-  const validation = createFieldValidation({ field, value, context: () => props.context, onError: (reason) => props.onError?.(reason) });
+  const validation = createFieldValidation({
+    field,
+    value,
+    context: () => props.context,
+    onError: (reason) => props.onError?.(reason),
+  });
   const error = () => (props.context as FieldContext).errors?.[field().name] ?? validation.error();
   const description = () => field().description ?? field().help;
   const choices = (): readonly OptionItem[] => {
