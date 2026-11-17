@@ -2,6 +2,10 @@ name: 🔒 Repair npm lockfile
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - package.json
 
 permissions:
   contents: write
@@ -27,11 +31,14 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
+      - name: Use npm 11
+        run: npm install --global npm@11
       - name: Verify branch and synchronize
         shell: bash
         env:
@@ -49,6 +56,7 @@ jobs:
         shell: bash
         env:
           BRANCH: ${{ github.ref_name }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           if git diff --quiet -- package-lock.json; then
@@ -59,5 +67,5 @@ jobs:
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package-lock.json
           git commit -m "fix(deps): regenerate npm lockfile"
-          git push origin "HEAD:$BRANCH"
+          git -c http.extraheader="AUTHORIZATION: basic $(printf "x-access-token:%s" "$APP_TOKEN" | base64 -w0)" push origin "HEAD:$BRANCH"
           echo "Regenerated package-lock.json and pushed to $BRANCH." >> "$GITHUB_STEP_SUMMARY"

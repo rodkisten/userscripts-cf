@@ -68,19 +68,6 @@ jobs:
             git commit -m "test: complete Vitest migration and regenerate npm lockfile"
             git push origin HEAD:test/migrate-to-vitest
           fi
-      # Keep the lockfile synchronized on same-repository PRs. Never push to forks.
-      # A follow-up PR run validates the committed lockfile with a clean npm ci.
-      - name: "🔒 Synchronize npm lockfile"
-        if: steps.fresh.outputs.latest == 'true' && github.event_name == 'pull_request' && github.head_ref != 'test/migrate-to-vitest' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
-            git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "chore: synchronize npm lockfile"
-            git push origin "HEAD:${{ github.head_ref }}"
-          fi
       - name: "📦 Install locked dependencies"
         if: steps.fresh.outputs.latest == 'true' && github.head_ref != 'test/migrate-to-vitest'
         run: npm ci --legacy-peer-deps

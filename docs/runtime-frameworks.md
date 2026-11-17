@@ -8,7 +8,7 @@ Unified/standalone bundles can contain both frameworks. The installer starts a s
 
 ## Pending verification
 
-- Regenerate `package-lock.json` with `npm install --package-lock-only` and run `npm ci`.
-- Configure JSX transforms for React entry modules without applying the Solid JSX compiler to them.
+- The `repair-lockfile.yml` workflow regenerates and verifies the lockfile when `package.json` changes, committing through the GitHub App. The lockfile is not yet synchronized on this branch.
+- React JSX is compiled in `*.react.tsx` and `runtime-context-react.tsx`; Solid JSX retains its existing compiler.
 - Run typecheck, bundle build, and mount/unmount tests for both frameworks.
 - Verify independent framework lifecycles and browser routing before merging.

@@ -5,6 +5,7 @@ import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
 import solid from "@solidjs/vite-plugin";
 import { solidDOMTemplates } from "./build/solid-dom.mjs";
+import { reactJSX } from "./build/react-jsx.mjs";
 
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
@@ -16,9 +17,10 @@ export default defineConfig({
   },
   plugins: [
     runtimeHelpers(),
+    reactJSX(),
     inlineCSSModules(),
     inlineSVG(),
-    solid({ refresh: false }),
+    solid({ refresh: false, include: /^(?!.*(?:\\.react\\.tsx|\\/runtime-context-react\\.tsx)(?:\\?.*)?$).*\\.[jt]sx(?:\\?.*)?$/ }),
     solidDOMTemplates(),
   ],
   css: {

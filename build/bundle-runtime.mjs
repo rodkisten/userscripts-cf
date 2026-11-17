@@ -31,9 +31,9 @@ export async function bundleRuntime(root, definitions, options = {}) {
     );
     return `create_${framework}([${indices.map((index) => entries[index]).join(",")}], scopedBridge, window, ${JSON.stringify(options.release || null)})`;
   });
-  const entryCode = `${imports.join("\\n")}
+  const entryCode = `${imports.join("\n")}
     ${dockImport}
-    ${runtimeImports.join("\\n")}
+    ${runtimeImports.join("\n")}
     export function boot(bridge) {
       const scopedBridge = {call: (method, payload) => bridge.call(method, payload)};
       const runtimes = [${groupedDefinitions.join(",")}];
