@@ -1,5 +1,5 @@
 import type { JSX } from "@solidjs/web";
-import { createSignal, For, onCleanup, createEffect } from "solid-js";
+import { createSignal, For, onCleanup, onSettled } from "solid-js";
 import { clamp, safeCall } from "./core";
 import type { EntrySource, InspectorEntry, InternalRenderContext } from "./types";
 
@@ -129,9 +129,9 @@ export function VirtualList(props: VirtualListProps) {
     return Math.max(estimatedHeight(), Math.ceil(measured));
   };
 
-  createEffect(
-    () => bodyRef,
-    () => {
+  // The DOM ref exists only after mounting. Solid 2 effects are not a
+  // two-argument (source, callback) API and can require an unavailable scheduler.
+  onSettled(() => {
       if (typeof ResizeObserver === "function") {
         rowObserver = new ResizeObserver((entries) => {
           if (!bodyRef) return;
@@ -174,8 +174,7 @@ export function VirtualList(props: VirtualListProps) {
 
       updateViewport(true);
       scheduleUpdate(true);
-    },
-  );
+  });
 
   onCleanup(() => {
     if (rafId !== null) cancelAnimationFrame(rafId);
