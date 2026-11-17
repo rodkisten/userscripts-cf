@@ -3,7 +3,16 @@ import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import { createAsyncOptions } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
 import type { AsyncOptionsConfig } from "../runtime/solid-ui/form-controls/createAsyncOptions.js";
-import { createContext, useContext, useState, useEffect, useRef, useCallback, createElement, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  createElement,
+  type ReactNode,
+} from "react";
 import type { OptionsSource } from "../runtime/solid-ui/form-controls/options.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
@@ -716,7 +725,8 @@ export function createRuntime(
         const listenersSet = new Set<() => void>();
         const getState = () => stateValue;
         const setState = (updater: Partial<T> | ((prev: T) => T)) => {
-          stateValue = typeof updater === "function" ? (updater as any)(stateValue) : { ...stateValue, ...updater };
+          stateValue =
+            typeof updater === "function" ? (updater as any)(stateValue) : { ...stateValue, ...updater };
           listenersSet.forEach((cb) => cb());
         };
         // Opcional: registrar limpezas
@@ -778,11 +788,7 @@ export function createRuntime(
           if (!uiFeature) throw new Error("ctx.ui is not enabled in this bundle");
           let release: () => void;
           try {
-            const scopedComponent = createElement(
-              RuntimeProvider,
-              { context: scriptContext },
-              component
-            );
+            const scopedComponent = createElement(RuntimeProvider, { context: scriptContext }, component);
             release = uiFeature.mountReactShadow(scopedComponent, {
               ...options,
               target: ensureUIRoot(),
@@ -800,7 +806,10 @@ export function createRuntime(
         },
         mountSolid(component: unknown, options: Record<string, unknown> = {}) {
           // Fallback adaptado para retrocompatibilidade caso scripts chamem mountSolid
-          return (this as any).mountReact(typeof component === "function" ? (component as any)() : component, options);
+          return (this as any).mountReact(
+            typeof component === "function" ? (component as any)() : component,
+            options,
+          );
         },
       }),
       style(css: string) {
