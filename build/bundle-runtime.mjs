@@ -19,15 +19,33 @@ export async function bundleRuntime(root, definitions, options = {}) {
        api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
     : "";
   const frameworks = new Set(definitions.map((item) => item.framework || "solid"));
-  if (frameworks.size > 1) throw new Error("Mixed React/Solid definitions require separate runtime bundles");
-  const framework = [...frameworks][0] || "solid";
-  if (!["react", "solid"].includes(framework)) throw new Error(`Unsupported framework: ${framework}`);
-  const runtimeEntry = framework === "react" ? "runtime-react.ts" : "runtime-solid.ts";
-  const entryCode = `${imports.join("\n")}
+  for (const framework of frameworks) {
+    if (!["react", "solid"].includes(framework)) throw new Error(`Unsupported framework: ${framework}`);
+  }
+  const runtimeImports = [...frameworks].map((framework) =>
+    `import {createRuntime as create_${framework}} from ${JSON.stringify(path.join(root, "src/core", `runtime-${framework}.ts`))};`,
+  );
+  const groupedDefinitions = [...frameworks].map((framework) => {
+    const indices = definitions.flatMap((item, index) =>
+      (item.framework || "solid") === framework ? [index] : [],
+    );
+    return `create_${framework}([${indices.map((index) => entries[index]).join(",")}], scopedBridge, window, ${JSON.stringify(options.release || null)})`;
+  });
+  const entryCode = `${imports.join("\\n")}
     ${dockImport}
-    import {createRuntime} from ${JSON.stringify(path.join(root, "src/core", runtimeEntry))};
+    ${runtimeImports.join("\\n")}
     export function boot(bridge) {
-      const api = createRuntime([${entries.join(",")}], bridge, window, ${JSON.stringify(options.release || null)});
+      const scopedBridge = {call: (method, payload) => bridge.call(method, payload)};
+      const runtimes = [${groupedDefinitions.join(",")}];
+      const api = {
+        ready: Promise.all(runtimes.map((runtime) => runtime.ready)).then(() => undefined),
+        navigate: async () => { await Promise.all(runtimes.map((runtime) => runtime.navigate())); },
+        get active() { return runtimes.flatMap((runtime) => runtime.active); },
+        dispose: async () => {
+          try { await Promise.all(runtimes.map((runtime) => runtime.dispose())); }
+          finally { bridge.dispose?.(); }
+        },
+      };
       ${dockBoot}
       return api;
     }

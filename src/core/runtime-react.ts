@@ -1,6 +1,6 @@
 import { createElement, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
-import { RuntimeProvider } from "./runtime-context-react.js";
+import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 
@@ -12,7 +12,23 @@ export function createRuntime(
   host: Window & typeof globalThis = window,
   release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
+  const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
   return createCoreRuntime(definitions, bridge, host, release, {
+    installHelpers: () => {
+      const installed: string[] = [];
+      for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
+        if (name in host) continue;
+        Object.defineProperty(host, name, { configurable: true, writable: false, value: helpers[name] });
+        installed.push(name);
+      }
+      return installed;
+    },
+    removeHelpers: (installed) => {
+      for (const name of installed) {
+        if ((host as unknown as Record<string, unknown>)[name] === helpers[name as keyof typeof helpers])
+          delete (host as unknown as Record<string, unknown>)[name];
+      }
+    },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot }) => {
       let scriptContext: import("./runtime.js").ScriptContext | undefined;
       return {
