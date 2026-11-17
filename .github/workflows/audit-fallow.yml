@@ -1,5 +1,5 @@
-name: "🔧 Audit codebase with fallow"
-run-name: "🔧 Fallow · audit · ${{ github.ref_name }}"
+name: "🔧 Fallow · full repository"
+run-name: "🔧 Fallow · full repository · ${{ github.ref_name }}"
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  full-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -23,7 +23,25 @@ jobs:
           cache: npm
       - name: Install project dependencies
         run: npm ci --no-audit --no-fund
-      - name: Audit complete checkout with Fallow
-        uses: fallow-rs/fallow@v3
+      - name: Analyze entire repository (not PR diff)
+        id: fallow
+        shell: bash
+        run: |
+          mkdir -p fallow-reports
+          set +e
+          npx --yes fallow --format json --no-cache > fallow-reports/full-repository.json
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -eq 2 ] || [ "$status" -gt 2 ]; then
+            echo "::error::Fallow failed to execute (exit code $status)"
+            exit "$status"
+          fi
+          echo "Fallow finished full-repository scan (exit code $status)"
+      - name: Upload complete Fallow report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          command: audit
+          name: fallow-full-repository-${{ github.run_id }}
+          path: fallow-reports/full-repository.json
+          if-no-files-found: error
