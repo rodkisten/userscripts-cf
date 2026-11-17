@@ -8,6 +8,7 @@ import baseViteConfig from "../vite.config.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
+const isPreview = process.env.USERSCRIPTS_PREVIEW === "1";
 execFileSync(process.execPath, [path.join(root, "build/design-system.mjs")], { cwd: root, stdio: "inherit" });
 const assets = { "index.html": await fs.readFile(path.join(root, "hosting/index.html"), "utf8") };
 assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design-system.html"), "utf8");
@@ -81,6 +82,11 @@ assets["playground/form-controls.css"] = await fs
     console.log("Form controls CSS is inlined; no standalone stylesheet emitted.");
     return "";
   });
+if (isPreview) {
+  const preview = JSON.parse(await fs.readFile(path.join(dist, "preview-manifest.json"), "utf8"));
+  assets["preview/manifest.json"] = JSON.stringify(preview);
+  assets["preview/index.html"] = assets["index.html"].replaceAll("/manifest.json", "/preview/manifest.json").replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
+}
 for (const file of await fs.readdir(dist)) {
   if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|SHA256SUMS)$/.test(file)) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");

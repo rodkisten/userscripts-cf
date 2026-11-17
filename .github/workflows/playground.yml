@@ -38,7 +38,11 @@ jobs:
       # No lint, typecheck, unit tests, version bump or GitHub release.
       - name: Build assets
         run: npm run build
+      - name: Prepare preview installers
+        run: node build/preview-userscripts.mjs
       - name: Bundle playground and hosting
+        env:
+          USERSCRIPTS_PREVIEW: "1"
         run: node build/hosting.mjs
       - name: Deploy Cloudflare Worker
         env:
