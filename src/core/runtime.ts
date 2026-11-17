@@ -21,6 +21,15 @@ import { createToasterFeature } from "../runtime/modular/features/toaster.js";
 import { createStorageFeature } from "../runtime/modular/features/storage.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
 
+// Importações dos utilitários de CSS do arquivo css.js
+import {
+  installCoreStyles,
+  applyComponentStyle,
+  clearComponentStyle,
+  setCssProperty,
+  setCssProperties,
+} from "./css.js";
+
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
@@ -152,6 +161,22 @@ export interface ScriptContext {
   };
   style(css: string): HTMLStyleElement;
   pageStyle(css: string): HTMLStyleElement;
+  css: {
+    installCoreStyles(root: Document | ShadowRoot | Element): void;
+    applyComponentStyle(element: HTMLElement | Element, className: string, append?: boolean): void;
+    clearComponentStyle(element: HTMLElement | Element): void;
+    setCssProperty<K extends keyof CSSStyleDeclaration>(
+      element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
+      property: K,
+      value: CSSStyleDeclaration[K] | string,
+      options?: { important?: boolean },
+    ): void;
+    setCssProperties(
+      element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
+      styles: Partial<Record<keyof CSSStyleDeclaration, string | number>>,
+      options?: { important?: boolean },
+    ): void;
+  };
   dispose(): Promise<void>;
 }
 
@@ -506,14 +531,19 @@ export function createRuntime(
 
       uiHost = host.document.createElement("div");
       uiHost.dataset[DATASET_UI_ATTR] = definition.id;
-      uiHost.style.setProperty("all", "initial");
-      uiHost.style.setProperty("position", "fixed", "important");
-      uiHost.style.setProperty("inset", "0", "important");
-      uiHost.style.setProperty("width", "0", "important");
-      uiHost.style.setProperty("height", "0", "important");
-      uiHost.style.setProperty("z-index", Z_INDEX_MAX, "important");
-      uiHost.style.setProperty("pointer-events", "none", "important");
-      uiHost.style.setProperty("visibility", "visible", "important");
+      
+      // Aplicando estilos via utilitários tipados exportados de css.js
+      setCssProperties(uiHost, {
+        all: "initial",
+        position: "fixed",
+        inset: "0",
+        width: "0",
+        height: "0",
+        zIndex: Z_INDEX_MAX,
+        pointerEvents: "none",
+        visibility: "visible",
+      }, { important: true });
+
       uiRoot = uiHost.attachShadow({ mode: "open" });
       parent.append(uiHost);
 
@@ -525,9 +555,9 @@ export function createRuntime(
       return uiRoot;
     }
 
-    function addStyle(css: string, target: ParentNode): HTMLStyleElement {
+    function addStyle(cssContent: string, target: ParentNode): HTMLStyleElement {
       const node = host.document.createElement("style");
-      node.textContent = String(css);
+      node.textContent = String(cssContent);
       target.append(node);
       onDispose(() => node.remove());
       return node;
@@ -769,6 +799,13 @@ export function createRuntime(
       pageStyle(css: string) {
         return addStyle(css, host.document.head || host.document.documentElement);
       },
+      css: Object.freeze({
+        installCoreStyles,
+        applyComponentStyle,
+        clearComponentStyle,
+        setCssProperty,
+        setCssProperties,
+      }),
       async dispose() {
         abort.abort();
         for (const cleanup of cleanups.reverse()) {
