@@ -110,3 +110,7 @@ The RodX entrypoint now uses `ctx.listen` for DOM readiness and releases its glo
 ### GitHub Tools preferences migration
 
 GitHub Tools now hydrates preferences via `ctx.storage.get`, migrates a pre-existing Tampermonkey `GM_getValue` entry once through `ctx.gm.legacy`, and saves using `ctx.storage.set`. The UI starts from safe defaults, then refreshes after asynchronous hydration. User edits made during hydration win over the delayed read. Legacy data is left intact for rollback; no direct `localStorage` calls remain in this module. This does not migrate a historical page-localStorage-only fallback: that requires a dedicated, explicitly scoped legacy import at the runtime boundary.
+
+### RodX core runtime lifecycle
+
+RodX's core runtime now reads its owning `ScriptContext` from `Studio.ctx` at `start()`, uses `ctx.observe` for the page DOM, `ctx.listen` for SPA navigation and visibility events, and `ctx.interval` for the watchdog and maintenance timers. Disposal clears pending debounce timers and invalidation caches. Startup without an attached context is delayed instead of installing unmanaged native resources. This does **not** yet migrate synchronous RodX configuration persistence or its page-world storage bridge.

@@ -1,3 +1,4 @@
+import type { ScriptContext } from "../../../core/runtime.js";
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { XDOM } from "../platform/selectors.js";
@@ -82,6 +83,7 @@ export interface StudioRuntime {
   configure(patch: Partial<StudioConfig>): void;
   diagnostics(): DiagnosticInfo;
   services: Record<string, unknown>;
+  ctx?: ScriptContext;
 }
 
 // ============================================================================
@@ -344,7 +346,13 @@ export function createStudioRuntime(): StudioRuntime {
     if (started || !document.body) return;
     started = true;
 
-    new MutationObserver((records) => {
+    const context = runtime.ctx;
+    if (!context) {
+      started = false;
+      console.warn('[RodX] ScriptContext unavailable; delaying runtime startup');
+      return;
+    }
+    context.observe(document.body, (records) => {
       if (
         !records.some(
           (r) =>
@@ -364,7 +372,7 @@ export function createStudioRuntime(): StudioRuntime {
           invalidate("dom");
         }, config.scanDelayMs);
       }
-    }).observe(document.body, {
+    }, {
       childList: true,
       subtree: true,
       characterData: true,
@@ -381,14 +389,14 @@ export function createStudioRuntime(): StudioRuntime {
       invalidate("route");
     };
 
-    document.addEventListener("rodx:route", route);
-    window.addEventListener("popstate", route);
-    window.addEventListener("pageshow", () => {
+    context.listen(document, "rodx:route", route);
+    context.listen(window, "popstate", route);
+    context.listen(window, "pageshow", () => {
       route();
       invalidate("dom");
     });
 
-    document.addEventListener("visibilitychange", () => {
+    context.listen(document, "visibilitychange", () => {
       if (!document.hidden) {
         route();
         invalidate("dom");
@@ -397,7 +405,7 @@ export function createStudioRuntime(): StudioRuntime {
     });
 
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
-    setInterval(() => {
+    context.interval(() => {
       if (!document.hidden) route();
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
@@ -409,6 +417,15 @@ export function createStudioRuntime(): StudioRuntime {
       if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
     }, 500);
 
+    context.onDispose(() => {
+      started = false;
+      window.clearTimeout(domTimer);
+      window.clearTimeout(drainTimer);
+      domTimer = 0;
+      drainTimer = 0;
+      pending.clear();
+      cache.clear();
+    });
     invalidate("dom");
   }
 
@@ -444,7 +461,7 @@ export function createStudioRuntime(): StudioRuntime {
     domGeneration: generation,
   });
 
-  return {
+  const runtime: StudioRuntime = {
     state,
     config,
     on,
@@ -462,4 +479,5 @@ export function createStudioRuntime(): StudioRuntime {
     diagnostics,
     services: {},
   };
+  return runtime;
 }
