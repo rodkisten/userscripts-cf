@@ -24,6 +24,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
+  const error = () => (props.context as FieldContext).errors?.[field().name];
+  const description = () => field().description ?? field().help;
   const choices = (): readonly OptionItem[] => {
     const current = field();
     return "options" in current ? current.options : [];
@@ -55,6 +57,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={["text", "email", "password", "search", "url", "tel"].includes(kind())}>
         <Input
+          error={error()}
+          description={description()}
           id={id()}
           name={field().name}
           type={kind() as "text" | "email" | "password" | "search" | "url" | "tel"}
@@ -75,6 +79,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={kind() === "number"}>
         <NumberInput
+          error={error()}
+          description={description()}
           id={id()}
           name={field().name}
           value={value() === "" || value() == null ? "" : Number(value())}
@@ -90,6 +96,8 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={kind() === "textarea"}>
         <Textarea
+          error={error()}
+          description={description()}
           id={id()}
           name={field().name}
           value={stringValue()}
@@ -348,7 +356,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             : null;
         })()}
       </Show>
-      <Show when={field().description}>
+      <Show when={field().description && !["text", "email", "password", "search", "url", "tel", "number", "textarea"].includes(kind())}>
         <small>{field().description}</small>
       </Show>
     </div>

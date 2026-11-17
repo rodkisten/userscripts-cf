@@ -30,6 +30,10 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
   const controlId = () => props.controlId;
   const isDisabled = () => props.disabled;
   const commit = props.commit;
+  const fieldError = () => {
+    const context = props.context as RodMenuContext & { errors?: Readonly<Record<string, string>> };
+    return context.errors?.[props.field.name];
+  };
   return (
     <Switch fallback={null}>
       <Match when={["text", "email", "password", "search", "url", "tel"].includes(props.field.type)}>
@@ -37,6 +41,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const f = props.field as TextLikeField;
           return (
             <Input
+              error={fieldError()}
               id={controlId()}
               name={f.name}
               type={f.type}
@@ -62,6 +67,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const f = props.field as Extract<RodMenuField, { type: "number" }>;
           return (
             <NumberInput
+              error={fieldError()}
               id={controlId()}
               name={f.name}
               value={fieldValue() === "" || fieldValue() == null ? "" : Number(fieldValue())}
@@ -82,6 +88,7 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const f = props.field as Extract<RodMenuField, { type: "textarea" }>;
           return (
             <Textarea
+              error={fieldError()}
               id={controlId()}
               name={f.name}
               value={String(fieldValue() ?? "")}

@@ -76,6 +76,7 @@ function App() {
   const [textareaDemo, setTextareaDemo] = createSignal("");
   const [numberDemo, setNumberDemo] = createSignal<number | "">(5);
   const [showErrors, setShowErrors] = createSignal(false);
+  const [contextError, setContextError] = createSignal(false);
   const [feedbackState, setFeedbackState] = createSignal<"default" | "warning" | "success">("default");
   const [basicSelect, setBasicSelect] = createSignal("first");
   const [basicCheckbox, setBasicCheckbox] = createSignal(true);
@@ -107,6 +108,7 @@ function App() {
     }) as unknown as FormField;
   const exampleContext = {
     values: { demo: variantValue() },
+    get errors() { return contextError() ? { demo: "Erro de validação vindo do contexto do formulário." } : {}; },
     set: (_name: string, next: unknown) => setVariantValue(next),
   };
   const [selected, setSelected] = createSignal<string[]>(["filter:videos"]);
@@ -286,6 +288,20 @@ function App() {
               2,
             )}
           </pre>
+        </section>
+        <section class="card wide" id="context-validation">
+          <h2>Validação pelo contexto</h2>
+          <p>O StandaloneFieldRenderer recebe o erro pelo contexto, sem duplicar a lógica no Input.</p>
+          <label class="toggle">
+            <input type="checkbox" checked={contextError()} onChange={(event) => setContextError(event.currentTarget.checked)} />
+            Simular erro no contexto
+          </label>
+          <StandaloneFieldRenderer
+            field={{ type: "text", name: "demo", label: "Campo com validação", description: "Descrição fornecida pelo schema" }}
+            context={exampleContext}
+            value={variantValue()}
+            onChange={setVariantValue}
+          />
         </section>
         <section class="card wide" id="basic-controls">
           <h2>Controles básicos · Componentes reais</h2>
