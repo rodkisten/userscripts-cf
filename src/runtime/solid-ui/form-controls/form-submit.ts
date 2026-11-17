@@ -14,7 +14,15 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
   const [validating, setValidating] = createSignal(false);
   const [touched, setTouched] = createSignal<Record<string, boolean>>({});
   const [dirty, setDirty] = createSignal<Record<string, boolean>>({});
-  const markChanged = (name: string) => { ++revision; setDirty((current) => ({ ...current, [name]: true })); setErrors((current) => { const next = { ...current }; delete next[name]; return next; }); };
+  const markChanged = (name: string) => {
+    ++revision;
+    setDirty((current) => ({ ...current, [name]: true }));
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[name];
+      return next;
+    });
+  };
   const markBlurred = (name: string) => setTouched((current) => ({ ...current, [name]: true }));
   const [submitted, setSubmitted] = createSignal(false);
   let revision = 0;
@@ -53,7 +61,10 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
         }
       }),
     );
-    if (current !== revision || !matchesSnapshot(values, options.values())) { if (current === revision) setValidating(false); return false; }
+    if (current !== revision || !matchesSnapshot(values, options.values())) {
+      if (current === revision) setValidating(false);
+      return false;
+    }
     setValidating(false);
     const next: Record<string, string> = {};
     for (const [name, message] of results) if (message) next[name] = message;
@@ -81,5 +92,16 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
       setSubmitting(false);
     }
   };
-  return { errors, submitting, submitted, validating, touched, dirty, markChanged, markBlurred, validate, submit };
+  return {
+    errors,
+    submitting,
+    submitted,
+    validating,
+    touched,
+    dirty,
+    markChanged,
+    markBlurred,
+    validate,
+    submit,
+  };
 }

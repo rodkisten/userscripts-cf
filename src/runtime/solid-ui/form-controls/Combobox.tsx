@@ -238,7 +238,9 @@ export function Combobox(props: ComboboxProps) {
           role="listbox"
           aria-multiselectable={props.multiple ? "true" : "false"}
           class={styles.list}
-          onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); }}
+          onScroll={(event) => {
+            setScrollTop(event.currentTarget.scrollTop);
+          }}
         >
           <Show
             when={!loading()}

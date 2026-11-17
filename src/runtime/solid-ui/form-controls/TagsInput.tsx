@@ -75,9 +75,15 @@ export function TagsInput(props: TagsInputProps) {
           readonly={props.readonly}
           placeholder={props.placeholder ?? "Adicionar tag…"}
           value={query()}
-          onInput={(event) => { setQuery(event.currentTarget.value); }}
-          onFocus={() => { setFocused(true); }}
-          onBlur={() => { setFocused(false); }}
+          onInput={(event) => {
+            setQuery(event.currentTarget.value);
+          }}
+          onFocus={() => {
+            setFocused(true);
+          }}
+          onBlur={() => {
+            setFocused(false);
+          }}
           onKeyDown={onKeyDown}
         />
       </div>
