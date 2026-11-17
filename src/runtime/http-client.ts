@@ -135,7 +135,10 @@ export function createHttpClient({
               options.method?.toUpperCase() === "HEAD" || status === 204 || status === 205 || status === 304
                 ? null
                 : response.response;
-            finish((result: Response) => resolve(result), new Response(body, { status, statusText: response.statusText, headers }));
+            finish(
+              (result: Response) => resolve(result),
+              new Response(body, { status, statusText: response.statusText, headers }),
+            );
           },
           onerror: () => finish(reject, new TypeError("GM request failed")),
           ontimeout: () => finish(reject, new DOMException("Request timed out", "TimeoutError")),
