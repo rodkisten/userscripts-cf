@@ -53,13 +53,8 @@ function appendStyleToTarget(
   doc: Document,
   sheet: HTMLStyleElement,
 ): void {
-  if (target.nodeType === DOCUMENT_NODE_TYPE || target.nodeType === SHADOW_ROOT_NODE_TYPE) {
-    const headContainer = (target as Document | ShadowRoot).querySelector(HEAD_TAG);
-    if (headContainer) {
-      headContainer.append(sheet);
-    } else {
-      doc.head.append(sheet);
-    }
+  if (target.nodeType === DOCUMENT_NODE_TYPE) {
+    (doc.head || doc.documentElement).append(sheet);
   } else {
     (target as Element | ShadowRoot).append(sheet);
   }
