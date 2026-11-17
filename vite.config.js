@@ -9,6 +9,11 @@ import { solidDOMTemplates } from "./build/solid-dom.mjs";
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
   publicDir: false,
+  // TanStack Virtual checks process.env.NODE_ENV at runtime. Browser bundles
+  // must not depend on Node's global process object.
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   plugins: [
     runtimeHelpers(),
     inlineCSSModules(),
