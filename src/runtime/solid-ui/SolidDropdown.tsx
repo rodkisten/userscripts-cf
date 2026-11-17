@@ -15,7 +15,7 @@ export function openSolidDropdown(options: DropdownOptions) {
   const root = trigger.getRootNode();
   const parent = root instanceof ShadowRoot ? root : trigger.ownerDocument.body;
   const mount = trigger.ownerDocument.createElement("div");
-  mount.style.cssText = "position:fixed;z-index:2147483647;max-width:calc(100vw - 16px)";
+  mount.style.cssText = "position:fixed;z-index:2147483647;max-width:calc(100vw - 24px)";
   parent.append(mount);
   const previous = trigger.getAttribute("aria-expanded");
   trigger.setAttribute("aria-expanded", "true");
@@ -56,17 +56,17 @@ export function openSolidDropdown(options: DropdownOptions) {
         aria-label="Opções"
         data-rod-dropdown={options.id ?? "menu"}
         style={{
-          "min-width": "220px",
-          "max-width": "340px",
+          "min-width": "180px",
+          "max-width": "min(300px, calc(100vw - 24px))",
           "max-height": "70dvh",
           "overflow-y": "auto",
-          padding: "6px",
-          background: "#202b3d",
-          color: "#edf2fb",
-          border: "1px solid #435067",
-          "border-radius": "12px",
-          "box-shadow": "0 12px 32px #0009",
-          font: "14px system-ui",
+          padding: "5px",
+          background: "var(--rod-menu-bg, #18181b)",
+          color: "var(--rod-menu-fg, #fafafa)",
+          border: "1px solid var(--rod-menu-border, #3f3f46)",
+          "border-radius": "9px",
+          "box-shadow": "0 10px 30px #0007",
+          font: "13px system-ui",
         }}
       >
         <For each={stack().length > 1 ? [true] : []}>
@@ -188,11 +188,11 @@ export function openSolidDropdown(options: DropdownOptions) {
 const buttonStyle = {
   display: "block",
   width: "100%",
-  "min-height": "40px",
+  "min-height": "36px",
   "text-align": "left",
-  padding: "9px 12px",
+  padding: "7px 10px",
   border: "0",
-  "border-radius": "7px",
+  "border-radius": "6px",
   background: "transparent",
   color: "inherit",
   font: "inherit",

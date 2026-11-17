@@ -115,3 +115,7 @@ Button variants now expose `--button-on-accent`, `--button-secondary-bg`, `--but
 ## Studio theme editor
 
 The Button gallery now includes light/dark preview selection and live color pickers for secondary background, secondary foreground and focus ring. Preview applies the same custom properties as the Button component; **Copiar CSS** exports these theme tokens alongside size, radius and accent. Changing the theme updates the default color values, while manual color edits remain possible. Verify build and Safari rendering on the latest commit.
+
+## Visual reset: shadcn-inspired density
+
+After mobile screenshots revealed oversized native controls, unbalanced dropdown surfaces and overly prominent badges, the Studio uses compact consistent select/input/color/range sizing, a restrained zinc surface palette, tighter cards and mobile spacing. Button defaults are 36px/8px with neutral count pills, and SolidDropdown uses a smaller zinc popover with CSS theme hooks (`--rod-menu-bg`, `--rod-menu-fg`, `--rod-menu-border`). This is a first corrective pass, not a claim of full shadcn parity. Build and Safari screenshot comparison are required.
