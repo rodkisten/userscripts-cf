@@ -85,11 +85,11 @@ jobs:
           import ts from 'typescript';
           import fs from 'node:fs';
           import { execFileSync } from 'node:child_process';
-          const files = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACM', '--', '*.ts', '*.tsx'], {encoding:'utf8'}).trim().split('\\n').filter(Boolean);
+          const files = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACM', '--', '*.ts', '*.tsx'], {encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
           for (const file of files) {
             const source = ts.createSourceFile(file, fs.readFileSync(file,'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
             if (source.parseDiagnostics.length) {
-              console.error(ts.formatDiagnosticsWithColorAndContext(source.parseDiagnostics, {getCurrentDirectory:process.cwd,getCanonicalFileName:x=>x,getNewLine:()=> '\\n'}));
+              console.error(ts.formatDiagnosticsWithColorAndContext(source.parseDiagnostics, {getCurrentDirectory:process.cwd,getCanonicalFileName:x=>x,getNewLine:()=> String.fromCharCode(10)}));
               process.exitCode = 1;
             }
           }
