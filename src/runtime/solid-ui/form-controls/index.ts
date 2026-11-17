@@ -72,4 +72,5 @@ export type { SelectProps, BooleanControlProps, SliderProps, ColorPickerProps } 
 
 export { Input, Textarea, NumberInput } from "./TextControls";
 export type { TextControlProps, NumberInputProps } from "./TextControls";
-\nexport { createFormSubmit } from "./form-submit";
+
+export { createFormSubmit } from "./form-submit";

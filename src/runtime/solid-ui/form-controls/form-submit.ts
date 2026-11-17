@@ -13,9 +13,11 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
   const [submitting, setSubmitting] = createSignal(false);
   const [submitted, setSubmitted] = createSignal(false);
   let revision = 0;
+  let submittedSnapshot: TValues | undefined;
   const validate = async () => {
     const current = ++revision;
     const values = options.values();
+    submittedSnapshot = values;
     const context: FieldContext<TValues> = { values };
     const fields = options.fields().filter((field) => !field.disabled && !field.hidden && field.type !== "button" && field.type !== "divider");
     const results = await Promise.all(fields.map(async (field) => {
@@ -30,7 +32,7 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
         return [field.name, "Não foi possível validar este campo."] as const;
       }
     }));
-    if (current !== revision) return false;
+    if (current !== revision || options.values() !== values && JSON.stringify(options.values()) !== JSON.stringify(values)) return false;
     const next: Record<string, string> = {};
     for (const [name, message] of results) if (message) next[name] = message;
     setErrors(next);
@@ -46,7 +48,8 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
     setSubmitting(true);
     try {
       if (!(await validate())) return false;
-      await options.onSubmit(options.values());
+      if (!submittedSnapshot) return false;
+      await options.onSubmit(submittedSnapshot);
       return true;
     } catch (reason) {
       options.onError?.(reason);
