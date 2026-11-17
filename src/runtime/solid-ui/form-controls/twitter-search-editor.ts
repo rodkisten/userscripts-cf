@@ -298,22 +298,51 @@ function showTokenMenu(
     close();
     view.focus();
   };
+  const groups = current.startsWith("list:")
+    ? [{ label: "Listas", items: lists.map((item) => ["list:" + item.id, item.name]) }]
+    : filterGroups;
+  let activeGroup: string | null = null;
+  const focusItem = (direction: number) => {
+    const items = [...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')];
+    if (!items.length) return;
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    items[(index + direction + items.length) % items.length]?.focus();
+  };
   const render = () => {
     results.replaceChildren();
     const query = search.value.toLocaleLowerCase();
-    const groups = current.startsWith("list:")
-      ? [{ label: "Listas", items: lists.map((item) => ["list:" + item.id, item.name]) }]
-      : filterGroups;
-    for (const group of groups) {
-      const matching = group.items.filter(
-        ([value, label]) => value.toLowerCase().includes(query) || label.toLowerCase().includes(query),
-      );
-      if (!matching.length) continue;
+    const visibleGroups = groups.map((group) => ({
+      ...group,
+      items: group.items.filter(([value, label]) =>
+        value.toLowerCase().includes(query) || label.toLowerCase().includes(query)),
+    })).filter((group) => group.items.length);
+    if (activeGroup && !visibleGroups.some((group) => group.label === activeGroup)) activeGroup = null;
+    if (activeGroup) {
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "twitter-token-menu-item";
+      back.textContent = "‹  Voltar aos grupos";
+      back.addEventListener("click", () => { activeGroup = null; render(); search.focus(); });
+      results.append(back);
+    }
+    for (const group of visibleGroups) {
+      if (!activeGroup && !query) {
+        const folder = document.createElement("button");
+        folder.type = "button";
+        folder.className = "twitter-token-menu-item";
+        folder.setAttribute("role", "menuitem");
+        folder.setAttribute("aria-haspopup", "menu");
+        folder.textContent = group.label + "  ›";
+        folder.addEventListener("click", () => { activeGroup = group.label; render(); focusItem(1); });
+        results.append(folder);
+        continue;
+      }
+      if (activeGroup && activeGroup !== group.label) continue;
       const heading = document.createElement("div");
       heading.className = "twitter-token-menu-label";
       heading.textContent = group.label;
       results.append(heading);
-      for (const [value, label] of matching) {
+      for (const [value, label] of group.items) {
         const option = document.createElement("button");
         option.type = "button";
         option.className = "twitter-token-menu-item";
@@ -328,9 +357,6 @@ function showTokenMenu(
         option.addEventListener("click", () => choose(value));
         results.append(option);
       }
-      const separator = document.createElement("div");
-      separator.className = "twitter-token-menu-separator";
-      results.append(separator);
     }
     if (!results.children.length) {
       const empty = document.createElement("div");
@@ -340,14 +366,31 @@ function showTokenMenu(
     }
     position();
   };
-  search.addEventListener("input", render);
+  search.addEventListener("input", () => { activeGroup = null; render(); });
+  panel.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" && event.target !== search) {
+      event.preventDefault(); focusItem(1);
+    } else if (event.key === "ArrowUp" && event.target !== search) {
+      event.preventDefault(); focusItem(-1);
+    } else if (event.key === "ArrowRight" && document.activeElement?.getAttribute("aria-haspopup") === "menu") {
+      event.preventDefault(); (document.activeElement as HTMLButtonElement).click();
+    } else if (event.key === "ArrowLeft" && activeGroup) {
+      event.preventDefault(); activeGroup = null; render(); search.focus();
+    } else if (event.key === "Enter" && event.target !== search) {
+      event.preventDefault(); (document.activeElement as HTMLButtonElement).click();
+    } else if (event.key === "Home" && event.target !== search) {
+      event.preventDefault(); results.querySelector<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')?.focus();
+    } else if (event.key === "End" && event.target !== search) {
+      event.preventDefault(); [...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')].at(-1)?.focus();
+    }
+  });
   search.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      const first = results.querySelector<HTMLButtonElement>('[role="menuitemradio"]');
-      if (first) {
-        event.preventDefault();
-        first.click();
-      }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusItem(1);
+    } else if (event.key === "Enter") {
+      const first = results.querySelector<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]');
+      if (first) { event.preventDefault(); first.click(); }
     }
   });
   render();
