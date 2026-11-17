@@ -78,13 +78,13 @@ export function Input(
         value={props.value}
         placeholder={props.placeholder}
         disabled={props.disabled}
-        readOnly={props.readonly}
+        readonly={props.readonly}
         required={props.required}
         minLength={props.minLength}
         maxLength={props.maxLength}
         pattern={props.pattern}
         autocomplete={props.autocomplete}
-        inputMode={props.inputMode}
+        inputmode={props.inputMode}
         spellcheck={props.spellcheck}
         autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
@@ -125,7 +125,7 @@ export function Textarea(
         style={{ resize: props.resize ?? "vertical" }}
         placeholder={props.placeholder}
         disabled={props.disabled}
-        readOnly={props.readonly}
+        readonly={props.readonly}
         required={props.required}
         minLength={props.minLength}
         maxLength={props.maxLength}
@@ -172,7 +172,7 @@ export function NumberInput(props: NumberInputProps) {
         name={props.name}
         class={styles.textInput}
         type="number"
-        inputMode={props.inputMode ?? "decimal"}
+        inputmode={props.inputMode ?? "decimal"}
         autofocus={props.autoFocus}
         value={props.value}
         min={props.min}
@@ -180,7 +180,7 @@ export function NumberInput(props: NumberInputProps) {
         step={props.step}
         placeholder={props.placeholder}
         disabled={props.disabled}
-        readOnly={props.readonly}
+        readonly={props.readonly}
         required={props.required}
         aria-invalid={props.error ? "true" : undefined}
         data-state={props.error ? "error" : props.warning ? "warning" : props.success ? "success" : "default"}

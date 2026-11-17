@@ -34,6 +34,12 @@ export function ToastItem(props: {
 
   const rec = () => props.entry.record;
   const opts = () => rec().options;
+  const errorDetails = () => {
+    const error = opts().error;
+    if (error instanceof Error) return error.stack ?? error.message;
+    const details = opts().details;
+    return typeof details === "string" ? details : JSON.stringify(details ?? error, null, 2);
+  };
 
   const iconName = (): SvgIconName => {
     const ic = opts().icon;
@@ -169,11 +175,7 @@ export function ToastItem(props: {
           <details class={styles.detailsBox}>
             <summary class={styles.detailsSummary}>{opts().detailsLabel ?? "Details"}</summary>
             <pre class={styles.detailsPre}>
-              {opts().error instanceof Error
-                ? (opts().error.stack ?? opts().error.message)
-                : typeof opts().details === "string"
-                  ? opts().details
-                  : JSON.stringify(opts().details ?? opts().error, null, 2)}
+              {errorDetails()}
             </pre>
           </details>
         </Show>
