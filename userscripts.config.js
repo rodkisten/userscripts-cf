@@ -1,6 +1,14 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "tiktok-cleaner",
+    name: "TikTok Safari Cleaner",
+    entry: "src/userscripts/tiktok-cleaner/index.js",
+    matches: ["https://www.tiktok.com/*", "https://m.tiktok.com/*"],
+    grants: [],
+    tags: ["tiktok", "mobile", "adblock"],
+  },
+  {
     id: "dom-inspector",
     name: "Rod DOM Inspector",
     entry: "src/userscripts/dom-inspector/index.tsx",
