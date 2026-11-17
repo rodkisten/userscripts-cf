@@ -248,6 +248,7 @@ export function createCoreRuntime(
     createSpecificContext: (params: {
       definition: ScriptDefinition;
       abort: AbortController;
+      getContext: () => any;
       onDispose: (cb: () => void | Promise<void>) => void;
       ensureUIRoot: () => ShadowRoot;
       addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
@@ -524,11 +525,14 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
+    let resolvedContext: any;
+    const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
       ? options.createSpecificContext({
           definition,
           abort,
           onDispose,
+          getContext,
           ensureUIRoot,
           addStyle,
           storage,
@@ -683,7 +687,8 @@ export function createCoreRuntime(
       },
     };
 
-    return Object.assign(baseContext, specificContext);
+    resolvedContext = Object.assign(baseContext, specificContext);
+    return resolvedContext;
   }
 
   async function reconcile(): Promise<void> {

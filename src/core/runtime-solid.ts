@@ -39,7 +39,7 @@ export function createRuntime(
           delete (host as unknown as Record<string, unknown>)[name];
       }
     },
-    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, queryService }) => {
+    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, queryService, getContext }) => {
       const solidQueryService = Object.freeze({
         ...queryService,
         createAsyncOptions(
@@ -90,7 +90,7 @@ export function createRuntime(
             try {
               const scopedComponent = () =>
                 createComponent(RuntimeProvider, {
-                  context: specificContextRef, // Referência injetada ou adaptada
+                  context: getContext(),
                   get children() {
                     return typeof component === "function" ? (component as () => unknown)() : component;
                   },
@@ -116,6 +116,4 @@ export function createRuntime(
     },
   });
 
-  // Variável de apoio para fechamento de escopo se necessário
-  let specificContextRef: any = null;
 }
