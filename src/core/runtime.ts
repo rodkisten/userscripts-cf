@@ -492,10 +492,14 @@ export function createRuntime(
           onDiagnostic: () => console.warn(LOG_TAG_EVENTS, "Event bus diagnostic"),
         });
         sharedEvents = createSharedEvents({ host });
-        abort.signal.addEventListener("abort", () => {
-          eventBus?.dispose();
-          sharedEvents?.dispose();
-        }, { once: true });
+        abort.signal.addEventListener(
+          "abort",
+          () => {
+            eventBus?.dispose();
+            sharedEvents?.dispose();
+          },
+          { once: true },
+        );
         domEventsEngine = createDomEventsEngine(definition.id, host);
         eventsValue = Object.freeze({ ...eventBus, shared: sharedEvents, dom: domEventsEngine });
       }
