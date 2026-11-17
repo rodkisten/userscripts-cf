@@ -32,7 +32,9 @@ class TokenWidget extends WidgetType {
     const label = document.createElement("button");
     label.type = "button";
     label.className = "twitter-cm-pill-trigger";
-    label.textContent = isList ? (this.lists.find((list) => list.id === this.value.slice(5))?.name || this.value) : this.value;
+    label.textContent = isList
+      ? this.lists.find((list) => list.id === this.value.slice(5))?.name || this.value
+      : this.value;
     if (isList || isFilter) {
       label.setAttribute("aria-haspopup", "menu");
       label.setAttribute("aria-expanded", "false");
@@ -146,30 +148,76 @@ function computeDecorations(source: string, lists: readonly TwitterList[]) {
 }
 
 const filterGroups = [
-  { label: "Mídia", items: [["filter:images", "Imagens"], ["filter:videos", "Vídeos"], ["filter:native_video", "Vídeo nativo"]] },
-  { label: "Conteúdo", items: [["filter:links", "Links"], ["filter:replies", "Respostas"], ["-filter:replies", "Sem respostas"], ["filter:media", "Qualquer mídia"]] },
-  { label: "Idioma", items: [["lang:pt", "Português"], ["lang:en", "Inglês"], ["lang:es", "Espanhol"]] },
+  {
+    label: "Mídia",
+    items: [
+      ["filter:images", "Imagens"],
+      ["filter:videos", "Vídeos"],
+      ["filter:native_video", "Vídeo nativo"],
+    ],
+  },
+  {
+    label: "Conteúdo",
+    items: [
+      ["filter:links", "Links"],
+      ["filter:replies", "Respostas"],
+      ["-filter:replies", "Sem respostas"],
+      ["filter:media", "Qualquer mídia"],
+    ],
+  },
+  {
+    label: "Idioma",
+    items: [
+      ["lang:pt", "Português"],
+      ["lang:en", "Inglês"],
+      ["lang:es", "Espanhol"],
+    ],
+  },
 ];
 let dismissMenu: (() => void) | undefined;
-function showTokenMenu(trigger: HTMLElement, view: EditorView, current: string, start: number, lists: readonly TwitterList[]) {
+function showTokenMenu(
+  trigger: HTMLElement,
+  view: EditorView,
+  current: string,
+  start: number,
+  lists: readonly TwitterList[],
+) {
   dismissMenu?.();
   const panel = document.createElement("div");
   panel.className = "twitter-token-menu";
   panel.setAttribute("role", "menu");
   panel.tabIndex = -1;
   document.body.append(panel);
-  const close = () => { panel.remove(); document.removeEventListener("pointerdown", outside, true); document.removeEventListener("keydown", keyboard, true); window.removeEventListener("resize", position); window.removeEventListener("scroll", position, true); trigger.setAttribute("aria-expanded", "false"); if (dismissMenu === close) dismissMenu = undefined; };
+  const close = () => {
+    panel.remove();
+    document.removeEventListener("pointerdown", outside, true);
+    document.removeEventListener("keydown", keyboard, true);
+    window.removeEventListener("resize", position);
+    window.removeEventListener("scroll", position, true);
+    trigger.setAttribute("aria-expanded", "false");
+    if (dismissMenu === close) dismissMenu = undefined;
+  };
   dismissMenu = close;
   trigger.setAttribute("aria-expanded", "true");
-  const outside = (event: PointerEvent) => { if (!panel.contains(event.target as Node) && !trigger.contains(event.target as Node)) close(); };
-  const keyboard = (event: KeyboardEvent) => { if (event.key === "Escape") { close(); trigger.focus(); } };
+  const outside = (event: PointerEvent) => {
+    if (!panel.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
+  };
+  const keyboard = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      close();
+      trigger.focus();
+    }
+  };
   const position = () => {
     const rect = trigger.getBoundingClientRect();
     const width = Math.min(320, window.innerWidth - 24);
     panel.style.width = width + "px";
     panel.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)) + "px";
     const below = window.innerHeight - rect.bottom;
-    panel.style.top = (below >= 240 || below > rect.top ? Math.min(rect.bottom + 6, window.innerHeight - 16) : Math.max(12, rect.top - Math.min(panel.scrollHeight, 340) - 6)) + "px";
+    panel.style.top =
+      (below >= 240 || below > rect.top
+        ? Math.min(rect.bottom + 6, window.innerHeight - 16)
+        : Math.max(12, rect.top - Math.min(panel.scrollHeight, 340) - 6)) + "px";
     panel.style.maxHeight = Math.max(140, Math.min(340, window.innerHeight - 32)) + "px";
   };
   const title = document.createElement("div");
@@ -185,8 +233,14 @@ function showTokenMenu(trigger: HTMLElement, view: EditorView, current: string, 
   const results = document.createElement("div");
   panel.append(results);
   const choose = (value: string) => {
-    const token = parseTwitterSearch(view.state.doc.toString()).find((item) => item.start === start && item.raw === current);
-    if (token) view.dispatch({ changes: { from: token.start, to: token.end, insert: value }, selection: { anchor: token.start + value.length } });
+    const token = parseTwitterSearch(view.state.doc.toString()).find(
+      (item) => item.start === start && item.raw === current,
+    );
+    if (token)
+      view.dispatch({
+        changes: { from: token.start, to: token.end, insert: value },
+        selection: { anchor: token.start + value.length },
+      });
     close();
   };
   const render = () => {
@@ -196,7 +250,9 @@ function showTokenMenu(trigger: HTMLElement, view: EditorView, current: string, 
       ? [{ label: "Listas", items: lists.map((item) => ["list:" + item.id, item.name]) }]
       : filterGroups;
     for (const group of groups) {
-      const matching = group.items.filter(([value, label]) => value.toLowerCase().includes(query) || label.toLowerCase().includes(query));
+      const matching = group.items.filter(
+        ([value, label]) => value.toLowerCase().includes(query) || label.toLowerCase().includes(query),
+      );
       if (!matching.length) continue;
       const heading = document.createElement("div");
       heading.className = "twitter-token-menu-label";
@@ -231,9 +287,20 @@ function showTokenMenu(trigger: HTMLElement, view: EditorView, current: string, 
   };
   search.addEventListener("input", render);
   search.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") { const first = results.querySelector<HTMLButtonElement>('[role="menuitemradio"]'); if (first) { event.preventDefault(); first.click(); } }
+    if (event.key === "Enter") {
+      const first = results.querySelector<HTMLButtonElement>('[role="menuitemradio"]');
+      if (first) {
+        event.preventDefault();
+        first.click();
+      }
+    }
   });
   render();
   position();
-  requestAnimationFrame(() => { document.addEventListener("pointerdown", outside, true); document.addEventListener("keydown", keyboard, true); window.addEventListener("resize", position); window.addEventListener("scroll", position, true); });
+  requestAnimationFrame(() => {
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", keyboard, true);
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+  });
 }
