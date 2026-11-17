@@ -66,11 +66,51 @@
   padding: 10px;
 }
 
-.bookmark { position:relative;width:44px;height:44px;border-radius:999px;transition:background .15s ease; }
-.bookmark:hover { background:rgba(255,255,255,.1); }
-.bookmark:focus-visible { outline:2px solid #a78bfa;outline-offset:2px; }
-.bookmark:disabled { cursor:progress;opacity:.65; }
-.bookmarkSpinner { position:absolute;inset:4px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:rodBookmarkSpin .7s linear infinite; }
-.bookmarkError { position:absolute;top:0;right:0;background:#dc2626;color:white;border-radius:50%;width:14px;height:14px;font:700 11px/14px system-ui;text-align:center; }
-@keyframes rodBookmarkSpin { to { transform:rotate(360deg); } }
-@media (prefers-reduced-motion:reduce) { .bookmarkSpinner { animation:none; } }
+.bookmark {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+.bookmark:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.bookmark:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+.bookmark:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+.bookmarkSpinner {
+  position: absolute;
+  inset: 4px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: rodBookmarkSpin 0.7s linear infinite;
+}
+.bookmarkError {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  font: 700 11px/14px system-ui;
+  text-align: center;
+}
+@keyframes rodBookmarkSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bookmarkSpinner {
+    animation: none;
+  }
+}

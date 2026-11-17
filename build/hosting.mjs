@@ -37,7 +37,10 @@ assets["playground/diagnostics.html"] = await fs.readFile(
   "utf8",
 );
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
-assets["playground/instagram-bookmark.html"] = await fs.readFile(path.join(root,"playground/instagram-bookmark.html"),"utf8");
+assets["playground/instagram-bookmark.html"] = await fs.readFile(
+  path.join(root, "playground/instagram-bookmark.html"),
+  "utf8",
+);
 assets["playground/form-controls.html"] = await fs.readFile(
   path.join(root, "playground/form-controls.html"),
   "utf8",
@@ -63,9 +66,29 @@ await viteBuild(
     },
   }),
 );
-const bookmarkDir=path.join(dist,"instagram-bookmark-playground");
-await viteBuild(mergeConfig(baseViteConfig,{configFile:false,root,build:{outDir:bookmarkDir,emptyOutDir:true,cssCodeSplit:false,lib:{entry:path.join(root,"playground/instagram-bookmark-app.tsx"),formats:["es"],fileName:()=>"instagram-bookmark.js"},minify:false,sourcemap:true}}));
-assets["playground/instagram-bookmark.js"]=await fs.readFile(path.join(bookmarkDir,"instagram-bookmark.js"),"utf8");
+const bookmarkDir = path.join(dist, "instagram-bookmark-playground");
+await viteBuild(
+  mergeConfig(baseViteConfig, {
+    configFile: false,
+    root,
+    build: {
+      outDir: bookmarkDir,
+      emptyOutDir: true,
+      cssCodeSplit: false,
+      lib: {
+        entry: path.join(root, "playground/instagram-bookmark-app.tsx"),
+        formats: ["es"],
+        fileName: () => "instagram-bookmark.js",
+      },
+      minify: false,
+      sourcemap: true,
+    },
+  }),
+);
+assets["playground/instagram-bookmark.js"] = await fs.readFile(
+  path.join(bookmarkDir, "instagram-bookmark.js"),
+  "utf8",
+);
 // Use a normal ESM build so TypeScript is split into an on-demand chunk.
 // Library mode would otherwise force a single ~5 MB initial download.
 const astDir = path.join(dist, "ast-errors-playground");

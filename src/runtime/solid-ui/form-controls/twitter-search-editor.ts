@@ -303,7 +303,9 @@ function showTokenMenu(
     : filterGroups;
   let activeGroup: string | null = null;
   const focusItem = (direction: number) => {
-    const items = [...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')];
+    const items = [
+      ...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]'),
+    ];
     if (!items.length) return;
     const index = items.indexOf(document.activeElement as HTMLButtonElement);
     items[(index + direction + items.length) % items.length]?.focus();
@@ -311,18 +313,25 @@ function showTokenMenu(
   const render = () => {
     results.replaceChildren();
     const query = search.value.toLocaleLowerCase();
-    const visibleGroups = groups.map((group) => ({
-      ...group,
-      items: group.items.filter(([value, label]) =>
-        value.toLowerCase().includes(query) || label.toLowerCase().includes(query)),
-    })).filter((group) => group.items.length);
+    const visibleGroups = groups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter(
+          ([value, label]) => value.toLowerCase().includes(query) || label.toLowerCase().includes(query),
+        ),
+      }))
+      .filter((group) => group.items.length);
     if (activeGroup && !visibleGroups.some((group) => group.label === activeGroup)) activeGroup = null;
     if (activeGroup) {
       const back = document.createElement("button");
       back.type = "button";
       back.className = "twitter-token-menu-item";
       back.textContent = "‹  Voltar aos grupos";
-      back.addEventListener("click", () => { activeGroup = null; render(); search.focus(); });
+      back.addEventListener("click", () => {
+        activeGroup = null;
+        render();
+        search.focus();
+      });
       results.append(back);
     }
     for (const group of visibleGroups) {
@@ -333,7 +342,11 @@ function showTokenMenu(
         folder.setAttribute("role", "menuitem");
         folder.setAttribute("aria-haspopup", "menu");
         folder.textContent = group.label + "  ›";
-        folder.addEventListener("click", () => { activeGroup = group.label; render(); focusItem(1); });
+        folder.addEventListener("click", () => {
+          activeGroup = group.label;
+          render();
+          focusItem(1);
+        });
         results.append(folder);
         continue;
       }
@@ -366,22 +379,39 @@ function showTokenMenu(
     }
     position();
   };
-  search.addEventListener("input", () => { activeGroup = null; render(); });
+  search.addEventListener("input", () => {
+    activeGroup = null;
+    render();
+  });
   panel.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown" && event.target !== search) {
-      event.preventDefault(); focusItem(1);
+      event.preventDefault();
+      focusItem(1);
     } else if (event.key === "ArrowUp" && event.target !== search) {
-      event.preventDefault(); focusItem(-1);
-    } else if (event.key === "ArrowRight" && document.activeElement?.getAttribute("aria-haspopup") === "menu") {
-      event.preventDefault(); (document.activeElement as HTMLButtonElement).click();
+      event.preventDefault();
+      focusItem(-1);
+    } else if (
+      event.key === "ArrowRight" &&
+      document.activeElement?.getAttribute("aria-haspopup") === "menu"
+    ) {
+      event.preventDefault();
+      (document.activeElement as HTMLButtonElement).click();
     } else if (event.key === "ArrowLeft" && activeGroup) {
-      event.preventDefault(); activeGroup = null; render(); search.focus();
+      event.preventDefault();
+      activeGroup = null;
+      render();
+      search.focus();
     } else if (event.key === "Enter" && event.target !== search) {
-      event.preventDefault(); (document.activeElement as HTMLButtonElement).click();
+      event.preventDefault();
+      (document.activeElement as HTMLButtonElement).click();
     } else if (event.key === "Home" && event.target !== search) {
-      event.preventDefault(); results.querySelector<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')?.focus();
+      event.preventDefault();
+      results.querySelector<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')?.focus();
     } else if (event.key === "End" && event.target !== search) {
-      event.preventDefault(); [...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')].at(-1)?.focus();
+      event.preventDefault();
+      [...results.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]')]
+        .at(-1)
+        ?.focus();
     }
   });
   search.addEventListener("keydown", (event) => {
@@ -390,7 +420,10 @@ function showTokenMenu(
       focusItem(1);
     } else if (event.key === "Enter") {
       const first = results.querySelector<HTMLButtonElement>('[role="menuitemradio"], [role="menuitem"]');
-      if (first) { event.preventDefault(); first.click(); }
+      if (first) {
+        event.preventDefault();
+        first.click();
+      }
     }
   });
   render();
