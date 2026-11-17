@@ -48,10 +48,7 @@ export interface GMBridge {
 
 // Preserve Tampermonkey's native menu behavior while mirroring commands into the Dock.
 // The wrapper never creates a second native menu item.
-export function createGMBridge(
-  host: Window & typeof globalThis = globalThis,
-  moduleId: string = "",
-): GMBridge {
+export function createGMBridge(host: Window & typeof globalThis = window, moduleId: string = ""): GMBridge {
   const menuCommands = new Map<MenuCommandId, MenuCommandItem>();
 
   const notify = (detail: DockMenuDetail): void => {

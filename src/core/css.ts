@@ -27,7 +27,7 @@ function getTargetDocument(root: Document | ShadowRoot | Element): Document {
 function resolveInstallationTarget(
   root: Document | ShadowRoot | Element,
   doc: Document,
-): DocumentFragment | Element | null {
+): Element | ShadowRoot | null {
   if (root.nodeType === DOCUMENT_NODE_TYPE) {
     return doc.head || doc.documentElement;
   }
