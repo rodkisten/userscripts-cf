@@ -108,7 +108,9 @@ function App() {
     }) as unknown as FormField;
   const exampleContext = {
     values: { demo: variantValue() },
-    get errors() { return contextError() ? { demo: "Erro de validação vindo do contexto do formulário." } : {}; },
+    get errors() {
+      return contextError() ? { demo: "Erro de validação vindo do contexto do formulário." } : {};
+    },
     set: (_name: string, next: unknown) => setVariantValue(next),
   };
   const [selected, setSelected] = createSignal<string[]>(["filter:videos"]);
@@ -222,11 +224,21 @@ function App() {
             Simular erros de validação
           </label>
           <label class="toggle">
-            <input type="checkbox" checked={advancedText()} onChange={(event) => setAdvancedText(event.currentTarget.checked)} />
+            <input
+              type="checkbox"
+              checked={advancedText()}
+              onChange={(event) => setAdvancedText(event.currentTarget.checked)}
+            />
             Atributos avançados
           </label>
           <label for="demo-feedback-state">Estado visual</label>
-          <select id="demo-feedback-state" value={feedbackState()} onChange={(event) => setFeedbackState(event.currentTarget.value as "default" | "warning" | "success")}>
+          <select
+            id="demo-feedback-state"
+            value={feedbackState()}
+            onChange={(event) =>
+              setFeedbackState(event.currentTarget.value as "default" | "warning" | "success")
+            }
+          >
             <option value="default">Padrão</option>
             <option value="warning">Aviso</option>
             <option value="success">Sucesso</option>
@@ -241,7 +253,9 @@ function App() {
               minLength={advancedText() ? 3 : undefined}
               pattern={advancedText() ? "[A-Za-zÀ-ÿ ]+" : undefined}
               autocomplete={advancedText() ? "name" : undefined}
-              warning={!showErrors() && feedbackState() === "warning" ? "Confira o nome antes de salvar." : undefined}
+              warning={
+                !showErrors() && feedbackState() === "warning" ? "Confira o nome antes de salvar." : undefined
+              }
               success={!showErrors() && feedbackState() === "success" ? "Nome verificado." : undefined}
               disabled={disabled()}
               readonly={readonly()}
@@ -293,11 +307,20 @@ function App() {
           <h2>Validação pelo contexto</h2>
           <p>O StandaloneFieldRenderer recebe o erro pelo contexto, sem duplicar a lógica no Input.</p>
           <label class="toggle">
-            <input type="checkbox" checked={contextError()} onChange={(event) => setContextError(event.currentTarget.checked)} />
+            <input
+              type="checkbox"
+              checked={contextError()}
+              onChange={(event) => setContextError(event.currentTarget.checked)}
+            />
             Simular erro no contexto
           </label>
           <StandaloneFieldRenderer
-            field={{ type: "text", name: "demo", label: "Campo com validação", description: "Descrição fornecida pelo schema" }}
+            field={{
+              type: "text",
+              name: "demo",
+              label: "Campo com validação",
+              description: "Descrição fornecida pelo schema",
+            }}
             context={exampleContext}
             value={variantValue()}
             onChange={setVariantValue}

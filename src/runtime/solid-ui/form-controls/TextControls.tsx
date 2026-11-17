@@ -36,12 +36,18 @@ function feedbackId(props: FieldFeedback): string | undefined {
 
 function FieldHelp(props: FieldFeedback) {
   return (
-    <Show
-      when={props.error || props.warning || props.success || props.description}
-    >
+    <Show when={props.error || props.warning || props.success || props.description}>
       <small
         id={feedbackId(props)}
-        class={props.error ? styles.fieldError : props.warning ? styles.fieldWarning : props.success ? styles.fieldSuccess : styles.fieldHelp}
+        class={
+          props.error
+            ? styles.fieldError
+            : props.warning
+              ? styles.fieldWarning
+              : props.success
+                ? styles.fieldSuccess
+                : styles.fieldHelp
+        }
         role={props.error ? "alert" : "status"}
         aria-live={props.error ? "assertive" : "polite"}
       >
@@ -85,12 +91,24 @@ export function Input(
         aria-describedby={describedBy(props)}
         onInput={(event) => props.onChange(event.currentTarget.value)}
       />
-      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
+      <FieldHelp
+        id={props.id}
+        description={props.description}
+        error={props.error}
+        warning={props.warning}
+        success={props.success}
+      />
     </div>
   );
 }
 
-export function Textarea(props: TextControlProps & { rows?: number; showCount?: boolean; resize?: "none" | "vertical" | "horizontal" | "both" }) {
+export function Textarea(
+  props: TextControlProps & {
+    rows?: number;
+    showCount?: boolean;
+    resize?: "none" | "vertical" | "horizontal" | "both";
+  },
+) {
   return (
     <div class={styles.textField}>
       <Show when={props.label}>
@@ -121,7 +139,13 @@ export function Textarea(props: TextControlProps & { rows?: number; showCount?: 
           {props.value.length} / {props.maxLength}
         </output>
       </Show>
-      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
+      <FieldHelp
+        id={props.id}
+        description={props.description}
+        error={props.error}
+        warning={props.warning}
+        success={props.success}
+      />
     </div>
   );
 }
@@ -162,7 +186,13 @@ export function NumberInput(props: NumberInputProps) {
           props.onChange(event.currentTarget.value === "" ? "" : event.currentTarget.valueAsNumber)
         }
       />
-      <FieldHelp id={props.id} description={props.description} error={props.error} warning={props.warning} success={props.success} />
+      <FieldHelp
+        id={props.id}
+        description={props.description}
+        error={props.error}
+        warning={props.warning}
+        success={props.success}
+      />
     </div>
   );
 }
