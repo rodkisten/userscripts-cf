@@ -644,13 +644,13 @@ export function createRuntime(
               detail: { type: "register", module },
             }),
           );
-          onDispose(() =>
+          onDispose(() => {
             host.document.dispatchEvent(
               new host.CustomEvent(DOCK_REGISTRY_EVENT, {
                 detail: { type: "unregister", id: definition.id },
               }),
-            ),
-          );
+            );
+          });
         },
       }),
       updates: updaterInstance,
