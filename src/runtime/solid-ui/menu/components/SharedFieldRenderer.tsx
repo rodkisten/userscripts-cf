@@ -9,6 +9,7 @@ import type {
   CheckboxGroupField,
 } from "../types";
 import { TypeaheadSelect } from "./fields/TypeaheadSelect";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "../../form-controls/Controls";
 import styles from "../styles/Fields.module.css";
 
 /** Generic variants rendered independently of RodMenu's media/diagnostic extensions.
@@ -16,7 +17,7 @@ import styles from "../styles/Fields.module.css";
  */
 export interface SharedFieldRendererProps {
   field: RodMenuField;
-  context: RodMenuContext<any>;
+  context: RodMenuContext;
   value: unknown;
   controlId: string;
   disabled: boolean;
@@ -129,22 +130,14 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                 />
               }
             >
-              <select
+              <Select
                 id={controlId()}
                 name={f.name}
-                class={styles.select}
-                disabled={isDisabled()}
                 value={String(fieldValue() ?? "")}
-                onChange={(e) => commit(e.currentTarget.value)}
-              >
-                <For each={f.options}>
-                  {(opt) => (
-                    <option value={opt.value} disabled={opt.disabled}>
-                      {opt.label}
-                    </option>
-                  )}
-                </For>
-              </select>
+                disabled={isDisabled()}
+                options={f.options}
+                onChange={commit}
+              />
             </Show>
           );
         })()}
@@ -251,15 +244,23 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
                   <div class={styles.descriptionField}>{f.description}</div>
                 </Show>
               </span>
-              <input
-                id={controlId()}
-                name={f.name}
-                type="checkbox"
-                checked={Boolean(fieldValue())}
-                disabled={isDisabled()}
-                class={f.type === "switch" ? styles.switch : styles.nativeCheck}
-                onChange={(e) => commit(e.currentTarget.checked)}
-              />
+              {f.type === "switch" ? (
+                <ToggleSwitch
+                  id={controlId()}
+                  name={f.name}
+                  checked={Boolean(fieldValue())}
+                  disabled={isDisabled()}
+                  onChange={commit}
+                />
+              ) : (
+                <Checkbox
+                  id={controlId()}
+                  name={f.name}
+                  checked={Boolean(fieldValue())}
+                  disabled={isDisabled()}
+                  onChange={commit}
+                />
+              )}
             </label>
           );
         })()}
@@ -271,17 +272,15 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
           const currentVal = () => String(fieldValue() ?? f.min ?? 0);
           return (
             <div class={styles.rangeWrap}>
-              <input
+              <Slider
                 id={controlId()}
                 name={f.name}
-                type="range"
-                class={styles.range}
-                min={f.min ?? 0}
-                max={f.max ?? 100}
-                step={f.step ?? 1}
+                value={Number(fieldValue() ?? f.min ?? 0)}
+                min={f.min}
+                max={f.max}
+                step={f.step}
                 disabled={isDisabled()}
-                value={currentVal()}
-                onInput={(e) => commit(e.currentTarget.valueAsNumber)}
+                onChange={commit}
               />
               <Show when={f.showValue !== false}>
                 <output class={styles.rangeValue}>{currentVal()}</output>
@@ -322,37 +321,16 @@ export function SharedFieldRenderer(props: SharedFieldRendererProps) {
       <Match when={props.field.type === "color"}>
         {(() => {
           const f = props.field as Extract<RodMenuField, { type: "color" }>;
-          const hex = () => {
-            const v = fieldValue();
-            return typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : "#ff7a18";
-          };
           return (
-            <div class={styles.colorRow}>
-              <input
-                id={controlId()}
-                name={f.name}
-                type="color"
-                class={styles.color}
-                disabled={isDisabled()}
-                value={hex()}
-                onInput={(e) => commit(e.currentTarget.value)}
-              />
-              <Show when={f.presets?.length}>
-                <div class={styles.presets}>
-                  <For each={f.presets}>
-                    {(color) => (
-                      <button
-                        type="button"
-                        class={styles.swatch}
-                        style={{ background: color }}
-                        aria-label={color}
-                        onClick={() => commit(color)}
-                      />
-                    )}
-                  </For>
-                </div>
-              </Show>
-            </div>
+            <ColorPicker
+              id={controlId()}
+              name={f.name}
+              value={String(fieldValue() ?? "")}
+              disabled={isDisabled()}
+              presets={f.presets}
+              onChange={commit}
+              aria-label={f.label ?? f.name}
+            />
           );
         })()}
       </Match>

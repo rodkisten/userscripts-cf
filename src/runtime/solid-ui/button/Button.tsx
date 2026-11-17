@@ -40,7 +40,7 @@ export function Button(props: ButtonProps) {
   const [pending, setPending] = createSignal(false);
   const busy = () => !!props.loading || pending();
   const hasIconOnlyContent = () => props.size === "icon" && props.icon == null && props.iconEnd == null;
-  const handleClick = (event: MouseEvent) => {
+  const handleClick: JSX.EventHandler<HTMLButtonElement, MouseEvent> = (event) => {
     if (busy() || props.disabled) return;
     const result = props.onClick?.(event);
     if (props.autoLoading && result && typeof (result as PromiseLike<unknown>).then === "function") {
@@ -57,8 +57,10 @@ export function Button(props: ButtonProps) {
   return (
     <button
       {...nativeProps}
-      ref={props.ref}
-      type={props.type ?? "button"}
+      ref={(element) => {
+        if (typeof props.ref === "function") props.ref(element);
+      }}
+      type={props.type || "button"}
       class={`${styles.button} ${styles[props.variant ?? "default"]} ${styles[props.size ?? "md"]} ${props.class ?? ""}`}
       disabled={props.disabled || busy()}
       aria-busy={busy()}
@@ -71,7 +73,11 @@ export function Button(props: ButtonProps) {
         )}
         {!busy() && props.iconEnd}
         {hasIconOnlyContent() && !busy() && props.children}
-        {props.badge != null && <span class={styles.badge} aria-hidden="true">{props.badge}</span>}
+        {props.badge != null && (
+          <span class={styles.badge} aria-hidden="true">
+            {props.badge}
+          </span>
+        )}
       </span>
     </button>
   );

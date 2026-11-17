@@ -1,4 +1,5 @@
 import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
+import { Slider, Switch as RodSwitch, ColorPicker, controlsCss } from "../src/runtime/solid-ui/form-controls";
 import { IconButton, SplitButton } from "../src/runtime/solid-ui/button";
 import { Button, ButtonGroup, DropdownButton, buttonCss } from "../src/runtime/solid-ui/button";
 import { createSignal } from "solid-js";
@@ -418,6 +419,35 @@ document.querySelector("main.content")?.append(buttonStudio);
 const buttonStyle = document.createElement("style");
 buttonStyle.textContent = buttonCss + "\n" + badgeCss;
 document.head.append(buttonStyle);
+type StudioChoice = { value: string; label: string };
+function StudioSelect(props: {
+  label: string;
+  value: string;
+  choices: readonly StudioChoice[];
+  onChange: (value: string) => void;
+}) {
+  const selected = () => props.choices.find((item) => item.value === props.value)?.label ?? "Personalizado";
+  return (
+    <div class="rod-studio-field">
+      <span class="rod-studio-field-label">{props.label}</span>
+      <DropdownButton
+        variant="outline"
+        size="sm"
+        aria-label={props.label + ": " + selected()}
+        items={props.choices.map((item) => ({
+          label: (item.value === props.value ? "✓  " : "    ") + item.label,
+          onSelect: () => props.onChange(item.value),
+        }))}
+      >
+        {selected()}
+      </DropdownButton>
+    </div>
+  );
+}
+const sharedControlStyles = document.createElement("style");
+sharedControlStyles.textContent = controlsCss;
+document.head.appendChild(sharedControlStyles);
+
 const buttonMount = document.getElementById("buttonStudioMount");
 if (buttonMount) {
   render(() => {
@@ -497,107 +527,115 @@ if (buttonMount) {
         }}
       >
         <div class="flex">
+          <StudioSelect
+            label="Tema"
+            value={theme()}
+            choices={[
+              { value: "light", label: "Claro" },
+              { value: "dark", label: "Escuro" },
+            ]}
+            onChange={(value) => changeTheme(value as "light" | "dark")}
+          />
           <label>
-            Tema{" "}
-            <select value={theme()} onChange={(e) => changeTheme(e.currentTarget.value as "light" | "dark")}>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
-            </select>
+            Fundo secondary{" "}
+            <ColorPicker value={secondaryBg()} onChange={setSecondaryBg} aria-label="Fundo secondary" />
           </label>
-          <label>Fundo secondary <input type="color" value={secondaryBg()} onInput={(e) => setSecondaryBg(e.currentTarget.value)} /></label>
-          <label>Texto secondary <input type="color" value={secondaryFg()} onInput={(e) => setSecondaryFg(e.currentTarget.value)} /></label>
-          <label>Foco <input type="color" value={focusColor()} onInput={(e) => setFocusColor(e.currentTarget.value)} /></label>
           <label>
-            Preset{" "}
-            <select
-              value={preset()}
-              onChange={(e) => {
-                const value = e.currentTarget.value;
-                if (value) applyPreset(value as "compact" | "default" | "touch");
-              }}
-            >
-              <option value="">Personalizado</option>
-              <option value="compact">Compacto</option>
-              <option value="default">Padrão</option>
-              <option value="touch">Touch</option>
-            </select>
+            Texto secondary{" "}
+            <ColorPicker value={secondaryFg()} onChange={setSecondaryFg} aria-label="Texto secondary" />
           </label>
-          <button type="button" onClick={() => void exportTokens()}>
+          <label>
+            Foco <ColorPicker value={focusColor()} onChange={setFocusColor} aria-label="Foco" />
+          </label>
+          <StudioSelect
+            label="Preset"
+            value={preset()}
+            choices={[
+              { value: "", label: "Personalizado" },
+              { value: "compact", label: "Compacto" },
+              { value: "default", label: "Padrão" },
+              { value: "touch", label: "Touch" },
+            ]}
+            onChange={(value) =>
+              value ? applyPreset(value as "compact" | "default" | "touch") : setPreset("")
+            }
+          />
+          <Button variant="outline" size="sm" onClick={() => void exportTokens()}>
             Copiar CSS
-          </button>
+          </Button>
           <span role="status" aria-live="polite">
             {copyStatus()}
           </span>
+          <StudioSelect
+            label="Variante"
+            value={variant()}
+            choices={["default", "secondary", "outline", "ghost", "destructive", "success", "warning"].map(
+              (value) => ({ value, label: value }),
+            )}
+            onChange={(value) => setVariant(value as ReturnType<typeof variant>)}
+          />
+          <StudioSelect
+            label="Tamanho"
+            value={size()}
+            choices={[
+              { value: "sm", label: "Pequeno" },
+              { value: "md", label: "Médio" },
+              { value: "lg", label: "Grande" },
+            ]}
+            onChange={(value) => {
+              setPreset("");
+              setSize(value as "sm" | "md" | "lg");
+            }}
+          />
           <label>
-            Variante{" "}
-            <select
-              value={variant()}
-              onChange={(e) => setVariant(e.currentTarget.value as ReturnType<typeof variant>)}
-            >
-              {(
-                ["default", "secondary", "outline", "ghost", "destructive", "success", "warning"] as const
-              ).map((v) => (
-                <option value={v}>{v}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Tamanho{" "}
-            <select
-              value={size()}
-              onChange={(e) => {
-                setPreset("");
-                setSize(e.currentTarget.value as "sm" | "md" | "lg");
-              }}
-            >
-              <option value="sm">Pequeno</option>
-              <option value="md">Médio</option>
-              <option value="lg">Grande</option>
-            </select>
-          </label>
-          <label>
-            Raio {radius()}px{" "}
-            <input
-              type="range"
-              min="0"
-              max="28"
+            Raio {radius()}px
+            <Slider
               value={radius()}
-              onInput={(e) => {
+              min={0}
+              max={28}
+              onChange={(value) => {
                 setPreset("");
-                setRadius(Number(e.currentTarget.value));
+                setRadius(value);
               }}
             />
           </label>
           <label>
-            Altura {height()}px{" "}
-            <input
-              type="range"
-              min="28"
-              max="64"
+            Altura {height()}px
+            <Slider
               value={height()}
-              onInput={(e) => {
+              min={28}
+              max={64}
+              onChange={(value) => {
                 setPreset("");
-                setHeight(Number(e.currentTarget.value));
+                setHeight(value);
               }}
             />
           </label>
-          <label>
-            <input type="checkbox" checked={busy()} onChange={(e) => setBusy(e.currentTarget.checked)} />{" "}
-            Loading
+          <label style={{ display: "flex", "align-items": "center", gap: "10px" }}>
+            <RodSwitch checked={busy()} onChange={setBusy} aria-label="Loading" /> Loading
           </label>
           <label>
             Accent{" "}
-            <input
-              type="color"
+            <ColorPicker
               value={accent()}
-              onInput={(e) => {
+              onChange={(value) => {
                 setPreset("");
-                setAccent(e.currentTarget.value);
+                setAccent(value);
               }}
+              aria-label="Accent"
+              presets={["#7c3aed", "#2563eb", "#0d9488", "#dc2626"]}
             />
           </label>
         </div>
-        <div class="flex" style={{ padding: "14px", "border-radius": "12px", background: theme() === "dark" ? "#18171d" : "#f7f7f9", color: theme() === "dark" ? "#fff" : "#211b2a" }}>
+        <div
+          class="flex"
+          style={{
+            padding: "14px",
+            "border-radius": "12px",
+            background: theme() === "dark" ? "#18171d" : "#f7f7f9",
+            color: theme() === "dark" ? "#fff" : "#211b2a",
+          }}
+        >
           <Button
             variant={variant()}
             size={size()}

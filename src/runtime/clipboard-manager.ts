@@ -29,7 +29,7 @@ export interface ClipboardManager {
 // Clipboard history is origin-scoped and never sent to a server.
 // Clipboard reads require an explicit browser-approved user gesture.
 export function createClipboardManager({
-  host = globalThis,
+  host = window,
   namespace = "rod-clipboard",
   limit = 100,
 }: ClipboardManagerOptions = {}): ClipboardManager {

@@ -1,4 +1,5 @@
 import { createSignal, For } from "solid-js";
+import type { JSX } from "solid-js";
 import { render } from "@solidjs/web";
 import type { DropdownOptions, DropdownItem } from "./menu-api";
 
@@ -15,7 +16,7 @@ export function openSolidDropdown(options: DropdownOptions) {
   const root = trigger.getRootNode();
   const parent = root instanceof ShadowRoot ? root : trigger.ownerDocument.body;
   const mount = trigger.ownerDocument.createElement("div");
-  mount.style.cssText = "position:fixed;z-index:2147483647;max-width:calc(100vw - 16px)";
+  mount.style.cssText = "position:fixed;z-index:2147483647;max-width:calc(100vw - 24px)";
   parent.append(mount);
   const previous = trigger.getAttribute("aria-expanded");
   trigger.setAttribute("aria-expanded", "true");
@@ -37,16 +38,25 @@ export function openSolidDropdown(options: DropdownOptions) {
   activeDropdowns.set(trigger, () => close());
   const focusFirst = () => mount.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   const position = () => {
+    if (disposed || !trigger.isConnected) {
+      close(false);
+      return;
+    }
+    const viewport = trigger.ownerDocument.defaultView?.visualViewport;
+    const vw = viewport?.width ?? innerWidth;
+    const vh = viewport?.height ?? innerHeight;
+    const vx = viewport?.offsetLeft ?? 0;
+    const vy = viewport?.offsetTop ?? 0;
     const rect = trigger.getBoundingClientRect();
     const width = mount.offsetWidth;
     mount.style.left =
       Math.max(
-        8,
-        Math.min(innerWidth - width - 8, options.align === "start" ? rect.left : rect.right - width),
+        vx + 8,
+        Math.min(vx + vw - width - 8, options.align === "start" ? rect.left : rect.right - width),
       ) + "px";
     mount.style.top =
-      (rect.bottom + mount.offsetHeight > innerHeight - 8
-        ? Math.max(8, rect.top - mount.offsetHeight - 4)
+      (rect.bottom + mount.offsetHeight > vy + vh - 8
+        ? Math.max(vy + 8, rect.top - mount.offsetHeight - 4)
         : rect.bottom + 4) + "px";
   };
   const dispose = render(
@@ -56,17 +66,17 @@ export function openSolidDropdown(options: DropdownOptions) {
         aria-label="Opções"
         data-rod-dropdown={options.id ?? "menu"}
         style={{
-          "min-width": "220px",
-          "max-width": "340px",
+          "min-width": "180px",
+          "max-width": "min(300px, calc(100vw - 24px))",
           "max-height": "70dvh",
           "overflow-y": "auto",
-          padding: "6px",
-          background: "#202b3d",
-          color: "#edf2fb",
-          border: "1px solid #435067",
-          "border-radius": "12px",
-          "box-shadow": "0 12px 32px #0009",
-          font: "14px system-ui",
+          padding: "5px",
+          background: "var(--rod-menu-bg, #18181b)",
+          color: "var(--rod-menu-fg, #fafafa)",
+          border: "1px solid var(--rod-menu-border, #3f3f46)",
+          "border-radius": "9px",
+          "box-shadow": "0 10px 30px #0007",
+          font: "13px system-ui",
         }}
       >
         <For each={stack().length > 1 ? [true] : []}>
@@ -90,7 +100,13 @@ export function openSolidDropdown(options: DropdownOptions) {
         <For each={stack().at(-1) ?? []}>
           {(item) =>
             item.type === "separator" ? (
-              <hr style={{ border: "0", "border-top": "1px solid #435067", margin: "6px 0" }} />
+              <hr
+                style={{
+                  border: "0",
+                  "border-top": "1px solid var(--rod-menu-border, #3f3f46)",
+                  margin: "5px 0",
+                }}
+              />
             ) : (
               <button
                 type="button"
@@ -173,8 +189,12 @@ export function openSolidDropdown(options: DropdownOptions) {
     { signal: controller.signal },
   );
   window.addEventListener("resize", position, { signal: controller.signal });
-  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", position, { signal: controller.signal });
-  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", position, { signal: controller.signal });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", position, {
+    signal: controller.signal,
+  });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", position, {
+    signal: controller.signal,
+  });
   // Capture scrolling from nested containers, including mobile overflow panes.
   trigger.ownerDocument.addEventListener("scroll", position, {
     capture: true,
@@ -185,14 +205,14 @@ export function openSolidDropdown(options: DropdownOptions) {
   focusFirst();
   return { close };
 }
-const buttonStyle = {
+const buttonStyle: JSX.CSSProperties = {
   display: "block",
   width: "100%",
-  "min-height": "40px",
+  "min-height": "36px",
   "text-align": "left",
-  padding: "9px 12px",
+  padding: "7px 10px",
   border: "0",
-  "border-radius": "7px",
+  "border-radius": "6px",
   background: "transparent",
   color: "inherit",
   font: "inherit",

@@ -115,3 +115,31 @@ Button variants now expose `--button-on-accent`, `--button-secondary-bg`, `--but
 ## Studio theme editor
 
 The Button gallery now includes light/dark preview selection and live color pickers for secondary background, secondary foreground and focus ring. Preview applies the same custom properties as the Button component; **Copiar CSS** exports these theme tokens alongside size, radius and accent. Changing the theme updates the default color values, while manual color edits remain possible. Verify build and Safari rendering on the latest commit.
+
+## Visual reset: shadcn-inspired density
+
+After mobile screenshots revealed oversized native controls, unbalanced dropdown surfaces and overly prominent badges, the Studio uses compact consistent select/input/color/range sizing, a restrained zinc surface palette, tighter cards and mobile spacing. Button defaults are 36px/8px with neutral count pills, and SolidDropdown uses a smaller zinc popover with CSS theme hooks (`--rod-menu-bg`, `--rod-menu-fg`, `--rod-menu-border`). This is a first corrective pass, not a claim of full shadcn parity. Build and Safari screenshot comparison are required.
+
+## Studio selects are shared Rod UI components
+
+The Button Studio now uses `StudioSelect`, a thin adapter around the existing `DropdownButton`/`SolidDropdown` stack, for theme, preset, variant and size. This removes iOS native select pickers from the Button panel without adding a second menu implementation. Selected values show a checkmark in the dropdown. The CSS-copy action uses the shared Button, and the settings grid has two columns on narrow screens. Remaining work: replace native sliders/color controls with dedicated shared Field/Slider/ColorPicker, align menu/inspector previews and verify the build/Safari.
+
+## Runtime-first visual pass
+
+The actual RodMenu `Surface.module.css` and `Fields.module.css` now use compact 8–10px radii, denser headers/sections/inputs/actions, and flat primary actions instead of gradients. The shared `SolidDropdown` uses the iOS visual viewport for placement and a tokenized separator. These are runtime changes consumed by userscripts, not Studio-only CSS. The Studio remains a consumer. Verify Cloudflare build, menu behavior and iPhone screenshots before considering the redesign finished.
+
+## Shared form controls: runtime-first
+
+`src/runtime/solid-ui/form-controls/Controls.tsx` exports real `Select`, `Checkbox`, `Switch`, `Slider` and `controlsCss`. RodMenu's `SharedFieldRenderer` consumes these directly, so its forms inherit their CSS Modules and accessible native input behavior. `Select` remains a styled native select for keyboard/form compatibility; a Radix-style popover select is a separate future enhancement. Consumers mounted in Shadow DOM must register `controlsCss` alongside their other runtime CSS. Build/typecheck/deploy not verified yet.
+
+## Shared controls integration progress
+
+`form-controls/index.ts` now exports `Select`, `Checkbox`, `Switch`, `Slider`, their props and `controlsCss`. The independent `StandaloneFieldRenderer` consumes these same controls as RodMenu for select, boolean and range fields. Consumers in Shadow Roots should register `controlsCss` once. No Studio-only components are involved. Native selects retain browser keyboard behavior. Build and Safari validation remain outstanding.
+
+## Studio uses runtime controls
+
+The Button Studio now imports `Slider`, `Switch`, and `controlsCss` from the public `form-controls` entrypoint. Radius, height and loading controls exercise the real primitives. The shared `ControlOption` type comes from `options.ts`, avoiding duplicate public contracts. The remaining native color pickers require a dedicated runtime ColorPicker before Studio migration. The automatic Cloudflare deployment path and build status still need confirmation.
+
+## Runtime ColorPicker
+
+`form-controls/Controls.tsx` now exports `ColorPicker`, a compact native color input with accessible labeling, current hex value, optional selectable presets and disabled/readonly support. Both RodMenu `SharedFieldRenderer` and the independent `StandaloneFieldRenderer` use it; the Studio only consumes the same public export. The native iOS picker is intentionally retained. Validate build and Safari before marking production-ready.

@@ -1,7 +1,7 @@
 .button {
-  --_button-radius: var(--button-radius, 10px);
-  --_button-height: var(--button-height, 38px);
-  --_button-accent: var(--button-accent, #6d28d9);
+  --_button-radius: var(--button-radius, 8px);
+  --_button-height: var(--button-height, 36px);
+  --_button-accent: var(--button-accent, #7c3aed);
   --_button-on-accent: var(--button-on-accent, #fff);
   --_button-secondary-bg: var(--button-secondary-bg, #e9e7ee);
   --_button-secondary-fg: var(--button-secondary-fg, #211b2a);
@@ -14,12 +14,12 @@
   justify-content: center;
   gap: 8px;
   min-height: var(--_button-height);
-  padding: 0 14px;
+  padding: 0 12px;
   border: 1px solid transparent;
   border-radius: var(--_button-radius);
   font-family: inherit;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.3;
   cursor: pointer;
   touch-action: manipulation;
@@ -39,7 +39,11 @@
   filter: brightness(0.93);
   transform: translateY(1px);
 }
-@media (hover: hover) { .button:not(:disabled):hover { filter: brightness(1.08); } }
+@media (hover: hover) {
+  .button:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+}
 .button:disabled {
   opacity: 0.55;
   filter: none;
@@ -86,11 +90,11 @@
   color: #111827;
 }
 .sm {
-  --_button-height: var(--button-height-sm, 30px);
+  --_button-height: var(--button-height-sm, 32px);
   padding: 0 10px;
 }
 .lg {
-  --_button-height: var(--button-height-lg, 46px);
+  --_button-height: var(--button-height-lg, 40px);
   padding: 0 20px;
 }
 .icon {
@@ -99,9 +103,9 @@
 }
 .badge {
   border-radius: 999px;
-  background: #dc2626;
-  color: white;
-  padding: 1px 5px;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  color: inherit;
+  padding: 1px 6px;
   font-size: 10px;
 }
 .button[aria-busy="true"] {
@@ -129,10 +133,10 @@
   border-radius: 0;
 }
 .group > .button:first-child {
-  border-radius: var(--button-radius, 10px) 0 0 var(--button-radius, 10px);
+  border-radius: var(--button-radius, 8px) 0 0 var(--button-radius, 8px);
 }
 .group > .button:last-child {
-  border-radius: 0 var(--button-radius, 10px) var(--button-radius, 10px) 0;
+  border-radius: 0 var(--button-radius, 8px) var(--button-radius, 8px) 0;
 }
 .group > .button + .button {
   margin-left: -1px;
@@ -171,7 +175,6 @@
     transform: none !important;
   }
 }
-
 
 @media (prefers-color-scheme: dark) {
   .button {

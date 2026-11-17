@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js";
-import type { FormField, FieldContext } from "./fields";
+import type { FormField, FieldContext, OptionItem, RangeField, ColorField } from "./fields";
 import { Combobox } from "./Combobox";
+import { Select, Checkbox, Switch as ToggleSwitch, Slider, ColorPicker } from "./Controls";
 import styles from "./StandaloneFieldRenderer.module.css";
 
 export interface StandaloneFieldRendererProps<TContext = FieldContext> {
@@ -22,15 +23,25 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
   const disabled = () => !!field().disabled;
   const readonly = () => !!field().readonly;
   const kind = () => field().type;
-  const choices = () =>
-    "options" in field()
-      ? (field() as { options: readonly { value: string; label: string; disabled?: boolean }[] }).options
-      : [];
+  const choices = (): readonly OptionItem[] => {
+    const current = field();
+    return "options" in current ? current.options : [];
+  };
   const stringValue = () => String(value() ?? "");
-  const prop = <T,>(name: string, fallback?: T): T | undefined =>
-    (field() as unknown as Record<string, T>)[name] ?? fallback;
-  const selectedValues = () => (Array.isArray(value()) ? (value() as string[]).map(String) : []);
-  const common = () => ({ id: id(), name: field().name, disabled: disabled(), required: !!field().required });
+  const prop = <T,>(name: string, fallback?: T): T | undefined => {
+    const current = field();
+    return (current as unknown as Record<string, T | undefined>)[name] ?? fallback;
+  };
+  const selectedValues = (): string[] => {
+    const current = value();
+    return Array.isArray(current) ? (current as unknown[]).map(String) : [];
+  };
+  const common = () => ({
+    id: id(),
+    name: field().name,
+    disabled: disabled() || readonly(),
+    required: !!field().required,
+  });
   return (
     <div class={styles.field} data-field-type={kind()} data-disabled={String(disabled())}>
       <Show
@@ -55,8 +66,6 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           "time",
           "month",
           "week",
-          "color",
-          "range",
           "hidden",
         ].includes(kind())}
       >
@@ -71,14 +80,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           autocomplete={prop<string>("autocomplete")}
           spellcheck={prop<boolean>("spellcheck")}
           autofocus={field().autoFocus}
-          min={"min" in field() ? ((field() as { min?: string | number }).min) : undefined}
-          max={"max" in field() ? ((field() as { max?: string | number }).max) : undefined}
-          step={"step" in field() ? ((field() as { step?: string | number }).step) : undefined}
+          min={"min" in field() ? (field() as { min?: string | number }).min : undefined}
+          max={"max" in field() ? (field() as { max?: string | number }).max : undefined}
+          step={"step" in field() ? (field() as { step?: string | number }).step : undefined}
           readOnly={readonly()}
           onInput={(event) => {
             if (readonly()) return;
             commit(
-              ["number", "range"].includes(kind())
+              kind() === "number"
                 ? event.currentTarget.value === ""
                   ? ""
                   : event.currentTarget.valueAsNumber
@@ -116,21 +125,14 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         />
       </Show>
       <Show when={kind() === "select" && !prop<boolean>("searchable")}>
-        <select
-          {...common()}
+        <Select
+          id={id()}
+          name={field().name}
+          options={choices()}
           value={stringValue()}
-          onChange={(e) => {
-            if (!readonly()) commit(e.currentTarget.value);
-          }}
-        >
-          <For each={choices()}>
-            {(option) => (
-              <option value={option.value} disabled={option.disabled}>
-                {option.label}
-              </option>
-            )}
-          </For>
-        </select>
+          disabled={disabled() || readonly()}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "multiselect" && !!prop<boolean>("searchable")}>
         <Combobox
@@ -168,17 +170,50 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         </div>
       </Show>
       <Show when={kind() === "checkbox" || kind() === "switch"}>
-        <label>
-          <input
-            {...common()}
-            type="checkbox"
-            role={kind() === "switch" ? "switch" : undefined}
-            checked={!!value()}
-            disabled={disabled() || readonly()}
-            onChange={(e) => commit(e.currentTarget.checked)}
-          />
-          {field().label ?? field().name}
+        <label class={styles.booleanRow}>
+          <span>{field().label ?? field().name}</span>
+          {kind() === "switch" ? (
+            <ToggleSwitch
+              id={id()}
+              name={field().name}
+              checked={!!value()}
+              disabled={disabled() || readonly()}
+              onChange={commit}
+            />
+          ) : (
+            <Checkbox
+              id={id()}
+              name={field().name}
+              checked={!!value()}
+              disabled={disabled() || readonly()}
+              onChange={commit}
+            />
+          )}
         </label>
+      </Show>
+      <Show when={kind() === "color"}>
+        <ColorPicker
+          id={id()}
+          name={field().name}
+          value={stringValue()}
+          disabled={disabled()}
+          readonly={readonly()}
+          presets={(field() as ColorField<TContext>).presets}
+          onChange={commit}
+          aria-label={field().label ?? field().name}
+        />
+      </Show>
+      <Show when={kind() === "range"}>
+        <Slider
+          id={id()}
+          name={field().name}
+          value={Number(value() ?? (field() as RangeField<TContext>).min ?? 0)}
+          min={(field() as RangeField<TContext>).min}
+          max={(field() as RangeField<TContext>).max}
+          step={(field() as RangeField<TContext>).step}
+          disabled={disabled() || readonly()}
+          onChange={commit}
+        />
       </Show>
       <Show when={kind() === "radio" || kind() === "checkbox-group"}>
         <div role="group" aria-label={field().label ?? field().name}>
@@ -190,14 +225,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
                   name={field().name}
                   disabled={disabled() || readonly() || option.disabled}
                   checked={
-                    kind() === "radio"
-                      ? value() === option.value
-                      : Array.isArray(value()) && (value() as string[]).includes(option.value)
+                    kind() === "radio" ? value() === option.value : selectedValues().includes(option.value)
                   }
                   onChange={(e) => {
                     if (kind() === "radio") commit(option.value);
                     else {
-                      const next = new Set(Array.isArray(value()) ? (value() as string[]) : []);
+                      const next = new Set(selectedValues());
                       if (e.currentTarget.checked) next.add(option.value);
                       else next.delete(option.value);
                       commit([...next]);
@@ -228,7 +261,12 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
       </Show>
       <Show when={kind() === "rating"}>
         <div role="group" aria-label={field().label ?? field().name}>
-          <For each={Array.from({ length: "max" in field() ? ((field() as { max?: number }).max ?? 5) : 5 }, (_, i) => i + 1)}>
+          <For
+            each={Array.from(
+              { length: "max" in field() ? ((field() as { max?: number }).max ?? 5) : 5 },
+              (_, i) => i + 1,
+            )}
+          >
             {(n) => (
               <button
                 type="button"
@@ -277,23 +315,6 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             : field().label}
         </button>
       </Show>
-      <Show when={kind() === "color" && !!prop<readonly string[]>("presets")?.length}>
-        <div role="group" aria-label="Cores predefinidas">
-          <For each={prop<readonly string[]>("presets") ?? []}>
-            {(color) => (
-              <button
-                type="button"
-                aria-label={color}
-                title={color}
-                disabled={disabled() || readonly()}
-                onClick={() => commit(color)}
-              >
-                {color}
-              </button>
-            )}
-          </For>
-        </div>
-      </Show>
       <Show when={kind() === "range" && prop<boolean>("showValue")}>
         <output for={id()}>{stringValue()}</output>
       </Show>
@@ -315,10 +336,9 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
         {(() => {
           const f = field();
           return "render" in f
-            ? (f as { render: (ctx: TContext, field: typeof f) => import("@solidjs/web").JSX.Element }).render(
-                props.context,
-                f,
-              )
+            ? (
+                f as { render: (ctx: TContext, field: typeof f) => import("@solidjs/web").JSX.Element }
+              ).render(props.context, f)
             : null;
         })()}
       </Show>
