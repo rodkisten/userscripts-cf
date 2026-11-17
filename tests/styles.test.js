@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import postcss from "postcss";
 import { transform } from "lightningcss";
-import { transformWithEsbuild } from "vite";
+import { transformWithOxc } from "vite";
 import { Window } from "happy-dom";
 import { stylesPipeline } from "../build/styles.mjs";
 import {
@@ -55,7 +55,7 @@ test("component classes replace or extend styles and install in document and sha
     /^import[^;]+;/,
     "const coreCSS = " + JSON.stringify(compiled) + ";",
   );
-  const helper = (await transformWithEsbuild(source, "core/css.ts", { loader: "ts", format: "iife" })).code;
+  const helper = (await transformWithEsbuild(source, "core/css.ts", { lang: "ts" })).code;
   window.eval(helper + ";window.applyStyle=applyComponentStyle;window.clearStyle=clearComponentStyle;");
   const host = window.document.createElement("div");
   window.document.body.append(host);
