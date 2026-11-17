@@ -1,6 +1,6 @@
 import { createEffect, createMemo, createSignal, For, Show, onCleanup, onSettled } from "solid-js";
 import Fuse from "fuse.js";
-import { Virtualizer } from "@tanstack/virtual-core";
+import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { ControlOption } from "./options";
 import { filterOptions, groupOptions } from "./options";
 import type { OptionsSource } from "./options";
@@ -56,6 +56,9 @@ export function Combobox(props: ComboboxProps) {
     count: 0,
     getScrollElement: () => scrollElement ?? null,
     estimateSize: () => 46,
+    scrollToFn: elementScroll,
+    observeElementRect,
+    observeElementOffset,
     overscan: 6,
     onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
   });
@@ -92,6 +95,9 @@ export function Combobox(props: ComboboxProps) {
       count: filtered().length,
       getScrollElement: () => scrollElement ?? null,
       estimateSize: () => 46,
+      scrollToFn: elementScroll,
+      observeElementRect,
+      observeElementOffset,
       overscan: 6,
       onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
     });
