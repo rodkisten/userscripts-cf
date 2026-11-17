@@ -187,7 +187,7 @@ export function initializeDeckScrollChrome(): void {
         if (article.hidden || getComputedStyle(article).display === "none") continue;
         const r = article.getBoundingClientRect();
         if (r.top <= top + CHROME_METRICS.pinTopBuffer && r.bottom > top + CHROME_METRICS.pinBottomBuffer) {
-          candidate = article.querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
+          candidate = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
           if (candidate) break;
         }
       }

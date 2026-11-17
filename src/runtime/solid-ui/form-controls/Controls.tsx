@@ -20,15 +20,13 @@ export function Select(props: SelectProps) {
       disabled={props.disabled}
       onChange={(event) => props.onChange(event.currentTarget.value)}
     >
-      {
-        <For each={props.options}>
-          {(option) => (
-            <option value={option.value} disabled={option.disabled}>
-              {option.label}
-            </option>
-          )}
-        </For>
-      }
+      <For each={props.options}>
+        {(option) => (
+          <option value={option.value} disabled={option.disabled}>
+            {option.label}
+          </option>
+        )}
+      </For>
     </select>
   );
 }
@@ -126,21 +124,19 @@ export function ColorPicker(props: ColorPickerProps) {
         {current().toUpperCase()}
       </output>
       <div class={styles.colorPresets} role="group" aria-label="Cores predefinidas">
-        {
-          <For each={(props.presets ?? []).filter(valid)}>
-            {(color) => (
-              <button
-                type="button"
-                class={styles.colorPreset}
-                style={{ "background-color": color }}
-                aria-label={color}
-                aria-pressed={current().toLowerCase() === color.toLowerCase()}
-                disabled={props.disabled || props.readonly}
-                onClick={() => props.onChange(color)}
-              />
-            )}
-          </For>
-        }
+        <For each={(props.presets ?? []).filter(valid)}>
+          {(color) => (
+            <button
+              type="button"
+              class={styles.colorPreset}
+              style={{ "background-color": color }}
+              aria-label={color}
+              aria-pressed={current().toLowerCase() === color.toLowerCase()}
+              disabled={props.disabled || props.readonly}
+              onClick={() => props.onChange(color)}
+            />
+          )}
+        </For>
       </div>
     </div>
   );

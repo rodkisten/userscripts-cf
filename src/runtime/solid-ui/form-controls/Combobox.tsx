@@ -1,6 +1,6 @@
 import { createEffect, createMemo, createSignal, For, Show, onCleanup, onSettled } from "solid-js";
 import Fuse from "fuse.js";
-import { Virtualizer } from "@tanstack/virtual-core";
+import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { ControlOption } from "./options";
 import { filterOptions, groupOptions } from "./options";
 import type { OptionsSource } from "./options";
@@ -57,6 +57,9 @@ export function Combobox(props: ComboboxProps) {
     getScrollElement: () => scrollElement ?? null,
     estimateSize: () => 46,
     overscan: 6,
+    scrollToFn: elementScroll,
+    observeElementRect,
+    observeElementOffset,
     onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
   });
   const listId = () => `${props.id}-listbox`;
@@ -93,6 +96,9 @@ export function Combobox(props: ComboboxProps) {
       getScrollElement: () => scrollElement ?? null,
       estimateSize: () => 46,
       overscan: 6,
+      scrollToFn: elementScroll,
+      observeElementRect,
+      observeElementOffset,
       onChange: () => setScrollTop(scrollElement?.scrollTop ?? 0),
     });
     virtualizer._willUpdate();
@@ -201,7 +207,7 @@ export function Combobox(props: ComboboxProps) {
           aria-controls={listId()}
           aria-activedescendant={open() && enabled()[active()] ? `${props.id}-option-${active()}` : undefined}
           disabled={props.disabled}
-          readOnly={props.readonly}
+          readOnly={!!props.readonly}
           placeholder={props.placeholder ?? "Pesquisar…"}
           autocomplete="off"
           value={displayed()}
