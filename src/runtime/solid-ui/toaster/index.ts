@@ -95,15 +95,24 @@ function createScope(name: string, defaults: ToastOptions = {}): ScopeApi {
     multiLoading: (d) => toast.multiLoading(merge(d)),
     confirm: (d) => toast.confirm(merge(d)),
     prompt: (d) => toast.prompt(merge(d)),
-    select: <T = unknown>(d: SelectOptions<T> = {}) => toast.select<T>({ ...defaults, ...d, scope: name }),
+    select: <T = unknown>(d: SelectOptions<T> = {}) => {
+      const { options: _options, value: _value, ...base } = defaults;
+      return toast.select<T>({ ...base, ...d, scope: name });
+    },
     picker: (d) => toast.picker(merge(d)),
     undo: (d) => toast.undo(merge(d)),
     task: (d) => toast.task(merge(d)),
     promise: <T>(
       inp: Promise<T> | ((ctx: TaskExecutorContext) => Promise<T>),
       d: PromiseDescriptor<T> = {},
-    ) => toast.promise<T>(inp, { ...defaults, ...d, scope: name }),
-    retry: <T>(d: RetryDescriptor<T>) => toast.retry<T>({ ...defaults, ...d, scope: name }),
+    ) => {
+      const { loading: _loading, success: _success, error: _error, ...base } = defaults;
+      return toast.promise<T>(inp, { ...base, ...d, scope: name });
+    },
+    retry: <T>(d: RetryDescriptor<T>) => {
+      const { loading: _loading, success: _success, error: _error, ...base } = defaults;
+      return toast.retry<T>({ ...base, ...d, scope: name });
+    },
     group: (d) => toast.group(merge(d)),
     dismissAll: (immediate = false) => {
       const { toasts } = useToasterState();

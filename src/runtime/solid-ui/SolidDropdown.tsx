@@ -1,5 +1,5 @@
 import { createSignal, For } from "solid-js";
-import type { Properties } from "csstype";
+import type { JSX } from "@solidjs/web";
 import { render } from "@solidjs/web";
 import type { DropdownOptions, DropdownItem } from "./menu-api";
 
@@ -205,7 +205,7 @@ export function openSolidDropdown(options: DropdownOptions) {
   focusFirst();
   return { close };
 }
-const buttonStyle: Properties = {
+const buttonStyle: JSX.CSSProperties = {
   display: "block",
   width: "100%",
   "min-height": "36px",
