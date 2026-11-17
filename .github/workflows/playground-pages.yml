@@ -49,6 +49,32 @@ jobs:
         env:
           USERSCRIPTS_PREVIEW: "1"
         run: node build/hosting.mjs
+      - name: Validate static Pages output
+        run: |
+          set -euo pipefail
+          test -s dist/pages/index.html
+          test -s dist/pages/manifest.json
+          test -s dist/pages/playground/form-controls.html
+          test -s dist/pages/playground/form-controls.js
+          test -s dist/pages/playground/form-controls.js.map
+          test -s dist/pages/icons/preview.svg
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const root = "dist/pages/";
+          const manifest = JSON.parse(fs.readFileSync(root + "manifest.json", "utf8"));
+          if (manifest.channel !== "preview" || !manifest.scripts.length) throw Error("Missing preview catalog");
+          for (const item of manifest.scripts) {
+            if (!item.file.endsWith(".preview.user.js") || !item.metaFile.endsWith(".preview.meta.js")) throw Error("Invalid preview filenames: " + item.id);
+            const source = fs.readFileSync(root + item.file, "utf8");
+            const meta = fs.readFileSync(root + item.metaFile, "utf8");
+            for (const [name, content] of [["script", source], ["metadata", meta]]) {
+              if (!/^\\/\\/ @name\\s+\\[PRE\\] /m.test(content)) throw Error("Missing PRE name in " + item.id + " " + name);
+              if (!content.includes("/" + item.file) || !content.includes("/" + item.metaFile)) throw Error("Incorrect preview links in " + item.id + " " + name);
+              if (!content.includes("/icons/preview.svg")) throw Error("Missing black preview icon in " + item.id + " " + name);
+            }
+          }
+          console.log("Verified " + manifest.scripts.length + " preview installers and static assets");
+          NODE
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
