@@ -99,3 +99,7 @@ ButtonGroup now reads `--button-radius` directly on the group, instead of relyin
 ## Dropdown keyboard and mobile behavior
 
 The shared `SolidDropdown` now prevents duplicate menus per trigger (reopening toggles closed), supports Home/End, ArrowUp/ArrowDown, Escape, ArrowLeft for submenu back navigation, and closes on Tab or pointerdown outside. It restores trigger focus on close and repositions on scroll/resize for mobile overflow layouts. Submenu transitions focus their first enabled item. These are source changes; Safari and assistive technology verification remain outstanding.
+
+## Focus and touch refinement
+
+Keyboard handling is scoped to focused dropdown descendants; Tab dismisses without stealing focus. Mobile viewport resize/scroll events reposition the menu when the virtual keyboard or zoom changes. Buttons have touch-action manipulation and hover/pressed feedback. Build and Safari checks remain pending for this commit.

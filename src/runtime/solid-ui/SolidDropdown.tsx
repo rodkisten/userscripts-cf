@@ -1,4 +1,4 @@
-import { createSignal, For, onCleanup } from "solid-js";
+import { createSignal, For } from "solid-js";
 import { render } from "@solidjs/web";
 import type { DropdownOptions, DropdownItem } from "./menu-api";
 
@@ -23,7 +23,7 @@ export function openSolidDropdown(options: DropdownOptions) {
   let disposed = false;
   const [stack, setStack] = createSignal<DropdownItem[][]>([options.items]);
   const [version, setVersion] = createSignal(0);
-  const close = () => {
+  const close = (restoreFocus = true) => {
     if (disposed) return;
     disposed = true;
     activeDropdowns.delete(trigger);
@@ -32,9 +32,9 @@ export function openSolidDropdown(options: DropdownOptions) {
     mount.remove();
     if (previous === null) trigger.removeAttribute("aria-expanded");
     else trigger.setAttribute("aria-expanded", previous);
-    if (trigger.isConnected) trigger.focus();
+    if (restoreFocus && trigger.isConnected) trigger.focus();
   };
-  activeDropdowns.set(trigger, close);
+  activeDropdowns.set(trigger, () => close());
   const focusFirst = () => mount.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   const position = () => {
     const rect = trigger.getBoundingClientRect();
@@ -143,8 +143,9 @@ export function openSolidDropdown(options: DropdownOptions) {
         event.preventDefault();
         close();
       }
+      if (!(event.target instanceof Node) || !mount.contains(event.target)) return;
       if (event.key === "Tab") {
-        close();
+        close(false);
         return;
       }
       if (event.key === "Home" || event.key === "End") {
@@ -172,6 +173,8 @@ export function openSolidDropdown(options: DropdownOptions) {
     { signal: controller.signal },
   );
   window.addEventListener("resize", position, { signal: controller.signal });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("resize", position, { signal: controller.signal });
+  trigger.ownerDocument.defaultView?.visualViewport?.addEventListener("scroll", position, { signal: controller.signal });
   // Capture scrolling from nested containers, including mobile overflow panes.
   trigger.ownerDocument.addEventListener("scroll", position, {
     capture: true,
