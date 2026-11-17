@@ -172,7 +172,7 @@
   }
   .button {
     transition: none;
-    transform: none !important;
+    transform: none;
   }
 }
 
