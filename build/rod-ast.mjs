@@ -226,6 +226,9 @@ export function transformRodAst(code, id, options = {}) {
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
       const callee = node.expression;
+      // Optional calls/receivers short-circuit. A context helper is not
+      // guaranteed to preserve that behavior, so never rewrite either form.
+      const optional = Boolean(node.questionDotToken || (ts.isPropertyAccessExpression(callee) && callee.questionDotToken));
       let replacement, extraArg;
       const storageMethod = storageRewrite(node, owner, shadowed);
       if (storageMethod) replacement = ctx + ".storage.local." + storageMethod;
@@ -269,7 +272,7 @@ export function transformRodAst(code, id, options = {}) {
       ) {
         replacement = ctx + ".gm.modern." + callee.name.text;
       }
-      if (replacement) {
+      if (replacement && !optional) {
         const original = code.slice(callee.getStart(source), callee.end);
         edits.push({ start: callee.getStart(source), end: callee.end, before: original, after: replacement });
         if (extraArg)
