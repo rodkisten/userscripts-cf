@@ -1,6 +1,9 @@
 name: "📦 Import ZIPs → PR"
 
 on:
+  push:
+    paths:
+      - "*.zip"
   workflow_dispatch:
     inputs:
       output_path:
