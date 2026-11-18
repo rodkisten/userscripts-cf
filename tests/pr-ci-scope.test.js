@@ -33,7 +33,9 @@ describe("explicit scope validation safety", () => {
   const validator = readFileSync(new URL("../build/validate-changed.sh", import.meta.url), "utf8");
 
   it("never bypasses TypeScript and lint for explicit test/build scopes", () => {
-    const explicit = validator.slice(validator.indexOf('if [[ "$explicit" == true ]]; then', validator.indexOf("  run)")));
+    const explicit = validator.slice(
+      validator.indexOf('if [[ "$explicit" == true ]]; then', validator.indexOf("  run)")),
+    );
     expect(explicit).toContain("npm run typecheck");
     expect(explicit).toContain("npm run lint");
     expect(explicit.indexOf("npm run typecheck")).toBeLessThan(explicit.indexOf("npx vitest run"));
@@ -42,7 +44,7 @@ describe("explicit scope validation safety", () => {
   it("builds missing dist artifacts for explicit full and integration suites", () => {
     expect(validator).toContain('[[ "${scoped_tests[0]}" == all ]]');
     expect(validator).toContain("integration|integrated|boot|standalone|page-repl");
-    expect(validator).toContain('[[ ! -f dist/manifest.json ]]');
+    expect(validator).toContain("[[ ! -f dist/manifest.json ]]");
     expect(validator).toContain("Build required by integration test scope");
   });
 
