@@ -134,7 +134,8 @@ case "$mode" in
         playground/*|public/*) hosting_changed=true; build_needed=true ;;
       esac
     done
-    # Fail fast on TypeScript errors before spending time bundling.\n    # Integration tests still build fresh dist/ before running.
+    # Fail fast on TypeScript errors before spending time bundling.
+    # Integration tests still build fresh dist/ before running.
     mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
     if (( ${#changed_tests[@]} )) && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
       build_needed=true
