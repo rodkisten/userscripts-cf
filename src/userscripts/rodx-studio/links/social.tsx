@@ -57,7 +57,7 @@ export function initializeDeckSocialAppLinks() {
       if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(RODX_SELECTORS.appLinkIcon)) {
         anchor.querySelector(RODX_SELECTORS.appLinkIcon)?.remove();
         const icon = (
-          <span class="rodx-app-icon" aria-hidden="true">
+          <span className="rodx-app-icon" aria-hidden="true">
             {app.name === "telegram" ? (
               <TelegramIcon />
             ) : app.name === "whatsapp" ? (

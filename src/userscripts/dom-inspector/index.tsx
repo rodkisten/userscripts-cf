@@ -438,7 +438,7 @@ export default {
                   <output className={styles.selection} title={selectionName()}>
                     {selectionName()}
                   </output>
-                  <label for="inspector-depth">Nível {depth()}</label>
+                  <label htmlFor="inspector-depth">Nível {depth()}</label>
                   <input
                     id="inspector-depth"
                     aria-label="Subir na hierarquia DOM"

@@ -227,7 +227,7 @@ export default {
         <>
           <Show when={position().visible}>
             <button
-              class={styles.fab}
+              className={styles.fab}
               data-open={open()}
               style={{ left: position().x + "px", top: position().y + "px" }}
               aria-label="Abrir atalhos do editor"
@@ -240,7 +240,7 @@ export default {
           </Show>
           <Show when={open() && position().visible}>
             <section
-              class={styles.panel}
+              className={styles.panel}
               role="group"
               aria-label="Atalhos do editor"
               style={{
@@ -252,17 +252,17 @@ export default {
                   ) + "px",
               }}
             >
-              <div class={styles.title}>
+              <div className={styles.title}>
                 <span>⌨ Editor móvel</span>
-                <button class={styles.close} aria-label="Fechar" onClick={() => setOpen(false)}>
+                <button className={styles.close} aria-label="Fechar" onClick={() => setOpen(false)}>
                   ×
                 </button>
               </div>
-              <div class={styles.grid}>
+              <div className={styles.grid}>
                 <For each={actions}>
                   {([icon, label, action]) => (
                     <button
-                      class={styles.key}
+                      className={styles.key}
                       data-active={action === "ctrl" ? ctrl() : action === "shift" ? shift() : false}
                       aria-label={label}
                       onPointerDown={(event) => event.preventDefault()}
@@ -274,7 +274,7 @@ export default {
                   )}
                 </For>
               </div>
-              <p class={styles.hint}>Ctrl e Shift: próximo comando</p>
+              <p className={styles.hint}>Ctrl e Shift: próximo comando</p>
             </section>
           </Show>
         </>

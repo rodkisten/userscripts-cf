@@ -229,7 +229,7 @@ export function renderField([key, title, type, data]) {
     <>
       <div className={cx(["field ", type === "textarea" ? "wide" : ""].join(""))}>
         {"\n      "}
-        <label for={""}>{title}</label>
+        <label htmlFor={""}>{title}</label>
         {ctrl}
       </div>
     </>
@@ -316,8 +316,8 @@ export function TagTray() {
             data-chip-input={""}
             aria-label={"Adicionar hashtags separadas por vírgulas"}
             placeholder={"#hashtag, outra, palavra…"}
-            autocomplete={"off"}
-            spellcheck={"false"}
+            autoComplete={"off"}
+            spellCheck={"false"}
           />
           {"\n      "}
         </div>
@@ -538,7 +538,7 @@ export function PresetShelf() {
           {"\n        "}
           <input
             className={cx("ctrl rx-search-workbench-ctrl")}
-            maxlength={"100"}
+            maxLength={"100"}
             data-preset-name={""}
             value={state.draft.presetName || ""}
             placeholder={"Nome da base · Ex.: Mídia + hashtags"}
@@ -930,7 +930,7 @@ export function SearchEditor() {
             <input
               className={cx("ctrl")}
               data-meta={"name"}
-              maxlength={"100"}
+              maxLength={"100"}
               placeholder={"Ex.: Tech Brasil, Notícias, Futebol"}
               value={draft.name}
             />
@@ -942,7 +942,7 @@ export function SearchEditor() {
             <input
               className={cx("ctrl")}
               data-meta={"icon"}
-              maxlength={"4"}
+              maxLength={"4"}
               value={draft.icon}
               placeholder={"🔎"}
             />
@@ -1051,7 +1051,7 @@ export function SearchEditor() {
           <textarea
             className={cx("ctrl raw-code")}
             data-raw-query={""}
-            spellcheck={"false"}
+            spellCheck={"false"}
             placeholder={"filter:media (#troconudes OR #troconuds)"}
             value={"\n            " + (state.rawDirty ? state.rawQueryDraft : "") + "\n          "}
           />
@@ -1355,7 +1355,7 @@ export function DataSettings() {
               className={cx("ctrl rx-search-workbench-ctrl-flex")}
               data-manual-account={""}
               placeholder={"@meuusuario"}
-              maxlength={"16"}
+              maxLength={"16"}
             />
             {"\n          "}
             <button className={cx("btn")} data-act={"set-manual-account"}>

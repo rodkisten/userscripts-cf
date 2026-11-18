@@ -223,9 +223,9 @@ export function initializeDeckSearchAnchors() {
           <>
             <style textContent={extractedCSS1} />
             {"\n"}
-            <div class={"list-context"} role={"status"} hidden={true}></div>
+            <div className={"list-context"} role={"status"} hidden={true}></div>
             {"\n"}
-            <div class={"return"} hidden={true}>
+            <div className={"return"} hidden={true}>
               {"\n  "}
               <button type={"button"} data-return={""}></button>
               {"\n  "}

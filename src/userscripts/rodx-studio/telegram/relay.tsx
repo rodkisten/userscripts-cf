@@ -125,8 +125,8 @@ export function initializeDeckRelay() {
               <input
                 className={"ctrl"}
                 data-relay={"url"}
-                inputmode={"url"}
-                autocomplete={"off"}
+                inputMode={"url"}
+                autoComplete={"off"}
                 value={clean(settings.url)}
                 placeholder={DEFAULT_URL}
               />
@@ -139,7 +139,7 @@ export function initializeDeckRelay() {
                 className={"ctrl"}
                 type={"password"}
                 data-relay={"token"}
-                autocomplete={"off"}
+                autoComplete={"off"}
                 placeholder={
                   settings.token
                     ? "Token ativo (••••" +

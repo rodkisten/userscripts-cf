@@ -1460,7 +1460,7 @@ export function renderSearch() {
         <label className={cx("small")}>{"Mínimo de curtidas"}</label>
         <input
           className={cx("field")}
-          inputmode={"numeric"}
+          inputMode={"numeric"}
           data-setting={"minLikes"}
           value={settings.minLikes}
           placeholder={"Ex.: 10"}

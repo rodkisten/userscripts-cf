@@ -20,7 +20,7 @@ export function TypeaheadSelect(props: TypeaheadSelectProps) {
       value={props.value as string | readonly string[] | null}
       multiple={props.multiple}
       disabled={props.disabled}
-      readonly={props.field.readonly}
+      readOnly={props.field.readonly}
       placeholder={props.field.placeholder || props.field.searchPlaceholder}
       emptyMessage={props.field.emptyMessage}
       onChange={props.onCommit}

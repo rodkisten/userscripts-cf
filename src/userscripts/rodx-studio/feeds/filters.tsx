@@ -204,7 +204,7 @@ export function FeedFilterButton(props: { summary: string; reposts: boolean; sna
     <>
       <style textContent={filterCSS} />
       <button
-        class={styles.filter}
+        className={styles.filter}
         type="button"
         data-filter-menu=""
         title="Configurar filtros no RodMenu"

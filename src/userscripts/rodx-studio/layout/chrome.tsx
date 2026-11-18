@@ -201,7 +201,7 @@ export function initializeDeckScrollChrome(): void {
         portal = (
           <div
             id={ELEMENT_IDS.activeTweetBar}
-            class={CSS_CLASSES.tweetTopbar}
+            className={CSS_CLASSES.tweetTopbar}
             aria-label={UI_TEXTS.tweetBarAriaLabel}
             onClick={(event: MouseEvent) => {
               const target = (event.target as HTMLElement)?.closest<HTMLElement>(

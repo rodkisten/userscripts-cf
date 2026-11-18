@@ -856,7 +856,7 @@ export function initializeDeckXRepost() {
           {"\n            "}
           <label className={"rx-repost-caption-field"}>
             {"\n              Legenda (sem tags HTML, com @/usuario)\n              "}
-            <textarea className={"rdx-ds-caption"} data-share-caption={""} spellcheck={"false"}></textarea>
+            <textarea className={"rdx-ds-caption"} data-share-caption={""} spellCheck={"false"}></textarea>
             {"\n            "}
           </label>
           {"\n            "}

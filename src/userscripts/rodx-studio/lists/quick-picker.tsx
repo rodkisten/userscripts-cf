@@ -114,7 +114,7 @@ export function initializeRodX_lists_83() {
             className={cx("quick-search")}
             type={"search"}
             placeholder={"Buscar listas"}
-            autocomplete={"off"}
+            autoComplete={"off"}
             aria-label={"Buscar lista"}
           />
         </div>

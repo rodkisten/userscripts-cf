@@ -226,7 +226,7 @@ export function GitHubTokenSettings(props: {
           Token com Actions: read
           <input
             type="password"
-            autocomplete="off"
+            autoComplete="off"
             value={state.token}
             onInput={(event) => {
               const token = event.currentTarget.value;

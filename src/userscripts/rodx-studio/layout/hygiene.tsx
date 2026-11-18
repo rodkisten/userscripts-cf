@@ -99,7 +99,7 @@ export function initializeDeckXInterfaceHygiene(): void {
       const button = (
         <button
           type="button"
-          class={CSS_CLASSES.grokReplacement}
+          className={CSS_CLASSES.grokReplacement}
           title={UI_TEXTS.openTweetTitle}
           aria-label={UI_TEXTS.openTweetTitle}
           onClick={(event: MouseEvent) => openTweet(article, event)}

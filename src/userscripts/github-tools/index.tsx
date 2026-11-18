@@ -592,7 +592,7 @@ function startGitHub(ctx: any): void {
           () => (
             <button
               type="button"
-              class={styles.button}
+              className={styles.button}
               title={"Favoritar " + item.name}
               aria-label={"Favoritar " + item.name}
               onClick={(event) => {

@@ -66,7 +66,7 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
     <>
       <style textContent={transportCSS + css} />
       <div
-        class={`rodx-video-transport ${styles.transport}`}
+        className={`rodx-video-transport ${styles.transport}`}
         data-rodx-player-control="1"
         aria-label="Controles de reprodução RodX"
         onClick={stop}
@@ -89,7 +89,7 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
           {playback.paused ? "▶" : "Ⅱ"}
         </button>
         <input
-          class={`rodx-transport-seek ${styles.seek}`}
+          className={`rodx-transport-seek ${styles.seek}`}
           type="range"
           min="0"
           max="1000"
@@ -106,7 +106,7 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
           onChange={finishSeek}
           onBlur={finishSeek}
         />
-        <time class={styles.clock}>
+        <time className={styles.clock}>
           {formatTime(scrubbing() ? (playback.duration * position()) / 1000 : playback.time)} /{" "}
           {formatTime(playback.duration)}
         </time>
