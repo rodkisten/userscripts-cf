@@ -30,6 +30,8 @@ const jsxAttrs = new Map([
   ["srcset", "srcSet"],
   ["crossorigin", "crossOrigin"],
   ["contenteditable", "contentEditable"],
+  ["colspan", "colSpan"], ["rowspan", "rowSpan"], ["cellpadding", "cellPadding"], ["cellspacing", "cellSpacing"],
+  ["allowfullscreen", "allowFullScreen"], ["frameborder", "frameBorder"],
 ]);
 const solidNames = new Set([
   "createSignal",
@@ -68,6 +70,7 @@ for (const file of files) {
   );
   const edits = [];
   const blockers = [];
+  if (sf.parseDiagnostics.length) blockers.push(...sf.parseDiagnostics.map(d=>({line:sf.getLineAndCharacterOfPosition(d.start ?? 0).line+1,kind:"Parse diagnostic",name:ts.flattenDiagnosticMessageText(d.messageText," ")})));
   const booleanAttrs = new Set(['spellCheck','readOnly','autoFocus','contentEditable','disabled','checked','required','multiple']);
   const numericAttrs = new Set(['maxLength','minLength','rows','cols','size','tabIndex','colSpan','rowSpan']);
   function visit(node) {
@@ -78,7 +81,7 @@ for (const file of files) {
       const name = after || before;
       if (node.initializer && ts.isStringLiteral(node.initializer)) {
         const value = node.initializer.text;
-        if (numericAttrs.has(name) && /^-?\\d+$/.test(value)) edits.push({start:node.initializer.getStart(sf),end:node.initializer.getEnd(),text:'{' + value + '}'});
+        if (numericAttrs.has(name) && /^-?\d+$/.test(value)) edits.push({start:node.initializer.getStart(sf),end:node.initializer.getEnd(),text:'{' + value + '}'});
         if (booleanAttrs.has(name) && /^(true|false)$/i.test(value)) edits.push({start:node.initializer.getStart(sf),end:node.initializer.getEnd(),text:'{' + value.toLowerCase() + '}'});
       }
       if (before === 'textContent') blockers.push({line:sf.getLineAndCharacterOfPosition(node.getStart(sf)).line+1,kind:'Requires React children conversion',name:before});
@@ -117,10 +120,10 @@ for (const file of files) {
   let updated = original;
   for (const edit of edits.sort((a, b) => b.start - a.start))
     updated = updated.slice(0, edit.start) + edit.text + updated.slice(edit.end);
-  if (write && updated !== original) writeFileSync(file, updated);
+  if (write && updated !== original && !sf.parseDiagnostics.length) writeFileSync(file, updated);
   const changed = updated !== original;
   if (edits.length || blockers.length)
-    reports.push({ file: relative(process.cwd(), file), replacements: edits.length, blockers });
+    reports.push({ file: relative(process.cwd(), file), changed, replacements: edits.length, blockers });
 }
 const changedFiles = reports.filter(item=>item.changed).length;
 const total = reports.reduce((sum, item) => sum + item.replacements, 0);
