@@ -67,7 +67,7 @@ function DropdownView({ options, close, portal }: { options: DropdownOptions; cl
           }}
         />
       </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
+      <DropdownMenu.Portal container={portal}>
         <DropdownMenu.Content
           align={options.align ?? "start"}
           sideOffset={4}
@@ -190,12 +190,17 @@ function DialogView({ schema, close, portal }: { schema: MenuSchema; close: () =
   );
 }
 
-function mount(view: (close: () => void, portal: HTMLElement) => React.ReactNode, name: string, owner: Document = document) {
+function mount(
+  view: (close: () => void, portal: HTMLElement) => React.ReactNode,
+  name: string,
+  owner: Document,
+  target: ShadowRoot | HTMLElement = owner.body,
+) {
   const host = owner.createElement("div");
   host.dataset.rodReactMenu = name;
   const portal = owner.createElement("div");
   portal.dataset.rodReactMenuPortal = name;
-  owner.body.append(host, portal);
+  target.append(host, portal);
   const root = createRoot(host);
   let disposed = false;
   const close = () => {
@@ -214,8 +219,11 @@ export function openRadixDropdown(options: DropdownOptions) {
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
     options.trigger.ownerDocument,
+    options.trigger.getRootNode() instanceof ShadowRoot ? options.trigger.getRootNode() as ShadowRoot : options.trigger.ownerDocument.body,
   );
 }
 export function openRadixDialog(schema: MenuSchema) {
-  return mount((close, portal) => <DialogView schema={schema} close={close} portal={portal} />, schema.id ?? "dialog");
+  const target = schema.container ?? document.body;
+  const owner = target.ownerDocument;
+  return mount((close, portal) => <DialogView schema={schema} close={close} portal={portal} />, schema.id ?? "dialog", owner, target);
 }
