@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type KeyboardEvent, type CSSProperties } from "react";
 import styles, { css } from "./Panel.module.css";
 
 export type ActionsTab = { id: string; title: string; icon?: string; render: () => ReactNode };
@@ -20,7 +20,7 @@ export function ActionsPanel({ entries, initial }: { entries: Entry[]; initial: 
     if (!entries.some((tab) => tab.key === active)) setActive(entries[0]?.key ?? "");
   }, [entries, active]);
   const slot = width / Math.max(1, entries.length);
-  const chooseNext = (event: React.KeyboardEvent<HTMLElement>) => {
+  const chooseNext = (event: KeyboardEvent<HTMLElement>) => {
     const current = entries.findIndex((tab) => tab.key === active);
     const next = event.key === "Home" ? 0 : event.key === "End" ? entries.length - 1
       : event.key === "ArrowRight" ? (current + 1) % entries.length
@@ -35,7 +35,7 @@ export function ActionsPanel({ entries, initial }: { entries: Entry[]; initial: 
       <style>{css}</style>
       <nav ref={nav} className={styles.tabs} role="tablist" aria-label="Ferramentas"
         onKeyDown={chooseNext} style={{ "--tab-font": `${Math.max(10, Math.min(13, slot / 7))}px`,
-          "--tab-pad": `${Math.max(0, Math.min(8, slot / 14))}px` } as React.CSSProperties}>
+          "--tab-pad": `${Math.max(0, Math.min(8, slot / 14))}px` } as CSSProperties}>
         {entries.map((tab) => (
           <button key={tab.key} type="button" role="tab" id={`rod-tab-${tab.key}`}
             aria-controls="rod-actions-content" aria-selected={active === tab.key}
