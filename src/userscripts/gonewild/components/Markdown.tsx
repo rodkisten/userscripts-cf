@@ -1,5 +1,4 @@
-import { For, createMemo } from "solid-js";
-import { Dynamic } from "@solidjs/web";
+import { Fragment, type ReactNode } from "react";
 import { safeURL } from "../domain.ts";
 
 type Block = {
@@ -71,96 +70,56 @@ export function markdownBlocks(source: string): Block[] {
   }
   return result;
 }
-function PlainText(props: { text: string }) {
-  return (
-    <For each={props.text.split("\n")}>
-      {(line, index) => (
-        <>
-          {index() > 0 ? <br /> : null}
-          {line}
-        </>
-      )}
-    </For>
-  );
+function PlainText({ text }: { text: string }) {
+  return <>{text.split("\\n").map((line, index) => (
+    <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>
+  ))}</>;
 }
-function Inline(props: { text: string; depth?: number }) {
-  const parts = createMemo(() => {
-    if ((props.depth || 0) > 5) return [props.text];
-    const result: Array<string | { kind: string; text: string; href?: string }> = [];
-    const tokens =
-      /(`[^`\n]+`)|\[([^\]\n]{1,300})\]\s*\((https?:\/\/[^\s)]+(?:\([^\n)]*\)[^\s)]*)*)\)|<(https?:\/\/[^>\s]+)>|(https?:\/\/[^\s<>'"\[\]]+)|(\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_)/gi;
-    let last = 0;
-    for (const m of props.text.matchAll(tokens)) {
-      if (m.index! > last) result.push(props.text.slice(last, m.index));
-      if (m[1]) result.push({ kind: "code", text: m[1].slice(1, -1) });
-      else if (m[2] || m[4] || m[5]) {
-        const raw = m[3] || m[4] || m[5];
-        const href = safeURL(raw.replace(/[.,;!?]+$/, ""), "https://www.reddit.com")?.href;
-        if (href) result.push({ kind: "a", text: m[2] || raw, href });
-        else result.push(m[0]);
-      } else {
-        const wide = /^(\*\*|__|~~)/.test(m[0]);
-        result.push({
-          kind: m[0].startsWith("~~") ? "del" : wide ? "strong" : "em",
-          text: m[0].slice(wide ? 2 : 1, wide ? -2 : -1),
-        });
-      }
-      last = m.index! + m[0].length;
+function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
+  if (depth > 5) return <PlainText text={text} />;
+  const tokens = /(`[^`\\n]+`)|\\[([^\\]\\n]{1,300})\\]\\s*\\((https?:\\/\\/[^\\s)]+(?:\\([^\\n)]*\\)[^\\s)]*)*)\\)|<(https?:\\/\\/[^>\\s]+)>|(https?:\\/\\/[^\\s<>'"\\[\\]]+)|(\\*\\*[^*\\n]+\\*\\*|__[^_\\n]+__|~~[^~\\n]+~~|\\*[^*\\n]+\\*|_[^_\\n]+_)/gi;
+  const result: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(tokens)) {
+    const index = match.index ?? 0;
+    if (index > last) result.push(<PlainText key={last} text={text.slice(last, index)} />);
+    if (match[1]) result.push(<code key={index}>{match[1].slice(1, -1)}</code>);
+    else if (match[2] || match[4] || match[5]) {
+      const raw = match[3] || match[4] || match[5];
+      const href = safeURL(raw.replace(/[.,;!?]+$/, ""), "https://www.reddit.com")?.href;
+      result.push(href ? <a key={index} href={href} target="_blank" rel="noopener noreferrer">{match[2] || raw}</a> : match[0]);
+    } else {
+      const wide = /^(\\*\\*|__|~~)/.test(match[0]);
+      const inner = match[0].slice(wide ? 2 : 1, wide ? -2 : -1);
+      const child = <Inline text={inner} depth={depth + 1} />;
+      result.push(match[0].startsWith("~~") ? <del key={index}>{child}</del>
+        : wide ? <strong key={index}>{child}</strong> : <em key={index}>{child}</em>);
     }
-    if (last < props.text.length) result.push(props.text.slice(last));
-    return result;
-  });
-  return (
-    <For each={parts()}>
-      {(part) =>
-        typeof part === "string" ? (
-          <PlainText text={part} />
-        ) : part.kind === "a" ? (
-          <a href={part.href} target="_blank" rel="noopener noreferrer">
-            {part.text}
-          </a>
-        ) : part.kind === "code" ? (
-          <code>{part.text}</code>
-        ) : (
-          <Dynamic component={part.kind}>
-            <Inline text={part.text} depth={(props.depth || 0) + 1} />
-          </Dynamic>
-        )
-      }
-    </For>
-  );
+    last = index + match[0].length;
+  }
+  if (last < text.length) result.push(<PlainText key={last} text={text.slice(last)} />);
+  return <>{result}</>;
 }
-export function Markdown(props: { text: string }) {
-  const blocks = createMemo(() => markdownBlocks(props.text));
-  return (
-    <For each={blocks()}>
-      {(block) =>
-        block.kind === "rule" ? (
-          <hr />
-        ) : block.kind === "code" ? (
-          <pre>
-            <code>{block.text}</code>
-          </pre>
-        ) : block.kind === "list" ? (
-          <Dynamic component={block.ordered ? "ol" : "ul"}>
-            <For each={block.items}>
-              {(text) => (
-                <li>
-                  <Inline text={text} />
-                </li>
-              )}
-            </For>
-          </Dynamic>
-        ) : (
-          <Dynamic
-            component={
-              block.kind === "heading" ? `h${block.level}` : block.kind === "quote" ? "blockquote" : "p"
-            }
-          >
-            <Inline text={block.text} />
-          </Dynamic>
-        )
+export function Markdown({ text }: { text: string }) {
+  return <>{markdownBlocks(text).map((block, index) => {
+    if (block.kind === "rule") return <hr key={index} />;
+    if (block.kind === "code") return <pre key={index}><code>{block.text}</code></pre>;
+    if (block.kind === "list") {
+      const children = block.items?.map((item, i) => <li key={i}><Inline text={item} /></li>);
+      return block.ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>;
+    }
+    const content = <Inline text={block.text} />;
+    if (block.kind === "quote") return <blockquote key={index}>{content}</blockquote>;
+    if (block.kind === "heading") {
+      switch (block.level) {
+        case 1: return <h1 key={index}>{content}</h1>;
+        case 2: return <h2 key={index}>{content}</h2>;
+        case 3: return <h3 key={index}>{content}</h3>;
+        case 4: return <h4 key={index}>{content}</h4>;
+        case 5: return <h5 key={index}>{content}</h5>;
+        default: return <h6 key={index}>{content}</h6>;
       }
-    </For>
-  );
+    }
+    return <p key={index}>{content}</p>;
+  })}</>;
 }
