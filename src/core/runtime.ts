@@ -267,7 +267,7 @@ export function createCoreRuntime(
     createSpecificContext: (params: {
       readonly definition: ScriptDefinition;
       readonly abort: AbortController;
-      readonly getContext: () => unknown;
+      readonly getContext: () => ScriptContext;
       readonly onDispose: (cb: () => void | Promise<void>) => void;
       readonly ensureUIRoot: () => ShadowRoot;
       readonly addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
@@ -395,7 +395,7 @@ export function createCoreRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches({ ...definition, name: definition.name ?? definition.id }, url, rules()[definition.id]);
+    matches({ ...definition, name: definition.name ?? definition.id, matches: definition.matches ? [...definition.matches] : undefined, includes: definition.includes ? [...definition.includes] : undefined, exclude: definition.exclude ? [...definition.exclude] : undefined, excludeMatches: definition.excludeMatches ? [...definition.excludeMatches] : undefined, excludes: definition.excludes ? [...definition.excludes] : undefined }, url, rules()[definition.id]);
 
   const onRulesChange = () => {
     void navigate();
@@ -588,7 +588,7 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    let resolvedContext: Record<string, unknown>;
+    let resolvedContext: ScriptContext;
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
       ? options.createSpecificContext({
@@ -760,7 +760,7 @@ export function createCoreRuntime(
       },
     };
 
-    resolvedContext = Object.assign(baseContext, specificContext);
+    resolvedContext = Object.assign(baseContext, specificContext) as ScriptContext;
     return resolvedContext;
   }
 
