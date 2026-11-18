@@ -1,0 +1,40 @@
+name: React migration validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "build/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - ".github/workflows/react-migration-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: react-migration-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: TypeScript and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Legacy TypeScript
+        run: npm run typecheck
+      - name: React TypeScript
+        run: npm run typecheck:react
+      - name: Production build
+        run: npm run build
