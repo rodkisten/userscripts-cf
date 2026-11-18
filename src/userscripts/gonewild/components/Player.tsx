@@ -32,7 +32,7 @@ export function Player(props: {
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const restoredRef = useRef(false);
-  const lastSavedRef.currentRef = useRef(0);
+  const lastSavedRef = useRef(0);
   const waveAbortRef = useRef<AbortController | undefined>(undefined);
   const audio = audioRef.current!;
   const canvas = canvasRef.current!;
@@ -228,8 +228,10 @@ export function Player(props: {
         try { media.setActionHandler(name as MediaSessionAction, action); } catch {}
       }
     }
-    restore();
-    draw();
+    if (element.readyState >= 1) {
+      restoredRef.current = true;
+      if (saved?.position > 0 && !saved.completed && Number.isFinite(element.duration)) element.currentTime = Math.min(saved.position, Math.max(0, element.duration - 0.25));
+    }
     return () => {
       persist();
       waveAbortRef.current?.abort();
@@ -264,7 +266,7 @@ export function Player(props: {
           id="gws-sg-wave"
           height="118"
           role="slider"
-          tabIndex="0"
+          tabIndex={0}
           aria-label="Posição na gravação"
           aria-valuemin="0"
           aria-valuemax={state.duration}
