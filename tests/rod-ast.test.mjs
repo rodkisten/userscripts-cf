@@ -256,3 +256,25 @@ it("preserves explicit querySelectorAll generic arguments and inferred selectors
   expect(result.code).toContain('ctx.dom.querySelector("input")');
   expect(transformRodAst(result.code, "selector-types.ts").changed).toBe(false);
 });
+
+it("rewrites direct legacy and modern GM calls to the context bridge", () => {
+  const input = 'function init(ctx) { GM_setValue("key", 1); GM_getValue("key"); GM.addStyle("body{}"); GM.xmlhttpRequest({ url: "/api" }); }';
+  const output = transformRodAst(input, "gm.ts").code;
+  expect(output).toContain('ctx.gm.legacy.setValue("key", 1)');
+  expect(output).toContain('ctx.gm.legacy.getValue("key")');
+  expect(output).toContain('ctx.gm.modern.addStyle("body{}")');
+  expect(output).toContain('ctx.gm.modern.xmlhttpRequest({ url: "/api" })');
+});
+it("does not rewrite shadowed GM bindings or unknown GM methods", () => {
+  const input = 'function init(ctx) { const GM = { getValue: () => 1 }; GM.getValue(); GM_unknown(); }';
+  expect(transformRodAst(input, "gm.ts").code).toBe(input);
+});
+it("preserves GM availability guards until the runtime provides equivalent fallback semantics", () => {
+  const input = 'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("key"); }';
+  const output = transformRodAst(input, "gm.ts").code;
+  expect(output).toContain('typeof GM_getValue === "function"');
+});
+it("preserves synchronous localStorage try/catch until async migration can be proven safe", () => {
+  const input = 'function init(ctx) { try { return localStorage.getItem("key"); } catch (error) { return "fallback"; } }';
+  expect(transformRodAst(input, "storage.ts").code).toBe(input);
+});
