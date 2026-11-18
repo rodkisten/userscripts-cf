@@ -30,11 +30,11 @@ export function bindRuntime(ctx: ReactScriptContext) {
   return Object.freeze({
     useContext: current,
     useRuntime: current,
-    useRuntimeWorld: () => current().events.shared,
+    useRuntimeWorld: () => current().events?.shared,
   });
 }
 
 /** Shared events only; never exposes other scripts' private stores. */
 export function useRuntimeWorld() {
-  return useContext().events.shared;
+  return useContext().events?.shared;
 }
