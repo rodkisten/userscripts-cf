@@ -42,3 +42,25 @@ it("respects opt-out for DOM query rewriting", () => {
   const input = 'function init(ctx: ScriptContext) { return document.querySelector("main"); }';
   expect(transformRodAst(input, "fixture.ts", { domMethods: false }).code).toBe(input);
 });
+
+it("rewrites a standalone native listener to ctx.listen with the original target", () => {
+  const source = 'function init(ctx: ScriptContext) { document.addEventListener("click", onClick); }';
+  const result = transformRodAst(source, "listener.ts");
+  expect(result.code).toContain('ctx.listen(document, "click", onClick)');
+  expect(result.diagnostics).toEqual([]);
+  expect(transformRodAst(result.code, "listener.ts").changed).toBe(false);
+});
+it("preserves native listeners when explicit removal is present", () => {
+  const source = 'function init(ctx: ScriptContext) { document.addEventListener("click", onClick); document.removeEventListener("click", onClick); }';
+  expect(transformRodAst(source, "listener.ts").code).toBe(source);
+});
+it("rewrites global setInterval to ctx.interval", () => {
+  const source = 'function init(ctx: ScriptContext) { return setInterval(tick, 1000); }';
+  const result = transformRodAst(source, "interval.ts");
+  expect(result.code).toContain("ctx.interval(tick, 1000)");
+  expect(transformRodAst(result.code, "interval.ts").changed).toBe(false);
+});
+it("preserves shadowed setInterval", () => {
+  const source = 'function init(ctx: ScriptContext) { const setInterval = () => 0; return setInterval(); }';
+  expect(transformRodAst(source, "interval.ts").code).toBe(source);
+});
