@@ -403,7 +403,7 @@ export function createCoreRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches(definition, url, rules()[definition.id]);
+    matches({ ...definition, name: definition.name ?? definition.id }, url, rules()[definition.id]);
 
   const onRulesChange = () => {
     void navigate();

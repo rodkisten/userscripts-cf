@@ -32,6 +32,8 @@ export interface MenuAction {
 export interface MenuSchema {
   id?: string;
   title?: string;
+  presentation?: "bottom-sheet" | "dialog" | "popover" | string;
+  size?: string;
   description?: string;
   fields?: MenuField[];
   actions?: MenuAction[];

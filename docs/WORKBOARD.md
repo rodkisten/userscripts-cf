@@ -141,3 +141,9 @@
 - Pending: TypeScript and full CI validation; legacy Solid modules still block release.
 
 - Renamed React runtime entrypoint to `.tsx` so the provider mount uses actual JSX instead of invoking the component function.
+
+### CI triage 2026-11-18
+
+- [React validation run 44210119123](https://github.com/rodkisten/userscripts-cf/actions/runs/44210119123): missing CSS inline module declaration and menu schema mismatch; remaining TS graph imports require investigation.
+- [Release run 44210119251](https://github.com/rodkisten/userscripts-cf/actions/runs/44210119251): menu schema mismatch, ScriptDefinition mismatch, Radix JSX typing conflicts and remaining Solid-related errors.
+- Added legacy presentation/size schema properties and normalized optional script name when passing definitions to matcher, rather than suppressing TypeScript checks. **CI verification pending**.
