@@ -82,8 +82,10 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   ctx.pageStyle(css);
   // Never blank the host page while Safari hydrates jPlayer or Solid.
   // The native Soundgasm player remains available as a guaranteed fallback.
-  const native = (_show: boolean) => {
-    document.body.classList.remove(styles["gws-sg-enhanced"]);
+  const native = (show: boolean) => {
+    // Keep the original jPlayer available until the enhanced view has rendered
+    // AND the media URL is known. Switch only after both conditions hold.
+    document.body.classList.toggle(styles["gws-sg-enhanced"], !show);
   };
   let failed = false;
   const mount = mountPoint(
@@ -114,7 +116,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   // exists. TODO: Add integration tests for recordings, profiles, delayed
   // jPlayer hydration and SPA navigation before removing this safeguard.
   const revealIfReady = () => {
-    const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name, [role=alert]");
+    const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name");
     // A title alone does not prove that the replacement audio player is usable.
     // Preserve the native player while jPlayer is still hydrating its source.
     // FIXME(SOUNDGASM-SAFARI): Validate native and enhanced playback on iOS,
