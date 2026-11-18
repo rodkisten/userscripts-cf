@@ -34,6 +34,7 @@ jobs:
           cat artifacts/rod-ast.diff
           echo '## 🧬 Rod AST · Full fixture diff' >> "$GITHUB_STEP_SUMMARY"
           echo '\`\`\`diff' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
           cat artifacts/rod-ast.diff >> "$GITHUB_STEP_SUMMARY"
           echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
       - name: "🧪 AST unit tests"
