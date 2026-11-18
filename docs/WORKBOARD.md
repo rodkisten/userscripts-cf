@@ -185,3 +185,8 @@
 - [`0d4bae1c`](https://github.com/rodkisten/userscripts-cf/commit/0d4bae1cad2ebd6a40287316332fba24ddc18486): dropdown portal uses its trigger's ShadowRoot when present; dialog accepts an explicit portal target. Containers are removed on close.
 - [`be7a235b`](https://github.com/rodkisten/userscripts-cf/commit/be7a235beba4449b8271b770d111937007330ef9): `MenuSchema.container` accepts ShadowRoot or HTMLElement.
 - **Outstanding:** automatic script-owned `ctx` target propagation, typecheck/build, Shadow DOM focus and keyboard interaction, Safari verification. Fallback dialog target remains document.body when caller does not provide a container. No P1 item marked complete.
+
+### Cross-realm ShadowRoot detection (2026-11-18)
+
+- [`fef3eee2`](https://github.com/rodkisten/userscripts-cf/commit/fef3eee2dbe6a6c1690e6f8e8acd4f54177ccaaa) avoids `instanceof ShadowRoot` on dropdown targets and uses the provided dialog container's ownerDocument. This is a compatibility hardening change, not a verified Safari fix.
+- **Pending:** ctx-owned menu factory, React typecheck, CI/release and actual Safari focus/keyboard tests. No checklist items marked complete.
