@@ -487,3 +487,12 @@
 - [ ] Validate GitHub Actions run, unit tests, and React typecheck; **no green CI evidence yet**.
 - [ ] Audit all helper contracts and implement typed symbol resolution/import insertion. Current prototype is intentionally partial. See [docs/rod-ast.md](rod-ast.md).
 - [ ] Typecheck transformed fixture, integrate safely with existing runtime AST, verify full build and browser behavior before enabling by default.
+
+
+### 🧬 Rod AST · Vitest and DOM transforms (2026-11-18)
+
+- [x] Migrate Rod AST unit tests from Node test runner to Vitest; workflow runs dedicated Vitest suite.
+- [x] Add conservative typed `document.querySelector` / `document.querySelectorAll` rewrites to `ctx.dom`, preserving `Element | null` and `NodeListOf<Element>` signatures.
+- [x] Expand fixture with DOM queries and explicit unsupported `document.createElement` preservation.
+- [ ] Verify green workflow run and generated-fixture typecheck against actual `ScriptContext` before treating this as validated.
+- [ ] Continue audited mappings and TypeChecker-backed symbol verification; do not rewrite APIs absent from context.
