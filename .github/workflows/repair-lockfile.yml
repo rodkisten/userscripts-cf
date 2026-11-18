@@ -6,7 +6,12 @@ on:
       - 'package.json'
       - 'repair-lockfile.yml'
   workflow_dispatch:
-  
+    inputs:
+      selected_branch:
+        name: 'branch'
+        default: 'main'
+        type: 'string'
+    
 permissions:
   contents: write
 
