@@ -68,7 +68,7 @@ export function TagsInput(props: TagsInputProps) {
           id={props.id}
           role="combobox"
           aria-autocomplete="list"
-          aria-expanded={String(focused() && options().length > 0)}
+          aria-expanded={focused() && options().length > 0 ? "true" : "false"}
           aria-controls={`${props.id}-suggestions`}
           autocomplete="off"
           disabled={props.disabled}
@@ -89,7 +89,7 @@ export function TagsInput(props: TagsInputProps) {
                 type="button"
                 class={styles.option}
                 role="option"
-                aria-selected={String(props.value.includes(option.value))}
+                aria-selected={props.value.includes(option.value) ? "true" : "false"}
                 onPointerDown={(event) => event.preventDefault()}
                 onClick={() => {
                   add(option.value);
