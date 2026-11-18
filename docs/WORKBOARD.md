@@ -242,3 +242,8 @@
 - Error details show Solid v2 JSX expects ARIA enumerated literal types (`"true" | "false"`, not a generic `string` from `String(boolean)`). Updated Controls, StandaloneFieldRenderer, TagsInput, Surface and ReelBookmarkButton to literal conditional values. Also fixed Solid `minlength`/`maxlength` JSX names in TextControls.
 - Fix commits: `6aa9d2e5`, `9c977acc`, `2ef6f739`, `bd3a1b78`, `737ec5ca`, `1cedc7a2` on `main`.
 - **Unverified:** await the next CI run for latest HEAD. Never mark P0 complete until both TypeScript jobs and production build pass.
+
+### CI diagnostics completeness (2026-11-18)
+
+- [`0076a7e6`](https://github.com/rodkisten/userscripts-cf/commit/0076a7e65377458458646343ce95c086f7684b75): React typecheck and production build steps now use `if: success() || failure()` after dependency installation. They execute even when the legacy typecheck fails, exposing independent failures in one workflow run while keeping job status failed when any check fails. No `continue-on-error` bypass.
+- Current latest run status **not independently retrieved**; GitHub connector here can fetch jobs by known run ID but does not expose a list-latest-runs action. Inspect the workflow URL for the new commit before declaring success.
