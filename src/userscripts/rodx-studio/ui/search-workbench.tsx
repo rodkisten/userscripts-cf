@@ -82,12 +82,12 @@ export function displayPreview() {
       issues.length ? (
         issues.map((issue) => (
           <>
-            <div class={cx("issue")} data-level={issue.level}>
+            <div className={cx("issue")} data-level={issue.level}>
               {issue.level === "error" ? "✕" : "⚠"} {issue.message}
               {issue.ids[0] ? (
                 <>
                   {" "}
-                  <button class={cx("btn smol")} data-act={"focus-block"} data-id={issue.ids[0]}>
+                  <button className={cx("btn smol")} data-act={"focus-block"} data-id={issue.ids[0]}>
                     {"Ver bloco"}
                   </button>
                 </>
@@ -99,7 +99,7 @@ export function displayPreview() {
         ))
       ) : (
         <>
-          <div class={cx("issue")} data-level={"ok"}>
+          <div className={cx("issue")} data-level={"ok"}>
             {"✓ Query compilada sem conflitos detectados. A disponibilidade dos operadores depende do X."}
           </div>
         </>
@@ -165,7 +165,7 @@ export function validateRawWorkbench(text) {
         <>
           <button
             type={"button"}
-            class={cx("rodx-issue-line")}
+            className={cx("rodx-issue-line")}
             data-raw-position={i.start}
             data-raw-end={i.end}
             data-level={i.severity}
@@ -187,7 +187,7 @@ export function renderField([key, title, type, data]) {
   if (type === "select") {
     ctrl = (
       <>
-        <select class={cx("ctrl")} {...attr}>
+        <select className={cx("ctrl")} {...attr}>
           {data.map(([id, label]) => (
             <>
               <option value={id} selected={(id === value ? "selected" : "") === "selected"}>
@@ -202,7 +202,7 @@ export function renderField([key, title, type, data]) {
     ctrl = (
       <>
         <textarea
-          class={cx("ctrl")}
+          className={cx("ctrl")}
           {...attr}
           placeholder={data}
           rows={"3"}
@@ -214,7 +214,7 @@ export function renderField([key, title, type, data]) {
     ctrl = (
       <>
         <input
-          class={cx("ctrl")}
+          className={cx("ctrl")}
           {...attr}
           type={type}
           value={value}
@@ -227,7 +227,7 @@ export function renderField([key, title, type, data]) {
   }
   return (
     <>
-      <div class={cx(["field ", type === "textarea" ? "wide" : ""].join(""))}>
+      <div className={cx(["field ", type === "textarea" ? "wide" : ""].join(""))}>
         {"\n      "}
         <label for={""}>{title}</label>
         {ctrl}
@@ -248,37 +248,37 @@ export function TagTray() {
   };
   return (
     <>
-      <section class={cx("chip-tray")} aria-label={"Editor de hashtags e termos"}>
+      <section className={cx("chip-tray")} aria-label={"Editor de hashtags e termos"}>
         {"\n      "}
-        <div class={cx("row rx-search-workbench-row")}>
+        <div className={cx("row rx-search-workbench-row")}>
           {"\n        "}
-          <h2 class={cx("hero-title")}>{"＃ Hashtags e palavras"}</h2>
+          <h2 className={cx("hero-title")}>{"＃ Hashtags e palavras"}</h2>
           {"\n        "}
-          <button class={cx("op-pill")} data-act={"toggle-tray"} title={"Alternar entre E e OU"}>
+          <button className={cx("op-pill")} data-act={"toggle-tray"} title={"Alternar entre E e OU"}>
             {target.op === "OR" ? "OU (OR)" : "E (AND)"}
             {" ⇄"}
           </button>
           {"\n      "}
         </div>
         {"\n      "}
-        <p class={cx("hero-sub")}>
+        <p className={cx("hero-sub")}>
           {"Digite normalmente e separe por "}
           <strong>{"vírgula"}</strong>
           {" ou Enter. Toque num chip para alternar entre hashtag → palavra → frase exata. ✎ edita."}
         </p>
         {"\n      "}
-        <div class={cx("chip-entry")} data-chip-entry={""}>
+        <div className={cx("chip-entry")} data-chip-entry={""}>
           {"\n        "}
           {target.children.map((block, index) => (
             <>
               <span
-                class={cx(["term-chip ", bad.has(block.id) ? "bad" : ""].join(""))}
+                className={cx(["term-chip ", bad.has(block.id) ? "bad" : ""].join(""))}
                 data-kind={block.type}
                 data-chip-node={block.id}
               >
                 {"\n          "}
                 <button
-                  class={cx("chip-main")}
+                  className={cx("chip-main")}
                   title={"Trocar tipo"}
                   data-act={"chip-cycle"}
                   data-id={block.id}
@@ -292,7 +292,7 @@ export function TagTray() {
                 </button>
                 {"\n          "}
                 <button
-                  class={cx("chip-edit")}
+                  className={cx("chip-edit")}
                   title={"Editar valor"}
                   data-act={"chip-edit"}
                   data-id={block.id}
@@ -300,7 +300,7 @@ export function TagTray() {
                   {"✎"}
                 </button>
                 {"\n          "}
-                <button class={cx("chip-x")} title={"Remover"} data-act={"chip-remove"} data-id={block.id}>
+                <button className={cx("chip-x")} title={"Remover"} data-act={"chip-remove"} data-id={block.id}>
                   {"×"}
                 </button>
               </span>
@@ -317,8 +317,8 @@ export function TagTray() {
           {"\n      "}
         </div>
         {"\n      "}
-        <div class={cx("row rx-search-workbench-row-margin-top")}>
-          <span class={cx("inline-label")}>
+        <div className={cx("row rx-search-workbench-row-margin-top")}>
+          <span className={cx("inline-label")}>
             {target.children.length}
             {" termo(s) · toque no operador para mudar a combinação"}
           </span>
@@ -367,32 +367,32 @@ export function addChips(value, focus = true) {
 export function SelectionList() {
   return (
     <>
-      <section class={cx("rodx-selection-list rx-search-workbench-rodx-selection-list")}>
+      <section className={cx("rodx-selection-list rx-search-workbench-rodx-selection-list")}>
         {"\n      "}
-        <div class={cx("row rx-search-workbench-row-align-items")}>
+        <div className={cx("row rx-search-workbench-row-align-items")}>
           <strong>{"Seleções guardadas"}</strong>
           {"\n        "}
-          <span class={cx("muted rx-search-workbench-muted")}>
+          <span className={cx("muted rx-search-workbench-muted")}>
             {"("}
             {state.selectionList.length}
             {")"}
           </span>
         </div>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {"Selecione uma palavra no post ou {uma frase inteira}, e guarde aqui para reutilizar."}
         </p>
         {"\n      "}
-        <div class={cx("row rx-search-workbench-row-flex-wrap-gap")}>
+        <div className={cx("row rx-search-workbench-row-flex-wrap-gap")}>
           {state.selectionList.map((term, index) => (
             <>
               {"\n        "}
-              <span class={cx("chip rx-search-workbench-chip")}>
+              <span className={cx("chip rx-search-workbench-chip")}>
                 {"\n          "}
                 <span>{term}</span>
                 {"\n          "}
                 <button
-                  class={cx("btn mini")}
+                  className={cx("btn mini")}
                   title={"Adicionar à pesquisa"}
                   data-act={"selection-use"}
                   data-index={index}
@@ -401,7 +401,7 @@ export function SelectionList() {
                 </button>
                 {"\n          "}
                 <button
-                  class={cx("btn mini")}
+                  className={cx("btn mini")}
                   title={"Excluir da pesquisa"}
                   data-act={"selection-exclude"}
                   data-index={index}
@@ -410,7 +410,7 @@ export function SelectionList() {
                 </button>
                 {"\n          "}
                 <button
-                  class={cx("btn mini")}
+                  className={cx("btn mini")}
                   title={"Remover da lista"}
                   data-act={"selection-delete"}
                   data-index={index}
@@ -422,7 +422,7 @@ export function SelectionList() {
             </>
           )) || (
             <>
-              <span class={cx("muted")}>{"Nenhuma seleção ainda."}</span>
+              <span className={cx("muted")}>{"Nenhuma seleção ainda."}</span>
             </>
           )}
         </div>
@@ -436,7 +436,7 @@ export function Presets() {
   return (
     <>
       {<SelectionList />}
-      <section class={cx("preset-shelf")} aria-label={"Biblioteca de presets"}>
+      <section className={cx("preset-shelf")} aria-label={"Biblioteca de presets"}>
         {"\n      "}
         <h3>
           {"Presets e baselines ("}
@@ -444,7 +444,7 @@ export function Presets() {
           {")"}
         </h3>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "Salve uma query como receita reutilizável. Combine várias com E/OU e acrescente novas hashtags sem alterar a receita original."
           }
@@ -453,33 +453,33 @@ export function Presets() {
         {state.presets.length ? (
           state.presets.map((preset) => (
             <>
-              <div class={cx("preset-card")}>
+              <div className={cx("preset-card")}>
                 {"\n        "}
-                <div class={cx("preset-name")}>
+                <div className={cx("preset-name")}>
                   <strong>
                     {"✦ "}
                     {preset.name}
                   </strong>
-                  <span class={cx("spacer")}></span>
+                  <span className={cx("spacer")}></span>
                   {"\n          "}
-                  <span class={cx("inline-label")}>
+                  <span className={cx("inline-label")}>
                     {new Date(preset.updatedAt).toLocaleDateString("pt-BR")}
                   </span>
                 </div>
                 {"\n        "}
-                <div class={cx("query-sm")}>{preset.query}</div>
+                <div className={cx("query-sm")}>{preset.query}</div>
                 {"\n        "}
-                <div class={cx("preset-list")}>
+                <div className={cx("preset-list")}>
                   {"\n          "}
-                  <button class={cx("btn primary")} data-act={"preset-insert"} data-id={preset.id}>
+                  <button className={cx("btn primary")} data-act={"preset-insert"} data-id={preset.id}>
                     {"＋ Adicionar à busca"}
                   </button>
                   {"\n          "}
-                  <button class={cx("btn")} data-act={"preset-edit"} data-id={preset.id}>
+                  <button className={cx("btn")} data-act={"preset-edit"} data-id={preset.id}>
                     {"Editar base"}
                   </button>
                   {"\n          "}
-                  <button class={cx("btn danger")} data-act={"preset-delete"} data-id={preset.id}>
+                  <button className={cx("btn danger")} data-act={"preset-delete"} data-id={preset.id}>
                     {"Excluir"}
                   </button>
                   {"\n        "}
@@ -490,14 +490,14 @@ export function Presets() {
           ))
         ) : (
           <>
-            <p class={cx("muted")}>
+            <p className={cx("muted")}>
               {"Nenhum preset salvo. Monte uma query no Editor e toque em Salvar preset."}
             </p>
           </>
         )}
         {"\n      "}
-        <div class={cx("row")}>
-          <button class={cx("btn primary")} data-act={"view-editor"}>
+        <div className={cx("row")}>
+          <button className={cx("btn primary")} data-act={"view-editor"}>
             {"🧩 Abrir editor"}
           </button>
         </div>
@@ -510,42 +510,42 @@ export function Presets() {
 export function PresetShelf() {
   return (
     <>
-      <section class={cx("preset-shelf")}>
+      <section className={cx("preset-shelf")}>
         {"\n      "}
         <h3>{"✦ Inserir presets"}</h3>
         {"\n      "}
-        <div class={cx("preset-list")}>
+        <div className={cx("preset-list")}>
           {state.presets.map((p) => (
             <>
-              <button class={cx("btn smol")} data-act={"preset-insert"} data-id={p.id}>
+              <button className={cx("btn smol")} data-act={"preset-insert"} data-id={p.id}>
                 {"＋ "}
                 {p.name}
               </button>
             </>
           )) || (
             <>
-              <span class={cx("muted")}>{"Salve uma base abaixo para reutilizá-la depois."}</span>
+              <span className={cx("muted")}>{"Salve uma base abaixo para reutilizá-la depois."}</span>
             </>
           )}
         </div>
         {"\n      "}
-        <div class={cx("row rx-search-workbench-row-margin-top-margin-top-11px")}>
+        <div className={cx("row rx-search-workbench-row-margin-top-margin-top-11px")}>
           {"\n        "}
           <input
-            class={cx("ctrl rx-search-workbench-ctrl")}
+            className={cx("ctrl rx-search-workbench-ctrl")}
             maxlength={"100"}
             data-preset-name={""}
             value={state.draft.presetName || ""}
             placeholder={"Nome da base · Ex.: Mídia + hashtags"}
           />
           {"\n        "}
-          <button class={cx("btn primary")} data-act={"preset-save"}>
+          <button className={cx("btn primary")} data-act={"preset-save"}>
             {state.presetEditingId ? "Atualizar preset" : "Salvar preset"}
           </button>
           {"\n        "}
           {state.presetEditingId ? (
             <>
-              <button class={cx("btn")} data-act={"preset-save-new"}>
+              <button className={cx("btn")} data-act={"preset-save-new"}>
                 {"Salvar como novo"}
               </button>
             </>
@@ -555,7 +555,7 @@ export function PresetShelf() {
           {"\n      "}
         </div>
         {"\n      "}
-        <p class={cx("inline-label")}>
+        <p className={cx("inline-label")}>
           {
             "Cada base salva a expressão completa atual. Inserir uma base cria novos blocos independentes para você personalizar."
           }
@@ -570,7 +570,7 @@ export function blockValueHTML(block) {
   if (block.type === "media") {
     return (
       <>
-        <select class={cx("ctrl")} data-block-value={block.id}>
+        <select className={cx("ctrl")} data-block-value={block.id}>
           {"\n        "}
           <option value={""}>{"Selecione mídia…"}</option>
           {"\n        "}
@@ -596,7 +596,7 @@ export function blockValueHTML(block) {
   return (
     <>
       <input
-        class={cx("ctrl")}
+        className={cx("ctrl")}
         data-block-value={block.id}
         aria-label={"Valor do bloco"}
         value={block.value}
@@ -610,9 +610,9 @@ export function blockHTML(block, depth = 0, isRoot = false) {
   if (block.kind === "term") {
     return (
       <>
-        <div class={cx("block-term")} data-block-node={block.id}>
+        <div className={cx("block-term")} data-block-node={block.id}>
           {"\n        "}
-          <select class={cx("ctrl")} data-block-type={block.id} aria-label={"Tipo do bloco"}>
+          <select className={cx("ctrl")} data-block-type={block.id} aria-label={"Tipo do bloco"}>
             {"\n          "}
             {BLOCK_TYPES.map(([key, label]) => (
               <>
@@ -626,7 +626,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           {"\n        "}
           {blockValueHTML(block)}
           {"\n        "}
-          <label class={cx("block-neg")} title={"Excluir resultados que correspondem a este bloco"}>
+          <label className={cx("block-neg")} title={"Excluir resultados que correspondem a este bloco"}>
             {"\n          "}
             <input
               type={"checkbox"}
@@ -637,7 +637,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           </label>
           {"\n        "}
           <button
-            class={cx("btn mini ghost")}
+            className={cx("btn mini ghost")}
             data-act={"block-up"}
             data-id={block.id}
             title={"Mover para cima"}
@@ -646,7 +646,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           </button>
           {"\n        "}
           <button
-            class={cx("btn mini ghost")}
+            className={cx("btn mini ghost")}
             data-act={"block-down"}
             data-id={block.id}
             title={"Mover para baixo"}
@@ -655,7 +655,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           </button>
           {"\n        "}
           <button
-            class={cx("btn mini danger")}
+            className={cx("btn mini danger")}
             data-act={"block-remove"}
             data-id={block.id}
             title={"Remover bloco"}
@@ -670,19 +670,19 @@ export function blockHTML(block, depth = 0, isRoot = false) {
   return (
     <>
       <section
-        class={cx(["block-group ", isRoot ? "root" : "", " level-", depth].join(""))}
+        className={cx(["block-group ", isRoot ? "root" : "", " level-", depth].join(""))}
         data-block-node={block.id}
         aria-label={"Grupo lógico"}
       >
         {"\n      "}
-        <div class={cx("block-head")}>
+        <div className={cx("block-head")}>
           {"\n        "}
-          <span class={cx("block-head-title")}>{isRoot ? "GRUPO PRINCIPAL" : "Subgrupo"}</span>
+          <span className={cx("block-head-title")}>{isRoot ? "GRUPO PRINCIPAL" : "Subgrupo"}</span>
           {"\n        "}
-          <span class={cx("hint-small")}>{"Combinar com"}</span>
+          <span className={cx("hint-small")}>{"Combinar com"}</span>
           {"\n        "}
           <button
-            class={cx("op-pill")}
+            className={cx("op-pill")}
             data-act={"block-toggle-op"}
             data-id={block.id}
             aria-label={"Alternar operador lógico do grupo"}
@@ -694,7 +694,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           {!isRoot ? (
             <>
               <button
-                class={cx("op-pill")}
+                className={cx("op-pill")}
                 data-act={"block-toggle-not"}
                 data-id={block.id}
                 title={"Excluir este grupo"}
@@ -710,17 +710,17 @@ export function blockHTML(block, depth = 0, isRoot = false) {
             ""
           ) : (
             <>
-              <span class={cx("spacer")}></span>
+              <span className={cx("spacer")}></span>
               {"\n          "}
-              <button class={cx("btn mini ghost")} data-act={"block-up"} data-id={block.id}>
+              <button className={cx("btn mini ghost")} data-act={"block-up"} data-id={block.id}>
                 {"↑"}
               </button>
               {"\n          "}
-              <button class={cx("btn mini ghost")} data-act={"block-down"} data-id={block.id}>
+              <button className={cx("btn mini ghost")} data-act={"block-down"} data-id={block.id}>
                 {"↓"}
               </button>
               {"\n          "}
-              <button class={cx("btn mini danger")} data-act={"block-remove"} data-id={block.id}>
+              <button className={cx("btn mini danger")} data-act={"block-remove"} data-id={block.id}>
                 {"×"}
               </button>
             </>
@@ -728,7 +728,7 @@ export function blockHTML(block, depth = 0, isRoot = false) {
           {"\n      "}
         </div>
         {"\n      "}
-        <div class={cx("block-content")}>
+        <div className={cx("block-content")}>
           {block.children.filter((c) => !c.tagTray).length ? (
             block.children
               .filter((c) => !c.tagTray)
@@ -737,8 +737,8 @@ export function blockHTML(block, depth = 0, isRoot = false) {
                   {""}
                   {i ? (
                     <>
-                      <div class={cx("block-join")}>
-                        <button class={cx("op-pill")} data-act={"block-toggle-op"} data-id={block.id}>
+                      <div className={cx("block-join")}>
+                        <button className={cx("op-pill")} data-act={"block-toggle-op"} data-id={block.id}>
                           {block.op === "OR" ? "OU ⇄" : "E ⇄"}
                         </button>
                       </div>
@@ -753,29 +753,29 @@ export function blockHTML(block, depth = 0, isRoot = false) {
               ))
           ) : (
             <>
-              <div class={cx("block-empty")}>
+              <div className={cx("block-empty")}>
                 {"Adicione abaixo palavras, mídia e grupos, ou use o campo de hashtags acima."}
               </div>
             </>
           )}
         </div>
         {"\n      "}
-        <div class={cx("builder-buttons rx-search-workbench-builder-buttons")}>
+        <div className={cx("builder-buttons rx-search-workbench-builder-buttons")}>
           {"\n        "}
-          <button class={cx("btn mini quick-add")} data-act={"block-add-tag"} data-id={block.id}>
+          <button className={cx("btn mini quick-add")} data-act={"block-add-tag"} data-id={block.id}>
             {"＋ Hashtag"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini")} data-act={"block-add-keyword"} data-id={block.id}>
+          <button className={cx("btn mini")} data-act={"block-add-keyword"} data-id={block.id}>
             {"＋ Palavra"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini")} data-act={"block-add-media"} data-id={block.id}>
+          <button className={cx("btn mini")} data-act={"block-add-media"} data-id={block.id}>
             {"＋ Mídia"}
           </button>
           {"\n        "}
           <button
-            class={cx("btn mini")}
+            className={cx("btn mini")}
             data-act={"block-add-group"}
             data-id={block.id}
             disabled={depth >= MAX_BLOCK_DEPTH - 2}
@@ -794,35 +794,35 @@ export function blockHTML(block, depth = 0, isRoot = false) {
 export function BlockBuilder() {
   return (
     <>
-      <section class={cx("builder")} aria-label={"Construtor de busca por blocos"}>
+      <section className={cx("builder")} aria-label={"Construtor de busca por blocos"}>
         {"\n      "}
-        <div class={cx("builder-header")}>
+        <div className={cx("builder-header")}>
           {"\n        "}
           <div>
-            <h3 class={cx("hero-title")}>{"🧩 Montar query com blocos"}</h3>
+            <h3 className={cx("hero-title")}>{"🧩 Montar query com blocos"}</h3>
             {"\n          "}
-            <p class={cx("hero-sub rx-search-workbench-hero-sub")}>
+            <p className={cx("hero-sub rx-search-workbench-hero-sub")}>
               {"Combine hashtags, palavras e mídia usando E, OU, NÃO e parênteses."}
             </p>
           </div>
           {"\n      "}
         </div>
         {"\n      "}
-        <div class={cx("builder-buttons rx-search-workbench-builder-buttons-margin-bottom")}>
+        <div className={cx("builder-buttons rx-search-workbench-builder-buttons-margin-bottom")}>
           {"\n        "}
-          <button class={cx("btn mini quick-add")} data-act={"template-tag-or-word"}>
+          <button className={cx("btn mini quick-add")} data-act={"template-tag-or-word"}>
             {"＃ Hashtag OU palavra"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini")} data-act={"template-tag-and-group"}>
+          <button className={cx("btn mini")} data-act={"template-tag-and-group"}>
             {"＃ E (＃ OU palavra)"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini")} data-act={"template-media-or"}>
+          <button className={cx("btn mini")} data-act={"template-media-or"}>
             {"📷 Fotos OU vídeos"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini danger")} data-act={"block-clear"}>
+          <button className={cx("btn mini danger")} data-act={"block-clear"}>
             {"Limpar blocos"}
           </button>
           {"\n      "}
@@ -830,7 +830,7 @@ export function BlockBuilder() {
         {"\n      "}
         <div data-blocks-container={""}>{blockHTML(state.draft.blocks, 0, true)}</div>
         {"\n      "}
-        <p class={cx("block-help")}>
+        <p className={cx("block-help")}>
           <strong>{"E"}</strong>
           {" exige as duas condições. "}
           <strong>{"OU"}</strong>
@@ -915,15 +915,15 @@ export function SearchEditor() {
   migrateLegacyTags(draft);
   return (
     <>
-      <div class={cx("editor-top stack")}>
+      <div className={cx("editor-top stack")}>
         {"\n      "}
-        <div class={cx("grid")}>
+        <div className={cx("grid")}>
           {"\n        "}
-          <div class={cx("field wide")}>
+          <div className={cx("field wide")}>
             <label>{"Nome da timeline"}</label>
             {"\n          "}
             <input
-              class={cx("ctrl")}
+              className={cx("ctrl")}
               data-meta={"name"}
               maxlength={"100"}
               placeholder={"Ex.: Tech Brasil, Notícias, Futebol"}
@@ -931,11 +931,11 @@ export function SearchEditor() {
             />
           </div>
           {"\n        "}
-          <div class={cx("field")}>
+          <div className={cx("field")}>
             <label>{"Ícone / emoji"}</label>
             {"\n          "}
             <input
-              class={cx("ctrl")}
+              className={cx("ctrl")}
               data-meta={"icon"}
               maxlength={"4"}
               value={draft.icon}
@@ -943,10 +943,10 @@ export function SearchEditor() {
             />
           </div>
           {"\n        "}
-          <div class={cx("field")}>
+          <div className={cx("field")}>
             <label>{"Visualização padrão"}</label>
             {"\n          "}
-            <select class={cx("ctrl")} data-meta={"sort"}>
+            <select className={cx("ctrl")} data-meta={"sort"}>
               {SORTS.map(([key, label]) => (
                 <>
                   <option value={key} selected={(key === draft.sort ? "selected" : "") === "selected"}>
@@ -959,11 +959,11 @@ export function SearchEditor() {
           {"\n      "}
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Máximo de posts visíveis (0 = ilimitado)"}</label>
           {"\n        "}
           <input
-            class={cx("ctrl")}
+            className={cx("ctrl")}
             type={"number"}
             min={"0"}
             max={MAX_VISIBLE}
@@ -974,7 +974,7 @@ export function SearchEditor() {
           {"\n      "}
         </div>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-meta={"pinned"}
@@ -987,15 +987,15 @@ export function SearchEditor() {
       {"\n    "}
       <div data-tag-tray={""}>{<TagTray />}</div>
       {"\n    "}
-      <section class={cx("priority")} aria-label={"Filtros de mídia"}>
+      <section className={cx("priority")} aria-label={"Filtros de mídia"}>
         {"\n      "}
-        <h2 class={cx("hero-title")}>{"▣ Tipo de mídia"}</h2>
+        <h2 className={cx("hero-title")}>{"▣ Tipo de mídia"}</h2>
         {"\n      "}
-        <p class={cx("hero-sub")}>
+        <p className={cx("hero-sub")}>
           {"Filtro global aplicado à query inteira. Para mídias alternativas, use um grupo OU no builder."}
         </p>
         {"\n      "}
-        <div class={cx("priority-grid")}>
+        <div className={cx("priority-grid")}>
           {"\n        "}
           {renderField(["media", "Tipo de mídia", "select", [["any", "Qualquer postagem"], ...BLOCK_MEDIA]])}
           {"\n      "}
@@ -1003,35 +1003,35 @@ export function SearchEditor() {
         {"\n    "}
       </section>
       {"\n    "}
-      <div class={cx("query-lab")} data-lab={""}>
+      <div className={cx("query-lab")} data-lab={""}>
         {"\n      "}
-        <div class={cx("query-lab-top")}>
+        <div className={cx("query-lab-top")}>
           <strong>{"⌕ Query em tempo real"}</strong>
           {"\n        "}
-          <div class={cx("row")}>
-            <span class={cx("lab-status")} data-analyzer-summary={""}>
+          <div className={cx("row")}>
+            <span className={cx("lab-status")} data-analyzer-summary={""}>
               {"Validando…"}
             </span>
             {"\n        "}
-            <button class={cx("btn smol")} data-act={"copy-query"} title={"Copiar query"}>
+            <button className={cx("btn smol")} data-act={"copy-query"} title={"Copiar query"}>
               {"⧉ Copiar"}
             </button>
           </div>
         </div>
         {"\n      "}
-        <code class={cx("query")} data-query-preview={""}></code>
+        <code className={cx("query")} data-query-preview={""}></code>
         {"\n      "}
-        <div class={cx("issues")} data-query-diagnostics={""}></div>
+        <div className={cx("issues")} data-query-diagnostics={""}></div>
         {"\n    "}
       </div>
       {"\n    "}
-      <details class={cx("section")} data-raw-workbench={""} open={true}>
+      <details className={cx("section")} data-raw-workbench={""} open={true}>
         {"\n      "}
         <summary>{"⌘ Laboratório de parser · editar query manual"}</summary>
         {"\n      "}
-        <div class={cx("section-body workbench")}>
+        <div className={cx("section-body workbench")}>
           {"\n        "}
-          <p class={cx("muted")}>
+          <p className={cx("muted")}>
             {"Cole ou escreva uma query com "}
             <strong>{"AND, OR, NOT e parênteses"}</strong>
             {".\n          O diagnóstico sublinha o trecho incorreto e sugere a correção. "}
@@ -1044,27 +1044,27 @@ export function SearchEditor() {
           </p>
           {"\n        "}
           <textarea
-            class={cx("ctrl raw-code")}
+            className={cx("ctrl raw-code")}
             data-raw-query={""}
             spellcheck={"false"}
             placeholder={"filter:media (#troconudes OR #troconuds)"}
             value={"\n            " + (state.rawDirty ? state.rawQueryDraft : "") + "\n          "}
           />
           {"\n        "}
-          <div class={cx("raw-preview")} data-raw-highlight={""}></div>
+          <div className={cx("raw-preview")} data-raw-highlight={""}></div>
           {"\n        "}
-          <div class={cx("rodx-issues")} data-raw-issues={""}></div>
+          <div className={cx("rodx-issues")} data-raw-issues={""}></div>
           {"\n        "}
-          <div class={cx("inline-label")} data-raw-status={""}>
+          <div className={cx("inline-label")} data-raw-status={""}>
             {"Pronto para analisar."}
           </div>
           {"\n        "}
-          <div class={cx("row")}>
-            <button class={cx("btn primary")} data-act={"raw-apply"}>
+          <div className={cx("row")}>
+            <button className={cx("btn primary")} data-act={"raw-apply"}>
               {"↳ Aplicar como blocos"}
             </button>
             {"\n        "}
-            <button class={cx("btn")} data-act={"raw-sync"}>
+            <button className={cx("btn")} data-act={"raw-sync"}>
               {"Usar query gerada"}
             </button>
           </div>
@@ -1080,7 +1080,7 @@ export function SearchEditor() {
       {GROUPS.map((group) => (
         <>
           <details
-            class={cx("section")}
+            className={cx("section")}
             data-group={group.id}
             open={(state.openedGroups.has(group.id) ? "open" : "") === "open"}
           >
@@ -1091,21 +1091,21 @@ export function SearchEditor() {
               {group.title}
             </summary>
             {"\n        "}
-            <div class={cx("section-body")}>
-              <div class={cx("grid")}>{group.fields.map(renderField)}</div>
+            <div className={cx("section-body")}>
+              <div className={cx("grid")}>{group.fields.map(renderField)}</div>
             </div>
             {"\n      "}
           </details>
         </>
       ))}
       {"\n    "}
-      <p class={cx("muted hint")}>
+      <p className={cx("muted hint")}>
         {
           "O campo livre aceita qualquer operador do buscador web do X.\n      Alguns filtros experimentais podem depender de alterações da plataforma.\n      A data final é tratada como inclusiva."
         }
       </p>
       {"\n    "}
-      <button class={cx("btn rx-search-workbench-btn")} data-act={"block-fix"}>
+      <button className={cx("btn rx-search-workbench-btn")} data-act={"block-fix"}>
         {"✦ Corrigir duplicatas e filtros redundantes com segurança"}
       </button>
     </>
@@ -1116,16 +1116,16 @@ export function SavedSearches() {
   if (!state.searches.length) {
     return (
       <>
-        <div class={cx("empty")}>
+        <div className={cx("empty")}>
           {"Ainda não há pesquisas salvas."}
           <br />
           {"\n        "}
-          <span class={cx("muted")}>
+          <span className={cx("muted")}>
             {"Crie uma busca avançada ou importe uma pesquisa que já esteja aberta."}
           </span>
           <br />
           {"\n        "}
-          <button class={cx("btn primary rx-search-workbench-btn-margin-top")} data-act={"new"}>
+          <button className={cx("btn primary rx-search-workbench-btn-margin-top")} data-act={"new"}>
             {"Criar primeira pesquisa"}
           </button>
           {"\n      "}
@@ -1136,14 +1136,14 @@ export function SavedSearches() {
   return (
     <>
       {<SelectionList />}
-      <div class={cx("row rx-search-workbench-row-margin-bottom")}>
+      <div className={cx("row rx-search-workbench-row-margin-bottom")}>
         {"\n      "}
-        <button class={cx("btn primary")} data-act={"new"}>
+        <button className={cx("btn primary")} data-act={"new"}>
           {"+ Nova pesquisa"}
         </button>
         {"\n      "}
         <button
-          class={cx("btn")}
+          className={cx("btn")}
           data-act={"capture"}
           disabled={(currentSearch() ? "" : "disabled") === "disabled"}
         >
@@ -1154,42 +1154,42 @@ export function SavedSearches() {
       {"\n    "}
       {state.searches.map((s, i) => (
         <>
-          <article class={cx("saved-item")}>
+          <article className={cx("saved-item")}>
             {"\n      "}
-            <div class={cx("saved-top")}>
-              <div class={cx("saved-title")}>
+            <div className={cx("saved-top")}>
+              <div className={cx("saved-title")}>
                 {s.icon} {s.name}
               </div>
               {"\n        "}
               {s.pinned ? (
                 <>
-                  <span class={cx("chip")}>{"Na Home"}</span>
+                  <span className={cx("chip")}>{"Na Home"}</span>
                 </>
               ) : (
                 ""
               )}
               {"\n        "}
-              <span class={cx("chip")}>{SORTS.find(([key]) => key === s.sort)?.[1] || "Recentes"}</span>
+              <span className={cx("chip")}>{SORTS.find(([key]) => key === s.sort)?.[1] || "Recentes"}</span>
               {"\n      "}
             </div>
             {"\n      "}
-            <div class={cx("query-sm")}>{s.query}</div>
+            <div className={cx("query-sm")}>{s.query}</div>
             {"\n      "}
-            <div class={cx("muted")}>
+            <div className={cx("muted")}>
               {s.resultLimit ? `Até ${s.resultLimit} posts visíveis` : "Exibição ilimitada"}
               {" · "}
               {s.sort === "live" ? "Recentes" : "Busca nativa"}
             </div>
             {"\n      "}
-            <div class={cx("saved-actions")}>
+            <div className={cx("saved-actions")}>
               {"\n        "}
-              <button class={cx("btn smol primary")} data-act={"open-search"} data-id={s.id}>
+              <button className={cx("btn smol primary")} data-act={"open-search"} data-id={s.id}>
                 {"Ver"}
               </button>
               {"\n        "}
               {s.sort !== "live" ? (
                 <>
-                  <button class={cx("btn smol")} data-act={"open-recent"} data-id={s.id}>
+                  <button className={cx("btn smol")} data-act={"open-recent"} data-id={s.id}>
                     {"Recentes"}
                   </button>
                 </>
@@ -1197,20 +1197,20 @@ export function SavedSearches() {
                 ""
               )}
               {"\n        "}
-              <button class={cx("btn smol")} data-act={"edit"} data-id={s.id}>
+              <button className={cx("btn smol")} data-act={"edit"} data-id={s.id}>
                 {"Editar"}
               </button>
               {"\n        "}
-              <button class={cx("btn smol")} data-act={"pin"} data-id={s.id}>
+              <button className={cx("btn smol")} data-act={"pin"} data-id={s.id}>
                 {s.pinned ? "Desafixar" : "Fixar"}
               </button>
               {"\n        "}
-              <button class={cx("btn smol")} data-act={"duplicate"} data-id={s.id}>
+              <button className={cx("btn smol")} data-act={"duplicate"} data-id={s.id}>
                 {"Duplicar"}
               </button>
               {"\n        "}
               <button
-                class={cx("btn smol")}
+                className={cx("btn smol")}
                 data-act={"up"}
                 data-id={s.id}
                 disabled={(i === 0 ? "disabled" : "") === "disabled"}
@@ -1219,7 +1219,7 @@ export function SavedSearches() {
               </button>
               {"\n        "}
               <button
-                class={cx("btn smol")}
+                className={cx("btn smol")}
                 data-act={"down"}
                 data-id={s.id}
                 disabled={(i === state.searches.length - 1 ? "disabled" : "") === "disabled"}
@@ -1227,7 +1227,7 @@ export function SavedSearches() {
                 {"↓"}
               </button>
               {"\n        "}
-              <button class={cx("btn smol danger")} data-act={"delete"} data-id={s.id}>
+              <button className={cx("btn smol danger")} data-act={"delete"} data-id={s.id}>
                 {"Excluir"}
               </button>
               {"\n      "}
@@ -1243,30 +1243,30 @@ export function SavedSearches() {
 export function DataSettings() {
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         {"\n      "}
-        <div class={cx("banner")}>
+        <div className={cx("banner")}>
           {"Os dados abaixo pertencem exclusivamente à conta\n        "}
           <strong>{identityLabel()}</strong>
           {".\n        Não há sincronização com os servidores do X."}
         </div>
         {"\n      "}
-        <section class={cx("section")}>
-          <div class={cx("section-body")}>
+        <section className={cx("section")}>
+          <div className={cx("section-body")}>
             {"\n        "}
             <strong>{"☁ Sincronização pessoal no D1"}</strong>
             {"\n        "}
-            <p class={cx("muted")}>
+            <p className={cx("muted")}>
               {
                 "Pesquisas, presets, configurações visuais, histórico e vistos ficam\n        separados por pessoa e por conta do X. A chave pessoal é diferente do\n        token compartilhado de envio ao Telegram. O modo local continua funcionando sem ela."
               }
             </p>
             {"\n        "}
-            <button class={cx("btn primary")} data-act={"cloud-configure"}>
+            <button className={cx("btn primary")} data-act={"cloud-configure"}>
               {"Configurar chave pessoal"}
             </button>
             {"\n        "}
-            <p class={cx("muted")}>
+            <p className={cx("muted")}>
               {"Peça uma chave "}
               <code>{"rodx_..."}</code>
               {" criada pelo provisionamento do relay.\n        Nunca coloque o token do Telegram aqui."}
@@ -1275,36 +1275,36 @@ export function DataSettings() {
           </div>
         </section>
         {"\n      "}
-        <div class={cx("line")}></div>
+        <div className={cx("line")}></div>
         {"\n      "}
         <strong>{"Backup das suas pesquisas"}</strong>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "Exporte um JSON de todas as pesquisas desta conta e importe no\n        outro navegador ou dispositivo. A importação nunca modifica pesquisas de outra conta."
           }
         </p>
         {"\n      "}
         <button
-          class={cx("btn")}
+          className={cx("btn")}
           data-act={"export"}
           disabled={(state.account ? "" : "disabled") === "disabled"}
         >
           {"↓ Exportar JSON"}
         </button>
         {"\n      "}
-        <div class={cx("line")}></div>
+        <div className={cx("line")}></div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Importar arquivo .json"}</label>
           {"\n        "}
-          <input class={cx("ctrl")} type={"file"} data-file={"import"} accept={"application/json,.json"} />
+          <input className={cx("ctrl")} type={"file"} data-file={"import"} accept={"application/json,.json"} />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Estratégia de importação"}</label>
           {"\n        "}
-          <select class={cx("ctrl")} data-import-strategy={""}>
+          <select className={cx("ctrl")} data-import-strategy={""}>
             {"\n          "}
             <option value={"merge"}>{"Mesclar (mantém as pesquisas atuais)"}</option>
             {"\n          "}
@@ -1313,17 +1313,17 @@ export function DataSettings() {
           </select>
         </div>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "Se IDs coincidirem, a pesquisa importada substituirá a existente\n        na opção Mesclar. Faça um backup antes de substituir tudo."
           }
         </p>
         {"\n      "}
-        <div class={cx("line")}></div>
+        <div className={cx("line")}></div>
         {"\n      "}
         <strong>{"Armazenamento"}</strong>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {"Motor em uso: "}
           <strong>
             {gmAvailable
@@ -1337,30 +1337,30 @@ export function DataSettings() {
           }
         </p>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Conta manual (fallback para iPhone / layout sem perfil)"}</label>
           {"\n        "}
-          <div class={cx("row")}>
+          <div className={cx("row")}>
             <input
-              class={cx("ctrl rx-search-workbench-ctrl-flex")}
+              className={cx("ctrl rx-search-workbench-ctrl-flex")}
               data-manual-account={""}
               placeholder={"@meuusuario"}
               maxlength={"16"}
             />
             {"\n          "}
-            <button class={cx("btn")} data-act={"set-manual-account"}>
+            <button className={cx("btn")} data-act={"set-manual-account"}>
               {"Usar conta"}
             </button>
           </div>
           {"\n        "}
-          <p class={cx("muted")}>
+          <p className={cx("muted")}>
             {
               "Use apenas se a detecção automática falhar. Ao trocar de conta,\n          selecione a conta correta. Nenhum token de sessão é salvo."
             }
           </p>
         </div>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {"RodX Search Deck v"}
           {VERSION}
           {" · Atalho: Alt + Shift + S"}
@@ -1376,39 +1376,39 @@ export function Workspace() {
   if (state.view === "editor" && !state.draft) state.draft = blankDraft();
   return (
     <>
-      <div class={cx("scrim")} data-act={"close"}></div>
+      <div className={cx("scrim")} data-act={"close"}></div>
       {"\n      "}
       <section
-        class={cx("panel")}
+        className={cx("panel")}
         role={"dialog"}
         aria-modal={"true"}
         data-view={state.view}
         aria-label={"RodX Search Deck"}
       >
         {"\n        "}
-        <div class={cx("panel-head")}>
+        <div className={cx("panel-head")}>
           {"\n          "}
-          <div class={cx("head-row")}>
+          <div className={cx("head-row")}>
             <div>
-              <div class={cx("brand")}>{"⌕ RodX Search Deck"}</div>
+              <div className={cx("brand")}>{"⌕ RodX Search Deck"}</div>
               {"\n            "}
-              <div class={cx("sub")}>{"Timelines e pesquisas avançadas para o X"}</div>
+              <div className={cx("sub")}>{"Timelines e pesquisas avançadas para o X"}</div>
             </div>
             {"\n            "}
-            <div class={cx("row")}>
-              <span class={cx("account")}>{identityLabel()}</span>
+            <div className={cx("row")}>
+              <span className={cx("account")}>{identityLabel()}</span>
               {"\n              "}
-              <button class={cx("btn smol")} data-act={"close"} aria-label={"Voltar ao X"}>
+              <button className={cx("btn smol")} data-act={"close"} aria-label={"Voltar ao X"}>
                 {"✕ Fechar"}
               </button>
             </div>
             {"\n          "}
           </div>
           {"\n          "}
-          <div class={cx("tabs")}>
+          <div className={cx("tabs")}>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "saved" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "saved" ? "active" : ""].join(""))}
               data-act={"view-saved"}
             >
               {"Salvas ("}
@@ -1417,14 +1417,14 @@ export function Workspace() {
             </button>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "editor" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "editor" ? "active" : ""].join(""))}
               data-act={"view-editor"}
             >
               {"Editor"}
             </button>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "presets" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "presets" ? "active" : ""].join(""))}
               data-act={"view-presets"}
             >
               {"Presets ("}
@@ -1433,35 +1433,35 @@ export function Workspace() {
             </button>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "relay" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "relay" ? "active" : ""].join(""))}
               data-act={"view-relay"}
             >
               {"Telegram"}
             </button>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "xrepost" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "xrepost" ? "active" : ""].join(""))}
               data-act={"view-xrepost"}
             >
               {"Vídeos X"}
             </button>
             {"\n            "}
-            <button class={cx("tab")} data-act={"view-network"}>
+            <button className={cx("tab")} data-act={"view-network"}>
               {"REDE"}
             </button>
             {"\n            "}
-            <button class={cx("tab")} data-act={"lists-studio"}>
+            <button className={cx("tab")} data-act={"lists-studio"}>
               {"Listas e membros"}
             </button>
             <button
-              class={cx(["tab ", state.view === "visual" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "visual" ? "active" : ""].join(""))}
               data-act={"view-visual"}
             >
               {"Preferências"}
             </button>
             {"\n            "}
             <button
-              class={cx(["tab ", state.view === "data" ? "active" : ""].join(""))}
+              className={cx(["tab ", state.view === "data" ? "active" : ""].join(""))}
               data-act={"view-data"}
             >
               {"Backup"}
@@ -1471,11 +1471,11 @@ export function Workspace() {
           {"\n        "}
         </div>
         {"\n        "}
-        <div class={cx("body")} data-scroll-area={""}>
+        <div className={cx("body")} data-scroll-area={""}>
           {"\n          "}
           {state.message ? (
             <>
-              <div class={cx("message")}>{state.message}</div>
+              <div className={cx("message")}>{state.message}</div>
             </>
           ) : (
             ""
@@ -1483,7 +1483,7 @@ export function Workspace() {
           {"\n          "}
           {state.storageWarning ? (
             <>
-              <div class={cx("storage-warning")}>
+              <div className={cx("storage-warning")}>
                 {"⚠ "}
                 {state.storageWarning}
               </div>
@@ -1494,7 +1494,7 @@ export function Workspace() {
           {"\n          "}
           {disabled ? (
             <>
-              <div class={cx("banner")}>
+              <div className={cx("banner")}>
                 {
                   "Conta não detectada. Abra a aba Backup para definir manualmente o @usuário, caso o X esconda os dados da sessão."
                 }
@@ -1524,7 +1524,7 @@ export function Workspace() {
         {"\n        "}
         {state.view === "editor" && state.saveError ? (
           <>
-            <div class={cx("save-feedback")} role={"alert"}>
+            <div className={cx("save-feedback")} role={"alert"}>
               {"✕ Não foi possível salvar: "}
               {state.saveError}
             </div>
@@ -1533,24 +1533,24 @@ export function Workspace() {
           ""
         )}
         {"\n        "}
-        <footer class={cx("foot")}>
+        <footer className={cx("foot")}>
           {"\n          "}
           {state.view === "editor" ? (
             <>
               <button
-                class={cx("btn primary")}
+                className={cx("btn primary")}
                 data-act={"save"}
                 disabled={(disabled || state.busy ? "disabled" : "") === "disabled"}
               >
                 {state.editingId ? "Salvar alterações" : "Salvar pesquisa"}
               </button>
               {"\n              "}
-              <button class={cx("btn")} data-act={"preview-search"}>
+              <button className={cx("btn")} data-act={"preview-search"}>
                 {"Testar"}
               </button>
               {"\n              "}
               <button
-                class={cx("btn")}
+                className={cx("btn")}
                 data-act={"capture"}
                 disabled={(currentSearch() ? "" : "disabled") === "disabled"}
               >
@@ -1559,24 +1559,24 @@ export function Workspace() {
             </>
           ) : state.view === "relay" ? (
             <>
-              <button class={cx("btn primary")} data-act={"relay-save"}>
+              <button className={cx("btn primary")} data-act={"relay-save"}>
                 {"Salvar"}
               </button>
               {"\n                "}
-              <button class={cx("btn")} data-act={"relay-health"}>
+              <button className={cx("btn")} data-act={"relay-health"}>
                 {"Testar conexão"}
               </button>
             </>
           ) : state.view === "xrepost" ? (
             <>
-              <button class={cx("btn primary")} data-act={"xrepost-refresh"}>
+              <button className={cx("btn primary")} data-act={"xrepost-refresh"}>
                 {"Atualizar fila D1"}
               </button>
             </>
           ) : (
             <>
               <button
-                class={cx("btn")}
+                className={cx("btn")}
                 data-act={"capture"}
                 disabled={(currentSearch() ? "" : "disabled") === "disabled"}
               >
@@ -1585,9 +1585,9 @@ export function Workspace() {
             </>
           )}
           {"\n          "}
-          <span class={cx("spacer")}></span>
+          <span className={cx("spacer")}></span>
           {"\n          "}
-          <button class={cx("btn ghost")} data-act={"close"}>
+          <button className={cx("btn ghost")} data-act={"close"}>
             {"Fechar"}
           </button>
           {"\n        "}
@@ -1602,17 +1602,17 @@ export function VisualSettings() {
   const v = state.visual;
   return (
     <>
-      <section class={cx("rodx-visual")} aria-label={"Personalização da interface"}>
+      <section className={cx("rodx-visual")} aria-label={"Personalização da interface"}>
         {"\n      "}
-        <h2 class={cx("hero-title")}>{"RodX Studio · módulos e desempenho"}</h2>
+        <h2 className={cx("hero-title")}>{"RodX Studio · módulos e desempenho"}</h2>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {Studio.state.network.ready
             ? "Ponte única de rede ativa"
             : Studio.state.network.error || "Aguardando ponte de rede"}
         </p>
         {"\n      "}
-        <div class={cx("grp")}>
+        <div className={cx("grp")}>
           {Object.entries({
             lists: "Listas, membros e fila",
             profile: "Listas no perfil",
@@ -1624,7 +1624,7 @@ export function VisualSettings() {
             customTimeline: "Timeline própria das listas (opcional)",
           }).map(([key, label]) => (
             <>
-              <label class={cx("tog")}>
+              <label className={cx("tog")}>
                 <input
                   type={"checkbox"}
                   data-studio-module={key}
@@ -1636,7 +1636,7 @@ export function VisualSettings() {
           ))}
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Orçamento entre módulos (ms)"}</label>
           <input
             type={"number"}
@@ -1647,7 +1647,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Agrupar atualizações do DOM (ms)"}</label>
           <input
             type={"number"}
@@ -1658,7 +1658,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Meia-vida da frequência/recência de listas (dias)"}</label>
           {"\n        "}
           <input
@@ -1673,15 +1673,15 @@ export function VisualSettings() {
         <button data-act={"runtime-apply"}>{"Aplicar módulos e recarregar"}</button>
         <button data-act={"runtime-diagnostics"}>{"Copiar diagnóstico de desempenho"}</button>
         {"\n      "}
-        <h2 class={cx("hero-title")}>{"Aparência da timeline"}</h2>
+        <h2 className={cx("hero-title")}>{"Aparência da timeline"}</h2>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "Tamanho de fonte, densidade e hashtags acompanham Home, buscas, perfis, bookmarks e threads. O input nativo do X permanece sem alterações de layout."
           }
         </p>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Espaçamento "}
             <strong data-visual-value={"density"}>
@@ -1700,7 +1700,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Fonte dos resultados "}
             <strong data-visual-value={"font"}>
@@ -1712,12 +1712,12 @@ export function VisualSettings() {
           <input type={"range"} min={"11"} max={"19"} step={"1"} value={v.font} data-visual={"font"} />
         </div>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input type={"checkbox"} data-visual={"snap"} checked={(v.snap ? "checked" : "") === "checked"} />
           {" Encaixe suave ao rolar (global)"}
         </label>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"compact"}
@@ -1726,7 +1726,7 @@ export function VisualSettings() {
           {" Usar densidade compacta (tweets começam expandidos)"}
         </label>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"colorfulTags"}
@@ -1735,7 +1735,7 @@ export function VisualSettings() {
           {" Hashtags com fundo colorido"}
         </label>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"blockTweetOpen"}
@@ -1744,7 +1744,7 @@ export function VisualSettings() {
           {" Bloquear abertura do tweet ao tocar no conteúdo (desmarcar restaura o clique nativo)"}
         </label>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"translatePosts"}
@@ -1753,7 +1753,7 @@ export function VisualSettings() {
           {" Traduzir automaticamente quando o X oferecer tradução"}
         </label>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"translateForeignTags"}
@@ -1762,15 +1762,15 @@ export function VisualSettings() {
           {" Traduzir hashtags em outros idiomas (PT/ES/EN não recebem tradução)"}
         </label>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "A tradução das hashtags usa o serviço público do Google Translate, quando disponível. As hashtags originais no post não são alteradas. No Safari, pode haver bloqueio de rede."
           }
         </p>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>{"Player de vídeo"}</label>
-          <select class={cx("ctrl")} data-visual={"playerMode"}>
+          <select className={cx("ctrl")} data-visual={"playerMode"}>
             {[
               ["videojs", "Video.js 10.3.0 (padrão)"],
               ["twitter", "Player normal do X"],
@@ -1785,7 +1785,7 @@ export function VisualSettings() {
           </select>
         </div>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"videoMute"}
@@ -1794,11 +1794,11 @@ export function VisualSettings() {
           {" Vídeos sempre mudos, exceto ao tocar no volume"}
         </label>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {"Resolução automática controlada pelo player do X (seletor desativado nesta versão)."}
         </p>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Iniciar vídeo com "}
             <strong data-visual-value={"autoPlayEnterPercent"}>
@@ -1818,7 +1818,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Pausar depois que "}
             <strong data-visual-value={"autoPauseExitPercent"}>
@@ -1838,7 +1838,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"swipeToCloseVideo"}
@@ -1847,13 +1847,13 @@ export function VisualSettings() {
           {" Deslizar para baixo para sair do vídeo imersivo"}
         </label>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {
             "O início e a pausa usam limiares separados para não ficar oscilando ao rolar. A reprodução automática ainda depende das permissões do Safari e do player do X."
           }
         </p>
         {"\n      "}
-        <label class={cx("tog")}>
+        <label className={cx("tog")}>
           <input
             type={"checkbox"}
             data-visual={"hideSeen"}
@@ -1862,7 +1862,7 @@ export function VisualSettings() {
           {" Ocultar tweets já vistos nesta conta"}
         </label>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Quanto do tweet deve estar na tela para marcar visto "}
             <strong data-visual-value={"viewedThreshold"}>
@@ -1881,7 +1881,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <div class={cx("field")}>
+        <div className={cx("field")}>
           <label>
             {"Tempo mínimo antes de registrar a leitura "}
             <strong data-visual-value={"seenDelayMs"}>
@@ -1900,7 +1900,7 @@ export function VisualSettings() {
           />
         </div>
         {"\n      "}
-        <p class={cx("muted")}>
+        <p className={cx("muted")}>
           {"O tweet só é marcado como visto depois de cumprir esse tempo visível e sair "}
           <strong>{"completamente"}</strong>
           {" da tela. Sair antes do tempo, trocar de aba ou ocultar o navegador não conta."}
@@ -2024,23 +2024,23 @@ export function renderDock() {
   mountView(dock, () => (
     <>
       <nav
-        class={cx("dock")}
+        className={cx("dock")}
         data-route={onSearch ? "search" : "home"}
         aria-label={"Timelines personalizadas"}
       >
         {"\n      "}
-        <span class={cx("dock-caption")}>{onSearch ? "Pesquisas" : "Minha Home"}</span>
+        <span className={cx("dock-caption")}>{onSearch ? "Pesquisas" : "Minha Home"}</span>
         {"\n      "}
-        <button data-act={"home"} class={cx(location.pathname === "/home" ? "active" : "")}>
+        <button data-act={"home"} className={cx(location.pathname === "/home" ? "active" : "")}>
           {"⌂ Início"}
         </button>
         {"\n      "}
         {pinned.map((search) => (
           <>
-            <span class={cx("rodx-dock-item")} data-drag-id={search.id}>
+            <span className={cx("rodx-dock-item")} data-drag-id={search.id}>
               {"\n        "}
               <button
-                class={cx("rodx-drag-handle")}
+                className={cx("rodx-drag-handle")}
                 draggable={"false"}
                 data-drag-handle={search.id}
                 title={"Segure e arraste para reorganizar"}
@@ -2052,7 +2052,7 @@ export function renderDock() {
               <button
                 data-act={"open-search"}
                 data-id={search.id}
-                class={cx(active?.query === search.query && active.sort === search.sort ? "active" : "")}
+                className={cx(active?.query === search.query && active.sort === search.sort ? "active" : "")}
                 title={search.query}
               >
                 {search.icon} {search.name}
@@ -2072,7 +2072,7 @@ export function renderDock() {
         {"\n      "}
         <button data-act={"lists-studio"}>{"☷ Listas"}</button>
         {"\n      "}
-        <button data-act={"new"} class={cx("plus")} title={"Criar timeline"}>
+        <button data-act={"new"} className={cx("plus")} title={"Criar timeline"}>
           {"+ Criar"}
         </button>
         {"\n      "}
