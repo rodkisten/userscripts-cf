@@ -78,8 +78,10 @@ export function transformRodAst(code, id, options = {}) {
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
-    return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end))) ||
-      (ts.isStatement(node) && /\/\/\s*@keep\b/.test(code.slice(node.getFullStart(), node.getStart(source))));
+    return (
+      ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end))) ||
+      (ts.isStatement(node) && /\/\/\s*@keep\b/.test(code.slice(node.getFullStart(), node.getStart(source))))
+    );
   };
   function walk(node, ctx, shadowed = new Set(), blocked = false, owner = null) {
     if (ts.isFunctionLike(node)) {
@@ -90,7 +92,9 @@ export function transformRodAst(code, id, options = {}) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
-      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner));
+      ts.forEachChild(node, (child) =>
+        walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner),
+      );
       return;
     }
     if (ts.isBlock(node) || ts.isSourceFile(node)) {
@@ -104,7 +108,8 @@ export function transformRodAst(code, id, options = {}) {
       let replacement, extraArg;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
-        if (callee.text === "setInterval" && node.arguments.length >= 2 && !cleanupFor(owner).timers) replacement = ctx + ".interval";
+        if (callee.text === "setInterval" && node.arguments.length >= 2 && !cleanupFor(owner).timers)
+          replacement = ctx + ".interval";
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
         const receiver = callee.expression.text;

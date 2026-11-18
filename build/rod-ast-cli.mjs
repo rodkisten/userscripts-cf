@@ -8,14 +8,23 @@ const input = args.find((x) => !x.startsWith("--")) ?? "tests/fixtures/rod-ast.i
 const output = args.find((x) => x.startsWith("--out="))?.slice(6) ?? "artifacts/rod-ast.output.tsx";
 const report = args.find((x) => x.startsWith("--report="))?.slice(9) ?? "artifacts/rod-ast-report.json";
 const source = readFileSync(input, "utf8");
-const result = args.includes("--iife") ? migrateUserscriptIife(source, input) : transformRodAst(source, input);
+const result = args.includes("--iife")
+  ? migrateUserscriptIife(source, input)
+  : transformRodAst(source, input);
 mkdirSync(dirname(resolve(output)), { recursive: true });
 mkdirSync(dirname(resolve(report)), { recursive: true });
 writeFileSync(output, result.code);
 writeFileSync(
   report,
   JSON.stringify(
-    { input, output, changed: result.changed, edits: result.edits, diagnostics: result.diagnostics, metadata: result.metadata ?? {} },
+    {
+      input,
+      output,
+      changed: result.changed,
+      edits: result.edits,
+      diagnostics: result.diagnostics,
+      metadata: result.metadata ?? {},
+    },
     null,
     2,
   ),

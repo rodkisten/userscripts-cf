@@ -488,7 +488,6 @@
 - [ ] Audit all helper contracts and implement typed symbol resolution/import insertion. Current prototype is intentionally partial. See [docs/rod-ast.md](rod-ast.md).
 - [ ] Typecheck transformed fixture, integrate safely with existing runtime AST, verify full build and browser behavior before enabling by default.
 
-
 ### 🧬 Rod AST · Vitest and DOM transforms (2026-11-18)
 
 - [x] Migrate Rod AST unit tests from Node test runner to Vitest; workflow runs dedicated Vitest suite.
@@ -512,7 +511,7 @@
 - [x] Expand the real TypeScript/TSX fixture with typed and inferred variables, `ctx`/`context`, `window`, `self`, `parent`, `top`, `globalThis`, nested callbacks, React JSX, observers, explicit cancellation and independent owners.
 - [x] Add 32 positive/negative syntax cases in `tests/fixtures/rod-ast.matrix.json` and run them with Vitest, including idempotence assertions.
 - [x] Include matrix changes in the Rod AST workflow push path filter.
-- [ ] Verify full CI execution and transformed fixture typecheck; matrix entries document *current* behavior, not a claim that all global variants are supported.
+- [ ] Verify full CI execution and transformed fixture typecheck; matrix entries document _current_ behavior, not a claim that all global variants are supported.
 
 ### 📦 IIFE userscript migration (2026-11-18)
 

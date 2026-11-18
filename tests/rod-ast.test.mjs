@@ -27,12 +27,13 @@ it("optional Vite plugin is disabled unless registered", () => {
 });
 
 it("rewrites typed DOM query aliases and preserves NodeList semantics", () => {
-  const input = 'function init(ctx: ScriptContext) { const one = document.querySelector(".item"); const all = document.querySelectorAll(".item"); return all.item(0) ?? one; }';
+  const input =
+    'function init(ctx: ScriptContext) { const one = document.querySelector(".item"); const all = document.querySelectorAll(".item"); return all.item(0) ?? one; }';
   const result = transformRodAst(input, "fixture.ts");
   expect(result.diagnostics).toEqual([]);
   expect(result.code).toContain('ctx.dom.querySelector(".item")');
   expect(result.code).toContain('ctx.dom.querySelectorAll(".item")');
-  expect(result.code).toContain('all.item(0)');
+  expect(result.code).toContain("all.item(0)");
   expect(transformRodAst(result.code, "fixture.ts").changed).toBe(false);
 });
 it("never rewrites unsupported document.createElement", () => {
@@ -52,48 +53,54 @@ it("rewrites a standalone native listener to ctx.listen with the original target
   expect(transformRodAst(result.code, "listener.ts").changed).toBe(false);
 });
 it("preserves native listeners when explicit removal is present", () => {
-  const source = 'function init(ctx: ScriptContext) { document.addEventListener("click", onClick); document.removeEventListener("click", onClick); }';
+  const source =
+    'function init(ctx: ScriptContext) { document.addEventListener("click", onClick); document.removeEventListener("click", onClick); }';
   expect(transformRodAst(source, "listener.ts").code).toBe(source);
 });
 it("rewrites global setInterval to ctx.interval", () => {
-  const source = 'function init(ctx: ScriptContext) { return setInterval(tick, 1000); }';
+  const source = "function init(ctx: ScriptContext) { return setInterval(tick, 1000); }";
   const result = transformRodAst(source, "interval.ts");
   expect(result.code).toContain("ctx.interval(tick, 1000)");
   expect(transformRodAst(result.code, "interval.ts").changed).toBe(false);
 });
 it("preserves shadowed setInterval", () => {
-  const source = 'function init(ctx: ScriptContext) { const setInterval = () => 0; return setInterval(); }';
+  const source = "function init(ctx: ScriptContext) { const setInterval = () => 0; return setInterval(); }";
   expect(transformRodAst(source, "interval.ts").code).toBe(source);
 });
 
 it("preserves interval IDs when clearInterval is used", () => {
-  const source = 'function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); clearInterval(id); }';
+  const source =
+    "function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); clearInterval(id); }";
   expect(transformRodAst(source, "timer.ts").code).toBe(source);
 });
 it("does not rewrite React useContext into an arbitrary ctx variable", () => {
-  const source = 'function init(ctx: ScriptContext) { return useContext(); }';
+  const source = "function init(ctx: ScriptContext) { return useContext(); }";
   expect(transformRodAst(source, "react.tsx").code).toBe(source);
 });
 it("preserves MutationObserver until observer ownership is proven", () => {
-  const source = 'function init(ctx: ScriptContext) { const observer = new MutationObserver(callback); observer.observe(document.body, {childList: true}); observer.disconnect(); }';
+  const source =
+    "function init(ctx: ScriptContext) { const observer = new MutationObserver(callback); observer.observe(document.body, {childList: true}); observer.disconnect(); }";
   expect(transformRodAst(source, "observer.ts").code).toBe(source);
 });
 
 it("does not let unrelated function timer cleanup disable a safe transform", () => {
-  const code = 'function first(ctx: ScriptContext) { setInterval(tick, 1000); } function second(ctx: ScriptContext) { const id = setInterval(tock, 2000); clearInterval(id); }';
+  const code =
+    "function first(ctx: ScriptContext) { setInterval(tick, 1000); } function second(ctx: ScriptContext) { const id = setInterval(tock, 2000); clearInterval(id); }";
   const result = transformRodAst(code, "owners.ts");
   expect(result.code).toContain("ctx.interval(tick, 1000)");
   expect(result.code).toContain("setInterval(tock, 2000)");
   expect(result.code).toContain("clearInterval(id)");
 });
 it("does not let unrelated listener removal disable a safe transform", () => {
-  const code = 'function first(ctx: ScriptContext) { document.addEventListener("click", click); } function second(ctx: ScriptContext) { document.addEventListener("scroll", scroll); document.removeEventListener("scroll", scroll); }';
+  const code =
+    'function first(ctx: ScriptContext) { document.addEventListener("click", click); } function second(ctx: ScriptContext) { document.addEventListener("scroll", scroll); document.removeEventListener("scroll", scroll); }';
   const result = transformRodAst(code, "owners.ts");
   expect(result.code).toContain('ctx.listen(document, "click", click)');
   expect(result.code).toContain('document.addEventListener("scroll", scroll)');
 });
 it("detects cleanup inside nested disposal callbacks of the same owner", () => {
-  const code = 'function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); ctx.onDispose(() => clearInterval(id)); }';
+  const code =
+    "function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); ctx.onDispose(() => clearInterval(id)); }";
   expect(transformRodAst(code, "nested.ts").code).toBe(code);
 });
 

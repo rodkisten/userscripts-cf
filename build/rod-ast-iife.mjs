@@ -2,7 +2,8 @@ import ts from "typescript";
 import { transformRodAst } from "./rod-ast.mjs";
 
 const parse = (code, id) => ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-const print = (node, source) => ts.createPrinter({ newLine: ts.NewLineKind.LineFeed }).printNode(ts.EmitHint.Unspecified, node, source);
+const print = (node, source) =>
+  ts.createPrinter({ newLine: ts.NewLineKind.LineFeed }).printNode(ts.EmitHint.Unspecified, node, source);
 
 /**
  * Converts a standalone, immediately invoked userscript into the native
@@ -29,7 +30,12 @@ export function migrateUserscriptIife(code, id = "userscript.js") {
     return !ts.isStringLiteral(statement.expression) || statement.expression.text !== "use strict";
   });
   if (statements.length !== 1 || !ts.isExpressionStatement(statements[0])) {
-    return { code, changed: false, metadata, diagnostics: ["Expected one top-level IIFE; review additional statements manually"] };
+    return {
+      code,
+      changed: false,
+      metadata,
+      diagnostics: ["Expected one top-level IIFE; review additional statements manually"],
+    };
   }
   const statement = statements[0];
   let expression = statement.expression;
@@ -43,16 +49,36 @@ export function migrateUserscriptIife(code, id = "userscript.js") {
     return { code, changed: false, metadata, diagnostics: ["Unsupported IIFE callee"] };
   }
   if (callee.parameters.length || !ts.isBlock(callee.body)) {
-    return { code, changed: false, metadata, diagnostics: ["Parameterized or expression-bodied IIFE requires manual review"] };
+    return {
+      code,
+      changed: false,
+      metadata,
+      diagnostics: ["Parameterized or expression-bodied IIFE requires manual review"],
+    };
   }
-  const body = callee.body.statements.filter((node) =>
-    !ts.isExpressionStatement(node) || !ts.isStringLiteral(node.expression) || node.expression.text !== "use strict",
+  const body = callee.body.statements.filter(
+    (node) =>
+      !ts.isExpressionStatement(node) ||
+      !ts.isStringLiteral(node.expression) ||
+      node.expression.text !== "use strict",
   );
   if (body.some((node) => ts.isReturnStatement(node) || ts.isExportDeclaration(node))) {
-    return { code, changed: false, metadata, diagnostics: ["Top-level return/export requires manual review"] };
+    return {
+      code,
+      changed: false,
+      metadata,
+      diagnostics: ["Top-level return/export requires manual review"],
+    };
   }
-  if (body.some((node) => ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) &&
-    ts.isIdentifier(node.expression.expression) && node.expression.expression.text === "eval")) {
+  if (
+    body.some(
+      (node) =>
+        ts.isExpressionStatement(node) &&
+        ts.isCallExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === "eval",
+    )
+  ) {
     return { code, changed: false, metadata, diagnostics: ["Dynamic eval requires manual review"] };
   }
   // Preserve lexical declarations, comments and JSX-free source verbatim.
@@ -62,7 +88,10 @@ export function migrateUserscriptIife(code, id = "userscript.js") {
   inner = inner.replace(/^(['"])use strict\1;?\s*/, "");
   const output = `export default {
   init(ctx) {
-${inner.split("\n").map((line) => "    " + line).join("\n")}
+${inner
+  .split("\n")
+  .map((line) => "    " + line)
+  .join("\n")}
   },
 };
 `;
