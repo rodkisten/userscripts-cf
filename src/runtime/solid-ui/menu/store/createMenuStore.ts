@@ -100,7 +100,7 @@ export function createMenuStore<TValues extends AnyRecord>(
   onError: (err: unknown) => void,
 ) {
   // SolidJS v2 Signal-backed reactive store
-  const [values, setValuesSignal] = createSignal<TValues>({ ...initial });
+  const [values, setValuesSignal] = createSignal<TValues>(() => ({ ...initial }));
   const initialSnapshot = { ...initial };
 
   const raw = storeConfig?.persist;
