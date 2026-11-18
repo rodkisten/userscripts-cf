@@ -1,4 +1,3 @@
-import { createRoot } from "react-dom/client";
 import { Badge, badgeCss } from "../src/runtime/solid-ui/badge";
 import { Slider, Switch as RodSwitch, ColorPicker, controlsCss } from "../src/runtime/solid-ui/form-controls";
 import { IconButton, SplitButton } from "../src/runtime/solid-ui/button";
@@ -67,7 +66,7 @@ const [inspectorOptions, setInspectorOptions] = createSignal<RodInspectorOptions
   virtualize: true,
   theme: "dark",
 });
-function InspectorPreview() {
+render(() => {
   const value = () => {
     const selected = samples[sample()];
     const term = filter().trim().toLowerCase();
@@ -95,8 +94,7 @@ function InspectorPreview() {
       <ObjectInspector value={value()} options={{ ...inspectorOptions(), expandDepth: depth() }} />
     </div>
   );
-}
-createRoot(root).render(<InspectorPreview />);
+}, root);
 document.querySelectorAll<HTMLButtonElement>("[data-object]").forEach((button) =>
   button.addEventListener("click", () => {
     const next = button.dataset.object as InspectorSample;
