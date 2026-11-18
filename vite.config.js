@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { runtimeHelpers } from "./build/runtime-helpers.mjs";
+import { rodAstPlugin } from "./build/rod-ast.mjs";
 import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
@@ -8,7 +9,10 @@ import { stylesPipeline } from "./build/styles.mjs";
 export default defineConfig({
   publicDir: false,
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
-  plugins: [runtimeHelpers(), inlineCSSModules(), inlineSVG()],
+  plugins: [
+    ...(process.env.ROD_AST === "1" ? [rodAstPlugin({ strict: true })] : []),
+    runtimeHelpers(), inlineCSSModules(), inlineSVG(),
+  ],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },
