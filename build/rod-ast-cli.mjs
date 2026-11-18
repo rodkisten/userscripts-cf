@@ -35,7 +35,7 @@ console.log(
       input,
       output,
       changed: result.changed,
-      replacements: result.edits.length,
+      replacements: result.edits?.length ?? 0,
       diagnostics: result.diagnostics,
     },
     null,
