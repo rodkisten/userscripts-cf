@@ -303,7 +303,8 @@ it("GM opt-out disables all automatic GM rewrites", () => {
 });
 
 it("does not erase GM guards with missing-grant fallback", () => {
-  const input = 'function init(ctx) { if (typeof GM_setValue === "function") { GM_setValue("k", "v"); } else { localStorage.setItem("k", "v"); } }';
+  const input =
+    'function init(ctx) { if (typeof GM_setValue === "function") { GM_setValue("k", "v"); } else { localStorage.setItem("k", "v"); } }';
   const output = transformRodAst(input, "gm-guards.ts").code;
   expect(output).toBe(input);
 });
