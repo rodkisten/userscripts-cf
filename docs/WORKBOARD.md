@@ -608,3 +608,6 @@
 - [x] Wire `rodAstPlugin` into Vite as explicit `ROD_AST=1` opt-in ahead of runtime helpers and CSS Modules.
 - [ ] Verify Vitest, typecheck, Vite build and production Safari behavior; no successful CI run has been confirmed.
 - [ ] Add dataflow-safe migration for `createElement('style')`, `textContent`/`innerText`, `insertRule`, `adoptedStyleSheets`, insertion and disposal; process static styles through the existing CSS pipeline without changing selector semantics.
+
+- [x] Implement conservative AST migration for contiguous static style creation, text assignment and document insertion when the element does not escape; add positive/negative Vitest and matrix cases.
+- [ ] Expand to dynamic styles, CSSOM and adoptedStyleSheets only with proven ownership and CSS processing parity; validate CI before enabling ROD_AST by default.
