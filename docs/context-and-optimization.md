@@ -250,3 +250,19 @@ Maiores módulos renderizados observados: `@codemirror/view` (~307–351 KB nos 
 - `build/bundle-runtime.mjs`: defines e Rolldown.
 - `build/build.mjs`: targets, instaláveis, auditoria e minificação.
 - `tests/runtime.test.js`, `tests/runtime-graph.test.js`, `tests/runtime-inspection-build.test.js`: regressões.
+
+### React-only provider boundary (2026-11-18)
+
+React `RuntimeProvider` and `RuntimeMount` now import `ReactScriptContext` from `src/core/react-context-contract.ts`, rather than importing `ScriptContext` from the legacy runtime module. The contract intentionally models only the fields required by the React provider and bound callbacks (`id`, `signal`, optional shared events). It does not replace the full runtime `ScriptContext` API or change AST helper semantics.
+
+```mermaid
+flowchart TD
+    A[React runtime entry] --> B[createCoreRuntime legacy implementation]
+    A --> C[RuntimeMount]
+    C --> D[RuntimeProvider]
+    D --> E[ReactScriptContext type-only contract]
+    B --> F[Instance-owned ctx and disposal]
+    F --> D
+```
+
+A mounted React descendant reads the owning provider; asynchronous callbacks use `bindRuntime(ctx)`. The binding throws after the instance signal aborts. Two simultaneous instances must not share a mutable active-context pointer. Regression coverage was added in `tests/react-runtime-context.test.ts`, but **tests have not been run**; full isolation remains blocked because the React entry still imports the legacy runtime implementation. No claim of a green React build is made.
