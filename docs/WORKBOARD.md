@@ -300,3 +300,8 @@
 
 - Migrated `src/runtime/actions/ClipboardPanel.tsx` and `src/runtime/actions/Panel.tsx` from Solid signals/For/Show to React state/effects and JSX. Clipboard panel preserves subscribe/unsubscribe, search, pin, remove and read; copying now uses `navigator.clipboard.writeText` and needs Safari/GM clipboard fallback verification. Commits [`94bd8e60`](https://github.com/rodkisten/userscripts-cf/commit/94bd8e606235675c1d2d2875980e99f88ff97b6d), [`bb2755ac`](https://github.com/rodkisten/userscripts-cf/commit/bb2755ac8c5db16a94d02af62d419e2b32301de9).
 - Restored clipboard registration in React Rod Actions hub [`ede083aa`](https://github.com/rodkisten/userscripts-cf/commit/ede083aad023ddedfa0125cf529ba327f095026a). No new foundational UI primitives added; Radix Dialog remains the hub primitive. **CI/runtime not verified**; remaining Solid consumers and old build failures persist.
+
+### Instagram Reel bookmark React mount (2026-11-18)
+
+- [`529c1be4`](https://github.com/rodkisten/userscripts-cf/commit/529c1be4788b7d01bfacf65d8eefaec28a87c6a5) migrates `ReelBookmarkButton.tsx` from Solid Show/class to React JSX; [`4f358842`](https://github.com/rodkisten/userscripts-cf/commit/4f358842c7b76bf18e531b01650ee2c32c6b6123) replaces Solid mountPoint/createSignal with React createRoot/unmount in `reel-bookmark.tsx`. No new shared foundational components created.
+- **Not verified**: multiple-Reel navigation and first-item-only bug, native save behavior, Safari/Tampermonkey, and build. `instagram-saved/index.tsx` and `Settings.tsx` still require migration; do not claim Instagram is React-only yet.
