@@ -1,6 +1,12 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { RuntimeProvider, bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
+import {
+  RuntimeProvider,
+  bindRuntime,
+  useContext,
+  useRuntime,
+  useRuntimeWorld,
+} from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 
@@ -31,9 +37,16 @@ export function createRuntime(
     },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => ({
       ui: Object.freeze({
-        get root() { return ensureUIRoot(); },
-        get host() { return ensureUIRoot().host as unknown as HTMLDivElement; },
-        mount(node: Node) { ensureUIRoot().append(node); return node; },
+        get root() {
+          return ensureUIRoot();
+        },
+        get host() {
+          return ensureUIRoot().host as unknown as HTMLDivElement;
+        },
+        mount(node: Node) {
+          ensureUIRoot().append(node);
+          return node;
+        },
         style(css: string) {
           const node = host.document.createElement("style");
           node.textContent = String(css);
