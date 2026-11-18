@@ -1,7 +1,7 @@
 import { createBridge } from "./bridge.js";
 import { mountReddit } from "./reddit-adapter.tsx";
 import { mountSoundgasm } from "./soundgasm-adapter.tsx";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { createRoot } from "react-dom/client";
 import { css } from "./Audiochan.module.css";
 
 export default {
@@ -13,20 +13,19 @@ export default {
       if (/^(?:www\.)?audiochan\.(?:com|net)$/i.test(location.hostname)) {
         const post = bridge.safeReddit(new URL(location.href).searchParams.get("gws_post"));
         if (!post) return;
-        const mount = mountPoint(
-          document.querySelector("main") || document.body,
-          () => (
-            <a id="gws-audiochan-return" href={post} rel="noopener noreferrer">
-              ↶ Voltar ao post no Reddit
-            </a>
-          ),
-          {
-            before: (document.querySelector("main") || document.body).firstChild,
-            shadow: true,
-            styles: [css],
-          },
-        );
-        ctx.onDispose(mount.dispose);
+        const parent = document.querySelector("main") || document.body;
+        const host = document.createElement("div");
+        host.id = "gws-audiochan-return";
+        parent.insertBefore(host, parent.firstChild);
+        const shadow = host.attachShadow({ mode: "open" });
+        const sheet = document.createElement("style");
+        sheet.textContent = css;
+        shadow.append(sheet);
+        const container = document.createElement("div");
+        shadow.append(container);
+        const root = createRoot(container);
+        root.render(<a href={post} rel="noopener noreferrer">↶ Voltar ao post no Reddit</a>);
+        ctx.onDispose(() => { root.unmount(); host.remove(); });
         return;
       }
       mountReddit(ctx, bridge);
