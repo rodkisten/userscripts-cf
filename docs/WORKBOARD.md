@@ -252,3 +252,8 @@
 
 - [`5f726038`](https://github.com/rodkisten/userscripts-cf/commit/5f726038b2c25ea0588c6b87943836c3be2bfaac) gives each validation stage a stable step ID and publishes a GitHub Actions job summary using `if: always()`, reporting legacy TS, React TS and production build outcomes alongside the exact commit SHA.
 - No validation was bypassed and no green build claimed. The GitHub connector supports job lookup by run ID, but not listing latest runs; next step is to inspect a current run and its individual logs.
+
+### Current CI run 44234731037 (2026-11-18)
+
+- [Run 44234731037](https://github.com/rodkisten/userscripts-cf/actions/runs/44234731037), job `134568001712`: `npm ci`, legacy TypeScript and React TypeScript **passed**; production build **failed** with Vite 8/Rolldown `PARSE_ERROR Unexpected JSX expression` in `.tsx` sources including GoneWild, Instagram Saved, mobile editor FAB and DOM Inspector.
+- [`297367dc`](https://github.com/rodkisten/userscripts-cf/commit/297367dc89bceeededf42a85fab75adf49a1bc4a) adds explicit Oxc TSX pretransform in Vite config as a candidate fix. **Not verified.** Important: legacy Solid TSX still exists and uses a different JSX runtime; a React automatic transform of legacy Solid JSX can change runtime behavior. Audit imports and validate actual runtime behavior before release. Prefer migrating remaining Solid consumers instead of shipping a semantically incompatible transform.
