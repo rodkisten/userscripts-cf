@@ -311,3 +311,9 @@
 - [`912daa9e`](https://github.com/rodkisten/userscripts-cf/commit/912daa9e95e0596a751c88d279486a921665c1c5): replaced Solid store/dialog in `src/userscripts/instagram-saved/Settings.tsx` with React state and Radix Dialog.
 - [`31dc7d85`](https://github.com/rodkisten/userscripts-cf/commit/31dc7d854642146fe4e95a29590f5d033cfdd486): replaced `mountSolid` and `Show` in `instagram-saved/index.tsx` with `ctx.ui.mountReact` and `useSyncExternalStore`-based notifications for runtime changes; kept Rod Actions tab integration.
 - **Unverified**: full build, typecheck, native Instagram behavior, portal styling within ShadowRoot, multi-Reel navigation. Existing form inputs/buttons are markup, not a new reusable component library; replace with shadcn/Radix primitives as the existing design system is consolidated.
+
+### GoneWild entrypoint inspection (2026-11-18)
+
+- [`6807cf09`](https://github.com/rodkisten/userscripts-cf/commit/6807cf093c1b0d90d164ecc1f1fba5f77da5b74c) replaces the Audiochan return-link Solid mount with a React root in a ShadowRoot and disposal cleanup.
+- **Remaining blocking Solid consumers:** `gonewild/reddit-adapter.tsx`, `gonewild/soundgasm-adapter.tsx`, `gonewild/components/SoundgasmApp.tsx`, and its child components. Soundgasm uses a Solid error boundary and Solid data store, so removing its mount alone would break the fallback. Prioritize coordinated adapter + component migration, then verify the native-player safeguard and Reddit layout.
+- No build or browser validation performed for this change.
