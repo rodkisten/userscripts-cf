@@ -620,3 +620,16 @@
 
 - [x] Repair literal escaped-newline comment in AST transformer, which otherwise comments out its replacement branch.
 - [ ] Run Vitest, typecheck and bundle verification in an environment with repository checkout; GitHub connector cannot dispatch a fresh workflow.
+
+### 🧬 Rod AST / ShadowRoot stabilization (PR #108, 2026-11-18)
+
+- [x] Open draft PR with originating conversation URL: https://github.com/rodkisten/userscripts-cf/pull/108
+- [x] Replace obsolete GM style assertions with ctx.ui.style expectations; add inline CSS regression test.
+- [x] Restore valid JavaScript in AST style-triple migration and remove escaped newline syntax defects.
+- [x] Define concrete ScriptContext contracts for HTTP, GM bridge, async storage, React UI and dispose.
+- [x] Preserve typed React context and fix nonexistent events.shared access.
+- [x] Avoid reinjecting tokens/core.css for every AST-compiled inline ShadowRoot style; preserve the existing CSS Modules pipeline.
+- [ ] Confirm new Vitest and TypeScript results in Actions; investigate any remaining failures before merge.
+- [ ] Verify actual Vite userscript build with ROD_AST=1 and Safari-compatible output.
+- [ ] Verify CSS Modules class mapping and dynamic style injection separately before expanding AST rewrite patterns.
+
