@@ -10,8 +10,7 @@ export type FeedController = {
   clear: () => void; settings: () => void; tagMenu: (tag: string) => void;
 };
 function useStudio(store: StudioStore) {
-  useSyncExternalStore(store.subscribe, store.getSnapshot);
-  return store.state;
+  return useSyncExternalStore(store.subscribe, () => store.state);
 }
 function TagButton({ tag, controller }: { tag: string; controller: FeedController }) {
   const state = useStudio(controller.store);
@@ -63,7 +62,10 @@ export function PostCard({ post, controller, native = false, onAudio }: {
         setAudio((previous) => ({ ...previous, checked: true, error: (error as Error).message }));
       }
     } finally {
-      if (!abort.signal.aborted) { loading.current = false; setAudio((previous) => ({ ...previous, loading: false })); }
+      if (request.current === abort) {
+        loading.current = false;
+        if (!abort.signal.aborted) setAudio((previous) => ({ ...previous, loading: false }));
+      }
     }
   };
   useEffect(() => {
