@@ -100,8 +100,8 @@ function TreeRow(props: {
   const [children, setChildren] = useState(props.node.children);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const toggle = async () => {
-    if (expanded) {
+  const toggle = async (retry = false) => {
+    if (expanded && !retry) {
       setExpanded(false);
       return;
     }
@@ -154,6 +154,7 @@ function TreeRow(props: {
       {props.node.folder && expanded && (
         <div role="group">
           {loading && (
+            <>
             <div
               className={styles.treeSkeleton}
               role="status"
@@ -161,14 +162,14 @@ function TreeRow(props: {
               style={{ width: "55%" }}
             />
             <div className={styles.treeSkeleton} style={{ width: "35%" }} />
+            </>
           )}
           {error && (
             <div className={styles.treeError}>
               {error}{" "}
               <button
                 onClick={() => {
-                  setExpanded(false);
-                  void toggle();
+                  void toggle(true);
                 }}
               >
                 Tentar novamente
