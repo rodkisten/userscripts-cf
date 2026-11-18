@@ -65,3 +65,17 @@ export function independent(ctx: ScriptContext) {
 export function Preview() {
   return <button className="rounded">React JSX</button>;
 }
+
+/** Compile-time contract: AST output must preserve native selector inference. */
+export function selectorTypeParity(ctx: ScriptContext) {
+  const anchors: NodeListOf<HTMLAnchorElement> = document.querySelectorAll("a");
+  const inputs: NodeListOf<HTMLInputElement> = document.querySelectorAll("input");
+  const buttons: NodeListOf<HTMLButtonElement> = document.querySelectorAll<HTMLButtonElement>(".action");
+  const svg: NodeListOf<SVGCircleElement> = document.querySelectorAll("circle");
+  const dynamicSelector: string = ".dynamic";
+  const dynamic: NodeListOf<Element> = document.querySelectorAll(dynamicSelector);
+  const first: HTMLAnchorElement | null = document.querySelector("a");
+  const maybe: Element | null = document.querySelector(dynamicSelector);
+  const scoped: NodeListOf<HTMLAnchorElement> = ctx.dom.scope(document.body).querySelectorAll("a");
+  return { anchors, inputs, buttons, svg, dynamic, first, maybe, scoped };
+}
