@@ -515,7 +515,45 @@ export function createCoreRuntime(
       return instance;
     }
 
+    // Compatibility layer for explicit async migration of legacy localStorage.
+    // Native localStorage remains the source of truth when available; the
+    // namespaced store is a fallback and receives imported values on reads.
+    const localStorageCompat = Object.freeze({
+      async getItem(key: string): Promise<string | null> {
+        let nativeValue: string | null = null;
+        try {
+          nativeValue = host.localStorage.getItem(key);
+        } catch {
+          // Private browsing and denied storage access use the async backend.
+        }
+        if (nativeValue !== null) {
+          await getStore().set("local:" + key, nativeValue);
+          return nativeValue;
+        }
+        const stored = await getStore().get("local:" + key);
+        return typeof stored === "string" ? stored : null;
+      },
+      async setItem(key: string, value: unknown): Promise<void> {
+        const stringValue = String(value);
+        await getStore().set("local:" + key, stringValue);
+        try {
+          host.localStorage.setItem(key, stringValue);
+        } catch {
+          // The namespaced backend already contains the new value.
+        }
+      },
+      async removeItem(key: string): Promise<void> {
+        await getStore().delete("local:" + key);
+        try {
+          host.localStorage.removeItem(key);
+        } catch {
+          // Removal from the async backend is already complete.
+        }
+      },
+    });
+
     const storage = Object.freeze({
+      local: localStorageCompat,
       async get(key: string, fallback?: unknown): Promise<unknown> {
         const value = await getStore().get(key);
         if (value !== undefined) return value;
