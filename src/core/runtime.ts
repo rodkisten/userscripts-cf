@@ -89,10 +89,29 @@ export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
   readonly events: ReturnType<typeof createEventBus> | undefined;
-  readonly storage: ReturnType<ReturnType<typeof createStorageFeature>["create"]>;
+  readonly http: ReturnType<typeof createHttpFeature>["http"] | undefined;
+  readonly gm: ReturnType<typeof createGMFeature> | undefined;
+  readonly dispose: () => Promise<void>;
+  readonly storage: {
+    readonly local: {
+      getItem(key: string): Promise<string | null>;
+      setItem(key: string, value: unknown): Promise<void>;
+      removeItem(key: string): Promise<void>;
+    };
+    get(key: string, fallback?: unknown): Promise<unknown>;
+    set(key: string, value: unknown): Promise<void>;
+    delete(key: string): Promise<void>;
+  };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui: ReturnType<typeof createUIFeature> | undefined;
-  readonly menu: ReturnType<typeof createMenuFeature>;
+  readonly ui: (ReturnType<typeof createUIFeature> & {
+    readonly root: ShadowRoot;
+    readonly host: HTMLDivElement;
+    mount(node: Node): Node;
+    style(css: string): HTMLStyleElement;
+    registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+    mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
+  }) | undefined;
+  readonly menu: ReturnType<typeof createMenuFeature> | undefined;
   readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
   readonly onDispose: (cleanup: () => void | Promise<void>) => void;
 };
