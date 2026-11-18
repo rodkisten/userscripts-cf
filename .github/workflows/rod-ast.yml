@@ -2,6 +2,8 @@ name: "🧬 Rod AST · Fixture, diff & typecheck"
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "build/rod-ast.mjs"
       - "build/rod-ast-cli.mjs"
