@@ -659,7 +659,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             type="button"
                             class={fieldStyles.tab}
                             role="tab"
-                            aria-selected={active()}
+                            aria-selected={String(active())}
                             data-active={String(active())}
                             onClick={() => setActiveTabId(tab.id)}
                           >
@@ -751,9 +751,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                       if (value === "primary") return "default";
                       if (
                         value === "secondary" ||
-                        value === "outline" ||
                         value === "ghost" ||
-                        value === "destructive" ||
                         value === "success" ||
                         value === "warning" ||
                         value === "link"
