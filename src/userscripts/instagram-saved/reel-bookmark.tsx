@@ -25,9 +25,9 @@ function controls(): HTMLElement[] {
       return ACTION_LABEL.test(label);
     });
 }
-function nativeSave(): HTMLElement | null {
+function nativeSave(scope: ParentNode = document): HTMLElement | null {
   return (
-    controls().find((button) =>
+    controls().filter((button) => scope === document || (scope instanceof Element && scope.contains(button))).find((button) =>
       SAVE_LABEL.test(
         [
           button.getAttribute("aria-label"),
@@ -38,12 +38,15 @@ function nativeSave(): HTMLElement | null {
   );
 }
 function actions(): HTMLElement | null {
-  const save = nativeSave();
+  const video = [...document.querySelectorAll("video")].filter((node) => {
+    const rect = node.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.top < innerHeight * 0.8 && rect.bottom > innerHeight * 0.2;
+  }).sort((a, b) => Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - innerHeight / 2) - Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - innerHeight / 2))[0];
+  const scope = video?.closest('article, [role="dialog"], [data-testid="reel"], section') || document;
+  const save = nativeSave(scope);
   if (save?.parentElement) return save.parentElement;
   const buttons = controls();
-  const video = [...document.querySelectorAll("video")].find(
-    (node) => node.getBoundingClientRect().width > 0,
-  );
+
   const near = buttons.filter((button) => {
     const rect = button.getBoundingClientRect();
     if (!rect.width || !rect.height) return false;
@@ -163,7 +166,7 @@ export function mountReelBookmark(
       if (observed === "unsaved" && state() === "saved") setState("unsaved");
     }
     const target = reelIsOpen() ? actions() : null;
-    const native = target && (nativeSave() || target.querySelector<HTMLElement>('button, [role="button"]'));
+    const native = target && (target.querySelector<HTMLElement>('button, [role="button"]') || (target.matches('button, [role="button"]') ? target : null));
     if (!target || !native || !native.isConnected) {
       clear();
       return;
