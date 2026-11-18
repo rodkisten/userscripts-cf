@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,7 +16,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dependencies:
+    name: Synchronize dependencies before Pages
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sync.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.dependencies.outputs.sha }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Synchronize npm lockfile and capture final commit
+        id: sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit --no-fund
+          npm ci --legacy-peer-deps --no-audit --no-fund
+          if ! git diff --quiet -- package-lock.json; then
+            if [[ "$GITHUB_REF_NAME" != "main" ]]; then
+              echo "::error::Lockfile out of sync outside main"
+              exit 1
+            fi
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "fix(deps): synchronize lockfile [skip ci]"
+            git push origin HEAD:main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   changes:
+    needs: dependencies
     runs-on: ubuntu-latest
     outputs:
       deploy: ${{ steps.detect.outputs.deploy }}
@@ -59,7 +95,7 @@ jobs:
             echo "reason=no relevant files or explicit marker" >> "$GITHUB_OUTPUT"
           fi
   deploy:
-    needs: changes
+    needs: [dependencies, changes]
     if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
@@ -67,6 +103,8 @@ jobs:
       url: https://userscripts-playground.migos.club/
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.dependencies.outputs.sha }}
       - name: Identify push actor and commit author
         if: github.event_name == 'push'
         env:
