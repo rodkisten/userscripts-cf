@@ -1,5 +1,5 @@
 import { boundedAudio } from "../services.ts";
-import { createStore, createSignal, createEffect, onCleanup, onSettled, Show } from "solid-js";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { formatTime, KEYS, readJSON, writeJSON } from "../domain.ts";
 import styles from "../Soundgasm.module.css";
 
@@ -14,7 +14,7 @@ export function Player(props: {
 }) {
   const key = `${location.hostname.toLowerCase().replace(/^www\./, "")}${location.pathname.replace(/\/$/, "")}`;
   const saved = readJSON<Record<string, Playback>>(KEYS.playback, {})[key];
-  const [state, setState] = createStore({
+  const [state, setStateBase] = useState({
     time: 0,
     duration: 0,
     paused: true,
@@ -23,18 +23,24 @@ export function Player(props: {
     status: "Preparando player…",
     native: false,
   });
-  const [jump, setJump] = createSignal("");
-  const [wave, setWave] = createStore({
+  const [jump, setJump] = useState("");
+  const [wave, setWaveBase] = useState({
     loading: false,
     peaks: [] as number[],
     note: "Visualização decorativa com seek preciso. Analise a mídia para amplitudes reais.",
   });
-  let audio!: HTMLAudioElement, canvas!: HTMLCanvasElement;
-  let restored = false,
-    lastSaved = 0;
-  let waveAbort: AbortController | undefined;
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const restoredRef = useRef(false);
+  const lastSavedRef.currentRef = useRef(0);
+  const waveAbortRef = useRef<AbortController | undefined>(undefined);
+  const audio = audioRef.current!;
+  const canvas = canvasRef.current!;
+
+  const setState = (update: (draft: typeof state) => void) => setStateBase((previous) => { const next = { ...previous }; update(next); return next; });
+  const setWave = (update: (draft: typeof wave) => void) => setWaveBase((previous) => { const next = { ...previous }; update(next); return next; });
   const persist = (completed = false) => {
-    if (!restored || !Number.isFinite(audio?.currentTime)) return;
+    if (!restoredRef.current || !Number.isFinite(audio?.currentTime)) return;
     const history = readJSON<Record<string, Playback & { at?: number }>>(KEYS.playback, {});
     history[key] = {
       position: audio.currentTime,
@@ -59,9 +65,9 @@ export function Player(props: {
       draft.duration = Number.isFinite(audio.duration) ? audio.duration : 0;
       draft.paused = audio.paused;
     });
-    if (Date.now() - lastSaved > 3000) {
+    if (Date.now() - lastSavedRef.current > 3000) {
       persist();
-      lastSaved = Date.now();
+      lastSavedRef.current = Date.now();
     }
   };
   const seek = (time: number) => {
@@ -71,14 +77,14 @@ export function Player(props: {
     persist();
   };
   const restore = () => {
-    if (!restored && Number.isFinite(audio.duration) && audio.duration > 0) {
-      restored = true;
+    if (!restoredRef.current && Number.isFinite(audio.duration) && audio.duration > 0) {
+      restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed)
         seek(Math.min(saved.position, Math.max(0, audio.duration - 0.25)));
     }
     sync();
     setState((draft) => {
-      draft.status = restored ? "Pronto para reproduzir" : "Aguardando duração…";
+      draft.status = restoredRef.current ? "Pronto para reproduzir" : "Aguardando duração…";
     });
   };
   const toggle = async () => {
@@ -115,7 +121,7 @@ export function Player(props: {
     persist();
   };
   const go = () => {
-    const parts = jump().split(":").map(Number);
+    const parts = jump.split(":").map(Number);
     if (parts.every(Number.isFinite)) seek(parts.reduce((value, part) => value * 60 + part, 0));
   };
   const draw = () => {
@@ -152,9 +158,9 @@ export function Player(props: {
       });
       return;
     }
-    waveAbort?.abort();
-    waveAbort = new AbortController();
-    const signal = waveAbort.signal;
+    waveAbortRef.current?.abort();
+    waveAbortRef.current = new AbortController();
+    const signal = waveAbortRef.current!.signal;
     setWave((draft) => {
       draft.loading = true;
     });
@@ -198,79 +204,67 @@ export function Player(props: {
         });
     }
   };
-  createEffect(() => ({ time: state.time, duration: state.duration, peaks: [...wave.peaks] }), draw);
-  createEffect(
-    () => props.source,
-    (source) => {
-      if (!audio || !source) return;
-      restored = false;
-      setState((draft) => {
-        draft.status = "Carregando áudio…";
-      }); /* src is bound declaratively below. */
-    },
-  );
-  onSettled(() => {
-    audio.playbackRate = state.speed;
-    audio.loop = state.loop;
-    const resize = new ResizeObserver(draw);
-    resize.observe(canvas);
+  useEffect(() => { draw(); }, [state.time, state.duration, wave.peaks]);
+  useEffect(() => {
+    if (!audioRef.current || !canvasRef.current) return;
+    const element = audioRef.current;
+    element.playbackRate = state.speed;
+    element.loop = state.loop;
+    const resize = new ResizeObserver(() => draw());
+    resize.observe(canvasRef.current);
     const hide = () => persist();
     window.addEventListener("pagehide", hide);
     document.addEventListener("visibilitychange", hide);
     const media = navigator.mediaSession;
     if (media && typeof MediaMetadata !== "undefined") {
-      media.metadata = new MediaMetadata({
-        title: props.title,
-        artist: props.author,
-        album: props.subreddit || "Soundgasm",
-      });
-      for (const [name, action] of Object.entries({
-        play: () => void audio.play(),
-        pause: () => audio.pause(),
-        seekbackward: () => seek(audio.currentTime - 15),
-        seekforward: () => seek(audio.currentTime + 15),
-        seekto: (event: any) => seek(event.seekTime),
-      }))
-        try {
-          media.setActionHandler(name as MediaSessionAction, action);
-        } catch {}
+      media.metadata = new MediaMetadata({ title: props.title, artist: props.author, album: props.subreddit || "Soundgasm" });
+      const handlers = {
+        play: () => void element.play(), pause: () => element.pause(),
+        seekbackward: () => seek(element.currentTime - 15),
+        seekforward: () => seek(element.currentTime + 15),
+        seekto: (event: MediaSessionActionDetails) => seek(event.seekTime ?? 0),
+      };
+      for (const [name, action] of Object.entries(handlers)) {
+        try { media.setActionHandler(name as MediaSessionAction, action); } catch {}
+      }
     }
     restore();
     draw();
     return () => {
       persist();
-      waveAbort?.abort();
+      waveAbortRef.current?.abort();
       resize.disconnect();
       window.removeEventListener("pagehide", hide);
       document.removeEventListener("visibilitychange", hide);
-      audio.pause();
-      if (media)
-        for (const name of ["play", "pause", "seekbackward", "seekforward", "seekto"] as MediaSessionAction[])
-          try {
-            media.setActionHandler(name, null);
-          } catch {}
+      element.pause();
+      if (media) for (const name of ["play", "pause", "seekbackward", "seekforward", "seekto"] as MediaSessionAction[]) {
+        try { media.setActionHandler(name, null); } catch {}
+      }
     };
-  });
-  onCleanup(() => waveAbort?.abort());
-  const canvasSeek = (event: PointerEvent) => {
+  }, [props.source]);
+  useEffect(() => {
+    restoredRef.current = false;
+    if (props.source) setState((draft) => { draft.status = "Carregando áudio…"; });
+  }, [props.source]);
+  const canvasSeek = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = canvas.getBoundingClientRect();
     if (rect.width) seek(((event.clientX - rect.left) / rect.width) * state.duration);
   };
   return (
-    <section class={styles["gws-sg-panel"]} aria-label="Player de áudio">
-      <div class={styles["gws-sg-panelhead"]}>
-        <div class={styles["gws-sg-pill"]}>● STUDIO PLAYER</div>
-        <div id="gws-sg-status" role="status" class={styles["gws-sg-status"]}>
+    <section className={styles["gws-sg-panel"]} aria-label="Player de áudio">
+      <div className={styles["gws-sg-panelhead"]}>
+        <div className={styles["gws-sg-pill"]}>● STUDIO PLAYER</div>
+        <div id="gws-sg-status" role="status" className={styles["gws-sg-status"]}>
           {props.source ? state.status : "Aguardando arquivo de áudio…"}
         </div>
       </div>
-      <div class={styles["gws-sg-wave-wrap"]}>
+      <div className={styles["gws-sg-wave-wrap"]}>
         <canvas
-          ref={canvas}
+          ref={canvasRef}
           id="gws-sg-wave"
           height="118"
           role="slider"
-          tabindex="0"
+          tabIndex="0"
           aria-label="Posição na gravação"
           aria-valuemin="0"
           aria-valuemax={state.duration}
@@ -292,7 +286,7 @@ export function Player(props: {
       </div>
       <input
         id="gws-sg-progress"
-        class={styles["gws-sg-progress"]}
+        className={styles["gws-sg-progress"]}
         type="range"
         min="0"
         max={state.duration || 100}
@@ -301,20 +295,20 @@ export function Player(props: {
         aria-label="Progresso preciso do áudio"
         onInput={(event) => seek(event.currentTarget.valueAsNumber)}
       />
-      <div class={styles["gws-sg-time"]}>
+      <div className={styles["gws-sg-time"]}>
         <span id="gws-sg-current">{formatTime(state.time)}</span>
         <span id="gws-sg-duration">{formatTime(state.duration)}</span>
       </div>
-      <div class={styles["gws-sg-controls"]}>
+      <div className={styles["gws-sg-controls"]}>
         <button
-          class={styles["gws-sg-control"]}
+          className={styles["gws-sg-control"]}
           onClick={() => seek(state.time - 15)}
           aria-label="Voltar 15 segundos"
         >
           ↶ 15
         </button>
         <button
-          class={styles["gws-sg-control"]}
+          className={styles["gws-sg-control"]}
           onClick={() => seek(state.time - 5)}
           aria-label="Voltar 5 segundos"
         >
@@ -322,45 +316,45 @@ export function Player(props: {
         </button>
         <button
           id="gws-sg-play"
-          class={`${styles["gws-sg-control"]} ${styles["gws-sg-play"]}`}
+          className={`${styles["gws-sg-control"]} ${styles["gws-sg-play"]}`}
           aria-label={state.paused ? "Reproduzir" : "Pausar"}
           onClick={toggle}
         >
           {state.paused ? "▶" : "Ⅱ"}
         </button>
         <button
-          class={styles["gws-sg-control"]}
+          className={styles["gws-sg-control"]}
           onClick={() => seek(state.time + 5)}
           aria-label="Avançar 5 segundos"
         >
           +5
         </button>
         <button
-          class={styles["gws-sg-control"]}
+          className={styles["gws-sg-control"]}
           onClick={() => seek(state.time + 15)}
           aria-label="Avançar 15 segundos"
         >
           15 ↷
         </button>
       </div>
-      <div class={styles["gws-sg-secondary"]}>
-        <button id="gws-sg-speed" class={styles["gws-sg-rate"]} onClick={speed}>
+      <div className={styles["gws-sg-secondary"]}>
+        <button id="gws-sg-speed" className={styles["gws-sg-rate"]} onClick={speed}>
           {state.speed}×
         </button>
         <button
           id="gws-sg-loop"
-          class={styles["gws-sg-loop"]}
+          className={styles["gws-sg-loop"]}
           aria-pressed={state.loop ? "true" : "false"}
           onClick={loop}
         >
           ↻ Repetir
         </button>
-        <div class={styles["gws-sg-seekrow"]}>
-          <label for="gws-sg-timefield">Ir para</label>
+        <div className={styles["gws-sg-seekrow"]}>
+          <label htmlFor="gws-sg-timefield">Ir para</label>
           <input
             id="gws-sg-timefield"
             placeholder="12:34"
-            value={jump()}
+            value={jump}
             onInput={(event) => setJump(event.currentTarget.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") go();
@@ -369,10 +363,10 @@ export function Player(props: {
           <button onClick={go}>OK</button>
         </div>
       </div>
-      <div class={styles["gws-sg-actions"]}>
+      <div className={styles["gws-sg-actions"]}>
         <button
           id="gws-sg-realwave"
-          class={styles["gws-sg-wave-btn"]}
+          className={styles["gws-sg-wave-btn"]}
           disabled={wave.loading}
           onClick={analyze}
         >
@@ -380,7 +374,7 @@ export function Player(props: {
         </button>
         <button
           id="gws-sg-native"
-          class={styles["gws-sg-copy"]}
+          className={styles["gws-sg-copy"]}
           onClick={() => {
             const native = !state.native;
             setState((draft) => {
@@ -392,11 +386,11 @@ export function Player(props: {
           Player original
         </button>
       </div>
-      <p id="gws-sg-wave-note" class={styles["gws-sg-note"]}>
+      <p id="gws-sg-wave-note" className={styles["gws-sg-note"]}>
         {wave.note}
       </p>
       <audio
-        ref={audio}
+        ref={audioRef}
         id="gws-sg-audio"
         src={props.source || undefined}
         preload="metadata"
