@@ -130,15 +130,15 @@ function TreeRow(props: {
   return (
     <>
       <div
-        class={styles.treeRow}
+        className={styles.treeRow}
         role="treeitem"
         aria-level={props.depth + 1}
         aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined}
         style={{ "padding-left": 10 + props.depth * 17 + "px" }}
       >
-        <Show when={props.node.folder} fallback={<span class={styles.treeSpacer} />}>
+        <Show when={props.node.folder} fallback={<span className={styles.treeSpacer} />}>
           <button
-            class={styles.treeChevron}
+            className={styles.treeChevron}
             aria-label={(expanded() ? "Recolher " : "Expandir ") + props.node.name}
             onClick={() => void toggle()}
           >
@@ -154,15 +154,15 @@ function TreeRow(props: {
         <div role="group">
           <Show when={loading()}>
             <div
-              class={styles.treeSkeleton}
+              className={styles.treeSkeleton}
               role="status"
               aria-label="Carregando pasta"
               style={{ width: "55%" }}
             />
-            <div class={styles.treeSkeleton} style={{ width: "35%" }} />
+            <div className={styles.treeSkeleton} style={{ width: "35%" }} />
           </Show>
           <Show when={error()}>
-            <div class={styles.treeError}>
+            <div className={styles.treeError}>
               {error()}{" "}
               <button
                 onClick={() => {
@@ -228,15 +228,15 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const mount = mountPoint(
     container.parentNode!,
     () => (
-      <section class={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
-        <div class={styles.treeHeader}>
+      <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
+        <div className={styles.treeHeader}>
           <span>Arquivos</span>
-          <span class={styles.treeCount}>
+          <span className={styles.treeCount}>
             {state() === "loading" ? "Carregando…" : nodes().length + " itens na raiz"}
           </span>
         </div>
         <Show when={state() === "ready"}>
-          <label class={styles.treeSearch}>
+          <label className={styles.treeSearch}>
             <span aria-hidden="true">⌕</span>
             <input
               type="search"
@@ -250,12 +250,12 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         <Show when={state() === "loading"}>
           <div role="status" aria-label="Carregando árvore de arquivos">
             <For each={Array.from({ length: 9 }, (_, i) => i)}>
-              {(i) => <div class={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />}
+              {(i) => <div className={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />}
             </For>
           </div>
         </Show>
         <Show when={state() === "error"}>
-          <div class={styles.treeError}>
+          <div className={styles.treeError}>
             {message()} <button onClick={() => location.reload()}>Tentar novamente</button>
           </div>
         </Show>
