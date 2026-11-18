@@ -1,5 +1,6 @@
-import { createSignal, For, Show } from "solid-js";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { useState, useSyncExternalStore } from "react";
+import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import { materialIcon } from "./material-icons.ts";
 import styles, { css } from "./GitHub.module.css";
 
@@ -96,16 +97,16 @@ function TreeRow(props: {
   current: string;
   loadFolder: (node: Node) => Promise<Node[]>;
 }) {
-  const [children, setChildren] = createSignal(props.node.children);
-  const [loading, setLoading] = createSignal(false);
-  const [error, setError] = createSignal("");
+  const [children, setChildren] = useState(props.node.children);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const toggle = async () => {
-    if (expanded()) {
+    if (expanded) {
       setExpanded(false);
       return;
     }
     setExpanded(true);
-    if (!props.node.sha || children().length) return;
+    if (!props.node.sha || children.length) return;
     setLoading(true);
     setError("");
     try {
@@ -116,7 +117,7 @@ function TreeRow(props: {
       setLoading(false);
     }
   };
-  const [expanded, setExpanded] = createSignal(
+  const [expanded, setExpanded] = useState(
     props.current === props.node.path || props.current.startsWith(props.node.path + "/"),
   );
   const url = () =>
@@ -133,26 +134,26 @@ function TreeRow(props: {
         className={styles.treeRow}
         role="treeitem"
         aria-level={props.depth + 1}
-        aria-expanded={props.node.folder ? (expanded() ? "true" : "false") : undefined}
-        style={{ "padding-left": 10 + props.depth * 17 + "px" }}
+        aria-expanded={props.node.folder ? (expanded ? "true" : "false") : undefined}
+        style={{ paddingLeft: 10 + props.depth * 17 }}
       >
-        <Show when={props.node.folder} fallback={<span className={styles.treeSpacer} />}>
+        {props.node.folder ? (
           <button
             className={styles.treeChevron}
-            aria-label={(expanded() ? "Recolher " : "Expandir ") + props.node.name}
+            aria-label={(expanded ? "Recolher " : "Expandir ") + props.node.name}
             onClick={() => void toggle()}
           >
-            {expanded() ? "⌄" : "›"}
+            {expanded ? "⌄" : "›"}
           </button>
-        </Show>
+        ) : <span className={styles.treeSpacer} />}
         <img src={materialIcon(props.node.name, props.node.folder)} width="16" height="16" alt="" />
         <a href={url()} title={props.node.path}>
           {props.node.name}
         </a>
       </div>
-      <Show when={props.node.folder && expanded()}>
+      {props.node.folder && expanded && (
         <div role="group">
-          <Show when={loading()}>
+          {loading && (
             <div
               className={styles.treeSkeleton}
               role="status"
@@ -160,10 +161,10 @@ function TreeRow(props: {
               style={{ width: "55%" }}
             />
             <div className={styles.treeSkeleton} style={{ width: "35%" }} />
-          </Show>
-          <Show when={error()}>
+          )}
+          {error && (
             <div className={styles.treeError}>
-              {error()}{" "}
+              {error}{" "}
               <button
                 onClick={() => {
                   setExpanded(false);
@@ -173,10 +174,10 @@ function TreeRow(props: {
                 Tentar novamente
               </button>
             </div>
-          </Show>
-          <For each={children()}>
-            {(node) => (
+          )}
+          {children.map((node) => (
               <TreeRow
+                key={node.path}
                 node={node}
                 depth={props.depth + 1}
                 base={props.base}
@@ -184,19 +185,24 @@ function TreeRow(props: {
                 current={props.current}
                 loadFolder={props.loadFolder}
               />
-            )}
-          </For>
+            ))}
         </div>
-      </Show>
+      )}
     </>
   );
 }
 export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
-  const [state, setState] = createSignal<"loading" | "ready" | "error">("loading");
-  const [nodes, setNodes] = createSignal<Node[]>([]);
-
-  const [message, setMessage] = createSignal("");
-  const [query, setQuery] = createSignal("");
+  type ViewState = { state: "loading" | "ready" | "error"; nodes: Node[]; message: string; query: string; resolvedBranch: string; current: string };
+  let snapshot: ViewState = { state: "loading", nodes: [], message: "", query: "", resolvedBranch: "", current: "" };
+  const listeners = new Set<() => void>();
+  const subscribe = (notify: () => void) => { listeners.add(notify); return () => { listeners.delete(notify); }; };
+  const update = (patch: Partial<ViewState>) => { snapshot = { ...snapshot, ...patch }; listeners.forEach((notify) => notify()); };
+  const setState = (state: ViewState["state"]) => update({ state });
+  const setNodes = (nodes: Node[]) => update({ nodes });
+  const setMessage = (message: string) => update({ message });
+  const setQuery = (query: string) => update({ query });
+  const setResolvedBranch = (resolvedBranch: string) => update({ resolvedBranch });
+  const setCurrent = (current: string) => update({ current });
   const controller = new AbortController();
   const base = "/" + repo.owner + "/" + repo.repo;
   const path = location.pathname;
@@ -207,8 +213,6 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         .split("/")
         .map(decodeURIComponent)
     : [];
-  const [resolvedBranch, setResolvedBranch] = createSignal("");
-  const [current, setCurrent] = createSignal("");
   let headers: Record<string, string> = { Accept: "application/vnd.github+json" };
   const loadFolder = async (node: Node): Promise<Node[]> => {
     if (!node.sha) return node.children;
@@ -225,61 +229,65 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
     const data = await response.json();
     return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
   };
-  const mount = mountPoint(
-    container.parentNode!,
-    () => (
+  function DirectoryTreeView() {
+    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(subscribe, () => snapshot);
+    return (
       <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
         <div className={styles.treeHeader}>
           <span>Arquivos</span>
           <span className={styles.treeCount}>
-            {state() === "loading" ? "Carregando…" : nodes().length + " itens na raiz"}
+            {state === "loading" ? "Carregando…" : nodes.length + " itens na raiz"}
           </span>
         </div>
-        <Show when={state() === "ready"}>
+        {state === "ready" && (
           <label className={styles.treeSearch}>
             <span aria-hidden="true">⌕</span>
             <input
               type="search"
               aria-label="Filtrar arquivos e pastas"
               placeholder="Filtrar árvore…"
-              value={query()}
+              value={query}
               onInput={(event) => setQuery(event.currentTarget.value)}
             />
           </label>
-        </Show>
-        <Show when={state() === "loading"}>
+        )}
+        {state === "loading" && (
           <div role="status" aria-label="Carregando árvore de arquivos">
-            <For each={Array.from({ length: 9 }, (_, i) => i)}>
-              {(i) => <div className={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />}
-            </For>
+            {Array.from({ length: 9 }, (_, i) => i).map((i) => <div key={i} className={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />)}
           </div>
-        </Show>
-        <Show when={state() === "error"}>
+        )}
+        {state === "error" && (
           <div className={styles.treeError}>
-            {message()} <button onClick={() => location.reload()}>Tentar novamente</button>
+            {message} <button onClick={() => location.reload()}>Tentar novamente</button>
           </div>
-        </Show>
-        <Show when={state() === "ready"}>
+        )}
+        {state === "ready" && (
           <div role="tree">
-            <For each={filterTree(nodes(), query())}>
-              {(node) => (
+            {filterTree(nodes, query).map((node) => (
                 <TreeRow
+                  key={node.path}
                   node={node}
                   depth={0}
                   base={base}
-                  branch={resolvedBranch()}
-                  current={current()}
+                  branch={resolvedBranch}
+                  current={current}
                   loadFolder={loadFolder}
                 />
-              )}
-            </For>
+              ))}
           </div>
-        </Show>
+        )}
       </section>
-    ),
-    { before: container, shadow: true, styles: [css] },
-  );
-  mount.host.dataset.ghftTreeHost = "";
+    );
+  }
+  const host = document.createElement("div");
+  const shadow = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.textContent = css;
+  shadow.append(style);
+  container.parentNode!.insertBefore(host, container);
+  const root = createRoot(shadow);
+  flushSync(() => root.render(<DirectoryTreeView />));
+  host.dataset.ghftTreeHost = "";
   let originalDisplay = (container as HTMLElement).style.display;
   const load = async () => {
     try {
@@ -368,6 +376,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   return () => {
     controller.abort();
     (container as HTMLElement).style.display = originalDisplay;
-    mount.dispose();
+    root.unmount();
+    host.remove();
   };
 }
