@@ -38,7 +38,7 @@ export function Player(props: {
   const setState = (update: (draft: typeof state) => void) => setStateBase((previous) => { const next = { ...previous }; update(next); return next; });
   const setWave = (update: (draft: typeof wave) => void) => setWaveBase((previous) => { const next = { ...previous }; update(next); return next; });
   const persist = (completed = false) => {
-    if (!restoredRef.current || !Number.isFinite(audio?.currentTime)) return;
+    if (!restoredRef.current || !Number.isFinite(audioRef.current?.currentTime)) return;
     const history = readJSON<Record<string, Playback & { at?: number }>>(KEYS.playback, {});
     history[key] = {
       position: audioRef.current!.currentTime,
@@ -69,13 +69,13 @@ export function Player(props: {
     }
   };
   const seek = (time: number) => {
-    if (!audio || !Number.isFinite(audioRef.current!.duration) || audioRef.current!.duration <= 0) return;
+    if (!audioRef.current || !Number.isFinite(audioRef.current.duration) || audioRef.current!.duration <= 0) return;
     audioRef.current!.currentTime = Math.max(0, Math.min(audioRef.current!.duration, time));
     sync();
     persist();
   };
   const restore = () => {
-    if (!restoredRef.current && Number.isFinite(audioRef.current!.duration) && audioRef.current!.duration > 0) {
+    if (audioRef.current && !restoredRef.current && Number.isFinite(audioRef.current.duration) && audioRef.current!.duration > 0) {
       restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed)
         seek(Math.min(saved.position, Math.max(0, audioRef.current!.duration - 0.25)));
@@ -123,7 +123,7 @@ export function Player(props: {
     if (parts.every(Number.isFinite)) seek(parts.reduce((value, part) => value * 60 + part, 0));
   };
   const draw = () => {
-    const context = canvas?.getContext("2d");
+    const context = canvasRef.current?.getContext("2d");
     if (!context) return;
     const width = Math.max(50, canvasRef.current!.getBoundingClientRect().width || 300),
       height = 118,
@@ -208,8 +208,8 @@ export function Player(props: {
     const element = audioRef.current;
     element.playbackRate = state.speed;
     element.loop = state.loop;
-    const resize = new ResizeObserver(() => draw());
-    resize.observe(canvasRef.current);
+    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => draw());
+    resize?.observe(canvasRef.current);
     const hide = () => persist();
     window.addEventListener("pagehide", hide);
     document.addEventListener("visibilitychange", hide);
@@ -233,7 +233,7 @@ export function Player(props: {
     return () => {
       persist();
       waveAbortRef.current?.abort();
-      resize.disconnect();
+      resize?.disconnect();
       window.removeEventListener("pagehide", hide);
       document.removeEventListener("visibilitychange", hide);
       element.pause();
