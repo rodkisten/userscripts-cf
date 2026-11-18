@@ -34,10 +34,14 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
   };
 
   const isModal = schema.surface === "modal";
+  if (!isOpen) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={schema.title || "Rod Menu"}
         className={`${styles.surface} ${isModal ? styles.surfaceModal : ""} ${className || ""}`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -100,7 +104,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                     type={field.type === "number" ? "number" : "text"}
                     placeholder={field.placeholder}
                     value={values[field.id] ?? ""}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    onChange={(e) => handleChange(field.id, field.type === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
                   />
                 )}
               </div>
