@@ -9,7 +9,7 @@ on:
     inputs:
       selected_branch:
         name: 'branch'
-        default: 'main'
+        #default: 'main'
         type: 'string'
     
 permissions:
@@ -32,28 +32,33 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-      - uses: actions/checkout@v6
+     
+      - uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ inputs.selected_branch || github.ref_name }}
           fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-node@v4
+     
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
       - name: Verify branch and synchronize
         shell: bash
         env:
-          BRANCH: ${{ github.ref_name }}
+          BRANCH: ${{ inputs.selected_branch || github.ref_name }}
         run: |
           set -euo pipefail
           git fetch origin "$BRANCH"
           git checkout "$BRANCH"
           git pull --ff-only origin "$BRANCH"
+     
       - name: Regenerate package-lock.json
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+      
       - name: Validate clean installation
         run: npm ci --legacy-peer-deps --no-audit --no-fund
+      
       - name: Commit regenerated lockfile
         shell: bash
         env:
