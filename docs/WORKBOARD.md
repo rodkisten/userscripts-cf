@@ -587,3 +587,11 @@
 - [x] Preserve all synchronous operations, `getItem` (string/null contract), `setItem` (string coercion), dynamic keys, and guarded try/catch; retain original code by default.
 - [x] Add Vitest opt-in, idempotence, and non-rewrite regressions.
 - [ ] Before enabling broadly: migrate existing localStorage data and document namespace changes; add typed async storage facade, parity tests, and safe fallback handling. Opt-in is not automatic data migration.
+
+### 🧵 Async localStorage compatibility facade (2026-11-18)
+
+- [x] Add `ctx.storage.local.getItem/setItem/removeItem` with native string/null semantics and read-through into namespaced RodStorage.
+- [x] Route `storage: "awaited"` AST opt-in through the compatibility facade instead of raw `ctx.storage.delete` to avoid mismatched key namespaces.
+- [x] Add TypeScript storage context contract, fixture, and Vitest checks for awaited reads/writes/removals and preserved synchronous operations.
+- [ ] Verify GitHub Actions. Native storage may still be unavailable and async backends may reject; do not strip try/catch automatically.
+- [ ] Add integration tests for denied native storage, cross-script key collisions, native persistence, and migration of old values before enabling defaults.
