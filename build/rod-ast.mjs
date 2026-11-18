@@ -10,12 +10,11 @@ const DEFAULT_RULES = Object.freeze({
   "window.fetch": "ctx.http.fetch",
   "document.querySelector": "ctx.dom.querySelector",
   "document.querySelectorAll": "ctx.dom.querySelectorAll",
-  "document.createElement": "ctx.dom.createElement",
   "window.addEventListener": "ctx.events.dom.add",
   "document.addEventListener": "ctx.events.dom.add",
 });
 const DOM_EVENTS = new Set(["addEventListener", "removeEventListener"]);
-const DOM_METHODS = new Set(["querySelector", "querySelectorAll", "createElement"]);
+const DOM_METHODS = new Set(["querySelector", "querySelectorAll"]);
 const scriptKind = (id) =>
   /\.tsx$/.test(id) ? ts.ScriptKind.TSX : /\.jsx$/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
 function declaredNames(node) {
@@ -96,8 +95,8 @@ export function transformRodAst(code, id, options = {}) {
             replacement = ctx + ".events.dom." + op;
             extraArg = target;
           } else if (receiver === "document" && DOM_METHODS.has(method)) {
-            // DOM helper signatures differ across implementations. Require explicit rule opt-in.
-            if (options.domMethods === true && rules[key])
+            // DomEngine preserves native Element / NodeListOf return types.
+            if (options.domMethods !== false && rules[key])
               replacement = rules[key].replace(/^ctx\./, ctx + ".");
           } else if (key === "window.fetch") replacement = rules[key]?.replace(/^ctx\./, ctx + ".");
         }
