@@ -387,3 +387,9 @@
 - [`ca9774ad`](https://github.com/rodkisten/userscripts-cf/commit/ca9774ad84d5c1e7c3bfa1a2902275209f8579c7): repaired three doubled-escape regex literals in `Feed.tsx` settings: split by comma/semicolon/newline, strip optional `r/`, validate subreddit names with `\w`.
 - [`854c1671`](https://github.com/rodkisten/userscripts-cf/commit/854c16711ba7a0298f879687889d051cf6296544): cleanup now aborts and releases the in-flight audio request lock; matching `finally` also clears request identity. Prevents a stale aborted request from blocking a new React effect.
 - **Validation:** source changes committed; no fresh TypeScript, Vitest, production build or iPhone Safari results verified in this block. Keep Reddit layout and Soundgasm blank screen P0 until real browser evidence.
+
+### GitHub Pages deploy run 44296306877 (2026-11-18)
+
+- [Failed Pages job 134774152208](https://github.com/rodkisten/userscripts-cf/actions/runs/44296306877/job/134774152208#step:7:16) checked out `854c16711ba7a0298f879687889d051cf6296544`; `npm ci --legacy-peer-deps` installed 163 packages successfully in 3 seconds. The next step failed with exit 1 because it required `node_modules/@solidjs/vite-plugin/package.json` and `node_modules/@solidjs/compiler/package.json`, which were intentionally removed during React-only cutover. Build and Pages deployment were not reached.
+- [`4ec0142e`](https://github.com/rodkisten/userscripts-cf/commit/4ec0142ee0e3a282ffda3e58650bbefd437c93c7) updates the dependency gate to verify Vite, TypeScript, React and React DOM, reject Solid declared dependencies, and removes the stale Solid DOM file from design-system cache fingerprint.
+- **Pending:** validate next Pages workflow run; do not claim deployment succeeded. If build now fails, diagnose Vite/Rolldown TSX or missing legacy imports from the new log.
