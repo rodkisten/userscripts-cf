@@ -216,3 +216,11 @@
 
 - Applied targeted fixes to previously logged Solid JSX/ARIA typing issues without adding new Solid components: [`0490ab17`](https://github.com/rodkisten/userscripts-cf/commit/0490ab1734c3e9349338c3839d64d7e507da6b4d) Controls color presets, [`d1985426`](https://github.com/rodkisten/userscripts-cf/commit/d19854265bbaf7fcedba41e7cab03daeb0c135c3) Instagram bookmark busy state, [`10b56ab5`](https://github.com/rodkisten/userscripts-cf/commit/10b56ab539950667ae81f10a3d9ccfea798b0906) TagsInput, [`901888f9`](https://github.com/rodkisten/userscripts-cf/commit/901888f9ea4588b4c60317017d53e3ce18550ce0) StandaloneFieldRenderer, [`a15959d8`](https://github.com/rodkisten/userscripts-cf/commit/a15959d8d8c5e3673a7999800ac96926dd75c618) menu Surface.
 - **Unverified:** no fresh TypeScript/build/CI run observed for these commits. Remaining diagnostics may include spread-prop type incompatibilities, TextControls, createMenuStore and RodX lists; do not check P0 tasks off until CI evidence.
+
+### Legacy typecheck follow-up (2026-11-18)
+
+- Read exact error explanations from failed release job `134554958217`, rather than inferring from top-level diagnostics.
+- [`e5a32656`](https://github.com/rodkisten/userscripts-cf/commit/e5a3265604d3e093d0ab8f75aad06dbd8778e94a): use Solid JSX DOM attribute names `readonly` and `inputmode` in legacy TextControls.
+- [`2f67e3b7`](https://github.com/rodkisten/userscripts-cf/commit/2f67e3b7732f8c02b8412b927315b47ab4c84dbf): use `tabindex` for legacy menu shell.
+- [`93a37a6c`](https://github.com/rodkisten/userscripts-cf/commit/93a37a6c926206d506169c2b97eed70647a523b3): initialize generic Solid signal with a compute function to resolve its overloaded type signature.
+- **Not validated:** fresh typecheck/release status remains unknown. Continue removing Solid via React parity, not by excluding failing files from compilation.
