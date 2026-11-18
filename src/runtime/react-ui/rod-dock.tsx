@@ -2,13 +2,32 @@
 import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import * as Dialog from "@radix-ui/react-dialog";
-import { matches, readScriptRules, saveScriptRules, type ScriptRulesRecord } from "../../core/script-manager.js";
+import {
+  matches,
+  readScriptRules,
+  saveScriptRules,
+  type ScriptRulesRecord,
+} from "../../core/script-manager.js";
 import { getDiagnostics } from "../diagnostics.js";
 
 export type DockAction = { id: string; label: string; run: () => void };
 export type DockModule = { id: string; name: string; actions: DockAction[] };
-export type DockScript = { id: string; name?: string; matches?: string[]; includes?: string[]; exclude?: string[]; excludeMatches?: string[]; excludes?: string[] };
-type DockController = { modules: DockModule[]; scripts: DockScript[]; open: boolean; setOpen: (value: boolean) => void; portal: HTMLElement };
+export type DockScript = {
+  id: string;
+  name?: string;
+  matches?: string[];
+  includes?: string[];
+  exclude?: string[];
+  excludeMatches?: string[];
+  excludes?: string[];
+};
+type DockController = {
+  modules: DockModule[];
+  scripts: DockScript[];
+  open: boolean;
+  setOpen: (value: boolean) => void;
+  portal: HTMLElement;
+};
 const css = `
 :host{all:initial;color-scheme:dark;font-family:ui-sans-serif,system-ui,sans-serif}
 *{box-sizing:border-box}
@@ -52,77 +71,172 @@ function DockView({ controller }: { controller: DockController }) {
     saveScriptRules(localStorage, next);
     document.dispatchEvent(new CustomEvent("rod-script-manager:change"));
   };
-  return <>
-    <style>{css}</style>
-    {!open && <button className="launcher" aria-label="Abrir Rod Dock" onClick={() => setOpen(true)}>☰</button>}
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Portal container={portal}>
-        <Dialog.Overlay className="overlay" />
-        <Dialog.Content className="panel">
-          <header><Dialog.Title>Rod Dock</Dialog.Title><Dialog.Close className="close" aria-label="Fechar">✕</Dialog.Close></header>
-          <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
-          <details className="module" open><summary>Scripts ({scripts.length})</summary>
-            {scripts.map((script) => {
-              const enabled = preferences[script.id]?.enabled !== false;
-              const permitted = matches({ ...script, name: script.name ?? script.id }, location.href, preferences[script.id]);
-              return <label className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span>
-                <input type="checkbox" checked={enabled} onChange={(event) => toggleScript(script.id, event.target.checked)} /></label>;
-            })}
-          </details>
-          {visibleModules.map((module) => <details className="module" key={module.id}><summary>{module.name}</summary>
-            <div className="actions">{module.actions.map((action) => <button className="action" key={action.id} onClick={() => action.run()}>{action.label}</button>)}</div>
-          </details>)}
-          <details className="module"><summary>Diagnósticos ({diagnostics.length})</summary>
-            <button className="action" onClick={() => {
-              const blob = new Blob([getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)], { type:"application/json" });
-              const url = URL.createObjectURL(blob);
-              const anchor = document.createElement("a"); anchor.href = url; anchor.download = "rod-script-diagnostics.json"; anchor.click();
-              queueMicrotask(() => URL.revokeObjectURL(url));
-            }}>Exportar JSON</button>
-            {diagnostics.slice(0,30).map((item,index) => <details className="module" key={index}><summary>{item.message}</summary><pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{item.stack ?? item.message}</pre></details>)}
-          </details>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  </>;
+  return (
+    <>
+      <style>{css}</style>
+      {!open && (
+        <button className="launcher" aria-label="Abrir Rod Dock" onClick={() => setOpen(true)}>
+          ☰
+        </button>
+      )}
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Portal container={portal}>
+          <Dialog.Overlay className="overlay" />
+          <Dialog.Content className="panel">
+            <header>
+              <Dialog.Title>Rod Dock</Dialog.Title>
+              <Dialog.Close className="close" aria-label="Fechar">
+                ✕
+              </Dialog.Close>
+            </header>
+            <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
+            <details className="module" open>
+              <summary>Scripts ({scripts.length})</summary>
+              {scripts.map((script) => {
+                const enabled = preferences[script.id]?.enabled !== false;
+                const permitted = matches(
+                  { ...script, name: script.name ?? script.id },
+                  location.href,
+                  preferences[script.id],
+                );
+                return (
+                  <label className="script" key={script.id}>
+                    <span>
+                      {script.name ?? script.id}
+                      <small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={(event) => toggleScript(script.id, event.target.checked)}
+                    />
+                  </label>
+                );
+              })}
+            </details>
+            {visibleModules.map((module) => (
+              <details className="module" key={module.id}>
+                <summary>{module.name}</summary>
+                <div className="actions">
+                  {module.actions.map((action) => (
+                    <button className="action" key={action.id} onClick={() => action.run()}>
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ))}
+            <details className="module">
+              <summary>Diagnósticos ({diagnostics.length})</summary>
+              <button
+                className="action"
+                onClick={() => {
+                  const blob = new Blob(
+                    [getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)],
+                    { type: "application/json" },
+                  );
+                  const url = URL.createObjectURL(blob);
+                  const anchor = document.createElement("a");
+                  anchor.href = url;
+                  anchor.download = "rod-script-diagnostics.json";
+                  anchor.click();
+                  queueMicrotask(() => URL.revokeObjectURL(url));
+                }}
+              >
+                Exportar JSON
+              </button>
+              {diagnostics.slice(0, 30).map((item, index) => (
+                <details className="module" key={index}>
+                  <summary>{item.message}</summary>
+                  <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                    {item.stack ?? item.message}
+                  </pre>
+                </details>
+              ))}
+            </details>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </>
+  );
 }
-export function installRodDock({ modules = [], scripts = [], registerMenu = globalThis.GM_registerMenuCommand }: {
-  modules?: DockModule[]; scripts?: DockScript[]; registerMenu?: typeof globalThis.GM_registerMenuCommand;
+export function installRodDock({
+  modules = [],
+  scripts = [],
+  registerMenu = globalThis.GM_registerMenuCommand,
+}: {
+  modules?: DockModule[];
+  scripts?: DockScript[];
+  registerMenu?: typeof globalThis.GM_registerMenuCommand;
 } = {}) {
   const host = document.createElement("div");
   host.dataset.rodDock = "";
   host.style.cssText = "position:fixed;inset:0;width:0;height:0;z-index:2147483646;pointer-events:none";
-  const shadow = host.attachShadow({ mode:"open" });
+  const shadow = host.attachShadow({ mode: "open" });
   const mountPoint = document.createElement("div");
   shadow.append(mountPoint);
   const root = createRoot(mountPoint);
   let currentModules = modules;
   let isOpen = false;
-  const render = () => root.render(<DockView controller={{ modules:currentModules, scripts, open:isOpen, setOpen, portal:mountPoint }} />);
-  const setOpen = (next: boolean) => { isOpen = next; render(); };
-  const setModules = (next: DockModule[]) => { currentModules = next; render(); };
+  const render = () =>
+    root.render(
+      <DockView
+        controller={{ modules: currentModules, scripts, open: isOpen, setOpen, portal: mountPoint }}
+      />,
+    );
+  const setOpen = (next: boolean) => {
+    isOpen = next;
+    render();
+  };
+  const setModules = (next: DockModule[]) => {
+    currentModules = next;
+    render();
+  };
   const onRegistration = (event: Event) => {
-    const detail = (event as CustomEvent<{type:string;module?:DockModule;id?:string}>).detail;
-    if (detail?.type === "register" && detail.module) setModules([...currentModules.filter((item) => item.id !== detail.module?.id), detail.module]);
-    if (detail?.type === "unregister" && detail.id) setModules(currentModules.filter((item) => item.id !== detail.id));
+    const detail = (event as CustomEvent<{ type: string; module?: DockModule; id?: string }>).detail;
+    if (detail?.type === "register" && detail.module)
+      setModules([...currentModules.filter((item) => item.id !== detail.module?.id), detail.module]);
+    if (detail?.type === "unregister" && detail.id)
+      setModules(currentModules.filter((item) => item.id !== detail.id));
   };
   const onMenu = (event: Event) => {
-    const detail = (event as CustomEvent<{type:string;moduleId:string;id:string;label:string;callback:()=>void}>).detail;
+    const detail = (
+      event as CustomEvent<{
+        type: string;
+        moduleId: string;
+        id: string;
+        label: string;
+        callback: () => void;
+      }>
+    ).detail;
     if (!detail?.moduleId) return;
-    const module = currentModules.find((item) => item.id === detail.moduleId) ?? { id:detail.moduleId, name:detail.moduleId, actions:[] };
+    const module = currentModules.find((item) => item.id === detail.moduleId) ?? {
+      id: detail.moduleId,
+      name: detail.moduleId,
+      actions: [],
+    };
     const actions = module.actions.filter((action) => action.id !== detail.id);
-    if (detail.type === "register" && typeof detail.callback === "function") actions.push({ id:String(detail.id), label:detail.label, run:detail.callback });
+    if (detail.type === "register" && typeof detail.callback === "function")
+      actions.push({ id: String(detail.id), label: detail.label, run: detail.callback });
     setModules([...currentModules.filter((item) => item.id !== module.id), { ...module, actions }]);
   };
   document.addEventListener("rod-dock:registry", onRegistration);
   document.addEventListener("rod-dock:menu", onMenu);
   (document.body ?? document.documentElement).append(host);
   render();
-  const command = typeof registerMenu === "function" ? registerMenu("Abrir Rod Dock", () => setOpen(true)) : null;
-  return { setModules, open: () => setOpen(true), close: () => setOpen(false), dispose() {
-    document.removeEventListener("rod-dock:registry", onRegistration);
-    document.removeEventListener("rod-dock:menu", onMenu);
-    root.unmount(); host.remove();
-    if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function") globalThis.GM_unregisterMenuCommand(command);
-  }};
+  const command =
+    typeof registerMenu === "function" ? registerMenu("Abrir Rod Dock", () => setOpen(true)) : null;
+  return {
+    setModules,
+    open: () => setOpen(true),
+    close: () => setOpen(false),
+    dispose() {
+      document.removeEventListener("rod-dock:registry", onRegistration);
+      document.removeEventListener("rod-dock:menu", onMenu);
+      root.unmount();
+      host.remove();
+      if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function")
+        globalThis.GM_unregisterMenuCommand(command);
+    },
+  };
 }
