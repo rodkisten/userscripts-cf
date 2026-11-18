@@ -480,3 +480,11 @@
 - [`1456e204`](https://github.com/rodkisten/userscripts-cf/commit/1456e20406db2002cb74f467fbec31352fed6230): standalone lockfile repair is manual-only, so it cannot race automatic Pages on `package.json` changes.
 - Deleted archived Cloudflare playground, legacy Solid button validation and temporary focused debug workflows. Kept release, diagnostics, React migration validation, Fallow, Prettier and other purpose-specific workflows pending evidence of redundancy.
 - **Verification pending:** new Pages run and successful npm/build. A manual repair on main can still produce a separate push-triggered Pages run by design. Further workflow deletions require inspecting dependencies/triggers.
+
+
+### 🧬 Optional Rod AST prototype (2026-11-18)
+
+- [x] Add conservative explicit-ctx AST transformer, optional Vite plugin, CLI, fixture, and workflow for diff/artifact/typecheck. Source: [build/rod-ast.mjs](../build/rod-ast.mjs), [workflow](../.github/workflows/rod-ast.yml).
+- [ ] Validate GitHub Actions run, unit tests, and React typecheck; **no green CI evidence yet**.
+- [ ] Audit all helper contracts and implement typed symbol resolution/import insertion. Current prototype is intentionally partial. See [docs/rod-ast.md](rod-ast.md).
+- [ ] Typecheck transformed fixture, integrate safely with existing runtime AST, verify full build and browser behavior before enabling by default.
