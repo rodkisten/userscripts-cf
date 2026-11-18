@@ -32,9 +32,11 @@ jobs:
           set -euo pipefail
           # The latest Ploocky trigger commit is the watermark. Every marked
           # commit after it is published by the next authenticated empty push.
+          # Consume all Git output so awk never closes the pipe early (SIGPIPE 141).
           marker="$(git log -100 --format='%H%x09%s' | awk -F '\t' '
-            $2 ~ /^chore\(preview\): trigger Ploocky deploy for / { exit }
-            $2 ~ /@ploocky$/ { print $1; exit }
+            !done && $2 ~ /^chore\(preview\): trigger Ploocky deploy for / { done = 1; next }
+            !done && $2 ~ /@ploocky$/ { marker = $1; done = 1 }
+            END { if (marker != "") print marker }
           ')"
           if [[ -n "$marker" ]]; then
             echo "pending=true" >> "$GITHUB_OUTPUT"
