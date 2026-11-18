@@ -422,3 +422,9 @@
 
 - [`ba700821`](https://github.com/rodkisten/userscripts-cf/commit/ba7008218a820529905825e3aa909ff0b70fd4a4) fixes the marker workflow's Git auth by configuring a temporary credential helper instead of embedding token headers into command-line arguments; commit subject ends in `@ploocky` as a real marker detection smoke test.
 - **Pending:** observe next scheduled workflow, verify the Ploocky-authored empty commit and subsequent GitHub Pages deployment. No workflow run or Pages success confirmed at commit time.
+
+### Ploocky marker run 44298941476 diagnosis (2026-11-18)
+
+- [Failed run](https://github.com/rodkisten/userscripts-cf/actions/runs/44298941476), job `134783235604`: checkout succeeded, `Find unpublished @ploocky commits` failed with exit code **141**. Root cause: `git log | awk` early `exit` under `set -o pipefail` causes upstream SIGPIPE. Ploocky authentication and Pages deploy were skipped, not tested.
+- [`d9a3b256`](https://github.com/rodkisten/userscripts-cf/commit/d9a3b256800b0cbc3b31a288e1dae1b1e61ce038) removes early `awk exit`; consumes the full input while retaining the first marker before the most recent processed watermark. Commit ends in `@ploocky` to exercise the next scheduled scan.
+- **Pending:** confirm next scheduled run, Ploocky token/permissions, authenticated trigger commit and Pages deploy. No green run observed yet.
