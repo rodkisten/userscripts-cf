@@ -1,11 +1,12 @@
 /** @jsxImportSource react */
 import type * as React from "react";
+import { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
 
-function DropdownItems({ items }: { items: DropdownItem[] }) {
+function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLElement }) {
   return (
     <>
       {items.map((item, index) => {
@@ -14,9 +15,9 @@ function DropdownItems({ items }: { items: DropdownItem[] }) {
           return (
             <DropdownMenu.Sub key={index}>
               <DropdownMenu.SubTrigger disabled={item.disabled}>{item.label}</DropdownMenu.SubTrigger>
-              <DropdownMenu.Portal>
+              <DropdownMenu.Portal container={portal}>
                 <DropdownMenu.SubContent sideOffset={4}>
-                  <DropdownItems items={item.children} />
+                  <DropdownItems items={item.children} portal={portal} />
                 </DropdownMenu.SubContent>
               </DropdownMenu.Portal>
             </DropdownMenu.Sub>
@@ -42,7 +43,7 @@ function DropdownItems({ items }: { items: DropdownItem[] }) {
   );
 }
 
-function DropdownView({ options, close }: { options: DropdownOptions; close: () => void }) {
+function DropdownView({ options, close, portal }: { options: DropdownOptions; close: () => void; portal: HTMLElement }) {
   const rect = options.trigger.getBoundingClientRect();
   return (
     <DropdownMenu.Root
@@ -80,7 +81,7 @@ function DropdownView({ options, close }: { options: DropdownOptions; close: () 
             boxShadow: "0 8px 32px #0004",
           }}
         >
-          <DropdownItems items={options.items} />
+          <DropdownItems items={options.items} portal={portal} />
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -119,8 +120,10 @@ function DialogField({ field, values }: { field: MenuField; values: Record<strin
   );
 }
 
-function DialogView({ schema, close }: { schema: MenuSchema; close: () => void }) {
-  const values: Record<string, unknown> = { ...schema.initialValues };
+function DialogView({ schema, close, portal }: { schema: MenuSchema; close: () => void; portal: HTMLElement }) {
+  const values = useRef<Record<string, unknown>>({ ...schema.initialValues });
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   return (
     <Dialog.Root
       defaultOpen
@@ -128,7 +131,7 @@ function DialogView({ schema, close }: { schema: MenuSchema; close: () => void }
         if (!open) queueMicrotask(close);
       }}
     >
-      <Dialog.Portal>
+      <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483646, background: "#0009" }} />
         <Dialog.Content
           aria-describedby={schema.description ? undefined : undefined}
@@ -150,23 +153,34 @@ function DialogView({ schema, close }: { schema: MenuSchema; close: () => void }
           <Dialog.Title>{schema.title ?? "Menu"}</Dialog.Title>
           {schema.description && <Dialog.Description>{schema.description}</Dialog.Description>}
           {(schema.fields ?? []).map((field) => (
-            <DialogField key={field.name} field={field} values={values} />
+            <DialogField key={field.name} field={field} values={values.current} />
           ))}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
             {(schema.actions ?? []).map((action) => (
               <button
                 key={action.id}
                 type="button"
+                disabled={pending}
                 onClick={() => {
-                  void Promise.resolve(action.handler?.({ values, close })).then((result) => {
-                    if (result !== false) close();
-                  });
+                  if (pending) return;
+                  setError(null);
+                  setPending(true);
+                  void Promise.resolve()
+                    .then(() => action.handler?.({ values: values.current, close }))
+                    .then((result) => {
+                      if (result !== false) close();
+                    })
+                    .catch((reason: unknown) => {
+                      setError(reason instanceof Error ? reason.message : String(reason));
+                    })
+                    .finally(() => setPending(false));
                 }}
               >
                 {action.label}
               </button>
             ))}
           </div>
+          {error && <p role="alert">{error}</p>}
           <Dialog.Close asChild>
             <button type="button">Fechar</button>
           </Dialog.Close>
@@ -176,10 +190,12 @@ function DialogView({ schema, close }: { schema: MenuSchema; close: () => void }
   );
 }
 
-function mount(view: (close: () => void) => React.ReactNode, name: string, owner: Document = document) {
+function mount(view: (close: () => void, portal: HTMLElement) => React.ReactNode, name: string, owner: Document = document) {
   const host = owner.createElement("div");
   host.dataset.rodReactMenu = name;
-  owner.body.append(host);
+  const portal = owner.createElement("div");
+  portal.dataset.rodReactMenuPortal = name;
+  owner.body.append(host, portal);
   const root = createRoot(host);
   let disposed = false;
   const close = () => {
@@ -187,18 +203,19 @@ function mount(view: (close: () => void) => React.ReactNode, name: string, owner
     disposed = true;
     root.unmount();
     host.remove();
+    portal.remove();
   };
-  root.render(view(close));
+  root.render(view(close, portal));
   return { close, dispose: close };
 }
 
 export function openRadixDropdown(options: DropdownOptions) {
   return mount(
-    (close) => <DropdownView options={options} close={close} />,
+    (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
     options.trigger.ownerDocument,
   );
 }
 export function openRadixDialog(schema: MenuSchema) {
-  return mount((close) => <DialogView schema={schema} close={close} />, schema.id ?? "dialog");
+  return mount((close, portal) => <DialogView schema={schema} close={close} portal={portal} />, schema.id ?? "dialog");
 }
