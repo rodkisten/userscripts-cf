@@ -614,3 +614,6 @@
 
 - [x] Tighten style-triple migration to const-only/document.head/no intervening comments, preserving hoisting and source annotations; add negative tests and fixtures.
 - [ ] Verify transformed source and tests with CI; no success claim until an actual run passes.
+
+- [x] Wire Vite static `ctx.ui.style` string compilation through the existing PostCSS shadow pipeline and Lightning CSS; add async plugin tests.
+- [ ] Benchmark duplicate CSS and run Vitest/typecheck/build before enabling production by default.
