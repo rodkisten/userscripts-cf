@@ -37,13 +37,13 @@ export default {
 
     if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
     const hub = installRodActions(ctx.menu);
-    const [runtime, updateStore] = ctx.store({
+    const runtime = {
       running: false,
       lastRun: 0,
       lastError: "",
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
-    });
+    };
     const listeners = new Set<() => void>();
     let version = 0;
     const subscribe = (listener: () => void) => {
@@ -53,8 +53,8 @@ export default {
       };
     };
     const getSnapshot = () => version;
-    const setRuntime = (update: Parameters<typeof updateStore>[0]) => {
-      updateStore(update);
+    const setRuntime = (update: (draft: typeof runtime) => void) => {
+      update(runtime);
       version++;
       listeners.forEach((listener) => listener());
     };
