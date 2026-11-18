@@ -645,3 +645,13 @@
 - [ ] Verify actual Vite userscript build with ROD_AST=1 and Safari-compatible output.
 - [ ] Verify CSS Modules class mapping and dynamic style injection separately before expanding AST rewrite patterns.
 
+
+### PR #108 · CI report reliability (2026-11-18)
+
+- [x] GitHub comparison confirms the PR branch is ahead of main with zero commits behind after the merge commit.
+- [x] GitHub reports PR #108 mergeable/clean; this does **not** mean tests are passing.
+- [x] Rod AST workflow watches pull requests and summary/test changes.
+- [x] Summary flags absent or invalid Vitest JSON instead of presenting 0/0/0 as success; diff previews capped at 300 lines while the full artifact remains available.
+- [x] Add Node test coverage for missing report, failing assertions and truncated diffs.
+- [ ] Confirm workflow actually starts for PR #108; no fresh run was visible at last check.
+- [ ] Verify React and transformed-fixture typechecks and actual build before marking this PR ready.
