@@ -519,3 +519,10 @@
 - [x] Extract Tampermonkey metadata (`@match`, `@grant`, `@require`, etc.) into migration report rather than silently dropping it.
 - [x] Add `--iife` CLI mode and Vitest coverage; include converter in workflow push filter.
 - [ ] Validate CI and end-to-end migration; handle async IIFEs, invocation arguments, lexical `this`, `return`, GM APIs, imports, metadata-to-config mapping and source maps before production use.
+
+### 🧪 Full fixture coverage expansion (2026-11-18)
+
+- [x] Expand the AST matrix from 32 to 56 cases, covering typed/untyped context, listeners and cleanup, timers, observer ownership, GM APIs, browser globals, nested callbacks, and untouched unsupported APIs.
+- [x] Add a full Tampermonkey `.user.js` fixture with metadata, `@require`, `@resource`, `@grant`, globals, DOM, events, timers, observers and GM APIs.
+- [x] Test legacy migration metadata extraction and run the CLI against the complete fixture in GitHub Actions; publish the generated JS and JSON report.
+- [ ] Verify the new workflow is green; expand negative cases and typecheck standalone migrated JS once import/GM contract conversion exists.
