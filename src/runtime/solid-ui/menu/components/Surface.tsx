@@ -659,7 +659,7 @@ export function Surface<TValues extends AnyRecord = AnyRecord>(props: SurfacePro
                             type="button"
                             class={fieldStyles.tab}
                             role="tab"
-                            aria-selected={String(active())}
+                            aria-selected={active() ? "true" : "false"}
                             data-active={String(active())}
                             onClick={() => setActiveTabId(tab.id)}
                           >
