@@ -14,11 +14,7 @@ export function FileToolbar(props: {
   const [copy, setCopy] = useState({ busy: false, label: "⧉ Copiar tudo", message: "" });
   const run = () => {
     if (copy.busy) return;
-    setCopy((draft) => {
-      draft.busy = true;
-      draft.label = "Preparando…";
-      draft.message = "";
-    });
+    setCopy((previous) => ({ ...previous, busy: true, label: "Preparando…", message: "" }));
     let result: Promise<unknown>;
     try {
       result = props.copy((current, total) =>
