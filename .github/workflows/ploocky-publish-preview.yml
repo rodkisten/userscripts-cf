@@ -1,0 +1,85 @@
+name: "🤖 Ploocky · Publish preview changes"
+run-name: "🤖 Ploocky · ${{ inputs.source_branch }} → main"
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Existing same-repository branch (automation/ploocky/*)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ploocky-preview-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate requested branch
+        env:
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_BRANCH" =~ ^automation/ploocky/[a-zA-Z0-9._/-]+$ ]] || [[ "$SOURCE_BRANCH" == *..* ]] || [[ "$SOURCE_BRANCH" == */. ]] || [[ "$SOURCE_BRANCH" == */ ]]; then
+            echo "::error::Source must be an automation/ploocky/* branch"
+            exit 1
+          fi
+      - name: Authenticate Ploocky App
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Squash approved branch into a Ploocky commit
+        env:
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$APP_SLUG" != "ploocky" ]]; then
+            echo "::error::Expected ploocky App, got $APP_SLUG"
+            exit 1
+          fi
+          git fetch origin main "refs/heads/$SOURCE_BRANCH:refs/remotes/origin/ploocky-source"
+          git checkout -B main origin/main
+          if ! git merge-base --is-ancestor origin/main refs/remotes/origin/ploocky-source; then
+            echo "::error::Source branch must be rebased onto current main before publishing"
+            exit 1
+          fi
+          mapfile -d '' changed < <(git diff --name-only -z origin/main refs/remotes/origin/ploocky-source)
+          if (( ${#changed[@]} == 0 )); then
+            echo "No changes to publish" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          for file in "${changed[@]}"; do
+            case "$file" in
+              .github/*|.git*|AGENTS.md|docs/WORKBOARD.md|docs/react-only-migration.md)
+                echo "::error::Protected file cannot be published via this workflow: $file"
+                exit 1 ;;
+            esac
+          done
+          git config user.name "ploocky[bot]"
+          git config user.email "ploocky[bot]@users.noreply.github.com"
+          git merge --squash refs/remotes/origin/ploocky-source
+          git commit -m "chore(preview): publish Ploocky prepared changes"
+          header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $header" push origin HEAD:main
+          {
+            echo "### 🤖 Ploocky published preview changes"
+            echo "Source: \`$SOURCE_BRANCH\`"
+            echo "Commit: \`$(git rev-parse HEAD)\`"
+            echo "GitHub Pages preview will be triggered by the App-authenticated push."
+          } >> "$GITHUB_STEP_SUMMARY"
