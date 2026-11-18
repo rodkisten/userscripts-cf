@@ -580,3 +580,10 @@
 - [x] Add typed GMAsyncValues contract and compile-time fixture for typed reads and writes.
 - [ ] Do not auto-convert synchronous GM_getValue/GM_setValue to async values: call-site return type and storage namespace differ. Add an explicit opt-in codemod after data-migration design and behavior tests.
 - [ ] Confirm CI for runtime + AST fixture; do not claim successful validation until verified.
+
+### 🧹 Explicit storage AST migration gate (2026-11-18)
+
+- [x] Introduce `storage: "awaited"` opt-in mode: only already-awaited `localStorage.removeItem("literal")` in an async owner may become `ctx.storage.delete("literal")`.
+- [x] Preserve all synchronous operations, `getItem` (string/null contract), `setItem` (string coercion), dynamic keys, and guarded try/catch; retain original code by default.
+- [x] Add Vitest opt-in, idempotence, and non-rewrite regressions.
+- [ ] Before enabling broadly: migrate existing localStorage data and document namespace changes; add typed async storage facade, parity tests, and safe fallback handling. Opt-in is not automatic data migration.
