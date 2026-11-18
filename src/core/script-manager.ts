@@ -5,18 +5,18 @@ export const SCRIPT_RULES_KEY = "userscripts-cf:script-manager:v1";
 export interface ScriptDefinition {
   id: string;
   name: string;
-  matches?: string[];
-  includes?: string[];
-  exclude?: string[];
-  excludeMatches?: string[];
-  excludes?: string[];
+  matches?: ReadonlyArray<string>;
+  includes?: ReadonlyArray<string>;
+  exclude?: ReadonlyArray<string>;
+  excludeMatches?: ReadonlyArray<string>;
+  excludes?: ReadonlyArray<string>;
   [key: string]: unknown;
 }
 
 export interface ScriptRulePreference {
   enabled?: boolean;
-  includes?: string[];
-  excludes?: string[];
+  includes?: ReadonlyArray<string>;
+  excludes?: ReadonlyArray<string>;
   [key: string]: unknown;
 }
 
@@ -32,7 +32,7 @@ function wildcard(pattern: string, value: string): boolean {
   return new RegExp("^" + expression + "$").test(value);
 }
 
-function any(patterns: string[] | undefined, url: string, matcher: UrlMatcherFn): boolean {
+function any(patterns: ReadonlyArray<string> | undefined, url: string, matcher: UrlMatcherFn): boolean {
   return (patterns || []).some((pattern) => {
     try {
       return matcher(pattern, url);
