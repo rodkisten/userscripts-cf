@@ -417,3 +417,8 @@
 - [`b4f2f029`](https://github.com/rodkisten/userscripts-cf/commit/b4f2f029845ad70e1d5456d74a7ddb866eb4896c): Pages push trigger on main no longer uses path filters, so Ploocky-authenticated empty trigger commits start the deploy.
 - [`f14a16bb`](https://github.com/rodkisten/userscripts-cf/commit/f14a16bb0d8d0b4c633a5ae765cc49e6de90da88): scheduled every five minutes (also manual dispatch) to scan last 100 main commits for subject ending `@ploocky` after the most recent `chore(preview): trigger Ploocky deploy for ...` watermark. If found, obtains Ploocky installation token, verifies current main hasn't advanced, and pushes one empty commit as `ploocky[bot]`. Pages then starts via ordinary App-authenticated push. The watermark prevents repeat triggers after successful push.
 - **Limitations:** marker must be at end of commit subject, and must be within latest 100 commits; GitHub scheduled workflows can run late. This mechanism triggers a Ploocky-authored *empty commit*, it does not re-author earlier ChatGPT connector commits. Requires App Contents write and configured BOT_APP_ID/BOT_PRIVATE_KEY. Actual run/deploy **not yet verified**.
+
+### Ploocky marker smoke test (2026-11-18)
+
+- [`ba700821`](https://github.com/rodkisten/userscripts-cf/commit/ba7008218a820529905825e3aa909ff0b70fd4a4) fixes the marker workflow's Git auth by configuring a temporary credential helper instead of embedding token headers into command-line arguments; commit subject ends in `@ploocky` as a real marker detection smoke test.
+- **Pending:** observe next scheduled workflow, verify the Ploocky-authored empty commit and subsequent GitHub Pages deployment. No workflow run or Pages success confirmed at commit time.
