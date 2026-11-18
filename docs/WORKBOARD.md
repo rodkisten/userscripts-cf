@@ -567,3 +567,9 @@
 - [x] Preserve availability-guarded GM scopes and synchronous localStorage try/catch pending semantic-safe async migration; never silently remove fallback branches.
 - [x] Update legacy migration expectations, typed fixture, Vitest tests and 66-case matrix.
 - [ ] Verify CI. Follow-up: type GM bridge method signatures, replace feature-detection guards only after runtime fallback guarantees, and design async storage codemod with namespace/data migration, JSON encoding and catch semantics.
+
+### 🔗 Runtime-to-AST CI dependency gate (2026-11-18)
+
+- [x] Trigger Rod AST validation on changes to runtime context, DOM engine, GM bridge, storage feature, and vendor storage contracts.
+- [x] Add Vitest coverage for GM @keep idempotence and guarded native fallback paths.
+- [ ] Verify CI for these new regressions; async storage rewrite and GM guard elimination remain blocked on explicit behavioral parity.
