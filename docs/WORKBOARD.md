@@ -317,3 +317,9 @@
 - [`6807cf09`](https://github.com/rodkisten/userscripts-cf/commit/6807cf093c1b0d90d164ecc1f1fba5f77da5b74c) replaces the Audiochan return-link Solid mount with a React root in a ShadowRoot and disposal cleanup.
 - **Remaining blocking Solid consumers:** `gonewild/reddit-adapter.tsx`, `gonewild/soundgasm-adapter.tsx`, `gonewild/components/SoundgasmApp.tsx`, and its child components. Soundgasm uses a Solid error boundary and Solid data store, so removing its mount alone would break the fallback. Prioritize coordinated adapter + component migration, then verify the native-player safeguard and Reddit layout.
 - No build or browser validation performed for this change.
+
+### GoneWild presentational React migration (2026-11-18)
+
+- [`90a3dae0`](https://github.com/rodkisten/userscripts-cf/commit/90a3dae02c445b7a0bdccffc93ff78dbc39bf4eb): migrated `components/Markdown.tsx` from Solid For/Dynamic/createMemo to React JSX and keyed mapped children; preserved Markdown block parsing, inline links and safeURL checks.
+- [`3e4fc84d`](https://github.com/rodkisten/userscripts-cf/commit/3e4fc84d33cca4d5245b79120c01b3a6340ab246): migrated `components/Tags.tsx` from Solid For to React JSX with keys. Neither creates a shared basic UI primitive.
+- **Important:** parent SoundgasmApp, Player, Reddit adapter, store and Feed are still Solid; mixing these React children directly into Solid parents is not a validated working state. Must migrate the entire component tree and adapters before expecting Soundgasm/Reddit to work. Build/browser tests not run.
