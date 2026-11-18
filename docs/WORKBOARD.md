@@ -506,3 +506,10 @@
 
 - [x] Rod AST: replace whole-file cleanup regex with AST traversal scoped to each explicit context-owner function, including nested disposal callbacks; Vitest regression coverage for independent owners.
 - [ ] Still required: symbol identity and pairing of individual timer/listener instances; current owner-level scan deliberately avoids partial cleanup rewrites.
+
+### 🧪 Rod AST fixture matrix (2026-11-18)
+
+- [x] Expand the real TypeScript/TSX fixture with typed and inferred variables, `ctx`/`context`, `window`, `self`, `parent`, `top`, `globalThis`, nested callbacks, React JSX, observers, explicit cancellation and independent owners.
+- [x] Add 32 positive/negative syntax cases in `tests/fixtures/rod-ast.matrix.json` and run them with Vitest, including idempotence assertions.
+- [x] Include matrix changes in the Rod AST workflow push path filter.
+- [ ] Verify full CI execution and transformed fixture typecheck; matrix entries document *current* behavior, not a claim that all global variants are supported.
