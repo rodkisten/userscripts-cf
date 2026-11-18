@@ -89,7 +89,7 @@ export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
   readonly events: ReturnType<typeof createEventBus> | undefined;
-  readonly http: ReturnType<typeof createHttpFeature>["http"] | undefined;
+  readonly http: ReturnType<typeof createHttpFeature>["http"];
   readonly gm: ReturnType<typeof createGMFeature> | undefined;
   readonly dispose: () => Promise<void>;
   readonly storage: {
