@@ -438,7 +438,7 @@
     "name": "GM addStyle bridge",
     "source": "function init(ctx) { GM_addStyle('body{}'); }",
     "includes": [
-      "ctx.gm.legacy.addStyle('body{}')"
+      "ctx.ui.style('body{}')"
     ],
     "excludes": []
   },
