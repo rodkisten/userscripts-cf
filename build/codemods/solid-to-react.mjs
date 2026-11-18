@@ -68,11 +68,20 @@ for (const file of files) {
   );
   const edits = [];
   const blockers = [];
+  const booleanAttrs = new Set(['spellCheck','readOnly','autoFocus','contentEditable','disabled','checked','required','multiple']);
+  const numericAttrs = new Set(['maxLength','minLength','rows','cols','size','tabIndex','colSpan','rowSpan']);
   function visit(node) {
     if (ts.isJsxAttribute(node)) {
       const before = node.name.text;
       const after = jsxAttrs.get(before);
       if (after) edits.push({ start: node.name.getStart(sf), end: node.name.getEnd(), text: after });
+      const name = after || before;
+      if (node.initializer && ts.isStringLiteral(node.initializer)) {
+        const value = node.initializer.text;
+        if (numericAttrs.has(name) && /^-?\\d+$/.test(value)) edits.push({start:node.initializer.getStart(sf),end:node.initializer.getEnd(),text:'{' + value + '}'});
+        if (booleanAttrs.has(name) && /^(true|false)$/i.test(value)) edits.push({start:node.initializer.getStart(sf),end:node.initializer.getEnd(),text:'{' + value.toLowerCase() + '}'});
+      }
+      if (before === 'textContent') blockers.push({line:sf.getLineAndCharacterOfPosition(node.getStart(sf)).line+1,kind:'Requires React children conversion',name:before});
       if (before.startsWith("on:") || before.startsWith("use:"))
         blockers.push({
           line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1,
@@ -109,13 +118,15 @@ for (const file of files) {
   for (const edit of edits.sort((a, b) => b.start - a.start))
     updated = updated.slice(0, edit.start) + edit.text + updated.slice(edit.end);
   if (write && updated !== original) writeFileSync(file, updated);
+  const changed = updated !== original;
   if (edits.length || blockers.length)
     reports.push({ file: relative(process.cwd(), file), replacements: edits.length, blockers });
 }
+const changedFiles = reports.filter(item=>item.changed).length;
 const total = reports.reduce((sum, item) => sum + item.replacements, 0);
 console.log(
   JSON.stringify(
-    { mode: write ? "write" : "dry-run", files: files.length, replacements: total, reports },
+    { mode: write ? "write" : "dry-run", files: files.length, changedFiles, replacements: total, reports },
     null,
     2,
   ),
