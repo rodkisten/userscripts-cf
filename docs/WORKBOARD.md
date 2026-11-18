@@ -513,3 +513,10 @@
 - [x] Add 32 positive/negative syntax cases in `tests/fixtures/rod-ast.matrix.json` and run them with Vitest, including idempotence assertions.
 - [x] Include matrix changes in the Rod AST workflow push path filter.
 - [ ] Verify full CI execution and transformed fixture typecheck; matrix entries document *current* behavior, not a claim that all global variants are supported.
+
+### 📦 IIFE userscript migration (2026-11-18)
+
+- [x] Add experimental `migrateUserscriptIife` converter for zero-argument, single-statement IIFEs to the repository's real `export default { init(ctx) {} }` contract.
+- [x] Extract Tampermonkey metadata (`@match`, `@grant`, `@require`, etc.) into migration report rather than silently dropping it.
+- [x] Add `--iife` CLI mode and Vitest coverage; include converter in workflow push filter.
+- [ ] Validate CI and end-to-end migration; handle async IIFEs, invocation arguments, lexical `this`, `return`, GM APIs, imports, metadata-to-config mapping and source maps before production use.
