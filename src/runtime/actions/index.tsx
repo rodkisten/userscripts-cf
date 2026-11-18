@@ -16,11 +16,12 @@ declare global {
 }
 
 type Entry = RodActionsTab & { key: string; label: string };
-function ActionsView({ hub, subscribe, getEntries, getSelection }: {
+function ActionsView({ hub, subscribe, getEntries, getSelection, portal }: {
   hub: RodActionsHub;
   subscribe: (notify: () => void) => () => void;
   getEntries: () => Entry[];
   getSelection: () => string;
+  portal: HTMLElement;
 }) {
   const [, redraw] = useState(0);
   const [open, setOpen] = useState(false);
@@ -44,7 +45,7 @@ function ActionsView({ hub, subscribe, getEntries, getSelection }: {
           ⚙
         </button>
       )}
-      <Dialog.Portal>
+      <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483600, background: "#0009" }} />
         <Dialog.Content style={{ position: "fixed", zIndex: 2147483601, inset: "auto 0 0", maxHeight: "85dvh", overflow: "auto", background: "#18181b", color: "#fafafa", borderRadius: "16px 16px 0 0", padding: 16, paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
           <Dialog.Title>Rod Actions</Dialog.Title>
@@ -106,7 +107,7 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
   const mount = document.createElement("div");
   shadow.append(mount);
   const root: Root = createRoot(mount);
-  root.render(<ActionsView hub={hub} getEntries={entries} getSelection={() => selected}
+  root.render(<ActionsView hub={hub} portal={mount} getEntries={entries} getSelection={() => selected}
     subscribe={(listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }} />);
   window.__RodActions = hub;
   return hub;
