@@ -316,3 +316,20 @@ it("does not rewrite already migrated context GM values", () => {
   expect(result.diagnostics).toEqual([]);
   expect(result.code).toBe(input);
 });
+
+it("storage migration is opt-in and only rewrites awaited removal in async owners", () => {
+  const input = 'async function init(ctx) { await localStorage.removeItem("obsolete"); }';
+  expect(transformRodAst(input, "storage.ts").code).toBe(input);
+  const result = transformRodAst(input, "storage.ts", { storage: "awaited" });
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('await ctx.storage.delete("obsolete")');
+  expect(transformRodAst(result.code, "storage.ts", { storage: "awaited" }).changed).toBe(false);
+});
+it("storage migration preserves synchronous access and getItem/setItem contracts", () => {
+  const input = 'async function init(ctx) { const value = await localStorage.getItem("x"); await localStorage.setItem("x", 1); localStorage.removeItem("y"); }';
+  expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
+});
+it("storage migration preserves try/catch and dynamic keys", () => {
+  const input = 'async function init(ctx) { try { await localStorage.removeItem(key); } catch (error) { console.error(error); } }';
+  expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
+});
