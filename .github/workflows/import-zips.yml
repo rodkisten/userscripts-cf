@@ -21,10 +21,19 @@ jobs:
     name: "📦 Extrair ZIPs e abrir PR"
     runs-on: ubuntu-latest
     steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Extract tracked ZIP archives safely
         id: extract
@@ -102,7 +111,7 @@ jobs:
         if: steps.extract.outputs.archives != '0'
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "chore(import): extract repository ZIP archives"
           branch: automation/import-zips
           delete-branch: true
