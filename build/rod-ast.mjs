@@ -78,7 +78,8 @@ export function transformRodAst(code, id, options = {}) {
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
-    return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end))) ||\n      (ts.isStatement(node) && /\/\/\s*@keep\b/.test(code.slice(node.getFullStart(), node.getStart(source))));
+    return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end))) ||
+      (ts.isStatement(node) && /\/\/\s*@keep\b/.test(code.slice(node.getFullStart(), node.getStart(source))));
   };
   function walk(node, ctx, shadowed = new Set(), blocked = false, owner = null) {
     if (ts.isFunctionLike(node)) {
