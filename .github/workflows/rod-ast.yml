@@ -10,6 +10,9 @@ on:
       - "tests/fixtures/rod-ast.input.tsx"
       - "tests/rod-ast.test.mjs"
       - ".github/workflows/rod-ast.yml"
+concurrency:
+  group: rod-ast-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
