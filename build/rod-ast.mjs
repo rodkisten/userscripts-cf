@@ -160,6 +160,10 @@ export function transformRodAst(code, id, options = {}) {
       (removal) => removal.target === target && removal.event === event.text && removal.symbol === symbol,
     );
   }
+  function hasGMGuard(owner) {
+    if (!owner) return true;
+    return /typeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(code.slice(owner.getStart(source), owner.end));
+  }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
     return (
@@ -194,7 +198,7 @@ export function transformRodAst(code, id, options = {}) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
         if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
           replacement = ctx + ".interval";
-        if (options.gm !== false && /^GM_[A-Za-z]+$/.test(callee.text)) {
+        if (options.gm !== false && !hasGMGuard(owner) && /^GM_[A-Za-z]+$/.test(callee.text)) {
           const method = callee.text.slice(3);
           if (GM_LEGACY_METHODS.has(method))
             replacement = ctx + ".gm.legacy." + method;
@@ -219,7 +223,7 @@ export function transformRodAst(code, id, options = {}) {
           } else if (key === "window.fetch") replacement = rules[key]?.replace(/^ctx\./, ctx + ".");
         }
       }
-      if (!replacement && options.gm !== false && ts.isPropertyAccessExpression(callee) &&
+      if (!replacement && options.gm !== false && !hasGMGuard(owner) && ts.isPropertyAccessExpression(callee) &&
           ts.isIdentifier(callee.expression) && callee.expression.text === "GM" &&
           !shadowed.has("GM") && GM_LEGACY_METHODS.has(callee.name.text)) {
         replacement = ctx + ".gm.modern." + callee.name.text;
