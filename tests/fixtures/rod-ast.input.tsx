@@ -1,5 +1,11 @@
 import React from "react";
 import type { ScriptContext } from "../../src/core/runtime.js";
+import type { DomEngine } from "../../src/runtime/dom-engine.js";
+type IsAny<T> = 0 extends (1 & T) ? true : false;
+type Assert<T extends true> = T;
+type DomIsTyped = Assert<IsAny<DomEngine> extends false ? true : false>;
+const _domTypeProof: DomIsTyped = true;
+void _domTypeProof;
 
 /** Typed real-world fixture: transformed output must pass TypeScript. */
 export async function init(ctx: ScriptContext) {
