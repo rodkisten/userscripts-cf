@@ -340,7 +340,7 @@ export function initializeDeckResultEnhancer(): void {
       const actions = findActions(article);
       if (!tray) {
         tray = (
-          <div class={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />
+          <div className={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />
         ) as HTMLDivElement;
       }
 
@@ -357,11 +357,11 @@ export function initializeDeckResultEnhancer(): void {
         tray.dataset.signature = signature;
         for (const { tag, href } of tags) {
           const item = (
-            <span class={CSS_CLASSES.hashtagItem} data-tag={tag}>
+            <span className={CSS_CLASSES.hashtagItem} data-tag={tag}>
               <a href={href || "/search?q=" + encodeURIComponent(tag)}>{tag}</a>
               <button
                 type="button"
-                class={CSS_CLASSES.tagAdd}
+                className={CSS_CLASSES.tagAdd}
                 title={`Adicionar ${tag} à pesquisa nativa`}
                 aria-label={`Adicionar ${tag} à pesquisa nativa`}
                 onClick={(event: MouseEvent) => {
@@ -374,7 +374,7 @@ export function initializeDeckResultEnhancer(): void {
               </button>
               <button
                 type="button"
-                class={CSS_CLASSES.tagExclude}
+                className={CSS_CLASSES.tagExclude}
                 title={`Excluir ${tag} da pesquisa`}
                 aria-label={`Excluir ${tag} da pesquisa`}
                 onClick={(event: MouseEvent) => {
@@ -422,7 +422,7 @@ export function initializeDeckResultEnhancer(): void {
       const btn = (
         <button
           type="button"
-          class={CSS_CLASSES.bookmarkBtn}
+          className={CSS_CLASSES.bookmarkBtn}
           title={UI_TEXTS.bookmarkTitle}
           aria-label={UI_TEXTS.bookmarkTitle}
           onClick={(event: MouseEvent) => {
@@ -665,7 +665,7 @@ export function initializeDeckResultEnhancer(): void {
         );
         if (!actions) {
           actions = (
-            <div class={CSS_CLASSES.resultActions}>
+            <div className={CSS_CLASSES.resultActions}>
               <button
                 type="button"
                 data-rodx-expand={DATA_ATTRS.expand}
