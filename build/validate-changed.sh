@@ -83,6 +83,13 @@ case "$mode" in
             node build/build.mjs "--targets=$targets"
           fi
         fi
+        # A test-only PR scope must not run integration suites against an empty dist/.
+        # Always generate the manifest and userscript bundles before the full suite.
+        if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" == all ]] && [[ ! -f dist/manifest.json ]]; then
+          echo "::group::Build required by full test scope"
+          npm run build
+          echo "::endgroup::"
+        fi
         if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
           if [[ "${scoped_tests[0]}" == all ]]; then
             npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
