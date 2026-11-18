@@ -617,3 +617,6 @@
 
 - [x] Wire Vite static `ctx.ui.style` string compilation through the existing PostCSS shadow pipeline and Lightning CSS; add async plugin tests.
 - [ ] Benchmark duplicate CSS and run Vitest/typecheck/build before enabling production by default.
+
+- [x] Repair literal escaped-newline comment in AST transformer, which otherwise comments out its replacement branch.
+- [ ] Run Vitest, typecheck and bundle verification in an environment with repository checkout; GitHub connector cannot dispatch a fresh workflow.
