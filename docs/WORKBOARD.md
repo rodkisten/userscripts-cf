@@ -551,3 +551,11 @@
 - [x] Preserve matched removals and dynamic/unknown cleanup; rewrite unrelated listeners to `ctx.listen` when identity is proven.
 - [x] Add 3 dedicated Vitest tests and expand AST matrix to 63 scenarios.
 - [ ] Verify the resulting CI run; investigate callback aliases, capture options, and escape analysis before widening the transformation.
+
+### 🧬 Typed DOM selector parity (2026-11-18)
+
+- [x] Add native HTML/SVG/generic overloads to DomEngine and ScopedQuery for querySelector/querySelectorAll.
+- [x] Bind scoped native methods while preserving the overload contract and NodeListOf return type.
+- [x] Replace ScriptContext DOM `any` with DomEngine and remove the top-level `any` intersection that erased property typing; legacy unknown helpers remain permissive via Record<string, any> pending broader context typing.
+- [x] Expand typed transformed fixture for HTMLAnchorElement, HTMLInputElement, HTMLButtonElement, SVGCircleElement, dynamic selectors, nullable queries and scoped queries; add type-level non-any assertions and Vitest generic syntax regression.
+- [ ] Confirm CI, then progressively type other ScriptContext helpers without breaking React-only migration.
