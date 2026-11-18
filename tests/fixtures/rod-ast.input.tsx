@@ -1,7 +1,7 @@
 import React from "react";
 import type { ScriptContext } from "../../src/core/runtime.js";
 import type { DomEngine } from "../../src/runtime/dom-engine.js";
-type IsAny<T> = 0 extends (1 & T) ? true : false;
+type IsAny<T> = 0 extends 1 & T ? true : false;
 type Assert<T extends true> = T;
 type DomIsTyped = Assert<IsAny<DomEngine> extends false ? true : false>;
 type ContextDomIsTyped = Assert<IsAny<ScriptContext["dom"]> extends false ? true : false>;

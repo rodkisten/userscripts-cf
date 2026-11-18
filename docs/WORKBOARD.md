@@ -563,7 +563,7 @@
 ### 🗃️ GM and storage AST migration (2026-11-18)
 
 - [x] Audit runtime: ctx.storage is async, namespaced, uses RodStorage with backend fallback and legacy bridge migration; ctx.gm exposes native-dependent modern and legacy proxies.
-- [x] Add opt-out-capable conservative AST rewriting of direct known GM_*/GM.* calls to ctx.gm.legacy/modern, retaining lexical shadowing and @keep behavior.
+- [x] Add opt-out-capable conservative AST rewriting of direct known GM__/GM._ calls to ctx.gm.legacy/modern, retaining lexical shadowing and @keep behavior.
 - [x] Preserve availability-guarded GM scopes and synchronous localStorage try/catch pending semantic-safe async migration; never silently remove fallback branches.
 - [x] Update legacy migration expectations, typed fixture, Vitest tests and 66-case matrix.
 - [ ] Verify CI. Follow-up: type GM bridge method signatures, replace feature-detection guards only after runtime fallback guarantees, and design async storage codemod with namespace/data migration, JSON encoding and catch semantics.

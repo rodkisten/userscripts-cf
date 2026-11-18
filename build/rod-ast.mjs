@@ -13,11 +13,22 @@ const DEFAULT_RULES = Object.freeze({
 });
 const DOM_EVENTS = new Set(["addEventListener"]);
 const GM_LEGACY_METHODS = new Set([
-  "getValue", "setValue", "deleteValue", "listValues",
-  "getResourceText", "getResourceURL", "addStyle",
-  "xmlhttpRequest", "download", "notification",
-  "openInTab", "setClipboard", "registerMenuCommand", "unregisterMenuCommand",
-  "addValueChangeListener", "removeValueChangeListener",
+  "getValue",
+  "setValue",
+  "deleteValue",
+  "listValues",
+  "getResourceText",
+  "getResourceURL",
+  "addStyle",
+  "xmlhttpRequest",
+  "download",
+  "notification",
+  "openInTab",
+  "setClipboard",
+  "registerMenuCommand",
+  "unregisterMenuCommand",
+  "addValueChangeListener",
+  "removeValueChangeListener",
 ]);
 const DOM_METHODS = new Set(["querySelector", "querySelectorAll"]);
 const scriptKind = (id) =>
@@ -200,8 +211,7 @@ export function transformRodAst(code, id, options = {}) {
           replacement = ctx + ".interval";
         if (options.gm !== false && !hasGMGuard(owner) && /^GM_[A-Za-z]+$/.test(callee.text)) {
           const method = callee.text.slice(3);
-          if (GM_LEGACY_METHODS.has(method))
-            replacement = ctx + ".gm.legacy." + method;
+          if (GM_LEGACY_METHODS.has(method)) replacement = ctx + ".gm.legacy." + method;
         }
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
@@ -223,9 +233,16 @@ export function transformRodAst(code, id, options = {}) {
           } else if (key === "window.fetch") replacement = rules[key]?.replace(/^ctx\./, ctx + ".");
         }
       }
-      if (!replacement && options.gm !== false && !hasGMGuard(owner) && ts.isPropertyAccessExpression(callee) &&
-          ts.isIdentifier(callee.expression) && callee.expression.text === "GM" &&
-          !shadowed.has("GM") && GM_LEGACY_METHODS.has(callee.name.text)) {
+      if (
+        !replacement &&
+        options.gm !== false &&
+        !hasGMGuard(owner) &&
+        ts.isPropertyAccessExpression(callee) &&
+        ts.isIdentifier(callee.expression) &&
+        callee.expression.text === "GM" &&
+        !shadowed.has("GM") &&
+        GM_LEGACY_METHODS.has(callee.name.text)
+      ) {
         replacement = ctx + ".gm.modern." + callee.name.text;
       }
       if (replacement) {

@@ -184,7 +184,10 @@ export function createDomEventsEngine(
     EventTarget,
     Map<
       string,
-      Map<EventListenerOrEventListenerObject, Map<boolean, { readonly listener: EventListener; readonly options: unknown }>>
+      Map<
+        EventListenerOrEventListenerObject,
+        Map<boolean, { readonly listener: EventListener; readonly options: unknown }>
+      >
     >
   >();
 
@@ -251,7 +254,10 @@ export function createDomEventsEngine(
 
 export function createCoreRuntime(
   definitions: ReadonlyArray<ScriptDefinition>,
-  bridge: { readonly call: (method: string, payload: unknown) => Promise<unknown>; readonly dispose?: () => void },
+  bridge: {
+    readonly call: (method: string, payload: unknown) => Promise<unknown>;
+    readonly dispose?: () => void;
+  },
   host: Window & typeof globalThis = window,
   release?: { readonly id: string; readonly version: string; readonly manifestURL: string },
   options?: {
@@ -397,7 +403,13 @@ export function createCoreRuntime(
   host.addEventListener("storage", onRulesChange);
   host.document.addEventListener("rod-script-manager:change", onRulesChange);
 
-  const active = new Map<string, { readonly definition: ScriptDefinition; readonly context: Record<string, unknown> & { readonly dispose: () => Promise<void> } }>();
+  const active = new Map<
+    string,
+    {
+      readonly definition: ScriptDefinition;
+      readonly context: Record<string, unknown> & { readonly dispose: () => Promise<void> };
+    }
+  >();
   const stateValues = new Map<string, unknown>();
   const listeners = new Map<string, Set<(value: unknown) => void>>();
   const failures = new Map<string, string>();
@@ -655,7 +667,12 @@ export function createCoreRuntime(
         onDispose(() => host.clearInterval(timer));
         return timer;
       },
-      listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options: AddEventListenerOptions | boolean = {}) {
+      listen(
+        target: EventTarget,
+        event: string,
+        callback: EventListenerOrEventListenerObject,
+        options: AddEventListenerOptions | boolean = {},
+      ) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
             const result: unknown =
@@ -671,7 +688,10 @@ export function createCoreRuntime(
             throw error;
           }
         };
-        target.addEventListener(event, wrapped, { ...(typeof options === "object" ? options : {}), signal: abort.signal });
+        target.addEventListener(event, wrapped, {
+          ...(typeof options === "object" ? options : {}),
+          signal: abort.signal,
+        });
       },
       style(cssContent: string) {
         return addStyle(cssContent, ensureUIRoot());

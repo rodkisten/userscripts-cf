@@ -156,8 +156,12 @@ export function createDomEngine({
     return root.querySelector(selector);
   }
 
-  function querySelectorAll<K extends keyof HTMLElementTagNameMap>(selector: K): NodeListOf<HTMLElementTagNameMap[K]>;
-  function querySelectorAll<K extends keyof SVGElementTagNameMap>(selector: K): NodeListOf<SVGElementTagNameMap[K]>;
+  function querySelectorAll<K extends keyof HTMLElementTagNameMap>(
+    selector: K,
+  ): NodeListOf<HTMLElementTagNameMap[K]>;
+  function querySelectorAll<K extends keyof SVGElementTagNameMap>(
+    selector: K,
+  ): NodeListOf<SVGElementTagNameMap[K]>;
   function querySelectorAll<E extends Element = Element>(selector: string): NodeListOf<E>;
   function querySelectorAll(selector: string): NodeListOf<Element> {
     return root.querySelectorAll(selector);
