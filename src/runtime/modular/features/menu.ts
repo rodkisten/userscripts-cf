@@ -30,6 +30,8 @@ export interface MenuAction {
   handler?: (context: { values: Record<string, unknown>; close: () => void }) => unknown;
 }
 export interface MenuSchema {
+  /** Optional script-owned ShadowRoot or host for the Radix dialog portal. */
+  container?: ShadowRoot | HTMLElement;
   id?: string;
   title?: string;
   presentation?: "bottom-sheet" | "dialog" | "popover" | string;
