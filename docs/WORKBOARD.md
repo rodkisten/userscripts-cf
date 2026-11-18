@@ -190,3 +190,10 @@
 
 - [`fef3eee2`](https://github.com/rodkisten/userscripts-cf/commit/fef3eee2dbe6a6c1690e6f8e8acd4f54177ccaaa) avoids `instanceof ShadowRoot` on dropdown targets and uses the provided dialog container's ownerDocument. This is a compatibility hardening change, not a verified Safari fix.
 - **Pending:** ctx-owned menu factory, React typecheck, CI/release and actual Safari focus/keyboard tests. No checklist items marked complete.
+
+### ctx.menu per-instance React ownership (2026-11-18)
+
+- [`2d33b0e1`](https://github.com/rodkisten/userscripts-cf/commit/2d33b0e1a66a8d7e8739420bb28c8c0181762795): configurable menu factory lazily resolves the instance container and registers close/dispose handles.
+- [`603e0a6b`](https://github.com/rodkisten/userscripts-cf/commit/603e0a6b22864222d381c63753f5fe80360c5410): `createCoreRuntime` creates a distinct `ctx.menu` per userscript and binds it to `ensureUIRoot` / `onDispose`, respecting the menu feature flag. Global `rod.menu` remains for runtime-owned clipboard UI.
+- [`8aa15aa3`](https://github.com/rodkisten/userscripts-cf/commit/8aa15aa3242090fd1257fe0be8866336128be255) and [`f8c7ace7`](https://github.com/rodkisten/userscripts-cf/commit/f8c7ace7f7342f75e482d50cb5fc83e3d2cc6436): dropdown options now support and honor the instance-owned portal container.
+- **Verification pending:** no green CI/typecheck/build or Safari interaction evidence. Need regression tests for two simultaneous contexts, dialog/dropdown lifecycle, focus/keyboard and reentrant closing; do not mark P1 complete.
