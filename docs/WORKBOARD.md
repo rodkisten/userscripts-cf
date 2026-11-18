@@ -399,3 +399,9 @@
 - [`d0a37a0b`](https://github.com/rodkisten/userscripts-cf/commit/d0a37a0b81e1bb2d6238f3eb76c07839b7be37ca): Pages workflow logs `github.actor`, head commit author and committer for push runs. If push actor is a bot login (`[bot]`), requires actor to match commit author or committer before deploying. Human pushes and manual `workflow_dispatch` remain supported.
 - GitHub App pushes can trigger `push` workflows, unlike pushes authenticated with default `GITHUB_TOKEN`. This check does **not** convert ChatGPT connector commits into GitHub App commits; prior connector commits resolve to `rodkisten` in GitHub commit metadata. The bot must authenticate its own push using an installation token.
 - **Not verified:** no new Pages run or deployment outcome observed. The bot check identifies bot actors generally; it does not yet pin a specific App slug. To enforce one exact App, set/confirm its slug and compare explicitly.
+
+### Ploocky App preview actor (2026-11-18)
+
+- [`84fb9732`](https://github.com/rodkisten/userscripts-cf/commit/84fb97322a89bff36a4b3ed215de0854e33dbec0): recognize `github.actor == 'ploocky[bot]'` explicitly as the authorized Ploocky GitHub App push in the preview summary. Removed previous generic bot author/committer matching rejection, which could block legitimate pushes; other bot and human pushes preserve existing behavior.
+- Existing Pages `push` trigger on `main` handles App-authenticated pushes automatically. This does **not** change the GitHub connector's commit credentials and cannot trigger a new run from ChatGPT itself.
+- **Pending:** verify actual Ploocky-authenticated push and Pages deployment; no run result observed yet.
