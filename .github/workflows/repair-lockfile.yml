@@ -4,13 +4,14 @@ on:
   push:
     paths:
       - 'package.json'
-      - 'repair-lockfile.yml'
+      - '.github/workflows/repair-lockfile.yml'
   workflow_dispatch:
     inputs:
       selected_branch:
-        name: 'branch'
-        #default: 'main'
-        type: 'string'
+        description: 'Branch to repair'
+        required: false
+        default: 'main'
+        type: string
     
 permissions:
   contents: write
@@ -22,6 +23,9 @@ concurrency:
 jobs:
   repair:
     name: Regenerate and verify package-lock.json
+    outputs:
+      changed: ${{ steps.generated_output.outputs.changed }}
+      branch: ${{ steps.generated_output.outputs.branch }}
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate Rod GitHub App
@@ -31,7 +35,6 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
-          permission-pull-requests: write
      
       - uses: actions/checkout@v6
         with:
@@ -61,12 +64,15 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
       
       - name: Commit regenerated lockfile
+        id: generated_output
         shell: bash
         env:
           BRANCH: ${{ inputs.selected_branch || github.ref_name }}
         run: |
           set -euo pipefail
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Lockfile already synchronized." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -75,4 +81,16 @@ jobs:
           git add package-lock.json
           git commit -m "fix(deps): regenerate npm lockfile trigger(playground-pages.yml)"
           git push origin "HEAD:$BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "Regenerated package-lock.json and pushed to $BRANCH." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-playground:
+    name: Trigger playground deployment after lockfile repair
+    needs: repair
+    if: needs.repair.outputs.changed == 'true' && needs.repair.outputs.branch == 'main'
+    uses: ./.github/workflows/playground-pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    secrets: inherit
