@@ -1168,7 +1168,9 @@ export function renderLists() {
             </>
           )) || (
             <>
-              <p className={cx("muted")}>{"Sem listas ainda. Visite a página Listas, ou adicione uma URL."}</p>
+              <p className={cx("muted")}>
+                {"Sem listas ainda. Visite a página Listas, ou adicione uma URL."}
+              </p>
             </>
           )}
         </div>

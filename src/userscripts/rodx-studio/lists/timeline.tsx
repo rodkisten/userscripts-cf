@@ -223,7 +223,13 @@ export function formatPostDate(value) {
 export function postHTML(post) {
   const avatar = post.avatar ? (
     <>
-      <img className={"xls-avatar"} loading={"lazy"} referrerpolicy={"no-referrer"} src={post.avatar} alt={""} />
+      <img
+        className={"xls-avatar"}
+        loading={"lazy"}
+        referrerpolicy={"no-referrer"}
+        src={post.avatar}
+        alt={""}
+      />
     </>
   ) : (
     <>

@@ -300,7 +300,12 @@ export function TagTray() {
                   {"✎"}
                 </button>
                 {"\n          "}
-                <button className={cx("chip-x")} title={"Remover"} data-act={"chip-remove"} data-id={block.id}>
+                <button
+                  className={cx("chip-x")}
+                  title={"Remover"}
+                  data-act={"chip-remove"}
+                  data-id={block.id}
+                >
                   {"×"}
                 </button>
               </span>
@@ -1298,7 +1303,12 @@ export function DataSettings() {
         <div className={cx("field")}>
           <label>{"Importar arquivo .json"}</label>
           {"\n        "}
-          <input className={cx("ctrl")} type={"file"} data-file={"import"} accept={"application/json,.json"} />
+          <input
+            className={cx("ctrl")}
+            type={"file"}
+            data-file={"import"}
+            accept={"application/json,.json"}
+          />
         </div>
         {"\n      "}
         <div className={cx("field")}>

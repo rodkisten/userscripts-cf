@@ -98,7 +98,12 @@ export function initializeRodX_lists_83() {
             </div>
           </div>
           {"\n        "}
-          <button className={cx("btn mini ghost")} id={"xls-quick-close"} type={"button"} aria-label={"Fechar"}>
+          <button
+            className={cx("btn mini ghost")}
+            id={"xls-quick-close"}
+            type={"button"}
+            aria-label={"Fechar"}
+          >
             {"✕"}
           </button>
         </div>

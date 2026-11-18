@@ -391,7 +391,9 @@ export function initializeDeckCompactLayout(): void {
 
         let top = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
-          top = (<div className={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />) as HTMLDivElement;
+          top = (
+            <div className={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />
+          ) as HTMLDivElement;
         }
 
         if (top.parentElement !== column) {
