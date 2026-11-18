@@ -264,7 +264,7 @@ it("rewrites direct legacy and modern GM calls to the context bridge", () => {
   const output = transformRodAst(input, "gm.ts").code;
   expect(output).toContain('ctx.gm.legacy.setValue("key", 1)');
   expect(output).toContain('ctx.gm.legacy.getValue("key")');
-  expect(output).toContain('ctx.gm.modern.addStyle("body{}")');
+  expect(output).toContain('ctx.ui.style("body{}")');
   expect(output).toContain('ctx.gm.modern.xmlhttpRequest({ url: "/api" })');
 });
 it("does not rewrite shadowed GM bindings or unknown GM methods", () => {
