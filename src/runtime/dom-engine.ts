@@ -178,12 +178,8 @@ export function createDomEngine({
     let helper = scoped.get(element);
     if (!helper) {
       helper = Object.freeze({
-        querySelector(selector: string): Element | null {
-          return element.querySelector(selector);
-        },
-        querySelectorAll(selector: string): NodeListOf<Element> {
-          return element.querySelectorAll(selector);
-        },
+        querySelector: element.querySelector.bind(element) as ScopedQuery["querySelector"],
+        querySelectorAll: element.querySelectorAll.bind(element) as ScopedQuery["querySelectorAll"],
       });
       scoped.set(element, helper);
     }
