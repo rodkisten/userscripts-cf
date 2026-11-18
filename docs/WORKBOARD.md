@@ -655,3 +655,12 @@
 - [x] Add Node test coverage for missing report, failing assertions and truncated diffs.
 - [ ] Confirm workflow actually starts for PR #108; no fresh run was visible at last check.
 - [ ] Verify React and transformed-fixture typechecks and actual build before marking this PR ready.
+
+### PR #108 · First automatic PR checks (2026-11-18)
+
+- [x] Automatic Rod AST workflow ran: https://github.com/rodkisten/userscripts-cf/actions/runs/44383607358
+- [x] Diagnose real results: 130 Vitest passed, 1 failed because Lightning CSS removes empty `.x{}`; replace test fixture with meaningful declaration.
+- [x] Diagnose transformed fixture TS2349 at four call sites: `ctx.interval` and `ctx.listen` missing from ScriptContext; declare both using runtime implementation signatures.
+- [x] Diagnose TS2352: feature-owned `events`/`ui` absent on baseContext; make declarations optional to match runtime shape.
+- [ ] Recheck new Actions results before declaring CI green.
+- [ ] Other global React-only cutover TS errors in rodx-studio are separate from this PR and must not be hidden with casts.
