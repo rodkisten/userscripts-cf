@@ -1,0 +1,58 @@
+.inspector {
+  --fg: rgba(250, 250, 250, 1);
+  --muted: rgba(212, 212, 216, 0.94);
+  --key: rgba(125, 211, 252, 1);
+  --string: rgba(253, 186, 116, 1);
+  --number: rgba(190, 242, 100, 1);
+  --boolean: rgba(96, 165, 250, 1);
+  --null: rgba(216, 180, 254, 1);
+  --func: rgba(253, 224, 71, 1);
+  --hover: rgba(255, 255, 255, 0.09);
+  display: inline-block;
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: text;
+}
+
+.row:hover {
+  background: var(--hover);
+}
+
+.arrow {
+  font-size: 10px;
+  color: var(--muted);
+  width: 12px;
+  text-align: center;
+}
+
+.key {
+  color: var(--key);
+  font-weight: 500;
+}
+
+.preview {
+  color: var(--muted);
+}
+
+.children {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.more {
+  color: var(--muted);
+  font-style: italic;
+  padding: 2px 4px;
+}
