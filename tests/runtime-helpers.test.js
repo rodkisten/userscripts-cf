@@ -156,3 +156,26 @@ test("preserves explicitly imported runtime helper names", () => {
 test("rejects module-scope context without an owning script", () => {
   assert.throws(() => transform("const shared = useContext();"), /Unbound useContext\(\).*example\.ts:1:16/);
 });
+
+test("lowers React TSX before Rolldown parses it and preserves ctx rewrites", () => {
+  const source = `export function init(ctx: { http: { fetch: typeof fetch } }) {
+    const element = <button onClick={() => fetch("/api")}>Ready</button>;
+    return element;
+  }`;
+  const output = runtimeHelpers().transform(source, "/src/example.tsx")?.code;
+  assert.ok(output);
+  assert.match(output, /react\\/jsx-runtime/);
+  assert.match(output, /jsx\\(/);
+  assert.match(output, /ctx\\.http\\.fetch\\("\\/api"\\)/);
+  assert.doesNotMatch(output, /<button|ctx: \\{/);
+});
+
+test("lowers TSX even without context rewrites", () => {
+  const output = runtimeHelpers().transform(
+    `export const Badge = ({ title }: { title: string }) => <span>{title}</span>;`,
+    "/src/Badge.tsx",
+  )?.code;
+  assert.ok(output);
+  assert.match(output, /react\\/jsx-runtime/);
+  assert.doesNotMatch(output, /<span|title: string/);
+});
