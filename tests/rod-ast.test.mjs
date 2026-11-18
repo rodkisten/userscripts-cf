@@ -168,3 +168,25 @@ it("migrates the complete real-world legacy fixture and preserves metadata", () 
   expect(result.metadata.connect).toEqual(["api.example.com"]);
   expect(transformRodAst(result.code, "output.js").changed).toBe(false);
 });
+
+it("symbol analysis converts only the timer not manually cancelled", () => {
+  const input = "function init(ctx) { const a = setInterval(one, 100); const b = setInterval(two, 200); clearInterval(a); }";
+  const output = transformRodAst(input, "symbols.ts").code;
+  expect(output).toContain("const a = setInterval(one, 100)");
+  expect(output).toContain("const b = ctx.interval(two, 200)");
+  expect(output).toContain("clearInterval(a)");
+});
+it("symbol analysis distinguishes identically named variables in nested scopes", () => {
+  const input = "function init(ctx) { const id = setInterval(one, 100); { const id = setInterval(two, 200); clearInterval(id); } }";
+  const output = transformRodAst(input, "symbols.ts").code;
+  expect(output).toContain("const id = ctx.interval(one, 100)");
+  expect(output).toContain("const id = setInterval(two, 200)");
+});
+it("dynamic clearInterval keeps all timers native", () => {
+  const input = "function init(ctx) { const a = setInterval(one, 100); clearInterval(getTimer()); }";
+  expect(transformRodAst(input, "symbols.ts").code).toBe(input);
+});
+it("native interval variadic arguments are preserved", () => {
+  const input = "function init(ctx) { setInterval(tick, 100, 'extra'); }";
+  expect(transformRodAst(input, "symbols.ts").code).toBe(input);
+});
