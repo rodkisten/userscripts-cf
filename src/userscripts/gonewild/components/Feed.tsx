@@ -22,7 +22,7 @@ function TagButton({ tag, controller }: { tag: string; controller: FeedControlle
     : state.search.exclude.some((value) => normalize(value) === normalize(tag)) ? "exclude" : "";
   const cancel = () => clearTimeout(timer.current);
   return <button type="button" className={`${styles["gws-tag"]} ${categoryTag(tag) ? styles["gws-category"] || "" : ""}`}
-    data-selection={selected} aria-pressed={Boolean(selected)}
+    data-active={selected} aria-pressed={Boolean(selected)}
     onPointerDown={() => {
       held.current = false;
       timer.current = setTimeout(() => { held.current = true; controller.tagMenu(tag); }, 500);
