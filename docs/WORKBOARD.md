@@ -538,3 +538,9 @@
 
 - [x] Document the non-optional runtime/AST compatibility gate in README.md and AGENTS.md, including tests, fixtures, React context adapters, IIFE migration and verification.
 - [ ] On each future runtime/context change, review AST behavior, add compatibility regression coverage, refresh relevant fixtures and record evidence in this workboard. No runtime-only completion claims.
+
+### 🧪 CLI migration regression (2026-11-18)
+
+- [x] Diagnose run 44333389425: Vitest 85/85 passed; legacy IIFE CLI crashed because the migration result does not expose `edits`, but CLI accessed `result.edits.length`.
+- [x] Make CLI edit-count reporting optional and add Vitest subprocess integration coverage for real IIFE CLI output and metadata JSON.
+- [ ] Verify the new run and update the confirmed test count/CI status; do not claim green before checking.
