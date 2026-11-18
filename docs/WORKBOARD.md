@@ -262,3 +262,7 @@
 
 - [`f0edca2a`](https://github.com/rodkisten/userscripts-cf/commit/f0edca2a89b362ad72ef8905f6a255e9708ee369) makes Oxc TSX transform select `@solidjs/web` for legacy Solid sources (`solid-ui` path or Solid import/pragma) and `react` otherwise. This avoids unconditional React JSX conversion of clearly Solid-owned source. **Unverified**: inspect build and confirm Solid runtime automatic JSX compatibility, including any Solid consumers with indirect imports; runtime/browser smoke checks remain necessary.
 - Keep P0 production build and release **open** until current-head CI and runtime checks pass. Do not confuse TS typecheck success on run `44234731037` with production build success.
+
+### Build plugin ordering correction (2026-11-18)
+
+- [`ae6b1425`](https://github.com/rodkisten/userscripts-cf/commit/ae6b142555a570f98fdc5af6ff5e22a8b13f03e6) reorders Vite `enforce: pre` plugins so `runtimeHelpers()` runs before `transformSourceTsx()`. The runtime helper uses TypeScript AST and rewrites `ctx`-owned DOM/events/HTTP calls; it must process original TSX before Oxc compiles it. This is a source-level fix; CI and runtime verification remain outstanding.
