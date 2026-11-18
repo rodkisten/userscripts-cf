@@ -601,3 +601,10 @@
 - [x] Guard AST rewriting of optional call/receiver syntax across GM, DOM, and HTTP; short-circuit semantics are not guaranteed by context helpers.
 - [x] Add Vitest regression cases and two matrix fixtures; verification in GitHub Actions remains pending.
 - [ ] Follow-up: type GM bridge signatures, analyze feature-detection guards by AST scope, and design async storage migration with explicit data/catch parity.
+
+### Rod AST style migration and Vite (2026-11-18)
+
+- [x] Route direct unguarded GM style injection to instance-owned `ctx.ui.style` in AST, with negative and idempotence tests and matrix cases.
+- [x] Wire `rodAstPlugin` into Vite as explicit `ROD_AST=1` opt-in ahead of runtime helpers and CSS Modules.
+- [ ] Verify Vitest, typecheck, Vite build and production Safari behavior; no successful CI run has been confirmed.
+- [ ] Add dataflow-safe migration for `createElement('style')`, `textContent`/`innerText`, `insertRule`, `adoptedStyleSheets`, insertion and disposal; process static styles through the existing CSS pipeline without changing selector semantics.
