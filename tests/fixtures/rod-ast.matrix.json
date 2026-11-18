@@ -1,0 +1,301 @@
+[
+  {
+    "name": "typed fetch",
+    "source": "function init(ctx: ScriptContext) { return fetch('/typed'); }",
+    "includes": [
+      "ctx.http.fetch('/typed')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "untyped ctx",
+    "source": "function init(ctx) { return fetch('/plain'); }",
+    "includes": [
+      "ctx.http.fetch('/plain')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "context alias",
+    "source": "function init(context) { return fetch('/alias'); }",
+    "includes": [
+      "context.http.fetch('/alias')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "window fetch",
+    "source": "function init(ctx) { return window.fetch('/window'); }",
+    "includes": [
+      "ctx.http.fetch('/window')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "self fetch preserved",
+    "source": "function init(ctx) { return self.fetch('/self'); }",
+    "includes": [
+      "self.fetch('/self')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "parent fetch preserved",
+    "source": "function init(ctx) { return parent.fetch('/parent'); }",
+    "includes": [
+      "parent.fetch('/parent')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "window.parent fetch preserved",
+    "source": "function init(ctx) { return window.parent.fetch('/parent'); }",
+    "includes": [
+      "window.parent.fetch('/parent')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "top fetch preserved",
+    "source": "function init(ctx) { return top?.fetch('/top'); }",
+    "includes": [
+      "top?.fetch('/top')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "globalThis fetch preserved",
+    "source": "function init(ctx) { return globalThis.fetch('/global'); }",
+    "includes": [
+      "globalThis.fetch('/global')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "globalThis window preserved",
+    "source": "function init(ctx) { return globalThis.window.fetch('/global-window'); }",
+    "includes": [
+      "globalThis.window.fetch('/global-window')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "document query typed",
+    "source": "function init(ctx: ScriptContext) { return document.querySelector('main'); }",
+    "includes": [
+      "ctx.dom.querySelector('main')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "document query all untyped",
+    "source": "function init(ctx) { return document.querySelectorAll('a'); }",
+    "includes": [
+      "ctx.dom.querySelectorAll('a')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "element query preserved",
+    "source": "function init(ctx) { return element.querySelector('a'); }",
+    "includes": [
+      "element.querySelector('a')"
+    ],
+    "excludes": [
+      "ctx.dom.querySelector"
+    ]
+  },
+  {
+    "name": "document createElement preserved",
+    "source": "function init(ctx) { return document.createElement('div'); }",
+    "includes": [
+      "document.createElement('div')"
+    ],
+    "excludes": [
+      "ctx.dom.createElement"
+    ]
+  },
+  {
+    "name": "document listener",
+    "source": "function init(ctx) { document.addEventListener('click', cb); }",
+    "includes": [
+      "ctx.listen(document, 'click', cb)"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "window listener",
+    "source": "function init(ctx) { window.addEventListener('resize', cb); }",
+    "includes": [
+      "ctx.listen(window, 'resize', cb)"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "self listener preserved",
+    "source": "function init(ctx) { self.addEventListener('message', cb); }",
+    "includes": [
+      "self.addEventListener('message', cb)"
+    ],
+    "excludes": [
+      "ctx.listen"
+    ]
+  },
+  {
+    "name": "parent listener preserved",
+    "source": "function init(ctx) { parent.addEventListener('message', cb); }",
+    "includes": [
+      "parent.addEventListener('message', cb)"
+    ],
+    "excludes": [
+      "ctx.listen"
+    ]
+  },
+  {
+    "name": "listener manual cleanup",
+    "source": "function init(ctx) { document.addEventListener('click', cb); ctx.onDispose(() => document.removeEventListener('click', cb)); }",
+    "includes": [
+      "document.addEventListener('click', cb)"
+    ],
+    "excludes": [
+      "ctx.listen"
+    ]
+  },
+  {
+    "name": "global interval",
+    "source": "function init(ctx) { return setInterval(tick, 1000); }",
+    "includes": [
+      "ctx.interval(tick, 1000)"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "window interval preserved",
+    "source": "function init(ctx) { return window.setInterval(tick, 1000); }",
+    "includes": [
+      "window.setInterval(tick, 1000)"
+    ],
+    "excludes": [
+      "ctx.interval"
+    ]
+  },
+  {
+    "name": "self interval preserved",
+    "source": "function init(ctx) { return self.setInterval(tick, 1000); }",
+    "includes": [
+      "self.setInterval(tick, 1000)"
+    ],
+    "excludes": [
+      "ctx.interval"
+    ]
+  },
+  {
+    "name": "interval cleanup",
+    "source": "function init(ctx) { const id = setInterval(tick, 1000); clearInterval(id); }",
+    "includes": [
+      "setInterval(tick, 1000)"
+    ],
+    "excludes": [
+      "ctx.interval"
+    ]
+  },
+  {
+    "name": "observer preserve",
+    "source": "function init(ctx) { const o = new MutationObserver(cb); o.observe(document.body, { childList: true }); }",
+    "includes": [
+      "new MutationObserver(cb)"
+    ],
+    "excludes": [
+      "ctx.observe"
+    ]
+  },
+  {
+    "name": "shadowed fetch",
+    "source": "function init(ctx) { const fetch = (x) => x; return fetch('/local'); }",
+    "includes": [
+      "fetch('/local')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "shadowed document",
+    "source": "function init(ctx) { const document = fake; return document.querySelector('a'); }",
+    "includes": [
+      "document.querySelector('a')"
+    ],
+    "excludes": [
+      "ctx.dom.querySelector"
+    ]
+  },
+  {
+    "name": "shadowed window",
+    "source": "function init(ctx) { const window = fake; return window.fetch('/fake'); }",
+    "includes": [
+      "window.fetch('/fake')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "outside ctx",
+    "source": "function ordinary() { return fetch('/outside'); }",
+    "includes": [
+      "fetch('/outside')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "nested closure",
+    "source": "function init(ctx) { return () => fetch('/nested'); }",
+    "includes": [
+      "ctx.http.fetch('/nested')"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "react hook preserved",
+    "source": "function init(ctx) { return useContext(); }",
+    "includes": [
+      "useContext()"
+    ],
+    "excludes": [
+      "return ctx;"
+    ]
+  },
+  {
+    "name": "keep comment",
+    "source": "function init(ctx) { // @keep\n return fetch('/keep'); }",
+    "includes": [
+      "fetch('/keep')"
+    ],
+    "excludes": [
+      "ctx.http.fetch"
+    ]
+  },
+  {
+    "name": "jsx",
+    "source": "function init(ctx) { return <button onClick={() => fetch('/jsx')}>Go</button>; }",
+    "includes": [
+      "ctx.http.fetch('/jsx')",
+      "<button"
+    ],
+    "excludes": []
+  }
+]
