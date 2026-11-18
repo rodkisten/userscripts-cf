@@ -22,6 +22,8 @@ type LegacyAction = {
   id: string;
   label: string;
   role?: "submit" | "cancel" | "secondary" | "destructive";
+  /** Backward-compatible action style used by clipboard and older scripts. */
+  variant?: "danger" | "destructive" | "default";
   handler?: (context: { values: AnyRecord; close: () => void }) => unknown;
   run?: (values: AnyRecord) => unknown;
   validate?: boolean;
@@ -49,7 +51,7 @@ export const menu = Object.freeze({
     const actions: RodMenuAction[] | undefined = schema.actions?.map((action) => ({
       id: action.id,
       label: action.label,
-      role: action.role,
+      role: action.role ?? (action.variant === "danger" || action.variant === "destructive" ? "destructive" : undefined),
       validate: action.validate,
       close: action.close,
       handler: async (context) => {

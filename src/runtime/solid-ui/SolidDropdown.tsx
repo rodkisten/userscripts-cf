@@ -1,5 +1,5 @@
 import { createSignal, For } from "solid-js";
-import type { JSX } from "solid-js";
+import type { JSX } from "@solidjs/web";
 import { render } from "@solidjs/web";
 import type { DropdownOptions, DropdownItem } from "./menu-api";
 
@@ -111,7 +111,7 @@ export function openSolidDropdown(options: DropdownOptions) {
               <button
                 type="button"
                 role={item.type === "checkbox" ? "menuitemcheckbox" : "menuitem"}
-                aria-checked={item.type === "checkbox" ? String(Boolean(item.checked)) : undefined}
+                aria-checked={item.type === "checkbox" ? Boolean(item.checked) : undefined}
                 disabled={item.disabled}
                 style={buttonStyle}
                 onClick={() => {
