@@ -21,7 +21,7 @@ export function ReelBookmarkButton(props: {
       data-bookmark-state={props.state}
       aria-label={label()}
       title={label()}
-      aria-busy={props.state === "loading"}
+      aria-busy={String(props.state === "loading")}
       disabled={disabled()}
       onClick={(event) => {
         event.preventDefault();
