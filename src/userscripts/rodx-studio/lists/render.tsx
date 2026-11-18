@@ -976,7 +976,7 @@ export function render() {
   mountView(tabArea, () =>
     tabs.map(([id, text]) => (
       <>
-        <button data-tab={id} class={cx(state.tab === id ? "on" : "")}>
+        <button data-tab={id} className={cx(state.tab === id ? "on" : "")}>
           {text}
         </button>
       </>
@@ -1006,26 +1006,26 @@ export function renderLists() {
   const pinned = settings.homeIds || [];
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         {"\n      "}
-        <div class={cx("row")}>
+        <div className={cx("row")}>
           <h3>
             {"Minhas listas "}
-            <span class={cx("pill")}>{state.lists.length}</span>
+            <span className={cx("pill")}>{state.lists.length}</span>
           </h3>
           {"\n        "}
-          <button class={cx("btn mini")} data-action={"scan-lists"}>
+          <button className={cx("btn mini")} data-action={"scan-lists"}>
             {"↻ Sincronizar nomes"}
           </button>
         </div>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "Sincronização automática durante a navegação: nomes das listas, novas listas e membros exibidos nos diálogos/páginas de membros. Não precisa manter este painel aberto. Continue rolando para descobrir mais."
           }
         </p>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {"Captura no Safari: "}
           <strong>{state.bridgeStatus}</strong>
           {
@@ -1033,7 +1033,7 @@ export function renderLists() {
           }
         </p>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {"Respostas de listas observadas: "}
           <strong>{state.networkResponses}</strong>
           {" · Nomes confirmados nas respostas: "}
@@ -1042,7 +1042,7 @@ export function renderLists() {
           {timeText(state.lastListResponseAt)}
         </p>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"autoSyncApi"}
@@ -1051,16 +1051,16 @@ export function renderLists() {
           {" Sincronizar silenciosamente pela API interna ao navegar"}
         </label>
         {"\n      "}
-        <div class={cx("grp")}>
-          <button class={cx("btn")} data-action={"open-lists-page"}>
+        <div className={cx("grp")}>
+          <button className={cx("btn")} data-action={"open-lists-page"}>
             {"Abrir Listas do X"}
           </button>
-          <button class={cx("btn")} data-action={"add-list"}>
+          <button className={cx("btn")} data-action={"add-list"}>
             {"+ Adicionar por URL"}
           </button>
         </div>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"hideReposts"}
@@ -1069,7 +1069,7 @@ export function renderLists() {
           {" Ocultar reposts em todas as timelines de listas"}
         </label>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"showHomeBar"}
@@ -1078,7 +1078,7 @@ export function renderLists() {
           {" Barra extra de listas na Home"}
         </label>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"homeAll"}
@@ -1087,29 +1087,29 @@ export function renderLists() {
           {" Mostrar todas as listas na barra extra (sem limite de 10)"}
         </label>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "A barra extra é local e independente das listas fixadas oficialmente pelo X. Para ativar a timeline própria, abra uma lista e toque em “Timeline Studio”."
           }
         </p>
         {"\n      "}
-        <div class={cx("items")}>
+        <div className={cx("items")}>
           {state.lists.map((l) => (
             <>
-              <div class={cx(["card ", state.listId === l.id ? "active" : ""].join(""))}>
+              <div className={cx(["card ", state.listId === l.id ? "active" : ""].join(""))}>
                 {"\n        "}
-                <div class={cx("row")}>
+                <div className={cx("row")}>
                   <div>
                     <strong>{displayListName(l)}</strong>
                     {"\n          "}
-                    <div class={cx("small")}>
+                    <div className={cx("small")}>
                       {"#"}
                       {l.id}
                       {" · origem: "}
                       {l.alias ? "alias local" : l.nameSource || "pendente"}
                     </div>
                     {"\n          "}
-                    <div class={cx("small")}>
+                    <div className={cx("small")}>
                       {"API: "}
                       {l.apiName || "pendente"}
                       {" · "}
@@ -1118,28 +1118,28 @@ export function renderLists() {
                     {"\n        "}
                   </div>
                   {"\n          "}
-                  <div class={cx("grp")}>
-                    <button class={cx("btn mini")} data-action={"select-list"} data-id={l.id}>
+                  <div className={cx("grp")}>
+                    <button className={cx("btn mini")} data-action={"select-list"} data-id={l.id}>
                       {"Gerenciar"}
                     </button>
                     {"\n            "}
-                    <button class={cx("btn mini")} data-action={"refresh-name"} data-id={l.id}>
+                    <button className={cx("btn mini")} data-action={"refresh-name"} data-id={l.id}>
                       {"↻ Nome"}
                     </button>
                     {"\n            "}
-                    <button class={cx("btn mini")} data-action={"rename-list"} data-id={l.id}>
+                    <button className={cx("btn mini")} data-action={"rename-list"} data-id={l.id}>
                       {"✎ Alias"}
                     </button>
                     {"\n            "}
-                    <button class={cx("btn mini")} data-action={"goto-list"} data-id={l.id}>
+                    <button className={cx("btn mini")} data-action={"goto-list"} data-id={l.id}>
                       {"↗"}
                     </button>
                   </div>
                 </div>
                 {"\n        "}
-                <div class={cx("grp rx-render-grp")}>
+                <div className={cx("grp rx-render-grp")}>
                   <button
-                    class={cx(["btn mini ", pinned.includes(l.id) ? "primary" : ""].join(""))}
+                    className={cx(["btn mini ", pinned.includes(l.id) ? "primary" : ""].join(""))}
                     data-action={"toggle-home-pin"}
                     data-id={l.id}
                   >
@@ -1148,10 +1148,10 @@ export function renderLists() {
                   {"\n          "}
                   {pinned.includes(l.id) ? (
                     <>
-                      <button class={cx("btn mini")} data-action={"pin-left"} data-id={l.id}>
+                      <button className={cx("btn mini")} data-action={"pin-left"} data-id={l.id}>
                         {"←"}
                       </button>
-                      <button class={cx("btn mini")} data-action={"pin-right"} data-id={l.id}>
+                      <button className={cx("btn mini")} data-action={"pin-right"} data-id={l.id}>
                         {"→"}
                       </button>
                     </>
@@ -1159,7 +1159,7 @@ export function renderLists() {
                     ""
                   )}
                   {"\n          "}
-                  <span class={cx("pill")}>
+                  <span className={cx("pill")}>
                     {l.scanComplete ? "varredura concluída*" : "membros não verificados"}
                   </span>
                 </div>
@@ -1168,12 +1168,12 @@ export function renderLists() {
             </>
           )) || (
             <>
-              <p class={cx("muted")}>{"Sem listas ainda. Visite a página Listas, ou adicione uma URL."}</p>
+              <p className={cx("muted")}>{"Sem listas ainda. Visite a página Listas, ou adicione uma URL."}</p>
             </>
           )}
         </div>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "* Uma coleta por requests internos não garante cobertura completa quando o X encerra a paginação, exige novos parâmetros ou bloqueia a operação."
           }
@@ -1192,19 +1192,19 @@ export function renderMembers() {
   const selected = items.filter((m) => state.selected.has(m.username.toLowerCase())).length;
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         {"\n      "}
         <h3>{"Gerenciar membros"}</h3>
         {"\n      "}
-        <select class={cx("select")} data-field={"listId"}>
+        <select className={cx("select")} data-field={"listId"}>
           {optionsHTML(state.listId, [
             ["", "Escolha uma lista"],
             ...orderedQuickLists().map((l) => [l.id, displayListName(l)]),
           ])}
         </select>
         {"\n      "}
-        <div class={cx("row wrap")}>
-          <span class={cx("small")}>
+        <div className={cx("row wrap")}>
+          <span className={cx("small")}>
             {memberCount()}
             {" membros salvos · "}
             {state.selected.size}
@@ -1212,7 +1212,7 @@ export function renderMembers() {
           </span>
           {"\n        "}
           <button
-            class={cx("btn")}
+            className={cx("btn")}
             data-action={"collect"}
             disabled={(!list || state.scan ? "disabled" : "") === "disabled"}
           >
@@ -1222,7 +1222,7 @@ export function renderMembers() {
         {"\n      "}
         {state.scan ? (
           <>
-            <button class={cx("btn danger")} data-action={"stop-scan"}>
+            <button className={cx("btn danger")} data-action={"stop-scan"}>
               {"Parar varredura"}
             </button>
           </>
@@ -1230,44 +1230,44 @@ export function renderMembers() {
           ""
         )}
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "A coleta é passiva durante a navegação e pode prosseguir por GET interno, com paginação e pausa. Para habilitar a primeira consulta de membros, abra uma vez a aba Membros de alguma lista no X; o Studio aprende a rota. A coleta não navega nem reabre o painel."
           }
         </p>
         {"\n      "}
         <input
-          class={cx("field")}
+          className={cx("field")}
           data-field={"filter"}
           value={state.filter}
           placeholder={"Buscar @usuário entre os membros salvos"}
         />
         {"\n      "}
-        <div class={cx("grp")}>
-          <button class={cx("btn mini")} data-action={"select-all"}>
+        <div className={cx("grp")}>
+          <button className={cx("btn mini")} data-action={"select-all"}>
             {"Selecionar todos"}
           </button>
-          <button class={cx("btn mini")} data-action={"select-visible"}>
+          <button className={cx("btn mini")} data-action={"select-visible"}>
             {"Selecionar filtrados"}
           </button>
           {"\n        "}
-          <button class={cx("btn mini")} data-action={"clear-selected"}>
+          <button className={cx("btn mini")} data-action={"clear-selected"}>
             {"Limpar ("}
             {state.selected.size}
             {")"}
           </button>
         </div>
         {"\n      "}
-        <div class={cx("card stack")}>
+        <div className={cx("card stack")}>
           {"\n        "}
           <h4>{"Copiar / mesclar em outra lista"}</h4>
           {"\n        "}
-          <select class={cx("select")} data-field={"targetId"}>
+          <select className={cx("select")} data-field={"targetId"}>
             <option value={""}>{"Lista de destino"}</option>
             {listOptions(state.targetId, state.listId)}
           </select>
           {"\n        "}
-          <label class={cx("check")}>
+          <label className={cx("check")}>
             <input
               type={"checkbox"}
               data-field={"follow"}
@@ -1276,7 +1276,7 @@ export function renderMembers() {
             {" Também seguir os membros copiados"}
           </label>
           {"\n        "}
-          <label class={cx("check")}>
+          <label className={cx("check")}>
             <input
               type={"checkbox"}
               data-field={"disableReposts"}
@@ -1285,9 +1285,9 @@ export function renderMembers() {
             {" Desativar reposts desses perfis (quando o X permitir)"}
           </label>
           {"\n        "}
-          <div class={cx("grp")}>
+          <div className={cx("grp")}>
             <button
-              class={cx("btn primary")}
+              className={cx("btn primary")}
               data-action={"copy-selected"}
               disabled={(!selected && !state.selected.size ? "disabled" : "") === "disabled"}
             >
@@ -1297,7 +1297,7 @@ export function renderMembers() {
             </button>
             {"\n          "}
             <button
-              class={cx("btn")}
+              className={cx("btn")}
               data-action={"merge-all"}
               disabled={(!memberCount() ? "disabled" : "") === "disabled"}
             >
@@ -1306,7 +1306,7 @@ export function renderMembers() {
             </button>
           </div>
           {"\n        "}
-          <p class={cx("small")}>
+          <p className={cx("small")}>
             {
               "Sem remover da origem. As alterações são enviadas por requests internas, em série e sem visitar perfis. Erros 401/403/429 interrompem imediatamente. Não há garantia de aprovação do X."
             }
@@ -1314,15 +1314,15 @@ export function renderMembers() {
           {"\n      "}
         </div>
         {"\n      "}
-        <div class={cx("items")}>
+        <div className={cx("items")}>
           {items.slice(0, 800).map((m) => (
             <>
-              <label class={cx("item")}>
+              <label className={cx("item")}>
                 {"\n        "}
-                <span class={cx("grp")}>
+                <span className={cx("grp")}>
                   <input
                     type={"checkbox"}
-                    class={cx("member-check")}
+                    className={cx("member-check")}
                     value={m.username}
                     checked={(state.selected.has(m.username.toLowerCase()) ? "checked" : "") === "checked"}
                   />
@@ -1332,13 +1332,13 @@ export function renderMembers() {
                       {"@"}
                       {m.username}
                     </strong>
-                    <div class={cx("small")}>{m.name || ""}</div>
+                    <div className={cx("small")}>{m.name || ""}</div>
                   </span>
                 </span>
                 {"\n        "}
                 <button
                   type={"button"}
-                  class={cx("btn mini")}
+                  className={cx("btn mini")}
                   data-action={"quick-pick-member"}
                   data-user={m.username}
                 >
@@ -1357,14 +1357,14 @@ export function renderMembers() {
             </>
           )) || (
             <>
-              <p class={cx("muted")}>{"Nenhum membro capturado ainda."}</p>
+              <p className={cx("muted")}>{"Nenhum membro capturado ainda."}</p>
             </>
           )}
         </div>
         {"\n      "}
         {items.length > 800 ? (
           <>
-            <p class={cx("small")}>
+            <p className={cx("small")}>
               {"Mostrando 800 de "}
               {items.length}
               {" perfis; a seleção em lote considera todos os dados armazenados."}
@@ -1374,9 +1374,9 @@ export function renderMembers() {
           ""
         )}
         {"\n      "}
-        <div class={cx("grp")}>
+        <div className={cx("grp")}>
           <button
-            class={cx("btn")}
+            className={cx("btn")}
             data-action={"export-csv"}
             disabled={(!memberCount() ? "disabled" : "") === "disabled"}
           >
@@ -1405,11 +1405,11 @@ export function buildQuery(overrideId = "") {
 export function renderSearch() {
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         {"\n      "}
         <h3>{"Busca filtrada por lista"}</h3>
         {"\n      "}
-        <select class={cx("select")} data-field={"listId"}>
+        <select className={cx("select")} data-field={"listId"}>
           {optionsHTML(state.listId, [
             ["", "Escolha uma lista"],
             ...orderedQuickLists().map((l) => [l.id, displayListName(l)]),
@@ -1418,7 +1418,7 @@ export function renderSearch() {
         {"\n      "}
         <h4>{"Tipo de conteúdo"}</h4>
         {"\n      "}
-        <select class={cx("select")} data-setting={"media"}>
+        <select className={cx("select")} data-setting={"media"}>
           {optionsHTML(settings.media, [
             ["all", "Todos os posts"],
             ["videos", "Vídeos"],
@@ -1428,7 +1428,7 @@ export function renderSearch() {
           ])}
         </select>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"hideReposts"}
@@ -1437,7 +1437,7 @@ export function renderSearch() {
           {" Excluir reposts (também nas timelines das listas)"}
         </label>
         {"\n      "}
-        <label class={cx("check")}>
+        <label className={cx("check")}>
           <input
             type={"checkbox"}
             data-setting={"replies"}
@@ -1446,25 +1446,25 @@ export function renderSearch() {
           {" Incluir respostas"}
         </label>
         {"\n      "}
-        <label class={cx("small")}>{"Palavras e operadores adicionais"}</label>
+        <label className={cx("small")}>{"Palavras e operadores adicionais"}</label>
         {"\n      "}
         <textarea
-          class={cx("textarea")}
+          className={cx("textarea")}
           data-setting={"queryText"}
           placeholder={"Ex.: (anime OR manga) lang:pt since:2026-01-01"}
           value={"\n          " + settings.queryText + "\n        "}
         />
         {"\n      "}
-        <label class={cx("small")}>{"Mínimo de curtidas"}</label>
+        <label className={cx("small")}>{"Mínimo de curtidas"}</label>
         <input
-          class={cx("field")}
+          className={cx("field")}
           inputmode={"numeric"}
           data-setting={"minLikes"}
           value={settings.minLikes}
           placeholder={"Ex.: 10"}
         />
         {"\n      "}
-        <select class={cx("select")} data-setting={"sort"}>
+        <select className={cx("select")} data-setting={"sort"}>
           {optionsHTML(settings.sort, [
             ["live", "Mais recentes"],
             ["top", "Destaques"],
@@ -1472,23 +1472,23 @@ export function renderSearch() {
         </select>
         {"\n      "}
         <h4>{"Consulta gerada"}</h4>
-        <div class={cx("mono code")} id={"xls-query"}>
+        <div className={cx("mono code")} id={"xls-query"}>
           {buildQuery() || "Selecione uma lista"}
         </div>
         {"\n      "}
-        <div class={cx("grp")}>
-          <button class={cx("btn primary")} data-action={"load-timeline"}>
+        <div className={cx("grp")}>
+          <button className={cx("btn primary")} data-action={"load-timeline"}>
             {"▶ Carregar timeline aqui"}
           </button>
-          <button class={cx("btn")} data-action={"open-search"}>
+          <button className={cx("btn")} data-action={"open-search"}>
             {"Busca nativa ↗"}
           </button>
-          <button class={cx("btn")} data-action={"copy-query"}>
+          <button className={cx("btn")} data-action={"copy-query"}>
             {"Copiar query"}
           </button>
         </div>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "O modo Studio apresenta os resultados nesta página, por requests, sem redirecionar. A primeira utilização de uma operação exige que o X a tenha carregado naturalmente pelo menos uma vez. Os filtros são salvos separadamente para cada lista."
           }
@@ -1499,7 +1499,7 @@ export function renderSearch() {
             renderTimelineCards(true)
           ) : (
             <>
-              <p class={cx("muted")}>{"Escolha seus filtros e toque em Carregar timeline aqui."}</p>
+              <p className={cx("muted")}>{"Escolha seus filtros e toque em Carregar timeline aqui."}</p>
             </>
           )}
         </div>
@@ -1512,7 +1512,7 @@ export function renderSearch() {
 export function renderBackup() {
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         {"\n      "}
         <h3>{"Backup e importação"}</h3>
         {"\n      "}
@@ -1524,12 +1524,12 @@ export function renderBackup() {
           {"."}
         </p>
         {"\n      "}
-        <div class={cx("grp")}>
-          <button class={cx("btn primary")} data-action={"export-json"}>
+        <div className={cx("grp")}>
+          <button className={cx("btn primary")} data-action={"export-json"}>
             {"↓ Exportar backup JSON"}
           </button>
           {"\n        "}
-          <button class={cx("btn")} data-action={"import-file"}>
+          <button className={cx("btn")} data-action={"import-file"}>
             {"↑ Importar JSON/CSV"}
           </button>
         </div>
@@ -1538,34 +1538,34 @@ export function renderBackup() {
           id={"xls-file"}
           type={"file"}
           accept={".json,.csv,application/json,text/csv"}
-          class={cx("rx-render-input")}
+          className={cx("rx-render-input")}
         />
         {"\n      "}
-        <div class={cx("card")}>
+        <div className={cx("card")}>
           <strong>{"Importação segura"}</strong>
           {"\n        "}
-          <p class={cx("small")}>
+          <p className={cx("small")}>
             {
               "Mescla pelo ID da lista e pelo @usuário, sem apagar os registros existentes. Não importa senhas, cookies nem tokens. O backup não altera as listas no servidor automaticamente."
             }
           </p>
         </div>
         {"\n      "}
-        <div class={cx("card")}>
+        <div className={cx("card")}>
           <strong>{"Estado do banco"}</strong>
           {"\n        "}
-          <p class={cx("small")}>
+          <p className={cx("small")}>
             {state.lists.length}
             {
               " listas conhecidas. Atualizado conforme você navega, coleta membros ou importa arquivos. Os dados não sincronizam entre dispositivos."
             }
           </p>
           {"\n        "}
-          <button class={cx("btn")} data-action={"scan-lists"}>
+          <button className={cx("btn")} data-action={"scan-lists"}>
             {"Sincronizar listas na página atual"}
           </button>
           {"\n        "}
-          <p class={cx("small")}>
+          <p className={cx("small")}>
             {"Último dado observado nesta sessão: "}
             {state.lastPassiveSync || "nenhum ainda"}
           </p>
@@ -1593,7 +1593,7 @@ export function renderQueue() {
   if (!q)
     return (
       <>
-        <div class={cx("stack")}>
+        <div className={cx("stack")}>
           <h3>{"Fila de operações"}</h3>
           <p>{"Nenhuma cópia em andamento."}</p>
         </div>
@@ -1604,17 +1604,17 @@ export function renderQueue() {
   const current = q.tasks[q.index];
   return (
     <>
-      <div class={cx("stack")}>
+      <div className={cx("stack")}>
         <h3>{"Fila de operações"}</h3>
         {"\n      "}
-        <div class={cx("card stack")}>
-          <div class={cx("row")}>
+        <div className={cx("card stack")}>
+          <div className={cx("row")}>
             <strong>
               {q.sourceName || q.sourceId}
               {" → "}
               {q.targetName || q.targetId}
             </strong>
-            <span class={cx("pill")}>{q.status}</span>
+            <span className={cx("pill")}>{q.status}</span>
           </div>
           {"\n      "}
           <div>
@@ -1628,13 +1628,13 @@ export function renderQueue() {
             {" falhas"}
           </div>
           {"\n      "}
-          <div class={cx("small")}>
+          <div className={cx("small")}>
             {current ? `Atual: @${current.username} (${current.status})` : "Sem perfil pendente"}
           </div>
           {"\n      "}
-          <div class={cx("grp")}>
+          <div className={cx("grp")}>
             <button
-              class={cx("btn primary")}
+              className={cx("btn primary")}
               data-action={"resume-queue"}
               disabled={(q.status === "running" || current?.uncertain ? "disabled" : "") === "disabled"}
             >
@@ -1642,28 +1642,28 @@ export function renderQueue() {
             </button>
             {"\n        "}
             <button
-              class={cx("btn")}
+              className={cx("btn")}
               data-action={"pause-queue"}
               disabled={(q.status !== "running" ? "disabled" : "") === "disabled"}
             >
               {"Ⅱ Pausar"}
             </button>
             {"\n        "}
-            <button class={cx("btn danger")} data-action={"cancel-queue"}>
+            <button className={cx("btn danger")} data-action={"cancel-queue"}>
               {"Cancelar"}
             </button>
           </div>
           {"\n      "}
           {current?.uncertain ? (
             <>
-              <p class={cx("notice error")}>
+              <p className={cx("notice error")}>
                 {"Resultado incerto: confira o membro no X antes de repetir ou ignorar."}
               </p>
-              <div class={cx("grp")}>
-                <button class={cx("btn")} data-action={"retry-current"}>
+              <div className={cx("grp")}>
+                <button className={cx("btn")} data-action={"retry-current"}>
                   {"Repetir após conferir"}
                 </button>
-                <button class={cx("btn")} data-action={"skip-current"}>
+                <button className={cx("btn")} data-action={"skip-current"}>
                   {"Ignorar este perfil"}
                 </button>
               </div>
@@ -1673,10 +1673,10 @@ export function renderQueue() {
           )}
         </div>
         {"\n      "}
-        <label class={cx("small")}>{"Intervalo entre alterações (segundos, mínimo 60)"}</label>
+        <label className={cx("small")}>{"Intervalo entre alterações (segundos, mínimo 60)"}</label>
         {"\n      "}
         <input
-          class={cx("field")}
+          className={cx("field")}
           type={"number"}
           min={"60"}
           max={"3600"}
@@ -1685,23 +1685,23 @@ export function renderQueue() {
           value={settings.queueIntervalSeconds}
         />
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {
             "Sem navegar ou clicar em menus. No máximo 10 operações de escrita por hora e 40 por 24 horas neste navegador. Interrompe ao receber um bloqueio ou limite. Cada membro pode exigir até 3 operações (lista, seguir e reposts)."
           }
         </p>
         {"\n      "}
-        <p class={cx("small")}>
+        <p className={cx("small")}>
           {"Próximo passo: "}
           {q.nextAt ? timeText(new Date(q.nextAt).toISOString()) : "quando autorizado"}
           {" · API "}
           {state.authReady ? "identificada" : "aguardando sessão X"}
         </p>
         {"\n      "}
-        <div class={cx("items")}>
+        <div className={cx("items")}>
           {q.tasks.slice(Math.max(0, q.index - 5), q.index + 12).map((task, i) => (
             <>
-              <div class={cx("item")}>
+              <div className={cx("item")}>
                 <span>
                   {"@"}
                   {task.username}
@@ -1710,7 +1710,7 @@ export function renderQueue() {
                     task.targetId ||
                     q.targetName}
                 </span>
-                <span class={cx("small")}>
+                <span className={cx("small")}>
                   {task.status}
                   {task.error ? ": " + task.error : ""}
                 </span>
