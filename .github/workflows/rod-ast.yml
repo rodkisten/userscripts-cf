@@ -8,6 +8,7 @@ on:
       - "build/rod-ast.mjs"
       - "build/rod-ast-cli.mjs"
       - "tests/fixtures/rod-ast.input.tsx"
+      - "tests/rod-ast.test.mjs"
       - ".github/workflows/rod-ast.yml"
 permissions:
   contents: read
@@ -22,29 +23,62 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps --no-audit --no-fund
       - name: "🧬 Transform fixture"
+        id: transform
+        continue-on-error: true
         run: |
           node build/rod-ast-cli.mjs tests/fixtures/rod-ast.input.tsx --out=tests/fixtures/rod-ast.output.tsx
           cp tests/fixtures/rod-ast.output.tsx artifacts/rod-ast.output.tsx
       - name: "🔎 Show full diff"
+        id: diff
+        continue-on-error: true
         if: always()
         shell: bash
         run: |
           mkdir -p artifacts
           diff -u --label fixture/input.tsx tests/fixtures/rod-ast.input.tsx --label fixture/output.tsx artifacts/rod-ast.output.tsx > artifacts/rod-ast.diff || test "$?" -eq 1
           cat artifacts/rod-ast.diff
-          echo '## 🧬 Rod AST · Full fixture diff' >> "$GITHUB_STEP_SUMMARY"
-          echo '\`\`\`diff' >> "$GITHUB_STEP_SUMMARY"
-          echo '' >> "$GITHUB_STEP_SUMMARY"
-          cat artifacts/rod-ast.diff >> "$GITHUB_STEP_SUMMARY"
-          echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '## 🧬 Rod AST · Fixture diff'
+            echo ''
+            echo '<details open><summary>🔍 Diff completo</summary>'
+            echo ''
+            printf '%s\n' '~~~diff'
+            cat artifacts/rod-ast.diff
+            printf '%s\n' '~~~'
+            echo ''
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: "🧪 AST unit tests"
+        id: unit
+        if: always()
+        continue-on-error: true
         run: node --test tests/rod-ast.test.mjs
       - name: "🧪 Typecheck transformed fixture against real ScriptContext"
+        id: fixture_types
+        if: always()
+        continue-on-error: true
         run: |
           node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
           npx tsc --project tsconfig.rod-ast.generated.json --noEmit
       - name: "🧪 Typecheck React"
+        id: react_types
+        if: always()
+        continue-on-error: true
         run: npm run typecheck:react
+      - name: "📊 Validation matrix"
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Validation matrix"
+            echo ""
+            echo "| Check | Result |"
+            echo "| :-- | :-- |"
+            echo "| transform | ${{ steps.transform.outcome }} |"
+            echo "| diff | ${{ steps.diff.outcome }} |"
+            echo "| unit | ${{ steps.unit.outcome }} |"
+            echo "| fixture_types | ${{ steps.fixture_types.outcome }} |"
+            echo "| react_types | ${{ steps.react_types.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: "📦 Reports"
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,3 +86,16 @@ jobs:
           name: rod-ast-${{ github.run_id }}
           path: artifacts/
           if-no-files-found: warn
+      - name: "🚦 Final validation gate"
+        if: always()
+        shell: bash
+        run: |
+          failed=0
+          for outcome in "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}"; do
+            if [[ "$outcome" != "success" ]]; then failed=1; fi
+          done
+          if (( failed )); then
+            echo "::error::Rod AST validation failed; inspect the validation matrix and logs."
+            exit 1
+          fi
+          echo "All Rod AST checks passed."
