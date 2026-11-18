@@ -67,8 +67,6 @@ jobs:
       url: https://userscripts-playground.migos.club/
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'workflow_call' && 'main' || github.ref_name }}
       - name: Identify push actor and commit author
         if: github.event_name == 'push'
         env:
