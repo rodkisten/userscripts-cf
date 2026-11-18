@@ -112,7 +112,7 @@ export type ScriptContext = Record<string, unknown> & {
     mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
   });
   readonly interval: (callback: () => void, milliseconds: number) => number;
-  readonly listen: (target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean) => () => void;
+  readonly listen: (target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean) => void;
   readonly menu: ReturnType<typeof createMenuFeature> | undefined;
   readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
   readonly onDispose: (cleanup: () => void | Promise<void>) => void;
