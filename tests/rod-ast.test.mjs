@@ -161,8 +161,8 @@ it("migrates the complete real-world legacy fixture and preserves metadata", () 
   expect(result.code).toContain('self.fetch("/api/self")');
   expect(result.code).toContain('parent.fetch("/api/parent")');
   expect(result.code).toContain("new MutationObserver(");
-  expect(result.code).toContain('GM_getValue("key")');
-  expect(result.code).toContain('GM_setValue("key", read)');
+  expect(result.code).toContain('ctx.gm.legacy.getValue("key")');
+  expect(result.code).toContain('ctx.gm.legacy.setValue("key", read)');
   expect(result.metadata.match).toHaveLength(2);
   expect(result.metadata.grant).toEqual(["GM_getValue", "GM_setValue", "GM_addStyle"]);
   expect(result.metadata.require).toEqual(["https://cdn.example.com/library.js"]);
