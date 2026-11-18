@@ -11,6 +11,7 @@ on:
       - "build/rod-ast-summary.mjs"
       - "tests/fixtures/rod-ast.input.tsx"
       - "tests/fixtures/rod-ast.matrix.json"
+      - "tests/fixtures/rod-ast.legacy.user.js"
       - "tests/rod-ast.test.mjs"
       - ".github/workflows/rod-ast.yml"
 concurrency:
@@ -34,6 +35,13 @@ jobs:
         run: |
           node build/rod-ast-cli.mjs tests/fixtures/rod-ast.input.tsx --out=tests/fixtures/rod-ast.output.tsx
           cp tests/fixtures/rod-ast.output.tsx artifacts/rod-ast.output.tsx
+      - name: "📦 Migrate complete Tampermonkey fixture"
+        id: legacy
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          node build/rod-ast-cli.mjs tests/fixtures/rod-ast.legacy.user.js --iife --out=artifacts/rod-ast.legacy.output.js --report=artifacts/rod-ast.legacy.report.json
+          node --check artifacts/rod-ast.legacy.output.js
       - name: "🔎 Show full diff"
         id: diff
         continue-on-error: true
@@ -74,6 +82,7 @@ jobs:
             echo "| Check | Result |"
             echo "| :-- | :-- |"
             echo "| transform | ${{ steps.transform.outcome }} |"
+            echo "| legacy IIFE migration | ${{ steps.legacy.outcome }} |"
             echo "| diff | ${{ steps.diff.outcome }} |"
             echo "| unit | ${{ steps.unit.outcome }} |"
             echo "| fixture_types | ${{ steps.fixture_types.outcome }} |"
@@ -91,7 +100,7 @@ jobs:
         shell: bash
         run: |
           failed=0
-          for outcome in "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}"; do
+          for outcome in "${{ steps.legacy.outcome }}" "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}"; do
             if [[ "$outcome" != "success" ]]; then failed=1; fi
           done
           if (( failed )); then
