@@ -9,7 +9,10 @@ type Context = {
     callback: EventListener,
     options?: AddEventListenerOptions,
   ) => void;
-  ui: { mountReact: (component: import("react").ReactElement, container?: HTMLElement) => () => void; registerStyles: (...styles: string[]) => () => void };
+  ui: {
+    mountReact: (component: import("react").ReactElement, container?: HTMLElement) => () => void;
+    registerStyles: (...styles: string[]) => () => void;
+  };
   onDispose: (callback: () => void) => void;
   dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
 };
@@ -88,20 +91,39 @@ function nativeInsert(element: Editor, value: string) {
 }
 export default {
   init(ctx: Context) {
-    let snapshot = { target: null as Editor | null, open: false, ctrl: false, shift: false, position: { x: 8, y: 8, visible: false } };
+    let snapshot = {
+      target: null as Editor | null,
+      open: false,
+      ctrl: false,
+      shift: false,
+      position: { x: 8, y: 8, visible: false },
+    };
     const subscribers = new Set<() => void>();
-    const subscribe = (notify: () => void) => { subscribers.add(notify); return () => { subscribers.delete(notify); }; };
-    const update = (patch: Partial<typeof snapshot>) => { snapshot = { ...snapshot, ...patch }; subscribers.forEach((notify) => notify()); };
+    const subscribe = (notify: () => void) => {
+      subscribers.add(notify);
+      return () => {
+        subscribers.delete(notify);
+      };
+    };
+    const update = (patch: Partial<typeof snapshot>) => {
+      snapshot = { ...snapshot, ...patch };
+      subscribers.forEach((notify) => notify());
+    };
     const target = () => snapshot.target;
     const open = () => snapshot.open;
     const ctrl = () => snapshot.ctrl;
     const shift = () => snapshot.shift;
     const position = () => snapshot.position;
     const setTarget = (value: Editor | null) => update({ target: value });
-    const setOpen = (value: boolean | ((previous: boolean) => boolean)) => update({ open: typeof value === "function" ? value(open()) : value });
-    const setCtrl = (value: boolean | ((previous: boolean) => boolean)) => update({ ctrl: typeof value === "function" ? value(ctrl()) : value });
-    const setShift = (value: boolean | ((previous: boolean) => boolean)) => update({ shift: typeof value === "function" ? value(shift()) : value });
-    const setPosition = (value: typeof snapshot.position | ((previous: typeof snapshot.position) => typeof snapshot.position)) => update({ position: typeof value === "function" ? value(position()) : value });
+    const setOpen = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ open: typeof value === "function" ? value(open()) : value });
+    const setCtrl = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ ctrl: typeof value === "function" ? value(ctrl()) : value });
+    const setShift = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ shift: typeof value === "function" ? value(shift()) : value });
+    const setPosition = (
+      value: typeof snapshot.position | ((previous: typeof snapshot.position) => typeof snapshot.position),
+    ) => update({ position: typeof value === "function" ? value(position()) : value });
     const place = () => {
       const el = target();
       if (!el?.isConnected) {
@@ -270,16 +292,16 @@ export default {
               </div>
               <div className={styles.grid}>
                 {actions.map(([icon, label, action]) => (
-                    <button
-                      className={styles.key}
-                      data-active={action === "ctrl" ? ctrl() : action === "shift" ? shift() : false}
-                      aria-label={label}
-                      onPointerDown={(event) => event.preventDefault()}
-                      onClick={() => void run(action)}
-                    >
-                      <Icon name={icon} />
-                      <span>{label}</span>
-                    </button>
+                  <button
+                    className={styles.key}
+                    data-active={action === "ctrl" ? ctrl() : action === "shift" ? shift() : false}
+                    aria-label={label}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => void run(action)}
+                  >
+                    <Icon name={icon} />
+                    <span>{label}</span>
+                  </button>
                 ))}
               </div>
               <p className={styles.hint}>Ctrl e Shift: próximo comando</p>
@@ -293,6 +315,10 @@ export default {
     document.documentElement.append(host);
     const unregisterStyles = ctx.ui.registerStyles(css);
     const unmount = ctx.ui.mountReact(<MobileEditorFab />, host);
-    ctx.onDispose(() => { unmount(); unregisterStyles(); host.remove(); });
+    ctx.onDispose(() => {
+      unmount();
+      unregisterStyles();
+      host.remove();
+    });
   },
 };
