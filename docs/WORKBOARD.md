@@ -381,3 +381,9 @@
 - Inspected `.github/workflows/diagnostics.yml` and `build/validate-changed.sh`: diagnostics **already triggers on push to main**. The available commit-to-run lookup only returns PR-triggered runs, so an empty lookup does **not** establish that no push workflow ran. The previous note claiming no associated runs should be interpreted with this limitation.
 - [`9f154d59`](https://github.com/rodkisten/userscripts-cf/commit/9f154d59f9898037e0ed5e04fc4f0d8a0f0a4969), [`b4ffb483`](https://github.com/rodkisten/userscripts-cf/commit/b4ffb483aa3bd04cc1fbf3391479c2de643af7dc): moved TypeScript validation before the expensive bundle in full and changed-source paths. Integration tests still build before executing against `dist/`. No gates were disabled or Solid restored.
 - **Not verified:** unable to execute `npm test` in a checked-out repository because github.com DNS is unavailable in the container, and no fresh run ID was accessible. Need fresh diagnostics run logs for the latest main commit.
+
+### Reddit React UI cleanup (2026-11-18)
+
+- [`ca9774ad`](https://github.com/rodkisten/userscripts-cf/commit/ca9774ad84d5c1e7c3bfa1a2902275209f8579c7): repaired three doubled-escape regex literals in `Feed.tsx` settings: split by comma/semicolon/newline, strip optional `r/`, validate subreddit names with `\w`.
+- [`854c1671`](https://github.com/rodkisten/userscripts-cf/commit/854c16711ba7a0298f879687889d051cf6296544): cleanup now aborts and releases the in-flight audio request lock; matching `finally` also clears request identity. Prevents a stale aborted request from blocking a new React effect.
+- **Validation:** source changes committed; no fresh TypeScript, Vitest, production build or iPhone Safari results verified in this block. Keep Reddit layout and Soundgasm blank screen P0 until real browser evidence.
