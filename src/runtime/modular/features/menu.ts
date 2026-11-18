@@ -9,6 +9,7 @@ export interface DropdownItem {
   onCheckedChange?: (checked: boolean) => unknown;
 }
 export interface DropdownOptions {
+  container?: ShadowRoot | HTMLElement;
   id?: string;
   trigger: HTMLElement;
   items: DropdownItem[];
@@ -70,7 +71,10 @@ export function createMenuFeature(options: MenuFeatureOptions = {}) {
       }));
     },
     dropdown(dropdownOptions: DropdownOptions) {
-      return own(openRadixDropdown(dropdownOptions));
+      return own(openRadixDropdown({
+        ...dropdownOptions,
+        container: dropdownOptions.container ?? options.container?.(),
+      }));
     },
     configure: menu.configure,
   });
