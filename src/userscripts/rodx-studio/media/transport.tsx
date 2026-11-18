@@ -31,12 +31,24 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
     if (!scrubbingRef.current) setPosition(duration ? Math.round((time / duration) * 1000) : 0);
   };
   useEffect(() => {
-    const events = ["timeupdate", "durationchange", "loadedmetadata", "play", "pause", "volumechange", "seeking", "seeked"];
+    const events = [
+      "timeupdate",
+      "durationchange",
+      "loadedmetadata",
+      "play",
+      "pause",
+      "volumechange",
+      "seeking",
+      "seeked",
+    ];
     events.forEach((name) => props.video.addEventListener(name, sync));
     sync();
     return () => events.forEach((name) => props.video.removeEventListener(name, sync));
   }, [props.video]);
-  const startSeek = () => { scrubbingRef.current = true; setScrubbing(true); };
+  const startSeek = () => {
+    scrubbingRef.current = true;
+    setScrubbing(true);
+  };
   const seek = (value: number) => {
     const duration = seekableDuration(props.video);
     setPosition(value);
