@@ -50,17 +50,24 @@ jobs:
       - name: Install dependencies (cache miss)
         if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
-      - name: Verify dependency cache
+      - name: Verify React-only dependencies
         run: |
           set -euo pipefail
-          test -f node_modules/vite/package.json
-          test -f node_modules/@solidjs/vite-plugin/package.json
-          test -f node_modules/@solidjs/compiler/package.json
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const plugin = JSON.parse(fs.readFileSync('node_modules/@solidjs/vite-plugin/package.json', 'utf8'));
-          const compiler = JSON.parse(fs.readFileSync('node_modules/@solidjs/compiler/package.json', 'utf8'));
-          console.log('Solid Vite plugin:', plugin.version, 'Solid compiler:', compiler.version);
+          const required = ['vite', 'typescript', 'react', 'react-dom'];
+          for (const name of required) {
+            const path = `node_modules/${name}/package.json`;
+            if (!fs.existsSync(path)) throw Error(`Missing dependency: ${name}`);
+            const { version } = JSON.parse(fs.readFileSync(path, 'utf8'));
+            console.log(`${name}: ${version}`);
+          }
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          for (const name of ['solid-js', '@solidjs/vite-plugin', '@solidjs/compiler']) {
+            if (pkg.dependencies?.[name] || pkg.devDependencies?.[name]) {
+              throw Error(`Legacy Solid dependency must not be restored: ${name}`);
+            }
+          }
           NODE
       # Playground preview is independent of lint, typecheck and release checks.
       # Cache only the userscript distribution, not the playground assets.
@@ -113,7 +120,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: dist/design-system.js
-          key: pages-design-system-v1-${{ hashFiles('studio/**', 'src/**', 'build/design-system.mjs', 'build/css-modules.mjs', 'build/solid-dom.mjs', 'build/styles.mjs', 'build/runtime-helpers.mjs', 'build/svg.mjs', 'vite.config.js', 'package.json', 'package-lock.json') }}
+          key: pages-design-system-v1-${{ hashFiles('studio/**', 'src/**', 'build/design-system.mjs', 'build/css-modules.mjs', 'build/styles.mjs', 'build/runtime-helpers.mjs', 'build/svg.mjs', 'vite.config.js', 'package.json', 'package-lock.json') }}
       - name: Generate static playground
         env:
           USERSCRIPTS_PREVIEW: "1"
