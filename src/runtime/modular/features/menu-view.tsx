@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import type * as React from "react";
 import { createRoot } from "react-dom/client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";

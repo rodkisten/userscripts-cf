@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import type { ReactElement } from "react";
 import { RuntimeMount } from "./runtime-mount-react.js";
 import { createRoot } from "react-dom/client";

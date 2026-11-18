@@ -147,3 +147,9 @@
 - [React validation run 44210119123](https://github.com/rodkisten/userscripts-cf/actions/runs/44210119123): missing CSS inline module declaration and menu schema mismatch; remaining TS graph imports require investigation.
 - [Release run 44210119251](https://github.com/rodkisten/userscripts-cf/actions/runs/44210119251): menu schema mismatch, ScriptDefinition mismatch, Radix JSX typing conflicts and remaining Solid-related errors.
 - Added legacy presentation/size schema properties and normalized optional script name when passing definitions to matcher, rather than suppressing TypeScript checks. **CI verification pending**.
+
+### JSX namespace collision diagnosed (2026-11-18)
+
+- [Release run 44228767230](https://github.com/rodkisten/userscripts-cf/actions/runs/44228767230) reports 71 JSX/type errors; Radix components are being checked against the repository's global Solid `jsxImportSource` in `tsconfig.json`.
+- Add file-local `@jsxImportSource react` to React TSX entrypoints while legacy Solid files still exist. This is an incremental compatibility step, not a declaration that the build is green.
+- Follow-up: eliminate the Solid JSX compiler and migrate root tsconfig to React once all Solid TSX files are replaced.

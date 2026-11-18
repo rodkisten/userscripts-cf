@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import React, { createContext, useContext as useReactContext, type ReactNode } from "react";
 import type { ScriptContext } from "./runtime.js";
 
