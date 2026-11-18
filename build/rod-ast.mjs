@@ -90,7 +90,7 @@ export function transformRodAst(code, id, options = {}) {
         const method = callee.name.text;
         if (!shadowed.has(receiver) && (receiver === "document" || receiver === "window")) {
           const key = receiver + "." + method;
-          if (DOM_EVENTS.has(method)) {
+          if (DOM_EVENTS.has(method) && options.legacyEventRewrite === true) {
             const target = receiver;
             const op = method === "addEventListener" ? "add" : "remove";
             replacement = ctx + ".events.dom." + op;
