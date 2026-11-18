@@ -1,4 +1,3 @@
-import { produce } from "immer";
 import { DEFAULTS, KEYS, normalize, readJSON, writeJSON, type Post, type Settings } from "./domain.ts";
 export function createStudioStore() {
   const saved = { ...DEFAULTS, ...readJSON<Partial<Settings>>(KEYS.config, {}) };
@@ -26,7 +25,9 @@ export function createStudioStore() {
   let revision = 0;
   const getSnapshot = () => revision;
   const setState = (recipe: (draft: typeof state) => void) => {
-    state = produce(state, recipe);
+    const next = structuredClone(state);
+    recipe(next);
+    state = next;
     revision++;
     listeners.forEach((listener) => listener());
   };
