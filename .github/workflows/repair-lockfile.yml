@@ -3,7 +3,7 @@ name: 🔒 Repair npm lockfile
 on:
   push:
     paths:
-      - 'package.json"
+      - 'package.json'
   workflow_dispatch:
   
 permissions:
