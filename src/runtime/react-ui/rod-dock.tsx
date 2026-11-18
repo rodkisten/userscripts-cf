@@ -160,14 +160,21 @@ function DockView({ controller }: { controller: DockController }) {
     </>
   );
 }
+type RegisterMenu = (caption: string, callback: () => void) => string | number | undefined;
+type UnregisterMenu = (id: string | number) => void;
+const gmMenu = globalThis as typeof globalThis & {
+  GM_registerMenuCommand?: RegisterMenu;
+  GM_unregisterMenuCommand?: UnregisterMenu;
+};
+
 export function installRodDock({
   modules = [],
   scripts = [],
-  registerMenu = globalThis.GM_registerMenuCommand,
+  registerMenu = gmMenu.GM_registerMenuCommand,
 }: {
   modules?: DockModule[];
   scripts?: DockScript[];
-  registerMenu?: typeof globalThis.GM_registerMenuCommand;
+  registerMenu?: RegisterMenu;
 } = {}) {
   const host = document.createElement("div");
   host.dataset.rodDock = "";
@@ -176,14 +183,17 @@ export function installRodDock({
   const mountPoint = document.createElement("div");
   shadow.append(mountPoint);
   const root = createRoot(mountPoint);
+  let disposed = false;
   let currentModules = modules;
   let isOpen = false;
-  const render = () =>
+  const render = () => {
+    if (disposed) return;
     root.render(
       <DockView
         controller={{ modules: currentModules, scripts, open: isOpen, setOpen, portal: mountPoint }}
       />,
     );
+  };
   const setOpen = (next: boolean) => {
     isOpen = next;
     render();
@@ -231,12 +241,14 @@ export function installRodDock({
     open: () => setOpen(true),
     close: () => setOpen(false),
     dispose() {
+      if (disposed) return;
+      disposed = true;
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
       root.unmount();
       host.remove();
-      if (command != null && typeof globalThis.GM_unregisterMenuCommand === "function")
-        globalThis.GM_unregisterMenuCommand(command);
+      if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")
+        gmMenu.GM_unregisterMenuCommand(command);
     },
   };
 }

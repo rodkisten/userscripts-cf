@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { ToasterView } from "./toaster-view.js";
 import { createRoot, type Root } from "react-dom/client";
 import { toast as sonner } from "sonner";

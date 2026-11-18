@@ -161,3 +161,9 @@
 - Migrated Sonner host JSX to a dedicated TSX view; React runtime menu and dock are TSX, no manual createElement in new views.
 - Added CSS inline TypeScript declaration, expanded React typecheck include list, and aligned migration contract with user-approved breaking cutover.
 - CI and browser verification remain pending; legacy Solid modules still exist elsewhere in the repository.
+
+### React foundation CI fixes (2026-11-18)
+
+- [React foundation run 44229374221](https://github.com/rodkisten/userscripts-cf/actions/runs/44229374221) failed on four `GM_registerMenuCommand` / `GM_unregisterMenuCommand` global type errors in the React Dock. Added explicit local GM host typings without leaking declarations into all scripts.
+- [Release run 44229374223](https://github.com/rodkisten/userscripts-cf/actions/runs/44229374223) failed on Sonner TSX JSX namespace mismatch plus legacy Solid TSX compilation. Added React JSX pragma to the Sonner host; legacy Solid errors remain and require migration, not suppression.
+- React Dock now guards repeated disposal and queued renders after disposal. No build success claimed until new CI completes.
