@@ -611,3 +611,6 @@
 
 - [x] Implement conservative AST migration for contiguous static style creation, text assignment and document insertion when the element does not escape; add positive/negative Vitest and matrix cases.
 - [ ] Expand to dynamic styles, CSSOM and adoptedStyleSheets only with proven ownership and CSS processing parity; validate CI before enabling ROD_AST by default.
+
+- [x] Tighten style-triple migration to const-only/document.head/no intervening comments, preserving hoisting and source annotations; add negative tests and fixtures.
+- [ ] Verify transformed source and tests with CI; no success claim until an actual run passes.
