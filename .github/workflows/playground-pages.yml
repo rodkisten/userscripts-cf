@@ -4,18 +4,6 @@ run-name: "Playground Pages · ${{ github.ref_name }} · ${{ github.sha }}"
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "playground/**"
-      - "build/**"
-      - "hosting/**"
-      - "assets/**"
-      - "userscripts.config.js"
-      - "distribution.config.js"
-      - "package.json"
-      - "package-lock.json"
-      - "vite.config.js"
-      - ".github/workflows/playground-pages.yml"
   workflow_dispatch:
 
 permissions:
