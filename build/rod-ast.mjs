@@ -197,6 +197,56 @@ export function transformRodAst(code, id, options = {}) {
     if (!ts.isStringLiteral(node.arguments[0])) return undefined;
     return callee.name.text;
   }
+  // Migrate only complete, contiguous style creation/write/append triples.
+  // Never rewrite an escaping style node or a partial mutation sequence.
+  function migrateStaticStyleTriples(owner, ctx, shadowed, blocked) {
+    if (blocked || options.styles === false || shadowed.has("document")) return;
+    const body = owner.body;
+    if (!body || !ts.isBlock(body)) return;
+    const statements = body.statements;
+    for (let i = 0; i + 2 < statements.length; i++) {
+      const [declaration, assignment, insertion] = statements.slice(i, i + 3);
+      if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
+      if (!ts.isVariableStatement(declaration) || declaration.declarationList.declarations.length !== 1) continue;
+      const variable = declaration.declarationList.declarations[0];
+      if (!ts.isIdentifier(variable.name) || !variable.initializer || !ts.isCallExpression(variable.initializer)) continue;
+      const name = variable.name.text;
+      const create = variable.initializer;
+      if (!ts.isPropertyAccessExpression(create.expression) || !ts.isIdentifier(create.expression.expression) ||
+          create.expression.expression.text !== "document" || create.expression.name.text !== "createElement" ||
+          create.questionDotToken || create.expression.questionDotToken || create.arguments.length !== 1 ||
+          !ts.isStringLiteral(create.arguments[0]) || create.arguments[0].text.toLowerCase() !== "style") continue;
+      if (!ts.isExpressionStatement(assignment) || !ts.isBinaryExpression(assignment.expression)) continue;
+      const write = assignment.expression;
+      if (write.operatorToken.kind !== ts.SyntaxKind.EqualsToken || !ts.isPropertyAccessExpression(write.left) ||
+          !ts.isIdentifier(write.left.expression) || write.left.expression.text !== name ||
+          !["textContent", "innerText"].includes(write.left.name.text)) continue;
+      if (!ts.isStringLiteral(write.right) && !ts.isNoSubstitutionTemplateLiteral(write.right)) continue;
+      if (!ts.isExpressionStatement(insertion) || !ts.isCallExpression(insertion.expression)) continue;
+      const append = insertion.expression;
+      if (!ts.isPropertyAccessExpression(append.expression) || append.questionDotToken || append.expression.questionDotToken ||
+          !["append", "appendChild", "prepend"].includes(append.expression.name.text) ||
+          append.arguments.length !== 1 || !ts.isIdentifier(append.arguments[0]) || append.arguments[0].text !== name) continue;
+      const target = append.expression.expression;
+      const documentHead = ts.isPropertyAccessExpression(target) && ts.isIdentifier(target.expression) &&
+        target.expression.text === "document" && ["head", "documentElement", "body"].includes(target.name.text);
+      if (!documentHead) continue;
+      const symbol = checker.getSymbolAtLocation(variable.name);
+      if (!symbol) continue;
+      let references = 0;
+      const count = (node) => {
+        if (ts.isIdentifier(node) && node.text === name && checker.getSymbolAtLocation(node) === symbol) references++;
+        ts.forEachChild(node, count);
+      };
+      count(owner);
+      // Declaration, write and append each reference the symbol exactly once.
+      if (references !== 3) continue;
+      edits.push({ start: declaration.getStart(source), end: insertion.end,
+        before: code.slice(declaration.getStart(source), insertion.end),
+        after: ctx + ".ui.style(" + code.slice(write.right.getStart(source), write.right.end) + ");" });
+      i += 2;
+    }
+  }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
     return (
@@ -213,6 +263,7 @@ export function transformRodAst(code, id, options = {}) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
+      if (explicit) migrateStaticStyleTriples(node, nextCtx, nextShadowed, blocked || keep(node));
       ts.forEachChild(node, (child) =>
         walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner),
       );
@@ -287,8 +338,10 @@ export function transformRodAst(code, id, options = {}) {
     ts.forEachChild(node, (child) => walk(child, ctx, shadowed, blocked || keep(node), owner));
   }
   walk(source, null);
+  // Whole-statement replacements take precedence over their nested calls.
+  const safeEdits = edits.filter((edit) => !edits.some((outer) => outer !== edit && outer.start <= edit.start && outer.end >= edit.end && outer.end > outer.start));
   let output = code;
-  for (const edit of [...edits].sort((a, b) => b.start - a.start))
+  for (const edit of [...safeEdits].sort((a, b) => b.start - a.start))
     output = output.slice(0, edit.start) + edit.after + output.slice(edit.end);
   const parsed = ts.createSourceFile(id, output, ts.ScriptTarget.Latest, true, scriptKind(id));
   if (parsed.parseDiagnostics.length)
