@@ -1,5 +1,4 @@
-import { createEffect, createSignal, createRoot, flush } from "solid-js";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { createRoot, type Root } from "react-dom/client";
 import { createStudioStore } from "./store.ts";
 import { FeedRoot, PostCard, SettingsShell, type FeedController } from "./components/Feed.tsx";
 import { normalize, KEYS } from "./domain.ts";
@@ -7,14 +6,16 @@ import { POST_SELECTOR, searchPosts } from "./services.ts";
 import { readPost } from "./native.ts";
 import { installNetwork } from "./network.js";
 import styles, { css } from "./Feed.module.css";
-import { buttonCss } from "../../runtime/solid-ui/button";
+
 export function mountReddit(ctx: any, bridge: any) {
   const store = createStudioStore();
-  const { state, setState, actions } = store;
-  const [open, setOpen] = createSignal(false),
-    [tag, setTag] = createSignal("");
+  const { setState, actions } = store;
+  const state = () => store.state;
+  let open = false, tag = "";
+  const setOpen = (value: boolean) => { open = value; renderShell(); };
+  const setTag = (value: string) => { tag = value; renderShell(); };
   const sub = () => decodeURIComponent(location.pathname.match(/\/r\/([^/]+)/i)?.[1] || "");
-  const enabled = () => state.settings.subreddits.some((name) => normalize(name) === normalize(sub()));
+  const enabled = () => state().settings.subreddits.some((name) => normalize(name) === normalize(sub()));
   let searchRequest: AbortController | undefined,
     returnURL = "",
     serial = 0,
@@ -27,21 +28,21 @@ export function mountReddit(ctx: any, bridge: any) {
   const sourceLinks = new Map<HTMLAnchorElement, { original: string; rewritten: string }>();
   const query = () =>
     [
-      state.search.text,
-      ...state.search.include.map((value) => `title:"${value.replace(/["\\]/g, " ")}"`),
-      ...state.search.exclude.map((value) => `-title:"${value.replace(/["\\]/g, " ")}"`),
+      state().search.text,
+      ...state().search.include.map((value) => `title:"${value.replace(/["\\]/g, " ")}"`),
+      ...state().search.exclude.map((value) => `-title:"${value.replace(/["\\]/g, " ")}"`),
     ]
       .filter(Boolean)
       .join(" ");
   const search = async (more = false) => {
     // Read the selection committed by this same click before building the query.
-    flush();
+
     if (!enabled()) return;
     searchRequest?.abort();
     searchRequest = new AbortController();
     const request = searchRequest,
       current = ++serial;
-    if (!state.search.active) returnURL = location.href;
+    if (!state().search.active) returnURL = location.href;
     const q = query();
     const url = new URL(`/r/${encodeURIComponent(sub())}/search/`, location.origin);
     url.searchParams.set("q", q);
@@ -59,7 +60,7 @@ export function mountReddit(ctx: any, bridge: any) {
     });
     schedule();
     try {
-      const page = await searchPosts(sub(), q, more ? state.search.after : "", request.signal);
+      const page = await searchPosts(sub(), q, more ? state().search.after : "", request.signal);
       if (request.signal.aborted || current !== serial) return;
       setState((draft) => {
         const ids = new Set(draft.search.results.map((post) => post.id));
@@ -96,26 +97,25 @@ export function mountReddit(ctx: any, bridge: any) {
     settings: () => setOpen(true),
     tagMenu: setTag,
   };
-  ctx.pageStyle(css + "\n" + buttonCss);
-  const shell = mountPoint(
-    document.body,
-    () => (
-      <SettingsShell
-        store={store}
-        open={open()}
-        tag={tag()}
-        close={() => setOpen(false)}
-        closeTag={() => setTag("")}
-        chooseTag={(value, kind) => {
-          actions.tag(value, kind);
-          void search();
-        }}
-        clear={clear}
-      />
-    ),
-    { id: "gws-shell", shadow: true, styles: [css, buttonCss] },
+  ctx.pageStyle(css);
+  const shellHost = document.createElement("div");
+  shellHost.id = "gws-shell";
+  shellHost.dataset.reactMount = "true";
+  document.body.append(shellHost);
+  const shadow = shellHost.attachShadow({ mode: "open" });
+  const sheet = document.createElement("style");
+  sheet.textContent = css;
+  shadow.append(sheet);
+  const shellNode = document.createElement("div");
+  shadow.append(shellNode);
+  const shellRoot = createRoot(shellNode);
+  const renderShell = () => shellRoot.render(
+    <SettingsShell store={store} open={open} tag={tag}
+      close={() => setOpen(false)} closeTag={() => setTag("")}
+      chooseTag={(value, kind) => { actions.tag(value, kind); void search(); }} clear={clear} />
   );
-  let root: ReturnType<typeof mountPoint> | undefined;
+  renderShell();
+  let root: { host: HTMLElement; dispose: () => void } | undefined;
   const setHidden = (node: Element, wanted: boolean) => {
     node.classList.toggle(styles["gws-hidden"], wanted);
     if (wanted) hidden.add(node);
@@ -141,40 +141,45 @@ export function mountReddit(ctx: any, bridge: any) {
     if (/^(?:www\.|old\.|new\.|sh\.)?reddit\.com$/i.test(location.hostname)) {
       if (!root?.host.isConnected) {
         root?.dispose();
-        root = mountPoint(main, () => <FeedRoot controller={controller} />, { before: main.firstChild });
+        const host = document.createElement("div");
+        host.id = "gws-feed-root";
+        host.dataset.reactMount = "true";
+        main.insertBefore(host, main.firstChild);
+        const reactRoot = createRoot(host);
+        reactRoot.render(<FeedRoot controller={controller} />);
+        root = { host, dispose: () => { reactRoot.unmount(); host.remove(); } };
       }
       for (const node of enabled() ? ctx.dom.all(POST_SELECTOR) : []) {
         if (
-          node.closest("[data-solid-mount]") ||
+          node.closest("[data-react-mount]") ||
           mounts.has(node) ||
           [...mounts.keys()].some((known) => known.contains(node) || node.contains(known))
         )
           continue;
         const post = readPost(node, sub());
-        if (!post || !state.settings.subreddits.some((name) => normalize(name) === normalize(post.sub)))
+        if (!post || !state().settings.subreddits.some((name) => normalize(name) === normalize(post.sub)))
           continue;
         const title = ctx.dom.one(
           '[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]',
           node,
         );
-        const mount = mountPoint(node, () => (
+        const host = document.createElement("div");
+        host.dataset.reactMount = "true";
+        node.append(host);
+        const reactRoot = createRoot(host);
+        reactRoot.render(
           <PostCard
             post={post}
             controller={controller}
             native
             onAudio={(items) => {
-              // Rewriting native source links is an adapter responsibility; the
-              // component only publishes resolved media, never queries site DOM.
               for (const anchor of ctx.dom.all("a[href]", node) as HTMLAnchorElement[]) {
-                if (anchor.closest("[data-solid-mount]")) continue;
+                if (anchor.closest("[data-react-mount]")) continue;
                 const item = items.find((item) => {
                   try {
-                    const source = new URL(item.external),
-                      target = new URL(anchor.href);
+                    const source = new URL(item.external), target = new URL(anchor.href);
                     return source.origin + source.pathname === target.origin + target.pathname;
-                  } catch {
-                    return false;
-                  }
+                  } catch { return false; }
                 });
                 if (item?.studioHref) {
                   const original = sourceLinks.get(anchor)?.original || anchor.href;
@@ -184,22 +189,23 @@ export function mountReddit(ctx: any, bridge: any) {
               }
             }}
           />
-        ));
+        );
+        const mount = { dispose: () => { reactRoot.unmount(); host.remove(); } };
         mounts.set(node, { dispose: mount.dispose, title, post });
       }
       for (const [node, record] of mounts) {
         const post = record.post!;
-        record.title?.classList.toggle(styles["gws-native-title"], state.settings.showTags);
+        record.title?.classList.toggle(styles["gws-native-title"], state().settings.showTags);
         const title = normalize(post.title);
         setHidden(
           node,
-          state.search.active ||
-            (state.settings.onlyAudio &&
-              state.resolved[post.id]?.checked &&
-              !state.resolved[post.id]?.count) ||
-            (state.settings.hideSeen && !!state.seen[post.id]) ||
-            state.search.include.some((value) => !title.includes(normalize(value))) ||
-            state.search.exclude.some((value) => title.includes(normalize(value))),
+          state().search.active ||
+            (state().settings.onlyAudio &&
+              state().resolved[post.id]?.checked &&
+              !state().resolved[post.id]?.count) ||
+            (state().settings.hideSeen && !!state().seen[post.id]) ||
+            state().search.include.some((value) => !title.includes(normalize(value))) ||
+            state().search.exclude.some((value) => title.includes(normalize(value))),
         );
       }
     } else {
@@ -209,8 +215,8 @@ export function mountReddit(ctx: any, bridge: any) {
     for (const node of ctx.dom.all(
       'shreddit-ad-post, shreddit-ad, reddit-ad, ad-unit, [data-promoted="true"], shreddit-post[promoted], shreddit-post[is-promoted], shreddit-post[ad-type]',
     ))
-      setHidden(node, state.settings.removeAds);
-    if (state.postCount !== mounts.size)
+      setHidden(node, state().settings.removeAds);
+    if (state().postCount !== mounts.size)
       setState((draft) => {
         draft.postCount = mounts.size;
       });
@@ -220,7 +226,7 @@ export function mountReddit(ctx: any, bridge: any) {
     scanTimer = setTimeout(scan, 50);
   }
   // Only this adapter touches native Reddit nodes. Every script-owned view is
-  // rendered and updated by Solid; page observers never build UI children.
+  // rendered and updated by React; page observers never build UI children.
   ctx.observe(
     document.documentElement,
     (records) => {
@@ -228,7 +234,7 @@ export function mountReddit(ctx: any, bridge: any) {
         records.some(
           (record) =>
             !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-              "[data-solid-mount]",
+              "[data-react-mount]",
             ),
         )
       )
@@ -236,22 +242,9 @@ export function mountReddit(ctx: any, bridge: any) {
     },
     { subtree: true, childList: true },
   );
-  const disposeEffects = createRoot((dispose) => {
-    createEffect(
-      () => ({
-        settings: { ...state.settings },
-        seen: { ...state.seen },
-        resolved: { ...state.resolved },
-        active: state.search.active,
-        include: [...state.search.include],
-        exclude: [...state.search.exclude],
-      }),
-      schedule,
-    );
-    return dispose;
-  });
+  const disposeEffects = store.subscribe(() => { schedule(); renderShell(); });
   const route = () => {
-    if (!new URL(location.href).searchParams.has("gws") && state.search.active) {
+    if (!new URL(location.href).searchParams.has("gws") && state().search.active) {
       searchRequest?.abort();
       actions.clearSearch();
     }
@@ -280,7 +273,8 @@ export function mountReddit(ctx: any, bridge: any) {
     searchRequest?.abort();
     disposeEffects();
     root?.dispose();
-    shell.dispose();
+    shellRoot.unmount();
+    shellHost.remove();
     for (const [node] of mounts) remove(node);
     hidden.forEach((node) => node.classList.remove(styles["gws-hidden"]));
     for (const [anchor, link] of sourceLinks) if (anchor.href === link.rewritten) anchor.href = link.original;
