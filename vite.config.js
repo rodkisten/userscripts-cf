@@ -2,7 +2,11 @@ import { runtimeHelpers } from "./build/runtime-helpers.mjs";
 import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
-import { defineConfig, transformWithOxc } from "vite";
+import { defineConfig } from "vite";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const ts = require("typescript");
 
 // Vite 8/Rolldown must receive JavaScript, not unparsed TSX, for mixed-runtime entries.
 // Keep this build-only transform scoped to source TSX while the React migration completes.
@@ -16,10 +20,27 @@ function transformSourceTsx() {
       // Preserve the legacy Solid 2 JSX runtime until each component is migrated.
       // Never silently compile Solid components into React elements.
       const solid = file.includes("/solid-ui/") || /(?:from\s*["\x27]solid-js(?:\/[^"\x27]*)?["\x27]|@jsxImportSource\s+@solidjs\/web)/.test(code);
-      return transformWithOxc(code, file, {
-        lang: "tsx",
-        jsx: { runtime: "automatic", importSource: solid ? "@solidjs/web" : "react" },
+      const result = ts.transpileModule(code, {
+        fileName: file,
+        reportDiagnostics: true,
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2022,
+          module: ts.ModuleKind.ESNext,
+          jsx: ts.JsxEmit.ReactJSX,
+          jsxImportSource: solid ? "@solidjs/web" : "react",
+          isolatedModules: true,
+          sourceMap: false,
+        },
       });
+      const errors = (result.diagnostics ?? []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
+      if (errors.length) {
+        throw new Error(ts.formatDiagnosticsWithColorAndContext(errors, {
+          getCanonicalFileName: (name) => name,
+          getCurrentDirectory: () => process.cwd(),
+          getNewLine: () => "\\n",
+        }));
+      }
+      return { code: result.outputText, map: null };
     },
   };
 }
