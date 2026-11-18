@@ -277,7 +277,7 @@ export function initializeDeckXRepost() {
         <>
           <section className={"rodx-xrepost"} aria-label={"Fila de vídeos no X"}>
             {"\n            "}
-            <style textContent={extractedCSS1} />
+            <style>{extractedCSS1}</style>
             {"\n            "}
             <div className={"banner"}>
               {
@@ -664,7 +664,7 @@ export function initializeDeckXRepost() {
             name: "details",
             chrome: "bare",
             render() {
-              const details = (<p />) as HTMLElement;
+              const details = document.createElement("p");
               applyComponentStyle(details, "rx-publisher-details", false);
               details.textContent =
                 "O vídeo é preparado antes de abrir a folha de compartilhamento do iPhone. " +
@@ -832,7 +832,7 @@ export function initializeDeckXRepost() {
     function downloadPreparedVideo(item) {
       const record = preparedFiles.get(item.id);
       if (!record?.url) throw Error("O vídeo precisa estar carregado antes de salvar.");
-      const link = (<a />) as HTMLAnchorElement;
+      const link = document.createElement("a");
       link.href = record.url;
       link.download = `rodx-${item.id}.mp4`;
       document.body.append(link);
@@ -842,13 +842,13 @@ export function initializeDeckXRepost() {
     function openDirectShare(item, options: Record<string, any> = {}) {
       const caption = shareCaption(item, options.caption ?? item.caption);
       const destination = shareDestination();
-      const panel = (<section />) as HTMLElement;
+      const panel = document.createElement("section");
       panel.className = "rodx-direct-share";
       applyComponentStyle(panel, "rx-publisher-panel", false);
       mountView(panel, () => (
         <>
           {"\n            "}
-          <style textContent={extractedCSS2} />
+          <style>{extractedCSS2}</style>
           {"\n            "}
           <p className={"rdx-ds-status"} data-share-status={""} role={"status"} aria-live={"polite"}>
             {"\n              Preparando o vídeo do Relay para o iPhone…\n            "}

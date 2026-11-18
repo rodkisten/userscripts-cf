@@ -29,12 +29,12 @@ export function initializeDeckQuickUI() {
     // This editor reuses the Search Deck's highlightQuery/diagnosticSpans implementation.
     // Suggestions inspect the complete query, not only a trailing `list:` token.
     function search(query = "") {
-      const form = (<form />) as HTMLFormElement;
+      const form = document.createElement("form");
       form.className = "rodx-quick-search";
       mountView(form, () => (
         <>
           {"\n            "}
-          <style textContent={extractedCSS1} />
+          <style>{extractedCSS1}</style>
           {"\n            "}
           <div className={"rxq-editor"}>
             {"\n              "}
@@ -47,7 +47,7 @@ export function initializeDeckQuickUI() {
               spellCheck={"false"}
               autocapitalize={"off"}
               autoComplete={"off"}
-              rows={"3"}
+              rows={3}
               aria-label={"Pesquisa com destaque de sintaxe e sugestões"}
               aria-autocomplete={"list"}
               aria-controls={"rodx-quick-suggestions"}
@@ -314,14 +314,14 @@ export function initializeDeckQuickUI() {
         suggestionBox.replaceChildren();
         suggestionBox.hidden = rows.length === 0;
         rows.forEach((row, index) => {
-          const option = (<button />) as HTMLButtonElement;
+          const option = document.createElement("button");
           option.type = "button";
           option.className = "rxq-option";
           option.setAttribute("role", "option");
           option.id = `rodx-rxq-option-${index}`;
           option.setAttribute("aria-selected", String(index === selected));
-          const title = (<strong />) as HTMLElement;
-          const detail = (<small />) as HTMLElement;
+          const title = document.createElement("strong");
+          const detail = document.createElement("small");
           title.textContent = row.label;
           detail.textContent = row.detail;
           option.append(title, detail);
@@ -528,7 +528,7 @@ export function initializeDeckQuickUI() {
     }
     function scan() {
       if (!floating) {
-        floating = (<button />) as HTMLButtonElement;
+        floating = document.createElement("button");
         floating.id = "rodx-floating-search";
         floating.type = "button";
         floating.textContent = "⌕";
@@ -581,7 +581,7 @@ export function initializeDeckQuickUI() {
         };
         document.body.append(floating);
         position();
-        const style = (<style />) as HTMLStyleElement;
+        const style = document.createElement("style");
         style.textContent = extractedCSS2;
         document.head.append(style);
         window.addEventListener("resize", position, { passive: true });
@@ -593,7 +593,7 @@ export function initializeDeckQuickUI() {
         if (!bar) continue;
         let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
-          button = (<button />) as HTMLButtonElement;
+          button = document.createElement("button");
           button.type = "button";
           button.dataset.rodxAddList = "1";
           button.textContent = "☷";
@@ -618,17 +618,17 @@ export function initializeDeckQuickUI() {
           document.querySelector<HTMLElement>(DOM_SELECTORS.mainElement);
         if (main && (!listInfo || listInfo.dataset.id !== id)) {
           listInfo?.remove();
-          listInfo = (<div />) as HTMLDivElement;
+          listInfo = document.createElement("div");
           listInfo.dataset.id = id;
           listInfo.id = "rodx-list-id";
           applyComponentStyle(listInfo, "rx-quick-actions-listInfo", false);
-          const text = (<span />) as HTMLSpanElement;
+          const text = document.createElement("span");
           text.textContent = "ID: " + id;
-          const name = (<strong />) as HTMLElement;
+          const name = document.createElement("strong");
           name.dataset.rodxLiveName = "1";
           const found = Studio.services.lists?.all().find((item) => item.id === id);
           name.textContent = found ? Studio.services.lists.displayName(found) : `lista ${id}`;
-          const copy = (<button />) as HTMLButtonElement;
+          const copy = document.createElement("button");
           copy.textContent = "Copiar";
           copy.onclick = async () => {
             try {
@@ -638,7 +638,7 @@ export function initializeDeckQuickUI() {
               copy.textContent = "Não foi possível copiar";
             }
           };
-          const refreshName = (<button />) as HTMLButtonElement;
+          const refreshName = document.createElement("button");
           refreshName.textContent = "↻ Atualizar nome";
           refreshName.onclick = async () => {
             refreshName.disabled = true;
@@ -650,7 +650,7 @@ export function initializeDeckQuickUI() {
               refreshName.textContent = "↻ Atualizar nome";
             }
           };
-          const videos = (<button />) as HTMLButtonElement;
+          const videos = document.createElement("button");
           videos.textContent = "Ver vídeos";
           videos.onclick = () => SearchAnchors.nativeSearch("list:" + id + " filter:native_video");
           listInfo.append(name, text, copy, refreshName, videos);
@@ -672,7 +672,7 @@ export function initializeDeckQuickUI() {
         )
           a.nextElementSibling.remove();
         if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) continue;
-        const b = (<button />) as HTMLButtonElement;
+        const b = document.createElement("button");
         b.type = "button";
         b.textContent = "▷ Vídeos";
         b.dataset.rodxListVideo = id;
