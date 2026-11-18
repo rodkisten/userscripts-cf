@@ -1,11 +1,10 @@
-import { createSignal, createStore, Show } from "solid-js";
-import { mountPoint } from "../solid-ui/mount-point.tsx";
-import { Dialog } from "../solid-ui/Dialog.tsx";
-import { ActionsPanel, type ActionsModule } from "./Panel.tsx";
-import { ClipboardPanel } from "./ClipboardPanel.tsx";
+import { useEffect, useState, type ReactNode } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import * as Dialog from "@radix-ui/react-dialog";
 import styles, { css } from "./Launcher.module.css";
-export type RodActionsTab = ActionsModule["tabs"][number];
-export type RodActionsModule = ActionsModule;
+
+export type RodActionsTab = { id: string; title: string; icon?: string; render: () => ReactNode };
+export type RodActionsModule = { id: string; title: string; tabs: RodActionsTab[] };
 export type RodActionsHub = {
   register: (module: RodActionsModule) => () => void;
   open: (tabId?: string) => void;
@@ -15,86 +14,100 @@ declare global {
     __RodActions?: RodActionsHub;
   }
 }
+
+type Entry = RodActionsTab & { key: string; label: string };
+function ActionsView({ hub, subscribe, getEntries, getSelection }: {
+  hub: RodActionsHub;
+  subscribe: (notify: () => void) => () => void;
+  getEntries: () => Entry[];
+  getSelection: () => string;
+}) {
+  const [, redraw] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("");
+  useEffect(() => subscribe(() => {
+    redraw((value) => value + 1);
+    const next = getSelection();
+    if (next) {
+      setSelected(next);
+      setOpen(true);
+    } else if (!getEntries().length) {
+      setOpen(false);
+    }
+  }), [subscribe, getEntries, getSelection]);
+  const entries = getEntries();
+  const active = entries.find((item) => item.key === selected) ?? entries[0];
+  return (
+    <Dialog.Root open={open && entries.length > 0} onOpenChange={setOpen}>
+      {entries.length > 0 && (
+        <button className={styles.launcher} type="button" aria-label="Abrir Rod Actions" onClick={() => hub.open()}>
+          ⚙
+        </button>
+      )}
+      <Dialog.Portal>
+        <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483600, background: "#0009" }} />
+        <Dialog.Content style={{ position: "fixed", zIndex: 2147483601, inset: "auto 0 0", maxHeight: "85dvh", overflow: "auto", background: "#18181b", color: "#fafafa", borderRadius: "16px 16px 0 0", padding: 16, paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+          <Dialog.Title>Rod Actions</Dialog.Title>
+          <Dialog.Description style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>
+            Ferramentas disponíveis para esta página
+          </Dialog.Description>
+          <Dialog.Close aria-label="Fechar" style={{ position: "absolute", top: 12, right: 16 }}>×</Dialog.Close>
+          <nav role="tablist" aria-label="Ferramentas" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBlock: 12 }}>
+            {entries.map((tab) => (
+              <button key={tab.key} role="tab" type="button" aria-selected={active?.key === tab.key} onClick={() => setSelected(tab.key)}>
+                {tab.icon ?? ""} {tab.title}
+              </button>
+            ))}
+          </nav>
+          <section role="tabpanel" aria-label={active?.label}>{active?.render()}</section>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 export function installRodActions(_menu?: unknown): RodActionsHub {
   if (window.__RodActions) return window.__RodActions;
-  const [state, setState] = createStore({ modules: [] as RodActionsModule[] });
-  const [open, setOpen] = createSignal(false),
-    [initial, setInitial] = createSignal("");
+  const modules = new Map<string, RodActionsModule>();
   const registrations = new Map<string, symbol>();
-  const entries = () =>
-    state.modules.flatMap((module) =>
-      module.tabs.map((tab) => ({
-        ...tab,
-        key: `${module.id}:${tab.id}`,
-        label: `${module.title} · ${tab.title}`,
-      })),
-    );
+  const listeners = new Set<() => void>();
+  let selected = "";
+  const entries = (): Entry[] => [...modules.values()].flatMap((module) =>
+    module.tabs.map((tab) => ({ ...tab, key: `${module.id}:${tab.id}`, label: `${module.title} · ${tab.title}` })));
+  const notify = () => listeners.forEach((listener) => listener());
   const hub: RodActionsHub = {
     register(module) {
       if (!module.id || !module.tabs.length) throw Error("Rod Actions requires module id and tabs");
       const token = Symbol(module.id);
       registrations.set(module.id, token);
-      setState((draft) => {
-        draft.modules = draft.modules.filter((item) => item.id !== module.id);
-        draft.modules.push(module);
-      });
+      modules.set(module.id, module);
+      notify();
       return () => {
         if (registrations.get(module.id) !== token) return;
         registrations.delete(module.id);
-        setState((draft) => {
-          draft.modules = draft.modules.filter((item) => item.id !== module.id);
-        });
-        if (!state.modules.length) setOpen(false);
+        modules.delete(module.id);
+        notify();
       };
     },
     open(tabId) {
       const tabs = entries();
       if (!tabs.length) return;
-      setInitial(tabs.some((tab) => tab.key === tabId) ? tabId! : tabs[0].key);
-      setOpen(true);
+      selected = tabs.some((tab) => tab.key === tabId) ? tabId! : tabs[0].key;
+      notify();
     },
   };
-  mountPoint(
-    document.body || document.documentElement,
-    () => (
-      <>
-        <Show when={state.modules.length}>
-          <button
-            class={styles.launcher}
-            type="button"
-            title="Rod Actions"
-            aria-label="Abrir Rod Actions"
-            onClick={() => hub.open()}
-          >
-            ⚙
-          </button>
-        </Show>
-        <Show when={open()}>
-          <Dialog title="Rod Actions" close={() => setOpen(false)}>
-            <ActionsPanel entries={entries()} initial={initial()} />
-          </Dialog>
-        </Show>
-      </>
-    ),
-    { id: "rod-actions-hub", shadow: true, styles: [css] },
-  );
+  const host = document.createElement("div");
+  host.id = "rod-actions-hub";
+  (document.body || document.documentElement).append(host);
+  const shadow = host.attachShadow({ mode: "open" });
+  const sheet = document.createElement("style");
+  sheet.textContent = css;
+  shadow.append(sheet);
+  const mount = document.createElement("div");
+  shadow.append(mount);
+  const root: Root = createRoot(mount);
+  root.render(<ActionsView hub={hub} getEntries={entries} getSelection={() => selected}
+    subscribe={(listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }} />);
   window.__RodActions = hub;
-  const clipboard = (
-    window as Window & { __RodClipboard?: Parameters<typeof ClipboardPanel>[0]["clipboard"] }
-  ).__RodClipboard;
-  if (clipboard) {
-    hub.register({
-      id: "clipboard",
-      title: "Clipboard",
-      tabs: [
-        {
-          id: "history",
-          title: "Histórico",
-          icon: "▤",
-          render: () => <ClipboardPanel clipboard={clipboard} />,
-        },
-      ],
-    });
-  }
   return hub;
 }
