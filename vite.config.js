@@ -2,7 +2,25 @@ import { runtimeHelpers } from "./build/runtime-helpers.mjs";
 import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
-import { defineConfig } from "vite";
+import { defineConfig, transformWithOxc } from "vite";
+
+// Vite 8/Rolldown must receive JavaScript, not unparsed TSX, for mixed-runtime entries.
+// Keep this build-only transform scoped to source TSX while the React migration completes.
+function transformSourceTsx() {
+  return {
+    name: "userscripts-cf-transform-source-tsx",
+    enforce: "pre",
+    async transform(code, id) {
+      const file = id.split("?")[0];
+      if (!file.includes("/src/") || !file.endsWith(".tsx")) return null;
+      return transformWithOxc(code, file, {
+        lang: "tsx",
+        jsx: { runtime: "automatic", importSource: "react" },
+      });
+    },
+  };
+}
+
 
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
@@ -12,7 +30,7 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
-  plugins: [runtimeHelpers(), inlineCSSModules(), inlineSVG()],
+  plugins: [transformSourceTsx(), runtimeHelpers(), inlineCSSModules(), inlineSVG()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },
