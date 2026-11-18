@@ -161,19 +161,24 @@ for (const file of files) {
     ts.forEachChild(node, visit);
   }
   visit(sf);
+  const canWrite = sf.parseDiagnostics.length === 0;
   let updated = original;
   for (const edit of edits.sort((a, b) => b.start - a.start))
     updated = updated.slice(0, edit.start) + edit.text + updated.slice(edit.end);
-  if (write && updated !== original && !sf.parseDiagnostics.length) writeFileSync(file, updated);
   const changed = updated !== original;
+  const written = write && changed && canWrite;
+  if (written) writeFileSync(file, updated);
   if (edits.length || blockers.length)
-    reports.push({ file: relative(process.cwd(), file), changed, replacements: edits.length, blockers });
+    reports.push({ file: relative(process.cwd(), file), changed, written, skipped: changed && !canWrite, replacements: edits.length, blockers });
 }
 const changedFiles = reports.filter((item) => item.changed).length;
+const writtenFiles = reports.filter((item) => item.written).length;
+const skippedFiles = reports.filter((item) => item.skipped).length;
+const blockerCount = reports.reduce((sum, item) => sum + item.blockers.length, 0);
 const total = reports.reduce((sum, item) => sum + item.replacements, 0);
 console.log(
   JSON.stringify(
-    { mode: write ? "write" : "dry-run", files: files.length, changedFiles, replacements: total, reports },
+    { mode: write ? "write" : "dry-run", files: files.length, changedFiles, writtenFiles, skippedFiles, blockerCount, replacements: total, reports },
     null,
     2,
   ),
