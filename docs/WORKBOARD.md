@@ -275,3 +275,8 @@
 ### React-only hard cutover (2026-11-18)
 
 - User explicitly revoked all Solid compatibility, authorized broken builds and requested a minimal Vite config. Direct Solid dependencies and lockfile package entries removed; TSX root config now targets React; mixed JSX transpiler removed from Vite. Remaining legacy Solid source and imports still require deletion or migration; **do not restore Solid to fix CI**.
+
+### First physical Solid UI deletion batch (2026-11-18)
+
+- Deleted nine obsolete Solid UI implementation files from `src/runtime/solid-ui`: Button, Dialog, SolidDropdown, Rod Dock, clipboard, ObjectInspector, Badge, mount-point, and shadow-mount. Last deletion commit [`01df0147`](https://github.com/rodkisten/userscripts-cf/commit/01df0147108de6e78173717fbcd45bb6294d40cf). This intentionally breaks consumers that still import these files; user explicitly authorized breakage.
+- GitHub code search still found dozens of Solid imports across userscripts, playground, studio, and remaining Solid UI. **React-only cleanup not complete**; do not mark done or reintroduce Solid compatibility.
