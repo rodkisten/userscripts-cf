@@ -1,7 +1,7 @@
-import React from "react";
+import type { ReactElement } from "react";
+import { RuntimeMount } from "./runtime-mount-react.js";
 import { createRoot } from "react-dom/client";
 import {
-  RuntimeProvider,
   bindRuntime,
   useContext,
   useRuntime,
@@ -60,7 +60,7 @@ export function createRuntime(
           onDispose(dispose);
           return dispose;
         },
-        mountReact(component: React.ReactElement, container?: HTMLElement) {
+        mountReact(component: ReactElement, container?: HTMLElement) {
           if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
           const mountPoint = container ?? host.document.createElement("div");
           const owned = !container;
@@ -68,7 +68,7 @@ export function createRuntime(
           let root: ReturnType<typeof createRoot>;
           try {
             root = createRoot(mountPoint);
-            root.render(React.createElement(RuntimeProvider, { context: getContext() }, component));
+            root.render(RuntimeMount({ context: getContext(), children: component }));
           } catch (error) {
             if (owned) mountPoint.remove();
             captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);

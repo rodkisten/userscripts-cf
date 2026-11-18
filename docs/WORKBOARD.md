@@ -133,3 +133,9 @@
 - [Release run 44209608858](https://github.com/rodkisten/userscripts-cf/actions/runs/44209608858) identifies a new TypeScript error: clipboard menu passes `searchable` to `MenuField`, but the Radix bridge omitted that contract property. Added the property without suppressing type checks.
 - Radix dialog actions now respect `false` return values instead of unconditionally closing. Searchable-select behavior is still pending implementation; this patch only repairs the schema contract.
 - Full release remains blocked by pre-existing Solid modules in the dependency graph; CI validation for this patch is pending.
+
+### JSX correction (2026-11-18)
+
+- Replaced manual React.createElement trees in menu/dropdown/dialog with typed TSX components in `menu-view.tsx`, retaining `menu.ts` as the imperative service facade.
+- React runtime provider mounting now uses `RuntimeMount` JSX in a TSX entrypoint. The JSX requirement is mandatory for subsequent React UI migrations.
+- Pending: TypeScript and full CI validation; legacy Solid modules still block release.
