@@ -191,9 +191,9 @@ export function SettingsShell({ store, open, tag, close, closeTag, chooseTag, cl
           </label>)}
           <div className={shell.buttons}>
             <button id="save" type="button" className={shell.primary} onClick={() => {
-              store.actions.settings({ ...draft, subreddits: [...new Set(subreddits.split(/[,;\\n]+/)
-                .map((name) => name.trim().replace(/^r\\//i, ""))
-                .filter((name) => /^[\\w]{2,32}$/.test(name)))] });
+              store.actions.settings({ ...draft, subreddits: [...new Set(subreddits.split(/[,;\n]+/)
+                .map((name) => name.trim().replace(/^r\//i, ""))
+                .filter((name) => /^[\w]{2,32}$/.test(name)))] });
               close();
             }}>Salvar alterações</button>
             <button id="clearTags" type="button" onClick={clear}>Limpar busca</button>
