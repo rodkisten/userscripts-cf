@@ -236,8 +236,8 @@ export function transformRodAst(code, id, options = {}) {
         target.expression.text === "document" && ["head", "documentElement", "body"].includes(target.name.text);
       if (!documentHead || target.name.text !== "head") continue;
       // Retain comments and directives between statements instead of deleting them.
-      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||
-          /\/\*|\/\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
+      const between = code.slice(declaration.end, insertion.getStart(source));
+      if (between.includes("/*") || between.includes("//")) continue;
       const symbol = checker.getSymbolAtLocation(variable.name);
       if (!symbol) continue;
       let references = 0;
