@@ -573,3 +573,10 @@
 - [x] Trigger Rod AST validation on changes to runtime context, DOM engine, GM bridge, storage feature, and vendor storage contracts.
 - [x] Add Vitest coverage for GM @keep idempotence and guarded native fallback paths.
 - [ ] Verify CI for these new regressions; async storage rewrite and GM guard elimination remain blocked on explicit behavioral parity.
+
+### 🔐 Context GM async value fallback (2026-11-18)
+
+- [x] Add ctx.gm.values.get/set/delete backed by the existing per-script ctx.storage namespace, independent of GM_* grants.
+- [x] Add typed GMAsyncValues contract and compile-time fixture for typed reads and writes.
+- [ ] Do not auto-convert synchronous GM_getValue/GM_setValue to async values: call-site return type and storage namespace differ. Add an explicit opt-in codemod after data-migration design and behavior tests.
+- [ ] Confirm CI for runtime + AST fixture; do not claim successful validation until verified.
