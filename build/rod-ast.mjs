@@ -52,29 +52,54 @@ export function transformRodAst(code, id, options = {}) {
       edits,
       diagnostics: source.parseDiagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, " ")),
     };
+  // In-memory TypeScript program provides declaration identity, even when
+  // different lexical scopes reuse the same identifier spelling.
+  const virtualId = "/__rod_ast__/" + id.replace(/^\\/+/, "");
+  const host = ts.createCompilerHost({ noLib: true, allowJs: true, checkJs: false });
+  const originalGetSourceFile = host.getSourceFile.bind(host);
+  host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) =>
+    fileName === virtualId ? source : originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+  host.fileExists = (fileName) => fileName === virtualId;
+  host.readFile = (fileName) => fileName === virtualId ? code : undefined;
+  const checker = ts.createProgram([virtualId], { noLib: true, allowJs: true, checkJs: false }, host).getTypeChecker();
   const rules = { ...DEFAULT_RULES, ...(options.rules ?? {}) };
-  // Cleanup is scoped to the nearest function owner, not the entire file.
-  // Nested closures belong to the surrounding owner because they may dispose
-  // resources captured from it.
+  // Resolve the exact timer variable consumed by clearInterval.
+  // Any dynamic or unknown cleanup keeps the whole owner conservative.
   const cleanupCache = new WeakMap();
   function cleanupFor(owner) {
-    if (!owner) return { timers: true, listeners: true };
+    if (!owner) return { timers: true, listeners: true, cleared: new Set(), unknown: true };
     if (cleanupCache.has(owner)) return cleanupCache.get(owner);
-    const state = { timers: false, listeners: false };
+    const state = { timers: false, listeners: false, cleared: new Set(), unknown: false };
     function scan(node) {
       if (ts.isCallExpression(node)) {
         const callee = node.expression;
-        if (ts.isIdentifier(callee) && callee.text === "clearInterval") state.timers = true;
-        if (ts.isPropertyAccessExpression(callee)) {
-          if (callee.name.text === "clearInterval") state.timers = true;
-          if (callee.name.text === "removeEventListener") state.listeners = true;
+        const clear = ts.isIdentifier(callee) && callee.text === "clearInterval" ||
+          ts.isPropertyAccessExpression(callee) && callee.name.text === "clearInterval";
+        if (clear) {
+          state.timers = true;
+          const arg = node.arguments[0];
+          const symbol = arg && ts.isIdentifier(arg) ? checker.getSymbolAtLocation(arg) : undefined;
+          if (symbol) state.cleared.add(symbol);
+          else state.unknown = true;
         }
+        if (ts.isPropertyAccessExpression(callee) && callee.name.text === "removeEventListener")
+          state.listeners = true;
       }
       ts.forEachChild(node, scan);
     }
     scan(owner);
     cleanupCache.set(owner, state);
     return state;
+  }
+  function timerIsSafe(node, owner) {
+    const cleanup = cleanupFor(owner);
+    if (!cleanup.timers) return true;
+    if (cleanup.unknown) return false;
+    const declaration = node.parent;
+    if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== node ||
+        !ts.isIdentifier(declaration.name)) return false;
+    const symbol = checker.getSymbolAtLocation(declaration.name);
+    return Boolean(symbol && !cleanup.cleared.has(symbol));
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
@@ -108,7 +133,7 @@ export function transformRodAst(code, id, options = {}) {
       let replacement, extraArg;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
-        if (callee.text === "setInterval" && node.arguments.length >= 2 && !cleanupFor(owner).timers)
+        if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
           replacement = ctx + ".interval";
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
