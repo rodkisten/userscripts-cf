@@ -14,16 +14,27 @@ const portalSubscribers = new Set<() => void>();
 let portalSnapshot: { host: HTMLElement; node: ReactNode; target: Element | ShadowRoot }[] = [];
 let portalRoot: ReturnType<typeof createRoot> | undefined;
 let portalKey = 0;
-const subscribePortals = (notify: () => void) => { portalSubscribers.add(notify); return () => { portalSubscribers.delete(notify); }; };
+const subscribePortals = (notify: () => void) => {
+  portalSubscribers.add(notify);
+  return () => {
+    portalSubscribers.delete(notify);
+  };
+};
 function PortalHost() {
   const entries = useSyncExternalStore(subscribePortals, () => portalSnapshot);
-  return <>{entries.map((entry) => createPortal(entry.node, entry.target, entry.host.dataset.ghftPortalKey))}</>;
+  return (
+    <>{entries.map((entry) => createPortal(entry.node, entry.target, entry.host.dataset.ghftPortalKey))}</>
+  );
 }
 function publishPortals() {
   portalSnapshot = [...portalEntries].map(([host, entry]) => ({ host, ...entry }));
   portalSubscribers.forEach((notify) => notify());
 }
-function mountReactPoint(parent: Node, node: ReactNode, options: { before?: Node | null; tag?: string; shadow?: boolean; styles?: string[] } = {}): ReactMount {
+function mountReactPoint(
+  parent: Node,
+  node: ReactNode,
+  options: { before?: Node | null; tag?: string; shadow?: boolean; styles?: string[] } = {},
+): ReactMount {
   if (!portalRoot) {
     const portalContainer = document.createElement("div");
     portalContainer.hidden = true;
@@ -42,7 +53,14 @@ function mountReactPoint(parent: Node, node: ReactNode, options: { before?: Node
   parent.insertBefore(host, options.before || null);
   portalEntries.set(host, { node, target });
   publishPortals();
-  return { host, dispose: () => { portalEntries.delete(host); publishPortals(); host.remove(); } };
+  return {
+    host,
+    dispose: () => {
+      portalEntries.delete(host);
+      publishPortals();
+      host.remove();
+    },
+  };
 }
 
 // ============================================================================
@@ -451,7 +469,11 @@ async function writeTextToSystemClipboard(text: string): Promise<void> {
   fallback.style.opacity = "0";
   document.body.append(fallback);
   fallback.select();
-  try { if (!document.execCommand("copy")) throw Error("Clipboard indisponível"); } finally { fallback.remove(); }
+  try {
+    if (!document.execCommand("copy")) throw Error("Clipboard indisponível");
+  } finally {
+    fallback.remove();
+  }
 }
 
 function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
@@ -559,22 +581,25 @@ function startGitHub(ctx: any): void {
       listContainer = listContainer.closest('table, [role="table"]') || listContainer;
     let info = { hint: "", title: "" };
     const infoListeners = new Set<() => void>();
-    const subscribeInfo = (notify: () => void) => { infoListeners.add(notify); return () => { infoListeners.delete(notify); }; };
+    const subscribeInfo = (notify: () => void) => {
+      infoListeners.add(notify);
+      return () => {
+        infoListeners.delete(notify);
+      };
+    };
     const copyFiles = (progress: (current: number, total: number) => void) => {
-            const items =
-              collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items ||
-              [];
-            const files = items.filter((item) => item.type === "file");
-            if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length)
-              return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
-            if (
-              prefs.mode === DEFAULT_CONTENT_MODE &&
-              files.length > 100 &&
-              !confirm(`Copiar ${files.length} arquivos?`)
-            )
-              return Promise.resolve();
-            return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
-
+      const items =
+        collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
+      const files = items.filter((item) => item.type === "file");
+      if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length)
+        return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
+      if (
+        prefs.mode === DEFAULT_CONTENT_MODE &&
+        files.length > 100 &&
+        !confirm(`Copiar ${files.length} arquivos?`)
+      )
+        return Promise.resolve();
+      return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
     };
     function ToolbarView() {
       const currentInfo = useSyncExternalStore(subscribeInfo, () => info);
@@ -627,21 +652,19 @@ function startGitHub(ctx: any): void {
         if (!anchor) continue;
         const mount = mountReactPoint(
           anchor.parentNode!,
-          (
-            <button
-              type="button"
-              className={styles.button}
-              title={"Favoritar " + item.name}
-              aria-label={"Favoritar " + item.name}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dashboard.toggleFile(item.name, item.href);
-              }}
-            >
-              ☆
-            </button>
-          ),
+          <button
+            type="button"
+            className={styles.button}
+            title={"Favoritar " + item.name}
+            aria-label={"Favoritar " + item.name}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              dashboard.toggleFile(item.name, item.href);
+            }}
+          >
+            ☆
+          </button>,
           { tag: "span", before: anchor, shadow: true, styles: [css] },
         );
         mounts.set(mount.host, mount.dispose);
@@ -684,16 +707,14 @@ function startGitHub(ctx: any): void {
       tokenDialog?.dispose();
       tokenDialog = mountReactPoint(
         document.body,
-        (
-          <GitHubTokenSettings
-            token={token}
-            close={() => tokenDialog?.dispose()}
-            save={async (next) => {
-              await ctx.storage.set("actionsToken", next);
-              tokenDialog?.dispose();
-            }}
-          />
-        ),
+        <GitHubTokenSettings
+          token={token}
+          close={() => tokenDialog?.dispose()}
+          save={async (next) => {
+            await ctx.storage.set("actionsToken", next);
+            tokenDialog?.dispose();
+          }}
+        />,
         { shadow: true, styles: [css] },
       );
     });

@@ -145,7 +145,9 @@ function TreeRow(props: {
           >
             {expanded ? "⌄" : "›"}
           </button>
-        ) : <span className={styles.treeSpacer} />}
+        ) : (
+          <span className={styles.treeSpacer} />
+        )}
         <img src={materialIcon(props.node.name, props.node.folder)} width="16" height="16" alt="" />
         <a href={url()} title={props.node.path}>
           {props.node.name}
@@ -155,13 +157,13 @@ function TreeRow(props: {
         <div role="group">
           {loading && (
             <>
-            <div
-              className={styles.treeSkeleton}
-              role="status"
-              aria-label="Carregando pasta"
-              style={{ width: "55%" }}
-            />
-            <div className={styles.treeSkeleton} style={{ width: "35%" }} />
+              <div
+                className={styles.treeSkeleton}
+                role="status"
+                aria-label="Carregando pasta"
+                style={{ width: "55%" }}
+              />
+              <div className={styles.treeSkeleton} style={{ width: "35%" }} />
             </>
           )}
           {error && (
@@ -177,27 +179,49 @@ function TreeRow(props: {
             </div>
           )}
           {children.map((node) => (
-              <TreeRow
-                key={node.path}
-                node={node}
-                depth={props.depth + 1}
-                base={props.base}
-                branch={props.branch}
-                current={props.current}
-                loadFolder={props.loadFolder}
-              />
-            ))}
+            <TreeRow
+              key={node.path}
+              node={node}
+              depth={props.depth + 1}
+              base={props.base}
+              branch={props.branch}
+              current={props.current}
+              loadFolder={props.loadFolder}
+            />
+          ))}
         </div>
       )}
     </>
   );
 }
 export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
-  type ViewState = { state: "loading" | "ready" | "error"; nodes: Node[]; message: string; query: string; resolvedBranch: string; current: string };
-  let snapshot: ViewState = { state: "loading", nodes: [], message: "", query: "", resolvedBranch: "", current: "" };
+  type ViewState = {
+    state: "loading" | "ready" | "error";
+    nodes: Node[];
+    message: string;
+    query: string;
+    resolvedBranch: string;
+    current: string;
+  };
+  let snapshot: ViewState = {
+    state: "loading",
+    nodes: [],
+    message: "",
+    query: "",
+    resolvedBranch: "",
+    current: "",
+  };
   const listeners = new Set<() => void>();
-  const subscribe = (notify: () => void) => { listeners.add(notify); return () => { listeners.delete(notify); }; };
-  const update = (patch: Partial<ViewState>) => { snapshot = { ...snapshot, ...patch }; listeners.forEach((notify) => notify()); };
+  const subscribe = (notify: () => void) => {
+    listeners.add(notify);
+    return () => {
+      listeners.delete(notify);
+    };
+  };
+  const update = (patch: Partial<ViewState>) => {
+    snapshot = { ...snapshot, ...patch };
+    listeners.forEach((notify) => notify());
+  };
   const setState = (state: ViewState["state"]) => update({ state });
   const setNodes = (nodes: Node[]) => update({ nodes });
   const setMessage = (message: string) => update({ message });
@@ -231,7 +255,10 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
     return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
   };
   function DirectoryTreeView() {
-    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(subscribe, () => snapshot);
+    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
+      subscribe,
+      () => snapshot,
+    );
     return (
       <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
         <div className={styles.treeHeader}>
@@ -254,7 +281,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         )}
         {state === "loading" && (
           <div role="status" aria-label="Carregando árvore de arquivos">
-            {Array.from({ length: 9 }, (_, i) => i).map((i) => <div key={i} className={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />)}
+            {Array.from({ length: 9 }, (_, i) => i).map((i) => (
+              <div key={i} className={styles.treeSkeleton} style={{ width: 45 + ((i * 17) % 48) + "%" }} />
+            ))}
           </div>
         )}
         {state === "error" && (
@@ -265,16 +294,16 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         {state === "ready" && (
           <div role="tree">
             {filterTree(nodes, query).map((node) => (
-                <TreeRow
-                  key={node.path}
-                  node={node}
-                  depth={0}
-                  base={base}
-                  branch={resolvedBranch}
-                  current={current}
-                  loadFolder={loadFolder}
-                />
-              ))}
+              <TreeRow
+                key={node.path}
+                node={node}
+                depth={0}
+                base={base}
+                branch={resolvedBranch}
+                current={current}
+                loadFolder={loadFolder}
+              />
+            ))}
           </div>
         )}
       </section>
