@@ -1,6 +1,6 @@
-import { createSignal, For } from "solid-js";
-import { render } from "@solidjs/web";
-import { ObjectInspector } from "../../runtime/solid-ui/object-inspector/ObjectInspector";
+import { useState } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
@@ -15,17 +15,23 @@ const pretty = (value: unknown) => {
 };
 
 export function mountPanel(container: HTMLElement) {
-  const [records, setRecords] = createSignal<RecordItem[]>([]);
-  const [methods, setMethods] = createSignal<MethodItem[]>([]);
-  const [history, setHistory] = createSignal<HistoryItem[]>([]);
+  let updateRecords: (items: RecordItem[]) => void = () => {};
+  let updateMethods: (items: MethodItem[]) => void = () => {};
+  let updateHistory: (items: HistoryItem[]) => void = () => {};
 
   const callbacks = {
     options: (_trigger: HTMLElement) => {},
     method: (_id: string) => {},
     history: (_code: string) => {},
   };
-  const dispose = render(
-    () => (
+  function Panel() {
+    const [records, setRecords] = useState<RecordItem[]>([]);
+    const [methods, setMethods] = useState<MethodItem[]>([]);
+    const [history, setHistory] = useState<HistoryItem[]>([]);
+    updateRecords = (items) => flushSync(() => setRecords(items));
+    updateMethods = (items) => flushSync(() => setMethods(items));
+    updateHistory = (items) => flushSync(() => setHistory(items));
+    return (
       <div className="repl-root">
         <button className="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
@@ -128,7 +134,7 @@ export function mountPanel(container: HTMLElement) {
               <div data-code-editor="" />
             </div>
             <div className="output">
-              <For each={records()}>
+              {records.map(
                 {(item) => (
                   <details
                     className="record"
@@ -136,10 +142,10 @@ export function mountPanel(container: HTMLElement) {
                     open={item.kind === "error" || item.kind === "result"}
                   >
                     <summary>{item.title}</summary>
-                    <ObjectInspector value={item.value} />
+                    <pre>{pretty(item.value)}</pre>
                   </details>
                 )}
-              </For>
+               )}
             </div>
           </div>
           <div className="view" data-view="methods" hidden={true}>
@@ -156,7 +162,7 @@ export function mountPanel(container: HTMLElement) {
               <button data-action="probe">{"Testar 27 estratégias"}</button>
             </div>
             <div className="results">
-              <For each={methods()}>
+              {methods.map(
                 {(item) => (
                   <div className="result" data-status={item.result?.status || ""}>
                     <strong>{item.label + " · " + (item.result?.status || "NÃO TESTADO")}</strong>
@@ -164,12 +170,12 @@ export function mountPanel(container: HTMLElement) {
                       <summary>
                         {item.world + (item.result ? " · " + item.result.elapsedMs + " ms" : "")}
                       </summary>
-                      <ObjectInspector value={item.result || { expectedWorld: item.world }} />
+                      <pre>{pretty(item.result || { expectedWorld: item.world })}</pre>
                     </details>
                     <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
                   </div>
                 )}
-              </For>
+               )}
             </div>
           </div>
           <div className="view" data-view="history" hidden={true}>
@@ -177,7 +183,7 @@ export function mountPanel(container: HTMLElement) {
               {"Código armazenado localmente por site. Nada é executado ao abrir o histórico."}
             </p>
             <div data-history="">
-              <For each={history()}>
+              {history.map(
                 {(item) => (
                   <div className="history-item">
                     <small>{item.at}</small>
@@ -185,7 +191,7 @@ export function mountPanel(container: HTMLElement) {
                     <button onClick={() => callbacks.history(item.code)}>Carregar</button>
                   </div>
                 )}
-              </For>
+               )}
             </div>
             <div className="toolbar">
               <button data-action="export">{"Exportar JSON"}</button>
@@ -199,8 +205,9 @@ export function mountPanel(container: HTMLElement) {
           </footer>
         </section>
       </div>
-    ),
-    container,
-  );
-  return { setRecords, setMethods, setHistory, callbacks, dispose };
+    );
+  }
+  const root = createRoot(container);
+  flushSync(() => root.render(<Panel />));
+  return { setRecords: (items: RecordItem[]) => updateRecords(items), setMethods: (items: MethodItem[]) => updateMethods(items), setHistory: (items: HistoryItem[]) => updateHistory(items), callbacks, dispose: () => root.unmount() };
 }
