@@ -513,5 +513,43 @@
       "ctx.http.fetch('/nested')"
     ],
     "excludes": []
+  },
+  {
+    "name": "symbol independent timers",
+    "source": "function init(ctx) { const a = setInterval(one, 100); const b = setInterval(two, 200); clearInterval(a); }",
+    "includes": [
+      "const a = setInterval(one, 100)",
+      "const b = ctx.interval(two, 200)"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "symbol nested shadow timer",
+    "source": "function init(ctx) { const id = setInterval(one, 100); { const id = setInterval(two, 200); clearInterval(id); } }",
+    "includes": [
+      "const id = ctx.interval(one, 100)",
+      "const id = setInterval(two, 200)"
+    ],
+    "excludes": []
+  },
+  {
+    "name": "symbol dynamic timer cleanup",
+    "source": "function init(ctx) { const id = setInterval(one, 100); clearInterval(resolveId()); }",
+    "includes": [
+      "const id = setInterval(one, 100)"
+    ],
+    "excludes": [
+      "ctx.interval"
+    ]
+  },
+  {
+    "name": "variadic timer preserved",
+    "source": "function init(ctx) { setInterval(tick, 100, 'arg'); }",
+    "includes": [
+      "setInterval(tick, 100, 'arg')"
+    ],
+    "excludes": [
+      "ctx.interval"
+    ]
   }
 ]
