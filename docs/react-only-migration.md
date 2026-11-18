@@ -1,6 +1,6 @@
 # React-only refactor: migration contract
 
-Status: breaking React-only cutover explicitly authorized by user. Solid production entrypoints may be replaced before feature parity; never claim CI/release success until validated.
+Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JSX runtime, compatibility layer or parity requirement. Broken builds accepted until migration is complete.
 
 ## Non-negotiable target
 
