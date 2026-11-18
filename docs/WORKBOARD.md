@@ -121,3 +121,9 @@
 - Replaced the runtime menu's Solid import with an official Radix DropdownMenu React bridge, including items, separators, checkboxes, nested menus and cleanup.
 - Existing advanced `ctx.menu.open/form/confirm/actions` API is not implemented by this initial bridge and will fail until migrated. The React-only cutover is intentionally breaking; do not claim menu parity or a working release.
 - Radix package lockfile regeneration and CI verification remain required.
+
+### Radix Dialog initial migration (2026-11-18)
+
+- Implemented `ctx.menu.open()` via official Radix Dialog primitives with fields, action handlers and cleanup; clipboard menu now has a React dialog entrypoint.
+- This is a basic bridge, **not** full shadcn styling or legacy menu parity; advanced schema types, keyboard/ShadowRoot behavior and validation still need testing.
+- Added Radix Dialog dependency; lockfile and CI must be checked after update.
