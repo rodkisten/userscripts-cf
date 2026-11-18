@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createInitialValues, loadPersistence, savePersistence } from "../src/runtime/react-ui/core";
 
 const schema = {
@@ -26,6 +26,8 @@ describe("React RodMenu data contract", () => {
 
   it("uses a stable prefixed storage key when localStorage is available", () => {
     const previous = globalThis.localStorage;
+    const previousWindow = globalThis.window;
+    Object.defineProperty(globalThis, "window", { configurable: true, value: globalThis });
     const storage = new Map();
     Object.defineProperty(globalThis, "localStorage", {
       configurable: true,
@@ -39,6 +41,8 @@ describe("React RodMenu data contract", () => {
       expect(storage.get("rod_menu_test")).toBe(JSON.stringify({ enabled: true }));
       expect(loadPersistence("test")).toEqual({ enabled: true });
     } finally {
+      if (previousWindow === undefined) delete globalThis.window;
+      else Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
       if (previous === undefined) delete globalThis.localStorage;
       else Object.defineProperty(globalThis, "localStorage", { configurable: true, value: previous });
     }
