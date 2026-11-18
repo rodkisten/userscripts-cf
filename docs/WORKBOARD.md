@@ -356,3 +356,10 @@
 - [`86efa837`](https://github.com/rodkisten/userscripts-cf/commit/86efa837e5b4e0c67b6804a5b03d41779a40623a): existing `runtimeHelpers()` pre-transform now compiles TSX/JSX with TypeScript's `transpileModule` to React automatic JSX runtime, after the context-aware AST rewrites. This avoids raw JSX reaching Rolldown and does not add Solid or another Vite plugin.
 - [`ca1b0d74`](https://github.com/rodkisten/userscripts-cf/commit/ca1b0d74fc492d690ffd78adf8c57d13c264d760) and [`a20cf19c`](https://github.com/rodkisten/userscripts-cf/commit/a20cf19caf286206717e71a7cfb980a9c35ab847): tests cover context rewrite + JSX lowering and JSX-only modules.
 - **Verification pending:** no new successful Actions run or local build was observed. Run typecheck, Vitest and production build; TSX transform fixes the identified parser path but does not prove the remaining Solid imports or runtime integration compile.
+
+### Runtime blockers found in source review (2026-11-18)
+
+- [`8bae172c`](https://github.com/rodkisten/userscripts-cf/commit/8bae172c65f853e60e4f6df9a6327ac3c5f0b7d1): Soundgasm Player referenced deleted `audio` and `canvas` variables in persist, seek and draw. Replaced them with current React refs, added null guard in restore and optional ResizeObserver for Safari.
+- [`b993262b`](https://github.com/rodkisten/userscripts-cf/commit/b993262ba23e8f108a2a9f2c680be818d0b9a5a4): categoryTag regex had global `g` flag and therefore stateful `test()` results. Removed `g`.
+- [`e85f88ca`](https://github.com/rodkisten/userscripts-cf/commit/e85f88ca88a8131b1591cf7f3ce37cf1ddbcfcfa): optional Soundgasm bridge location lookup now handles missing method and stale Solid reference removed.
+- **CI verification remains blocked:** latest GitHub Actions run could not be retrieved from this environment, and the container cannot resolve github.com. Previous failure run 44234869187 predates the TSX transform fix. Do not mark build/typecheck/browser green. Next priority: obtain fresh run logs, repair remaining TSX/runtime errors, verify Safari playback and Reddit layout.
