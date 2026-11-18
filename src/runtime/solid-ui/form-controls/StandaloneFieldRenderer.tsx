@@ -211,7 +211,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             {(option) => (
               <button
                 type="button"
-                aria-pressed={selectedValues().includes(option.value)}
+                aria-pressed={String(selectedValues().includes(option.value))}
                 disabled={disabled() || readonly() || option.disabled}
                 onClick={() => {
                   const next = new Set(selectedValues());
@@ -306,7 +306,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             {(option) => (
               <button
                 type="button"
-                aria-pressed={value() === option.value}
+                aria-pressed={String(value() === option.value)}
                 disabled={disabled() || readonly() || option.disabled}
                 onClick={() => commit(option.value)}
               >
@@ -328,7 +328,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
               <button
                 type="button"
                 aria-label={`${n} estrelas`}
-                aria-pressed={Number(value() ?? 0) === n}
+                aria-pressed={String(Number(value() ?? 0) === n)}
                 onClick={() => commit(prop<boolean>("allowZero") && Number(value()) === n ? 0 : n)}
                 disabled={disabled() || readonly()}
               >
@@ -344,7 +344,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           type="file"
           accept={"accept" in field() ? (field() as { accept?: string }).accept : undefined}
           multiple={prop<boolean>("multiple", false)}
-          capture={prop<string>("capture")}
+          capture={(() => { const value = prop<string>("capture"); return value === "user" || value === "environment" ? value : undefined; })()}
           disabled={disabled() || readonly()}
           onChange={(e) =>
             commit(
