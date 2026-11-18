@@ -136,3 +136,11 @@ Before any change to form controls, RodMenu field rendering, Combobox, TagsInput
 In the **same logical change**, update the component README with what is implemented, remaining gaps, compatibility/limitations, and verification status. Add or update a **working interactive Playground example** for each added or changed user-visible behavior. Keep the example linked from the Playground index, and ensure it exercises real component code, not a static mock. Add/update regression tests and run typecheck, build and relevant tests. Do not check off roadmap items or claim CI passed without evidence. If validation is blocked, record the exact failure and next action. Avoid one commit per file: group related changes into one logical commit.
 
 The README is the persistent source of truth for the renderer migration, 29 shared field variants, RodMenu compatibility adapter, and mobile/Shadow DOM validation.
+
+## Commit and deployment marker policy (MANDATORY)
+
+- Every intermediate agent-authored commit MUST end with `[skip ci]` to avoid redundant workflow runs while a work block is incomplete.
+- Only the final commit of a completed work block MUST end with `[deploy]` (and MUST NOT contain `[skip ci]`). This is the explicit signal to run production release and Pages deployment workflows.
+- Never use `[deploy]` for intermediate, unvalidated, or documentation-only changes. If the work block is not ready to deploy, keep `[skip ci]` and clearly report that deployment was not requested.
+- Workflows triggered by pushes must enforce this marker contract explicitly: `[skip ci]` skips deployment, `[deploy]` permits deployment. Manual `workflow_dispatch` remains available. CI checks on pull requests must remain usable and must not be silently bypassed.
+- Automated lockfile, formatting, and maintenance commits must use `[skip ci]`; never emit `[deploy]` as a side effect of housekeeping.
