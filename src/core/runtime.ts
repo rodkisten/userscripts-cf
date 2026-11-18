@@ -88,7 +88,7 @@ export interface ScriptDefinition {
 export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
-  readonly events: ReturnType<typeof createEventBus> | undefined;
+  readonly events?: ReturnType<typeof createEventBus>;
   readonly http: ReturnType<typeof createHttpFeature>["http"];
   readonly gm: ReturnType<typeof createGMFeature> | undefined;
   readonly dispose: () => Promise<void>;
@@ -103,14 +103,16 @@ export type ScriptContext = Record<string, unknown> & {
     delete(key: string): Promise<void>;
   };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui: (ReturnType<typeof createUIFeature> & {
+  readonly ui?: (ReturnType<typeof createUIFeature> & {
     readonly root: ShadowRoot;
     readonly host: HTMLDivElement;
     mount(node: Node): Node;
     style(css: string): HTMLStyleElement;
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
     mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
-  }) | undefined;
+  });
+  readonly interval: (callback: () => void, milliseconds: number) => number;
+  readonly listen: (target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean) => () => void;
   readonly menu: ReturnType<typeof createMenuFeature> | undefined;
   readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
   readonly onDispose: (cleanup: () => void | Promise<void>) => void;
