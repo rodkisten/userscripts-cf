@@ -106,3 +106,11 @@ export async function typedGMBridge(ctx: ScriptContext) {
   await ctx.gm?.legacy.setValue?.("theme", "dark");
   return { legacy, modern };
 }
+
+/** Namespaced async values exist independently of native GM grants. */
+export async function contextGMValues(ctx: ScriptContext) {
+  const theme = await ctx.gm?.values?.get<string>("theme", "light");
+  await ctx.gm?.values?.set("theme", "dark");
+  await ctx.gm?.values?.delete("theme");
+  return theme;
+}
