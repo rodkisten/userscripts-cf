@@ -5,7 +5,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  workflow_call:
 
 permissions:
   contents: read
@@ -26,7 +25,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_call' && 'main' || github.ref_name }}
       - name: Detect preview changes and explicit triggers
         id: detect
         env:
@@ -37,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "workflow_call" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
             echo "reason=manual dispatch" >> "$GITHUB_OUTPUT"
             exit 0
@@ -52,8 +50,8 @@ jobs:
             echo "reason=unavailable push base; conservative deployment" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if git diff --name-only "$BEFORE" "$HEAD" -- |
-            grep -Eq '^(src/|playground/|studio/|build/|hosting/|assets/|package(-lock)?\.json$|userscripts\.config\.js$|distribution\.config\.js$|vite\.config\.js$|\.github/workflows/playground-pages\.yml$)'; then
+          changed_files="$(git diff --name-only "$BEFORE" "$HEAD" --)"
+          if grep -Eq '^(src/|playground/|studio/|build/|hosting/|assets/|package(-lock)?\.json$|userscripts\.config\.js$|distribution\.config\.js$|vite\.config\.js$|\.github/workflows/playground-pages\.yml$)' <<< "$changed_files"; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
             echo "reason=relevant file changed" >> "$GITHUB_OUTPUT"
           else
