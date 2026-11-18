@@ -49,7 +49,7 @@ export function createFormSubmit<TValues extends FieldValues>(options: {
             field.required &&
             (values[field.name] == null ||
               values[field.name] === "" ||
-              (Array.isArray(values[field.name]) && values[field.name].length === 0))
+              (Array.isArray(values[field.name]) && (values[field.name] as unknown[]).length === 0))
           ) {
             return [field.name, "Campo obrigatório."] as const;
           }
