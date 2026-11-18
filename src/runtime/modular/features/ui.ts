@@ -1,4 +1,4 @@
-import { mountSolidShadow, registerShadowStyles } from "../../solid-ui/shadow-mount";
+import { registerShadowStyles } from "../../react-ui/shadow-styles.js";
 
-/** UI implementation stays outside the base runtime dependency graph. */
-export const createUIFeature = () => ({ mountSolidShadow, registerShadowStyles });
+/** Framework-neutral ShadowRoot style registration. */
+export const createUIFeature = () => ({ registerShadowStyles });

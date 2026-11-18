@@ -9,6 +9,7 @@ import {
 } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
+import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
@@ -53,6 +54,11 @@ export function createRuntime(
           ensureUIRoot().append(node);
           onDispose(() => node.remove());
           return node;
+        },
+        registerStyles(...styles: ShadowStyle[]) {
+          const dispose = registerShadowStyles(ensureUIRoot(), styles);
+          onDispose(dispose);
+          return dispose;
         },
         mountReact(component: React.ReactElement, container?: HTMLElement) {
           if (abort.signal.aborted) throw new Error("ScriptContext already disposed");

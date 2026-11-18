@@ -104,3 +104,8 @@
 
 - User explicitly authorized removing Solid without preserving installed scripts. Production entrypoint switched to React and Solid Vite compiler removed. Existing Solid-based feature modules are **not** migrated; expect builds to fail until those imports are replaced with React/shadcn/Radix implementations. Do not represent this as a working release.
 - Next: remove the remaining legacy Solid imports and dependencies after replacing UI consumers; no new custom UI primitives.
+
+### React ShadowRoot foundation (2026-11-18)
+
+- Migrated shared ShadowRoot style registration to `src/runtime/react-ui/shadow-styles.ts` with reference counting and idempotent disposal. React `ctx.ui.registerStyles` now owns cleanup through `ctx.onDispose`.
+- `src/runtime/modular/features/ui.ts` no longer imports Solid. Legacy Solid UI consumers still require replacement. React typecheck and release remain unverified after this change.
