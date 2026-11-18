@@ -147,9 +147,10 @@ export function FeedRoot({ controller }: { controller: FeedController }) {
     </section>}
   </>;
 }
-export function SettingsShell({ store, open, tag, close, closeTag, chooseTag, clear }: {
+export function SettingsShell({ store, open, tag, close, closeTag, chooseTag, clear, portalContainer }: {
   store: StudioStore; open: boolean; tag: string; close: () => void; closeTag: () => void;
   chooseTag: (tag: string, kind: "include" | "exclude") => void; clear: () => void;
+  portalContainer?: HTMLElement;
 }) {
   const state = useStudio(store);
   const [draft, setDraft] = useState<Settings>(() => ({ ...state.settings, subreddits: [...state.settings.subreddits] }));
@@ -171,7 +172,7 @@ export function SettingsShell({ store, open, tag, close, closeTag, chooseTag, cl
   return <>
     <style>{shellCSS}</style>
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) close(); }}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer}>
         <Dialog.Overlay id="shade" className="open" />
         <Dialog.Content id="sheet" className="open" aria-describedby={undefined}>
           <div className={shell.top}><Dialog.Title>🎧 GoneWildStudio</Dialog.Title>
