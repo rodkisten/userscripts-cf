@@ -78,10 +78,10 @@ function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown
   return "unknown";
 }
 
-async function waitForSaved(signal: AbortSignal, timeout = 2200): Promise<boolean> {
+async function waitForSaved(source: HTMLElement, signal: AbortSignal, timeout = 2200): Promise<boolean> {
   const end = Date.now() + timeout;
   while (!signal.aborted && Date.now() < end) {
-    if (nativeState(nativeSave()) === "saved") return true;
+    if (nativeState(source) === "saved") return true;
     await sleep(120);
   }
   return false;
@@ -99,8 +99,7 @@ function collectionOption(id: string): HTMLElement | null {
   );
 }
 
-async function saveToCollections(ids: string[], signal: AbortSignal): Promise<void> {
-  const source = nativeSave();
+async function saveToCollections(ids: string[], signal: AbortSignal, source: HTMLElement): Promise<void> {
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
   if (nativeState(source) === "saved") return;
@@ -108,7 +107,7 @@ async function saveToCollections(ids: string[], signal: AbortSignal): Promise<vo
     throw Error("Não foi possível confirmar o estado do bookmark nativo");
   if (signal.aborted) throw Error("Operação cancelada");
   source.click();
-  if (!(await waitForSaved(signal)))
+  if (!(await waitForSaved(source, signal)))
     throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
   for (const id of ids) {
     if (signal.aborted) throw Error("Operação cancelada");
@@ -127,6 +126,7 @@ export function mountReelBookmark(
   const { signal } = ctx;
   ctx.pageStyle(css);
   const [state, setState] = createSignal<BookmarkState>("unsaved");
+  let selectedSave: HTMLElement | null = null;
   let activeReel = location.pathname;
   let operation = 0;
   let mount: ReturnType<typeof mountPoint> | undefined;
@@ -135,15 +135,17 @@ export function mountReelBookmark(
     if (state() === "loading" || state() === "saved" || signal.aborted) return;
     const token = ++operation;
     const reel = location.pathname;
+    const source = selectedSave;
+    if (!source?.isConnected) return;
     setState("loading");
     try {
-      await saveToCollections(await getCollectionIds(), signal);
-      if (token !== operation || signal.aborted || reel !== location.pathname) return;
+      await saveToCollections(await getCollectionIds(), signal, source);
+      if (token !== operation || signal.aborted || reel !== location.pathname || source !== selectedSave) return;
       setState("saved");
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
       if (token !== operation || signal.aborted || reel !== location.pathname) return;
-      setState(nativeState(nativeSave()) === "saved" ? "saved" : "error");
+      setState(nativeState(source) === "saved" ? "saved" : "error");
       notify((error as Error).message);
     }
   };
@@ -151,6 +153,7 @@ export function mountReelBookmark(
     mount?.dispose();
     mount = undefined;
     anchor = null;
+    selectedSave = null;
   }
 
   function refresh() {
@@ -160,13 +163,18 @@ export function mountReelBookmark(
       setState("unsaved");
       clear();
     }
-    if (state() !== "loading") {
-      const observed = nativeState(nativeSave());
+    const target = reelIsOpen() ? actions() : null;
+    const native = target && (nativeSave(target) || target.querySelector<HTMLElement>('button, [role="button"]'));
+    const source = target && nativeSave(target);
+    if (source !== selectedSave) {
+      operation++;
+      selectedSave = source;
+      setState(source ? nativeState(source) === "saved" ? "saved" : "unsaved" : "unsaved");
+    } else if (state() !== "loading") {
+      const observed = nativeState(source);
       if (observed === "saved" && state() !== "saved") setState("saved");
       if (observed === "unsaved" && state() === "saved") setState("unsaved");
     }
-    const target = reelIsOpen() ? actions() : null;
-    const native = target && (target.querySelector<HTMLElement>('button, [role="button"]') || (target.matches('button, [role="button"]') ? target : null));
     if (!target || !native || !native.isConnected) {
       clear();
       return;
