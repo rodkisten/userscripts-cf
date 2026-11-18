@@ -11,8 +11,12 @@ export interface DomEngineStats {
 }
 
 export interface ScopedQuery {
-  querySelector(selector: string): Element | null;
-  querySelectorAll(selector: string): NodeListOf<Element>;
+  querySelector<K extends keyof HTMLElementTagNameMap>(selector: K): HTMLElementTagNameMap[K] | null;
+  querySelector<K extends keyof SVGElementTagNameMap>(selector: K): SVGElementTagNameMap[K] | null;
+  querySelector<E extends Element = Element>(selector: string): E | null;
+  querySelectorAll<K extends keyof HTMLElementTagNameMap>(selector: K): NodeListOf<HTMLElementTagNameMap[K]>;
+  querySelectorAll<K extends keyof SVGElementTagNameMap>(selector: K): NodeListOf<SVGElementTagNameMap[K]>;
+  querySelectorAll<E extends Element = Element>(selector: string): NodeListOf<E>;
 }
 
 export interface WaitForOptions {
@@ -24,8 +28,12 @@ export interface WaitForOptions {
 export interface DomEngine {
   one(selector: string, scope?: ParentNode & EventTarget): Element | null;
   all(selector: string, scope?: ParentNode & EventTarget): Element[];
-  querySelector(selector: string): Element | null;
-  querySelectorAll(selector: string): NodeListOf<Element>;
+  querySelector<K extends keyof HTMLElementTagNameMap>(selector: K): HTMLElementTagNameMap[K] | null;
+  querySelector<K extends keyof SVGElementTagNameMap>(selector: K): SVGElementTagNameMap[K] | null;
+  querySelector<E extends Element = Element>(selector: string): E | null;
+  querySelectorAll<K extends keyof HTMLElementTagNameMap>(selector: K): NodeListOf<HTMLElementTagNameMap[K]>;
+  querySelectorAll<K extends keyof SVGElementTagNameMap>(selector: K): NodeListOf<SVGElementTagNameMap[K]>;
+  querySelectorAll<E extends Element = Element>(selector: string): NodeListOf<E>;
   scope(element: ParentNode & EventTarget): ScopedQuery;
   waitFor(selector: string, options?: WaitForOptions): Promise<Element>;
   invalidate(): void;
@@ -141,10 +149,16 @@ export function createDomEngine({
 
   // Native aliases preserve DOM return types, including NodeListOf and .item().
   // The array-returning all() helper remains available for cached snapshots.
+  function querySelector<K extends keyof HTMLElementTagNameMap>(selector: K): HTMLElementTagNameMap[K] | null;
+  function querySelector<K extends keyof SVGElementTagNameMap>(selector: K): SVGElementTagNameMap[K] | null;
+  function querySelector<E extends Element = Element>(selector: string): E | null;
   function querySelector(selector: string): Element | null {
     return root.querySelector(selector);
   }
 
+  function querySelectorAll<K extends keyof HTMLElementTagNameMap>(selector: K): NodeListOf<HTMLElementTagNameMap[K]>;
+  function querySelectorAll<K extends keyof SVGElementTagNameMap>(selector: K): NodeListOf<SVGElementTagNameMap[K]>;
+  function querySelectorAll<E extends Element = Element>(selector: string): NodeListOf<E>;
   function querySelectorAll(selector: string): NodeListOf<Element> {
     return root.querySelectorAll(selector);
   }
