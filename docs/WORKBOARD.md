@@ -526,3 +526,10 @@
 - [x] Add a full Tampermonkey `.user.js` fixture with metadata, `@require`, `@resource`, `@grant`, globals, DOM, events, timers, observers and GM APIs.
 - [x] Test legacy migration metadata extraction and run the CLI against the complete fixture in GitHub Actions; publish the generated JS and JSON report.
 - [ ] Verify the new workflow is green; expand negative cases and typecheck standalone migrated JS once import/GM contract conversion exists.
+
+### 🔬 Symbol-aware resource ownership (2026-11-18)
+
+- [x] Start TypeScript TypeChecker-based symbol resolution for `setInterval` declarations and `clearInterval` references within each context-owner function.
+- [x] Convert independently owned timers even if another timer is manually cleared; preserve unknown/dynamic cleanup and variadic timer signatures.
+- [x] Add 4 regression tests and expand the matrix to 60 scenarios.
+- [ ] Confirm CI passes; next resolve listener callback/target/event identities and conservative escape analysis for timer aliases.
