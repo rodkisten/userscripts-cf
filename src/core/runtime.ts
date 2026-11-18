@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/query-core";
 import { captureDiagnostic, observeNetworkDiagnostics } from "../runtime/diagnostics.js";
 import type { createGMBridge } from "../runtime/gm-bridge.js";
 import { createGMFeature } from "../runtime/modular/features/gm.js";
+import type { GMBridge } from "../runtime/gm-bridge.js";
 import { createEventBus } from "../runtime/events/event-bus.js";
 import { createSharedEvents } from "../runtime/events/shared-events.js";
 import { matches, readScriptRules } from "./script-manager.js";
