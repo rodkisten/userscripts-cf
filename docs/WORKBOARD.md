@@ -337,3 +337,10 @@
 - [`21f01cf4`](https://github.com/rodkisten/userscripts-cf/commit/21f01cf476f3458f3f0bf31f7f45ba93ce969107): replace Solid FeedRoot/PostCard/SettingsShell with React JSX, hooks and Radix Dialog; preserve search, tagging, media resolution and settings actions.
 - [`62e0d8aa`](https://github.com/rodkisten/userscripts-cf/commit/62e0d8aaf364489d15149ed0271bf97ddff149fb): replace Solid Reddit adapter mounts with React roots and subscribe-based rescans, preserve native link rewrite/restore and cleanup. [`cc3c7049`](https://github.com/rodkisten/userscripts-cf/commit/cc3c704908cc5f5ac9c941e64ed3ae9ad5be5483) / [`631826c5`](https://github.com/rodkisten/userscripts-cf/commit/631826c5db4d4beb73221a6d5ca2fe60bfc011b9) keep Radix portal inside ShadowRoot.
 - **Not verified:** build, typecheck, live Reddit layout, long-press menu, network filter, mobile Safari. Do not mark fixed. Need validate before further refactor. Existing native buttons are not new shared primitives; shadcn/Radix design-system consolidation remains pending.
+
+### React GoneWild stabilization pass (2026-11-18)
+
+- [`e633a97c`](https://github.com/rodkisten/userscripts-cf/commit/e633a97cb0ae50625c9c8337e67d60c38d51600e): corrected React Player callbacks that captured null audio/canvas refs on initial render; callbacks now dereference refs at use time.
+- [`d8973911`](https://github.com/rodkisten/userscripts-cf/commit/d8973911bf40850f12058d7cd90d533dd1ebedec): aligned tag state with `.gws-tag[data-active]` CSS and fixed subreddit regex parsing after Solid→React rewrite.
+- [`762e7ff7`](https://github.com/rodkisten/userscripts-cf/commit/762e7ff777e65c061eabb9d191fa656c3f98014c): gave Reddit settings ShadowRoot an overlay stacking context with pointer-events disabled at host level, leaving the actual dialog interactive.
+- GitHub combined commit statuses query returned no statuses for the last commit. This **does not establish build success**. Live Reddit/Soundgasm, TS typecheck, release and Safari playback remain unverified. Next: inspect failing Actions logs and run actual build before declaring resolved.
