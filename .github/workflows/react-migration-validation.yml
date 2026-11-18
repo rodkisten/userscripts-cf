@@ -35,6 +35,8 @@ jobs:
       - name: Legacy TypeScript
         run: npm run typecheck
       - name: React TypeScript
+        if: success() || failure()
         run: npm run typecheck:react
       - name: Production build
+        if: success() || failure()
         run: npm run build
