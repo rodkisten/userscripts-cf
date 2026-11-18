@@ -110,7 +110,7 @@ export function mountReddit(ctx: any, bridge: any) {
   shadow.append(shellNode);
   const shellRoot = createRoot(shellNode);
   const renderShell = () => shellRoot.render(
-    <SettingsShell store={store} open={open} tag={tag}
+    <SettingsShell store={store} open={open} tag={tag} portalContainer={shellNode}
       close={() => setOpen(false)} closeTag={() => setTag("")}
       chooseTag={(value, kind) => { actions.tag(value, kind); void search(); }} clear={clear} />
   );
