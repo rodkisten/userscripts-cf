@@ -37,9 +37,7 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
       values[node.specifiers[0].local.name] = css;
     }
     if (entry.endsWith(".tsx"))
-      code = (
-        await transformWithOxc(code, entry, { lang: "tsx", jsx: "react-jsx" })
-      ).code;
+      code = (await transformWithOxc(code, entry, { lang: "tsx", jsx: "react-jsx" })).code;
     code = code.replace(/^import[^;]+;\s*/gm, "");
     code = code.replace(/createDefaults\("([^"\n]+)"\)/g, (_, section) =>
       JSON.stringify(createDefaults(section)),
