@@ -49,6 +49,14 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
+      - name: Configure authenticated push remote
+        if: steps.marker.outputs.pending == 'true'
+        env:
+          APP_TOKEN: ${{ steps.app.outputs.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --local credential.helper '!f() { echo username=x-access-token; echo "password=$APP_TOKEN"; }; f'
       - name: Trigger Pages through authenticated Ploocky push
         if: steps.marker.outputs.pending == 'true'
         env:
@@ -65,11 +73,11 @@ jobs:
           git config user.name "ploocky[bot]"
           git config user.email "ploocky[bot]@users.noreply.github.com"
           # Refuse to publish a stale snapshot if main moved since checkout.
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)" fetch origin main
+          git fetch origin main
           if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
             echo "::notice::main advanced; next scheduled check will retry"
             exit 0
           fi
           git commit --allow-empty -m "chore(preview): trigger Ploocky deploy for $SOURCE_SHA"
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)" push origin HEAD:main
+          git push origin HEAD:main
           echo "🤖 Ploocky pushed preview trigger for $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
