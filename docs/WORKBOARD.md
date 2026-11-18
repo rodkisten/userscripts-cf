@@ -109,3 +109,9 @@
 
 - Migrated shared ShadowRoot style registration to `src/runtime/react-ui/shadow-styles.ts` with reference counting and idempotent disposal. React `ctx.ui.registerStyles` now owns cleanup through `ctx.onDispose`.
 - `src/runtime/modular/features/ui.ts` no longer imports Solid. Legacy Solid UI consumers still require replacement. React typecheck and release remain unverified after this change.
+
+### Toast migration to official shadcn dependency (2026-11-18)
+
+- Replaced the Solid-backed runtime toaster import with a React 19 + Sonner implementation. Sonner is the toast component used by shadcn/ui; no custom toast visual primitives were created.
+- This initial facade covers show/success/error/warning/info/loading/dismiss/promise. The legacy custom toaster's advanced task, picker, confirmation, scope and progress APIs are not yet migrated; affected consumers require an audit before claiming parity.
+- Dependency lockfile and release build must be validated before use; current cutover remains intentionally incomplete.
