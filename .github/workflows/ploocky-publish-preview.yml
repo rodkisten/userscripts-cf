@@ -40,12 +40,12 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ steps.app.outputs.token }}
+          persist-credentials: true
       - name: Squash approved branch into a Ploocky commit
         env:
           SOURCE_BRANCH: ${{ inputs.source_branch }}
           APP_SLUG: ${{ steps.app.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.app.outputs.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -75,8 +75,7 @@ jobs:
           git config user.email "ploocky[bot]@users.noreply.github.com"
           git merge --squash refs/remotes/origin/ploocky-source
           git commit -m "chore(preview): publish Ploocky prepared changes"
-          header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $header" push origin HEAD:main
+          git push origin HEAD:main
           {
             echo "### 🤖 Ploocky published preview changes"
             echo "Source: \`$SOURCE_BRANCH\`"
