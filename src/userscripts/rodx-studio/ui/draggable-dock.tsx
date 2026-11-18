@@ -89,7 +89,7 @@ export function initializeDeckDragDock() {
       if (!active || active.started) return;
       active.started = true;
       active.handle.closest(RODX_SELECTORS.draggableItems)?.classList.add("dragging");
-      const ghost = (<div />) as HTMLDivElement;
+      const ghost = document.createElement("div");
       ghost.textContent = active.label;
       ghost.className = "rodx-drag-ghost";
       document.body.append(ghost);
