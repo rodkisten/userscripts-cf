@@ -346,11 +346,13 @@ it("storage opt-in never rewrites a shadowed localStorage binding", () => {
 });
 
 it("storage opt-in leaves sync localStorage try/catch intact", () => {
-  const input = 'async function init(ctx) { try { return localStorage.getItem("x"); } catch { return null; } }';
+  const input =
+    'async function init(ctx) { try { return localStorage.getItem("x"); } catch { return null; } }';
   expect(transformRodAst(input, "storage-sync.ts", { storage: "awaited" }).code).toBe(input);
 });
 
 it("storage opt-in keeps dynamic keys native even when awaited", () => {
-  const input = 'async function init(ctx) { await localStorage.setItem(key, value); await localStorage.getItem(key); }';
+  const input =
+    "async function init(ctx) { await localStorage.setItem(key, value); await localStorage.getItem(key); }";
   expect(transformRodAst(input, "storage-dynamic.ts", { storage: "awaited" }).code).toBe(input);
 });

@@ -179,13 +179,19 @@ export function transformRodAst(code, id, options = {}) {
   // ctx.storage.local retains native string/null coercion and read-through.
   const STORAGE_METHODS = new Set(["getItem", "setItem", "removeItem"]);
   function storageRewrite(node, owner, shadowed) {
-    if (options.storage !== "awaited" ||
-        !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword))
+    if (
+      options.storage !== "awaited" ||
+      !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword)
+    )
       return undefined;
     if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage")) return undefined;
     const callee = node.expression;
-    if (!ts.isPropertyAccessExpression(callee) || !ts.isIdentifier(callee.expression) ||
-        callee.expression.text !== "localStorage" || !STORAGE_METHODS.has(callee.name.text))
+    if (
+      !ts.isPropertyAccessExpression(callee) ||
+      !ts.isIdentifier(callee.expression) ||
+      callee.expression.text !== "localStorage" ||
+      !STORAGE_METHODS.has(callee.name.text)
+    )
       return undefined;
     if (node.arguments.length !== (callee.name.text === "setItem" ? 2 : 1)) return undefined;
     if (!ts.isStringLiteral(node.arguments[0])) return undefined;
