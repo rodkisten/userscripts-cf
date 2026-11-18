@@ -65,16 +65,20 @@ export function createMenuFeature(options: MenuFeatureOptions = {}) {
 
   return Object.freeze({
     open(schema: MenuSchema) {
-      return own(openRadixDialog({
-        ...schema,
-        container: schema.container ?? options.container?.(),
-      }));
+      return own(
+        openRadixDialog({
+          ...schema,
+          container: schema.container ?? options.container?.(),
+        }),
+      );
     },
     dropdown(dropdownOptions: DropdownOptions) {
-      return own(openRadixDropdown({
-        ...dropdownOptions,
-        container: dropdownOptions.container ?? options.container?.(),
-      }));
+      return own(
+        openRadixDropdown({
+          ...dropdownOptions,
+          container: dropdownOptions.container ?? options.container?.(),
+        }),
+      );
     },
     configure: menu.configure,
   });

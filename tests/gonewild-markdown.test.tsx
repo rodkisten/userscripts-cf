@@ -9,9 +9,7 @@ describe("GoneWild Markdown React migration", () => {
   });
 
   it("renders inline Markdown and preserves line breaks", () => {
-    const html = renderToStaticMarkup(
-      <Markdown text={"**bold** and *italic*\nsecond line with code"} />,
-    );
+    const html = renderToStaticMarkup(<Markdown text={"**bold** and *italic*\nsecond line with code"} />);
     expect(html).toContain("<strong>bold</strong>");
     expect(html).toContain("<em>italic</em>");
     expect(html).toContain("<br/>");

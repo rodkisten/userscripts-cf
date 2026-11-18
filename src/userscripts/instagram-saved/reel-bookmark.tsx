@@ -143,7 +143,8 @@ export function mountReelBookmark(
   let activeReel = location.pathname;
   let operation = 0;
   let mount: { host: HTMLElement; root: Root } | undefined;
-  const render = () => mount?.root.render(<ReelBookmarkButton state={state} onActivate={() => void send()} />);
+  const render = () =>
+    mount?.root.render(<ReelBookmarkButton state={state} onActivate={() => void send()} />);
   let anchor: HTMLElement | null = null;
   const send = async () => {
     if (state === "loading" || state === "saved" || signal.aborted) return;

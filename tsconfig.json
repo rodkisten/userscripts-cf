@@ -3,11 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "strict": false,
     "noEmit": true,
     "allowJs": true,
@@ -16,20 +12,8 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": [
-      "react",
-      "react-dom"
-    ]
+    "types": ["react", "react-dom"]
   },
-  "include": [
-    "src/userscripts/**/*.ts",
-    "src/userscripts/**/*.tsx",
-    "src/types/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "coverage"
-  ]
+  "include": ["src/userscripts/**/*.ts", "src/userscripts/**/*.tsx", "src/types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
 }

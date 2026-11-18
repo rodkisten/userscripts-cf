@@ -607,10 +607,7 @@ export function createCoreRuntime(
       db,
       signal: abort.signal,
       storage,
-      menu:
-        typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__
-          ? instanceMenu
-          : undefined,
+      menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? instanceMenu : undefined,
       dock: Object.freeze({
         register(actions: DockAction[]) {
           const module = {

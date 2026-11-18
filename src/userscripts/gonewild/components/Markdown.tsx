@@ -71,13 +71,21 @@ export function markdownBlocks(source: string): Block[] {
   return result;
 }
 function PlainText({ text }: { text: string }) {
-  return <>{text.split("\n").map((line, index) => (
-    <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>
-  ))}</>;
+  return (
+    <>
+      {text.split("\n").map((line, index) => (
+        <Fragment key={index}>
+          {index > 0 && <br />}
+          {line}
+        </Fragment>
+      ))}
+    </>
+  );
 }
 function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
   if (depth > 5) return <PlainText text={text} />;
-  const tokens = /(\`[^\`\n]+\`)|\[([^\]\n]{1,300})\]\s*\((https?:\/\/[^\s)]+(?:\([^\n)]*\)[^\s)]*)*)\)|<(https?:\/\/[^>\s]+)>|(https?:\/\/[^\s<>'"\[\]]+)|(\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_)/gi;
+  const tokens =
+    /(\`[^\`\n]+\`)|\[([^\]\n]{1,300})\]\s*\((https?:\/\/[^\s)]+(?:\([^\n)]*\)[^\s)]*)*)\)|<(https?:\/\/[^>\s]+)>|(https?:\/\/[^\s<>'"\[\]]+)|(\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_)/gi;
   const result: ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(tokens)) {
@@ -87,13 +95,28 @@ function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
     else if (match[2] || match[4] || match[5]) {
       const raw = match[3] || match[4] || match[5];
       const href = safeURL(raw.replace(/[.,;!?]+$/, ""), "https://www.reddit.com")?.href;
-      result.push(href ? <a key={index} href={href} target="_blank" rel="noopener noreferrer">{match[2] || raw}</a> : match[0]);
+      result.push(
+        href ? (
+          <a key={index} href={href} target="_blank" rel="noopener noreferrer">
+            {match[2] || raw}
+          </a>
+        ) : (
+          match[0]
+        ),
+      );
     } else {
       const wide = /^(\*\*|__|~~)/.test(match[0]);
       const inner = match[0].slice(wide ? 2 : 1, wide ? -2 : -1);
       const child = <Inline text={inner} depth={depth + 1} />;
-      result.push(match[0].startsWith("~~") ? <del key={index}>{child}</del>
-        : wide ? <strong key={index}>{child}</strong> : <em key={index}>{child}</em>);
+      result.push(
+        match[0].startsWith("~~") ? (
+          <del key={index}>{child}</del>
+        ) : wide ? (
+          <strong key={index}>{child}</strong>
+        ) : (
+          <em key={index}>{child}</em>
+        ),
+      );
     }
     last = index + match[0].length;
   }
@@ -101,25 +124,44 @@ function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
   return <>{result}</>;
 }
 export function Markdown({ text }: { text: string }) {
-  return <>{markdownBlocks(text).map((block, index) => {
-    if (block.kind === "rule") return <hr key={index} />;
-    if (block.kind === "code") return <pre key={index}><code>{block.text}</code></pre>;
-    if (block.kind === "list") {
-      const children = block.items?.map((item, i) => <li key={i}><Inline text={item} /></li>);
-      return block.ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>;
-    }
-    const content = <Inline text={block.text} />;
-    if (block.kind === "quote") return <blockquote key={index}>{content}</blockquote>;
-    if (block.kind === "heading") {
-      switch (block.level) {
-        case 1: return <h1 key={index}>{content}</h1>;
-        case 2: return <h2 key={index}>{content}</h2>;
-        case 3: return <h3 key={index}>{content}</h3>;
-        case 4: return <h4 key={index}>{content}</h4>;
-        case 5: return <h5 key={index}>{content}</h5>;
-        default: return <h6 key={index}>{content}</h6>;
-      }
-    }
-    return <p key={index}>{content}</p>;
-  })}</>;
+  return (
+    <>
+      {markdownBlocks(text).map((block, index) => {
+        if (block.kind === "rule") return <hr key={index} />;
+        if (block.kind === "code")
+          return (
+            <pre key={index}>
+              <code>{block.text}</code>
+            </pre>
+          );
+        if (block.kind === "list") {
+          const children = block.items?.map((item, i) => (
+            <li key={i}>
+              <Inline text={item} />
+            </li>
+          ));
+          return block.ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>;
+        }
+        const content = <Inline text={block.text} />;
+        if (block.kind === "quote") return <blockquote key={index}>{content}</blockquote>;
+        if (block.kind === "heading") {
+          switch (block.level) {
+            case 1:
+              return <h1 key={index}>{content}</h1>;
+            case 2:
+              return <h2 key={index}>{content}</h2>;
+            case 3:
+              return <h3 key={index}>{content}</h3>;
+            case 4:
+              return <h4 key={index}>{content}</h4>;
+            case 5:
+              return <h5 key={index}>{content}</h5>;
+            default:
+              return <h6 key={index}>{content}</h6>;
+          }
+        }
+        return <p key={index}>{content}</p>;
+      })}
+    </>
+  );
 }

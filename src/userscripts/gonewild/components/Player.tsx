@@ -35,8 +35,18 @@ export function Player(props: {
   const lastSavedRef = useRef(0);
   const waveAbortRef = useRef<AbortController | undefined>(undefined);
 
-  const setState = (update: (draft: typeof state) => void) => setStateBase((previous) => { const next = { ...previous }; update(next); return next; });
-  const setWave = (update: (draft: typeof wave) => void) => setWaveBase((previous) => { const next = { ...previous }; update(next); return next; });
+  const setState = (update: (draft: typeof state) => void) =>
+    setStateBase((previous) => {
+      const next = { ...previous };
+      update(next);
+      return next;
+    });
+  const setWave = (update: (draft: typeof wave) => void) =>
+    setWaveBase((previous) => {
+      const next = { ...previous };
+      update(next);
+      return next;
+    });
   const persist = (completed = false) => {
     if (!restoredRef.current || !Number.isFinite(audioRef.current?.currentTime)) return;
     const history = readJSON<Record<string, Playback & { at?: number }>>(KEYS.playback, {});
@@ -69,13 +79,19 @@ export function Player(props: {
     }
   };
   const seek = (time: number) => {
-    if (!audioRef.current || !Number.isFinite(audioRef.current.duration) || audioRef.current!.duration <= 0) return;
+    if (!audioRef.current || !Number.isFinite(audioRef.current.duration) || audioRef.current!.duration <= 0)
+      return;
     audioRef.current!.currentTime = Math.max(0, Math.min(audioRef.current!.duration, time));
     sync();
     persist();
   };
   const restore = () => {
-    if (audioRef.current && !restoredRef.current && Number.isFinite(audioRef.current.duration) && audioRef.current!.duration > 0) {
+    if (
+      audioRef.current &&
+      !restoredRef.current &&
+      Number.isFinite(audioRef.current.duration) &&
+      audioRef.current!.duration > 0
+    ) {
       restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed)
         seek(Math.min(saved.position, Math.max(0, audioRef.current!.duration - 0.25)));
@@ -202,7 +218,9 @@ export function Player(props: {
         });
     }
   };
-  useEffect(() => { draw(); }, [state.time, state.duration, wave.peaks]);
+  useEffect(() => {
+    draw();
+  }, [state.time, state.duration, wave.peaks]);
   useEffect(() => {
     if (!audioRef.current || !canvasRef.current) return;
     const element = audioRef.current;
@@ -215,20 +233,28 @@ export function Player(props: {
     document.addEventListener("visibilitychange", hide);
     const media = navigator.mediaSession;
     if (media && typeof MediaMetadata !== "undefined") {
-      media.metadata = new MediaMetadata({ title: props.title, artist: props.author, album: props.subreddit || "Soundgasm" });
+      media.metadata = new MediaMetadata({
+        title: props.title,
+        artist: props.author,
+        album: props.subreddit || "Soundgasm",
+      });
       const handlers = {
-        play: () => void element.play(), pause: () => element.pause(),
+        play: () => void element.play(),
+        pause: () => element.pause(),
         seekbackward: () => seek(element.currentTime - 15),
         seekforward: () => seek(element.currentTime + 15),
         seekto: (event: MediaSessionActionDetails) => seek(event.seekTime ?? 0),
       };
       for (const [name, action] of Object.entries(handlers)) {
-        try { media.setActionHandler(name as MediaSessionAction, action); } catch {}
+        try {
+          media.setActionHandler(name as MediaSessionAction, action);
+        } catch {}
       }
     }
     if (element.readyState >= 1) {
       restoredRef.current = true;
-      if (saved?.position > 0 && !saved.completed && Number.isFinite(element.duration)) element.currentTime = Math.min(saved.position, Math.max(0, element.duration - 0.25));
+      if (saved?.position > 0 && !saved.completed && Number.isFinite(element.duration))
+        element.currentTime = Math.min(saved.position, Math.max(0, element.duration - 0.25));
     }
     return () => {
       persist();
@@ -237,14 +263,26 @@ export function Player(props: {
       window.removeEventListener("pagehide", hide);
       document.removeEventListener("visibilitychange", hide);
       element.pause();
-      if (media) for (const name of ["play", "pause", "seekbackward", "seekforward", "seekto"] as MediaSessionAction[]) {
-        try { media.setActionHandler(name, null); } catch {}
-      }
+      if (media)
+        for (const name of [
+          "play",
+          "pause",
+          "seekbackward",
+          "seekforward",
+          "seekto",
+        ] as MediaSessionAction[]) {
+          try {
+            media.setActionHandler(name, null);
+          } catch {}
+        }
     };
   }, [props.source]);
   useEffect(() => {
     restoredRef.current = false;
-    if (props.source) setState((draft) => { draft.status = "Carregando áudio…"; });
+    if (props.source)
+      setState((draft) => {
+        draft.status = "Carregando áudio…";
+      });
   }, [props.source]);
   const canvasSeek = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();

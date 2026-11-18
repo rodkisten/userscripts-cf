@@ -21,7 +21,12 @@ export function createStudioStore() {
     },
   };
   const listeners = new Set<() => void>();
-  const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
   let revision = 0;
   const getSnapshot = () => revision;
   const setState = (recipe: (draft: typeof state) => void) => {
@@ -83,6 +88,14 @@ export function createStudioStore() {
       });
     },
   };
-  return { get state() { return state; }, getSnapshot, subscribe, setState, actions };
+  return {
+    get state() {
+      return state;
+    },
+    getSnapshot,
+    subscribe,
+    setState,
+    actions,
+  };
 }
 export type StudioStore = ReturnType<typeof createStudioStore>;

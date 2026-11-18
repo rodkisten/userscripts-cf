@@ -48,7 +48,9 @@ export default {
     let version = 0;
     const subscribe = (listener: () => void) => {
       listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      return () => {
+        listeners.delete(listener);
+      };
     };
     const getSnapshot = () => version;
     const setRuntime = (update: Parameters<typeof updateStore>[0]) => {
@@ -63,12 +65,18 @@ export default {
           key={JSON.stringify(runtime.form)}
           settings={runtime.form}
           error={runtime.lastError}
-          close={() => setRuntime((draft) => { draft.open = false; })}
+          close={() =>
+            setRuntime((draft) => {
+              draft.open = false;
+            })
+          }
           save={async (form) => {
             const { token, channels, ...settings } = form;
             await settingsApi.update(settings);
             await set("config", { token: token.trim(), channels });
-            setRuntime((draft) => { draft.open = false; });
+            setRuntime((draft) => {
+              draft.open = false;
+            });
             void run(true);
           }}
         />
@@ -76,8 +84,13 @@ export default {
     }
     function SavedActionsPanel() {
       useSyncExternalStore(subscribe, getSnapshot);
-      return <SavedPanel onOpen={() => void settingsApi.open()}
-        running={runtime.running} error={runtime.lastError} />;
+      return (
+        <SavedPanel
+          onOpen={() => void settingsApi.open()}
+          running={runtime.running}
+          error={runtime.lastError}
+        />
+      );
     }
     const unregisterActions = hub.register({
       id: "instagram-saved",

@@ -24,8 +24,15 @@ export default {
         const container = document.createElement("div");
         shadow.append(container);
         const root = createRoot(container);
-        root.render(<a href={post} rel="noopener noreferrer">↶ Voltar ao post no Reddit</a>);
-        ctx.onDispose(() => { root.unmount(); host.remove(); });
+        root.render(
+          <a href={post} rel="noopener noreferrer">
+            ↶ Voltar ao post no Reddit
+          </a>,
+        );
+        ctx.onDispose(() => {
+          root.unmount();
+          host.remove();
+        });
         return;
       }
       mountReddit(ctx, bridge);

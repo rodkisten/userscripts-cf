@@ -17,7 +17,13 @@ declare global {
 }
 
 type Entry = RodActionsTab & { key: string; label: string };
-function ActionsView({ hub, subscribe, getEntries, getSelection, portal }: {
+function ActionsView({
+  hub,
+  subscribe,
+  getEntries,
+  getSelection,
+  portal,
+}: {
   hub: RodActionsHub;
   subscribe: (notify: () => void) => () => void;
   getEntries: () => Entry[];
@@ -27,41 +33,79 @@ function ActionsView({ hub, subscribe, getEntries, getSelection, portal }: {
   const [, redraw] = useState(0);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("");
-  useEffect(() => subscribe(() => {
-    redraw((value) => value + 1);
-    const next = getSelection();
-    if (next) {
-      setSelected(next);
-      setOpen(true);
-    } else if (!getEntries().length) {
-      setOpen(false);
-    }
-  }), [subscribe, getEntries, getSelection]);
+  useEffect(
+    () =>
+      subscribe(() => {
+        redraw((value) => value + 1);
+        const next = getSelection();
+        if (next) {
+          setSelected(next);
+          setOpen(true);
+        } else if (!getEntries().length) {
+          setOpen(false);
+        }
+      }),
+    [subscribe, getEntries, getSelection],
+  );
   const entries = getEntries();
   const active = entries.find((item) => item.key === selected) ?? entries[0];
   return (
     <Dialog.Root open={open && entries.length > 0} onOpenChange={setOpen}>
       {entries.length > 0 && (
-        <button className={styles.launcher} type="button" aria-label="Abrir Rod Actions" onClick={() => hub.open()}>
+        <button
+          className={styles.launcher}
+          type="button"
+          aria-label="Abrir Rod Actions"
+          onClick={() => hub.open()}
+        >
           ⚙
         </button>
       )}
       <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483600, background: "#0009" }} />
-        <Dialog.Content style={{ position: "fixed", zIndex: 2147483601, inset: "auto 0 0", maxHeight: "85dvh", overflow: "auto", background: "#18181b", color: "#fafafa", borderRadius: "16px 16px 0 0", padding: 16, paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+        <Dialog.Content
+          style={{
+            position: "fixed",
+            zIndex: 2147483601,
+            inset: "auto 0 0",
+            maxHeight: "85dvh",
+            overflow: "auto",
+            background: "#18181b",
+            color: "#fafafa",
+            borderRadius: "16px 16px 0 0",
+            padding: 16,
+            paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+          }}
+        >
           <Dialog.Title>Rod Actions</Dialog.Title>
-          <Dialog.Description style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>
+          <Dialog.Description
+            style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}
+          >
             Ferramentas disponíveis para esta página
           </Dialog.Description>
-          <Dialog.Close aria-label="Fechar" style={{ position: "absolute", top: 12, right: 16 }}>×</Dialog.Close>
-          <nav role="tablist" aria-label="Ferramentas" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBlock: 12 }}>
+          <Dialog.Close aria-label="Fechar" style={{ position: "absolute", top: 12, right: 16 }}>
+            ×
+          </Dialog.Close>
+          <nav
+            role="tablist"
+            aria-label="Ferramentas"
+            style={{ display: "flex", gap: 8, overflowX: "auto", paddingBlock: 12 }}
+          >
             {entries.map((tab) => (
-              <button key={tab.key} role="tab" type="button" aria-selected={active?.key === tab.key} onClick={() => setSelected(tab.key)}>
+              <button
+                key={tab.key}
+                role="tab"
+                type="button"
+                aria-selected={active?.key === tab.key}
+                onClick={() => setSelected(tab.key)}
+              >
                 {tab.icon ?? ""} {tab.title}
               </button>
             ))}
           </nav>
-          <section role="tabpanel" aria-label={active?.label}>{active?.render()}</section>
+          <section role="tabpanel" aria-label={active?.label}>
+            {active?.render()}
+          </section>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -74,8 +118,14 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
   const registrations = new Map<string, symbol>();
   const listeners = new Set<() => void>();
   let selected = "";
-  const entries = (): Entry[] => [...modules.values()].flatMap((module) =>
-    module.tabs.map((tab) => ({ ...tab, key: `${module.id}:${tab.id}`, label: `${module.title} · ${tab.title}` })));
+  const entries = (): Entry[] =>
+    [...modules.values()].flatMap((module) =>
+      module.tabs.map((tab) => ({
+        ...tab,
+        key: `${module.id}:${tab.id}`,
+        label: `${module.title} · ${tab.title}`,
+      })),
+    );
   const notify = () => listeners.forEach((listener) => listener());
   const hub: RodActionsHub = {
     register(module) {
@@ -108,14 +158,34 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
   const mount = document.createElement("div");
   shadow.append(mount);
   const root: Root = createRoot(mount);
-  root.render(<ActionsView hub={hub} portal={mount} getEntries={entries} getSelection={() => selected}
-    subscribe={(listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }} />);
+  root.render(
+    <ActionsView
+      hub={hub}
+      portal={mount}
+      getEntries={entries}
+      getSelection={() => selected}
+      subscribe={(listener) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      }}
+    />,
+  );
   window.__RodActions = hub;
   const clipboard = (window as Window & { __RodClipboard?: ClipboardApi }).__RodClipboard;
-  if (clipboard) hub.register({
-    id: "clipboard", title: "Clipboard", tabs: [
-      { id: "history", title: "Histórico", icon: "▤", render: () => <ClipboardPanel clipboard={clipboard} /> },
-    ],
-  });
+  if (clipboard)
+    hub.register({
+      id: "clipboard",
+      title: "Clipboard",
+      tabs: [
+        {
+          id: "history",
+          title: "Histórico",
+          icon: "▤",
+          render: () => <ClipboardPanel clipboard={clipboard} />,
+        },
+      ],
+    });
   return hub;
 }

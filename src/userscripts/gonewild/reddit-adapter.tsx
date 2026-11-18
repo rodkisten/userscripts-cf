@@ -11,9 +11,16 @@ export function mountReddit(ctx: any, bridge: any) {
   const store = createStudioStore();
   const { setState, actions } = store;
   const state = () => store.state;
-  let open = false, tag = "";
-  const setOpen = (value: boolean) => { open = value; renderShell(); };
-  const setTag = (value: string) => { tag = value; renderShell(); };
+  let open = false,
+    tag = "";
+  const setOpen = (value: boolean) => {
+    open = value;
+    renderShell();
+  };
+  const setTag = (value: string) => {
+    tag = value;
+    renderShell();
+  };
   const sub = () => decodeURIComponent(location.pathname.match(/\/r\/([^/]+)/i)?.[1] || "");
   const enabled = () => state().settings.subreddits.some((name) => normalize(name) === normalize(sub()));
   let searchRequest: AbortController | undefined,
@@ -112,11 +119,22 @@ export function mountReddit(ctx: any, bridge: any) {
   shellNode.style.pointerEvents = "none";
   shadow.append(shellNode);
   const shellRoot = createRoot(shellNode);
-  const renderShell = () => shellRoot.render(
-    <SettingsShell store={store} open={open} tag={tag} portalContainer={shellNode}
-      close={() => setOpen(false)} closeTag={() => setTag("")}
-      chooseTag={(value, kind) => { actions.tag(value, kind); void search(); }} clear={clear} />
-  );
+  const renderShell = () =>
+    shellRoot.render(
+      <SettingsShell
+        store={store}
+        open={open}
+        tag={tag}
+        portalContainer={shellNode}
+        close={() => setOpen(false)}
+        closeTag={() => setTag("")}
+        chooseTag={(value, kind) => {
+          actions.tag(value, kind);
+          void search();
+        }}
+        clear={clear}
+      />,
+    );
   renderShell();
   let root: { host: HTMLElement; dispose: () => void } | undefined;
   const setHidden = (node: Element, wanted: boolean) => {
@@ -150,7 +168,13 @@ export function mountReddit(ctx: any, bridge: any) {
         main.insertBefore(host, main.firstChild);
         const reactRoot = createRoot(host);
         reactRoot.render(<FeedRoot controller={controller} />);
-        root = { host, dispose: () => { reactRoot.unmount(); host.remove(); } };
+        root = {
+          host,
+          dispose: () => {
+            reactRoot.unmount();
+            host.remove();
+          },
+        };
       }
       for (const node of enabled() ? ctx.dom.all(POST_SELECTOR) : []) {
         if (
@@ -180,9 +204,12 @@ export function mountReddit(ctx: any, bridge: any) {
                 if (anchor.closest("[data-react-mount]")) continue;
                 const item = items.find((item) => {
                   try {
-                    const source = new URL(item.external), target = new URL(anchor.href);
+                    const source = new URL(item.external),
+                      target = new URL(anchor.href);
                     return source.origin + source.pathname === target.origin + target.pathname;
-                  } catch { return false; }
+                  } catch {
+                    return false;
+                  }
                 });
                 if (item?.studioHref) {
                   const original = sourceLinks.get(anchor)?.original || anchor.href;
@@ -191,9 +218,14 @@ export function mountReddit(ctx: any, bridge: any) {
                 }
               }
             }}
-          />
+          />,
         );
-        const mount = { dispose: () => { reactRoot.unmount(); host.remove(); } };
+        const mount = {
+          dispose: () => {
+            reactRoot.unmount();
+            host.remove();
+          },
+        };
         mounts.set(node, { dispose: mount.dispose, title, post });
       }
       for (const [node, record] of mounts) {
@@ -245,7 +277,10 @@ export function mountReddit(ctx: any, bridge: any) {
     },
     { subtree: true, childList: true },
   );
-  const disposeEffects = store.subscribe(() => { schedule(); renderShell(); });
+  const disposeEffects = store.subscribe(() => {
+    schedule();
+    renderShell();
+  });
   const route = () => {
     if (!new URL(location.href).searchParams.has("gws") && state().search.active) {
       searchRequest?.abort();

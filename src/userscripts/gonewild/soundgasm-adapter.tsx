@@ -4,9 +4,14 @@ import { SoundgasmApp, StudioFailure, type SoundgasmData } from "./components/So
 import { readNativeMedia, readRecordings } from "./services.ts";
 import { safeURL } from "./domain.ts";
 import styles, { css } from "./Soundgasm.module.css";
-class SoundgasmBoundary extends Component<{ children: ReactNode; onFailure: () => void }, { failed: boolean }> {
+class SoundgasmBoundary extends Component<
+  { children: ReactNode; onFailure: () => void },
+  { failed: boolean }
+> {
   state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
   componentDidCatch(error: Error, _info: ErrorInfo) {
     console.error("[GoneWildStudio] React render failed", error);
     this.props.onFailure();
@@ -22,7 +27,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const context = await Promise.race([
     Promise.resolve()
-      .then(() => typeof bridge?.readLocation === "function" ? bridge.readLocation() : null)
+      .then(() => (typeof bridge?.readLocation === "function" ? bridge.readLocation() : null))
       .catch((error: unknown) => {
         console.warn("[GoneWildStudio] Optional Soundgasm context unavailable", error);
         return null;
@@ -105,11 +110,17 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   host.dataset.reactMount = "true";
   document.body.append(host);
   const root = createRoot(host);
-  const render = () => root.render(
-    <SoundgasmBoundary onFailure={() => { failed = true; native(true); }}>
-      <SoundgasmApp data={data} bridge={bridge} onNative={native} />
-    </SoundgasmBoundary>
-  );
+  const render = () =>
+    root.render(
+      <SoundgasmBoundary
+        onFailure={() => {
+          failed = true;
+          native(true);
+        }}
+      >
+        <SoundgasmApp data={data} bridge={bridge} onNative={native} />
+      </SoundgasmBoundary>,
+    );
   render();
   // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty React root
   // without throwing. Never hide the native player until replacement content
@@ -134,7 +145,8 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     const nextDescription = text(".jp-audio .jp-description, .jp-description");
     const patch: Partial<SoundgasmData> = {};
     if (!context?.title && nextTitle && nextTitle !== data.title) patch.title = nextTitle;
-    if (!context?.description && nextDescription && nextDescription !== data.description) patch.description = nextDescription;
+    if (!context?.description && nextDescription && nextDescription !== data.description)
+      patch.description = nextDescription;
     if (source && source !== data.source) patch.source = source;
     if (Object.keys(patch).length) {
       data = { ...data, ...patch };

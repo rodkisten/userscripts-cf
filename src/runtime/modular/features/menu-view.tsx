@@ -43,7 +43,15 @@ function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLE
   );
 }
 
-function DropdownView({ options, close, portal }: { options: DropdownOptions; close: () => void; portal: HTMLElement }) {
+function DropdownView({
+  options,
+  close,
+  portal,
+}: {
+  options: DropdownOptions;
+  close: () => void;
+  portal: HTMLElement;
+}) {
   const rect = options.trigger.getBoundingClientRect();
   return (
     <DropdownMenu.Root
@@ -120,7 +128,15 @@ function DialogField({ field, values }: { field: MenuField; values: Record<strin
   );
 }
 
-function DialogView({ schema, close, portal }: { schema: MenuSchema; close: () => void; portal: HTMLElement }) {
+function DialogView({
+  schema,
+  close,
+  portal,
+}: {
+  schema: MenuSchema;
+  close: () => void;
+  portal: HTMLElement;
+}) {
   const values = useRef<Record<string, unknown>>({ ...schema.initialValues });
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -220,9 +236,7 @@ function mount(
 /** Resolve the caller's tree without relying on a global ShadowRoot constructor. */
 function resolveMenuTarget(trigger: HTMLElement): ShadowRoot | HTMLElement {
   const root = trigger.getRootNode();
-  return root.nodeType === 11 && "host" in root
-    ? (root as ShadowRoot)
-    : trigger.ownerDocument.body;
+  return root.nodeType === 11 && "host" in root ? (root as ShadowRoot) : trigger.ownerDocument.body;
 }
 
 export function openRadixDropdown(options: DropdownOptions) {
@@ -236,5 +250,10 @@ export function openRadixDropdown(options: DropdownOptions) {
 export function openRadixDialog(schema: MenuSchema) {
   const owner = schema.container?.ownerDocument ?? document;
   const target = schema.container ?? owner.body;
-  return mount((close, portal) => <DialogView schema={schema} close={close} portal={portal} />, schema.id ?? "dialog", owner, target);
+  return mount(
+    (close, portal) => <DialogView schema={schema} close={close} portal={portal} />,
+    schema.id ?? "dialog",
+    owner,
+    target,
+  );
 }
