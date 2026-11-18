@@ -264,10 +264,28 @@ export function runtimeHelpers() {
         ts.forEachChild(node, (child) => checkUnresolved(child, scope));
       };
       checkUnresolved(source);
-      if (!edits.length) return null;
+      const jsxFile = /\.[jt]sx(?:\?|$)/.test(id);
+      if (!edits.length && !jsxFile) return null;
       let output = code;
       for (const edit of edits.sort((a, b) => b.start - a.start)) {
         output = output.slice(0, edit.start) + edit.value + output.slice(edit.end);
+      }
+      // Vite 8/Rolldown must receive plain JavaScript, not raw TSX.
+      // Keep the context-aware AST rewrite and JSX lowering in one pre-transform,
+      // with React automatic runtime. Do not add a Solid compiler or a second plugin.
+      if (jsxFile) {
+        const transformed = ts.transpileModule(output, {
+          fileName: id.split("?")[0],
+          compilerOptions: {
+            target: ts.ScriptTarget.ES2022,
+            module: ts.ModuleKind.ESNext,
+            jsx: ts.JsxEmit.ReactJSX,
+            jsxImportSource: "react",
+            sourceMap: false,
+          },
+          reportDiagnostics: false,
+        });
+        output = transformed.outputText;
       }
       return { code: output, map: null };
     },
