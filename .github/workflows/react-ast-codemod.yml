@@ -1,0 +1,109 @@
+name: ⚛️ React AST Codemod
+run-name: "⚛️ Codemod · ${{ github.ref_name }} · ${{ inputs.mode }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run does not modify source; write applies changes only in the runner"
+        type: choice
+        required: true
+        default: dry-run
+        options:
+          - dry-run
+          - write
+      target:
+        description: "Source directory to scan"
+        type: choice
+        required: true
+        default: src
+        options:
+          - src
+      run_typecheck:
+        description: "Run React TypeScript typecheck after codemod"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: react-codemod-${{ github.ref }}-${{ inputs.mode }}
+  cancel-in-progress: false
+
+jobs:
+  codemod:
+    name: "AST transform and React typecheck"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Run AST codemod and capture report
+        id: codemod
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if [[ "$MODE" == "write" ]]; then
+            node build/codemods/solid-to-react.mjs --write "$TARGET" > artifacts/codemod-report.json
+          else
+            node build/codemods/solid-to-react.mjs "$TARGET" > artifacts/codemod-report.json
+          fi
+          node --input-type=module <<'NODE'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          const r=JSON.parse(readFileSync('artifacts/codemod-report.json','utf8'));
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+            '## ⚛️ React AST Codemod',
+            '',
+            '| Metric | Value |',
+            '|---|---:|',
+            `| Mode | ${r.mode} |`,
+            `| Files scanned | ${r.files} |`,
+            `| JSX replacements | ${r.replacements} |`,
+            `| Files with findings | ${r.reports.length} |`,
+            `| Semantic blockers | ${r.reports.reduce((n,x)=>n+x.blockers.length,0)} |`,
+            '',
+            'The complete report is available in the workflow artifact.',
+            ''
+          ].join('\n'));
+          NODE
+      - name: Capture source patch
+        if: inputs.mode == 'write'
+        shell: bash
+        run: |
+          git diff -- src > artifacts/react-codemod.patch
+          git diff --stat -- src >> "$GITHUB_STEP_SUMMARY"
+      - name: Run React typecheck
+        if: inputs.run_typecheck
+        id: typecheck
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck:react 2>&1 | tee artifacts/react-typecheck.log
+      - name: Upload report and optional patch
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-codemod-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Fail if React typecheck failed
+        if: inputs.run_typecheck && steps.typecheck.outcome == 'failure'
+        run: |
+          echo "::error::React typecheck failed. Download the report artifact for diagnostics."
+          exit 1
