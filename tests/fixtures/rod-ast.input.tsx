@@ -114,3 +114,12 @@ export async function contextGMValues(ctx: ScriptContext) {
   await ctx.gm?.values?.delete("theme");
   return theme;
 }
+
+/** Type-safe async localStorage migration retains native string/null contract. */
+export async function typedLocalStorageCompat(ctx: ScriptContext) {
+  const before: string | null = await ctx.storage.local.getItem("theme");
+  await ctx.storage.local.setItem("theme", 42);
+  const after: string | null = await ctx.storage.local.getItem("theme");
+  await ctx.storage.local.removeItem("theme");
+  return { before, after };
+}
