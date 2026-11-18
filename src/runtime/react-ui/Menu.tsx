@@ -33,7 +33,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
     reset: () => setValues(createInitialValues(schema, initialValues)),
   };
 
-  const isModal = schema.surface === "modal";
+  const isModal = (schema.surface ?? schema.presentation) === "modal";
   if (!isOpen) return null;
 
   return (
@@ -58,19 +58,20 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         )}
 
         <div className={styles.body}>
-          {schema.fields?.map((field) => {
-            const isCheckbox = field.type === "checkbox" || field.type === "toggle";
+          {schema.fields?.map((field, index) => {
+            const fieldId = field.id ?? field.name ?? `field-${index}`;
+            const isCheckbox = field.type === "checkbox" || field.type === "toggle" || field.type === "switch";
             return (
               <div
-                key={field.id}
+                key={fieldId}
                 className={`${styles.fieldGroup} ${isCheckbox ? styles.checkboxGroup : ""}`}
               >
-                <label htmlFor={field.id}>{field.label}</label>
+                <label htmlFor={fieldId}>{field.label}</label>
                 {field.type === "select" ? (
                   <select
-                    id={field.id}
-                    value={values[field.id] ?? ""}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    id={fieldId}
+                    value={values[fieldId] ?? ""}
+                    onChange={(e) => handleChange(fieldId, e.target.value)}
                   >
                     <option value="" disabled>
                       {field.placeholder || "Select option..."}
@@ -81,7 +82,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                       </option>
                     ))}
                   </select>
-                ) : field.type === 'slider' ? (
+                ) : field.type === "slider" || field.type === "range" ? (
                   <input
                     id={field.id}
                     type="range"
@@ -90,6 +91,13 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                     step={field.step}
                     value={values[field.id] ?? field.min ?? 0}
                     onChange={e => handleChange(field.id, Number(e.target.value))}
+                  />
+                ) : field.type === "textarea" ? (
+                  <textarea
+                    id={fieldId}
+                    placeholder={field.placeholder}
+                    value={String(values[fieldId] ?? "")}
+                    onChange={(e) => handleChange(fieldId, e.target.value)}
                   />
                 ) : isCheckbox ? (
                   <input
@@ -101,7 +109,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                 ) : (
                   <input
                     id={field.id}
-                    type={field.type === "number" ? "number" : "text"}
+                    type={["number", "email", "password", "search", "url", "tel"].includes(field.type) ? field.type : "text"}
                     placeholder={field.placeholder}
                     value={values[field.id] ?? ""}
                     onChange={(e) => handleChange(field.id, field.type === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
@@ -127,7 +135,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   key={action.id}
                   disabled={action.disabled}
                   className={`${styles.btn} ${variantClass}`}
-                  onClick={() => action.onClick(context)}
+                  onClick={() => action.role === "cancel" ? onClose() : action.onClick?.(context)}
                 >
                   {action.label}
                 </button>
