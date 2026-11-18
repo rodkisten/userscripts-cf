@@ -322,13 +322,16 @@ it("storage migration is opt-in and only rewrites awaited removal in async owner
   expect(transformRodAst(input, "storage.ts").code).toBe(input);
   const result = transformRodAst(input, "storage.ts", { storage: "awaited" });
   expect(result.diagnostics).toEqual([]);
-  expect(result.code).toContain('await ctx.storage.delete("obsolete")');
+  expect(result.code).toContain('await ctx.storage.local.removeItem("obsolete")');
   expect(transformRodAst(result.code, "storage.ts", { storage: "awaited" }).changed).toBe(false);
 });
-it("storage migration preserves synchronous access and getItem/setItem contracts", () => {
+it("storage migration preserves synchronous access while migrating awaited getItem/setItem", () => {
   const input =
     'async function init(ctx) { const value = await localStorage.getItem("x"); await localStorage.setItem("x", 1); localStorage.removeItem("y"); }';
-  expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
+  const result = transformRodAst(input, "storage.ts", { storage: "awaited" });
+  expect(result.code).toContain('await ctx.storage.local.getItem("x")');
+  expect(result.code).toContain('await ctx.storage.local.setItem("x", 1)');
+  expect(result.code).toContain('localStorage.removeItem("y")');
 });
 it("storage migration preserves try/catch and dynamic keys", () => {
   const input =
@@ -340,4 +343,9 @@ it("storage opt-in never rewrites a shadowed localStorage binding", () => {
   const input =
     'async function init(ctx) { const localStorage = { removeItem() {} }; await localStorage.removeItem("x"); }';
   expect(transformRodAst(input, "storage-shadow.ts", { storage: "awaited" }).code).toBe(input);
+});
+
+it("storage opt-in leaves sync localStorage try/catch intact", () => {
+  const input = 'async function init(ctx) { try { return localStorage.getItem("x"); } catch { return null; } }';
+  expect(transformRodAst(input, "storage-sync.ts", { storage: "awaited" }).code).toBe(input);
 });
