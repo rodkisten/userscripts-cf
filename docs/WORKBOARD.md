@@ -455,3 +455,9 @@
 - [`0f54b6b4`](https://github.com/rodkisten/userscripts-cf/commit/0f54b6b4737daebc0acf7ac48048e3d4d8176500): Rod Actions launcher now subscribes to external count through React `useSyncExternalStore`, removing Solid `createSignal/onCleanup`.
 - [`801bc536`](https://github.com/rodkisten/userscripts-cf/commit/801bc5367821b5777b9a98d498e65df59dc1281d): query highlighting JSX now uses React `className`.
 - Remaining Solid code still exists in the repository, including larger feature screens and playgrounds. These edits are not a green-build claim; validate and continue component-by-component conversion rather than reintroducing Solid packages.
+
+### Release run 44305418980 (2026-11-18)
+
+- [Release job](https://github.com/rodkisten/userscripts-cf/actions/runs/44305418980/job/134805622833) failed at **Typecheck, build and test before publishing**; GitHub App auth, checkout, lockfile synchronization and npm install succeeded. Logs contain 200+ TypeScript error lines, including unresolved Solid imports, removed solid-ui modules, React JSX props/event types, and JSX elements incorrectly cast as DOM nodes. No release or deploy ran.
+- [`0e115d78`](https://github.com/rodkisten/userscripts-cf/commit/0e115d78a2fd0650b01df4a9572198b487809060) and [`9a589493`](https://github.com/rodkisten/userscripts-cf/commit/9a589493968ea3d092749e895bf76ccd111ddf13) replace invalid JSX-to-DOM casts in RodX dock and drag ghost with actual DOM creation.
+- **Still blocking:** React migration of Solid-based GitHub Tools, DOM Inspector, mobile editor and RodX components. Fresh typecheck/build and successful release unverified.
