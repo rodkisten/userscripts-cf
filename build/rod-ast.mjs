@@ -326,7 +326,8 @@ export function transformRodAst(code, id, options = {}) {
       ) {
         replacement = callee.name.text === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.modern." + callee.name.text;
       }
-      // GM.addStyle creates a page-level stylesheet. The UI helper owns the\n      // ShadowRoot and disposal instead; only migrate direct unguarded calls.
+      // GM.addStyle creates a page-level stylesheet. The UI helper owns the
+      // ShadowRoot and disposal instead; only migrate direct unguarded calls.
       if (replacement && !optional) {
         const original = code.slice(callee.getStart(source), callee.end);
         edits.push({ start: callee.getStart(source), end: callee.end, before: original, after: replacement });
