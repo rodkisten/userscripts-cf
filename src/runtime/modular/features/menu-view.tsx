@@ -227,7 +227,7 @@ export function openRadixDropdown(options: DropdownOptions) {
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
     options.trigger.ownerDocument,
-    resolveMenuTarget(options.trigger),
+    options.container ?? resolveMenuTarget(options.trigger),
   );
 }
 export function openRadixDialog(schema: MenuSchema) {
