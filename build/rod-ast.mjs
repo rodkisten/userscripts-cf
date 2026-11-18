@@ -234,7 +234,9 @@ export function transformRodAst(code, id, options = {}) {
       const target = append.expression.expression;
       const documentHead = ts.isPropertyAccessExpression(target) && ts.isIdentifier(target.expression) &&
         target.expression.text === "document" && ["head", "documentElement", "body"].includes(target.name.text);
-      if (!documentHead || target.name.text !== "head") continue;\n      // Retain comments and directives between statements instead of deleting them.\n      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||\n          /\\/\\*|\\/\\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
+      if (!documentHead || target.name.text !== "head") continue;
+      // Retain comments and directives between statements instead of deleting them.
+      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||\n          /\\/\\*|\\/\\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
       const symbol = checker.getSymbolAtLocation(variable.name);
       if (!symbol) continue;
       let references = 0;
