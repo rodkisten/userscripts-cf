@@ -12,7 +12,7 @@ const SAFE_URL_PROTOCOLS_REGEX = /^https?:$/;
 const HOSTNAME_MATCH_REGEX = /(?:^|\.)(?:soundgasm\.net|audiochan\.(?:com|net)|audioerotica\.(?:com|net))$/i;
 const AUDIO_EXTENSION_REGEX = /\.(?:mp3|m4a|aac|ogg|opus|wav)(?:[?#]|$)/i;
 const CATEGORY_TAG_REGEX =
-  /^(?:(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM){1,3}4(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM|B|NB){1,3}|NSFW|SFW|MDOM|MSUB|18\+)|\[\s*(?:Script\s+(?:Offer|Fill)|Improv|OC|Verification)\s*\]|\[\s*(?:gentle\s+\w*)\]|\[(?:mdom|msub)\s*(?:\w*)\]|\[\w*\s*(?:speaker)]|\[\w*\s*(?:listener)\]/gi;
+  /^(?:(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM){1,3}4(?:M|F|A|NB|T|TM|TF|MM|FF|MF|FM|B|NB){1,3}|NSFW|SFW|MDOM|MSUB|18\+)|\[\s*(?:Script\s+(?:Offer|Fill)|Improv|OC|Verification)\s*\]|\[\s*(?:gentle\s+\w*)\]|\[(?:mdom|msub)\s*(?:\w*)\]|\[\w*\s*(?:speaker)]|\[\w*\s*(?:listener)\]/i;
 const BRACKET_MATCH_REGEX = /\[([^\[\]\r\n]{1,180})\]/g;
 const TAG_KEYWORDS_MATCH_REGEX =
   /\b(?:tags?|keywords?|kinks?|themes?|genres?)\s*:\s*((?:\s*\[[^\[\]\r\n]{1,180}\])+)/gi;
