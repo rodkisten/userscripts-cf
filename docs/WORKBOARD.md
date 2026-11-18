@@ -428,3 +428,10 @@
 - [Failed run](https://github.com/rodkisten/userscripts-cf/actions/runs/44298941476), job `134783235604`: checkout succeeded, `Find unpublished @ploocky commits` failed with exit code **141**. Root cause: `git log | awk` early `exit` under `set -o pipefail` causes upstream SIGPIPE. Ploocky authentication and Pages deploy were skipped, not tested.
 - [`d9a3b256`](https://github.com/rodkisten/userscripts-cf/commit/d9a3b256800b0cbc3b31a288e1dae1b1e61ce038) removes early `awk exit`; consumes the full input while retaining the first marker before the most recent processed watermark. Commit ends in `@ploocky` to exercise the next scheduled scan.
 - **Pending:** confirm next scheduled run, Ploocky token/permissions, authenticated trigger commit and Pages deploy. No green run observed yet.
+
+### Event-driven preview triggers (2026-11-18)
+
+- [`7c9f9d6a`](https://github.com/rodkisten/userscripts-cf/commit/7c9f9d6a1f1d9c2b1fd07d0dad13f127911944d0): Pages now listens to every main push and gates the deploy job using changed relevant paths OR head commit message containing `@ploocky` or `trigger(playground-pages.yml)`. Manual dispatch always deploys; missing push base deploys conservatively.
+- [`41376a7e`](https://github.com/rodkisten/userscripts-cf/commit/41376a7e2e3139ab8b1509b560803f31fb9ca020): lockfile repair uses numeric BOT_APP_ID, authenticates checkout/push with App installation token, fixes branch selection, and puts `trigger(playground-pages.yml)` into commit subject. Successful lockfile repair on main should trigger Pages via App push.
+- [`2ae6567f`](https://github.com/rodkisten/userscripts-cf/commit/2ae6567fe031568dd2a98433ce06d4df34fa8cfb): removes scheduled marker poller. No schedule remains for Ploocky preview triggering.
+- **Verification pending:** observe fresh main push Pages change-detection job and lockfile-repair App-authenticated push. The new logic cannot detect push events GitHub suppresses for GITHUB_TOKEN-authenticated writes; explicit manual dispatch or App token is required for those cases.
