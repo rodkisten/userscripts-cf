@@ -524,7 +524,7 @@ export function mountGitHubDashboard(ctx: any) {
                   <label>
                     Inputs JSON{" "}
                     <textarea
-                      rows="3"
+                      rows={3}
                       spellCheck={false}
                       value={dispatchInputs()}
                       onInput={(e) => setDispatchInputs(e.currentTarget.value)}
