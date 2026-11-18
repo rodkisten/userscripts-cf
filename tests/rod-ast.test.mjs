@@ -246,3 +246,13 @@ it("listener symbols: unrelated event on same target can use context ownership",
   expect(output).toContain('ctx.listen(document, "keydown", h)');
   expect(transformRodAst(output, "listener-symbols.ts").changed).toBe(false);
 });
+
+it("preserves explicit querySelectorAll generic arguments and inferred selectors", () => {
+  const input = 'function init(ctx: ScriptContext) { const a = document.querySelectorAll<HTMLButtonElement>(".action"); const b = document.querySelectorAll("a"); const c = document.querySelector("input"); }';
+  const result = transformRodAst(input, "selector-types.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('ctx.dom.querySelectorAll<HTMLButtonElement>(".action")');
+  expect(result.code).toContain('ctx.dom.querySelectorAll("a")');
+  expect(result.code).toContain('ctx.dom.querySelector("input")');
+  expect(transformRodAst(result.code, "selector-types.ts").changed).toBe(false);
+});
