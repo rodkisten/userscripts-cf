@@ -111,7 +111,7 @@ jobs:
           git config user.name "${APP_SLUG}[bot]"
           git config user.email "${APP_SLUG}[bot]@users.noreply.github.com"
           git add -- src
-          git commit -m "refactor(react): apply AST codemod improvements [skip ci]"
+          git commit -m "refactor(react): apply AST codemod improvements"
           # Push only the source changes; no force push or deploy marker.
           git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)" push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
           echo "Saved partial codemod progress: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
