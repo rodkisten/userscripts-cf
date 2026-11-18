@@ -23,10 +23,10 @@ it("shadowed fetch is not rewritten", () => {
   const code = 'function init(ctx: unknown) { const fetch = (x: string) => x; return fetch("ok"); }';
   expect(transformRodAst(code, "shadow.ts").code).toBe(code);
 });
-it("optional Vite plugin is disabled unless registered", () => {
+it("optional Vite plugin is disabled unless registered", async () => {
   const plugin = rodAstPlugin();
   expect(plugin.name).toBe("rod-ast");
-  expect(plugin.transform('fetch("/")', "file.ts")).toBeNull();
+  expect(await plugin.transform('fetch("/")', "file.ts")).toBeNull();
 });
 
 it("rewrites typed DOM query aliases and preserves NodeList semantics", () => {
@@ -392,9 +392,9 @@ it("does not rewrite shadowed or availability-guarded GM style injections", () =
   expect(transformRodAst(guarded, "guarded-gm-style.ts").code).toBe(guarded);
 });
 
-it("Vite AST plugin rewrites GM styles only when explicitly registered", () => {
+it("Vite AST plugin rewrites GM styles only when explicitly registered", async () => {
   const plugin = rodAstPlugin();
-  const result = plugin.transform('function init(ctx) { GM_addStyle(".x{}"); }', "script.ts");
+  const result = await plugin.transform('function init(ctx) { GM_addStyle(".x{}"); }', "script.ts");
   expect(result?.code).toContain('ctx.ui.style(".x{}")');
 });
 
