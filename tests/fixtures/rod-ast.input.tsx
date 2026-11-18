@@ -91,12 +91,10 @@ export function selectorTypeParity(ctx: ScriptContext) {
 
 /** GM bridge and guarded synchronous storage migration candidates. */
 export function legacyApiCompatibility(ctx: ScriptContext) {
-  // @keep
-  const guarded = typeof GM_getValue === "function";
   try {
     const legacy = localStorage.getItem("legacy");
-    return { guarded, legacy };
+    return { legacy };
   } catch {
-    return { guarded, legacy: null };
+    return { legacy: null };
   }
 }
