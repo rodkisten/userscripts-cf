@@ -392,7 +392,7 @@ export function rodAstPlugin(options = {}) {
         visit(parsed);
         for (const entry of replacements.reverse()) {
           try {
-            const processed = await postcss(stylesPipeline({ scope: "shadow" })).process(entry.css, {
+            const processed = await postcss(stylesPipeline({ scope: "shadow", includeBase: false })).process(entry.css, {
               from: id.split("?")[0] + ".shadow.css",
             });
             const compiled = transformCSS({
