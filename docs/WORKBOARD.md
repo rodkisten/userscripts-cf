@@ -496,3 +496,7 @@
 - [x] Expand fixture with DOM queries and explicit unsupported `document.createElement` preservation.
 - [ ] Verify green workflow run and generated-fixture typecheck against actual `ScriptContext` before treating this as validated.
 - [ ] Continue audited mappings and TypeChecker-backed symbol verification; do not rewrite APIs absent from context.
+
+- [x] Rod AST: add typed `ctx.interval` conversion and conservative `ctx.listen` conversion, retaining native listeners when explicit removal is detected; Vitest coverage added.
+- [ ] Validate current workflow run and fixture typecheck; inspect failed cases before enabling more transforms.
+- [ ] Implement symbol-aware listener pairing and MutationObserver ownership analysis before automating `ctx.observe`.
