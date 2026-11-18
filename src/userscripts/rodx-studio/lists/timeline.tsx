@@ -223,18 +223,18 @@ export function formatPostDate(value) {
 export function postHTML(post) {
   const avatar = post.avatar ? (
     <>
-      <img class={"xls-avatar"} loading={"lazy"} referrerpolicy={"no-referrer"} src={post.avatar} alt={""} />
+      <img className={"xls-avatar"} loading={"lazy"} referrerpolicy={"no-referrer"} src={post.avatar} alt={""} />
     </>
   ) : (
     <>
-      <span class={"xls-avatar"}></span>
+      <span className={"xls-avatar"}></span>
     </>
   );
   const media =
     post.media?.type === "video" && post.media.video ? (
       <>
         <video
-          class={"xls-media"}
+          className={"xls-media"}
           playsinline={true}
           controls={true}
           preload={"none"}
@@ -244,16 +244,16 @@ export function postHTML(post) {
       </>
     ) : post.media?.image ? (
       <>
-        <img class={"xls-media"} loading={"lazy"} src={post.media.image} alt={"Mídia do post"} />
+        <img className={"xls-media"} loading={"lazy"} src={post.media.image} alt={"Mídia do post"} />
       </>
     ) : (
       ""
     );
   return (
     <>
-      <article class={"xls-post"}>
+      <article className={"xls-post"}>
         {avatar}
-        <div class={"xls-post-body"}>
+        <div className={"xls-post-body"}>
           {"\n      "}
           <a
             href={["https://x.com/", encodeURIComponent(post.username)].join("")}
@@ -261,13 +261,13 @@ export function postHTML(post) {
             rel={"noopener noreferrer"}
           >
             <strong>{post.displayName}</strong>{" "}
-            <span class={"small"}>
+            <span className={"small"}>
               {"@"}
               {post.username}
             </span>
           </a>
           {"\n      "}
-          <div class={"xls-post-date"}>
+          <div className={"xls-post-date"}>
             {post.isRepost ? "Repost · " : ""}
             {formatPostDate(post.createdAt)}
             {" · "}
@@ -275,10 +275,10 @@ export function postHTML(post) {
             {" curtidas"}
           </div>
           {"\n      "}
-          <div class={"xls-post-text"}>{post.text}</div>
+          <div className={"xls-post-text"}>{post.text}</div>
           {media}
           {"\n      "}
-          <a href={post.url} target={"_blank"} rel={"noopener noreferrer"} class={"small"}>
+          <a href={post.url} target={"_blank"} rel={"noopener noreferrer"} className={"small"}>
             {"Abrir post no X ↗"}
           </a>
           {"\n      "}
@@ -293,9 +293,9 @@ export function renderTimelineCards(panel = false) {
   const canMore = Boolean(timeline.hasMore && !timeline.loading);
   const actions = (
     <>
-      <div class={"grp rx-timeline-grp"}>
+      <div className={"grp rx-timeline-grp"}>
         <button
-          class={"btn mini"}
+          className={"btn mini"}
           data-action={"timeline-refresh"}
           disabled={(timeline.loading ? "disabled" : "") === "disabled"}
         >
@@ -303,7 +303,7 @@ export function renderTimelineCards(panel = false) {
         </button>
         {"\n      "}
         <button
-          class={"btn mini primary"}
+          className={"btn mini primary"}
           data-action={"timeline-more"}
           disabled={(!canMore ? "disabled" : "") === "disabled"}
         >
@@ -315,7 +315,7 @@ export function renderTimelineCards(panel = false) {
   const label = timeline.mode === "search" ? "Busca interna filtrada" : "Timeline da lista + filtros locais";
   const status = (
     <>
-      <div class={"xls-feed-status"}>
+      <div className={"xls-feed-status"}>
         {label}
         {" · "}
         {shown.length}
@@ -329,7 +329,7 @@ export function renderTimelineCards(panel = false) {
       {"\n      "}
       {timeline.mode === "native" ? (
         <>
-          <div class={"xls-feed-status"}>
+          <div className={"xls-feed-status"}>
             {
               "Modo parcial: filtros aplicados só aos posts recebidos. Para consultas exatas, abra uma busca comum no X uma vez para que o Studio identifique SearchTimeline."
             }
@@ -341,7 +341,7 @@ export function renderTimelineCards(panel = false) {
       {"\n      "}
       {timeline.error ? (
         <>
-          <p class={"notice error"}>{timeline.error}</p>
+          <p className={"notice error"}>{timeline.error}</p>
         </>
       ) : (
         ""
@@ -349,7 +349,7 @@ export function renderTimelineCards(panel = false) {
       {"\n      "}
       {timeline.status ? (
         <>
-          <p class={"notice"}>{timeline.status}</p>
+          <p className={"notice"}>{timeline.status}</p>
         </>
       ) : (
         ""
@@ -358,14 +358,14 @@ export function renderTimelineCards(panel = false) {
   );
   return (
     <>
-      <div class={"xls-feed"} data-xls-feed={panel ? "panel" : "embedded"}>
+      <div className={"xls-feed"} data-xls-feed={panel ? "panel" : "embedded"}>
         {status}
         {actions}
         {"\n      "}
         {shown.map(postHTML) ||
           (!timeline.loading ? (
             <>
-              <p class={"muted"}>{"Nenhum post correspondente entre os resultados carregados."}</p>
+              <p className={"muted"}>{"Nenhum post correspondente entre os resultados carregados."}</p>
             </>
           ) : (
             ""
@@ -375,7 +375,7 @@ export function renderTimelineCards(panel = false) {
         {"\n      "}
         {timeline.hasMore ? (
           <>
-            <div id={"xls-more-sentinel"} class={"rx-timeline-sentinel"} aria-hidden={"true"}></div>
+            <div id={"xls-more-sentinel"} className={"rx-timeline-sentinel"} aria-hidden={"true"}></div>
           </>
         ) : (
           ""
@@ -646,18 +646,18 @@ export function ensureEmbeddedTimeline() {
     const markup = (<div />) as HTMLDivElement;
     mountView(markup, () => (
       <>
-        <div class={"head"}>
+        <div className={"head"}>
           <div>
-            <span class={"tag"}>{"X LISTS STUDIO"}</span>
+            <span className={"tag"}>{"X LISTS STUDIO"}</span>
             <div>
               <strong>{"Timeline personalizada"}</strong>
             </div>
           </div>
-          <div class={"grp"}>
-            <button class={"btn"} data-action={"edit-filters"}>
+          <div className={"grp"}>
+            <button className={"btn"} data-action={"edit-filters"}>
               {"Filtros ⚙"}
             </button>
-            <button class={"btn"} data-action={"timeline-close"}>
+            <button className={"btn"} data-action={"timeline-close"}>
               {"Voltar ao X"}
             </button>
           </div>
