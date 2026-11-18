@@ -405,3 +405,9 @@
 - [`84fb9732`](https://github.com/rodkisten/userscripts-cf/commit/84fb97322a89bff36a4b3ed215de0854e33dbec0): recognize `github.actor == 'ploocky[bot]'` explicitly as the authorized Ploocky GitHub App push in the preview summary. Removed previous generic bot author/committer matching rejection, which could block legitimate pushes; other bot and human pushes preserve existing behavior.
 - Existing Pages `push` trigger on `main` handles App-authenticated pushes automatically. This does **not** change the GitHub connector's commit credentials and cannot trigger a new run from ChatGPT itself.
 - **Pending:** verify actual Ploocky-authenticated push and Pages deployment; no run result observed yet.
+
+### Ploocky App authenticated preview publication (2026-11-18)
+
+- [`de037dc4`](https://github.com/rodkisten/userscripts-cf/commit/de037dc4fb065926eb9d92ad124f794d960ccdc9) creates `.github/workflows/ploocky-publish-preview.yml` with manual `workflow_dispatch` and `source_branch` input restricted to `automation/ploocky/*`.
+- [`6df80b50`](https://github.com/rodkisten/userscripts-cf/commit/6df80b50b8d86107692a7692788a25eb5a706ed3) uses Ploocky installation token for checkout, fetch and push. Workflow requires App slug `ploocky`, up-to-date source branch, and blocks modifying GitHub workflow files and migration governance docs through the bot publishing route. Squashes source changes into a new commit authored `ploocky[bot]`, then pushes `main` using installation token; Pages existing `push` trigger should run.
+- **Pending verification:** manual dispatch with a real prepared branch, correct `BOT_APP_ID` and `BOT_PRIVATE_KEY`, App Contents write permission, actual preview Pages success. GitHub connector cannot dispatch new workflows directly, so ChatGPT-authored commits still do not automatically become Ploocky-authored without a separate branch preparation and dispatch mechanism.
