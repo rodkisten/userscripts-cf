@@ -173,7 +173,7 @@ NODE
     fi
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
-      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
+      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
         targets="$(node -p 'require("./affected-userscripts.json").targets.join(",")')"
         if [[ -n "$targets" ]]; then
           echo "Building affected targets: $targets"
@@ -205,10 +205,10 @@ NODE
     # Test files named after a userscript directory are selected automatically.
     # Folder-based suites are selected from affected runtime dependency graphs.
     if (( ${#selected_tests[@]} )); then
-      mapfile -t unique_tests < <(printf '%s\\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
+      mapfile -t unique_tests < <(printf '%s\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
       if [[ "${SCRIPT_TESTS_SEPARATE:-false}" == true ]]; then
-        mapfile -t unique_tests < <(printf '%s\\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
+        mapfile -t unique_tests < <(printf '%s\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
       fi
       if (( ${#unique_tests[@]} )); then
         npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
