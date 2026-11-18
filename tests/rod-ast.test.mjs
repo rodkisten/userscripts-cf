@@ -437,3 +437,16 @@ it("Vite leaves dynamic style expressions untouched", async () => {
   const plugin = rodAstPlugin({ css: true });
   expect(await plugin.transform('function init(ctx) { ctx.ui.style(cssText); }', "dynamic.ts")).toBeNull();
 });
+
+
+it("Vite compiles inline ShadowRoot CSS without injecting shared design-system styles", async () => {
+  const plugin = rodAstPlugin();
+  const result = await plugin.transform(
+    'function init(ctx) { GM_addStyle(".rod-inline-only { color: red; }"); }',
+    "isolated-inline.ts",
+  );
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain("rod-inline-only");
+  expect(result?.code).not.toContain("--rod-");
+  expect(result?.code).not.toContain("font-face");
+});
