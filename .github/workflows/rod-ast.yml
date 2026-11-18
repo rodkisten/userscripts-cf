@@ -13,6 +13,13 @@ on:
       - "tests/fixtures/rod-ast.matrix.json"
       - "tests/fixtures/rod-ast.legacy.user.js"
       - "tests/rod-ast.test.mjs"
+      - "src/core/runtime.ts"
+      - "src/runtime/dom-engine.ts"
+      - "src/runtime/gm-bridge.ts"
+      - "src/runtime/modular/features/dom.ts"
+      - "src/runtime/modular/features/gm.ts"
+      - "src/runtime/modular/features/storage.ts"
+      - "src/runtime/vendor/storage.ts"
       - ".github/workflows/rod-ast.yml"
 concurrency:
   group: rod-ast-${{ github.ref }}
