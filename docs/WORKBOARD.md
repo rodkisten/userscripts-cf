@@ -230,3 +230,8 @@
 - Confirmed the historical release job `134554958217` explains `readOnly` as invalid under Solid JSX for `StandaloneFieldRenderer` and `TagsInput`; changed to `readonly` in [`6d2404b4`](https://github.com/rodkisten/userscripts-cf/commit/6d2404b46fde1dd4687cf23112965ee8ec3ff23a) and [`7b9b62c7`](https://github.com/rodkisten/userscripts-cf/commit/7b9b62c7b1b871cfa5c03cceeb29b77f8b4d10f4).
 - Queried commit combined status for `909c8059`: no legacy commit statuses returned. This does **not** establish passing or failing GitHub Actions checks. GitHub Actions cannot be inferred from an empty statuses array.
 - **Next validation:** run `npm run typecheck && npm run typecheck:react && npm run build` against latest `main` in CI and inspect the actual run. Do not rerun the historical failed release as evidence of the latest commit.
+
+### Automated current-main validation added (2026-11-18)
+
+- [`a54a52a6`](https://github.com/rodkisten/userscripts-cf/commit/a54a52a6fcd3ffb386744fc4f1a32153f55609a0) adds `.github/workflows/react-migration-validation.yml` on `main` with `push` path filters and `workflow_dispatch`. It runs `npm ci`, legacy `npm run typecheck`, React `npm run typecheck:react`, and `npm run build`, without formatting gate or skipped checks. It uses a cancel-in-progress concurrency group and a 20-minute timeout.
+- **Validation still pending:** workflow creation/commit does not establish execution or success. Inspect Actions run and failure logs, then fix errors against current HEAD before marking P0 done.
