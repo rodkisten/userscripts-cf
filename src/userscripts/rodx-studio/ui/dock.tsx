@@ -25,7 +25,7 @@ export function ensureDock() {
     return;
   }
   if (!state.dockHost) {
-    const host = (<div />) as HTMLDivElement;
+    const host = document.createElement("div");
     host.id = `${IDENT}-dock`;
     const shadow = host.attachShadow({
       mode: "open",
