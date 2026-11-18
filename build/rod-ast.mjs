@@ -4,6 +4,9 @@
  * @keep on a statement opts out of rewrites for that statement.
  */
 import ts from "typescript";
+import postcss from "postcss";
+import { transform as transformCSS } from "lightningcss";
+import { stylesPipeline } from "./styles.mjs";
 
 const DEFAULT_RULES = Object.freeze({
   fetch: "ctx.http.fetch",
@@ -323,7 +326,8 @@ export function transformRodAst(code, id, options = {}) {
       ) {
         replacement = callee.name.text === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.modern." + callee.name.text;
       }
-      // GM.addStyle creates a page-level stylesheet. The UI helper owns the\n      // ShadowRoot and disposal instead; only migrate direct unguarded calls.\n      if (replacement && !optional) {
+      // GM.addStyle creates a page-level stylesheet. The UI helper owns the\n      // ShadowRoot and disposal instead; only migrate direct unguarded calls.
+      if (replacement && !optional) {
         const original = code.slice(callee.getStart(source), callee.end);
         edits.push({ start: callee.getStart(source), end: callee.end, before: original, after: replacement });
         if (extraArg)
@@ -357,12 +361,47 @@ export function rodAstPlugin(options = {}) {
   return {
     name: "rod-ast",
     enforce: "pre",
-    transform(code, id) {
+    async transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || id.includes("node_modules") || id.includes("/dist/"))
         return null;
       const result = transformRodAst(code, id.split("?")[0], options);
       if (result.diagnostics.length && options.strict) this.error(result.diagnostics.join("\n"));
-      return result.changed ? { code: result.code, map: null } : null;
+      let output = result.code;
+      if (options.css !== false) {
+        const parsed = ts.createSourceFile(id, output, ts.ScriptTarget.Latest, true, scriptKind(id));
+        const replacements = [];
+        const visit = (node) => {
+          if (ts.isCallExpression(node) && node.arguments.length === 1 &&
+              ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "style" &&
+              ts.isPropertyAccessExpression(node.expression.expression) && node.expression.expression.name.text === "ui" &&
+              ts.isIdentifier(node.expression.expression.expression) &&
+              ["ctx", "context"].includes(node.expression.expression.expression.text)) {
+            const arg = node.arguments[0];
+            if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg))
+              replacements.push({ start: arg.getStart(parsed), end: arg.end, css: arg.text });
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(parsed);
+        for (const entry of replacements.reverse()) {
+          try {
+            const processed = await postcss(stylesPipeline({ scope: "shadow" })).process(entry.css, {
+              from: id.split("?")[0] + ".shadow.css",
+            });
+            const compiled = transformCSS({
+              filename: id.split("?")[0] + ".shadow.css",
+              code: Buffer.from(processed.css),
+              targets: { safari: 15 << 16 },
+              minify: true,
+            });
+            output = output.slice(0, entry.start) + JSON.stringify(compiled.code.toString()) + output.slice(entry.end);
+          } catch (error) {
+            if (options.strict) this.error("Rod AST CSS: " + error.message);
+            this.warn?.("Rod AST CSS skipped: " + error.message);
+          }
+        }
+      }
+      return output !== code ? { code: output, map: null } : null;
     },
   };
 }
