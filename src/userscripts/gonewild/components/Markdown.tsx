@@ -71,13 +71,13 @@ export function markdownBlocks(source: string): Block[] {
   return result;
 }
 function PlainText({ text }: { text: string }) {
-  return <>{text.split("\\n").map((line, index) => (
+  return <>{text.split("\n").map((line, index) => (
     <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>
   ))}</>;
 }
 function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
   if (depth > 5) return <PlainText text={text} />;
-  const tokens = /(`[^`\\n]+`)|\\[([^\\]\\n]{1,300})\\]\\s*\\((https?:\\/\\/[^\\s)]+(?:\\([^\\n)]*\\)[^\\s)]*)*)\\)|<(https?:\\/\\/[^>\\s]+)>|(https?:\\/\\/[^\\s<>'"\\[\\]]+)|(\\*\\*[^*\\n]+\\*\\*|__[^_\\n]+__|~~[^~\\n]+~~|\\*[^*\\n]+\\*|_[^_\\n]+_)/gi;
+  const tokens = /(\`[^\`\n]+\`)|\[([^\]\n]{1,300})\]\s*\((https?:\/\/[^\s)]+(?:\([^\n)]*\)[^\s)]*)*)\)|<(https?:\/\/[^>\s]+)>|(https?:\/\/[^\s<>'"\[\]]+)|(\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_)/gi;
   const result: ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(tokens)) {
@@ -89,7 +89,7 @@ function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
       const href = safeURL(raw.replace(/[.,;!?]+$/, ""), "https://www.reddit.com")?.href;
       result.push(href ? <a key={index} href={href} target="_blank" rel="noopener noreferrer">{match[2] || raw}</a> : match[0]);
     } else {
-      const wide = /^(\\*\\*|__|~~)/.test(match[0]);
+      const wide = /^(\*\*|__|~~)/.test(match[0]);
       const inner = match[0].slice(wide ? 2 : 1, wide ? -2 : -1);
       const child = <Inline text={inner} depth={depth + 1} />;
       result.push(match[0].startsWith("~~") ? <del key={index}>{child}</del>
