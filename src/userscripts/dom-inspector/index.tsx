@@ -317,7 +317,7 @@ export default {
           <>
             <Show when={!open() && !picking()}>
               <button
-                class={styles.launcher}
+                className={styles.launcher}
                 type="button"
                 aria-label="Abrir DOM Inspector"
                 title="Abrir DOM Inspector"
@@ -328,7 +328,7 @@ export default {
             </Show>
             <Show when={picking()}>
               <button
-                class={styles.cancelPicker}
+                className={styles.cancelPicker}
                 type="button"
                 onClick={() => {
                   cancelPicker();
@@ -340,7 +340,7 @@ export default {
             </Show>
             <Show when={open()}>
               <section
-                class={[styles.panel, { [styles.full]: full() }]}
+                className={[styles.panel, { [styles.full]: full() }]}
                 role="dialog"
                 aria-modal="false"
                 aria-label="DOM Inspector"
@@ -348,7 +348,7 @@ export default {
                   if (event.key === "Escape") setOpen(false);
                 }}
               >
-                <header class={styles.header}>
+                <header className={styles.header}>
                   <h2>Inspector</h2>
                   <small>{status()}</small>
                   <button type="button" aria-label="Alternar tela cheia" onClick={() => setFull((v) => !v)}>
@@ -358,13 +358,13 @@ export default {
                     ✕
                   </button>
                 </header>
-                <div class={styles.tabs} role="tablist" aria-label="Inspector views">
+                <div className={styles.tabs} role="tablist" aria-label="Inspector views">
                   {["dom", "css", "network"].map((value) => (
                     <button
                       type="button"
                       role="tab"
                       aria-selected={tab() === value ? "true" : "false"}
-                      class={{ [styles.active]: tab() === value }}
+                      className={{ [styles.active]: tab() === value }}
                       onClick={() => {
                         setTab(value);
                         queueMicrotask(renderSource);
@@ -374,7 +374,7 @@ export default {
                     </button>
                   ))}
                 </div>
-                <div class={styles.tools}>
+                <div className={styles.tools}>
                   <input
                     value={selector()}
                     placeholder="CSS selector"
@@ -388,7 +388,7 @@ export default {
                     Copy
                   </button>
                 </div>
-                <div class={styles.tools}>
+                <div className={styles.tools}>
                   <button type="button" aria-label="Elemento pai" onClick={() => moveSelection("parent")}>
                     ↑
                   </button>
@@ -401,7 +401,7 @@ export default {
                   <button type="button" aria-label="Próximo irmão" onClick={() => moveSelection("next")}>
                     →
                   </button>
-                  <label class={styles.switch}>
+                  <label className={styles.switch}>
                     <input
                       type="checkbox"
                       checked={scroll()}
@@ -409,7 +409,7 @@ export default {
                     />{" "}
                     Scroll
                   </label>
-                  <label class={styles.switch}>
+                  <label className={styles.switch}>
                     <input
                       type="checkbox"
                       checked={live()}
@@ -434,8 +434,8 @@ export default {
                     ⌕
                   </button>
                 </div>
-                <div class={styles.hierarchy}>
-                  <output class={styles.selection} title={selectionName()}>
+                <div className={styles.hierarchy}>
+                  <output className={styles.selection} title={selectionName()}>
                     {selectionName()}
                   </output>
                   <label for="inspector-depth">Nível {depth()}</label>
@@ -451,7 +451,7 @@ export default {
                   />
                 </div>
                 <div
-                  class={styles.editor}
+                  className={styles.editor}
                   ref={(el) => {
                     editorRoot = el;
                     queueMicrotask(renderSource);
