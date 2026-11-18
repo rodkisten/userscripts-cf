@@ -713,9 +713,15 @@ export function FileCommit(props: { ctx: any; owner: string; repo: string; path:
     setCommit(null);
     setError("");
     void fetchLatestCommit(props)
-      .then((entry) => { if (active) setCommit(entry); })
-      .catch((caught) => { if (active && !props.ctx.signal.aborted) setError(String(caught)); });
-    return () => { active = false; };
+      .then((entry) => {
+        if (active) setCommit(entry);
+      })
+      .catch((caught) => {
+        if (active && !props.ctx.signal.aborted) setError(String(caught));
+      });
+    return () => {
+      active = false;
+    };
   }, [props.ctx, props.owner, props.repo, props.path]);
   if (!commit) return <span title={error} />;
   return (
