@@ -281,3 +281,17 @@ it("preserves synchronous localStorage try/catch until async migration can be pr
     'function init(ctx) { try { return localStorage.getItem("key"); } catch (error) { return "fallback"; } }';
   expect(transformRodAst(input, "storage.ts").code).toBe(input);
 });
+
+it("GM rewrites remain idempotent and honor @keep", () => {
+  const input = 'function init(ctx) { GM_setValue("x", 1); // @keep\n GM_getValue("y"); }';
+  const once = transformRodAst(input, "gm-keep.ts");
+  expect(once.diagnostics).toEqual([]);
+  expect(once.code).toContain('ctx.gm.legacy.setValue("x", 1)');
+  expect(once.code).toContain('GM_getValue("y")');
+  expect(transformRodAst(once.code, "gm-keep.ts").changed).toBe(false);
+});
+it("GM availability checks retain both branches until fallback parity is proven", () => {
+  const input = 'function init(ctx) { if (typeof GM_getValue === "function") { return GM_getValue("x"); } return localStorage.getItem("x"); }';
+  const result = transformRodAst(input, "gm-fallback.ts");
+  expect(result.code).toBe(input);
+});
