@@ -1,8 +1,8 @@
-export type SurfaceType = 'bottom-sheet' | 'modal' | 'drawer' | 'popover';
+export type SurfaceType = "bottom-sheet" | "modal" | "drawer" | "popover";
 
-export type Position = 'top' | 'bottom' | 'left' | 'right' | 'center';
+export type Position = "top" | "bottom" | "left" | "right" | "center";
 
-export type FieldType = 'text' | 'number' | 'select' | 'checkbox' | 'toggle' | 'slider';
+export type FieldType = "text" | "number" | "select" | "checkbox" | "toggle" | "slider";
 
 export interface FieldDefinition {
   id: string;
@@ -21,7 +21,7 @@ export interface ActionDefinition {
   id: string;
   label: string;
   icon?: string;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: "primary" | "secondary" | "danger" | "ghost";
   disabled?: boolean;
   onClick: (context: MenuContext) => void | Promise<void>;
 }
