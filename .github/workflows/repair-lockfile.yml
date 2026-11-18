@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'package.json'
+      - 'repair-lockfile.yml'
   workflow_dispatch:
   
 permissions:
