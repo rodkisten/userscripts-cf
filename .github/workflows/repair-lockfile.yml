@@ -79,18 +79,7 @@ jobs:
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package-lock.json
-          git commit -m "fix(deps): regenerate npm lockfile trigger(playground-pages.yml)"
+          git commit -m "fix(deps): regenerate npm lockfile"
           git push origin "HEAD:$BRANCH"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "Regenerated package-lock.json and pushed to $BRANCH." >> "$GITHUB_STEP_SUMMARY"
-
-  deploy-playground:
-    name: Trigger playground deployment after lockfile repair
-    needs: repair
-    if: needs.repair.outputs.changed == 'true' && needs.repair.outputs.branch == 'main'
-    uses: ./.github/workflows/playground-pages.yml
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    secrets: inherit
