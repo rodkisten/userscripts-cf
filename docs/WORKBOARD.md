@@ -305,3 +305,9 @@
 
 - [`529c1be4`](https://github.com/rodkisten/userscripts-cf/commit/529c1be4788b7d01bfacf65d8eefaec28a87c6a5) migrates `ReelBookmarkButton.tsx` from Solid Show/class to React JSX; [`4f358842`](https://github.com/rodkisten/userscripts-cf/commit/4f358842c7b76bf18e531b01650ee2c32c6b6123) replaces Solid mountPoint/createSignal with React createRoot/unmount in `reel-bookmark.tsx`. No new shared foundational components created.
 - **Not verified**: multiple-Reel navigation and first-item-only bug, native save behavior, Safari/Tampermonkey, and build. `instagram-saved/index.tsx` and `Settings.tsx` still require migration; do not claim Instagram is React-only yet.
+
+### Instagram saved settings React-only cutover (2026-11-18)
+
+- [`912daa9e`](https://github.com/rodkisten/userscripts-cf/commit/912daa9e95e0596a751c88d279486a921665c1c5): replaced Solid store/dialog in `src/userscripts/instagram-saved/Settings.tsx` with React state and Radix Dialog.
+- [`31dc7d85`](https://github.com/rodkisten/userscripts-cf/commit/31dc7d854642146fe4e95a29590f5d033cfdd486): replaced `mountSolid` and `Show` in `instagram-saved/index.tsx` with `ctx.ui.mountReact` and `useSyncExternalStore`-based notifications for runtime changes; kept Rod Actions tab integration.
+- **Unverified**: full build, typecheck, native Instagram behavior, portal styling within ShadowRoot, multi-Reel navigation. Existing form inputs/buttons are markup, not a new reusable component library; replace with shadcn/Radix primitives as the existing design system is consolidated.
