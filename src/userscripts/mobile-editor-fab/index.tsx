@@ -280,7 +280,6 @@ export default {
                       <Icon name={icon} />
                       <span>{label}</span>
                     </button>
-                  )}
                 ))}
               </div>
               <p className={styles.hint}>Ctrl e Shift: próximo comando</p>
