@@ -97,9 +97,9 @@ case "$mode" in
     fi
     if [[ "${FULL:-false}" == true ]]; then
       echo "Shared infrastructure changed: running full validation."
-      npm run build
       npm run typecheck
       npm run lint
+      npm run build
       # Run previously failing suites first so Vitest prints their complete failure
       # summary before a long full-suite run can be superseded by newer CI.
       # Keep the full suite as the release gate once these regressions pass.
@@ -134,7 +134,7 @@ case "$mode" in
         playground/*|public/*) hosting_changed=true; build_needed=true ;;
       esac
     done
-    # Build first: integration tests consume dist/ and must never see stale bundles.
+    # Fail fast on TypeScript errors before spending time bundling.\n    # Integration tests still build fresh dist/ before running.
     mapfile -t changed_tests < <(printf '%s\n' "${files[@]}" | grep -E '^tests/.*\.test\.[cm]?[jt]sx?$' || true)
     if (( ${#changed_tests[@]} )) && printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
       build_needed=true
@@ -142,6 +142,7 @@ case "$mode" in
     # Typecheck after the build so UI previews can still be generated independently.
     # The dedicated playground workflow step also runs with always().
     if [[ "$source_changed" == true ]]; then
+      npm run typecheck
       npm run lint
     fi
     # Resolve transitive source dependencies using the same graph as the bundler.
@@ -183,7 +184,6 @@ NODE
         npm run build
       fi
     fi
-    if [[ "$source_changed" == true ]]; then npm run typecheck; fi
     selected_tests=("${changed_tests[@]}")
     if [[ "$source_changed" == true ]]; then
       mapfile -t changed_sources < <(printf '%s\n' "${files[@]}" | grep '^src/' || true)
