@@ -53,6 +53,11 @@ export function transformRodAst(code, id, options = {}) {
       diagnostics: source.parseDiagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, " ")),
     };
   const rules = { ...DEFAULT_RULES, ...(options.rules ?? {}) };
+  // A native timer ID cannot be passed to clearInterval after converting to a
+  // context-owned timer without proving equivalent ownership and cancellation.
+  const nativeTimerCleanup = /\bclearInterval\s*\(/.test(code) || /\.clearInterval\s*\(/.test(code);
+  const nativeListenerCleanup = /\.removeEventListener\s*\(/.test(code);
+  const hasNativeObserver = /\bMutationObserver\b/.test(code);
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
     return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)));
@@ -75,20 +80,25 @@ export function transformRodAst(code, id, options = {}) {
       ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node)));
       return;
     }
+    if (ctx && !blocked && !keep(node) && ts.isNewExpression(node) &&
+        ts.isIdentifier(node.expression) && node.expression.text === "MutationObserver" &&
+        !shadowed.has("MutationObserver") && !hasNativeObserver) {
+      // Observer ownership requires proving observe/disconnect pairing.
+      // Intentionally left unchanged until that analysis is available.
+    }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
       const callee = node.expression;
       let replacement, extraArg;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
-        if (callee.text === "setInterval" && node.arguments.length >= 2 && !shadowed.has("setInterval")) replacement = ctx + ".interval";
-        if (callee.text === "useRuntime" || callee.text === "useContext")
-          if (!node.arguments.length) replacement = ctx;
+        if (callee.text === "setInterval" && node.arguments.length >= 2 && !nativeTimerCleanup) replacement = ctx + ".interval";
+        // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
         const receiver = callee.expression.text;
         const method = callee.name.text;
         if (!shadowed.has(receiver) && (receiver === "document" || receiver === "window")) {
           const key = receiver + "." + method;
-          if (DOM_EVENTS.has(method) && options.listeners !== false && !/\.removeEventListener\s*\(/.test(code)) {
+          if (DOM_EVENTS.has(method) && options.listeners !== false && !nativeListenerCleanup) {
             replacement = ctx + ".listen";
             extraArg = receiver;
           } else if (receiver === "document" && DOM_METHODS.has(method)) {
