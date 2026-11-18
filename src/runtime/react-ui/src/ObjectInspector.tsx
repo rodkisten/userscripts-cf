@@ -1,23 +1,9 @@
 import React, { useState, useMemo } from "react";
-import {
-  normalizeOptions,
-  createEntrySource,
-  getObjectPreview,
-  safeKeyText,
-} from "./core";
-import type {
-  ObjectInspectorProps,
-  NormalizedInspectorOptions,
-  InspectorEntry,
-} from "./types";
+import { normalizeOptions, createEntrySource, getObjectPreview, safeKeyText } from "./core";
+import type { ObjectInspectorProps, NormalizedInspectorOptions, InspectorEntry } from "./types";
 import styles from "./ObjectInspector.module.css";
 
-export function ObjectInspector({
-  data,
-  name,
-  depth = 0,
-  options,
-}: ObjectInspectorProps) {
+export function ObjectInspector({ data, name, depth = 0, options }: ObjectInspectorProps) {
   const normalizedOptions = useMemo(() => normalizeOptions(options), [options]);
   const [expanded, setExpanded] = useState(depth < normalizedOptions.expandDepth);
 
@@ -47,13 +33,9 @@ export function ObjectInspector({
         onClick={() => isExpandable && setExpanded(!expanded)}
         style={{ cursor: isExpandable ? "pointer" : "default" }}
       >
-        {isExpandable && (
-          <span className={styles.arrow}>{expanded ? "▼" : "▶"}</span>
-        )}
+        {isExpandable && <span className={styles.arrow}>{expanded ? "▼" : "▶"}</span>}
         {name !== undefined && <span className={styles.key}>{name}: </span>}
-        <span className={styles.preview}>
-          {getObjectPreview(data, normalizedOptions)}
-        </span>
+        <span className={styles.preview}>{getObjectPreview(data, normalizedOptions)}</span>
       </div>
       {expanded && isExpandable && (
         <ObjectInspectorList data={data} options={normalizedOptions} depth={depth + 1} />
@@ -102,14 +84,7 @@ function InspectorEntryRow({
 }) {
   if (entry.kind === "data" || entry.kind === "prototype") {
     const keyText = safeKeyText(entry.key);
-    return (
-      <ObjectInspector
-        data={entry.value}
-        name={keyText}
-        depth={depth}
-        options={options}
-      />
-    );
+    return <ObjectInspector data={entry.value} name={keyText} depth={depth} options={options} />;
   }
   if (entry.kind === "accessor") {
     return (
@@ -120,24 +95,10 @@ function InspectorEntryRow({
     );
   }
   if (entry.kind === "map-entry") {
-    return (
-      <ObjectInspector
-        data={entry.value}
-        name={String(entry.mapKey)}
-        depth={depth}
-        options={options}
-      />
-    );
+    return <ObjectInspector data={entry.value} name={String(entry.mapKey)} depth={depth} options={options} />;
   }
   if (entry.kind === "set-entry") {
-    return (
-      <ObjectInspector
-        data={entry.value}
-        name={String(entry.key)}
-        depth={depth}
-        options={options}
-      />
-    );
+    return <ObjectInspector data={entry.value} name={String(entry.key)} depth={depth} options={options} />;
   }
   return null;
 }
