@@ -135,7 +135,7 @@ export function highlightWithIssues(text, issues) {
     nodes.push(highlightQuery(text.slice(from, issue.start)));
     nodes.push(
       <>
-        <span class={["rodx-syntax-", issue.severity].join("")} title={issue.message}>
+        <span className={["rodx-syntax-", issue.severity].join("")} title={issue.message}>
           {highlightQuery(text.slice(issue.start, issue.end))}
         </span>
       </>,
@@ -175,7 +175,7 @@ export function highlightQuery(source) {
     if (!whitespace) nextNegative = /^NOT$/i.test(token);
     return cls ? (
       <>
-        <span class={cls}>{token}</span>
+        <span className={cls}>{token}</span>
       </>
     ) : (
       token
