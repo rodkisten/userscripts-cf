@@ -27,7 +27,8 @@
     "lint": "node build/check-style.mjs",
     "lint:fix": "node build/check-style.mjs --fix",
     "check:design-system": "node build/check-design-system-changes.mjs",
-    "test:design-system": "vitest run tests/design-system-contract.test.js"
+    "test:design-system": "vitest run tests/design-system-contract.test.js",
+    "typecheck:react": "tsc --noEmit -p tsconfig.react.json"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
