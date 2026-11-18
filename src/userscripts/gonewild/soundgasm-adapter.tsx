@@ -1,9 +1,21 @@
-import { createStore, Errored } from "solid-js";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import { SoundgasmApp, StudioFailure, type SoundgasmData } from "./components/SoundgasmApp.tsx";
 import { readNativeMedia, readRecordings } from "./services.ts";
 import { safeURL } from "./domain.ts";
 import styles, { css } from "./Soundgasm.module.css";
+class SoundgasmBoundary extends Component<{ children: ReactNode; onFailure: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    console.error("[GoneWildStudio] React render failed", error);
+    this.props.onFailure();
+  }
+  render() {
+    if (this.state.failed) return <StudioFailure retry={() => this.setState({ failed: false })} />;
+    return this.props.children;
+  }
+}
 export async function mountSoundgasm(ctx: any, bridge: any) {
   // External bridge data is optional. Never block the Soundgasm UI indefinitely.
   // Bound the wait and continue using native page metadata on failure.
@@ -68,7 +80,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         JSON.stringify({ path: location.pathname, href: location.href, at: Date.now() }),
       );
     } catch {}
-  const [data, setData] = createStore<SoundgasmData>({
+  let data: SoundgasmData = {
     title,
     description,
     author: decodeURIComponent(parts[1] || ""),
@@ -77,7 +89,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     source: readNativeMedia(),
     profile: parts.length === 2,
     recordings,
-  });
+  };
   if (data.profile && !data.recordings.length) return; // Keep native empty/unknown profiles usable.
   ctx.pageStyle(css);
   // Never blank the host page while Safari hydrates jPlayer or Solid.
@@ -88,35 +100,23 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     document.body.classList.toggle(styles["gws-sg-enhanced"], !show);
   };
   let failed = false;
-  const mount = mountPoint(
-    document.body,
-    () => (
-      <Errored
-        fallback={(_error, reset) => {
-          failed = true;
-          native(true);
-          return (
-            <StudioFailure
-              retry={() => {
-                failed = false;
-                native(false);
-                reset();
-              }}
-            />
-          );
-        }}
-      >
-        <SoundgasmApp data={data} bridge={bridge} onNative={native} />
-      </Errored>
-    ),
-    { id: "gws-sg-root" },
+  const host = document.createElement("div");
+  host.id = "gws-sg-root";
+  host.dataset.reactMount = "true";
+  document.body.append(host);
+  const root = createRoot(host);
+  const render = () => root.render(
+    <SoundgasmBoundary onFailure={() => { failed = true; native(true); }}>
+      <SoundgasmApp data={data} bridge={bridge} onNative={native} />
+    </SoundgasmBoundary>
   );
+  render();
   // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty Solid host
   // without throwing. Never hide the native player until replacement content
   // exists. TODO: Add integration tests for recordings, profiles, delayed
   // jPlayer hydration and SPA navigation before removing this safeguard.
   const revealIfReady = () => {
-    const rendered = mount.host.querySelector("#gws-sg-title, #gws-sg-profile-name");
+    const rendered = host.querySelector("#gws-sg-title, #gws-sg-profile-name");
     // A title alone does not prove that the replacement audio player is usable.
     // Preserve the native player while jPlayer is still hydrating its source.
     // FIXME(SOUNDGASM-SAFARI): Validate native and enhanced playback on iOS,
@@ -132,18 +132,14 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     const source = readNativeMedia();
     const nextTitle = text(".jp-audio .jp-title li, .jp-audio .jp-title, .jp-title");
     const nextDescription = text(".jp-audio .jp-description, .jp-description");
-    if (!context?.title && nextTitle && nextTitle !== data.title)
-      setData((draft) => {
-        draft.title = nextTitle;
-      });
-    if (!context?.description && nextDescription && nextDescription !== data.description)
-      setData((draft) => {
-        draft.description = nextDescription;
-      });
-    if (source && source !== data.source)
-      setData((draft) => {
-        draft.source = source;
-      });
+    const patch: Partial<SoundgasmData> = {};
+    if (!context?.title && nextTitle && nextTitle !== data.title) patch.title = nextTitle;
+    if (!context?.description && nextDescription && nextDescription !== data.description) patch.description = nextDescription;
+    if (source && source !== data.source) patch.source = source;
+    if (Object.keys(patch).length) {
+      data = { ...data, ...patch };
+      render();
+    }
   };
   ctx.observe(
     document.documentElement,
@@ -152,7 +148,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         records.some(
           (record) =>
             !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-              "[data-solid-mount]",
+              "[data-react-mount]",
             ),
         )
       )
@@ -172,7 +168,8 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    mount.dispose();
+    root.unmount();
+    host.remove();
     native(true);
     document.title = titleBefore;
   });
