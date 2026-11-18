@@ -56,9 +56,9 @@ export function initializeDeckSelectionPopover() {
       if (!rect.width && !rect.height) return;
       picked = term;
       close();
-      node = (<div />) as HTMLDivElement;
+      node = document.createElement("div");
       node.id = "rodx-selection-popover";
-      const caption = (<span />) as HTMLSpanElement;
+      const caption = document.createElement("span");
       caption.className = "rodx-selection-caption";
       caption.textContent = term;
       node.append(caption);
@@ -67,7 +67,7 @@ export function initializeDeckSelectionPopover() {
         ["−", "Excluir da busca", "exclude"],
         ["☆", "Guardar na lista", "list"],
       ]) {
-        const b = (<button />) as HTMLButtonElement;
+        const b = document.createElement("button");
         b.type = "button";
         b.textContent = label;
         b.title = title;
