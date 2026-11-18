@@ -24,6 +24,17 @@ Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separa
 
 📖 [Guia técnico de contexto, lifecycle, tree-shaking e estratégia de otimização](docs/context-and-optimization.md). Inclui contrato de `ctx`, análise de dependências, flags de build, auditoria de tamanho, prioridades e critérios de aceite.
 
+## 🧬 Contrato obrigatório: Runtime Context ↔ Rod AST
+
+> **Regra de manutenção:** toda alteração em `src/core/runtime.ts`, `src/core/runtime-react.ts`, `src/core/runtime-context-react.tsx`, `ScriptContext` ou helpers do `ctx` exige revisão conjunta do Rod AST. Não considere a tarefa concluída alterando apenas o runtime.
+
+1. Inspecione `build/rod-ast.mjs`, `build/rod-ast-iife.mjs` e `build/rod-ast-cli.mjs`; adapte transformações, assinaturas, guards e diagnósticos quando necessário. Se a transformação não for segura, mantenha o código nativo e documente a decisão.
+2. Adicione casos positivos, negativos, tipados, sem tipo, globais (`window`, `self`, `parent`, `globalThis`), escopo/shadowing, cleanup e idempotência conforme a API afetada em `tests/fixtures/rod-ast.matrix.json` e `tests/rod-ast.test.mjs`.
+3. **Atualize as fixtures reais sempre que necessário**: `tests/fixtures/rod-ast.input.tsx` para TypeScript/React e `tests/fixtures/rod-ast.legacy.user.js` para userscripts IIFE/Tampermonkey. Preserve metadados e comportamento de migração.
+4. Execute Vitest, typechecks e o workflow Rod AST; registre falhas ou bloqueios sem declarar CI verde sem evidência. Atualize `docs/WORKBOARD.md` no mesmo bloco.
+
+Mesmo que a alteração não exija uma nova regra de AST, **registre explicitamente o motivo e acrescente um teste de regressão** que demonstre a compatibilidade ou a preservação do comportamento. A obrigação vale também para renomear/remover helpers e mudar tipos, parâmetros, retornos, lifecycle ou semântica de cleanup.
+
 ## Como desenvolver
 
 Node.js 22.18+ e npm:
