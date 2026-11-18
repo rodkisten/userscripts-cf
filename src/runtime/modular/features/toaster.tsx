@@ -1,6 +1,6 @@
-import React from "react";
+import { ToasterView } from "./toaster-view.js";
 import { createRoot, type Root } from "react-dom/client";
-import { Toaster, toast as sonner } from "sonner";
+import { toast as sonner } from "sonner";
 
 /** shadcn/ui's official Sonner integration; no custom toast visual primitives. */
 let root: Root | undefined;
@@ -11,9 +11,7 @@ function ensureMounted() {
   host.dataset.rodToaster = "sonner";
   document.body.append(host);
   root = createRoot(host);
-  root.render(
-    React.createElement(Toaster, { position: "bottom-right", richColors: true, closeButton: true }),
-  );
+  root.render(<ToasterView />);
 }
 function show(message: unknown, options?: Record<string, unknown>) {
   ensureMounted();

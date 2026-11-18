@@ -11,7 +11,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
   );
   const entries = definitions.map((item, index) => `{...${JSON.stringify(item)}, module: module${index}}`);
   const dockImport = options.dock
-    ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/solid-ui/rod-dock.tsx"))};`
+    ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/react-ui/rod-dock.tsx"))};`
     : "";
   const dockBoot = options.dock
     ? `const dock = installRodDock({ modules: [], scripts: ${JSON.stringify(options.catalog || definitions)} });

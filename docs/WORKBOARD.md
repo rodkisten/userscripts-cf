@@ -153,3 +153,11 @@
 - [Release run 44228767230](https://github.com/rodkisten/userscripts-cf/actions/runs/44228767230) reports 71 JSX/type errors; Radix components are being checked against the repository's global Solid `jsxImportSource` in `tsconfig.json`.
 - Add file-local `@jsxImportSource react` to React TSX entrypoints while legacy Solid files still exist. This is an incremental compatibility step, not a declaration that the build is green.
 - Follow-up: eliminate the Solid JSX compiler and migrate root tsconfig to React once all Solid TSX files are replaced.
+
+### Large React cutover batch (2026-11-18)
+
+- Switched unified/standalone Dock import from Solid to `src/runtime/react-ui/rod-dock.tsx`.
+- Added React 19 Dock in ShadowRoot with official Radix Dialog, script enable/disable persistence, module action registry, menu events, diagnostics JSON export and disposal. This is a breaking migration: advanced diagnostic inspector, drag positioning and full legacy UI parity remain pending.
+- Migrated Sonner host JSX to a dedicated TSX view; React runtime menu and dock are TSX, no manual createElement in new views.
+- Added CSS inline TypeScript declaration, expanded React typecheck include list, and aligned migration contract with user-approved breaking cutover.
+- CI and browser verification remain pending; legacy Solid modules still exist elsewhere in the repository.

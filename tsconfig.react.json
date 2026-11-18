@@ -3,13 +3,19 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["react", "react-dom"]
+    "types": [
+      "react",
+      "react-dom"
+    ]
   },
   "include": [
     "src/core/runtime-react.tsx",
     "src/core/runtime-context-react.tsx",
     "src/types/**/*.d.ts",
     "src/core/runtime-mount-react.tsx",
-    "src/runtime/modular/features/menu-view.tsx"
+    "src/runtime/modular/features/menu-view.tsx",
+    "src/runtime/react-ui/rod-dock.tsx",
+    "src/runtime/modular/features/toaster.tsx",
+    "src/runtime/modular/features/toaster-view.tsx"
   ]
 }

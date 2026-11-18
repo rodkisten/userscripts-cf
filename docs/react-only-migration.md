@@ -1,6 +1,6 @@
 # React-only refactor: migration contract
 
-Status: in progress. **Do not remove Solid or switch production entrypoints until their React replacements pass validation.**
+Status: breaking React-only cutover explicitly authorized by user. Solid production entrypoints may be replaced before feature parity; never claim CI/release success until validated.
 
 ## Non-negotiable target
 
