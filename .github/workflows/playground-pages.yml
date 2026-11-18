@@ -1,5 +1,5 @@
-name: Deploy playground to GitHub Pages
-run-name: "Playground Pages · ${{ github.ref_name }} · ${{ github.sha }}"
+name: ' 🛝 Deploy playground to GitHub Pages'
+run-name: "🛝 Playground Pages · ${{ github.event_name }}(${{ github.ref_name }})"
 
 on:
   push:
