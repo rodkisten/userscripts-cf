@@ -224,3 +224,9 @@
 - [`2f67e3b7`](https://github.com/rodkisten/userscripts-cf/commit/2f67e3b7732f8c02b8412b927315b47ab4c84dbf): use `tabindex` for legacy menu shell.
 - [`93a37a6c`](https://github.com/rodkisten/userscripts-cf/commit/93a37a6c926206d506169c2b97eed70647a523b3): initialize generic Solid signal with a compute function to resolve its overloaded type signature.
 - **Not validated:** fresh typecheck/release status remains unknown. Continue removing Solid via React parity, not by excluding failing files from compilation.
+
+### Typecheck P0 exact diagnostics follow-up (2026-11-18)
+
+- Confirmed the historical release job `134554958217` explains `readOnly` as invalid under Solid JSX for `StandaloneFieldRenderer` and `TagsInput`; changed to `readonly` in [`6d2404b4`](https://github.com/rodkisten/userscripts-cf/commit/6d2404b46fde1dd4687cf23112965ee8ec3ff23a) and [`7b9b62c7`](https://github.com/rodkisten/userscripts-cf/commit/7b9b62c7b1b871cfa5c03cceeb29b77f8b4d10f4).
+- Queried commit combined status for `909c8059`: no legacy commit statuses returned. This does **not** establish passing or failing GitHub Actions checks. GitHub Actions cannot be inferred from an empty statuses array.
+- **Next validation:** run `npm run typecheck && npm run typecheck:react && npm run build` against latest `main` in CI and inspect the actual run. Do not rerun the historical failed release as evidence of the latest commit.
