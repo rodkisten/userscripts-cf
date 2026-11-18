@@ -234,3 +234,11 @@ it("listener symbols: dynamic removal remains conservative", () => {
   const input = 'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener(eventName, handler); }';
   expect(transformRodAst(input, "listener-symbols.ts").code).toBe(input);
 });
+
+it("listener symbols: unrelated event on same target can use context ownership", () => {
+  const input = 'function init(ctx) { const h = () => {}; document.addEventListener("click", h); document.removeEventListener("click", h); document.addEventListener("keydown", h); }';
+  const output = transformRodAst(input, "listener-symbols.ts").code;
+  expect(output).toContain('document.addEventListener("click", h)');
+  expect(output).toContain('ctx.listen(document, "keydown", h)');
+  expect(transformRodAst(output, "listener-symbols.ts").changed).toBe(false);
+});
