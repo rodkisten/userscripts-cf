@@ -1,5 +1,6 @@
 {
   "name": "userscripts-cf",
+  "author": "rodkisten",
   "private": true,
   "type": "module",
   "engines": {
