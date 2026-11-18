@@ -16,8 +16,6 @@ import { createToasterFeature } from "../runtime/modular/features/toaster.js";
 import { createStorageFeature } from "../runtime/modular/features/storage.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
 
-// Compile-time feature switches supplied by the runtime bundler.
-// Declare them for TypeScript without assigning runtime values.
 declare const __ROD_FEATURE_MENU__: boolean;
 declare const __ROD_FEATURE_TOASTER__: boolean;
 declare const __ROD_FEATURE_CLIPBOARD__: boolean;
@@ -25,7 +23,6 @@ declare const __ROD_FEATURE_HTTP__: boolean;
 declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
 
-// Importações dos utilitários de CSS do arquivo css.js
 import {
   installCoreStyles,
   applyComponentStyle,
@@ -34,9 +31,6 @@ import {
   setCssProperties,
 } from "./css.js";
 
-// ============================================================================
-// Constantes Semânticas e Mensagens
-// ============================================================================
 export const STORAGE_NAMESPACE_PREFIX = "userscripts-cf/";
 export const DB_NAMESPACE_SEGMENT = "/db/";
 export const CLIPBOARD_ID = "rod-clipboard";
@@ -76,38 +70,36 @@ export const QUERY_RETRY_COUNT = 1;
 export const QUERY_GC_TIME = 300_000;
 export const Z_INDEX_MAX = "2147483647";
 
-// ============================================================================
-// Tipos e Interfaces Compartilhadas (Base)
-// ============================================================================
 export interface ScriptDefinition {
-  id: string;
-  name?: string;
-  match?: string | string[];
-  matches?: string[];
-  includes?: string[];
-  exclude?: string[];
-  excludeMatches?: string[];
-  excludes?: string[];
-  module: {
-    init: (ctx: any) => void | (() => void) | Promise<void | (() => void)>;
+  readonly id: string;
+  readonly name?: string;
+  readonly match?: string | ReadonlyArray<string>;
+  readonly matches?: ReadonlyArray<string>;
+  readonly includes?: ReadonlyArray<string>;
+  readonly exclude?: ReadonlyArray<string>;
+  readonly excludeMatches?: ReadonlyArray<string>;
+  readonly excludes?: ReadonlyArray<string>;
+  readonly module: {
+    readonly init: (ctx: ScriptContext) => void | (() => void) | Promise<void | (() => void)>;
   };
 }
 
-/** Instance-owned context assembled by createCoreRuntime; no global active context. */
-export type ScriptContext = Record<string, any> & {
-  id: string;
-  signal: AbortSignal;
-  events: any;
-  storage: any;
-  dom: DomEngine;
-  ui: any;
-  onDispose: (cleanup: () => void | Promise<void>) => void;
+export type ScriptContext = Record<string, unknown> & {
+  readonly id: string;
+  readonly signal: AbortSignal;
+  readonly events: ReturnType<typeof createEventBus> | undefined;
+  readonly storage: ReturnType<ReturnType<typeof createStorageFeature>["create"]>;
+  readonly dom: ReturnType<typeof createDomFeature>;
+  readonly ui: ReturnType<typeof createUIFeature> | undefined;
+  readonly menu: ReturnType<typeof createMenuFeature>;
+  readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
+  readonly onDispose: (cleanup: () => void | Promise<void>) => void;
 };
 
 export interface DockAction {
-  id: string;
-  label: string;
-  run: () => void | Promise<void>;
+  readonly id: string;
+  readonly label: string;
+  readonly run: () => void | Promise<void>;
 }
 
 export interface DomEventsEngine {
@@ -127,15 +119,11 @@ export interface DomEventsEngine {
 }
 
 export interface RuntimeAPI {
-  ready: Promise<void>;
+  readonly ready: Promise<void>;
   navigate: () => Promise<void>;
-  readonly active: string[];
+  readonly active: ReadonlyArray<string>;
   dispose: () => Promise<void>;
 }
-
-// ============================================================================
-// Funções Auxiliares Comuns
-// ============================================================================
 
 export function initializeRodFeatures(host: Window & typeof globalThis) {
   return {
@@ -150,7 +138,7 @@ export function initializeRodFeatures(host: Window & typeof globalThis) {
 }
 
 export function setupUpdateChecker(
-  release: { id: string; version: string; manifestURL: string },
+  release: { readonly id: string; readonly version: string; readonly manifestURL: string },
   host: Window & typeof globalThis,
   rod: ReturnType<typeof initializeRodFeatures>,
   updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null },
@@ -196,12 +184,12 @@ export function createDomEventsEngine(
     EventTarget,
     Map<
       string,
-      Map<EventListenerOrEventListenerObject, Map<boolean, { listener: EventListener; options: unknown }>>
+      Map<EventListenerOrEventListenerObject, Map<boolean, { readonly listener: EventListener; readonly options: unknown }>>
     >
   >();
 
   const captureOf = (options?: boolean | AddEventListenerOptions) =>
-    typeof options === "boolean" ? options : !!options?.capture;
+    typeof options === "boolean" ? options : !!(options as AddEventListenerOptions)?.capture;
 
   const engine: DomEventsEngine = Object.freeze({
     add(target, type, callback, options) {
@@ -225,12 +213,12 @@ export function createDomEventsEngine(
           const result: unknown =
             typeof callback === "function" ? callback.call(this, event) : callback.handleEvent(event);
           if (result && typeof (result as Promise<unknown>).then === "function") {
-            void Promise.resolve(result).catch((error) => {
+            void Promise.resolve(result).catch((error: unknown) => {
               captureDiagnostic(error, `${DOM_EVENT_PREFIX}${type}`, definitionId, host);
               console.error(`${LOG_TAG_SCRIPT_PREFIX}${definitionId}]`, error);
             });
           }
-        } catch (error) {
+        } catch (error: unknown) {
           captureDiagnostic(error, `${DOM_EVENT_PREFIX}${type}`, definitionId, host);
           throw error;
         }
@@ -261,37 +249,36 @@ export function createDomEventsEngine(
   return engine;
 }
 
-// Classe/Fábrica base abstrata para o núcleo do Runtime
 export function createCoreRuntime(
-  definitions: ScriptDefinition[],
-  bridge: { call: (method: string, payload: unknown) => Promise<unknown>; dispose?: () => void },
+  definitions: ReadonlyArray<ScriptDefinition>,
+  bridge: { readonly call: (method: string, payload: unknown) => Promise<unknown>; readonly dispose?: () => void },
   host: Window & typeof globalThis = window,
-  release?: { id: string; version: string; manifestURL: string },
+  release?: { readonly id: string; readonly version: string; readonly manifestURL: string },
   options?: {
     installHelpers?: () => Array<string>;
     removeHelpers?: (installedHelpers: Array<string>) => void;
     createSpecificContext: (params: {
-      definition: ScriptDefinition;
-      abort: AbortController;
-      getContext: () => any;
-      onDispose: (cb: () => void | Promise<void>) => void;
-      ensureUIRoot: () => ShadowRoot;
-      addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
-      storage: any;
-      db: any;
-      clipboard: any;
-      openClipboardMenu: () => void;
-      dom: any;
-      network: any;
-      rod: any;
-      queryService: any;
-      updaterInstance: any;
-      host: Window & typeof globalThis;
-      desiredURL: string;
-      stateValues: Map<string, unknown>;
-      listeners: Map<string, Set<(value: unknown) => void>>;
-      publish: (id: string, value: unknown) => void;
-    }) => any;
+      readonly definition: ScriptDefinition;
+      readonly abort: AbortController;
+      readonly getContext: () => unknown;
+      readonly onDispose: (cb: () => void | Promise<void>) => void;
+      readonly ensureUIRoot: () => ShadowRoot;
+      readonly addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
+      readonly storage: unknown;
+      readonly db: (name?: string, options?: Record<string, unknown>) => unknown;
+      readonly clipboard: unknown;
+      readonly openClipboardMenu: () => void;
+      readonly dom: unknown;
+      readonly network: unknown;
+      readonly rod: ReturnType<typeof initializeRodFeatures>;
+      readonly queryService: unknown;
+      readonly updaterInstance: ReturnType<typeof createUpdateChecker> | null;
+      readonly host: Window & typeof globalThis;
+      readonly desiredURL: string;
+      readonly stateValues: Map<string, unknown>;
+      readonly listeners: Map<string, Set<(value: unknown) => void>>;
+      readonly publish: (id: string, value: unknown) => void;
+    }) => Record<string, unknown>;
   },
 ) {
   const rod = initializeRodFeatures(host);
@@ -344,7 +331,7 @@ export function createCoreRuntime(
           name: CLIPBOARD_ITEM_NAME,
           label: CLIPBOARD_ITEM_LABEL,
           searchable: true,
-          options: entries.map((item: { id: string; text: string }) => ({
+          options: entries.map((item: { readonly id: string; readonly text: string }) => ({
             value: item.id,
             label: item.text.slice(0, CLIPBOARD_SNIPPET_LENGTH),
           })),
@@ -354,7 +341,7 @@ export function createCoreRuntime(
         {
           id: CLIPBOARD_ACTION_COPY,
           label: CLIPBOARD_ACTION_COPY_LABEL,
-          handler: async (ctx: any) => {
+          handler: async (ctx: { readonly values: { readonly item?: unknown } }) => {
             const item = ctx.values.item;
             if (typeof item !== "string") return false;
             return clipboard.copy(item);
@@ -365,7 +352,7 @@ export function createCoreRuntime(
           id: CLIPBOARD_ACTION_CLEAR,
           label: CLIPBOARD_ACTION_CLEAR_LABEL,
           variant: "danger",
-          handler: (ctx: any) => {
+          handler: (ctx: { readonly values: { readonly item?: unknown } }) => {
             const item = ctx.values.item;
             if (typeof item !== "string") return;
             return clipboard.remove(item);
@@ -410,7 +397,7 @@ export function createCoreRuntime(
   host.addEventListener("storage", onRulesChange);
   host.document.addEventListener("rod-script-manager:change", onRulesChange);
 
-  const active = new Map<string, { definition: ScriptDefinition; context: any }>();
+  const active = new Map<string, { readonly definition: ScriptDefinition; readonly context: Record<string, unknown> & { readonly dispose: () => Promise<void> } }>();
   const stateValues = new Map<string, unknown>();
   const listeners = new Map<string, Set<(value: unknown) => void>>();
   const failures = new Map<string, string>();
@@ -428,7 +415,7 @@ export function createCoreRuntime(
     for (const callback of scriptListeners) {
       try {
         callback(value);
-      } catch (error) {
+      } catch (error: unknown) {
         captureDiagnostic(error, SOURCE_STATE_SUBSCRIBER, id, host);
         console.error(LOG_TAG_SUBSCRIBER, error);
       }
@@ -511,7 +498,7 @@ export function createCoreRuntime(
       });
 
       databases.set(name, instance);
-      onDispose(() => (instance as { close?: () => void })?.close?.());
+      onDispose(() => (instance as { readonly close?: () => void })?.close?.());
       return instance;
     }
 
@@ -550,7 +537,7 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    let resolvedContext: any;
+    let resolvedContext: Record<string, unknown>;
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
       ? options.createSpecificContext({
@@ -607,7 +594,7 @@ export function createCoreRuntime(
       storage,
       menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? instanceMenu : undefined,
       dock: Object.freeze({
-        register(actions: DockAction[]) {
+        register(actions: ReadonlyArray<DockAction>) {
           const module = {
             id: definition.id,
             name: definition.name,
@@ -668,23 +655,23 @@ export function createCoreRuntime(
         onDispose(() => host.clearInterval(timer));
         return timer;
       },
-      listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options = {}) {
+      listen(target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options: AddEventListenerOptions | boolean = {}) {
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
             const result: unknown =
               typeof callback === "function" ? callback.call(this, value) : callback.handleEvent(value);
             if (result && typeof (result as Promise<unknown>).then === "function") {
-              void Promise.resolve(result).catch((error) => {
+              void Promise.resolve(result).catch((error: unknown) => {
                 captureDiagnostic(error, `${EVENT_PREFIX}${event}`, definition.id, host);
                 console.error(`${LOG_TAG_SCRIPT_PREFIX}${definition.id}]`, error);
               });
             }
-          } catch (error) {
+          } catch (error: unknown) {
             captureDiagnostic(error, `${EVENT_PREFIX}${event}`, definition.id, host);
             throw error;
           }
         };
-        target.addEventListener(event, wrapped, { ...options, signal: abort.signal });
+        target.addEventListener(event, wrapped, { ...(typeof options === "object" ? options : {}), signal: abort.signal });
       },
       style(cssContent: string) {
         return addStyle(cssContent, ensureUIRoot());
@@ -701,10 +688,10 @@ export function createCoreRuntime(
       }),
       async dispose() {
         abort.abort();
-        for (const cleanup of cleanups.reverse()) {
+        for (const cleanup of [...cleanups].reverse()) {
           try {
             await cleanup();
-          } catch (error) {
+          } catch (error: unknown) {
             console.error(LOG_TAG_CLEANUP, error);
           }
         }
@@ -732,14 +719,14 @@ export function createCoreRuntime(
           continue;
         const ctx = createContext(definition);
         try {
-          const cleanup = await definition.module.init(ctx);
+          const cleanup = await definition.module.init(ctx as unknown as ScriptContext);
           if (typeof cleanup === "function") ctx.onDispose(cleanup);
           if (closed || desiredURL !== url) await ctx.dispose();
           else {
             active.set(definition.id, { definition, context: ctx });
             failures.delete(definition.id);
           }
-        } catch (error) {
+        } catch (error: unknown) {
           captureDiagnostic(error, SOURCE_MODULE_INIT, definition.id, host);
           await ctx.dispose();
           failures.set(definition.id, url);
@@ -817,7 +804,7 @@ export function createCoreRuntime(
       stateValues.clear();
       listeners.clear();
 
-      for (const store of stores.values()) (store as { close?: () => void })?.close?.();
+      for (const store of stores.values()) (store as { readonly close?: () => void })?.close?.();
       stores.clear();
 
       queryClient?.clear();
