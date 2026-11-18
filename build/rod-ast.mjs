@@ -175,40 +175,21 @@ export function transformRodAst(code, id, options = {}) {
     if (!owner) return true;
     return /typeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(code.slice(owner.getStart(source), owner.end));
   }
-  // Explicit opt-in only: ctx.storage has different persistence and async semantics.
-  // Restrict to already awaited calls in async functions so no control-flow rewrite is needed.
-  const STORAGE_METHODS = new Map([
-    ["getItem", "get"],
-    ["setItem", "set"],
-    ["removeItem", "delete"],
-  ]);
+  // Opt-in migration only for already-awaited calls in async functions.
+  // ctx.storage.local retains native string/null coercion and read-through.
+  const STORAGE_METHODS = new Set(["getItem", "setItem", "removeItem"]);
   function storageRewrite(node, owner, shadowed) {
-    if (
-      options.storage !== "awaited" ||
-      !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword)
-    )
+    if (options.storage !== "awaited" ||
+        !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword))
       return undefined;
     if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage")) return undefined;
     const callee = node.expression;
-    if (
-      !ts.isPropertyAccessExpression(callee) ||
-      !ts.isIdentifier(callee.expression) ||
-      callee.expression.text !== "localStorage"
-    )
+    if (!ts.isPropertyAccessExpression(callee) || !ts.isIdentifier(callee.expression) ||
+        callee.expression.text !== "localStorage" || !STORAGE_METHODS.has(callee.name.text))
       return undefined;
-    const method = STORAGE_METHODS.get(callee.name.text);
-    if (!method) return undefined;
-    if (node.arguments.length !== (method === "set" ? 2 : 1)) return undefined;
-    if (
-      !node.arguments.every(
-        (arg) => ts.isStringLiteral(arg) || (method === "set" && arg === node.arguments[1]),
-      )
-    )
-      return undefined;
-    // getItem's null and string contract differs from ctx.storage.get (undefined / unknown).
-    // setItem coerces to string; RodStorage preserves structured values.
-    // Only delete is behaviorally compatible at the call boundary, and only on explicit opt-in.
-    return method === "delete" ? "delete" : undefined;
+    if (node.arguments.length !== (callee.name.text === "setItem" ? 2 : 1)) return undefined;
+    if (!ts.isStringLiteral(node.arguments[0])) return undefined;
+    return callee.name.text;
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
@@ -241,7 +222,7 @@ export function transformRodAst(code, id, options = {}) {
       const callee = node.expression;
       let replacement, extraArg;
       const storageMethod = storageRewrite(node, owner, shadowed);
-      if (storageMethod) replacement = ctx + ".storage." + storageMethod;
+      if (storageMethod) replacement = ctx + ".storage.local." + storageMethod;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
         if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
