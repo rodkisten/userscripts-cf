@@ -183,18 +183,28 @@ export function transformRodAst(code, id, options = {}) {
     ["removeItem", "delete"],
   ]);
   function storageRewrite(node, owner, shadowed) {
-    if (options.storage !== "awaited" || !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword))
+    if (
+      options.storage !== "awaited" ||
+      !owner?.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword)
+    )
       return undefined;
-    if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage"))
-      return undefined;
+    if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage")) return undefined;
     const callee = node.expression;
-    if (!ts.isPropertyAccessExpression(callee) || !ts.isIdentifier(callee.expression) ||
-        callee.expression.text !== "localStorage") return undefined;
+    if (
+      !ts.isPropertyAccessExpression(callee) ||
+      !ts.isIdentifier(callee.expression) ||
+      callee.expression.text !== "localStorage"
+    )
+      return undefined;
     const method = STORAGE_METHODS.get(callee.name.text);
     if (!method) return undefined;
     if (node.arguments.length !== (method === "set" ? 2 : 1)) return undefined;
-    if (!node.arguments.every((arg) => ts.isStringLiteral(arg) ||
-        (method === "set" && arg === node.arguments[1]))) return undefined;
+    if (
+      !node.arguments.every(
+        (arg) => ts.isStringLiteral(arg) || (method === "set" && arg === node.arguments[1]),
+      )
+    )
+      return undefined;
     // getItem's null and string contract differs from ctx.storage.get (undefined / unknown).
     // setItem coerces to string; RodStorage preserves structured values.
     // Only delete is behaviorally compatible at the call boundary, and only on explicit opt-in.

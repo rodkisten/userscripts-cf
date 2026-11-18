@@ -326,15 +326,18 @@ it("storage migration is opt-in and only rewrites awaited removal in async owner
   expect(transformRodAst(result.code, "storage.ts", { storage: "awaited" }).changed).toBe(false);
 });
 it("storage migration preserves synchronous access and getItem/setItem contracts", () => {
-  const input = 'async function init(ctx) { const value = await localStorage.getItem("x"); await localStorage.setItem("x", 1); localStorage.removeItem("y"); }';
+  const input =
+    'async function init(ctx) { const value = await localStorage.getItem("x"); await localStorage.setItem("x", 1); localStorage.removeItem("y"); }';
   expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
 });
 it("storage migration preserves try/catch and dynamic keys", () => {
-  const input = 'async function init(ctx) { try { await localStorage.removeItem(key); } catch (error) { console.error(error); } }';
+  const input =
+    "async function init(ctx) { try { await localStorage.removeItem(key); } catch (error) { console.error(error); } }";
   expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
 });
 
 it("storage opt-in never rewrites a shadowed localStorage binding", () => {
-  const input = 'async function init(ctx) { const localStorage = { removeItem() {} }; await localStorage.removeItem("x"); }';
+  const input =
+    'async function init(ctx) { const localStorage = { removeItem() {} }; await localStorage.removeItem("x"); }';
   expect(transformRodAst(input, "storage-shadow.ts", { storage: "awaited" }).code).toBe(input);
 });
