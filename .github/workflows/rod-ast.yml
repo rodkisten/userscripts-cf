@@ -34,6 +34,10 @@ jobs:
           echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
       - name: "🧪 AST unit tests"
         run: node --test tests/rod-ast.test.mjs
+      - name: "🧪 Typecheck transformed fixture against real ScriptContext"
+        run: |
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("artifacts/tsconfig.rod-ast.json",JSON.stringify({extends:"../tsconfig.react.json",include:["rod-ast.output.tsx"],compilerOptions:{noEmit:true}},null,2))'
+          npx tsc --project artifacts/tsconfig.rod-ast.json --noEmit
       - name: "🧪 Typecheck React"
         run: npm run typecheck:react
       - name: "📦 Reports"
