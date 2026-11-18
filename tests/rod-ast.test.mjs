@@ -414,3 +414,11 @@ it("preserves style nodes with escaping references or dynamic content", () => {
   expect(transformRodAst(escaping, "escaping.ts").code).toBe(escaping);
   expect(transformRodAst(dynamic, "dynamic.ts").code).toBe(dynamic);
 });
+
+
+it("preserves hoisted and externally targeted styles", () => {
+  const hoisted = 'function init(ctx) { var s = document.createElement("style"); s.textContent = ".x{}"; document.head.append(s); }';
+  const body = 'function init(ctx) { const s = document.createElement("style"); s.textContent = ".x{}"; document.body.append(s); }';
+  const comment = 'function init(ctx) { const s = document.createElement("style"); /* keep note */ s.textContent = ".x{}"; document.head.append(s); }';
+  for (const input of [hoisted, body, comment]) expect(transformRodAst(input, "preserve.ts").code).toBe(input);
+});
