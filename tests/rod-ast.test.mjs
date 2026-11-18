@@ -1,5 +1,8 @@
 import { it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 import { transformRodAst, rodAstPlugin } from "../build/rod-ast.mjs";
 import { migrateUserscriptIife } from "../build/rod-ast-iife.mjs";
 it("fixture is transformed and output is idempotent", () => {
@@ -191,4 +194,26 @@ it("dynamic clearInterval keeps all timers native", () => {
 it("native interval variadic arguments are preserved", () => {
   const input = "function init(ctx) { setInterval(tick, 100, 'extra'); }";
   expect(transformRodAst(input, "symbols.ts").code).toBe(input);
+});
+
+it("CLI migrates legacy IIFE and writes a valid JSON report", () => {
+  const directory = mkdtempSync(join(tmpdir(), "rod-ast-cli-"));
+  try {
+    const output = join(directory, "migrated.js");
+    const report = join(directory, "report.json");
+    execFileSync(process.execPath, [
+      "build/rod-ast-cli.mjs",
+      "tests/fixtures/rod-ast.legacy.user.js",
+      "--iife",
+      `--out=${output}`,
+      `--report=${report}`,
+    ]);
+    expect(existsSync(output)).toBe(true);
+    const result = JSON.parse(readFileSync(report, "utf8"));
+    expect(result.diagnostics).toEqual([]);
+    expect(result.metadata.match).toHaveLength(2);
+    expect(readFileSync(output, "utf8")).toContain("export default {");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
