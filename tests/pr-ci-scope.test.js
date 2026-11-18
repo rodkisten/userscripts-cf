@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { parsePrCiScope, resolveTestSelectors } from "../build/pr-ci-scope.mjs";
 
 describe("PR title CI scope", () => {
@@ -25,5 +26,29 @@ describe("PR title CI scope", () => {
   });
   it("expands explicit glob selectors into real tests", async () => {
     expect(await resolveTestSelectors(["tests/pr-ci-scope.test.js"])).toContain("tests/pr-ci-scope.test.js");
+  });
+});
+
+describe("explicit scope validation safety", () => {
+  const validator = readFileSync(new URL("../build/validate-changed.sh", import.meta.url), "utf8");
+
+  it("never bypasses TypeScript and lint for explicit test/build scopes", () => {
+    const explicit = validator.slice(validator.indexOf('if [[ "$explicit" == true ]]; then', validator.indexOf("  run)")));
+    expect(explicit).toContain("npm run typecheck");
+    expect(explicit).toContain("npm run lint");
+    expect(explicit.indexOf("npm run typecheck")).toBeLessThan(explicit.indexOf("npx vitest run"));
+  });
+
+  it("builds missing dist artifacts for explicit full and integration suites", () => {
+    expect(validator).toContain('[[ "${scoped_tests[0]}" == all ]]');
+    expect(validator).toContain("integration|integrated|boot|standalone|page-repl");
+    expect(validator).toContain('[[ ! -f dist/manifest.json ]]');
+    expect(validator).toContain("Build required by integration test scope");
+  });
+
+  it("retains full-suite release gates", () => {
+    expect(validator).toContain("npm run test:lab");
+    expect(validator).toContain("node build/hosting.mjs");
+    expect(validator).toContain("Focused regression diagnostics");
   });
 });
