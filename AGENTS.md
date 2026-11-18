@@ -2,7 +2,6 @@
 
 > **READ FIRST · ACTIVE REACT MIGRATION (MANDATORY):** Before **every** task in this repository, read [docs/WORKBOARD.md](docs/WORKBOARD.md) and [docs/react-only-migration.md](docs/react-only-migration.md). Follow the active workboard's priority order, update its status/evidence with every relevant change, and do not mark work done without verification. **React 19 + React DOM + TypeScript is the only target for new and migrated interactive UI.** The historical Solid-first/Solid 2 instructions below are superseded wherever they conflict; they apply only to understanding or safely maintaining unmigrated legacy code. Do not add new Solid code or dependencies. Keep existing Solid temporarily only until React parity and release validation. The latest explicit user request always takes precedence.
 
-
 These instructions apply to every agent, automation, and code contributor working in this repository.
 
 ## PR title CI scope policy (MANDATORY for all agents)

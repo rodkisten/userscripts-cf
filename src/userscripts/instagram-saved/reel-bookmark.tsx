@@ -27,21 +27,31 @@ function controls(): HTMLElement[] {
 }
 function nativeSave(scope: ParentNode = document): HTMLElement | null {
   return (
-    controls().filter((button) => scope === document || (scope instanceof Element && scope.contains(button))).find((button) =>
-      SAVE_LABEL.test(
-        [
-          button.getAttribute("aria-label"),
-          ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label")),
-        ].join(" "),
-      ),
-    ) || null
+    controls()
+      .filter((button) => scope === document || (scope instanceof Element && scope.contains(button)))
+      .find((button) =>
+        SAVE_LABEL.test(
+          [
+            button.getAttribute("aria-label"),
+            ...[...button.querySelectorAll("[aria-label]")].map((node) => node.getAttribute("aria-label")),
+          ].join(" "),
+        ),
+      ) || null
   );
 }
 function actions(): HTMLElement | null {
-  const video = [...document.querySelectorAll("video")].filter((node) => {
-    const rect = node.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && rect.top < innerHeight * 0.8 && rect.bottom > innerHeight * 0.2;
-  }).sort((a, b) => Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - innerHeight / 2) - Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - innerHeight / 2))[0];
+  const video = [...document.querySelectorAll("video")]
+    .filter((node) => {
+      const rect = node.getBoundingClientRect();
+      return (
+        rect.width > 0 && rect.height > 0 && rect.top < innerHeight * 0.8 && rect.bottom > innerHeight * 0.2
+      );
+    })
+    .sort(
+      (a, b) =>
+        Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - innerHeight / 2) -
+        Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - innerHeight / 2),
+    )[0];
   const scope = video?.closest('article, [role="dialog"], [data-testid="reel"], section') || document;
   const save = nativeSave(scope);
   if (save?.parentElement) return save.parentElement;
@@ -140,7 +150,8 @@ export function mountReelBookmark(
     setState("loading");
     try {
       await saveToCollections(await getCollectionIds(), signal, source);
-      if (token !== operation || signal.aborted || reel !== location.pathname || source !== selectedSave) return;
+      if (token !== operation || signal.aborted || reel !== location.pathname || source !== selectedSave)
+        return;
       setState("saved");
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
@@ -164,12 +175,13 @@ export function mountReelBookmark(
       clear();
     }
     const target = reelIsOpen() ? actions() : null;
-    const native = target && (nativeSave(target) || target.querySelector<HTMLElement>('button, [role="button"]'));
+    const native =
+      target && (nativeSave(target) || target.querySelector<HTMLElement>('button, [role="button"]'));
     const source = target && nativeSave(target);
     if (source !== selectedSave) {
       operation++;
       selectedSave = source;
-      setState(source ? nativeState(source) === "saved" ? "saved" : "unsaved" : "unsaved");
+      setState(source ? (nativeState(source) === "saved" ? "saved" : "unsaved") : "unsaved");
     } else if (state() !== "loading") {
       const observed = nativeState(source);
       if (observed === "saved" && state() !== "saved") setState("saved");

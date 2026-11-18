@@ -57,4 +57,3 @@ This document is the target architecture, not a claim that production already us
 - Any vendored shadcn component must identify its upstream origin and remain close to the official implementation; avoid custom forks of Radix primitives.
 - Every UI PR/commit must audit new components against this policy and remove obsolete custom counterparts as each feature migrates.
 - Maintain React root lifecycle through ctx.ui.mountReact and dispose via ctx.onDispose. Avoid global CSS leakage into host pages.
-

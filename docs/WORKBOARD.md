@@ -93,4 +93,3 @@
 - npm lockfile repair run [44207581664](https://github.com/rodkisten/userscripts-cf/actions/runs/44207581664) succeeded; React 19 and React DOM 19.2.0 are present in package-lock.json.
 - Added dedicated React foundation workflow to expose React type errors independently of legacy release failures. Its result is pending until GitHub Actions completes. This does not bypass full release checks.
 - UI policy: only official shadcn/ui or Radix UI primitives for new/migrated components. No custom replacement primitives.
-

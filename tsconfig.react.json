@@ -3,14 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": [
-      "react",
-      "react-dom"
-    ]
+    "types": ["react", "react-dom"]
   },
-  "include": [
-    "src/core/runtime-react.ts",
-    "src/core/runtime-context-react.tsx",
-    "src/types/**/*.d.ts"
-  ]
+  "include": ["src/core/runtime-react.ts", "src/core/runtime-context-react.tsx", "src/types/**/*.d.ts"]
 }
