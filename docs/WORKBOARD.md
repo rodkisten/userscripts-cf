@@ -205,3 +205,9 @@
 - [`549d0ca1`](https://github.com/rodkisten/userscripts-cf/commit/549d0ca136136f315532286b4525e576ddd55f1e): widen literal snap distance to number in RodX chrome.
 - [`92e47478`](https://github.com/rodkisten/userscripts-cf/commit/92e474783b7e5dcbfc39384828651171cb720ab3): narrow required-field array length check in legacy form submission; no new Solid code added.
 - **Remaining:** legacy Solid JSX/ARIA typing failures, `createMenuStore` overload, `createListsModule` argument mismatch, and fresh CI/typecheck/build validation. Do not mark P0 complete.
+
+### Release CI exact error inventory and Radix event disposal (2026-11-18)
+
+- Fetched [run 44230768471](https://github.com/rodkisten/userscripts-cf/actions/runs/44230768471) job `134554958217` logs: **23 TypeScript diagnostics** in legacy Solid form controls/menu, Instagram legacy bookmark, GitHub Tools and RodX. `tsconfig.json` still uses `jsxImportSource: @solidjs/web`; `tsconfig.react.json` is a separate React configuration. Do not hide legacy failures by excluding those sources from release typecheck.
+- [`5edefeb9`](https://github.com/rodkisten/userscripts-cf/commit/5edefeb92f6d5aa5cb8ccbff900ece3cd8c21d5e): defer React Radix root unmount to a microtask when closing inside an event callback. Pending focus/keyboard and browser verification.
+- **P0 still blocked:** current-head CI/typecheck has not been verified; mixed JSX and Solid legacy typing failures remain. Need fix each diagnostic or remove legacy imports after React parity, then rerun release.
