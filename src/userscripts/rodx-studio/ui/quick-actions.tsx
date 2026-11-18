@@ -44,8 +44,8 @@ export function initializeDeckQuickUI() {
               className={"rxq-input"}
               data-rxq={"input"}
               name={"q"}
-              spellCheck={"false"}
-              autocapitalize={"off"}
+              spellCheck={false}
+              autoCapitalize={"off"}
               autoComplete={"off"}
               rows={3}
               aria-label={"Pesquisa com destaque de sintaxe e sugestões"}
