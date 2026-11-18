@@ -356,3 +356,21 @@ it("storage opt-in keeps dynamic keys native even when awaited", () => {
     "async function init(ctx) { await localStorage.setItem(key, value); await localStorage.getItem(key); }";
   expect(transformRodAst(input, "storage-dynamic.ts", { storage: "awaited" }).code).toBe(input);
 });
+
+it("preserves optional GM calls and receiver chains without changing short-circuit semantics", () => {
+  const input = 'function init(ctx) { GM?.getValue("key"); GM.getValue?.("key"); GM_getValue?.("key"); GM.getValue("plain"); }';
+  const result = transformRodAst(input, "optional-gm.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('GM?.getValue("key")');
+  expect(result.code).toContain('GM.getValue?.("key")');
+  expect(result.code).toContain('GM_getValue?.("key")');
+  expect(result.code).toContain('ctx.gm.modern.getValue("plain")');
+  expect(transformRodAst(result.code, "optional-gm.ts").changed).toBe(false);
+});
+
+it("preserves optional native calls across HTTP and DOM helpers", () => {
+  const input = 'function init(ctx) { fetch?.("/api"); window?.fetch("/api"); document.querySelector?.("main"); document?.querySelector("main"); }';
+  const result = transformRodAst(input, "optional-native.ts");
+  expect(result.code).toBe(input);
+  expect(result.diagnostics).toEqual([]);
+});
