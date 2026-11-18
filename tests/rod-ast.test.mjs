@@ -291,7 +291,8 @@ it("GM rewrites remain idempotent and honor @keep", () => {
   expect(transformRodAst(once.code, "gm-keep.ts").changed).toBe(false);
 });
 it("GM availability checks retain both branches until fallback parity is proven", () => {
-  const input = 'function init(ctx) { if (typeof GM_getValue === "function") { return GM_getValue("x"); } return localStorage.getItem("x"); }';
+  const input =
+    'function init(ctx) { if (typeof GM_getValue === "function") { return GM_getValue("x"); } return localStorage.getItem("x"); }';
   const result = transformRodAst(input, "gm-fallback.ts");
   expect(result.code).toBe(input);
 });
