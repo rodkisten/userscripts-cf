@@ -1,7 +1,7 @@
 import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
-import { Dialog } from "../../runtime/solid-ui/Dialog.tsx";
-import { createStore } from "solid-js";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { useState } from "react";
+import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import styles, { css } from "./GitHub.module.css";
 import { loadStepOutput, stepNumber } from "./logs.ts";
 
@@ -11,7 +11,7 @@ export function FileToolbar(props: {
   save: (patch: any) => void;
   copy: (progress: (current: number, total: number) => void) => Promise<unknown>;
 }) {
-  const [copy, setCopy] = createStore({ busy: false, label: "⧉ Copiar tudo", message: "" });
+  const [copy, setCopy] = useState({ busy: false, label: "⧉ Copiar tudo", message: "" });
   const run = () => {
     if (copy.busy) return;
     setCopy((draft) => {
@@ -22,29 +22,20 @@ export function FileToolbar(props: {
     let result: Promise<unknown>;
     try {
       result = props.copy((current, total) =>
-        setCopy((draft) => {
-          draft.label = `Lendo ${current}/${total}…`;
-        }),
+        setCopy((previous) => ({ ...previous, label: `Lendo ${current}/${total}…` })),
       );
     } catch (error) {
       result = Promise.reject(error);
     }
     void result
       .then(() =>
-        setCopy((draft) => {
-          draft.message = "Copiado";
-        }),
+        setCopy((previous) => ({ ...previous, message: "Copiado" })),
       )
       .catch((error) =>
-        setCopy((draft) => {
-          draft.message = error.message;
-        }),
+        setCopy((previous) => ({ ...previous, message: error.message })),
       )
       .finally(() =>
-        setCopy((draft) => {
-          draft.busy = false;
-          draft.label = "⧉ Copiar tudo";
-        }),
+        setCopy((previous) => ({ ...previous, busy: false, label: "⧉ Copiar tudo" })),
       );
   };
   return (
@@ -91,15 +82,12 @@ export function FileToolbar(props: {
 }
 
 function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: any }) {
-  const [state, setState] = createStore({ busy: false, message: "" });
-  const copy = (event: MouseEvent) => {
+  const [state, setState] = useState({ busy: false, message: "" });
+  const copy = (event: import("react").MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     event.preventDefault();
     if (state.busy) return;
-    setState((draft) => {
-      draft.busy = true;
-      draft.message = "";
-    });
+    setState((previous) => ({ ...previous, busy: true, message: "" }));
     const output = props.ctx.storage
       .get("actionsToken", "")
       .then((token: string) => loadStepOutput(props.address, token, props.ctx.signal));
@@ -125,19 +113,13 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
     }
     void writing
       .then(() =>
-        setState((draft) => {
-          draft.message = "Log completo do job copiado";
-        }),
+        setState((previous) => ({ ...previous, message: "Log completo do job copiado" })),
       )
       .catch((error) =>
-        setState((draft) => {
-          draft.message = error.message || "Falha ao copiar";
-        }),
+        setState((previous) => ({ ...previous, message: error.message || "Falha ao copiar" })),
       )
       .finally(() =>
-        setState((draft) => {
-          draft.busy = false;
-        }),
+        setState((previous) => ({ ...previous, busy: false })),
       );
   };
   return (
@@ -180,13 +162,16 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
     if (existing?.dataset.ghftStepHost === key) continue;
     existing?.remove();
     const header = step.querySelector("summary, .js-check-step-header, [data-testid='step-header']");
-    const mount = mountPoint(
-      step,
-      () => <CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />,
-      { tag: "span", before: header?.nextSibling || step.firstChild, shadow: true, styles: [css] },
-    );
-    mount.host.dataset.ghftStepHost = key;
-    mounts.set(mount.host, mount.dispose);
+    const host = document.createElement("span");
+    const shadow = host.attachShadow({ mode: "open" });
+    const style = document.createElement("style");
+    style.textContent = css;
+    shadow.append(style);
+    step.insertBefore(host, header?.nextSibling || step.firstChild);
+    const root = createRoot(shadow);
+    flushSync(() => root.render(<CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />));
+    host.dataset.ghftStepHost = key;
+    mounts.set(host, () => { root.unmount(); host.remove(); });
   }
 }
 
@@ -195,30 +180,23 @@ export function GitHubTokenSettings(props: {
   save: (token: string) => Promise<void>;
   close: () => void;
 }) {
-  const [state, setState] = createStore({ token: props.token, busy: false, error: "" });
+  const [state, setState] = useState({ token: props.token, busy: false, error: "" });
   return (
-    <Dialog title="GitHub · Logs do Actions" close={props.close}>
+    <div role="dialog" aria-modal="true" aria-label="GitHub · Logs do Actions" className={styles.tokenForm}>
       <form
         className={styles.tokenForm}
         onSubmit={(event) => {
           event.preventDefault();
           if (state.busy) return;
           const token = state.token.trim();
-          setState((draft) => {
-            draft.busy = true;
-            draft.error = "";
-          });
+          setState((previous) => ({ ...previous, busy: true, error: "" }));
           void props
             .save(token)
             .catch((error) =>
-              setState((draft) => {
-                draft.error = error.message;
-              }),
+              setState((previous) => ({ ...previous, error: error.message })),
             )
             .finally(() =>
-              setState((draft) => {
-                draft.busy = false;
-              }),
+              setState((previous) => ({ ...previous, busy: false })),
             );
         }}
       >
@@ -230,9 +208,7 @@ export function GitHubTokenSettings(props: {
             value={state.token}
             onInput={(event) => {
               const token = event.currentTarget.value;
-              setState((draft) => {
-                draft.token = token;
-              });
+              setState((previous) => ({ ...previous, token: token }));
             }}
           />
         </label>
@@ -245,6 +221,6 @@ export function GitHubTokenSettings(props: {
           Cancelar
         </button>
       </form>
-    </Dialog>
+    </div>
   );
 }
