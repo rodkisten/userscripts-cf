@@ -70,7 +70,9 @@ function createPortalStore() {
   return {
     subscribe(listener: () => void) {
       listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      return () => {
+        listeners.delete(listener);
+      };
     },
     getSnapshot: () => snapshot, // stable until a mutation
     upsert(entry: Entry) {
@@ -83,8 +85,13 @@ function createPortalStore() {
         }
       };
     },
-    remove(id: string) { if (entries.delete(id)) publish(); },
-    clear() { entries.clear(); publish(); },
+    remove(id: string) {
+      if (entries.delete(id)) publish();
+    },
+    clear() {
+      entries.clear();
+      publish();
+    },
   };
 }
 
