@@ -78,6 +78,7 @@ export interface MenuField {
   type?: string;
   placeholder?: string;
   options?: { value: string; label: string }[];
+  searchable?: boolean;
 }
 export interface MenuAction {
   id: string;
@@ -126,7 +127,7 @@ export function openRadixDialog(schema: MenuSchema) {
   const actions = (schema.actions ?? []).map((action) => React.createElement("button", {
     key: action.id,
     type: "button",
-    onClick: () => { void Promise.resolve(action.handler?.({ values, close })).then(close); },
+    onClick: () => { void Promise.resolve(action.handler?.({ values, close })).then((result) => { if (result !== false) close(); }); },
   }, action.label));
   root.render(React.createElement(Dialog.Root, { defaultOpen: true, onOpenChange: (open: boolean) => { if (!open) queueMicrotask(close); } },
     React.createElement(Dialog.Portal, null,

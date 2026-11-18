@@ -127,3 +127,9 @@
 - Implemented `ctx.menu.open()` via official Radix Dialog primitives with fields, action handlers and cleanup; clipboard menu now has a React dialog entrypoint.
 - This is a basic bridge, **not** full shadcn styling or legacy menu parity; advanced schema types, keyboard/ShadowRoot behavior and validation still need testing.
 - Added Radix Dialog dependency; lockfile and CI must be checked after update.
+
+### React menu compilation regression fix (2026-11-18)
+
+- [Release run 44209608858](https://github.com/rodkisten/userscripts-cf/actions/runs/44209608858) identifies a new TypeScript error: clipboard menu passes `searchable` to `MenuField`, but the Radix bridge omitted that contract property. Added the property without suppressing type checks.
+- Radix dialog actions now respect `false` return values instead of unconditionally closing. Searchable-select behavior is still pending implementation; this patch only repairs the schema contract.
+- Full release remains blocked by pre-existing Solid modules in the dependency graph; CI validation for this patch is pending.
