@@ -285,3 +285,8 @@
 
 - Removed `src/core/runtime-solid.ts`, `src/runtime/events/solid.ts`, `src/runtime/solid-ui/reactive-store.ts` and 14 more Solid-only TSX implementations across diagnostic stack, form controls, toaster, and object inspector. Last deletion [`c1f97cb1`](https://github.com/rodkisten/userscripts-cf/commit/c1f97cb1e63f07f64a7cd3a3c93a044d4cddf020). No compatibility shims added.
 - This is an intentional breaking deletion; consumers remain and must be migrated to React. GitHub search index can lag deletions. Do not report the project as Solid-free or CI-green.
+
+### Solid deletion batch 3 (2026-11-18)
+
+- Deleted 20 additional Solid-only menu components, state stores, form helpers, toaster helpers, entrypoints and types under `src/runtime/solid-ui/`, including `src/runtime/solid-ui/index.ts` ([last deletion `aaaa336e`](https://github.com/rodkisten/userscripts-cf/commit/aaaa336e4ebf78775a83dcdd9d757a2df132c507)).
+- **Not a complete React migration**: userscript consumers and further Solid modules remain; builds are intentionally permitted to fail. The next batch must migrate actual user-facing entrypoints and remove their Solid imports, not restore compatibility.
