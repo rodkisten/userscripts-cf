@@ -1,6 +1,6 @@
 import React from "react";
-type Ctx = { http: { fetch: typeof fetch }; events: { dom: { add: (target: EventTarget, type: string, listener: EventListener) => void; remove: (target: EventTarget, type: string, listener: EventListener) => void } }; onDispose: (fn: () => void) => void };
-export async function init(ctx: Ctx) {
+import type { ScriptContext } from "../../src/core/runtime.js";
+export async function init(ctx: ScriptContext) {
   const response = await fetch("/api/posts");
   const onClick: EventListener = () => console.log("clicked");
   document.addEventListener("click", onClick);
