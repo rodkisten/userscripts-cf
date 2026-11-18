@@ -449,3 +449,9 @@
 - [`5eb51229`](https://github.com/rodkisten/userscripts-cf/commit/5eb51229f62197177c16f284cc51455d473fcc6a): RodX toast now uses a React root inside an isolated ShadowRoot and retains timer cleanup.
 - [`9b154dda`](https://github.com/rodkisten/userscripts-cf/commit/9b154dda3e55e433b0d91cc90de3c5cff889caf8): `src/core/runtime-context.ts` reexports the React runtime context rather than importing Solid.
 - **Not yet verified:** fresh TypeScript run, bundler output, DOM lifecycle under React, and compatibility of other Solid-era call sites. Do not mark the overall React migration complete.
+
+### Additional Solid elimination (2026-11-18)
+
+- [`0f54b6b4`](https://github.com/rodkisten/userscripts-cf/commit/0f54b6b4737daebc0acf7ac48048e3d4d8176500): Rod Actions launcher now subscribes to external count through React `useSyncExternalStore`, removing Solid `createSignal/onCleanup`.
+- [`801bc536`](https://github.com/rodkisten/userscripts-cf/commit/801bc5367821b5777b9a98d498e65df59dc1281d): query highlighting JSX now uses React `className`.
+- Remaining Solid code still exists in the repository, including larger feature screens and playgrounds. These edits are not a green-build claim; validate and continue component-by-component conversion rather than reintroducing Solid packages.
