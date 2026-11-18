@@ -131,7 +131,7 @@ export function ColorPicker(props: ColorPickerProps) {
               class={styles.colorPreset}
               style={{ "background-color": color }}
               aria-label={color}
-              aria-pressed={current().toLowerCase() === color.toLowerCase()}
+              aria-pressed={String(current().toLowerCase() === color.toLowerCase())}
               disabled={props.disabled || props.readonly}
               onClick={() => props.onChange(color)}
             />
