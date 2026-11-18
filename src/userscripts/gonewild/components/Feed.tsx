@@ -63,6 +63,7 @@ export function PostCard({ post, controller, native = false, onAudio }: {
       }
     } finally {
       if (request.current === abort) {
+        request.current = undefined;
         loading.current = false;
         if (!abort.signal.aborted) setAudio((previous) => ({ ...previous, loading: false }));
       }
@@ -70,7 +71,11 @@ export function PostCard({ post, controller, native = false, onAudio }: {
   };
   useEffect(() => {
     if (state.settings.audio) void load();
-    return () => request.current?.abort();
+    return () => {
+      request.current?.abort();
+      request.current = undefined;
+      loading.current = false;
+    };
   }, [post.id, state.settings.audio]);
   const title = normalize(post.title);
   const hidden = (state.settings.hideSeen && !!state.seen[post.id])
