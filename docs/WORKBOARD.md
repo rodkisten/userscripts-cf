@@ -280,3 +280,8 @@
 
 - Deleted nine obsolete Solid UI implementation files from `src/runtime/solid-ui`: Button, Dialog, SolidDropdown, Rod Dock, clipboard, ObjectInspector, Badge, mount-point, and shadow-mount. Last deletion commit [`01df0147`](https://github.com/rodkisten/userscripts-cf/commit/01df0147108de6e78173717fbcd45bb6294d40cf). This intentionally breaks consumers that still import these files; user explicitly authorized breakage.
 - GitHub code search still found dozens of Solid imports across userscripts, playground, studio, and remaining Solid UI. **React-only cleanup not complete**; do not mark done or reintroduce Solid compatibility.
+
+### Solid deletion batch 2 (2026-11-18)
+
+- Removed `src/core/runtime-solid.ts`, `src/runtime/events/solid.ts`, `src/runtime/solid-ui/reactive-store.ts` and 14 more Solid-only TSX implementations across diagnostic stack, form controls, toaster, and object inspector. Last deletion [`c1f97cb1`](https://github.com/rodkisten/userscripts-cf/commit/c1f97cb1e63f07f64a7cd3a3c93a044d4cddf020). No compatibility shims added.
+- This is an intentional breaking deletion; consumers remain and must be migrated to React. GitHub search index can lag deletions. Do not report the project as Solid-free or CI-green.
