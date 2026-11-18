@@ -656,5 +656,26 @@
     "excludes": [
       "ctx.ui.style"
     ]
+  },
+  {
+    "name": "owned style triple to ShadowRoot",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.innerText = '.x{}'; document.head.append(s); }",
+    "includes": [
+      "ctx.ui.style('.x{}')"
+    ],
+    "excludes": [
+      "document.createElement('style')"
+    ]
+  },
+  {
+    "name": "escaping style preserved",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.textContent = '.x{}'; document.head.append(s); return s; }",
+    "includes": [
+      "document.createElement('style')",
+      "return s"
+    ],
+    "excludes": [
+      "ctx.ui.style"
+    ]
   }
 ]
