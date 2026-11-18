@@ -10,10 +10,8 @@ const DEFAULT_RULES = Object.freeze({
   "window.fetch": "ctx.http.fetch",
   "document.querySelector": "ctx.dom.querySelector",
   "document.querySelectorAll": "ctx.dom.querySelectorAll",
-  "window.addEventListener": "ctx.events.dom.add",
-  "document.addEventListener": "ctx.events.dom.add",
 });
-const DOM_EVENTS = new Set(["addEventListener", "removeEventListener"]);
+const DOM_EVENTS = new Set(["addEventListener"]);
 const DOM_METHODS = new Set(["querySelector", "querySelectorAll"]);
 const scriptKind = (id) =>
   /\.tsx$/.test(id) ? ts.ScriptKind.TSX : /\.jsx$/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
@@ -82,6 +80,7 @@ export function transformRodAst(code, id, options = {}) {
       let replacement, extraArg;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
+        if (callee.text === "setInterval" && node.arguments.length >= 2 && !shadowed.has("setInterval")) replacement = ctx + ".interval";
         if (callee.text === "useRuntime" || callee.text === "useContext")
           if (!node.arguments.length) replacement = ctx;
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
@@ -89,11 +88,9 @@ export function transformRodAst(code, id, options = {}) {
         const method = callee.name.text;
         if (!shadowed.has(receiver) && (receiver === "document" || receiver === "window")) {
           const key = receiver + "." + method;
-          if (DOM_EVENTS.has(method) && options.legacyEventRewrite === true) {
-            const target = receiver;
-            const op = method === "addEventListener" ? "add" : "remove";
-            replacement = ctx + ".events.dom." + op;
-            extraArg = target;
+          if (DOM_EVENTS.has(method) && options.listeners !== false && !/\.removeEventListener\s*\(/.test(code)) {
+            replacement = ctx + ".listen";
+            extraArg = receiver;
           } else if (receiver === "document" && DOM_METHODS.has(method)) {
             // DomEngine preserves native Element / NodeListOf return types.
             if (options.domMethods !== false && rules[key])
