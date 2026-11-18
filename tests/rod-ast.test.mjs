@@ -374,3 +374,26 @@ it("preserves optional native calls across HTTP and DOM helpers", () => {
   expect(result.code).toBe(input);
   expect(result.diagnostics).toEqual([]);
 });
+
+
+it("routes unguarded GM style injection through the ShadowRoot UI helper", () => {
+  const input = 'function init(ctx) { GM_addStyle(".panel { color: red }"); GM.addStyle(".box { display: grid }"); }';
+  const result = transformRodAst(input, "gm-styles.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('ctx.ui.style(".panel { color: red }")');
+  expect(result.code).toContain('ctx.ui.style(".box { display: grid }")');
+  expect(transformRodAst(result.code, "gm-styles.ts").changed).toBe(false);
+});
+
+it("does not rewrite shadowed or availability-guarded GM style injections", () => {
+  const shadowed = 'function init(ctx) { const GM_addStyle = (css) => css; GM_addStyle(".x{}"); }';
+  expect(transformRodAst(shadowed, "shadowed-gm-style.ts").code).toBe(shadowed);
+  const guarded = 'function init(ctx) { if (typeof GM_addStyle === "function") GM_addStyle(".x{}"); }';
+  expect(transformRodAst(guarded, "guarded-gm-style.ts").code).toBe(guarded);
+});
+
+it("Vite AST plugin rewrites GM styles only when explicitly registered", () => {
+  const plugin = rodAstPlugin();
+  const result = plugin.transform('function init(ctx) { GM_addStyle(".x{}"); }', "script.ts");
+  expect(result?.code).toContain('ctx.ui.style(".x{}")');
+});
