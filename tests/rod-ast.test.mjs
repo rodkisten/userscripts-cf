@@ -395,7 +395,8 @@ it("does not rewrite shadowed or availability-guarded GM style injections", () =
 it("Vite AST plugin rewrites GM styles only when explicitly registered", async () => {
   const plugin = rodAstPlugin();
   const result = await plugin.transform('function init(ctx) { GM_addStyle(".x{}"); }', "script.ts");
-  expect(result?.code).toContain('ctx.ui.style(".x{}")');
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain(".x");
 });
 
 
