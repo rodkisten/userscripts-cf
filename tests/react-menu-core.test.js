@@ -48,3 +48,16 @@ describe("React RodMenu data contract", () => {
     }
   });
 });
+
+describe("imperative React menu bridge", () => {
+  it("opens and closes through a stable public API", async () => {
+    const { RodMenu } = await import("../src/runtime/react-ui/index.tsx");
+    const first = RodMenu.open({ id: "first", title: "First" });
+    expect(RodMenu.active?.id).toBe("first");
+    RodMenu.open({ id: "second", title: "Second" });
+    first.close();
+    expect(RodMenu.active?.id).toBe("second");
+    RodMenu.close();
+    expect(RodMenu.active).toBeNull();
+  });
+});
