@@ -54,7 +54,7 @@ export function transformRodAst(code, id, options = {}) {
     };
   // In-memory TypeScript program provides declaration identity, even when
   // different lexical scopes reuse the same identifier spelling.
-  const virtualId = "/__rod_ast__/" + id.replace(/^\\/+/, "");
+  const virtualId = "/__rod_ast__/" + id.replace(/^[/]+/, "");
   const host = ts.createCompilerHost({ noLib: true, allowJs: true, checkJs: false });
   const originalGetSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) =>
