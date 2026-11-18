@@ -57,7 +57,6 @@ export function transformRodAst(code, id, options = {}) {
   // context-owned timer without proving equivalent ownership and cancellation.
   const nativeTimerCleanup = /\bclearInterval\s*\(/.test(code) || /\.clearInterval\s*\(/.test(code);
   const nativeListenerCleanup = /\.removeEventListener\s*\(/.test(code);
-  const hasNativeObserver = /\bMutationObserver\b/.test(code);
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
     return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)));
@@ -79,12 +78,6 @@ export function transformRodAst(code, id, options = {}) {
       const nextShadowed = new Set([...shadowed, ...names]);
       ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node)));
       return;
-    }
-    if (ctx && !blocked && !keep(node) && ts.isNewExpression(node) &&
-        ts.isIdentifier(node.expression) && node.expression.text === "MutationObserver" &&
-        !shadowed.has("MutationObserver") && !hasNativeObserver) {
-      // Observer ownership requires proving observe/disconnect pairing.
-      // Intentionally left unchanged until that analysis is available.
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
       const callee = node.expression;
