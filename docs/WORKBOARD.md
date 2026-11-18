@@ -595,3 +595,9 @@
 - [x] Add TypeScript storage context contract, fixture, and Vitest checks for awaited reads/writes/removals and preserved synchronous operations.
 - [ ] Verify GitHub Actions. Native storage may still be unavailable and async backends may reject; do not strip try/catch automatically.
 - [ ] Add integration tests for denied native storage, cross-script key collisions, native persistence, and migration of old values before enabling defaults.
+
+### Rod AST optional-chain safety (2026-11-18)
+
+- [x] Guard AST rewriting of optional call/receiver syntax across GM, DOM, and HTTP; short-circuit semantics are not guaranteed by context helpers.
+- [x] Add Vitest regression cases and two matrix fixtures; verification in GitHub Actions remains pending.
+- [ ] Follow-up: type GM bridge signatures, analyze feature-detection guards by AST scope, and design async storage migration with explicit data/catch parity.
