@@ -235,3 +235,10 @@
 
 - [`a54a52a6`](https://github.com/rodkisten/userscripts-cf/commit/a54a52a6fcd3ffb386744fc4f1a32153f55609a0) adds `.github/workflows/react-migration-validation.yml` on `main` with `push` path filters and `workflow_dispatch`. It runs `npm ci`, legacy `npm run typecheck`, React `npm run typecheck:react`, and `npm run build`, without formatting gate or skipped checks. It uses a cancel-in-progress concurrency group and a 20-minute timeout.
 - **Validation still pending:** workflow creation/commit does not establish execution or success. Inspect Actions run and failure logs, then fix errors against current HEAD before marking P0 done.
+
+### CI run 44234494538: first current-main validation (2026-11-18)
+
+- [Workflow run 44234494538](https://github.com/rodkisten/userscripts-cf/actions/runs/44234494538), job `134567221042`: dependency install **passed**, legacy TypeScript **failed** with **10 TS2322 errors**, React TypeScript and build **skipped**.
+- Error details show Solid v2 JSX expects ARIA enumerated literal types (`"true" | "false"`, not a generic `string` from `String(boolean)`). Updated Controls, StandaloneFieldRenderer, TagsInput, Surface and ReelBookmarkButton to literal conditional values. Also fixed Solid `minlength`/`maxlength` JSX names in TextControls.
+- Fix commits: `6aa9d2e5`, `9c977acc`, `2ef6f739`, `bd3a1b78`, `737ec5ca`, `1cedc7a2` on `main`.
+- **Unverified:** await the next CI run for latest HEAD. Never mark P0 complete until both TypeScript jobs and production build pass.
