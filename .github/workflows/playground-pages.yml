@@ -17,6 +17,9 @@ concurrency:
 
 jobs:
   dependencies:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.head_commit.message, '[deploy]') && !contains(github.event.head_commit.message, '[skip ci]'))
     name: Synchronize dependencies before Pages
     runs-on: ubuntu-latest
     outputs:
@@ -76,7 +79,7 @@ jobs:
             echo "reason=manual dispatch" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [[ "$COMMIT_MESSAGE" == *"@ploocky"* || "$COMMIT_MESSAGE" == *"trigger(playground-pages.yml)"* ]]; then
+          if [[ "$COMMIT_MESSAGE" == *"[deploy]"* ]]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
             echo "reason=explicit commit marker" >> "$GITHUB_OUTPUT"
             exit 0
