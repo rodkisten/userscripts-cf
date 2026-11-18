@@ -367,7 +367,7 @@ function detectCodeLanguageForFilename(filename: string): string {
 }
 
 function calculateMarkdownCodeFence(text: string): string {
-  const sequences = text.match(/`{3,}/g) || [];
+  const sequences: string[] = text.match(/`{3,}/g) ?? [];
   const maximum = sequences.reduce((n, sequence) => Math.max(n, sequence.length), 2);
   return "`".repeat(maximum + 1);
 }

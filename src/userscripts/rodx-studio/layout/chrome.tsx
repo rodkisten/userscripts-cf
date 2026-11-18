@@ -327,7 +327,7 @@ export function initializeDeckScrollChrome(): void {
         return;
 
       const top = offset();
-      let distance = CHROME_METRICS.snapMaxDistance;
+      let distance: number = CHROME_METRICS.snapMaxDistance;
 
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (article.hidden || getComputedStyle(article).display === "none") continue;

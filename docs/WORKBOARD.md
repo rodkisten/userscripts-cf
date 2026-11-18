@@ -167,3 +167,10 @@
 - [React foundation run 44229374221](https://github.com/rodkisten/userscripts-cf/actions/runs/44229374221) failed on four `GM_registerMenuCommand` / `GM_unregisterMenuCommand` global type errors in the React Dock. Added explicit local GM host typings without leaking declarations into all scripts.
 - [Release run 44229374223](https://github.com/rodkisten/userscripts-cf/actions/runs/44229374223) failed on Sonner TSX JSX namespace mismatch plus legacy Solid TSX compilation. Added React JSX pragma to the Sonner host; legacy Solid errors remain and require migration, not suppression.
 - React Dock now guards repeated disposal and queued renders after disposal. No build success claimed until new CI completes.
+
+### React Dock hardening + real TS fixes (2026-11-18)
+
+- Fixed React Dock Radix portal mounting into the React root itself: now portal has its own sibling container in the ShadowRoot, preventing React DOM ownership conflicts.
+- Added mobile Dock launcher drag position, script search, and cross-instance script preference refresh via `rod-script-manager:change`.
+- Fixed three additional TypeScript failures reported in [release run 44230768471](https://github.com/rodkisten/userscripts-cf/actions/runs/44230768471): markdown fence reduction inferred as never, literal snap distance narrowed to 45, and outdated `createListsModule(Studio)` call.
+- Remaining legacy Solid component errors are not fixed or hidden; browser behavior and CI must be checked before calling this stable.

@@ -49,10 +49,17 @@ function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
   const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
+  const [search, setSearch] = useState("");
+  const [position, setPosition] = useState(46);
   useEffect(() => {
     const refresh = () => setDiagnostics([...(getDiagnostics()?.history ?? [])]);
     document.addEventListener("rod-diagnostics:change", refresh);
-    return () => document.removeEventListener("rod-diagnostics:change", refresh);
+    const onRulesChange = () => setPreferences(readScriptRules(localStorage));
+    document.addEventListener("rod-script-manager:change", onRulesChange);
+    return () => {
+      document.removeEventListener("rod-diagnostics:change", refresh);
+      document.removeEventListener("rod-script-manager:change", onRulesChange);
+    };
   }, []);
   const visibleModules = useMemo(() => {
     const grouped = new Map<string, DockModule>();
@@ -75,7 +82,14 @@ function DockView({ controller }: { controller: DockController }) {
     <>
       <style>{css}</style>
       {!open && (
-        <button className="launcher" aria-label="Abrir Rod Dock" onClick={() => setOpen(true)}>
+        <button className="launcher" style={{ top: `${position}%`, touchAction: "none" }} aria-label="Abrir Rod Dock" onPointerDown={(event) => {
+          const startY = event.clientY;
+          const start = position;
+          const onMove = (next: PointerEvent) => setPosition(Math.max(12, Math.min(88, start + (next.clientY - startY) * 100 / innerHeight)));
+          const onEnd = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onEnd); };
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onEnd, { once: true });
+        }} onClick={() => setOpen(true)}>
           ☰
         </button>
       )}
@@ -92,7 +106,8 @@ function DockView({ controller }: { controller: DockController }) {
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
             <details className="module" open>
               <summary>Scripts ({scripts.length})</summary>
-              {scripts.map((script) => {
+              <input aria-label="Filtrar scripts" placeholder="Buscar script..." value={search} onChange={(event) => setSearch(event.target.value)} style={{ width:"100%", padding:10, marginTop:10, borderRadius:8, background:"#27272a", color:"white", border:"1px solid #3f3f46" }} />
+              {scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map((script) => {
                 const enabled = preferences[script.id]?.enabled !== false;
                 const permitted = matches(
                   { ...script, name: script.name ?? script.id },
@@ -181,7 +196,8 @@ export function installRodDock({
   host.style.cssText = "position:fixed;inset:0;width:0;height:0;z-index:2147483646;pointer-events:none";
   const shadow = host.attachShadow({ mode: "open" });
   const mountPoint = document.createElement("div");
-  shadow.append(mountPoint);
+  const portalPoint = document.createElement("div");
+  shadow.append(mountPoint, portalPoint);
   const root = createRoot(mountPoint);
   let disposed = false;
   let currentModules = modules;
@@ -190,7 +206,7 @@ export function installRodDock({
     if (disposed) return;
     root.render(
       <DockView
-        controller={{ modules: currentModules, scripts, open: isOpen, setOpen, portal: mountPoint }}
+        controller={{ modules: currentModules, scripts, open: isOpen, setOpen, portal: portalPoint }}
       />,
     );
   };

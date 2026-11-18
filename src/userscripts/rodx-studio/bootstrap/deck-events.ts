@@ -199,7 +199,7 @@ export function configureStudioSpaNavigation(): void {
 }
 
 export function initializeStudioListsModule(): void {
-  if (Studio.enabled("lists")) createListsModule(Studio);
+  if (Studio.enabled("lists")) createListsModule();
 }
 
 export function setupStudioListTypeahead(): void {
