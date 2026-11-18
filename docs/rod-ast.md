@@ -46,3 +46,12 @@ The plugin does not activate by merely existing. The CLI produces a full fixture
 - [ ] Integrate with the existing runtime AST without double-transforming.
 - [ ] Add source maps and typecheck transformed fixture in an isolated TypeScript project.
 - [ ] Verify standalone/unified build and iPhone Safari behavior before enabling production.
+
+
+## ShadowRoot style migration (incremental)
+
+Direct, unguarded `GM_addStyle(css)` and `GM.addStyle(css)` calls inside explicit `init(ctx)` scopes now rewrite to `ctx.ui.style(css)`. This routes CSS to the instance-owned ShadowRoot and registers disposal. Lexically shadowed calls, optional calls and `typeof GM` guards remain unchanged.
+
+The Vite plugin is wired into `vite.config.js` behind `ROD_AST=1`, before runtime helpers and CSS Modules. Run `ROD_AST=1 npm run build` to opt in. This is **not** a production-wide enablement. Existing `.module.css` and `.shadow.css` imports continue through the PostCSS/Lightning CSS pipeline.
+
+**Not yet automatically migrated:** dynamically assembled `document.createElement('style')`, `innerText`/`textContent`, `insertRule`, `adoptedStyleSheets`, `insertAdjacentHTML` and DOM insertion patterns. They require dataflow/ownership analysis. Also, inline strings passed to `ctx.ui.style` are not converted into CSS Modules: hashing class selectors without rewriting all consumers would break styling. Prefer imported CSS Modules or shadow styles for new code.
