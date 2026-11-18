@@ -1,6 +1,6 @@
 import { test } from "vitest";
-import { transform as compileSolid } from "@solidjs/compiler";
-import { build, transformWithOxc } from "vite";
+import { build } from "vite";
+import { transform } from "esbuild";
 import { DEFAULT_SETTINGS, createDefaults } from "../src/config/defaults.js";
 import { RUNTIME_LIMITS, HTTP_STATUS } from "../src/config/runtime.js";
 import fs from "node:fs";
@@ -38,11 +38,13 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
     }
     if (entry.endsWith(".tsx"))
       code = (
-        await transformWithOxc(
-          compileSolid(code, { filename: entry, generate: "dom", dev: false }).code,
-          entry,
-          { lang: "ts" },
-        )
+        await transform(code, {
+          sourcefile: entry,
+          loader: "tsx",
+          format: "esm",
+          jsx: "automatic",
+          target: "es2022",
+        })
       ).code;
     code = code.replace(/^import[^;]+;\s*/gm, "");
     code = code.replace(/createDefaults\("([^"\n]+)"\)/g, (_, section) =>
