@@ -12,6 +12,13 @@ const DEFAULT_RULES = Object.freeze({
   "document.querySelectorAll": "ctx.dom.querySelectorAll",
 });
 const DOM_EVENTS = new Set(["addEventListener"]);
+const GM_LEGACY_METHODS = new Set([
+  "getValue", "setValue", "deleteValue", "listValues",
+  "getResourceText", "getResourceURL", "addStyle",
+  "xmlhttpRequest", "download", "notification",
+  "openInTab", "setClipboard", "registerMenuCommand", "unregisterMenuCommand",
+  "addValueChangeListener", "removeValueChangeListener",
+]);
 const DOM_METHODS = new Set(["querySelector", "querySelectorAll"]);
 const scriptKind = (id) =>
   /\.tsx$/.test(id) ? ts.ScriptKind.TSX : /\.jsx$/.test(id) ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
@@ -187,6 +194,11 @@ export function transformRodAst(code, id, options = {}) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
         if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
           replacement = ctx + ".interval";
+        if (options.gm !== false && /^GM_[A-Za-z]+$/.test(callee.text)) {
+          const method = callee.text.slice(3);
+          if (GM_LEGACY_METHODS.has(method))
+            replacement = ctx + ".gm.legacy." + method;
+        }
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
         const receiver = callee.expression.text;
@@ -206,6 +218,11 @@ export function transformRodAst(code, id, options = {}) {
               replacement = rules[key].replace(/^ctx\./, ctx + ".");
           } else if (key === "window.fetch") replacement = rules[key]?.replace(/^ctx\./, ctx + ".");
         }
+      }
+      if (!replacement && options.gm !== false && ts.isPropertyAccessExpression(callee) &&
+          ts.isIdentifier(callee.expression) && callee.expression.text === "GM" &&
+          !shadowed.has("GM") && GM_LEGACY_METHODS.has(callee.name.text)) {
+        replacement = ctx + ".gm.modern." + callee.name.text;
       }
       if (replacement) {
         const original = code.slice(callee.getStart(source), callee.end);
