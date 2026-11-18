@@ -46,3 +46,15 @@ flowchart TD
 ```
 
 This document is the target architecture, not a claim that production already uses React.
+
+## Mandatory UI component policy (React migration)
+
+**All new or migrated UI must use official shadcn/ui components or Radix UI primitives.** Do not implement proprietary replacements for buttons, dialogs, menus, dropdowns, selects, comboboxes, tooltips, popovers, tabs, switches, toasts, or form controls. Prefer shadcn's maintained source components and Radix accessibility behavior; compose them for feature-specific screens rather than building a parallel component library.
+
+- React is the only target UI framework. Solid implementations are transitional legacy code, never a template for new features.
+- Use shadcn/ui design tokens, Tailwind CSS, and lucide-react icons. Keep the existing visual language and iPhone Safari ergonomics.
+- Custom code is allowed only for domain-specific UI composition and the userscript runtime adapters (ctx, ShadowRoot, events, storage, HTTP, lifecycle).
+- Any vendored shadcn component must identify its upstream origin and remain close to the official implementation; avoid custom forks of Radix primitives.
+- Every UI PR/commit must audit new components against this policy and remove obsolete custom counterparts as each feature migrates.
+- Maintain React root lifecycle through ctx.ui.mountReact and dispose via ctx.onDispose. Avoid global CSS leakage into host pages.
+
