@@ -8,11 +8,11 @@ describe("PR title CI scope", () => {
   it("parses test and build selectors without splitting glob paths", () => {
     expect(
       parsePrCiScope(
-        "feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,reddit)",
+        "feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,unified)",
       ),
     ).toEqual({
       test: ["tests/runtime-helpers.test.js", "tests/*.test.js"],
-      build: ["standalone", "reddit"],
+      build: ["standalone", "unified"],
     });
   });
   it("rejects unsafe test paths and unknown targets", () => {
