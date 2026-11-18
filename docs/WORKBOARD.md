@@ -23,6 +23,10 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+> **Architecture decision (2026-11-18):** [Single React root + portal registry](react-single-root-portals.md). One root per runtime instance; per-post/per-Reel **portals**, not separate roots. This supersedes any older per-target root wording.
+
+- [ ] Implement one instance-owned React root and keyed PortalRegistry for all feature UI, with shared providers and ShadowRoot style attachment; validate multiple simultaneous instances and cleanup.
+
 - [ ] Audit `src/core/runtime-react.ts`, `src/core/runtime-context-react.tsx`, `ctx.ui.mountReact`, JSX transform and actual bundling.
 - [ ] React mount/unmount ownership per userscript instance; isolate context across multiple simultaneous instances; no global current-context.
 - [ ] React adapter for framework-neutral `ctx.store` using `useSyncExternalStore`; stable snapshots and subscriptions.
@@ -35,7 +39,7 @@
 
 ### Instagram bookmarks
 
-- [ ] Replace single global bookmark mount with **per-post/per-Reel React mounts** and stable ownership keyed by actual publication.
+- [ ] Replace single global bookmark mount with **per-post/per-Reel React portals in the shared instance root** and stable ownership keyed by actual publication.
 - [ ] Support Feed, grid/modal, and vertically swiped Reels; recycled DOM and URL-stable navigation.
 - [ ] Bind native save click, state and confirmation to the **same publication**; avoid accidental saves of a different post.
 - [ ] Preserve native save/collections semantics; handle unavailable native control and failed collection selection visibly.
