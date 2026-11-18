@@ -1,4 +1,4 @@
-import { Show } from "solid-js";
+import { useSyncExternalStore } from "react";
 import type { ScriptContext } from "../../core/runtime";
 import { SavedPanel, SettingsDialog, css, type Form } from "./Settings.tsx";
 import type { MediaPayload, Page } from "./core.ts";
@@ -37,58 +37,55 @@ export default {
 
     if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
     const hub = installRodActions(ctx.menu);
-    const unregisterActions = hub.register({
-      id: "instagram-saved",
-      title: "Instagram",
-      tabs: [
-        {
-          id: "saved",
-          title: "Salvos",
-          render() {
-            return (
-              <SavedPanel
-                onOpen={() => void settingsApi.open()}
-                running={runtime.running}
-                error={runtime.lastError}
-              />
-            );
-          },
-        },
-      ],
-    });
-    ctx.onDispose(unregisterActions);
-    const [runtime, setRuntime] = ctx.store({
+    const [runtime, updateStore] = ctx.store({
       running: false,
       lastRun: 0,
       lastError: "",
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
     });
-    ctx.ui.mountSolid(
-      () => (
-        <Show when={runtime.open}>
-          <SettingsDialog
-            settings={runtime.form}
-            error={runtime.lastError}
-            close={() =>
-              setRuntime((draft) => {
-                draft.open = false;
-              })
-            }
-            save={async (form) => {
-              const { token, channels, ...settings } = form;
-              await settingsApi.update(settings);
-              await set("config", { token: token.trim(), channels });
-              setRuntime((draft) => {
-                draft.open = false;
-              });
-              void run(true);
-            }}
-          />
-        </Show>
-      ),
-      { styles: [css], id: "instagram-settings" },
-    );
+    const listeners = new Set<() => void>();
+    let version = 0;
+    const subscribe = (listener: () => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    };
+    const getSnapshot = () => version;
+    const setRuntime = (update: Parameters<typeof updateStore>[0]) => {
+      updateStore(update);
+      version++;
+      listeners.forEach((listener) => listener());
+    };
+    function SettingsMount() {
+      useSyncExternalStore(subscribe, getSnapshot);
+      return runtime.open ? (
+        <SettingsDialog
+          key={JSON.stringify(runtime.form)}
+          settings={runtime.form}
+          error={runtime.lastError}
+          close={() => setRuntime((draft) => { draft.open = false; })}
+          save={async (form) => {
+            const { token, channels, ...settings } = form;
+            await settingsApi.update(settings);
+            await set("config", { token: token.trim(), channels });
+            setRuntime((draft) => { draft.open = false; });
+            void run(true);
+          }}
+        />
+      ) : null;
+    }
+    function SavedActionsPanel() {
+      useSyncExternalStore(subscribe, getSnapshot);
+      return <SavedPanel onOpen={() => void settingsApi.open()}
+        running={runtime.running} error={runtime.lastError} />;
+    }
+    const unregisterActions = hub.register({
+      id: "instagram-saved",
+      title: "Instagram",
+      tabs: [{ id: "saved", title: "Salvos", render: () => <SavedActionsPanel /> }],
+    });
+    ctx.onDispose(unregisterActions);
+    ctx.ui.mountReact(<SettingsMount />);
     const get = async <T,>(key: string, fallback: T): Promise<T> =>
       (await ctx.storage.get(key, fallback)) as T;
     const set = async <T,>(key: string, value: T): Promise<void> => ctx.storage.set(key, value);
