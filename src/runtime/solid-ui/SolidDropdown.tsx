@@ -111,7 +111,7 @@ export function openSolidDropdown(options: DropdownOptions) {
               <button
                 type="button"
                 role={item.type === "checkbox" ? "menuitemcheckbox" : "menuitem"}
-                aria-checked={item.type === "checkbox" ? Boolean(item.checked) : undefined}
+                aria-checked={item.type === "checkbox" ? (item.checked ? "true" : "false") : undefined}
                 disabled={item.disabled}
                 style={buttonStyle}
                 onClick={() => {
