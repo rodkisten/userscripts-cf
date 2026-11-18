@@ -22,7 +22,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const context = await Promise.race([
     Promise.resolve()
-      .then(() => bridge.readLocation())
+      .then(() => typeof bridge?.readLocation === "function" ? bridge.readLocation() : null)
       .catch((error: unknown) => {
         console.warn("[GoneWildStudio] Optional Soundgasm context unavailable", error);
         return null;
@@ -111,7 +111,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     </SoundgasmBoundary>
   );
   render();
-  // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty Solid host
+  // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty React root
   // without throwing. Never hide the native player until replacement content
   // exists. TODO: Add integration tests for recordings, profiles, delayed
   // jPlayer hydration and SPA navigation before removing this safeguard.
