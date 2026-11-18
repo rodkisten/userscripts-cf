@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles, { css } from "./Launcher.module.css";
+import { ClipboardPanel, type ClipboardApi } from "./ClipboardPanel.tsx";
 
 export type RodActionsTab = { id: string; title: string; icon?: string; render: () => ReactNode };
 export type RodActionsModule = { id: string; title: string; tabs: RodActionsTab[] };
@@ -110,5 +111,11 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
   root.render(<ActionsView hub={hub} portal={mount} getEntries={entries} getSelection={() => selected}
     subscribe={(listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }} />);
   window.__RodActions = hub;
+  const clipboard = (window as Window & { __RodClipboard?: ClipboardApi }).__RodClipboard;
+  if (clipboard) hub.register({
+    id: "clipboard", title: "Clipboard", tabs: [
+      { id: "history", title: "Histórico", icon: "▤", render: () => <ClipboardPanel clipboard={clipboard} /> },
+    ],
+  });
   return hub;
 }
