@@ -61,23 +61,26 @@ export function createRuntime(
           const mountPoint = container ?? host.document.createElement("div");
           const owned = !container;
           if (owned) ensureUIRoot().append(mountPoint);
-          let root: ReturnType<typeof createRoot>;
-          try {
-            root = createRoot(mountPoint);
-            root.render(<RuntimeMount context={getContext()}>{component}</RuntimeMount>);
-          } catch (error) {
-            if (owned) mountPoint.remove();
-            captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
-            throw error;
-          }
+          let root: ReturnType<typeof createRoot> | undefined;
           let disposed = false;
           const dispose = () => {
             if (disposed) return;
             disposed = true;
-            root.unmount();
-            if (owned) mountPoint.remove();
+            try {
+              root?.unmount();
+            } finally {
+              if (owned) mountPoint.remove();
+            }
           };
-          onDispose(dispose);
+          try {
+            root = createRoot(mountPoint);
+            root.render(<RuntimeMount context={getContext()}>{component}</RuntimeMount>);
+            onDispose(dispose);
+          } catch (error) {
+            dispose();
+            captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
+            throw error;
+          }
           return dispose;
         },
       }),
