@@ -677,5 +677,25 @@
     "excludes": [
       "ctx.ui.style"
     ]
+  },
+  {
+    "name": "style node var preserved",
+    "source": "function init(ctx) { var s = document.createElement('style'); s.textContent = '.x{}'; document.head.append(s); }",
+    "includes": [
+      "var s = document.createElement('style')"
+    ],
+    "excludes": [
+      "ctx.ui.style"
+    ]
+  },
+  {
+    "name": "body style insertion preserved",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.textContent = '.x{}'; document.body.append(s); }",
+    "includes": [
+      "document.body.append(s)"
+    ],
+    "excludes": [
+      "ctx.ui.style"
+    ]
   }
 ]
