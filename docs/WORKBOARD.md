@@ -363,3 +363,9 @@
 - [`b993262b`](https://github.com/rodkisten/userscripts-cf/commit/b993262ba23e8f108a2a9f2c680be818d0b9a5a4): categoryTag regex had global `g` flag and therefore stateful `test()` results. Removed `g`.
 - [`e85f88ca`](https://github.com/rodkisten/userscripts-cf/commit/e85f88ca88a8131b1591cf7f3ce37cf1ddbcfcfa): optional Soundgasm bridge location lookup now handles missing method and stale Solid reference removed.
 - **CI verification remains blocked:** latest GitHub Actions run could not be retrieved from this environment, and the container cannot resolve github.com. Previous failure run 44234869187 predates the TSX transform fix. Do not mark build/typecheck/browser green. Next priority: obtain fresh run logs, repair remaining TSX/runtime errors, verify Safari playback and Reddit layout.
+
+### Release run 44239966435 diagnosis (2026-11-18)
+
+- [Failed release run](https://github.com/rodkisten/userscripts-cf/actions/runs/44239966435), job 134585157743, checked out `e85f88ca88a8131b1591cf7f3ce37cf1ddbcfcfa`. `npm ci --legacy-peer-deps` succeeded, but `npm test` stopped at the first `tsc --noEmit -p tsconfig.json` with seven TS1127/TS1134 invalid-character/variable-declaration errors on `src/userscripts/gonewild/components/Markdown.tsx:80`. Build and Vitest did **not** run in this job.
+- [`6dd2a425`](https://github.com/rodkisten/userscripts-cf/commit/6dd2a425c5cc91f9d34d88b45a5819333af31396) replaces the malformed Markdown inline tokenizer regex with a valid JavaScript regex and fixes escaped newline/strong emphasis parsing. Source-level fix only; **new CI run not yet verified**.
+- Next: check new release workflow run and resolve any subsequent typecheck/build failures. Do not assume green or release success from this change.
