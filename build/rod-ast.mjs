@@ -247,7 +247,8 @@ export function transformRodAst(code, id, options = {}) {
       };
       count(owner);
       // Declaration, write and append each reference the symbol exactly once.
-      if (references !== 3) continue;\n      // A declaration in a nested block must not be migrated as if it belonged
+      if (references !== 3) continue;
+      // A declaration in a nested block must not be migrated as if it belonged
       // to the outer function scope. The triple is intentionally local.
       edits.push({ start: declaration.getStart(source), end: insertion.end,
         before: code.slice(declaration.getStart(source), insertion.end),
