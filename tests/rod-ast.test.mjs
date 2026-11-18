@@ -217,3 +217,20 @@ it("CLI migrates legacy IIFE and writes a valid JSON report", () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it("listener symbols: only the matching target and event stay native", () => {
+  const input = 'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener("click", handler); window.addEventListener("scroll", handler); }';
+  const output = transformRodAst(input, "listener-symbols.ts").code;
+  expect(output).toContain('document.addEventListener("click", handler)');
+  expect(output).toContain('ctx.listen(window, "scroll", handler)');
+});
+it("listener symbols: distinct callbacks on same event remain independent", () => {
+  const input = 'function init(ctx) { const a = () => {}; const b = () => {}; document.addEventListener("click", a); document.removeEventListener("click", a); document.addEventListener("click", b); }';
+  const output = transformRodAst(input, "listener-symbols.ts").code;
+  expect(output).toContain('document.addEventListener("click", a)');
+  expect(output).toContain('ctx.listen(document, "click", b)');
+});
+it("listener symbols: dynamic removal remains conservative", () => {
+  const input = 'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener(eventName, handler); }';
+  expect(transformRodAst(input, "listener-symbols.ts").code).toBe(input);
+});
