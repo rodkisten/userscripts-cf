@@ -344,3 +344,9 @@
 - [`d8973911`](https://github.com/rodkisten/userscripts-cf/commit/d8973911bf40850f12058d7cd90d533dd1ebedec): aligned tag state with `.gws-tag[data-active]` CSS and fixed subreddit regex parsing after Solid→React rewrite.
 - [`762e7ff7`](https://github.com/rodkisten/userscripts-cf/commit/762e7ff777e65c061eabb9d191fa656c3f98014c): gave Reddit settings ShadowRoot an overlay stacking context with pointer-events disabled at host level, leaving the actual dialog interactive.
 - GitHub combined commit statuses query returned no statuses for the last commit. This **does not establish build success**. Live Reddit/Soundgasm, TS typecheck, release and Safari playback remain unverified. Next: inspect failing Actions logs and run actual build before declaring resolved.
+
+### CI diagnosis and GoneWild store subscription (2026-11-18)
+
+- Inspected Actions run [`44234869187`](https://github.com/rodkisten/userscripts-cf/actions/runs/44234869187), job `134568452192`. Legacy TypeScript: success; React TypeScript: success; production build: failure. The build log reports Rolldown `[PARSE_ERROR] Unexpected JSX expression` in TSX (including `src/userscripts/github-tools/index.tsx:408`). This run predates the latest React migrations, so do **not** infer current main CI status from it.
+- [`ef940bd2`](https://github.com/rodkisten/userscripts-cf/commit/ef940bd235e9289ba7fe733b1d1153f889e1533e): React Feed now subscribes directly to the immutable state snapshot using `useSyncExternalStore`; async audio loading no longer remains latched when its active request finishes.
+- **Unresolved P0:** verify current main run and address Vite 8/Rolldown TSX transform/parser without restoring Solid or masking checks. Run `npm ci`, `npm run typecheck`, `npm run typecheck:react`, `npm run build` and validate Safari before marking any item complete. No local CI runner or fresh successful build was available in this work block.
