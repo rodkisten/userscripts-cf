@@ -544,3 +544,10 @@
 - [x] Diagnose run 44333389425: Vitest 85/85 passed; legacy IIFE CLI crashed because the migration result does not expose `edits`, but CLI accessed `result.edits.length`.
 - [x] Make CLI edit-count reporting optional and add Vitest subprocess integration coverage for real IIFE CLI output and metadata JSON.
 - [ ] Verify the new run and update the confirmed test count/CI status; do not claim green before checking.
+
+### 🎧 Listener ownership by symbols (2026-11-18)
+
+- [x] Match native `removeEventListener` against `addEventListener` by receiver (`document`/`window`), literal event name and TypeScript callback symbol identity.
+- [x] Preserve matched removals and dynamic/unknown cleanup; rewrite unrelated listeners to `ctx.listen` when identity is proven.
+- [x] Add 3 dedicated Vitest tests and expand AST matrix to 63 scenarios.
+- [ ] Verify the resulting CI run; investigate callback aliases, capture options, and escape analysis before widening the transformation.
