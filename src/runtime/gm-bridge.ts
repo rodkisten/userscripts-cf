@@ -140,5 +140,5 @@ export function createGMBridge(host: Window & typeof globalThis = window, module
     },
   });
 
-  return Object.freeze({ modern, legacy });
+  return Object.freeze({ modern, legacy }) as GMBridge;
 }
