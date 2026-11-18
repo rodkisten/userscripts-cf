@@ -369,3 +369,9 @@
 - [Failed release run](https://github.com/rodkisten/userscripts-cf/actions/runs/44239966435), job 134585157743, checked out `e85f88ca88a8131b1591cf7f3ce37cf1ddbcfcfa`. `npm ci --legacy-peer-deps` succeeded, but `npm test` stopped at the first `tsc --noEmit -p tsconfig.json` with seven TS1127/TS1134 invalid-character/variable-declaration errors on `src/userscripts/gonewild/components/Markdown.tsx:80`. Build and Vitest did **not** run in this job.
 - [`6dd2a425`](https://github.com/rodkisten/userscripts-cf/commit/6dd2a425c5cc91f9d34d88b45a5819333af31396) replaces the malformed Markdown inline tokenizer regex with a valid JavaScript regex and fixes escaped newline/strong emphasis parsing. Source-level fix only; **new CI run not yet verified**.
 - Next: check new release workflow run and resolve any subsequent typecheck/build failures. Do not assume green or release success from this change.
+
+### Markdown regression tests and CI check (2026-11-18)
+
+- GitHub commit-workflow lookup returned **no associated workflow runs** for `6dd2a425` and `349ec6c1`; this is not evidence of a green CI, and the prior release job predates the fix.
+- [`d3d4fb19`](https://github.com/rodkisten/userscripts-cf/commit/d3d4fb194390d3fcd4ae69dc97fac62e2c1ecdd1): added React Markdown regression tests for headings/lists/fenced code, inline emphasis, newlines and safe links. Tests were **added, not executed** in this work block.
+- Next: obtain a current workflow run or execute `npm test` in a checked-out repository; resolve typecheck/build errors before release. Maintain React-only cutover.
