@@ -98,3 +98,11 @@ export function legacyApiCompatibility(ctx: ScriptContext) {
     return { legacy: null };
   }
 }
+
+/** GM methods are optional until native grants or runtime fallbacks are available. */
+export async function typedGMBridge(ctx: ScriptContext) {
+  const legacy = await ctx.gm?.legacy.getValue?.("theme", "light");
+  const modern = await ctx.gm?.modern.getValue?.("theme", "light");
+  await ctx.gm?.legacy.setValue?.("theme", "dark");
+  return { legacy, modern };
+}
