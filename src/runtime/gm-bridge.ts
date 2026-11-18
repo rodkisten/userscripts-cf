@@ -44,7 +44,14 @@ export interface GMMenuMethods {
 }
 
 /** The bridge reflects granted native APIs; unsupported methods remain optional. */
+export interface GMAsyncValues {
+  get<T = unknown>(key: string, fallback?: T): Promise<T | undefined>;
+  set(key: string, value: unknown): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 export interface GMBridge {
+  values?: GMAsyncValues;
   modern: Record<string, unknown> & GMValueMethods & GMMenuMethods;
   legacy: Record<string, unknown> & GMValueMethods & GMMenuMethods;
 }
