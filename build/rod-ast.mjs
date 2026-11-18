@@ -207,7 +207,7 @@ export function transformRodAst(code, id, options = {}) {
     for (let i = 0; i + 2 < statements.length; i++) {
       const [declaration, assignment, insertion] = statements.slice(i, i + 3);
       if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
-      if (!ts.isVariableStatement(declaration) || declaration.declarationList.declarations.length !== 1) continue;
+      if (!ts.isVariableStatement(declaration) || declaration.declarationList.declarations.length !== 1 ||\n          !(declaration.declarationList.flags & ts.NodeFlags.Const)) continue;
       const variable = declaration.declarationList.declarations[0];
       if (!ts.isIdentifier(variable.name) || !variable.initializer || !ts.isCallExpression(variable.initializer)) continue;
       const name = variable.name.text;
@@ -230,7 +230,7 @@ export function transformRodAst(code, id, options = {}) {
       const target = append.expression.expression;
       const documentHead = ts.isPropertyAccessExpression(target) && ts.isIdentifier(target.expression) &&
         target.expression.text === "document" && ["head", "documentElement", "body"].includes(target.name.text);
-      if (!documentHead) continue;
+      if (!documentHead || target.name.text !== "head") continue;\n      // Retain comments and directives between statements instead of deleting them.\n      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||\n          /\\/\\*|\\/\\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
       const symbol = checker.getSymbolAtLocation(variable.name);
       if (!symbol) continue;
       let references = 0;
@@ -240,7 +240,7 @@ export function transformRodAst(code, id, options = {}) {
       };
       count(owner);
       // Declaration, write and append each reference the symbol exactly once.
-      if (references !== 3) continue;
+      if (references !== 3) continue;\n      // A declaration in a nested block must not be migrated as if it belonged\n      // to the outer function scope. The triple is intentionally local.
       edits.push({ start: declaration.getStart(source), end: insertion.end,
         before: code.slice(declaration.getStart(source), insertion.end),
         after: ctx + ".ui.style(" + code.slice(write.right.getStart(source), write.right.end) + ");" });
