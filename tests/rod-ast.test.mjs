@@ -77,3 +77,21 @@ it("preserves MutationObserver until observer ownership is proven", () => {
   const source = 'function init(ctx: ScriptContext) { const observer = new MutationObserver(callback); observer.observe(document.body, {childList: true}); observer.disconnect(); }';
   expect(transformRodAst(source, "observer.ts").code).toBe(source);
 });
+
+it("does not let unrelated function timer cleanup disable a safe transform", () => {
+  const code = 'function first(ctx: ScriptContext) { setInterval(tick, 1000); } function second(ctx: ScriptContext) { const id = setInterval(tock, 2000); clearInterval(id); }';
+  const result = transformRodAst(code, "owners.ts");
+  expect(result.code).toContain("ctx.interval(tick, 1000)");
+  expect(result.code).toContain("setInterval(tock, 2000)");
+  expect(result.code).toContain("clearInterval(id)");
+});
+it("does not let unrelated listener removal disable a safe transform", () => {
+  const code = 'function first(ctx: ScriptContext) { document.addEventListener("click", click); } function second(ctx: ScriptContext) { document.addEventListener("scroll", scroll); document.removeEventListener("scroll", scroll); }';
+  const result = transformRodAst(code, "owners.ts");
+  expect(result.code).toContain('ctx.listen(document, "click", click)');
+  expect(result.code).toContain('document.addEventListener("scroll", scroll)');
+});
+it("detects cleanup inside nested disposal callbacks of the same owner", () => {
+  const code = 'function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); ctx.onDispose(() => clearInterval(id)); }';
+  expect(transformRodAst(code, "nested.ts").code).toBe(code);
+});
