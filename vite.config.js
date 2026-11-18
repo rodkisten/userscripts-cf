@@ -11,7 +11,9 @@ export default defineConfig({
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
   plugins: [
     ...(process.env.ROD_AST === "1" ? [rodAstPlugin({ strict: true })] : []),
-    runtimeHelpers(), inlineCSSModules(), inlineSVG(),
+    runtimeHelpers(),
+    inlineCSSModules(),
+    inlineSVG(),
   ],
   css: {
     transformer: "postcss",

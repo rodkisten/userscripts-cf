@@ -358,7 +358,8 @@ it("storage opt-in keeps dynamic keys native even when awaited", () => {
 });
 
 it("preserves optional GM calls and receiver chains without changing short-circuit semantics", () => {
-  const input = 'function init(ctx) { GM?.getValue("key"); GM.getValue?.("key"); GM_getValue?.("key"); GM.getValue("plain"); }';
+  const input =
+    'function init(ctx) { GM?.getValue("key"); GM.getValue?.("key"); GM_getValue?.("key"); GM.getValue("plain"); }';
   const result = transformRodAst(input, "optional-gm.ts");
   expect(result.diagnostics).toEqual([]);
   expect(result.code).toContain('GM?.getValue("key")');
@@ -369,15 +370,16 @@ it("preserves optional GM calls and receiver chains without changing short-circu
 });
 
 it("preserves optional native calls across HTTP and DOM helpers", () => {
-  const input = 'function init(ctx) { fetch?.("/api"); window?.fetch("/api"); document.querySelector?.("main"); document?.querySelector("main"); }';
+  const input =
+    'function init(ctx) { fetch?.("/api"); window?.fetch("/api"); document.querySelector?.("main"); document?.querySelector("main"); }';
   const result = transformRodAst(input, "optional-native.ts");
   expect(result.code).toBe(input);
   expect(result.diagnostics).toEqual([]);
 });
 
-
 it("routes unguarded GM style injection through the ShadowRoot UI helper", () => {
-  const input = 'function init(ctx) { GM_addStyle(".panel { color: red }"); GM.addStyle(".box { display: grid }"); }';
+  const input =
+    'function init(ctx) { GM_addStyle(".panel { color: red }"); GM.addStyle(".box { display: grid }"); }';
   const result = transformRodAst(input, "gm-styles.ts");
   expect(result.diagnostics).toEqual([]);
   expect(result.code).toContain('ctx.ui.style(".panel { color: red }")');
@@ -386,7 +388,8 @@ it("routes unguarded GM style injection through the ShadowRoot UI helper", () =>
 });
 
 it("does not rewrite shadowed or availability-guarded GM style injections", () => {
-  const shadowed = 'function init(ctx) { const GM_addStyle = (css) => css; GM_addStyle(".x { color: red; }"); }';
+  const shadowed =
+    'function init(ctx) { const GM_addStyle = (css) => css; GM_addStyle(".x { color: red; }"); }';
   expect(transformRodAst(shadowed, "shadowed-gm-style.ts").code).toBe(shadowed);
   const guarded = 'function init(ctx) { if (typeof GM_addStyle === "function") GM_addStyle(".x{}"); }';
   expect(transformRodAst(guarded, "guarded-gm-style.ts").code).toBe(guarded);
@@ -399,9 +402,9 @@ it("Vite AST plugin rewrites GM styles only when explicitly registered", async (
   expect(result?.code).toContain(".x");
 });
 
-
 it("migrates a fully owned static style triple to ShadowRoot and is idempotent", () => {
-  const input = 'function init(ctx) { const style = document.createElement("style"); style.textContent = ".card { color: red }"; document.head.appendChild(style); }';
+  const input =
+    'function init(ctx) { const style = document.createElement("style"); style.textContent = ".card { color: red }"; document.head.appendChild(style); }';
   const result = transformRodAst(input, "static-style.ts");
   expect(result.diagnostics).toEqual([]);
   expect(result.code).toContain('ctx.ui.style(".card { color: red }");');
@@ -410,24 +413,31 @@ it("migrates a fully owned static style triple to ShadowRoot and is idempotent",
 });
 
 it("preserves style nodes with escaping references or dynamic content", () => {
-  const escaping = 'function init(ctx) { const style = document.createElement("style"); style.innerText = ".a{}"; document.head.append(style); return style; }';
-  const dynamic = 'function init(ctx) { const style = document.createElement("style"); style.textContent = css; document.head.append(style); }';
+  const escaping =
+    'function init(ctx) { const style = document.createElement("style"); style.innerText = ".a{}"; document.head.append(style); return style; }';
+  const dynamic =
+    'function init(ctx) { const style = document.createElement("style"); style.textContent = css; document.head.append(style); }';
   expect(transformRodAst(escaping, "escaping.ts").code).toBe(escaping);
   expect(transformRodAst(dynamic, "dynamic.ts").code).toBe(dynamic);
 });
 
-
 it("preserves hoisted and externally targeted styles", () => {
-  const hoisted = 'function init(ctx) { var s = document.createElement("style"); s.textContent = ".x{}"; document.head.append(s); }';
-  const body = 'function init(ctx) { const s = document.createElement("style"); s.textContent = ".x{}"; document.body.append(s); }';
-  const comment = 'function init(ctx) { const s = document.createElement("style"); /* keep note */ s.textContent = ".x{}"; document.head.append(s); }';
-  for (const input of [hoisted, body, comment]) expect(transformRodAst(input, "preserve.ts").code).toBe(input);
+  const hoisted =
+    'function init(ctx) { var s = document.createElement("style"); s.textContent = ".x{}"; document.head.append(s); }';
+  const body =
+    'function init(ctx) { const s = document.createElement("style"); s.textContent = ".x{}"; document.body.append(s); }';
+  const comment =
+    'function init(ctx) { const s = document.createElement("style"); /* keep note */ s.textContent = ".x{}"; document.head.append(s); }';
+  for (const input of [hoisted, body, comment])
+    expect(transformRodAst(input, "preserve.ts").code).toBe(input);
 });
-
 
 it("Vite processes static ShadowRoot CSS through PostCSS and Lightning CSS", async () => {
   const plugin = rodAstPlugin({ css: true });
-  const result = await plugin.transform('function init(ctx) { GM_addStyle(".card { color: red; }"); }', "inline.ts");
+  const result = await plugin.transform(
+    'function init(ctx) { GM_addStyle(".card { color: red; }"); }',
+    "inline.ts",
+  );
   expect(result?.code).toContain("ctx.ui.style(");
   expect(result?.code).toContain(".card");
   expect(result?.code).not.toContain("GM_addStyle(");
@@ -435,9 +445,8 @@ it("Vite processes static ShadowRoot CSS through PostCSS and Lightning CSS", asy
 
 it("Vite leaves dynamic style expressions untouched", async () => {
   const plugin = rodAstPlugin({ css: true });
-  expect(await plugin.transform('function init(ctx) { ctx.ui.style(cssText); }', "dynamic.ts")).toBeNull();
+  expect(await plugin.transform("function init(ctx) { ctx.ui.style(cssText); }", "dynamic.ts")).toBeNull();
 });
-
 
 it("Vite compiles inline ShadowRoot CSS without injecting shared design-system styles", async () => {
   const plugin = rodAstPlugin();

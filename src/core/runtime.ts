@@ -103,16 +103,21 @@ export type ScriptContext = Record<string, unknown> & {
     delete(key: string): Promise<void>;
   };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui?: (ReturnType<typeof createUIFeature> & {
+  readonly ui?: ReturnType<typeof createUIFeature> & {
     readonly root: ShadowRoot;
     readonly host: HTMLDivElement;
     mount(node: Node): Node;
     style(css: string): HTMLStyleElement;
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
     mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
-  });
+  };
   readonly interval: (callback: () => void, milliseconds: number) => number;
-  readonly listen: (target: EventTarget, event: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean) => void;
+  readonly listen: (
+    target: EventTarget,
+    event: string,
+    callback: EventListenerOrEventListenerObject,
+    options?: AddEventListenerOptions | boolean,
+  ) => void;
   readonly menu: ReturnType<typeof createMenuFeature> | undefined;
   readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
   readonly onDispose: (cleanup: () => void | Promise<void>) => void;
@@ -416,7 +421,19 @@ export function createCoreRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches({ ...definition, name: definition.name ?? definition.id, matches: definition.matches ? [...definition.matches] : undefined, includes: definition.includes ? [...definition.includes] : undefined, exclude: definition.exclude ? [...definition.exclude] : undefined, excludeMatches: definition.excludeMatches ? [...definition.excludeMatches] : undefined, excludes: definition.excludes ? [...definition.excludes] : undefined }, url, rules()[definition.id]);
+    matches(
+      {
+        ...definition,
+        name: definition.name ?? definition.id,
+        matches: definition.matches ? [...definition.matches] : undefined,
+        includes: definition.includes ? [...definition.includes] : undefined,
+        exclude: definition.exclude ? [...definition.exclude] : undefined,
+        excludeMatches: definition.excludeMatches ? [...definition.excludeMatches] : undefined,
+        excludes: definition.excludes ? [...definition.excludes] : undefined,
+      },
+      url,
+      rules()[definition.id],
+    );
 
   const onRulesChange = () => {
     void navigate();

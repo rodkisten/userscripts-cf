@@ -44,7 +44,11 @@ const sections = [
   ),
   "",
 ];
-if (!reportValid || !tests.length) sections.push(`> ⚠️ Vitest JSON report missing, empty or invalid${reportError ? ": " + escape(reportError) : ""}. The test step must be inspected; **0 passed does not mean success**.`, "");
+if (!reportValid || !tests.length)
+  sections.push(
+    `> ⚠️ Vitest JSON report missing, empty or invalid${reportError ? ": " + escape(reportError) : ""}. The test step must be inspected; **0 passed does not mean success**.`,
+    "",
+  );
 if (failed.length) {
   sections.push("### 🔥 Failed tests", "");
   for (const test of failed) {
@@ -74,7 +78,13 @@ sections.push(
   "~~~diff",
   diffPreview || "No diff available.",
   "~~~",
-  ...(diffTruncated ? [``, `> Diff preview truncated after ${diffPreviewLimit} lines; download the complete rod-ast.diff artifact.`, ``] : []),
+  ...(diffTruncated
+    ? [
+        ``,
+        `> Diff preview truncated after ${diffPreviewLimit} lines; download the complete rod-ast.diff artifact.`,
+        ``,
+      ]
+    : []),
   "",
   "</details>",
   "",

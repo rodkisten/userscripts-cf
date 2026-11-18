@@ -607,7 +607,6 @@
 - **Not verified:** React typecheck, Vitest, and bundles. `runtime-react.tsx` still imports `runtime.ts`; the full React project graph remains mixed. Do not mark P1 complete.
 - PR: https://github.com/rodkisten/userscripts-cf/pull/107 ; latest test commit: https://github.com/rodkisten/userscripts-cf/commit/bbe24c7a47e19c8f51f513af719d01c456052c0f
 
-
 ### Rod AST optional-chain safety (2026-11-18)
 
 - [x] Guard AST rewriting of optional call/receiver syntax across GM, DOM, and HTTP; short-circuit semantics are not guaranteed by context helpers.
@@ -644,7 +643,6 @@
 - [ ] Confirm new Vitest and TypeScript results in Actions; investigate any remaining failures before merge.
 - [ ] Verify actual Vite userscript build with ROD_AST=1 and Safari-compatible output.
 - [ ] Verify CSS Modules class mapping and dynamic style injection separately before expanding AST rewrite patterns.
-
 
 ### PR #108 · CI report reliability (2026-11-18)
 

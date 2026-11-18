@@ -32,10 +32,20 @@ test("missing report never masquerades as zero successful tests", () => {
 test("failed assertions include diagnostics in a readable section", () => {
   const summary = render({
     success: false,
-    testResults: [{ name: "rod-ast", assertionResults: [
-      { fullName: "GM style migration", status: "failed", failureMessages: ["Expected ctx.ui.style"], duration: 4 },
-      { fullName: "fixture", status: "passed", duration: 1 },
-    ] }],
+    testResults: [
+      {
+        name: "rod-ast",
+        assertionResults: [
+          {
+            fullName: "GM style migration",
+            status: "failed",
+            failureMessages: ["Expected ctx.ui.style"],
+            duration: 4,
+          },
+          { fullName: "fixture", status: "passed", duration: 1 },
+        ],
+      },
+    ],
   });
   assert.match(summary, /1 passed/);
   assert.match(summary, /1 failed/);
@@ -43,9 +53,13 @@ test("failed assertions include diagnostics in a readable section", () => {
 });
 
 test("diff preview is bounded while full artifact remains separate", () => {
-  const summary = render({ success: true, testResults: [{ name: "fixture", assertionResults: [
-    { fullName: "fixture", status: "passed" },
-  ] }] }, Array.from({ length: 350 }, (_, i) => "+" + i).join("\n"));
+  const summary = render(
+    {
+      success: true,
+      testResults: [{ name: "fixture", assertionResults: [{ fullName: "fixture", status: "passed" }] }],
+    },
+    Array.from({ length: 350 }, (_, i) => "+" + i).join("\n"),
+  );
   assert.match(summary, /truncated after 300 lines/);
   assert.doesNotMatch(summary, /\+349/);
 });
