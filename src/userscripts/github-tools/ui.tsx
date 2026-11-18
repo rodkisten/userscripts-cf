@@ -49,11 +49,11 @@ export function FileToolbar(props: {
   };
   return (
     <>
-      <button class={styles.button} data-ghft-copy="" disabled={copy.busy} onClick={run}>
+      <button className={styles.button} data-ghft-copy="" disabled={copy.busy} onClick={run}>
         {copy.label}
       </button>
       <select
-        class={styles.select}
+        className={styles.select}
         data-ghft-mode=""
         aria-label="O que copiar"
         value={props.preferences.mode}
@@ -63,7 +63,7 @@ export function FileToolbar(props: {
         <option value="paths">Caminhos</option>
       </select>
       <select
-        class={styles.select}
+        className={styles.select}
         data-ghft-sort=""
         aria-label="Ordenar arquivos por"
         value={props.preferences.sort}
@@ -73,17 +73,17 @@ export function FileToolbar(props: {
         <option value="modified">Modificado</option>
       </select>
       <button
-        class={styles.button}
+        className={styles.button}
         data-ghft-direction=""
         aria-label="Inverter ordenação"
         onClick={() => props.save({ direction: props.preferences.direction === "asc" ? "desc" : "asc" })}
       >
         {props.preferences.direction === "asc" ? "↑" : "↓"}
       </button>
-      <span class={styles.hint} data-ghft-hint="" title={props.info.title}>
+      <span className={styles.hint} data-ghft-hint="" title={props.info.title}>
         {props.info.hint}
       </span>
-      <span class={styles.message} role="status">
+      <span className={styles.message} role="status">
         {copy.message}
       </span>
     </>
@@ -141,10 +141,10 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
       );
   };
   return (
-    <span class={styles.stepCopy} data-ghft-step-copy="">
+    <span className={styles.stepCopy} data-ghft-step-copy="">
       <button
         type="button"
-        class={styles.button}
+        className={styles.button}
         disabled={state.busy}
         onClick={copy}
         title="Copiar log completo do job, incluindo todos os steps"
@@ -152,7 +152,7 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
       >
         {state.busy ? "◌" : "⧉"} Output
       </button>
-      <span class={styles.message} role="status">
+      <span className={styles.message} role="status">
         {state.message}
       </span>
     </span>
@@ -199,7 +199,7 @@ export function GitHubTokenSettings(props: {
   return (
     <Dialog title="GitHub · Logs do Actions" close={props.close}>
       <form
-        class={styles.tokenForm}
+        className={styles.tokenForm}
         onSubmit={(event) => {
           event.preventDefault();
           if (state.busy) return;
@@ -238,10 +238,10 @@ export function GitHubTokenSettings(props: {
         </label>
         <p>Deixe vazio para remover o token. Ele é enviado apenas à API oficial do GitHub.</p>
         <p role="status">{state.error}</p>
-        <button type="submit" class={styles.button} disabled={state.busy}>
+        <button type="submit" className={styles.button} disabled={state.busy}>
           Salvar
         </button>
-        <button type="button" class={styles.button} onClick={props.close}>
+        <button type="button" className={styles.button} onClick={props.close}>
           Cancelar
         </button>
       </form>
