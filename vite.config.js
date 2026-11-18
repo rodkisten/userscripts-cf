@@ -12,11 +12,7 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
-  plugins: [
-    runtimeHelpers(),
-    inlineCSSModules(),
-    inlineSVG(),
-  ],
+  plugins: [runtimeHelpers(), inlineCSSModules(), inlineSVG()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },
