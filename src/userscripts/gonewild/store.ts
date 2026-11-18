@@ -1,11 +1,11 @@
-import { createStore } from "solid-js";
+import { produce } from "immer";
 import { DEFAULTS, KEYS, normalize, readJSON, writeJSON, type Post, type Settings } from "./domain.ts";
 export function createStudioStore() {
   const saved = { ...DEFAULTS, ...readJSON<Partial<Settings>>(KEYS.config, {}) };
   saved.subreddits = (Array.isArray(saved.subreddits) ? saved.subreddits : DEFAULTS.subreddits)
     .filter((name) => /^[\w]{2,32}$/.test(name))
     .slice(0, 30);
-  const [state, setState] = createStore({
+  let state = {
     settings: saved,
     seen: readJSON<Record<string, number>>(KEYS.seen, {}),
     postCount: 0,
@@ -20,7 +20,16 @@ export function createStudioStore() {
       results: [] as Post[],
       after: "",
     },
-  });
+  };
+  const listeners = new Set<() => void>();
+  const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+  let revision = 0;
+  const getSnapshot = () => revision;
+  const setState = (recipe: (draft: typeof state) => void) => {
+    state = produce(state, recipe);
+    revision++;
+    listeners.forEach((listener) => listener());
+  };
   const actions = {
     settings(patch: Partial<Settings>) {
       // Persist the staged action payload, never the pre-commit public snapshot.
@@ -73,6 +82,6 @@ export function createStudioStore() {
       });
     },
   };
-  return { state, setState, actions };
+  return { get state() { return state; }, getSnapshot, subscribe, setState, actions };
 }
 export type StudioStore = ReturnType<typeof createStudioStore>;
