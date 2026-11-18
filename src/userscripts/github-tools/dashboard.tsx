@@ -294,7 +294,7 @@ export function mountGitHubDashboard(ctx: any) {
     document.body,
     () => (
       <section
-        class={styles.dashboard}
+        className={styles.dashboard}
         data-ghft-dashboard=""
         style={{
           transform: settings().barPosition
@@ -303,7 +303,7 @@ export function mountGitHubDashboard(ctx: any) {
         }}
       >
         <nav
-          class={styles.favoriteBar}
+          className={styles.favoriteBar}
           aria-label="Arquivos e workflows favoritos"
           onPointerDown={startBarDrag}
           onPointerMove={moveBarDrag}
@@ -311,7 +311,7 @@ export function mountGitHubDashboard(ctx: any) {
           onPointerCancel={endBarDrag}
         >
           <button
-            class={styles.button}
+            className={styles.button}
             onClick={() => setOpen(!open())}
             aria-expanded={open() ? "true" : "false"}
           >
@@ -320,7 +320,7 @@ export function mountGitHubDashboard(ctx: any) {
           <For each={settings().files}>
             {(file, i) => (
               <a
-                class={styles.favorite}
+                className={styles.favorite}
                 href={file.url}
                 draggable="true"
                 data-ghft-favorite-index={i()}
@@ -340,14 +340,14 @@ export function mountGitHubDashboard(ctx: any) {
                 onClick={() => setOpen(false)}
                 title={file.name}
               >
-                <img class={styles.favoriteIcon} src={materialIcon(file.name)} alt="" /> {file.name}
+                <img className={styles.favoriteIcon} src={materialIcon(file.name)} alt="" /> {file.name}
               </a>
             )}
           </For>
           <For each={settings().workflows}>
             {(workflow) => (
               <a
-                class={styles.favorite}
+                className={styles.favorite}
                 href={"/" + repo() + "/actions/workflows/" + workflow.path.split("/").pop()}
                 title={workflow.name}
                 onClick={() => setOpen(false)}
@@ -358,20 +358,20 @@ export function mountGitHubDashboard(ctx: any) {
           </For>
         </nav>
         <Show when={!customized() && busy()}>
-          <div class={styles.loadingBar} role="status">
+          <div className={styles.loadingBar} role="status">
             Carregando arquivos…
           </div>
         </Show>
         <Show when={open()}>
-          <div class={styles.dashboardPanel}>
+          <div className={styles.dashboardPanel}>
             <header>
               <strong>GitHub · {repo()}</strong>
-              <button class={styles.button} onClick={() => setOpen(false)}>
+              <button className={styles.button} onClick={() => setOpen(false)}>
                 ✕
               </button>
             </header>
-            <div class={styles.dashboardControls}>
-              <label class={styles.dragSetting}>
+            <div className={styles.dashboardControls}>
+              <label className={styles.dragSetting}>
                 <input
                   type="checkbox"
                   checked={settings().dragMode}
@@ -379,7 +379,7 @@ export function mountGitHubDashboard(ctx: any) {
                 />{" "}
                 Arrastar barra
               </label>
-              <button class={styles.button} onClick={() => save({ barPosition: null })}>
+              <button className={styles.button} onClick={() => save({ barPosition: null })}>
                 Redefinir posição
               </button>
               <label>
@@ -413,26 +413,26 @@ export function mountGitHubDashboard(ctx: any) {
                 <option value="atom">File icons</option>
                 <option value="simple">Simples</option>
               </select>
-              <button class={styles.button} disabled={busy()} onClick={() => void load()}>
+              <button className={styles.button} disabled={busy()} onClick={() => void load()}>
                 ↻
               </button>
             </div>
             <details>
               <summary>Repositórios no Dock</summary>
-              <div class={styles.dashboardControls}>
+              <div className={styles.dashboardControls}>
                 <input
                   aria-label="Adicionar repositório"
                   placeholder="owner/repo"
                   value={repoInput()}
                   onInput={(e) => setRepoInput(e.currentTarget.value)}
                 />
-                <button class={styles.button} onClick={addRepository}>
+                <button className={styles.button} onClick={addRepository}>
                   Adicionar
                 </button>
               </div>
               <For each={repositories()}>
                 {(name) => (
-                  <button class={styles.workflowChoice} onClick={() => void load(name)}>
+                  <button className={styles.workflowChoice} onClick={() => void load(name)}>
                     {name}
                   </button>
                 )}
@@ -443,10 +443,10 @@ export function mountGitHubDashboard(ctx: any) {
             <h4>Workflows favoritos</h4>
             <For each={settings().workflows}>
               {(w) => (
-                <div class={styles.dashboardItem}>
+                <div className={styles.dashboardItem}>
                   <a href={"/" + repo() + "/actions/workflows/" + w.path.split("/").pop()}>{w.name}</a>
                   <button
-                    class={styles.button}
+                    className={styles.button}
                     onClick={() => {
                       setDispatchWorkflow(w);
                       setDispatchInputs("{}");
@@ -455,7 +455,7 @@ export function mountGitHubDashboard(ctx: any) {
                     ▶
                   </button>
                   <button
-                    class={styles.button}
+                    className={styles.button}
                     aria-label="Remover favorito"
                     onClick={() => toggleWorkflow(w)}
                   >
@@ -468,10 +468,10 @@ export function mountGitHubDashboard(ctx: any) {
               <summary>Reordenar arquivos no celular</summary>
               <For each={settings().files}>
                 {(file, i) => (
-                  <div class={styles.dashboardItem}>
+                  <div className={styles.dashboardItem}>
                     <span>{file.name}</span>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       disabled={i() === 0}
                       onClick={() => {
                         dragIndex = i();
@@ -482,7 +482,7 @@ export function mountGitHubDashboard(ctx: any) {
                       ↑
                     </button>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       disabled={i() === settings().files.length - 1}
                       onClick={() => {
                         dragIndex = i();
@@ -493,7 +493,7 @@ export function mountGitHubDashboard(ctx: any) {
                       ↓
                     </button>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       onClick={() => toggleFile(file.name, file.url)}
                       aria-label={"Remover " + file.name}
                     >
@@ -507,7 +507,7 @@ export function mountGitHubDashboard(ctx: any) {
               <summary>Adicionar workflows</summary>
               <For each={workflows()}>
                 {(w) => (
-                  <button class={styles.workflowChoice} onClick={() => toggleWorkflow(w)}>
+                  <button className={styles.workflowChoice} onClick={() => toggleWorkflow(w)}>
                     {settings().workflows.some((f) => f.id === w.id) ? "★" : "☆"} {w.name}
                   </button>
                 )}
@@ -515,7 +515,7 @@ export function mountGitHubDashboard(ctx: any) {
             </details>
             <Show when={dispatchWorkflow()}>
               {(w) => (
-                <div class={styles.dispatchForm}>
+                <div className={styles.dispatchForm}>
                   <strong>Executar: {w().name}</strong>
                   <label>
                     Branch/ref{" "}
@@ -531,10 +531,10 @@ export function mountGitHubDashboard(ctx: any) {
                     />
                   </label>
                   <div>
-                    <button class={styles.button} disabled={busy()} onClick={() => void dispatch()}>
+                    <button className={styles.button} disabled={busy()} onClick={() => void dispatch()}>
                       Executar
                     </button>
-                    <button class={styles.button} onClick={() => setDispatchWorkflow(null)}>
+                    <button className={styles.button} onClick={() => setDispatchWorkflow(null)}>
                       Cancelar
                     </button>
                   </div>
@@ -542,7 +542,7 @@ export function mountGitHubDashboard(ctx: any) {
               )}
             </Show>
             <h4>Execuções recentes</h4>
-            <div class={styles.dashboardControls}>
+            <div className={styles.dashboardControls}>
               <input
                 aria-label="Buscar workflows"
                 placeholder="Buscar workflow"
@@ -568,8 +568,8 @@ export function mountGitHubDashboard(ctx: any) {
               )}
             >
               {(run) => (
-                <div class={styles.runRow}>
-                  <a class={styles.dashboardItem} href={run.html_url}>
+                <div className={styles.runRow}>
+                  <a className={styles.dashboardItem} href={run.html_url}>
                     <span>
                       {run.conclusion === "success" ? "✓" : run.conclusion === "failure" ? "✕" : "◌"}
                     </span>
@@ -580,23 +580,23 @@ export function mountGitHubDashboard(ctx: any) {
                       </small>
                     </span>
                   </a>
-                  <div class={styles.runActions}>
+                  <div className={styles.runActions}>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       disabled={busy() || run.conclusion !== "failure"}
                       onClick={() => void runAction(run, "rerun-failed-jobs")}
                     >
                       ↻ Falhas
                     </button>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       disabled={busy() || run.status === "completed"}
                       onClick={() => void runAction(run, "cancel")}
                     >
                       ✕
                     </button>
                     <button
-                      class={styles.button}
+                      className={styles.button}
                       onClick={() =>
                         void navigator.clipboard
                           .writeText(run.html_url)
@@ -718,7 +718,7 @@ export function FileCommit(props: { ctx: any; owner: string; repo: string; path:
   return (
     <Show when={commit()} fallback={<span title={error()} />}>
       {(entry) => (
-        <span class={styles.commitHint} title={entry().author + " · " + entry().sha}>
+        <span className={styles.commitHint} title={entry().author + " · " + entry().sha}>
           <a href={"/" + props.owner + "/" + props.repo + "/commit/" + entry().sha}>{entry().message}</a>
           {" · "}
           <a href={props.href.replace("/blob/", "/blame/")}>blame</a>
