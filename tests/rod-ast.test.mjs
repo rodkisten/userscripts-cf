@@ -422,3 +422,17 @@ it("preserves hoisted and externally targeted styles", () => {
   const comment = 'function init(ctx) { const s = document.createElement("style"); /* keep note */ s.textContent = ".x{}"; document.head.append(s); }';
   for (const input of [hoisted, body, comment]) expect(transformRodAst(input, "preserve.ts").code).toBe(input);
 });
+
+
+it("Vite processes static ShadowRoot CSS through PostCSS and Lightning CSS", async () => {
+  const plugin = rodAstPlugin({ css: true });
+  const result = await plugin.transform('function init(ctx) { GM_addStyle(".card { color: red; }"); }', "inline.ts");
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain(".card");
+  expect(result?.code).not.toContain("GM_addStyle(");
+});
+
+it("Vite leaves dynamic style expressions untouched", async () => {
+  const plugin = rodAstPlugin({ css: true });
+  expect(await plugin.transform('function init(ctx) { ctx.ui.style(cssText); }', "dynamic.ts")).toBeNull();
+});
