@@ -168,7 +168,7 @@ export function initializeDeckCompactLayout(): void {
 
       let identity = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileIdentity);
       if (!identity) {
-        identity = (<div class={CSS_CLASSES.profileIdentity} />) as HTMLDivElement;
+        identity = (<div className={CSS_CLASSES.profileIdentity} />) as HTMLDivElement;
         name.before(identity);
       }
 
@@ -260,7 +260,7 @@ export function initializeDeckCompactLayout(): void {
         toggle = (
           <button
             type="button"
-            class={CSS_CLASSES.profileMore}
+            className={CSS_CLASSES.profileMore}
             aria-expanded="false"
             onClick={(event: MouseEvent) => {
               event.preventDefault();
@@ -391,7 +391,7 @@ export function initializeDeckCompactLayout(): void {
 
         let top = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
-          top = (<div class={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />) as HTMLDivElement;
+          top = (<div className={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />) as HTMLDivElement;
         }
 
         if (top.parentElement !== column) {
@@ -409,7 +409,7 @@ export function initializeDeckCompactLayout(): void {
           mini?.remove();
           mini = (
             <a
-              class={CSS_CLASSES.miniAvatar}
+              className={CSS_CLASSES.miniAvatar}
               href={sourceURL}
               title={UI_TEXTS.openProfileTitle}
               aria-label={UI_TEXTS.openProfileAriaPrefix + key.slice(1)}
@@ -449,7 +449,7 @@ export function initializeDeckCompactLayout(): void {
 
         let authorLink = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
         if (!authorLink) {
-          authorLink = (<a class={CSS_CLASSES.topbarAuthor} />) as HTMLAnchorElement;
+          authorLink = (<a className={CSS_CLASSES.topbarAuthor} />) as HTMLAnchorElement;
           top.insertBefore(authorLink, top.querySelector(RODX_SELECTORS.proxyActions));
         }
 
