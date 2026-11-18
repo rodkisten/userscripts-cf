@@ -135,15 +135,15 @@ export function mountPanel(container: HTMLElement) {
             </div>
             <div className="output">
               {records.map((item) => (
-                  <details
-                    className="record"
-                    data-kind={item.kind}
-                    open={item.kind === "error" || item.kind === "result"}
-                  >
-                    <summary>{item.title}</summary>
-                    <pre>{pretty(item.value)}</pre>
-                  </details>
-                ))}
+                <details
+                  className="record"
+                  data-kind={item.kind}
+                  open={item.kind === "error" || item.kind === "result"}
+                >
+                  <summary>{item.title}</summary>
+                  <pre>{pretty(item.value)}</pre>
+                </details>
+              ))}
             </div>
           </div>
           <div className="view" data-view="methods" hidden={true}>
@@ -161,17 +161,17 @@ export function mountPanel(container: HTMLElement) {
             </div>
             <div className="results">
               {methods.map((item) => (
-                  <div className="result" data-status={item.result?.status || ""}>
-                    <strong>{item.label + " · " + (item.result?.status || "NÃO TESTADO")}</strong>
-                    <details>
-                      <summary>
-                        {item.world + (item.result ? " · " + item.result.elapsedMs + " ms" : "")}
-                      </summary>
-                      <pre>{pretty(item.result || { expectedWorld: item.world })}</pre>
-                    </details>
-                    <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
-                  </div>
-                ))}
+                <div className="result" data-status={item.result?.status || ""}>
+                  <strong>{item.label + " · " + (item.result?.status || "NÃO TESTADO")}</strong>
+                  <details>
+                    <summary>
+                      {item.world + (item.result ? " · " + item.result.elapsedMs + " ms" : "")}
+                    </summary>
+                    <pre>{pretty(item.result || { expectedWorld: item.world })}</pre>
+                  </details>
+                  <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
+                </div>
+              ))}
             </div>
           </div>
           <div className="view" data-view="history" hidden={true}>
@@ -180,12 +180,12 @@ export function mountPanel(container: HTMLElement) {
             </p>
             <div data-history="">
               {history.map((item) => (
-                  <div className="history-item">
-                    <small>{item.at}</small>
-                    <pre>{item.code.slice(0, 300)}</pre>
-                    <button onClick={() => callbacks.history(item.code)}>Carregar</button>
-                  </div>
-                ))}
+                <div className="history-item">
+                  <small>{item.at}</small>
+                  <pre>{item.code.slice(0, 300)}</pre>
+                  <button onClick={() => callbacks.history(item.code)}>Carregar</button>
+                </div>
+              ))}
             </div>
             <div className="toolbar">
               <button data-action="export">{"Exportar JSON"}</button>
@@ -203,5 +203,11 @@ export function mountPanel(container: HTMLElement) {
   }
   const root = createRoot(container);
   flushSync(() => root.render(<Panel />));
-  return { setRecords: (items: RecordItem[]) => updateRecords(items), setMethods: (items: MethodItem[]) => updateMethods(items), setHistory: (items: HistoryItem[]) => updateHistory(items), callbacks, dispose: () => root.unmount() };
+  return {
+    setRecords: (items: RecordItem[]) => updateRecords(items),
+    setMethods: (items: MethodItem[]) => updateMethods(items),
+    setHistory: (items: HistoryItem[]) => updateHistory(items),
+    callbacks,
+    dispose: () => root.unmount(),
+  };
 }
