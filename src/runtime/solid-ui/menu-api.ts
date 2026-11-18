@@ -51,7 +51,9 @@ export const menu = Object.freeze({
     const actions: RodMenuAction[] | undefined = schema.actions?.map((action) => ({
       id: action.id,
       label: action.label,
-      role: action.role ?? (action.variant === "danger" || action.variant === "destructive" ? "destructive" : undefined),
+      role:
+        action.role ??
+        (action.variant === "danger" || action.variant === "destructive" ? "destructive" : undefined),
       validate: action.validate,
       close: action.close,
       handler: async (context) => {

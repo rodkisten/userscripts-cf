@@ -464,7 +464,6 @@ body.gws-studio-search-active [data-testid="post-container"]:not(.gws-result) {
   flex-wrap: wrap;
 }
 
-
 /* Mobile Reddit hosts can use multi-column/grid layouts. Keep our inserted
    content in the full post width rather than a narrow metadata column. */
 @media (max-width: 767px) {
@@ -505,7 +504,9 @@ body.gws-studio-search-active [data-testid="post-container"]:not(.gws-result) {
   .gws-searchbar button {
     min-width: 0;
   }
-  .gws-tags, .gws-categories, .gws-controls {
+  .gws-tags,
+  .gws-categories,
+  .gws-controls {
     width: 100%;
     max-width: 100%;
     min-width: 0;
