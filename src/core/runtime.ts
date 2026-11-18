@@ -111,6 +111,9 @@ export type ScriptContext = Record<string, unknown> & {
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
     mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
   };
+  readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
+  readonly observe: (target: Node, callback: MutationCallback, options: MutationObserverInit) => MutationObserver;
+  readonly pageStyle: (cssContent: string) => HTMLStyleElement;
   readonly interval: (callback: () => void, milliseconds: number) => number;
   readonly listen: (
     target: EventTarget,
