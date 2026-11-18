@@ -4,8 +4,11 @@ import type { DomEngine } from "../../src/runtime/dom-engine.js";
 type IsAny<T> = 0 extends (1 & T) ? true : false;
 type Assert<T extends true> = T;
 type DomIsTyped = Assert<IsAny<DomEngine> extends false ? true : false>;
+type ContextDomIsTyped = Assert<IsAny<ScriptContext["dom"]> extends false ? true : false>;
 const _domTypeProof: DomIsTyped = true;
 void _domTypeProof;
+const _contextDomProof: ContextDomIsTyped = true;
+void _contextDomProof;
 
 /** Typed real-world fixture: transformed output must pass TypeScript. */
 export async function init(ctx: ScriptContext) {
