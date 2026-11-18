@@ -442,3 +442,10 @@
 - [`763b295f`](https://github.com/rodkisten/userscripts-cf/commit/763b295f334043e9994b3aa52aa2a20f3aaa6efa) migrated 245 `class=` attributes in RodX workbench; [`c3700d6a`](https://github.com/rodkisten/userscripts-cf/commit/c3700d6ab985d7c144dc9992035ddfb48979891e) uses real `document.createElement` nodes in selection popover instead of JSX-to-DOM casts.
 - Additional `class=` to `className=` edits across 14 other TSX files: lists/render (112), tweets/publisher (41), github-tools/dashboard (35), telegram/relay (30), page-repl/Panel (29), network/inspector (20), lists/timeline (25), lists/quick-picker (26), quick-actions (6), layout/tweets (5), github-tools/ui (12), dom-inspector (13), github-tools/directory-tree (12), tweets/enhancer (6). These are syntax migration edits only, **not a complete React rewrite**.
 - **Unverified:** CI/typecheck and runtime behavior after edits. Remaining work: remove Solid imports, migrate `solid-mount` and toast to React, correct event/ref APIs, JSX `for` to `htmlFor`, state/signal semantics, and validate React mount/disposal. No green build claimed.
+
+### React-only root/context/toast conversion (2026-11-18)
+
+- [`68869d51`](https://github.com/rodkisten/userscripts-cf/commit/68869d51a97759d1e8a12cd45c251a7328e49ca7): RodX legacy `mountView` now uses React `createRoot`/`flushSync` with target-scoped root ownership and detached-root disposal; source filename remains `solid-mount.tsx` temporarily for imports, but no Solid code remains inside it.
+- [`5eb51229`](https://github.com/rodkisten/userscripts-cf/commit/5eb51229f62197177c16f284cc51455d473fcc6a): RodX toast now uses a React root inside an isolated ShadowRoot and retains timer cleanup.
+- [`9b154dda`](https://github.com/rodkisten/userscripts-cf/commit/9b154dda3e55e433b0d91cc90de3c5cff889caf8): `src/core/runtime-context.ts` reexports the React runtime context rather than importing Solid.
+- **Not yet verified:** fresh TypeScript run, bundler output, DOM lifecycle under React, and compatibility of other Solid-era call sites. Do not mark the overall React migration complete.
