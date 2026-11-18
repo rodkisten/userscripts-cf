@@ -24,15 +24,9 @@ export function FileToolbar(props: {
       result = Promise.reject(error);
     }
     void result
-      .then(() =>
-        setCopy((previous) => ({ ...previous, message: "Copiado" })),
-      )
-      .catch((error) =>
-        setCopy((previous) => ({ ...previous, message: error.message })),
-      )
-      .finally(() =>
-        setCopy((previous) => ({ ...previous, busy: false, label: "⧉ Copiar tudo" })),
-      );
+      .then(() => setCopy((previous) => ({ ...previous, message: "Copiado" })))
+      .catch((error) => setCopy((previous) => ({ ...previous, message: error.message })))
+      .finally(() => setCopy((previous) => ({ ...previous, busy: false, label: "⧉ Copiar tudo" })));
   };
   return (
     <>
@@ -108,15 +102,11 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
       });
     }
     void writing
-      .then(() =>
-        setState((previous) => ({ ...previous, message: "Log completo do job copiado" })),
-      )
+      .then(() => setState((previous) => ({ ...previous, message: "Log completo do job copiado" })))
       .catch((error) =>
         setState((previous) => ({ ...previous, message: error.message || "Falha ao copiar" })),
       )
-      .finally(() =>
-        setState((previous) => ({ ...previous, busy: false })),
-      );
+      .finally(() => setState((previous) => ({ ...previous, busy: false })));
   };
   return (
     <span className={styles.stepCopy} data-ghft-step-copy="">
@@ -167,7 +157,10 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
     const root = createRoot(shadow);
     flushSync(() => root.render(<CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />));
     host.dataset.ghftStepHost = key;
-    mounts.set(host, () => { root.unmount(); host.remove(); });
+    mounts.set(host, () => {
+      root.unmount();
+      host.remove();
+    });
   }
 }
 
@@ -188,12 +181,8 @@ export function GitHubTokenSettings(props: {
           setState((previous) => ({ ...previous, busy: true, error: "" }));
           void props
             .save(token)
-            .catch((error) =>
-              setState((previous) => ({ ...previous, error: error.message })),
-            )
-            .finally(() =>
-              setState((previous) => ({ ...previous, busy: false })),
-            );
+            .catch((error) => setState((previous) => ({ ...previous, error: error.message })))
+            .finally(() => setState((previous) => ({ ...previous, busy: false })));
         }}
       >
         <label>
