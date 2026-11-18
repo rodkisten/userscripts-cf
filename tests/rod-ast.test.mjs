@@ -397,3 +397,20 @@ it("Vite AST plugin rewrites GM styles only when explicitly registered", () => {
   const result = plugin.transform('function init(ctx) { GM_addStyle(".x{}"); }', "script.ts");
   expect(result?.code).toContain('ctx.ui.style(".x{}")');
 });
+
+
+it("migrates a fully owned static style triple to ShadowRoot and is idempotent", () => {
+  const input = 'function init(ctx) { const style = document.createElement("style"); style.textContent = ".card { color: red }"; document.head.appendChild(style); }';
+  const result = transformRodAst(input, "static-style.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('ctx.ui.style(".card { color: red }");');
+  expect(result.code).not.toContain('createElement("style")');
+  expect(transformRodAst(result.code, "static-style.ts").changed).toBe(false);
+});
+
+it("preserves style nodes with escaping references or dynamic content", () => {
+  const escaping = 'function init(ctx) { const style = document.createElement("style"); style.innerText = ".a{}"; document.head.append(style); return style; }';
+  const dynamic = 'function init(ctx) { const style = document.createElement("style"); style.textContent = css; document.head.append(style); }';
+  expect(transformRodAst(escaping, "escaping.ts").code).toBe(escaping);
+  expect(transformRodAst(dynamic, "dynamic.ts").code).toBe(dynamic);
+});
