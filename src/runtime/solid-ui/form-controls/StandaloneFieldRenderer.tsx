@@ -211,7 +211,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             {(option) => (
               <button
                 type="button"
-                aria-pressed={String(selectedValues().includes(option.value))}
+                aria-pressed={selectedValues().includes(option.value) ? "true" : "false"}
                 disabled={disabled() || readonly() || option.disabled}
                 onClick={() => {
                   const next = new Set(selectedValues());
@@ -306,7 +306,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
             {(option) => (
               <button
                 type="button"
-                aria-pressed={String(value() === option.value)}
+                aria-pressed={value() === option.value ? "true" : "false"}
                 disabled={disabled() || readonly() || option.disabled}
                 onClick={() => commit(option.value)}
               >
@@ -328,7 +328,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
               <button
                 type="button"
                 aria-label={`${n} estrelas`}
-                aria-pressed={String(Number(value() ?? 0) === n)}
+                aria-pressed={Number(value() ?? 0) === n ? "true" : "false"}
                 onClick={() => commit(prop<boolean>("allowZero") && Number(value()) === n ? 0 : n)}
                 disabled={disabled() || readonly()}
               >
