@@ -333,3 +333,8 @@ it("storage migration preserves try/catch and dynamic keys", () => {
   const input = 'async function init(ctx) { try { await localStorage.removeItem(key); } catch (error) { console.error(error); } }';
   expect(transformRodAst(input, "storage.ts", { storage: "awaited" }).code).toBe(input);
 });
+
+it("storage opt-in never rewrites a shadowed localStorage binding", () => {
+  const input = 'async function init(ctx) { const localStorage = { removeItem() {} }; await localStorage.removeItem("x"); }';
+  expect(transformRodAst(input, "storage-shadow.ts", { storage: "awaited" }).code).toBe(input);
+});
