@@ -53,15 +53,34 @@ export function transformRodAst(code, id, options = {}) {
       diagnostics: source.parseDiagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, " ")),
     };
   const rules = { ...DEFAULT_RULES, ...(options.rules ?? {}) };
-  // A native timer ID cannot be passed to clearInterval after converting to a
-  // context-owned timer without proving equivalent ownership and cancellation.
-  const nativeTimerCleanup = /\bclearInterval\s*\(/.test(code) || /\.clearInterval\s*\(/.test(code);
-  const nativeListenerCleanup = /\.removeEventListener\s*\(/.test(code);
+  // Cleanup is scoped to the nearest function owner, not the entire file.
+  // Nested closures belong to the surrounding owner because they may dispose
+  // resources captured from it.
+  const cleanupCache = new WeakMap();
+  function cleanupFor(owner) {
+    if (!owner) return { timers: true, listeners: true };
+    if (cleanupCache.has(owner)) return cleanupCache.get(owner);
+    const state = { timers: false, listeners: false };
+    function scan(node) {
+      if (ts.isCallExpression(node)) {
+        const callee = node.expression;
+        if (ts.isIdentifier(callee) && callee.text === "clearInterval") state.timers = true;
+        if (ts.isPropertyAccessExpression(callee)) {
+          if (callee.name.text === "clearInterval") state.timers = true;
+          if (callee.name.text === "removeEventListener") state.listeners = true;
+        }
+      }
+      ts.forEachChild(node, scan);
+    }
+    scan(owner);
+    cleanupCache.set(owner, state);
+    return state;
+  }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
     return ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)));
   };
-  function walk(node, ctx, shadowed = new Set(), blocked = false) {
+  function walk(node, ctx, shadowed = new Set(), blocked = false, owner = null) {
     if (ts.isFunctionLike(node)) {
       const param = node.parameters?.[0];
       const explicit =
@@ -70,13 +89,13 @@ export function transformRodAst(code, id, options = {}) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
-      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node)));
+      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner));
       return;
     }
     if (ts.isBlock(node) || ts.isSourceFile(node)) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
-      ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node)));
+      ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node), owner));
       return;
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
@@ -84,14 +103,14 @@ export function transformRodAst(code, id, options = {}) {
       let replacement, extraArg;
       if (ts.isIdentifier(callee) && !shadowed.has(callee.text)) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
-        if (callee.text === "setInterval" && node.arguments.length >= 2 && !nativeTimerCleanup) replacement = ctx + ".interval";
+        if (callee.text === "setInterval" && node.arguments.length >= 2 && !cleanupFor(owner).timers) replacement = ctx + ".interval";
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
         const receiver = callee.expression.text;
         const method = callee.name.text;
         if (!shadowed.has(receiver) && (receiver === "document" || receiver === "window")) {
           const key = receiver + "." + method;
-          if (DOM_EVENTS.has(method) && options.listeners !== false && !nativeListenerCleanup) {
+          if (DOM_EVENTS.has(method) && options.listeners !== false && !cleanupFor(owner).listeners) {
             replacement = ctx + ".listen";
             extraArg = receiver;
           } else if (receiver === "document" && DOM_METHODS.has(method)) {
@@ -113,7 +132,7 @@ export function transformRodAst(code, id, options = {}) {
           });
       }
     }
-    ts.forEachChild(node, (child) => walk(child, ctx, shadowed, blocked || keep(node)));
+    ts.forEachChild(node, (child) => walk(child, ctx, shadowed, blocked || keep(node), owner));
   }
   walk(source, null);
   let output = code;
