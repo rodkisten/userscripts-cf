@@ -266,3 +266,8 @@
 ### Build plugin ordering correction (2026-11-18)
 
 - [`ae6b1425`](https://github.com/rodkisten/userscripts-cf/commit/ae6b142555a570f98fdc5af6ff5e22a8b13f03e6) reorders Vite `enforce: pre` plugins so `runtimeHelpers()` runs before `transformSourceTsx()`. The runtime helper uses TypeScript AST and rewrites `ctx`-owned DOM/events/HTTP calls; it must process original TSX before Oxc compiles it. This is a source-level fix; CI and runtime verification remain outstanding.
+
+### Build run 44234869187 (2026-11-18)
+
+- [Run](https://github.com/rodkisten/userscripts-cf/actions/runs/44234869187/job/134568452192): npm ci, legacy TypeScript and React TypeScript passed; production build failed with 41 Rolldown `PARSE_ERROR Unexpected JSX expression` errors, including `src/userscripts/dom-inspector/index.tsx:279`, `mobile-editor-fab/index.tsx:115`, `instagram-saved/index.tsx:27`, and `gonewild/index.tsx:14`.
+- [`a976211f`](https://github.com/rodkisten/userscripts-cf/commit/a976211f30592309fa5592b04fd348657cc03fb0) replaces the earlier Vite `transformWithOxc` TSX pretransform with explicit `typescript.transpileModule`, preserving source-aware JSX runtime selection and running after context AST rewrites. **Candidate fix only: not validated against CI**. If the same errors persist, inspect Vite/Rolldown transform-hook invocation and parser settings rather than changing component files.
