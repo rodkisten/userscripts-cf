@@ -236,7 +236,8 @@ export function transformRodAst(code, id, options = {}) {
         target.expression.text === "document" && ["head", "documentElement", "body"].includes(target.name.text);
       if (!documentHead || target.name.text !== "head") continue;
       // Retain comments and directives between statements instead of deleting them.
-      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||\n          /\\/\\*|\\/\\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
+      if (/\\/\\*|\\/\\//.test(code.slice(declaration.end, assignment.getStart(source))) ||
+          /\/\*|\/\//.test(code.slice(assignment.end, insertion.getStart(source)))) continue;
       const symbol = checker.getSymbolAtLocation(variable.name);
       if (!symbol) continue;
       let references = 0;
@@ -246,7 +247,8 @@ export function transformRodAst(code, id, options = {}) {
       };
       count(owner);
       // Declaration, write and append each reference the symbol exactly once.
-      if (references !== 3) continue;\n      // A declaration in a nested block must not be migrated as if it belonged\n      // to the outer function scope. The triple is intentionally local.
+      if (references !== 3) continue;\n      // A declaration in a nested block must not be migrated as if it belonged
+      // to the outer function scope. The triple is intentionally local.
       edits.push({ start: declaration.getStart(source), end: insertion.end,
         before: code.slice(declaration.getStart(source), insertion.end),
         after: ctx + ".ui.style(" + code.slice(write.right.getStart(source), write.right.end) + ");" });
