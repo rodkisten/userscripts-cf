@@ -134,8 +134,7 @@ export function mountPanel(container: HTMLElement) {
               <div data-code-editor="" />
             </div>
             <div className="output">
-              {records.map(
-                {(item) => (
+              {records.map((item) => (
                   <details
                     className="record"
                     data-kind={item.kind}
@@ -144,8 +143,7 @@ export function mountPanel(container: HTMLElement) {
                     <summary>{item.title}</summary>
                     <pre>{pretty(item.value)}</pre>
                   </details>
-                )}
-               )}
+                ))}
             </div>
           </div>
           <div className="view" data-view="methods" hidden={true}>
@@ -162,8 +160,7 @@ export function mountPanel(container: HTMLElement) {
               <button data-action="probe">{"Testar 27 estratégias"}</button>
             </div>
             <div className="results">
-              {methods.map(
-                {(item) => (
+              {methods.map((item) => (
                   <div className="result" data-status={item.result?.status || ""}>
                     <strong>{item.label + " · " + (item.result?.status || "NÃO TESTADO")}</strong>
                     <details>
@@ -174,8 +171,7 @@ export function mountPanel(container: HTMLElement) {
                     </details>
                     <button onClick={() => callbacks.method(item.id)}>Usar no console</button>
                   </div>
-                )}
-               )}
+                ))}
             </div>
           </div>
           <div className="view" data-view="history" hidden={true}>
@@ -183,15 +179,13 @@ export function mountPanel(container: HTMLElement) {
               {"Código armazenado localmente por site. Nada é executado ao abrir o histórico."}
             </p>
             <div data-history="">
-              {history.map(
-                {(item) => (
+              {history.map((item) => (
                   <div className="history-item">
                     <small>{item.at}</small>
                     <pre>{item.code.slice(0, 300)}</pre>
                     <button onClick={() => callbacks.history(item.code)}>Carregar</button>
                   </div>
-                )}
-               )}
+                ))}
             </div>
             <div className="toolbar">
               <button data-action="export">{"Exportar JSON"}</button>
