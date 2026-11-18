@@ -83,12 +83,20 @@ case "$mode" in
             node build/build.mjs "--targets=$targets"
           fi
         fi
-        # A test-only PR scope must not run integration suites against an empty dist/.
-        # Always generate the manifest and userscript bundles before the full suite.
-        if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" == all ]] && [[ ! -f dist/manifest.json ]]; then
-          echo "::group::Build required by full test scope"
-          npm run build
-          echo "::endgroup::"
+        # A test-only scope can select dist-driven suites without selecting builds.
+        # Never let tests accidentally consume stale or absent generated bundles.
+        if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
+          needs_dist=false
+          if [[ "${scoped_tests[0]}" == all ]]; then
+            needs_dist=true
+          elif printf '%s\n' "${scoped_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
+            needs_dist=true
+          fi
+          if [[ "$needs_dist" == true ]] && [[ ! -f dist/manifest.json ]]; then
+            echo "::group::Build required by integration test scope"
+            npm run build
+            echo "::endgroup::"
+          fi
         fi
         if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
           if [[ "${scoped_tests[0]}" == all ]]; then
