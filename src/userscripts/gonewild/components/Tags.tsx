@@ -1,21 +1,21 @@
-import { For } from "solid-js";
 import { categoryTag } from "../domain.ts";
 import styles from "../Soundgasm.module.css";
-export function Tags(props: { tags: string[]; subreddit: string; bridge: any; category?: boolean }) {
-  return (
-    <For each={props.tags.filter((tag) => categoryTag(tag) === !!props.category)}>
-      {(tag) => (
-        <a
-          class={`${styles["gws-sg-tag"]} ${props.category ? styles["gws-sg-category"] : ""}`}
-          href={props.bridge.searchURL(props.subreddit, tag)}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={`Pesquisar ${tag}${props.subreddit ? ` em r/${props.subreddit}` : " no Reddit"}`}
-        >
-          <strong>#</strong>
-          <span>{tag}</span>
-        </a>
-      )}
-    </For>
-  );
+export function Tags({ tags, subreddit, bridge, category = false }: {
+  tags: string[];
+  subreddit: string;
+  bridge: { searchURL: (subreddit: string, tag: string) => string };
+  category?: boolean;
+}) {
+  return <>
+    {tags.filter((tag) => categoryTag(tag) === category).map((tag) => (
+      <a key={tag}
+        className={`${styles["gws-sg-tag"]} ${category ? styles["gws-sg-category"] : ""}`}
+        href={bridge.searchURL(subreddit, tag)}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`Pesquisar ${tag}${subreddit ? ` em r/${subreddit}` : " no Reddit"}`}>
+        <strong>#</strong><span>{tag}</span>
+      </a>
+    ))}
+  </>;
 }
