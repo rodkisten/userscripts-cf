@@ -197,3 +197,11 @@
 - [`603e0a6b`](https://github.com/rodkisten/userscripts-cf/commit/603e0a6b22864222d381c63753f5fe80360c5410): `createCoreRuntime` creates a distinct `ctx.menu` per userscript and binds it to `ensureUIRoot` / `onDispose`, respecting the menu feature flag. Global `rod.menu` remains for runtime-owned clipboard UI.
 - [`8aa15aa3`](https://github.com/rodkisten/userscripts-cf/commit/8aa15aa3242090fd1257fe0be8866336128be255) and [`f8c7ace7`](https://github.com/rodkisten/userscripts-cf/commit/f8c7ace7f7342f75e482d50cb5fc83e3d2cc6436): dropdown options now support and honor the instance-owned portal container.
 - **Verification pending:** no green CI/typecheck/build or Safari interaction evidence. Need regression tests for two simultaneous contexts, dialog/dropdown lifecycle, focus/keyboard and reentrant closing; do not mark P1 complete.
+
+### Release P0 error triage (2026-11-18)
+
+- Inspected failed [Release · patch run 44230768471](https://github.com/rodkisten/userscripts-cf/actions/runs/44230768471), job `134554958217`. Typecheck reports legacy Solid JSX/ARIA errors in `src/runtime/solid-ui/form-controls`, `src/runtime/solid-ui/menu`, `src/userscripts/instagram-saved/ReelBookmarkButton.tsx`, plus errors in GitHub Tools and RodX Studio. This is a historical run, not proof of current head status.
+- [`256ba547`](https://github.com/rodkisten/userscripts-cf/commit/256ba5476511aba320f57723b814c90968644254): explicit numeric reduce accumulator for markdown fence length in GitHub Tools.
+- [`549d0ca1`](https://github.com/rodkisten/userscripts-cf/commit/549d0ca136136f315532286b4525e576ddd55f1e): widen literal snap distance to number in RodX chrome.
+- [`92e47478`](https://github.com/rodkisten/userscripts-cf/commit/92e474783b7e5dcbfc39384828651171cb720ab3): narrow required-field array length check in legacy form submission; no new Solid code added.
+- **Remaining:** legacy Solid JSX/ARIA typing failures, `createMenuStore` overload, `createListsModule` argument mismatch, and fresh CI/typecheck/build validation. Do not mark P0 complete.
