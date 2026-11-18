@@ -634,5 +634,27 @@
       "ctx.http",
       "ctx.dom"
     ]
+  },
+  {
+    "name": "GM style injection to UI helper",
+    "source": "function init(ctx) { GM_addStyle('.x{}'); GM.addStyle('.y{}'); }",
+    "includes": [
+      "ctx.ui.style('.x{}')",
+      "ctx.ui.style('.y{}')"
+    ],
+    "excludes": [
+      "GM_addStyle(",
+      "GM.addStyle("
+    ]
+  },
+  {
+    "name": "guarded GM styles stay native",
+    "source": "function init(ctx) { if (typeof GM_addStyle !== 'undefined') GM_addStyle('.x{}'); }",
+    "includes": [
+      "GM_addStyle('.x{}')"
+    ],
+    "excludes": [
+      "ctx.ui.style"
+    ]
   }
 ]
