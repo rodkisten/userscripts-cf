@@ -52,5 +52,17 @@
     return fetch("/api/nested");
   }
 
-  void [localNode, api, windowApi, selfApi, parentApi, topApi, globalApi, windowParentApi, autoInterval, manualInterval, nested];
+  void [
+    localNode,
+    api,
+    windowApi,
+    selfApi,
+    parentApi,
+    topApi,
+    globalApi,
+    windowParentApi,
+    autoInterval,
+    manualInterval,
+    nested,
+  ];
 })();

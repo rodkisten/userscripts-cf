@@ -157,7 +157,7 @@ it("migrates the complete real-world legacy fixture and preserves metadata", () 
   expect(result.code).toContain('ctx.http.fetch("/api/window")');
   expect(result.code).toContain('self.fetch("/api/self")');
   expect(result.code).toContain('parent.fetch("/api/parent")');
-  expect(result.code).toContain('new MutationObserver(');
+  expect(result.code).toContain("new MutationObserver(");
   expect(result.code).toContain('GM_getValue("key")');
   expect(result.code).toContain('GM_setValue("key", read)');
   expect(result.metadata.match).toHaveLength(2);
@@ -170,14 +170,16 @@ it("migrates the complete real-world legacy fixture and preserves metadata", () 
 });
 
 it("symbol analysis converts only the timer not manually cancelled", () => {
-  const input = "function init(ctx) { const a = setInterval(one, 100); const b = setInterval(two, 200); clearInterval(a); }";
+  const input =
+    "function init(ctx) { const a = setInterval(one, 100); const b = setInterval(two, 200); clearInterval(a); }";
   const output = transformRodAst(input, "symbols.ts").code;
   expect(output).toContain("const a = setInterval(one, 100)");
   expect(output).toContain("const b = ctx.interval(two, 200)");
   expect(output).toContain("clearInterval(a)");
 });
 it("symbol analysis distinguishes identically named variables in nested scopes", () => {
-  const input = "function init(ctx) { const id = setInterval(one, 100); { const id = setInterval(two, 200); clearInterval(id); } }";
+  const input =
+    "function init(ctx) { const id = setInterval(one, 100); { const id = setInterval(two, 200); clearInterval(id); } }";
   const output = transformRodAst(input, "symbols.ts").code;
   expect(output).toContain("const id = ctx.interval(one, 100)");
   expect(output).toContain("const id = setInterval(two, 200)");

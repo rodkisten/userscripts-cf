@@ -9,6 +9,7 @@
 **Every change to the Context Runtime is an AST compatibility change until proven otherwise.** Applies to `src/core/runtime.ts`, React context adapters, `ScriptContext`, and any `ctx.*` helper, including additions, removals, renames, signature/return-type changes, disposal, listeners, observers, storage, requests, UI mounting and lifecycle behavior.
 
 For **every** such change, agents MUST:
+
 1. Read and review `build/rod-ast.mjs`, `build/rod-ast-iife.mjs` and `build/rod-ast-cli.mjs`; implement necessary AST adjustments **in the same work block**. Never blindly rewrite unsupported APIs; retain native calls with documented diagnostics when unsafe.
 2. Add or adjust regression cases in `tests/rod-ast.test.mjs` and `tests/fixtures/rod-ast.matrix.json` for supported rewrites and deliberate non-rewrites, including typed/untyped, lexical shadowing, browser globals, cleanup, IIFE conversion and idempotence as applicable.
 3. Update `tests/fixtures/rod-ast.input.tsx` and/or `tests/fixtures/rod-ast.legacy.user.js` whenever the runtime change affects realistic source or migration output.

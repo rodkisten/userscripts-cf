@@ -58,10 +58,14 @@ export function transformRodAst(code, id, options = {}) {
   const host = ts.createCompilerHost({ noLib: true, allowJs: true, checkJs: false });
   const originalGetSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) =>
-    fileName === virtualId ? source : originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+    fileName === virtualId
+      ? source
+      : originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
   host.fileExists = (fileName) => fileName === virtualId;
-  host.readFile = (fileName) => fileName === virtualId ? code : undefined;
-  const checker = ts.createProgram([virtualId], { noLib: true, allowJs: true, checkJs: false }, host).getTypeChecker();
+  host.readFile = (fileName) => (fileName === virtualId ? code : undefined);
+  const checker = ts
+    .createProgram([virtualId], { noLib: true, allowJs: true, checkJs: false }, host)
+    .getTypeChecker();
   const rules = { ...DEFAULT_RULES, ...(options.rules ?? {}) };
   // Resolve the exact timer variable consumed by clearInterval.
   // Any dynamic or unknown cleanup keeps the whole owner conservative.
@@ -73,8 +77,9 @@ export function transformRodAst(code, id, options = {}) {
     function scan(node) {
       if (ts.isCallExpression(node)) {
         const callee = node.expression;
-        const clear = ts.isIdentifier(callee) && callee.text === "clearInterval" ||
-          ts.isPropertyAccessExpression(callee) && callee.name.text === "clearInterval";
+        const clear =
+          (ts.isIdentifier(callee) && callee.text === "clearInterval") ||
+          (ts.isPropertyAccessExpression(callee) && callee.name.text === "clearInterval");
         if (clear) {
           state.timers = true;
           const arg = node.arguments[0];
@@ -96,8 +101,12 @@ export function transformRodAst(code, id, options = {}) {
     if (!cleanup.timers) return true;
     if (cleanup.unknown) return false;
     const declaration = node.parent;
-    if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== node ||
-        !ts.isIdentifier(declaration.name)) return false;
+    if (
+      !ts.isVariableDeclaration(declaration) ||
+      declaration.initializer !== node ||
+      !ts.isIdentifier(declaration.name)
+    )
+      return false;
     const symbol = checker.getSymbolAtLocation(declaration.name);
     return Boolean(symbol && !cleanup.cleared.has(symbol));
   }
