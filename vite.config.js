@@ -13,9 +13,12 @@ function transformSourceTsx() {
     async transform(code, id) {
       const file = id.split("?")[0];
       if (!file.includes("/src/") || !file.endsWith(".tsx")) return null;
+      // Preserve the legacy Solid 2 JSX runtime until each component is migrated.
+      // Never silently compile Solid components into React elements.
+      const solid = file.includes("/solid-ui/") || /(?:from\s*["\x27]solid-js(?:\/[^"\x27]*)?["\x27]|@jsxImportSource\s+@solidjs\/web)/.test(code);
       return transformWithOxc(code, file, {
         lang: "tsx",
-        jsx: { runtime: "automatic", importSource: "react" },
+        jsx: { runtime: "automatic", importSource: solid ? "@solidjs/web" : "react" },
       });
     },
   };
