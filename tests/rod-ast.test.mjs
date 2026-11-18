@@ -295,3 +295,8 @@ it("GM availability checks retain both branches until fallback parity is proven"
   const result = transformRodAst(input, "gm-fallback.ts");
   expect(result.code).toBe(input);
 });
+
+it("GM opt-out disables all automatic GM rewrites", () => {
+  const input = 'function init(ctx) { GM_getValue("x"); GM.setValue("x", 2); }';
+  expect(transformRodAst(input, "gm-opt-out.ts", { gm: false }).code).toBe(input);
+});
