@@ -82,11 +82,11 @@ export function initializeDeckRelay() {
       const isOn = settings.enabled;
       return (
         <>
-          <div class={"stack"} id={"rodx-relay-settings"}>
+          <div className={"stack"} id={"rodx-relay-settings"}>
             {"\n        "}
             {!gmAvailable ? (
               <>
-                <div class={"banner"}>
+                <div className={"banner"}>
                   {
                     "Sem GM Storage, as configurações personalizadas não podem ser persistidas com segurança. Os padrões incorporados ao script continuam disponíveis."
                   }
@@ -96,21 +96,21 @@ export function initializeDeckRelay() {
               ""
             )}
             {"\n        "}
-            <div class={"banner rx-relay-banner"}>
+            <div className={"banner rx-relay-banner"}>
               {"✈ "}
               <b>{isOn ? "Botão Telegram ativado" : "Botão Telegram desativado"}</b>
               {"\n          · Destino padrão "}
               {clean(settings.channels || DEFAULTS.channels)}
               {".\n          "}
-              <details class={"rx-relay-details"}>
-                <summary class={"rx-relay-summary"}>{"Sobre segurança e confirmação"}</summary>
+              <details className={"rx-relay-details"}>
+                <summary className={"rx-relay-summary"}>{"Sobre segurança e confirmação"}</summary>
                 {
                   "\n            O Worker/D1 confirma os envios; o script nunca marca um post como enviado\n            só por ter sido clicado. O token não entra nos backups das buscas.\n          "
                 }
               </details>
             </div>
             {"\n        "}
-            <label class={"tog"}>
+            <label className={"tog"}>
               <input
                 type={"checkbox"}
                 data-relay={"enabled"}
@@ -119,11 +119,11 @@ export function initializeDeckRelay() {
               {" Mostrar botão Telegram automaticamente nos posts do X"}
             </label>
             {"\n        "}
-            <div class={"field"}>
+            <div className={"field"}>
               <label>{"URL base do seu Worker Relay"}</label>
               {"\n          "}
               <input
-                class={"ctrl"}
+                className={"ctrl"}
                 data-relay={"url"}
                 inputmode={"url"}
                 autocomplete={"off"}
@@ -132,11 +132,11 @@ export function initializeDeckRelay() {
               />
             </div>
             {"\n        "}
-            <div class={"field"}>
+            <div className={"field"}>
               <label>{"Bearer token"}</label>
               {"\n          "}
               <input
-                class={"ctrl"}
+                className={"ctrl"}
                 type={"password"}
                 data-relay={"token"}
                 autocomplete={"off"}
@@ -149,30 +149,30 @@ export function initializeDeckRelay() {
                 }
               />
               {"\n          "}
-              <span class={"hint-small"}>
+              <span className={"hint-small"}>
                 {settings.token
                   ? "✓ Token já configurado; não precisa digitar novamente."
                   : "Nenhum token configurado."}
               </span>
               {"\n          "}
-              <label class={"tog"}>
+              <label className={"tog"}>
                 <input type={"checkbox"} data-relay={"clearToken"} />
                 {" Apagar token salvo"}
               </label>
             </div>
             {"\n        "}
-            <div class={"field"}>
+            <div className={"field"}>
               <label>{"Canais e tópicos (separados por vírgula ou linha)"}</label>
               {"\n          "}
               <textarea
-                class={"ctrl"}
+                className={"ctrl"}
                 data-relay={"channels"}
                 rows={"3"}
                 placeholder={"-1003991698263:65"}
                 value={"\n                " + clean(settings.channels) + "\n              "}
               />
               {"\n          "}
-              <p class={"muted"}>
+              <p className={"muted"}>
                 {"Use identificadores de destino aceitos pelo seu relay,\n            inclusive "}
                 <code>{"chat_id:thread_id"}</code>
                 {
@@ -181,7 +181,7 @@ export function initializeDeckRelay() {
               </p>
             </div>
             {"\n        "}
-            <label class={"tog"}>
+            <label className={"tog"}>
               <input
                 type={"checkbox"}
                 data-relay={"autoCheck"}
@@ -190,7 +190,7 @@ export function initializeDeckRelay() {
               {" Consultar /media/check automaticamente ao rolar"}
             </label>
             {"\n        "}
-            <label class={"tog"}>
+            <label className={"tog"}>
               <input
                 type={"checkbox"}
                 data-relay={"labelSent"}
@@ -199,21 +199,21 @@ export function initializeDeckRelay() {
               {" Exibir texto ✓ Enviado no botão"}
             </label>
             {"\n        "}
-            <div class={"row"}>
+            <div className={"row"}>
               {"\n          "}
-              <button class={"btn"} data-act={"relay-refresh"}>
+              <button className={"btn"} data-act={"relay-refresh"}>
                 {"↻ Rever status dos posts visíveis"}
               </button>
               {"\n        "}
             </div>
             {"\n        "}
-            <details class={"section rx-relay-section"}>
+            <details className={"section rx-relay-section"}>
               {"\n          "}
               <summary>{"ℹ Como funciona e segurança"}</summary>
               {"\n          "}
-              <div class={"section-body"}>
+              <div className={"section-body"}>
                 {"\n            "}
-                <p class={"muted"}>
+                <p className={"muted"}>
                   {
                     "Em buscas, hashtags, Home, bookmarks e perfis, o botão Telegram\n              aparece nas ações de cada post. Fotos, vídeos e carrosséis passam por\n              "
                   }
@@ -223,7 +223,7 @@ export function initializeDeckRelay() {
                   }
                 </p>
                 {"\n            "}
-                <p class={"muted"}>
+                <p className={"muted"}>
                   {
                     "O token fica em GM Storage sem criptografia adicional.\n              Não compartilhe o userscript com credenciais e proteja seu dispositivo.\n              Se alterar "
                   }
@@ -235,7 +235,7 @@ export function initializeDeckRelay() {
               {"\n        "}
             </details>
             {"\n        "}
-            <small class={"muted"}>
+            <small className={"muted"}>
               {"Conta ativa: "}
               {identityLabel()}
             </small>
@@ -759,10 +759,10 @@ export function initializeDeckRelay() {
       wrapper.id = "rodx-relay-confirm";
       mountView(wrapper, () => (
         <>
-          <div class={"relay-scrim"} data-act={"relay-cancel"}></div>
+          <div className={"relay-scrim"} data-act={"relay-cancel"}></div>
           {"\n        "}
           <section
-            class={"relay-dialog"}
+            className={"relay-dialog"}
             role={"alertdialog"}
             aria-modal={"true"}
             aria-label={"Reenvio Telegram"}
@@ -779,15 +779,15 @@ export function initializeDeckRelay() {
               {" apenas para esses destinos?"}
             </p>
             {"\n          "}
-            <p class={"muted"}>{destinations.join(", ")}</p>
+            <p className={"muted"}>{destinations.join(", ")}</p>
             {"\n          "}
-            <div class={"row rx-relay-row"}>
+            <div className={"row rx-relay-row"}>
               {"\n            "}
-              <button class={"btn"} data-act={"relay-cancel"}>
+              <button className={"btn"} data-act={"relay-cancel"}>
                 {"Cancelar"}
               </button>
               {"\n            "}
-              <button class={"btn primary"} data-act={"relay-force"}>
+              <button className={"btn primary"} data-act={"relay-force"}>
                 {"Reenviar"}
               </button>
               {"\n          "}
