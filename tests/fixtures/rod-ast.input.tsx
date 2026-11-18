@@ -5,13 +5,14 @@ export async function init(ctx: ScriptContext) {
   const firstPost = document.querySelector(".post");
   const posts = document.querySelectorAll(".post");
   const nativeNode = document.createElement("div");
+  const ticker = setInterval(() => console.log("tick"), 1000);
   const onClick: EventListener = () => console.log("clicked");
   document.addEventListener("click", onClick);
   ctx.onDispose(() => document.removeEventListener("click", onClick));
   // @keep
   const native = window.location.href;
   const nested = async () => fetch("/api/more");
-  return { response, nested, native, firstPost, posts, nativeNode };
+  return { response, nested, native, firstPost, posts, nativeNode, ticker };
 }
 export function Preview() {
   return <button className="rounded">React JSX</button>;
