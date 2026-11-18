@@ -257,3 +257,8 @@
 
 - [Run 44234731037](https://github.com/rodkisten/userscripts-cf/actions/runs/44234731037), job `134568001712`: `npm ci`, legacy TypeScript and React TypeScript **passed**; production build **failed** with Vite 8/Rolldown `PARSE_ERROR Unexpected JSX expression` in `.tsx` sources including GoneWild, Instagram Saved, mobile editor FAB and DOM Inspector.
 - [`297367dc`](https://github.com/rodkisten/userscripts-cf/commit/297367dc89bceeededf42a85fab75adf49a1bc4a) adds explicit Oxc TSX pretransform in Vite config as a candidate fix. **Not verified.** Important: legacy Solid TSX still exists and uses a different JSX runtime; a React automatic transform of legacy Solid JSX can change runtime behavior. Audit imports and validate actual runtime behavior before release. Prefer migrating remaining Solid consumers instead of shipping a semantically incompatible transform.
+
+### TSX transform compatibility follow-up (2026-11-18)
+
+- [`f0edca2a`](https://github.com/rodkisten/userscripts-cf/commit/f0edca2a89b362ad72ef8905f6a255e9708ee369) makes Oxc TSX transform select `@solidjs/web` for legacy Solid sources (`solid-ui` path or Solid import/pragma) and `react` otherwise. This avoids unconditional React JSX conversion of clearly Solid-owned source. **Unverified**: inspect build and confirm Solid runtime automatic JSX compatibility, including any Solid consumers with indirect imports; runtime/browser smoke checks remain necessary.
+- Keep P0 production build and release **open** until current-head CI and runtime checks pass. Do not confuse TS typecheck success on run `44234731037` with production build success.
