@@ -579,6 +579,8 @@ export function createCoreRuntime(
         })
       : {};
 
+    const instanceMenu = createMenuFeature({ container: ensureUIRoot, onDispose });
+
     const baseContext = {
       id: definition.id,
       diagnostics: Object.freeze({
@@ -605,7 +607,10 @@ export function createCoreRuntime(
       db,
       signal: abort.signal,
       storage,
-      menu: rod.menu,
+      menu:
+        typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__
+          ? instanceMenu
+          : undefined,
       dock: Object.freeze({
         register(actions: DockAction[]) {
           const module = {
