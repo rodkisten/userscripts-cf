@@ -71,9 +71,24 @@ export function transformRodAst(code, id, options = {}) {
   // Any dynamic or unknown cleanup keeps the whole owner conservative.
   const cleanupCache = new WeakMap();
   function cleanupFor(owner) {
-    if (!owner) return { timers: true, listeners: true, cleared: new Set(), unknown: true, removals: [], unknownListener: true };
+    if (!owner)
+      return {
+        timers: true,
+        listeners: true,
+        cleared: new Set(),
+        unknown: true,
+        removals: [],
+        unknownListener: true,
+      };
     if (cleanupCache.has(owner)) return cleanupCache.get(owner);
-    const state = { timers: false, listeners: false, cleared: new Set(), unknown: false, removals: [], unknownListener: false };
+    const state = {
+      timers: false,
+      listeners: false,
+      cleared: new Set(),
+      unknown: false,
+      removals: [],
+      unknownListener: false,
+    };
     function scan(node) {
       if (ts.isCallExpression(node)) {
         const callee = node.expression;
@@ -91,8 +106,13 @@ export function transformRodAst(code, id, options = {}) {
           state.listeners = true;
           const target = callee.expression;
           const [event, callback] = node.arguments;
-          if (!ts.isIdentifier(target) || !["window", "document"].includes(target.text) ||
-              !ts.isStringLiteral(event) || !callback || !ts.isIdentifier(callback)) {
+          if (
+            !ts.isIdentifier(target) ||
+            !["window", "document"].includes(target.text) ||
+            !ts.isStringLiteral(event) ||
+            !callback ||
+            !ts.isIdentifier(callback)
+          ) {
             state.unknownListener = true;
           } else {
             const symbol = checker.getSymbolAtLocation(callback);
@@ -129,8 +149,9 @@ export function transformRodAst(code, id, options = {}) {
     if (!ts.isStringLiteral(event) || !ts.isIdentifier(callback)) return false;
     const symbol = checker.getSymbolAtLocation(callback);
     if (!symbol) return false;
-    return !state.removals.some((removal) =>
-      removal.target === target && removal.event === event.text && removal.symbol === symbol);
+    return !state.removals.some(
+      (removal) => removal.target === target && removal.event === event.text && removal.symbol === symbol,
+    );
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
@@ -172,7 +193,11 @@ export function transformRodAst(code, id, options = {}) {
         const method = callee.name.text;
         if (!shadowed.has(receiver) && (receiver === "document" || receiver === "window")) {
           const key = receiver + "." + method;
-          if (DOM_EVENTS.has(method) && options.listeners !== false && listenerIsSafe(node, owner, receiver)) {
+          if (
+            DOM_EVENTS.has(method) &&
+            options.listeners !== false &&
+            listenerIsSafe(node, owner, receiver)
+          ) {
             replacement = ctx + ".listen";
             extraArg = receiver;
           } else if (receiver === "document" && DOM_METHODS.has(method)) {

@@ -219,24 +219,28 @@ it("CLI migrates legacy IIFE and writes a valid JSON report", () => {
 });
 
 it("listener symbols: only the matching target and event stay native", () => {
-  const input = 'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener("click", handler); window.addEventListener("scroll", handler); }';
+  const input =
+    'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener("click", handler); window.addEventListener("scroll", handler); }';
   const output = transformRodAst(input, "listener-symbols.ts").code;
   expect(output).toContain('document.addEventListener("click", handler)');
   expect(output).toContain('ctx.listen(window, "scroll", handler)');
 });
 it("listener symbols: distinct callbacks on same event remain independent", () => {
-  const input = 'function init(ctx) { const a = () => {}; const b = () => {}; document.addEventListener("click", a); document.removeEventListener("click", a); document.addEventListener("click", b); }';
+  const input =
+    'function init(ctx) { const a = () => {}; const b = () => {}; document.addEventListener("click", a); document.removeEventListener("click", a); document.addEventListener("click", b); }';
   const output = transformRodAst(input, "listener-symbols.ts").code;
   expect(output).toContain('document.addEventListener("click", a)');
   expect(output).toContain('ctx.listen(document, "click", b)');
 });
 it("listener symbols: dynamic removal remains conservative", () => {
-  const input = 'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener(eventName, handler); }';
+  const input =
+    'function init(ctx) { const handler = () => {}; document.addEventListener("click", handler); document.removeEventListener(eventName, handler); }';
   expect(transformRodAst(input, "listener-symbols.ts").code).toBe(input);
 });
 
 it("listener symbols: unrelated event on same target can use context ownership", () => {
-  const input = 'function init(ctx) { const h = () => {}; document.addEventListener("click", h); document.removeEventListener("click", h); document.addEventListener("keydown", h); }';
+  const input =
+    'function init(ctx) { const h = () => {}; document.addEventListener("click", h); document.removeEventListener("click", h); document.addEventListener("keydown", h); }';
   const output = transformRodAst(input, "listener-symbols.ts").code;
   expect(output).toContain('document.addEventListener("click", h)');
   expect(output).toContain('ctx.listen(document, "keydown", h)');
