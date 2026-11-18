@@ -214,16 +214,24 @@ function mount(
   return { close, dispose: close };
 }
 
+/** Resolve the caller's tree without relying on a global ShadowRoot constructor. */
+function resolveMenuTarget(trigger: HTMLElement): ShadowRoot | HTMLElement {
+  const root = trigger.getRootNode();
+  return root.nodeType === 11 && "host" in root
+    ? (root as ShadowRoot)
+    : trigger.ownerDocument.body;
+}
+
 export function openRadixDropdown(options: DropdownOptions) {
   return mount(
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
     options.trigger.ownerDocument,
-    options.trigger.getRootNode() instanceof ShadowRoot ? options.trigger.getRootNode() as ShadowRoot : options.trigger.ownerDocument.body,
+    resolveMenuTarget(options.trigger),
   );
 }
 export function openRadixDialog(schema: MenuSchema) {
-  const target = schema.container ?? document.body;
-  const owner = target.ownerDocument;
+  const owner = schema.container?.ownerDocument ?? document;
+  const target = schema.container ?? owner.body;
   return mount((close, portal) => <DialogView schema={schema} close={close} portal={portal} />, schema.id ?? "dialog", owner, target);
 }
