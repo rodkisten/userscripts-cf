@@ -99,3 +99,8 @@
 - [React foundation workflow run 44208272149](https://github.com/rodkisten/userscripts-cf/actions/runs/44208272149) **failed**. The isolated React TypeScript project imports `runtime-react.ts`, which imports `runtime.ts`, transitively pulling legacy Solid JSX components into React's JSX typing context. Errors include `Show`, `For`, and `Portal` being invalid React components.
 - Root cause: the supposedly isolated typecheck is not isolated at the module graph boundary. Next implementation must extract framework-neutral runtime contracts and/or split the React-specific project boundary before treating its result as a valid React foundation check. Do not hide errors using `noCheck` or `@ts-ignore`.
 - React production migration and shadcn/Radix components remain pending; no claim of a green React build is justified.
+
+### React-only cutover authorized (2026-11-18)
+
+- User explicitly authorized removing Solid without preserving installed scripts. Production entrypoint switched to React and Solid Vite compiler removed. Existing Solid-based feature modules are **not** migrated; expect builds to fail until those imports are replaced with React/shadcn/Radix implementations. Do not represent this as a working release.
+- Next: remove the remaining legacy Solid imports and dependencies after replacing UI consumers; no new custom UI primitives.

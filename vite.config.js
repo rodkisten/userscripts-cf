@@ -3,8 +3,6 @@ import { inlineCSSModules } from "./build/css-modules.mjs";
 import { inlineSVG } from "./build/svg.mjs";
 import { stylesPipeline } from "./build/styles.mjs";
 import { defineConfig } from "vite";
-import solid from "@solidjs/vite-plugin";
-import { solidDOMTemplates } from "./build/solid-dom.mjs";
 
 // Build orchestrator calls this once per standalone and once for the unified script.
 export default defineConfig({
@@ -18,8 +16,6 @@ export default defineConfig({
     runtimeHelpers(),
     inlineCSSModules(),
     inlineSVG(),
-    solid({ refresh: false }),
-    solidDOMTemplates(),
   ],
   css: {
     transformer: "postcss",
