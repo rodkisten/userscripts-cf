@@ -139,3 +139,5 @@
 - Replaced manual React.createElement trees in menu/dropdown/dialog with typed TSX components in `menu-view.tsx`, retaining `menu.ts` as the imperative service facade.
 - React runtime provider mounting now uses `RuntimeMount` JSX in a TSX entrypoint. The JSX requirement is mandatory for subsequent React UI migrations.
 - Pending: TypeScript and full CI validation; legacy Solid modules still block release.
+
+- Renamed React runtime entrypoint to `.tsx` so the provider mount uses actual JSX instead of invoking the component function.

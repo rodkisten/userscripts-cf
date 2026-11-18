@@ -68,7 +68,7 @@ export function createRuntime(
           let root: ReturnType<typeof createRoot>;
           try {
             root = createRoot(mountPoint);
-            root.render(RuntimeMount({ context: getContext(), children: component }));
+            root.render(<RuntimeMount context={getContext()}>{component}</RuntimeMount>);
           } catch (error) {
             if (owned) mountPoint.remove();
             captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
