@@ -210,7 +210,8 @@ export function transformRodAst(code, id, options = {}) {
     for (let i = 0; i + 2 < statements.length; i++) {
       const [declaration, assignment, insertion] = statements.slice(i, i + 3);
       if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
-      if (!ts.isVariableStatement(declaration) || declaration.declarationList.declarations.length !== 1 ||\n          !(declaration.declarationList.flags & ts.NodeFlags.Const)) continue;
+      if (!ts.isVariableStatement(declaration) || declaration.declarationList.declarations.length !== 1 ||
+          !(declaration.declarationList.flags & ts.NodeFlags.Const)) continue;
       const variable = declaration.declarationList.declarations[0];
       if (!ts.isIdentifier(variable.name) || !variable.initializer || !ts.isCallExpression(variable.initializer)) continue;
       const name = variable.name.text;
