@@ -81,7 +81,7 @@ export const Z_INDEX_MAX = "2147483647";
 // ============================================================================
 export interface ScriptDefinition {
   id: string;
-  name: string;
+  name?: string;
   match?: string | string[];
   matches?: string[];
   includes?: string[];
