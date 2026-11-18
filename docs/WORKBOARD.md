@@ -290,3 +290,8 @@
 
 - Deleted 20 additional Solid-only menu components, state stores, form helpers, toaster helpers, entrypoints and types under `src/runtime/solid-ui/`, including `src/runtime/solid-ui/index.ts` ([last deletion `aaaa336e`](https://github.com/rodkisten/userscripts-cf/commit/aaaa336e4ebf78775a83dcdd9d757a2df132c507)).
 - **Not a complete React migration**: userscript consumers and further Solid modules remain; builds are intentionally permitted to fail. The next batch must migrate actual user-facing entrypoints and remove their Solid imports, not restore compatibility.
+
+### React/Radix-only component policy and Rod Actions migration (2026-11-18)
+
+- User reaffirmed: **do not create custom foundational components**. Use shadcn/ui and Radix UI primitives for buttons, dialogs, menus, etc.; existing app-specific compositions are allowed. No Solid compatibility.
+- [`cad779a0`](https://github.com/rodkisten/userscripts-cf/commit/cad779a006cefb30970dfa7102c9f861acf60253) replaces the Solid-based `src/runtime/actions/index.tsx` hub with React `createRoot` and `@radix-ui/react-dialog`, retaining register/open API and tab rendering; [`fe2af46c`](https://github.com/rodkisten/userscripts-cf/commit/fe2af46cf88d417b9c9041baa1ca492cdff46c30) keeps Radix portal in the hub ShadowRoot. This removes runtime Solid imports from the hub but **does not migrate its legacy consumer tabs or guarantee a successful build**. Clipboard auto-registration was not carried forward; restore using a React implementation.
