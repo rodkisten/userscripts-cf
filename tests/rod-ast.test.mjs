@@ -64,3 +64,16 @@ it("preserves shadowed setInterval", () => {
   const source = 'function init(ctx: ScriptContext) { const setInterval = () => 0; return setInterval(); }';
   expect(transformRodAst(source, "interval.ts").code).toBe(source);
 });
+
+it("preserves interval IDs when clearInterval is used", () => {
+  const source = 'function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); clearInterval(id); }';
+  expect(transformRodAst(source, "timer.ts").code).toBe(source);
+});
+it("does not rewrite React useContext into an arbitrary ctx variable", () => {
+  const source = 'function init(ctx: ScriptContext) { return useContext(); }';
+  expect(transformRodAst(source, "react.tsx").code).toBe(source);
+});
+it("preserves MutationObserver until observer ownership is proven", () => {
+  const source = 'function init(ctx: ScriptContext) { const observer = new MutationObserver(callback); observer.observe(document.body, {childList: true}); observer.disconnect(); }';
+  expect(transformRodAst(source, "observer.ts").code).toBe(source);
+});
