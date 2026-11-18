@@ -467,3 +467,9 @@
 - [`87d4abd9`](https://github.com/rodkisten/userscripts-cf/commit/87d4abd96a73feea4e4d9aa8304c025931a0ab79): repaired workflow adds correct change/branch outputs, proper workflow path trigger, GitHub App authenticated push and a separate reusable `deploy-playground` job only for a changed lockfile on main.
 - [`87b0ba27`](https://github.com/rodkisten/userscripts-cf/commit/87b0ba27a284dc271fc165e01e7662b9b7832d03): Pages now accepts `workflow_call`, treats it as explicit deploy, checks out main and compares its checked-out HEAD against latest main before publishing.
 - **Verification pending:** reusable workflow validation, App push and successful Pages deploy. A changed lockfile on main also triggers the existing push workflow; Pages concurrency cancels overlapping runs, but may result in redundant builds. React build remains a separate blocker.
+
+### Single-path lockfile → Pages deploy (2026-11-18)
+
+- [`fd4703cf`](https://github.com/rodkisten/userscripts-cf/commit/fd4703cfac14a01b0c4f6be5cf7dc572b2483aeb): removed the duplicate reusable deploy job and explicit deploy commit marker from lockfile repair. App-authored lockfile push on main triggers Pages once via the existing `push` event. Lockfile-only pushes do not match repair's `package.json` / workflow-file paths, preventing repair recursion.
+- [`5edad527`](https://github.com/rodkisten/userscripts-cf/commit/5edad5272a817acb48362fb304db8a888d4796f1) and [`75e2f2fd`](https://github.com/rodkisten/userscripts-cf/commit/75e2f2fd7d401c239a55bc53f5856d78d420e909): removed unused `workflow_call` path from Pages; fixed pipefail-sensitive changed-files detection.
+- **Unverified:** end-to-end GitHub Actions execution and React build. The prior workflow-call approach is superseded by single push-driven deployment.
