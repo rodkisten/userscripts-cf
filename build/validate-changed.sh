@@ -204,6 +204,15 @@ NODE
     fi
     # Test files named after a userscript directory are selected automatically.
     # Folder-based suites are selected from affected runtime dependency graphs.
+    # A selected integration suite consumes dist/*.user.js or dist/manifest.json.
+    # The dependency graph can be narrower than these cross-script fixtures.
+    if (( ${#selected_tests[@]} )) && printf '%s\n' "${selected_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
+      if [[ ! -f dist/manifest.json ]]; then
+        echo "::group::Build integration fixtures"
+        npm run build
+        echo "::endgroup::"
+      fi
+    fi
     if (( ${#selected_tests[@]} )); then
       mapfile -t unique_tests < <(printf '%s\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
