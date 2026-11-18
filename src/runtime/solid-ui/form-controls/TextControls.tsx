@@ -80,8 +80,8 @@ export function Input(
         disabled={props.disabled}
         readonly={props.readonly}
         required={props.required}
-        minLength={props.minLength}
-        maxLength={props.maxLength}
+        minlength={props.minLength}
+        maxlength={props.maxLength}
         pattern={props.pattern}
         autocomplete={props.autocomplete}
         inputmode={props.inputMode}
@@ -127,8 +127,8 @@ export function Textarea(
         disabled={props.disabled}
         readonly={props.readonly}
         required={props.required}
-        minLength={props.minLength}
-        maxLength={props.maxLength}
+        minlength={props.minLength}
+        maxlength={props.maxLength}
         spellcheck={props.spellcheck}
         autofocus={props.autoFocus}
         aria-invalid={props.error ? "true" : undefined}
