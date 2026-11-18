@@ -26,14 +26,14 @@ export function mountPanel(container: HTMLElement) {
   };
   const dispose = render(
     () => (
-      <div class="repl-root">
-        <button class="launcher" aria-label="Abrir REPL JavaScript" hidden>
+      <div className="repl-root">
+        <button className="launcher" aria-label="Abrir REPL JavaScript" hidden>
           {">_"}
         </button>
-        <section class="panel" aria-label="REPL JavaScript" hidden={true}>
+        <section className="panel" aria-label="REPL JavaScript" hidden={true}>
           <header>
             <strong>{"REPL · JavaScript"}</strong>
-            <button data-action="run" class="primary" title="Executar código">
+            <button data-action="run" className="primary" title="Executar código">
               {"▶ Executar"}
             </button>
             <button
@@ -47,32 +47,32 @@ export function mountPanel(container: HTMLElement) {
               {"×"}
             </button>
           </header>
-          <div class="repl-menu" hidden role="group" aria-label="Opções avançadas do REPL">
-            <nav class="tabs">
+          <div className="repl-menu" hidden role="group" aria-label="Opções avançadas do REPL">
+            <nav className="tabs">
               <button data-tab="console" aria-selected="true">
                 {"Console"}
               </button>
               <button data-tab="methods">{"Métodos"}</button>
               <button data-tab="history">{"Histórico"}</button>
             </nav>
-            <div class="repl-menu-content">
+            <div className="repl-menu-content">
               {" "}
-              <div class="toolbar execution-toolbar">
+              <div className="toolbar execution-toolbar">
                 <select aria-label="Método" data-method="">
                   <option value="auto">{"Automático · testa antes, executa uma vez"}</option>
                 </select>
-                <button class="primary" data-action="run">
+                <button className="primary" data-action="run">
                   {"Executar"}
                 </button>
                 <button data-action="stop">{"Parar espera"}</button>
               </div>
-              <div class="editor-actions repl-settings" role="toolbar" aria-label="Edição">
+              <div className="editor-actions repl-settings" role="toolbar" aria-label="Edição">
                 <button data-action="select-all">Selecionar tudo</button>
                 <button data-action="copy-code">Copiar</button>
                 <button data-action="paste-code">Colar</button>
                 <button data-action="validate">Validar</button>
               </div>
-              <div class="options repl-settings">
+              <div className="options repl-settings">
                 <label>
                   <input type="checkbox" data-raw="" />
                   Script global (sem wrapper)
@@ -91,12 +91,12 @@ export function mountPanel(container: HTMLElement) {
                   <option value="">{"Exemplos…"}</option>
                 </select>
               </div>
-              <p class="hint repl-settings" data-syntax="">
+              <p className="hint repl-settings" data-syntax="">
                 {
                   "Await e última expressão retornam resultado. Use _, $, $, $0 e ctx.vars. Declarações de topo persistidas viram propriedades mutáveis, inclusive const. Console capturado enquanto a execução aguarda o resultado."
                 }
               </p>
-              <div class="row repl-settings">
+              <div className="row repl-settings">
                 <input
                   data-url=""
                   type="url"
@@ -110,12 +110,12 @@ export function mountPanel(container: HTMLElement) {
                   {"Módulo"}
                 </label>
               </div>
-              <p class="hint warning repl-settings">
+              <p className="hint warning repl-settings">
                 {
                   "Parar/timeout cancelam a espera, não interrompem loops síncronos nem desfazem efeitos. “Executar em todos” repete seu código."
                 }
               </p>
-              <div class="toolbar repl-settings">
+              <div className="toolbar repl-settings">
                 <button data-action="probe">{"Testar compatibilidade"}</button>
                 <button data-action="run-all">{"Executar em todos"}</button>
                 <button data-action="clear">{"Limpar saída"}</button>
@@ -123,15 +123,15 @@ export function mountPanel(container: HTMLElement) {
               </div>
             </div>
           </div>
-          <div class="view" data-view="console">
-            <div class="editor-wrap">
+          <div className="view" data-view="console">
+            <div className="editor-wrap">
               <div data-code-editor="" />
             </div>
-            <div class="output">
+            <div className="output">
               <For each={records()}>
                 {(item) => (
                   <details
-                    class="record"
+                    className="record"
                     data-kind={item.kind}
                     open={item.kind === "error" || item.kind === "result"}
                   >
@@ -142,23 +142,23 @@ export function mountPanel(container: HTMLElement) {
               </For>
             </div>
           </div>
-          <div class="view" data-view="methods" hidden={true}>
-            <p class="hint">
+          <div className="view" data-view="methods" hidden={true}>
+            <p className="hint">
               {
                 "OK confirma retorno pelo transporte, não equivalência entre todos os contextos. “Página esperada” indica o alvo do método; evidências aparecem nos detalhes. CSP e o gerenciador podem alterar o resultado. @sandbox raw/JavaScript/DOM exigem reinstalação; APIs chrome.scripting/userScripts precisam de uma extensão e não são concedidas por este userscript."
               }
             </p>
-            <div class="options">
+            <div className="options">
               <label>
                 <input data-advanced="" type="checkbox" />
                 {"Incluir javascript: (opcional)"}
               </label>
               <button data-action="probe">{"Testar 27 estratégias"}</button>
             </div>
-            <div class="results">
+            <div className="results">
               <For each={methods()}>
                 {(item) => (
-                  <div class="result" data-status={item.result?.status || ""}>
+                  <div className="result" data-status={item.result?.status || ""}>
                     <strong>{item.label + " · " + (item.result?.status || "NÃO TESTADO")}</strong>
                     <details>
                       <summary>
@@ -172,14 +172,14 @@ export function mountPanel(container: HTMLElement) {
               </For>
             </div>
           </div>
-          <div class="view" data-view="history" hidden={true}>
-            <p class="hint">
+          <div className="view" data-view="history" hidden={true}>
+            <p className="hint">
               {"Código armazenado localmente por site. Nada é executado ao abrir o histórico."}
             </p>
             <div data-history="">
               <For each={history()}>
                 {(item) => (
-                  <div class="history-item">
+                  <div className="history-item">
                     <small>{item.at}</small>
                     <pre>{item.code.slice(0, 300)}</pre>
                     <button onClick={() => callbacks.history(item.code)}>Carregar</button>
@@ -187,14 +187,14 @@ export function mountPanel(container: HTMLElement) {
                 )}
               </For>
             </div>
-            <div class="toolbar">
+            <div className="toolbar">
               <button data-action="export">{"Exportar JSON"}</button>
               <button data-action="import">{"Importar JSON"}</button>
               <button data-action="clear-history">{"Apagar histórico"}</button>
             </div>
           </div>
           <footer>
-            <span class="status">{"Pronto."}</span>
+            <span className="status">{"Pronto."}</span>
             <small>{"Sem execução automática ao abrir"}</small>
           </footer>
         </section>
