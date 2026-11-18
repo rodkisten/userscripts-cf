@@ -664,3 +664,9 @@
 - [x] Diagnose TS2352: feature-owned `events`/`ui` absent on baseContext; make declarations optional to match runtime shape.
 - [ ] Recheck new Actions results before declaring CI green.
 - [ ] Other global React-only cutover TS errors in rodx-studio are separate from this PR and must not be hidden with casts.
+
+### PR #108 · Concurrent formatting push safety (2026-11-18)
+
+- [x] Investigated formatter run 44383663525: Prettier passed, but direct git push failed because the PR branch advanced concurrently.
+- [x] Add bounded fetch/rebase/push retry to manual Prettier workflow, without force-push; stop on rebase conflicts and preserve other agents' commits.
+- [ ] Confirm the next formatter run and Rod AST/React checks before merge.
