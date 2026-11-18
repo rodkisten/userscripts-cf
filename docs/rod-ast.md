@@ -55,3 +55,8 @@ Direct, unguarded `GM_addStyle(css)` and `GM.addStyle(css)` calls inside explici
 The Vite plugin is wired into `vite.config.js` behind `ROD_AST=1`, before runtime helpers and CSS Modules. Run `ROD_AST=1 npm run build` to opt in. This is **not** a production-wide enablement. Existing `.module.css` and `.shadow.css` imports continue through the PostCSS/Lightning CSS pipeline.
 
 **Not yet automatically migrated:** dynamically assembled `document.createElement('style')`, `innerText`/`textContent`, `insertRule`, `adoptedStyleSheets`, `insertAdjacentHTML` and DOM insertion patterns. They require dataflow/ownership analysis. Also, inline strings passed to `ctx.ui.style` are not converted into CSS Modules: hashing class selectors without rewriting all consumers would break styling. Prefer imported CSS Modules or shadow styles for new code.
+
+
+### Owned static style elements
+
+The AST now recognizes a contiguous three-statement pattern inside an explicit context function: `const style = document.createElement("style")`, a static `style.textContent` or `style.innerText` assignment, then `document.head.append(style)`/`appendChild`/`prepend` (also `document.body` or `document.documentElement`). When the local style node has no other references, the sequence becomes `ctx.ui.style(css)` and is automatically disposed with the context. Dynamic CSS, escaped nodes, external references and non-contiguous patterns remain unchanged. Inline CSS is not CSS Modules transformed; explicit `.module.css` imports still use the existing pipeline.
