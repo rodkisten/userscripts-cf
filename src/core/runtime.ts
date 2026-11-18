@@ -9,7 +9,7 @@ import { matches, readScriptRules } from "./script-manager.js";
 import { createHttpFeature } from "../runtime/modular/features/http.js";
 import type { createClipboardManager } from "../runtime/clipboard-manager.js";
 import { createClipboardFeature } from "../runtime/modular/features/clipboard.js";
-import type { createDomEngine } from "../runtime/dom-engine.js";
+import type { DomEngine } from "../runtime/dom-engine.js";
 import { createDomFeature } from "../runtime/modular/features/dom.js";
 import { createMenuFeature } from "../runtime/modular/features/menu.js";
 import { createToasterFeature } from "../runtime/modular/features/toaster.js";
@@ -101,7 +101,7 @@ export type ScriptContext = ReturnType<
   signal: AbortSignal;
   events: any;
   storage: any;
-  dom: any;
+  dom: DomEngine;
   ui: any;
   onDispose: (cleanup: () => void | Promise<void>) => void;
 };
