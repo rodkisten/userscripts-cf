@@ -27,23 +27,26 @@ export interface DockMenuDetail {
   [key: string]: unknown;
 }
 
+export interface GMValueMethods {
+  getValue?<T = unknown>(key: string, defaultValue?: T): T | Promise<T>;
+  setValue?(key: string, value: unknown): void | Promise<void>;
+  deleteValue?(key: string): void | Promise<void>;
+  listValues?(): string[] | Promise<string[]>;
+}
+
+export interface GMMenuMethods {
+  registerMenuCommand?: (
+    label: string,
+    callback: MenuCommandCallback,
+    options?: MenuCommandOptions,
+  ) => MenuCommandId | undefined;
+  unregisterMenuCommand?: (id: MenuCommandId) => void;
+}
+
+/** The bridge reflects granted native APIs; unsupported methods remain optional. */
 export interface GMBridge {
-  modern: Record<string, unknown> & {
-    registerMenuCommand?: (
-      label: string,
-      callback: MenuCommandCallback,
-      options?: MenuCommandOptions,
-    ) => MenuCommandId;
-    unregisterMenuCommand?: (id: MenuCommandId) => void;
-  };
-  legacy: Record<string, unknown> & {
-    registerMenuCommand?: (
-      label: string,
-      callback: MenuCommandCallback,
-      options?: MenuCommandOptions,
-    ) => MenuCommandId;
-    unregisterMenuCommand?: (id: MenuCommandId) => void;
-  };
+  modern: Record<string, unknown> & GMValueMethods & GMMenuMethods;
+  legacy: Record<string, unknown> & GMValueMethods & GMMenuMethods;
 }
 
 // Preserve Tampermonkey's native menu behavior while mirroring commands into the Dock.
