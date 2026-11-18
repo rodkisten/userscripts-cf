@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { transformRodAst, rodAstPlugin } from "../build/rod-ast.mjs";
 it("fixture is transformed and output is idempotent", () => {
@@ -95,3 +95,15 @@ it("detects cleanup inside nested disposal callbacks of the same owner", () => {
   const code = 'function init(ctx: ScriptContext) { const id = setInterval(tick, 1000); ctx.onDispose(() => clearInterval(id)); }';
   expect(transformRodAst(code, "nested.ts").code).toBe(code);
 });
+
+const matrix = JSON.parse(readFileSync("tests/fixtures/rod-ast.matrix.json", "utf8"));
+for (const entry of matrix) {
+  it(`matrix: ${entry.name}`, () => {
+    const id = entry.name === "jsx" ? "matrix.tsx" : "matrix.ts";
+    const result = transformRodAst(entry.source, id);
+    expect(result.diagnostics).toEqual([]);
+    for (const value of entry.includes) expect(result.code).toContain(value);
+    for (const value of entry.excludes) expect(result.code).not.toContain(value);
+    expect(transformRodAst(result.code, id).changed).toBe(false);
+  });
+}
