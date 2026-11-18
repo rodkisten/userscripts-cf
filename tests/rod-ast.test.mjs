@@ -391,7 +391,8 @@ it("does not rewrite shadowed or availability-guarded GM style injections", () =
   const shadowed =
     'function init(ctx) { const GM_addStyle = (css) => css; GM_addStyle(".x { color: red; }"); }';
   expect(transformRodAst(shadowed, "shadowed-gm-style.ts").code).toBe(shadowed);
-  const guarded = 'function init(ctx) { if (typeof GM_addStyle === "function") GM_addStyle(".x { color: red; }"); }';
+  const guarded =
+    'function init(ctx) { if (typeof GM_addStyle === "function") GM_addStyle(".x { color: red; }"); }';
   expect(transformRodAst(guarded, "guarded-gm-style.ts").code).toBe(guarded);
 });
 
