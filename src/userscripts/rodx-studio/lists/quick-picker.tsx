@@ -35,29 +35,29 @@ export function initializeListsShell() {
 export function initializeRodX_lists_80() {
   mountView(shell, () => (
     <>
-      <button type={"button"} class={cx("fab")} id={"xls-fab"} aria-label={"Abrir X Lists Studio"}>
+      <button type={"button"} className={cx("fab")} id={"xls-fab"} aria-label={"Abrir X Lists Studio"}>
         {"☷ Lists"}
       </button>
       {"\n    "}
-      <div class={cx("overlay")} id={"xls-overlay"}>
-        <section class={cx("panel")} role={"dialog"} aria-label={"X Lists Studio"}>
+      <div className={cx("overlay")} id={"xls-overlay"}>
+        <section className={cx("panel")} role={"dialog"} aria-label={"X Lists Studio"}>
           {"\n      "}
-          <div class={cx("top")}>
-            <div class={cx("brand")}>
+          <div className={cx("top")}>
+            <div className={cx("brand")}>
               <strong>{"▰ X LISTS STUDIO"}</strong>
               <small>{"Gerencie, filtre, copie e restaure"}</small>
             </div>
             {"\n        "}
-            <button class={cx("btn ghost")} data-action={"close"} aria-label={"Fechar painel"}>
+            <button className={cx("btn ghost")} data-action={"close"} aria-label={"Fechar painel"}>
               {"✕"}
             </button>
           </div>
           {"\n      "}
-          <nav class={cx("tabs")} id={"xls-tabs"}></nav>
+          <nav className={cx("tabs")} id={"xls-tabs"}></nav>
           {"\n      "}
-          <div class={cx("body")} id={"xls-body"}></div>
+          <div className={cx("body")} id={"xls-body"}></div>
           {"\n      "}
-          <div class={cx("footer")} id={"xls-footer"}>
+          <div className={cx("footer")} id={"xls-footer"}>
             {"Armazenamento local · sem API paga"}
           </div>
           {"\n    "}
@@ -80,33 +80,33 @@ export function initializeListsQuickRoot() {
 export function initializeRodX_lists_83() {
   mountView(quickRoot, () => (
     <>
-      <div class={cx("quick-backdrop")} id={"xls-quick-backdrop"}></div>
+      <div className={cx("quick-backdrop")} id={"xls-quick-backdrop"}></div>
       {"\n    "}
       <section
-        class={cx("quick-picker")}
+        className={cx("quick-picker")}
         id={"xls-quick-picker"}
         role={"dialog"}
         aria-label={"Adicionar usuário a uma lista"}
       >
         {"\n      "}
-        <div class={cx("quick-head")}>
+        <div className={cx("quick-head")}>
           <div>
             <strong id={"xls-quick-title"}>{"Escolher lista"}</strong>
             {"\n        "}
-            <div class={cx("small")} id={"xls-quick-subtitle"}>
+            <div className={cx("small")} id={"xls-quick-subtitle"}>
               {"Toque na lista para colocar na fila"}
             </div>
           </div>
           {"\n        "}
-          <button class={cx("btn mini ghost")} id={"xls-quick-close"} type={"button"} aria-label={"Fechar"}>
+          <button className={cx("btn mini ghost")} id={"xls-quick-close"} type={"button"} aria-label={"Fechar"}>
             {"✕"}
           </button>
         </div>
         {"\n      "}
-        <div class={cx("rx-quick-picker-search-field")}>
+        <div className={cx("rx-quick-picker-search-field")}>
           <input
             id={"xls-quick-search"}
-            class={cx("quick-search")}
+            className={cx("quick-search")}
             type={"search"}
             placeholder={"Buscar listas"}
             autocomplete={"off"}
@@ -114,7 +114,7 @@ export function initializeRodX_lists_83() {
           />
         </div>
         {"\n      "}
-        <div class={cx("quick-flags")}>
+        <div className={cx("quick-flags")}>
           <label>
             <input type={"checkbox"} id={"xls-quick-follow"} />
             {" Seguir"}
@@ -126,12 +126,12 @@ export function initializeRodX_lists_83() {
           </label>
         </div>
         {"\n      "}
-        <div class={cx("quick-options")} id={"xls-quick-options"}></div>
+        <div className={cx("quick-options")} id={"xls-quick-options"}></div>
         {"\n      "}
-        <div class={cx("quick-status")} id={"xls-quick-status"}></div>
+        <div className={cx("quick-status")} id={"xls-quick-status"}></div>
         {"\n    "}
       </section>
-      <div class={cx("quick-toast")} id={"xls-quick-toast"} role={"status"} aria-live={"polite"}></div>
+      <div className={cx("quick-toast")} id={"xls-quick-toast"} role={"status"} aria-live={"polite"}></div>
     </>
   ));
 }
@@ -193,7 +193,7 @@ export function initializeListsNoteHTML() {
   noteHTML = () =>
     state.message ? (
       <>
-        <div class={cx(["notice ", state.messageType].join(""))}>{state.message}</div>
+        <div className={cx(["notice ", state.messageType].join(""))}>{state.message}</div>
       </>
     ) : (
       ""
@@ -348,15 +348,15 @@ export function renderQuickOptions() {
         return (
           <>
             <button
-              class={cx("quick-option")}
+              className={cx("quick-option")}
               type={"button"}
               data-quick-list-id={l.id}
               disabled={(already ? "disabled" : "") === "disabled"}
             >
               {"\n        "}
-              <span class={cx("rx-quick-picker-list-icon")}>{last ? "★" : frequent ? "◷" : "☷"}</span>
+              <span className={cx("rx-quick-picker-list-icon")}>{last ? "★" : frequent ? "◷" : "☷"}</span>
               {"\n        "}
-              <span class={cx("copy")}>
+              <span className={cx("copy")}>
                 {displayListName(l)}
                 <small>
                   {last
@@ -367,13 +367,13 @@ export function renderQuickOptions() {
                 </small>
               </span>
               {"\n        "}
-              <span class={cx("checkmark")}>{already ? "Origem" : "Adicionar"}</span>
+              <span className={cx("checkmark")}>{already ? "Origem" : "Adicionar"}</span>
             </button>
           </>
         );
       }) || (
         <>
-          <div class={cx("rx-quick-picker-empty-state")}>
+          <div className={cx("rx-quick-picker-empty-state")}>
             {term
               ? "Nenhuma lista corresponde à busca."
               : "Nenhuma lista salva. Abra a aba Listas e sincronize suas listas."}
