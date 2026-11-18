@@ -375,3 +375,9 @@
 - GitHub commit-workflow lookup returned **no associated workflow runs** for `6dd2a425` and `349ec6c1`; this is not evidence of a green CI, and the prior release job predates the fix.
 - [`d3d4fb19`](https://github.com/rodkisten/userscripts-cf/commit/d3d4fb194390d3fcd4ae69dc97fac62e2c1ecdd1): added React Markdown regression tests for headings/lists/fenced code, inline emphasis, newlines and safe links. Tests were **added, not executed** in this work block.
 - Next: obtain a current workflow run or execute `npm test` in a checked-out repository; resolve typecheck/build errors before release. Maintain React-only cutover.
+
+### Fast-fail validation order (2026-11-18)
+
+- Inspected `.github/workflows/diagnostics.yml` and `build/validate-changed.sh`: diagnostics **already triggers on push to main**. The available commit-to-run lookup only returns PR-triggered runs, so an empty lookup does **not** establish that no push workflow ran. The previous note claiming no associated runs should be interpreted with this limitation.
+- [`9f154d59`](https://github.com/rodkisten/userscripts-cf/commit/9f154d59f9898037e0ed5e04fc4f0d8a0f0a4969), [`b4ffb483`](https://github.com/rodkisten/userscripts-cf/commit/b4ffb483aa3bd04cc1fbf3391479c2de643af7dc): moved TypeScript validation before the expensive bundle in full and changed-source paths. Integration tests still build before executing against `dist/`. No gates were disabled or Solid restored.
+- **Not verified:** unable to execute `npm test` in a checked-out repository because github.com DNS is unavailable in the container, and no fresh run ID was accessible. Need fresh diagnostics run logs for the latest main commit.
