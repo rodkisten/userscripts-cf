@@ -164,10 +164,11 @@ test("lowers React TSX before Rolldown parses it and preserves ctx rewrites", ()
   }`;
   const output = runtimeHelpers().transform(source, "/src/example.tsx")?.code;
   assert.ok(output);
-  assert.match(output, /react\\/jsx-runtime/);
-  assert.match(output, /jsx\\(/);
-  assert.match(output, /ctx\\.http\\.fetch\\("\\/api"\\)/);
-  assert.doesNotMatch(output, /<button|ctx: \\{/);
+  assert.ok(output.includes("react/jsx-runtime"));
+  assert.ok(output.includes("jsx("));
+  assert.ok(output.includes('ctx.http.fetch("/api")'));
+  assert.ok(!output.includes("<button"));
+  assert.ok(!output.includes("ctx: {"));
 });
 
 test("lowers TSX even without context rewrites", () => {
@@ -176,6 +177,7 @@ test("lowers TSX even without context rewrites", () => {
     "/src/Badge.tsx",
   )?.code;
   assert.ok(output);
-  assert.match(output, /react\\/jsx-runtime/);
-  assert.doesNotMatch(output, /<span|title: string/);
+  assert.ok(output.includes("react/jsx-runtime"));
+  assert.ok(!output.includes("<span"));
+  assert.ok(!output.includes("title: string"));
 });
