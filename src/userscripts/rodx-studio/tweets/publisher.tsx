@@ -275,29 +275,29 @@ export function initializeDeckXRepost() {
       const list = rows.get(view) || [];
       return (
         <>
-          <section class={"rodx-xrepost"} aria-label={"Fila de vídeos no X"}>
+          <section className={"rodx-xrepost"} aria-label={"Fila de vídeos no X"}>
             {"\n            "}
             <style textContent={extractedCSS1} />
             {"\n            "}
-            <div class={"banner"}>
+            <div className={"banner"}>
               {
                 "\n              🎬 Fila global do token Relay/D1: inclui vídeos enviados pelo Safari, Scriptable e Shortcuts.\n              Telegram entregue ≠ vídeo publicado no X. Publicar requer confirmação sua.\n            "
               }
             </div>
             {"\n            "}
-            <div class={"row rx-publisher-row"}>
+            <div className={"row rx-publisher-row"}>
               {"\n              "}
-              <button class={"btn"} data-act={"xrepost-refresh"}>
+              <button className={"btn"} data-act={"xrepost-refresh"}>
                 {"↻ Atualizar D1"}
               </button>
               {"\n              "}
-              <button class={"btn primary"} data-act={"xrepost-next"}>
+              <button className={"btn primary"} data-act={"xrepost-next"}>
                 {"▶ Próximo vencido"}
               </button>
               {"\n            "}
             </div>
             {"\n            "}
-            <div class={"xr-choices"} role={"tablist"} aria-label={"Estados da fila"}>
+            <div className={"xr-choices"} role={"tablist"} aria-label={"Estados da fila"}>
               {"\n              "}
               {STATUSES.map((status) => (
                 <>
@@ -305,7 +305,7 @@ export function initializeDeckXRepost() {
                     type={"button"}
                     role={"tab"}
                     aria-selected={view === status ? "true" : "false"}
-                    class={["btn ", view === status ? "primary" : ""].join("")}
+                    className={["btn ", view === status ? "primary" : ""].join("")}
                     data-act={"xrepost-tab"}
                     data-id={status}
                   >
@@ -322,7 +322,7 @@ export function initializeDeckXRepost() {
             {"\n            "}
             {loading ? (
               <>
-                <p class={"muted"}>{"Sincronizando D1…"}</p>
+                <p className={"muted"}>{"Sincronizando D1…"}</p>
               </>
             ) : (
               ""
@@ -330,7 +330,7 @@ export function initializeDeckXRepost() {
             {"\n            "}
             {error ? (
               <>
-                <p class={"storage-warning"} role={"alert"}>
+                <p className={"storage-warning"} role={"alert"}>
                   {escapeText(error)}
                 </p>
               </>
@@ -340,7 +340,7 @@ export function initializeDeckXRepost() {
             {"\n            "}
             {!list.length ? (
               <>
-                <p class={"muted"}>{"Nenhum registro nesta categoria. Toque em Atualizar D1."}</p>
+                <p className={"muted"}>{"Nenhum registro nesta categoria. Toque em Atualizar D1."}</p>
               </>
             ) : (
               ""
@@ -348,11 +348,11 @@ export function initializeDeckXRepost() {
             {"\n            "}
             {list.map((item) => (
               <>
-                <article class={"xr-item"}>
+                <article className={"xr-item"}>
                   {"\n              "}
-                  <div class={"xr-caption"}>{escapeText(shareCaption(item) || "Sem legenda")}</div>
+                  <div className={"xr-caption"}>{escapeText(shareCaption(item) || "Sem legenda")}</div>
                   {"\n              "}
-                  <p class={"xr-meta"}>
+                  <p className={"xr-meta"}>
                     {escapeText(item.status)}
                     {" · "}
                     {escapeText(timeLabel(item.scheduled_at))}
@@ -360,7 +360,7 @@ export function initializeDeckXRepost() {
                     {item.posted_at ? ` · publicado ${escapeText(timeLabel(item.posted_at))}` : ""}
                   </p>
                   {"\n              "}
-                  <p class={"xr-meta"}>
+                  <p className={"xr-meta"}>
                     {"Origem: "}
                     <a
                       href={escapeText(safeSource(item.source_url) || "#")}
@@ -373,7 +373,7 @@ export function initializeDeckXRepost() {
                   {"\n              "}
                   {item.post_url ? (
                     <>
-                      <p class={"xr-meta"}>
+                      <p className={"xr-meta"}>
                         {"Publicado: "}
                         <a
                           href={escapeText(safeSource(item.post_url) || "#")}
@@ -388,19 +388,19 @@ export function initializeDeckXRepost() {
                     ""
                   )}
                   {"\n              "}
-                  <div class={"xr-actions"}>
+                  <div className={"xr-actions"}>
                     {"\n                "}
                     {item.status !== "posted" && item.status !== "cancelled" ? (
                       <>
                         <button
-                          class={"btn primary"}
+                          className={"btn primary"}
                           data-act={"xrepost-prepare"}
                           data-id={escapeText(item.id)}
                         >
                           {"🎞 Compartilhar vídeo"}
                         </button>
                         {"\n                    "}
-                        <button class={"btn"} data-act={"xrepost-edit"} data-id={escapeText(item.id)}>
+                        <button className={"btn"} data-act={"xrepost-edit"} data-id={escapeText(item.id)}>
                           {"\n                      ✎ Editar legenda\n                    "}
                         </button>
                       </>
@@ -410,7 +410,7 @@ export function initializeDeckXRepost() {
                     {"\n                "}
                     {item.status === "queued" ? (
                       <>
-                        <button class={"btn"} data-act={"xrepost-delay"} data-id={escapeText(item.id)}>
+                        <button className={"btn"} data-act={"xrepost-delay"} data-id={escapeText(item.id)}>
                           {"Adiar 1 h"}
                         </button>
                       </>
@@ -418,7 +418,7 @@ export function initializeDeckXRepost() {
                       ""
                     )}
                     {"\n                "}
-                    <button class={"btn"} data-act={"xrepost-copy"} data-id={escapeText(item.id)}>
+                    <button className={"btn"} data-act={"xrepost-copy"} data-id={escapeText(item.id)}>
                       {"Copiar legenda"}
                     </button>
                     {"\n              "}
@@ -428,19 +428,19 @@ export function initializeDeckXRepost() {
               </>
             ))}
             {"\n            "}
-            <p class={"muted"}>
+            <p className={"muted"}>
               {
                 "Até 100 itens por status (limite do endpoint atual).\n              Consultas têm backoff e jitter, sem reenvio automático de mutations."
               }
             </p>
             {"\n            "}
-            <fieldset class={"rx-publisher-fieldset"}>
+            <fieldset className={"rx-publisher-fieldset"}>
               {"\n              "}
               <legend>{"Compartilhamento depois do Telegram"}</legend>
               {"\n              "}
-              <label class={"rx-repost-share-mode-field"}>
+              <label className={"rx-repost-share-mode-field"}>
                 {"\n                Destino preferido\n                "}
-                <select class={"btn rx-publisher-btn"} data-xrepost-setting={"destination"}>
+                <select className={"btn rx-publisher-btn"} data-xrepost-setting={"destination"}>
                   {"\n                  "}
                   <option
                     value={"instagram"}
@@ -460,9 +460,9 @@ export function initializeDeckXRepost() {
                 {"\n              "}
               </label>
               {"\n              "}
-              <label class={"rx-repost-destination-field"}>
+              <label className={"rx-repost-destination-field"}>
                 {"\n                Fluxo de publicação\n                "}
-                <select class={"btn rx-publisher-btn-width"} data-xrepost-setting={"shareMode"}>
+                <select className={"btn rx-publisher-btn-width"} data-xrepost-setting={"shareMode"}>
                   {"\n                  "}
                   <option
                     value={"direct"}
@@ -491,7 +491,7 @@ export function initializeDeckXRepost() {
                 {"\n              "}
               </label>
               {"\n              "}
-              <label class={"tog"}>
+              <label className={"tog"}>
                 {"\n                "}
                 <input
                   type={"checkbox"}
@@ -501,7 +501,7 @@ export function initializeDeckXRepost() {
                 {"\n                Garantir registro no D1 após confirmação\n              "}
               </label>
               {"\n              "}
-              <label class={"tog"}>
+              <label className={"tog"}>
                 {"\n                "}
                 <input
                   type={"checkbox"}
@@ -511,7 +511,7 @@ export function initializeDeckXRepost() {
                 {"\n                Tentar copiar legenda ao compartilhar\n              "}
               </label>
               {"\n              "}
-              <label class={"tog"}>
+              <label className={"tog"}>
                 {"\n                "}
                 <input
                   type={"checkbox"}
@@ -521,13 +521,13 @@ export function initializeDeckXRepost() {
                 {"\n                Acrescentar link do tweet original à legenda\n              "}
               </label>
               {"\n              "}
-              <p class={"muted rx-publisher-muted"}>
+              <p className={"muted rx-publisher-muted"}>
                 {
                   "\n                O Safari não pode escolher automaticamente um aplicativo nem anexar um arquivo ao\n                compositor por deep link. O MP4 é preparado antes; um toque abre o compartilhamento\n                nativo do iOS. Instagram pode ignorar o texto compartilhado. A fila só é marcada como\n                publicada depois da sua confirmação, nunca ao compartilhar.\n              "
                 }
               </p>
               {"\n              "}
-              <button class={"btn primary"} data-act={"xrepost-save"}>
+              <button className={"btn primary"} data-act={"xrepost-save"}>
                 {"Salvar opções"}
               </button>
               {"\n            "}
@@ -850,41 +850,41 @@ export function initializeDeckXRepost() {
           {"\n            "}
           <style textContent={extractedCSS2} />
           {"\n            "}
-          <p class={"rdx-ds-status"} data-share-status={""} role={"status"} aria-live={"polite"}>
+          <p className={"rdx-ds-status"} data-share-status={""} role={"status"} aria-live={"polite"}>
             {"\n              Preparando o vídeo do Relay para o iPhone…\n            "}
           </p>
           {"\n            "}
-          <label class={"rx-repost-caption-field"}>
+          <label className={"rx-repost-caption-field"}>
             {"\n              Legenda (sem tags HTML, com @/usuario)\n              "}
-            <textarea class={"rdx-ds-caption"} data-share-caption={""} spellcheck={"false"}></textarea>
+            <textarea className={"rdx-ds-caption"} data-share-caption={""} spellcheck={"false"}></textarea>
             {"\n            "}
           </label>
           {"\n            "}
-          <div class={"rdx-ds-buttons"}>
+          <div className={"rdx-ds-buttons"}>
             {"\n              "}
-            <button type={"button"} class={"btn primary"} data-share-action={"native"} disabled={true}>
+            <button type={"button"} className={"btn primary"} data-share-action={"native"} disabled={true}>
               {"\n                🎞 Compartilhar vídeo no iPhone\n              "}
             </button>
             {"\n              "}
-            <button type={"button"} class={"btn"} data-share-action={"copy"}>
+            <button type={"button"} className={"btn"} data-share-action={"copy"}>
               {"Copiar legenda"}
             </button>
             {"\n              "}
-            <button type={"button"} class={"btn"} data-share-action={"save"} disabled={true}>
+            <button type={"button"} className={"btn"} data-share-action={"save"} disabled={true}>
               {"Salvar MP4"}
             </button>
             {"\n              "}
-            <button type={"button"} class={"btn"} data-share-action={"review"}>
+            <button type={"button"} className={"btn"} data-share-action={"review"}>
               {"Editar detalhes"}
             </button>
             {"\n              "}
-            <button type={"button"} class={"btn"} data-share-action={"source"}>
+            <button type={"button"} className={"btn"} data-share-action={"source"}>
               {"Ver tweet original"}
             </button>
             {"\n            "}
           </div>
           {"\n            "}
-          <p class={"rdx-ds-note"}>
+          <p className={"rdx-ds-note"}>
             {"\n              Escolha "}
             {destination}
             {
