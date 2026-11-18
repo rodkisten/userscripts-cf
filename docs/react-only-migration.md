@@ -2,13 +2,15 @@
 
 Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JSX runtime, compatibility layer or parity requirement. Broken builds accepted until migration is complete.
 
+**Architecture update (2026-11-18):** [Single-root + portals ADR](react-single-root-portals.md) is authoritative for root ownership. One `createRoot()` per runtime instance; `createPortal()` for every independently placed UI target. Older per-mount-root wording below is superseded.
+
 ## Non-negotiable target
 
 - React + React DOM + TypeScript for every interactive userscript and shared UI.
 - Keep CSS Modules, Shadow DOM isolation, mobile Safari compatibility and the existing shadcn/Vercel visual language.
 - Preserve instance-owned `ctx`: `ctx.dom`, `ctx.events`, `ctx.storage`, `ctx.http`, `ctx.ui`, `ctx.signal`, and `ctx.onDispose`.
 - `RuntimeProvider` must use the existing `src/core/runtime-context-react.tsx` and must never use a mutable global active context.
-- Mount via `createRoot` from `react-dom/client`; unmount every root on `ctx.onDispose`. Expose `ctx.ui.mountReact`, not `mountSolid`.
+- Mount one root per runtime instance via `createRoot` from `react-dom/client`; mount UI targets via `createPortal` from `react-dom`; unmount the owned root on `ctx.onDispose`. Expose `ctx.ui.mount` and transitional `ctx.ui.mountReact`, not `mountSolid`.
 - `ctx.store` must be framework-neutral and subscribe through `useSyncExternalStore` or an equivalent React adapter. Do not call React hooks outside React components/custom hooks.
 - No direct `document.querySelector`, `addEventListener`, raw fetch/XHR interception, or ad hoc global CSS in migrated feature modules when the equivalent `ctx` API exists.
 
@@ -37,10 +39,12 @@ flowchart TD
   B --> C["Create instance-owned ctx and AbortController"]
   C --> D["definition.module.init(ctx)"]
   D --> E["ctx.ui.mountReact(Component)"]
-  E --> F["ReactDOM.createRoot in ShadowRoot"]
+  E --> F["PortalRegistry + ReactDOM.createPortal into ShadowRoot"]
   F --> G["RuntimeProvider(context = ctx)"]
   G --> H["React useContext(ScriptScope)"]
   C --> I["ctx.signal + ctx.onDispose"]
+  C --> R["One instance-owned ReactDOM.createRoot"]
+  R --> G
   H --> J["Unmount React root on dispose"]
   I --> J
 ```

@@ -23,6 +23,10 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+> **Architecture decision (2026-11-18):** [Single React root + portal registry](react-single-root-portals.md). One root per runtime instance; per-post/per-Reel **portals**, not separate roots. This supersedes any older per-target root wording.
+
+- [ ] Implement one instance-owned React root and keyed PortalRegistry for all feature UI, with shared providers and ShadowRoot style attachment; validate multiple simultaneous instances and cleanup.
+
 - [ ] Audit `src/core/runtime-react.ts`, `src/core/runtime-context-react.tsx`, `ctx.ui.mountReact`, JSX transform and actual bundling.
 - [ ] React mount/unmount ownership per userscript instance; isolate context across multiple simultaneous instances; no global current-context.
 - [ ] React adapter for framework-neutral `ctx.store` using `useSyncExternalStore`; stable snapshots and subscriptions.
@@ -35,7 +39,7 @@
 
 ### Instagram bookmarks
 
-- [ ] Replace single global bookmark mount with **per-post/per-Reel React mounts** and stable ownership keyed by actual publication.
+- [ ] Replace single global bookmark mount with **per-post/per-Reel React portals in the shared instance root** and stable ownership keyed by actual publication.
 - [ ] Support Feed, grid/modal, and vertically swiped Reels; recycled DOM and URL-stable navigation.
 - [ ] Bind native save click, state and confirmation to the **same publication**; avoid accidental saves of a different post.
 - [ ] Preserve native save/collections semantics; handle unavailable native control and failed collection selection visibly.
@@ -595,6 +599,14 @@
 - [x] Add TypeScript storage context contract, fixture, and Vitest checks for awaited reads/writes/removals and preserved synchronous operations.
 - [ ] Verify GitHub Actions. Native storage may still be unavailable and async backends may reject; do not strip try/catch automatically.
 - [ ] Add integration tests for denied native storage, cross-script key collisions, native persistence, and migration of old values before enabling defaults.
+
+### React context boundary progress (2026-11-18, PR #107)
+
+- Introduced `src/core/react-context-contract.ts` so React provider and mount components no longer import `runtime.ts` solely for context typing.
+- Added `tests/react-runtime-context.test.ts` for two independent contexts, disposal isolation, and optional shared events.
+- **Not verified:** React typecheck, Vitest, and bundles. `runtime-react.tsx` still imports `runtime.ts`; the full React project graph remains mixed. Do not mark P1 complete.
+- PR: https://github.com/rodkisten/userscripts-cf/pull/107 ; latest test commit: https://github.com/rodkisten/userscripts-cf/commit/bbe24c7a47e19c8f51f513af719d01c456052c0f
+
 
 ### Rod AST optional-chain safety (2026-11-18)
 
