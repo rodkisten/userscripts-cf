@@ -60,3 +60,6 @@ The Vite plugin is wired into `vite.config.js` behind `ROD_AST=1`, before runtim
 ### Owned static style elements
 
 The AST now recognizes a contiguous three-statement pattern inside an explicit context function: `const style = document.createElement("style")`, a static `style.textContent` or `style.innerText` assignment, then `document.head.append(style)`/`appendChild`/`prepend` (also `document.body` or `document.documentElement`). When the local style node has no other references, the sequence becomes `ctx.ui.style(css)` and is automatically disposed with the context. Dynamic CSS, escaped nodes, external references and non-contiguous patterns remain unchanged. Inline CSS is not CSS Modules transformed; explicit `.module.css` imports still use the existing pipeline.
+
+
+Safety refinement: automatic style-triple migration requires a `const` declaration, insertion into `document.head`, and no intervening comments. `var` hoisting, document-body insertion and preserved comments are deliberately not rewritten. The existing `ctx.ui.style` helper injects styles into the owned ShadowRoot; automatic CSS Modules class hashing remains unsupported until selectors and consumers can be rewritten together.
