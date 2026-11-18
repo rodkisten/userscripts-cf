@@ -206,9 +206,12 @@ function mount(
   const close = () => {
     if (disposed) return;
     disposed = true;
-    root.unmount();
-    host.remove();
-    portal.remove();
+    // A Radix event can close its own React tree; defer unmount until the event finishes.
+    queueMicrotask(() => {
+      root.unmount();
+      host.remove();
+      portal.remove();
+    });
   };
   root.render(view(close, portal));
   return { close, dispose: close };
