@@ -247,3 +247,8 @@
 
 - [`0076a7e6`](https://github.com/rodkisten/userscripts-cf/commit/0076a7e65377458458646343ce95c086f7684b75): React typecheck and production build steps now use `if: success() || failure()` after dependency installation. They execute even when the legacy typecheck fails, exposing independent failures in one workflow run while keeping job status failed when any check fails. No `continue-on-error` bypass.
 - Current latest run status **not independently retrieved**; GitHub connector here can fetch jobs by known run ID but does not expose a list-latest-runs action. Inspect the workflow URL for the new commit before declaring success.
+
+### CI summary visibility (2026-11-18)
+
+- [`5f726038`](https://github.com/rodkisten/userscripts-cf/commit/5f726038b2c25ea0588c6b87943836c3be2bfaac) gives each validation stage a stable step ID and publishes a GitHub Actions job summary using `if: always()`, reporting legacy TS, React TS and production build outcomes alongside the exact commit SHA.
+- No validation was bypassed and no green build claimed. The GitHub connector supports job lookup by run ID, but not listing latest runs; next step is to inspect a current run and its individual logs.
