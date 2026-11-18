@@ -82,14 +82,24 @@ function DockView({ controller }: { controller: DockController }) {
     <>
       <style>{css}</style>
       {!open && (
-        <button className="launcher" style={{ top: `${position}%`, touchAction: "none" }} aria-label="Abrir Rod Dock" onPointerDown={(event) => {
-          const startY = event.clientY;
-          const start = position;
-          const onMove = (next: PointerEvent) => setPosition(Math.max(12, Math.min(88, start + (next.clientY - startY) * 100 / innerHeight)));
-          const onEnd = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onEnd); };
-          window.addEventListener("pointermove", onMove);
-          window.addEventListener("pointerup", onEnd, { once: true });
-        }} onClick={() => setOpen(true)}>
+        <button
+          className="launcher"
+          style={{ top: `${position}%`, touchAction: "none" }}
+          aria-label="Abrir Rod Dock"
+          onPointerDown={(event) => {
+            const startY = event.clientY;
+            const start = position;
+            const onMove = (next: PointerEvent) =>
+              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / innerHeight)));
+            const onEnd = () => {
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onEnd);
+            };
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onEnd, { once: true });
+          }}
+          onClick={() => setOpen(true)}
+        >
           ☰
         </button>
       )}
@@ -106,28 +116,48 @@ function DockView({ controller }: { controller: DockController }) {
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
             <details className="module" open>
               <summary>Scripts ({scripts.length})</summary>
-              <input aria-label="Filtrar scripts" placeholder="Buscar script..." value={search} onChange={(event) => setSearch(event.target.value)} style={{ width:"100%", padding:10, marginTop:10, borderRadius:8, background:"#27272a", color:"white", border:"1px solid #3f3f46" }} />
-              {scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map((script) => {
-                const enabled = preferences[script.id]?.enabled !== false;
-                const permitted = matches(
-                  { ...script, name: script.name ?? script.id },
-                  location.href,
-                  preferences[script.id],
-                );
-                return (
-                  <label className="script" key={script.id}>
-                    <span>
-                      {script.name ?? script.id}
-                      <small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={(event) => toggleScript(script.id, event.target.checked)}
-                    />
-                  </label>
-                );
-              })}
+              <input
+                aria-label="Filtrar scripts"
+                placeholder="Buscar script..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 10,
+                  marginTop: 10,
+                  borderRadius: 8,
+                  background: "#27272a",
+                  color: "white",
+                  border: "1px solid #3f3f46",
+                }}
+              />
+              {scripts
+                .filter((script) =>
+                  `${script.name ?? ""} ${script.id}`
+                    .toLocaleLowerCase()
+                    .includes(search.toLocaleLowerCase()),
+                )
+                .map((script) => {
+                  const enabled = preferences[script.id]?.enabled !== false;
+                  const permitted = matches(
+                    { ...script, name: script.name ?? script.id },
+                    location.href,
+                    preferences[script.id],
+                  );
+                  return (
+                    <label className="script" key={script.id}>
+                      <span>
+                        {script.name ?? script.id}
+                        <small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={(event) => toggleScript(script.id, event.target.checked)}
+                      />
+                    </label>
+                  );
+                })}
             </details>
             {visibleModules.map((module) => (
               <details className="module" key={module.id}>
