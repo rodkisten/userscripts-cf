@@ -1,6 +1,7 @@
 import { it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { transformRodAst, rodAstPlugin } from "../build/rod-ast.mjs";
+import { migrateUserscriptIife } from "../build/rod-ast-iife.mjs";
 it("fixture is transformed and output is idempotent", () => {
   const source = readFileSync("tests/fixtures/rod-ast.input.tsx", "utf8");
   const result = transformRodAst(source, "fixture.tsx");
@@ -107,3 +108,34 @@ for (const entry of matrix) {
     expect(transformRodAst(result.code, id).changed).toBe(false);
   });
 }
+
+it("migrates classic Tampermonkey IIFE into the actual default init contract", () => {
+  const source = `// ==UserScript==
+// @name         Legacy Example
+// @match        https://example.com/*
+// @grant        GM_getValue
+// ==/UserScript==
+(function () {
+  'use strict';
+  const element = document.querySelector("main");
+  window.addEventListener("load", () => console.log(element));
+})();`;
+  const result = migrateUserscriptIife(source);
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain("export default {");
+  expect(result.code).toContain("init(ctx)");
+  expect(result.code).toContain('ctx.dom.querySelector("main")');
+  expect(result.code).toContain('ctx.listen(window, "load"');
+  expect(result.metadata.match).toEqual(["https://example.com/*"]);
+  expect(result.metadata.grant).toEqual(["GM_getValue"]);
+});
+it("preserves unrecognized IIFEs rather than changing behavior", () => {
+  const source = '(function (window) { window.alert("hi"); })(window);';
+  const result = migrateUserscriptIife(source);
+  expect(result.changed).toBe(false);
+  expect(result.diagnostics.length).toBeGreaterThan(0);
+});
+it("does not convert an existing ES module", () => {
+  const source = "export default { init(ctx) { return ctx; } };";
+  expect(migrateUserscriptIife(source).changed).toBe(false);
+});
