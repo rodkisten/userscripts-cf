@@ -161,7 +161,7 @@ export function createNetworkInspector(Studio) {
       {"\n      "}
       <style textContent={extractedCSS1} />
       {"\n      "}
-      <div class={"rx-row"}>
+      <div className={"rx-row"}>
         {"\n        "}
         <strong>{"REDE · GraphQL observado"}</strong>
         {"\n        "}
@@ -173,11 +173,11 @@ export function createNetworkInspector(Studio) {
         {"\n      "}
       </div>
       {"\n      "}
-      <p class={"rx-warning"} data-rx={"stats"}></p>
+      <p className={"rx-warning"} data-rx={"stats"}></p>
       {"\n      "}
-      <p class={"rx-warning"} data-rx={"selectors"}></p>
+      <p className={"rx-warning"} data-rx={"selectors"}></p>
       {"\n      "}
-      <div class={"rx-row rx-retention"}>
+      <div className={"rx-row rx-retention"}>
         {"\n        "}
         <label>
           {"Requests "}
@@ -208,7 +208,7 @@ export function createNetworkInspector(Studio) {
         {"\n      "}
       </div>
       {"\n      "}
-      <div class={"rx-row"}>
+      <div className={"rx-row"}>
         {"\n        "}
         <input
           type={"search"}
@@ -231,15 +231,15 @@ export function createNetworkInspector(Studio) {
         {"\n      "}
       </div>
       {"\n      "}
-      <div class={"rx-list"} data-rx={"list"}></div>
+      <div className={"rx-list"} data-rx={"list"}></div>
       {"\n      "}
-      <div class={"rx-row"}>
+      <div className={"rx-row"}>
         <button data-rx={"more"}>{"Mostrar mais"}</button>
       </div>
       {"\n      "}
-      <div class={"rx-detail"} data-rx={"detail"}></div>
+      <div className={"rx-detail"} data-rx={"detail"}></div>
       {"\n      "}
-      <p class={"rx-warning"}>
+      <p className={"rx-warning"}>
         {
           "\n        A captura começa quando o userscript inicializa, após @require. Chamadas anteriores e de workers isolados\n        não são recuperáveis. Headers forbidden/CORS não aparecem nas APIs do navegador.\n        Credenciais são mascaradas inicialmente e nunca são sincronizadas.\n      "
         }
@@ -280,7 +280,7 @@ export function createNetworkInspector(Studio) {
         rows.slice(0, state.visible).map((item) => (
           <>
             {"\n        "}
-            <div class={"rx-entry"}>
+            <div className={"rx-entry"}>
               {"\n          "}
               <input
                 type={"checkbox"}
@@ -289,13 +289,13 @@ export function createNetworkInspector(Studio) {
                 aria-label={["Selecionar registro ", item.id].join("")}
               />
               {"\n          "}
-              <button data-rx-open={item.id} class={state.active === item.id ? "rx-current" : ""}>
+              <button data-rx-open={item.id} className={state.active === item.id ? "rx-current" : ""}>
                 {"\n            "}
                 <strong>
                   {item.method || "GET"} {item.operation}
                 </strong>
                 {"\n            "}
-                <span class={"rx-small"}>
+                <span className={"rx-small"}>
                   {" · "}
                   {item.status ?? "…"}
                   {" · "}
@@ -307,7 +307,7 @@ export function createNetworkInspector(Studio) {
                   {item.queryId ? ` · ${item.queryId}` : ""}
                 </span>
                 {"\n            "}
-                <span class={"rx-small"}>
+                <span className={"rx-small"}>
                   {new Date(item.at).toLocaleTimeString("pt-BR")}
                   {" ·\n              "}
                   {item.durationMs != null ? item.durationMs + " ms" : "pendente"}
@@ -320,7 +320,7 @@ export function createNetworkInspector(Studio) {
           </>
         )) || (
           <>
-            <p class={"rx-warning"}>{"Nenhum request corresponde ao filtro."}</p>
+            <p className={"rx-warning"}>{"Nenhum request corresponde ao filtro."}</p>
           </>
         ),
     );
@@ -405,7 +405,7 @@ export function createNetworkInspector(Studio) {
     mountView(target, () => (
       <>
         {"\n        "}
-        <div class={"rx-row"}>
+        <div className={"rx-row"}>
           <strong>
             {item.operation}
             {" #"}
@@ -422,9 +422,9 @@ export function createNetworkInspector(Studio) {
           {"\n        "}
         </div>
         {"\n        "}
-        <div class={"rx-small"}>{safeURL(item.url)}</div>
+        <div className={"rx-small"}>{safeURL(item.url)}</div>
         {"\n        "}
-        <div class={"rx-row"}>
+        <div className={"rx-row"}>
           {["Headers", "Payload", "Response"].map((name) => (
             <>
               {"\n          "}
@@ -439,7 +439,7 @@ export function createNetworkInspector(Studio) {
         {state.tab === "Response" && item.filteredBody != null ? (
           <>
             {"\n          "}
-            <div class={"rx-row"}>
+            <div className={"rx-row"}>
               {"\n            "}
               <button data-rx={"original"} aria-pressed={!state.filtered ? "true" : "false"}>
                 {"Original"}
@@ -456,7 +456,7 @@ export function createNetworkInspector(Studio) {
           ""
         )}
         {"\n        "}
-        <div class={"rx-row"}>
+        <div className={"rx-row"}>
           {"\n          "}
           <button data-rx={"tree"} aria-pressed={!state.raw ? "true" : "false"}>
             {"JSON colapsável"}
@@ -472,7 +472,7 @@ export function createNetworkInspector(Studio) {
           {"\n        "}
         </div>
         {"\n        "}
-        <div class={"rx-warning"}>
+        <div className={"rx-warning"}>
           {note || ""}
           {"\n          "}
           {item.originalRetained === false ? " · Corpo completo não retido" : ""}
