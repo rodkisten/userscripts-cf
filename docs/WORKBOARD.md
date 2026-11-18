@@ -461,3 +461,9 @@
 - [Release job](https://github.com/rodkisten/userscripts-cf/actions/runs/44305418980/job/134805622833) failed at **Typecheck, build and test before publishing**; GitHub App auth, checkout, lockfile synchronization and npm install succeeded. Logs contain 200+ TypeScript error lines, including unresolved Solid imports, removed solid-ui modules, React JSX props/event types, and JSX elements incorrectly cast as DOM nodes. No release or deploy ran.
 - [`0e115d78`](https://github.com/rodkisten/userscripts-cf/commit/0e115d78a2fd0650b01df4a9572198b487809060) and [`9a589493`](https://github.com/rodkisten/userscripts-cf/commit/9a589493968ea3d092749e895bf76ccd111ddf13) replace invalid JSX-to-DOM casts in RodX dock and drag ghost with actual DOM creation.
 - **Still blocking:** React migration of Solid-based GitHub Tools, DOM Inspector, mobile editor and RodX components. Fresh typecheck/build and successful release unverified.
+
+### Lockfile repair reusable Pages deployment (2026-11-18)
+
+- [`87d4abd9`](https://github.com/rodkisten/userscripts-cf/commit/87d4abd96a73feea4e4d9aa8304c025931a0ab79): repaired workflow adds correct change/branch outputs, proper workflow path trigger, GitHub App authenticated push and a separate reusable `deploy-playground` job only for a changed lockfile on main.
+- [`87b0ba27`](https://github.com/rodkisten/userscripts-cf/commit/87b0ba27a284dc271fc165e01e7662b9b7832d03): Pages now accepts `workflow_call`, treats it as explicit deploy, checks out main and compares its checked-out HEAD against latest main before publishing.
+- **Verification pending:** reusable workflow validation, App push and successful Pages deploy. A changed lockfile on main also triggers the existing push workflow; Pages concurrency cancels overlapping runs, but may result in redundant builds. React build remains a separate blocker.
