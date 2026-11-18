@@ -473,3 +473,10 @@
 - [`fd4703cf`](https://github.com/rodkisten/userscripts-cf/commit/fd4703cfac14a01b0c4f6be5cf7dc572b2483aeb): removed the duplicate reusable deploy job and explicit deploy commit marker from lockfile repair. App-authored lockfile push on main triggers Pages once via the existing `push` event. Lockfile-only pushes do not match repair's `package.json` / workflow-file paths, preventing repair recursion.
 - [`5edad527`](https://github.com/rodkisten/userscripts-cf/commit/5edad5272a817acb48362fb304db8a888d4796f1) and [`75e2f2fd`](https://github.com/rodkisten/userscripts-cf/commit/75e2f2fd7d401c239a55bc53f5856d78d420e909): removed unused `workflow_call` path from Pages; fixed pipefail-sensitive changed-files detection.
 - **Unverified:** end-to-end GitHub Actions execution and React build. The prior workflow-call approach is superseded by single push-driven deployment.
+
+### Single Pages dependency gate and workflow cleanup (2026-11-18)
+
+- [`65a70640`](https://github.com/rodkisten/userscripts-cf/commit/65a70640e38e747fca66af4ba03422ec46434fc7): Pages now runs a dependency synchronization job first, performs lockfile-only install plus `npm ci`, commits any repair with the default `GITHUB_TOKEN` (whose pushes do not start another push workflow), and passes its final SHA to change detection and deployment. Pages still rejects a stale SHA before publication.
+- [`1456e204`](https://github.com/rodkisten/userscripts-cf/commit/1456e20406db2002cb74f467fbec31352fed6230): standalone lockfile repair is manual-only, so it cannot race automatic Pages on `package.json` changes.
+- Deleted archived Cloudflare playground, legacy Solid button validation and temporary focused debug workflows. Kept release, diagnostics, React migration validation, Fallow, Prettier and other purpose-specific workflows pending evidence of redundancy.
+- **Verification pending:** new Pages run and successful npm/build. A manual repair on main can still produce a separate push-triggered Pages run by design. Further workflow deletions require inspecting dependencies/triggers.
