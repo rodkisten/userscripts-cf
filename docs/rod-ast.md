@@ -63,3 +63,8 @@ The AST now recognizes a contiguous three-statement pattern inside an explicit c
 
 
 Safety refinement: automatic style-triple migration requires a `const` declaration, insertion into `document.head`, and no intervening comments. `var` hoisting, document-body insertion and preserved comments are deliberately not rewritten. The existing `ctx.ui.style` helper injects styles into the owned ShadowRoot; automatic CSS Modules class hashing remains unsupported until selectors and consumers can be rewritten together.
+
+
+### Vite static CSS processing
+
+With `ROD_AST=1`, the Vite plugin processes static string arguments to `ctx.ui.style(css)` through the existing `stylesPipeline({scope:"shadow"})` PostCSS plugins and Lightning CSS targeting Safari 15. This includes migrated GM style calls and owned style triples. The result remains an inline string; dynamic CSS remains untouched. CSS Modules class hashing is deliberately not applied, because class consumers must be rewritten together. Shared tokens/core styles are injected by the pipeline; measure duplication and size before enabling production by default.
