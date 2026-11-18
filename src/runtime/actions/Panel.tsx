@@ -1,86 +1,53 @@
-import { For, createSignal, createEffect, onCleanup, type Element } from "solid-js";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import styles, { css } from "./Panel.module.css";
 
-export type ActionsTab = { id: string; title: string; icon?: string; render: () => Element };
+export type ActionsTab = { id: string; title: string; icon?: string; render: () => ReactNode };
 export type ActionsModule = { id: string; title: string; tabs: ActionsTab[] };
 type Entry = ActionsTab & { key: string; label: string };
 
-export function ActionsPanel(props: { entries: Entry[]; initial: string }) {
-  const tabs = () => props.entries;
-  const [active, setActive] = createSignal(props.initial);
-  const [width, setWidth] = createSignal(360);
-  let nav!: HTMLElement;
-  createEffect(
-    () => props.entries,
-    (next) => {
-      if (!next.some((tab) => tab.key === active())) setActive(next[0]?.key || "");
-    },
-  );
-  const slot = () => width() / Math.max(1, tabs().length);
-  const attachNav = (element: HTMLElement) => {
-    nav = element;
-    const resize = new ResizeObserver(() => setWidth(nav.getBoundingClientRect().width));
-    resize.observe(nav);
-    onCleanup(() => resize.disconnect());
-  };
-  const chooseNext = (event: KeyboardEvent) => {
-    const current = tabs().findIndex((tab) => tab.key === active());
-    const next =
-      event.key === "Home"
-        ? 0
-        : event.key === "End"
-          ? tabs().length - 1
-          : event.key === "ArrowRight"
-            ? (current + 1) % tabs().length
-            : event.key === "ArrowLeft"
-              ? (current - 1 + tabs().length) % tabs().length
-              : -1;
-    if (next < 0) return;
+export function ActionsPanel({ entries, initial }: { entries: Entry[]; initial: string }) {
+  const [active, setActive] = useState(initial);
+  const [width, setWidth] = useState(360);
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = nav.current;
+    if (!element) return;
+    const resize = new ResizeObserver(() => setWidth(element.getBoundingClientRect().width));
+    resize.observe(element);
+    return () => resize.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!entries.some((tab) => tab.key === active)) setActive(entries[0]?.key ?? "");
+  }, [entries, active]);
+  const slot = width / Math.max(1, entries.length);
+  const chooseNext = (event: React.KeyboardEvent<HTMLElement>) => {
+    const current = entries.findIndex((tab) => tab.key === active);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? entries.length - 1
+      : event.key === "ArrowRight" ? (current + 1) % entries.length
+      : event.key === "ArrowLeft" ? (current - 1 + entries.length) % entries.length : -1;
+    if (next < 0 || !entries.length) return;
     event.preventDefault();
-    setActive(tabs()[next].key);
-    nav.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
+    setActive(entries[next].key);
+    nav.current?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
   };
   return (
-    <section class={styles.panel}>
+    <section className={styles.panel}>
       <style>{css}</style>
-      <nav
-        ref={attachNav}
-        class={styles.tabs}
-        role="tablist"
-        aria-label="Ferramentas"
-        onKeyDown={chooseNext}
-        style={{
-          "--tab-font": `${Math.max(10, Math.min(13, slot() / 7))}px`,
-          "--tab-pad": `${Math.max(0, Math.min(8, slot() / 14))}px`,
-        }}
-      >
-        <For each={tabs()}>
-          {(tab) => (
-            <button
-              type="button"
-              role="tab"
-              id={`rod-tab-${tab.key}`}
-              aria-controls="rod-actions-content"
-              aria-selected={active() === tab.key ? "true" : "false"}
-              tabindex={active() === tab.key ? 0 : -1}
-              title={tab.label}
-              aria-label={tab.label}
-              onClick={() => setActive(tab.key)}
-            >
-              {slot() < 70 ? tab.icon || (tab.id === "saved" ? "▣" : "⚙") : tab.title}
-            </button>
-          )}
-        </For>
+      <nav ref={nav} className={styles.tabs} role="tablist" aria-label="Ferramentas"
+        onKeyDown={chooseNext} style={{ "--tab-font": `${Math.max(10, Math.min(13, slot / 7))}px`,
+          "--tab-pad": `${Math.max(0, Math.min(8, slot / 14))}px` } as React.CSSProperties}>
+        {entries.map((tab) => (
+          <button key={tab.key} type="button" role="tab" id={`rod-tab-${tab.key}`}
+            aria-controls="rod-actions-content" aria-selected={active === tab.key}
+            tabIndex={active === tab.key ? 0 : -1} title={tab.label} aria-label={tab.label}
+            onClick={() => setActive(tab.key)}>
+            {slot < 70 ? tab.icon || (tab.id === "saved" ? "▣" : "⚙") : tab.title}
+          </button>
+        ))}
       </nav>
-      <div
-        id="rod-actions-content"
-        class={styles.content}
-        role="tabpanel"
-        aria-labelledby={`rod-tab-${active()}`}
-      >
-        {tabs()
-          .find((tab) => tab.key === active())
-          ?.render()}
+      <div id="rod-actions-content" className={styles.content} role="tabpanel"
+        aria-labelledby={`rod-tab-${active}`}>
+        {entries.find((tab) => tab.key === active)?.render()}
       </div>
     </section>
   );
