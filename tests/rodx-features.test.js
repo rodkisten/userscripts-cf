@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import { build } from "vite";
-import { transform } from "esbuild";
+import { transformWithOxc } from "vite";
 import { DEFAULT_SETTINGS, createDefaults } from "../src/config/defaults.js";
 import { RUNTIME_LIMITS, HTTP_STATUS } from "../src/config/runtime.js";
 import fs from "node:fs";
@@ -38,13 +38,7 @@ for (const entry of fs.readdirSync(directory, { recursive: true }))
     }
     if (entry.endsWith(".tsx"))
       code = (
-        await transform(code, {
-          sourcefile: entry,
-          loader: "tsx",
-          format: "esm",
-          jsx: "automatic",
-          target: "es2022",
-        })
+        await transformWithOxc(code, entry, { lang: "tsx", jsx: "react-jsx" })
       ).code;
     code = code.replace(/^import[^;]+;\s*/gm, "");
     code = code.replace(/createDefaults\("([^"\n]+)"\)/g, (_, section) =>
