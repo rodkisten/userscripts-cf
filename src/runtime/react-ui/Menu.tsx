@@ -4,16 +4,23 @@ import { createInitialValues, loadPersistence, savePersistence } from "./core";
 import styles from "./Menu.module.css";
 
 export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initialValues, className }) => {
-  if (!isOpen) return null;
-
   const [values, setValues] = useState<Record<string, any>>(() => {
     const persisted = loadPersistence(schema.persistKey);
     return { ...createInitialValues(schema, initialValues), ...persisted };
   });
 
   useEffect(() => {
-    savePersistence(schema.persistKey, values);
-  }, [values, schema.persistKey]);
+    if (isOpen) savePersistence(schema.persistKey, values);
+  }, [isOpen, values, schema.persistKey]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
   const handleChange = (fieldId: string, value: any) => {
     setValues((prev) => ({ ...prev, [fieldId]: value }));
@@ -70,6 +77,16 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                       </option>
                     ))}
                   </select>
+                ) : field.type === 'slider' ? (
+                  <input
+                    id={field.id}
+                    type="range"
+                    min={field.min}
+                    max={field.max}
+                    step={field.step}
+                    value={values[field.id] ?? field.min ?? 0}
+                    onChange={e => handleChange(field.id, Number(e.target.value))}
+                  />
                 ) : isCheckbox ? (
                   <input
                     id={field.id}
