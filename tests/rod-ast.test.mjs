@@ -7,8 +7,8 @@ test("fixture is transformed and output is idempotent", () => {
   const result = transformRodAst(source, "fixture.tsx");
   assert.deepEqual(result.diagnostics, []);
   assert.match(result.code, /ctx\.http\.fetch\("\/api\/posts"\)/);
-  assert.match(result.code, /ctx\.events\.dom\.add\(document, "click", onClick\)/);
-  assert.match(result.code, /ctx\.events\.dom\.remove\(document, "click", onClick\)/);
+  assert.match(result.code, /document\.addEventListener\("click", onClick\)/);
+  assert.match(result.code, /document\.removeEventListener\("click", onClick\)/);
   assert.match(result.code, /return <button className=/);
   assert.equal(transformRodAst(result.code, "fixture.tsx").changed, false);
 });
