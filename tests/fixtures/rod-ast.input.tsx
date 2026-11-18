@@ -88,3 +88,15 @@ export function selectorTypeParity(ctx: ScriptContext) {
   const scoped: NodeListOf<HTMLAnchorElement> = ctx.dom.scope(document.body).querySelectorAll("a");
   return { anchors, inputs, buttons, svg, dynamic, first, maybe, scoped };
 }
+
+/** GM bridge and guarded synchronous storage migration candidates. */
+export function legacyApiCompatibility(ctx: ScriptContext) {
+  // @keep
+  const guarded = typeof GM_getValue === "function";
+  try {
+    const legacy = localStorage.getItem("legacy");
+    return { guarded, legacy };
+  } catch {
+    return { guarded, legacy: null };
+  }
+}
