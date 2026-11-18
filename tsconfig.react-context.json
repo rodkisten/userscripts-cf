@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["react", "react-dom"],
+    "strict": true
+  },
+  "include": [
+    "src/core/react-context-contract.ts",
+    "src/core/runtime-context-react.tsx",
+    "src/core/runtime-mount-react.tsx"
+  ]
+}

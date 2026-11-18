@@ -599,3 +599,10 @@
 - [x] Add TypeScript storage context contract, fixture, and Vitest checks for awaited reads/writes/removals and preserved synchronous operations.
 - [ ] Verify GitHub Actions. Native storage may still be unavailable and async backends may reject; do not strip try/catch automatically.
 - [ ] Add integration tests for denied native storage, cross-script key collisions, native persistence, and migration of old values before enabling defaults.
+
+### React context boundary progress (2026-11-18, PR #107)
+
+- Introduced `src/core/react-context-contract.ts` so React provider and mount components no longer import `runtime.ts` solely for context typing.
+- Added `tests/react-runtime-context.test.ts` for two independent contexts, disposal isolation, and optional shared events.
+- **Not verified:** React typecheck, Vitest, and bundles. `runtime-react.tsx` still imports `runtime.ts`; the full React project graph remains mixed. Do not mark P1 complete.
+- PR: https://github.com/rodkisten/userscripts-cf/pull/107 ; latest test commit: https://github.com/rodkisten/userscripts-cf/commit/bbe24c7a47e19c8f51f513af719d01c456052c0f

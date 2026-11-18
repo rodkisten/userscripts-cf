@@ -588,7 +588,12 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    let resolvedContext: Record<string, unknown>;
+    let resolvedContext: Record<string, unknown> & {
+      readonly id: string;
+      readonly signal: AbortSignal;
+      readonly onDispose: (cleanup: () => void | Promise<void>) => void;
+      readonly dispose: () => Promise<void>;
+    };
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
       ? options.createSpecificContext({
