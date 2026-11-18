@@ -8,6 +8,7 @@ on:
       - "build/rod-ast.mjs"
       - "build/rod-ast-iife.mjs"
       - "build/rod-ast-cli.mjs"
+      - "build/rod-ast-summary.mjs"
       - "tests/fixtures/rod-ast.input.tsx"
       - "tests/fixtures/rod-ast.matrix.json"
       - "tests/rod-ast.test.mjs"
@@ -57,7 +58,9 @@ jobs:
         id: unit
         if: always()
         continue-on-error: true
-        run: npx vitest run tests/rod-ast.test.mjs
+        run: |
+          mkdir -p artifacts
+          npx vitest run tests/rod-ast.test.mjs --reporter=default --reporter=json --outputFile.json=artifacts/rod-ast-vitest.json
       - name: "🧪 Typecheck transformed fixture against real ScriptContext"
         id: fixture_types
         if: always()
@@ -70,11 +73,14 @@ jobs:
         if: always()
         continue-on-error: true
         run: npm run typecheck:react
+      - name: "🎨 Highlighted test report"
+        if: always()
+        run: node build/rod-ast-summary.mjs
       - name: "📊 Validation matrix"
         if: always()
         run: |
           {
-            echo "## 🧪 Validation matrix"
+            echo "### 🧪 Validation matrix"
             echo ""
             echo "| Check | Result |"
             echo "| :-- | :-- |"
