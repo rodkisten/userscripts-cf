@@ -34,8 +34,6 @@ export function Player(props: {
   const restoredRef = useRef(false);
   const lastSavedRef = useRef(0);
   const waveAbortRef = useRef<AbortController | undefined>(undefined);
-  const audio = audioRef.current!;
-  const canvas = canvasRef.current!;
 
   const setState = (update: (draft: typeof state) => void) => setStateBase((previous) => { const next = { ...previous }; update(next); return next; });
   const setWave = (update: (draft: typeof wave) => void) => setWaveBase((previous) => { const next = { ...previous }; update(next); return next; });
@@ -43,9 +41,9 @@ export function Player(props: {
     if (!restoredRef.current || !Number.isFinite(audio?.currentTime)) return;
     const history = readJSON<Record<string, Playback & { at?: number }>>(KEYS.playback, {});
     history[key] = {
-      position: audio.currentTime,
-      speed: audio.playbackRate,
-      loop: audio.loop,
+      position: audioRef.current!.currentTime,
+      speed: audioRef.current!.playbackRate,
+      loop: audioRef.current!.loop,
       completed,
       at: Date.now(),
     };
@@ -59,11 +57,11 @@ export function Player(props: {
     );
   };
   const sync = () => {
-    if (!audio) return;
+    if (!audioRef.current) return;
     setState((draft) => {
-      draft.time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
-      draft.duration = Number.isFinite(audio.duration) ? audio.duration : 0;
-      draft.paused = audio.paused;
+      draft.time = Number.isFinite(audioRef.current!.currentTime) ? audioRef.current!.currentTime : 0;
+      draft.duration = Number.isFinite(audioRef.current!.duration) ? audioRef.current!.duration : 0;
+      draft.paused = audioRef.current!.paused;
     });
     if (Date.now() - lastSavedRef.current > 3000) {
       persist();
@@ -71,16 +69,16 @@ export function Player(props: {
     }
   };
   const seek = (time: number) => {
-    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
-    audio.currentTime = Math.max(0, Math.min(audio.duration, time));
+    if (!audio || !Number.isFinite(audioRef.current!.duration) || audioRef.current!.duration <= 0) return;
+    audioRef.current!.currentTime = Math.max(0, Math.min(audioRef.current!.duration, time));
     sync();
     persist();
   };
   const restore = () => {
-    if (!restoredRef.current && Number.isFinite(audio.duration) && audio.duration > 0) {
+    if (!restoredRef.current && Number.isFinite(audioRef.current!.duration) && audioRef.current!.duration > 0) {
       restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed)
-        seek(Math.min(saved.position, Math.max(0, audio.duration - 0.25)));
+        seek(Math.min(saved.position, Math.max(0, audioRef.current!.duration - 0.25)));
     }
     sync();
     setState((draft) => {
@@ -95,8 +93,8 @@ export function Player(props: {
       return;
     }
     try {
-      if (audio.paused) await audio.play();
-      else audio.pause();
+      if (audioRef.current!.paused) await audioRef.current!.play();
+      else audioRef.current!.pause();
       sync();
     } catch (error) {
       setState((draft) => {
@@ -107,16 +105,16 @@ export function Player(props: {
   const speed = () => {
     const index = rates.indexOf(state.speed);
     const next = rates[(index + 1) % rates.length];
-    audio.playbackRate = next;
+    audioRef.current!.playbackRate = next;
     setState((draft) => {
       draft.speed = next;
     });
     persist();
   };
   const loop = () => {
-    audio.loop = !state.loop;
+    audioRef.current!.loop = !state.loop;
     setState((draft) => {
-      draft.loop = audio.loop;
+      draft.loop = audioRef.current!.loop;
     });
     persist();
   };
@@ -127,11 +125,11 @@ export function Player(props: {
   const draw = () => {
     const context = canvas?.getContext("2d");
     if (!context) return;
-    const width = Math.max(50, canvas.getBoundingClientRect().width || 300),
+    const width = Math.max(50, canvasRef.current!.getBoundingClientRect().width || 300),
       height = 118,
       dpr = Math.min(devicePixelRatio || 1, 2.5);
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
+    canvasRef.current!.width = Math.floor(width * dpr);
+    canvasRef.current!.height = Math.floor(height * dpr);
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.clearRect(0, 0, width, height);
     const peaks = wave.peaks.length
@@ -249,7 +247,8 @@ export function Player(props: {
     if (props.source) setState((draft) => { draft.status = "Carregando áudio…"; });
   }, [props.source]);
   const canvasSeek = (event: PointerEvent<HTMLCanvasElement>) => {
-    const rect = canvas.getBoundingClientRect();
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
     if (rect.width) seek(((event.clientX - rect.left) / rect.width) * state.duration);
   };
   return (
@@ -272,11 +271,11 @@ export function Player(props: {
           aria-valuemax={state.duration}
           aria-valuenow={state.time}
           onPointerDown={(event) => {
-            canvas.setPointerCapture(event.pointerId);
+            event.currentTarget.setPointerCapture(event.pointerId);
             canvasSeek(event);
           }}
           onPointerMove={(event) => {
-            if (canvas.hasPointerCapture(event.pointerId)) canvasSeek(event);
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) canvasSeek(event);
           }}
           onKeyDown={(event) => {
             if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
@@ -404,7 +403,7 @@ export function Player(props: {
         onTimeUpdate={sync}
         onRateChange={() => {
           setState((draft) => {
-            draft.speed = audio.playbackRate;
+            draft.speed = audioRef.current!.playbackRate;
           });
           persist();
         }}
