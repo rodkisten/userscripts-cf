@@ -174,3 +174,8 @@
 - Added mobile Dock launcher drag position, script search, and cross-instance script preference refresh via `rod-script-manager:change`.
 - Fixed three additional TypeScript failures reported in [release run 44230768471](https://github.com/rodkisten/userscripts-cf/actions/runs/44230768471): markdown fence reduction inferred as never, literal snap distance narrowed to 45, and outdated `createListsModule(Studio)` call.
 - Remaining legacy Solid component errors are not fixed or hidden; browser behavior and CI must be checked before calling this stable.
+
+### Radix menu lifecycle hardening (2026-11-18)
+
+- Commit [`d76096ca`](https://github.com/rodkisten/userscripts-cf/commit/d76096ca4a82797d4a59cb19f8fb219071812a87): preserve dialog values across React re-renders, surface asynchronous action failures, disable concurrent submissions, and explicitly own/remove dropdown and dialog portal containers.
+- **Unverified:** CI, React typecheck, Safari/ShadowRoot behavior and full release. The menu bridge still mounts in the document body, not the script-owned ShadowRoot; this remains a P1 isolation issue. Do not mark migration complete.
