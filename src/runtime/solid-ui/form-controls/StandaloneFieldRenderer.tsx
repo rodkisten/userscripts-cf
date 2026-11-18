@@ -161,7 +161,7 @@ export function StandaloneFieldRenderer<TContext = FieldContext>(
           type={kind()}
           value={stringValue()}
           placeholder={field().placeholder}
-          readOnly={readonly()}
+          readonly={readonly()}
           onInput={(event) => {
             if (!readonly()) commit(event.currentTarget.value);
           }}
