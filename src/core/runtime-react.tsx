@@ -1,12 +1,7 @@
 import type { ReactElement } from "react";
 import { RuntimeMount } from "./runtime-mount-react.js";
 import { createRoot } from "react-dom/client";
-import {
-  bindRuntime,
-  useContext,
-  useRuntime,
-  useRuntimeWorld,
-} from "./runtime-context-react.js";
+import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";

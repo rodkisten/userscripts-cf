@@ -38,10 +38,11 @@ export interface MenuSchema {
   initialValues?: Record<string, unknown>;
 }
 
-
 export const menu = Object.freeze({
   open: openRadixDialog,
   dropdown: openRadixDropdown,
   configure: (_options?: Record<string, unknown>) => menu,
 });
-export function createMenuFeature() { return menu; }
+export function createMenuFeature() {
+  return menu;
+}
