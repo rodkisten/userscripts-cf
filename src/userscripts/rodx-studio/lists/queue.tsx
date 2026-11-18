@@ -400,7 +400,7 @@ export function downloadBlob(name, text, type) {
     type,
   });
   const url = URL.createObjectURL(blob);
-  const anchor = (<a />) as HTMLAnchorElement;
+  const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = name;
   document.body.append(anchor);

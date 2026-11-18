@@ -59,7 +59,7 @@ export function initializeDeckProfileLists() {
       });
     }
     function button(text, action) {
-      const el = (<button />) as HTMLButtonElement;
+      const el = document.createElement("button");
       el.type = "button";
       el.textContent = text;
       el.onclick = (event) => {
@@ -73,7 +73,7 @@ export function initializeDeckProfileLists() {
       return "/" + handle + "/lists/memberships";
     }
     function listLink(item) {
-      const a = (<a />) as HTMLAnchorElement;
+      const a = document.createElement("a");
       a.href = studioListIndex(Studio) + "/" + item.id;
       const record = Studio.state.lists?.lists?.find((x) => x.id === item.id) || item;
       const name = Studio.services.lists?.displayName(record) || item.name;
@@ -119,20 +119,20 @@ export function initializeDeckProfileLists() {
     }
     function showAll() {
       modal?.remove();
-      modal = (<dialog />) as HTMLDialogElement;
+      modal = document.createElement("dialog");
       modal.className = "all";
-      const heading = (<strong />) as HTMLElement;
+      const heading = document.createElement("strong");
       heading.textContent = "Listas de @" + handle;
       const close = button("Fechar", () => modal.close());
-      const header = (<header />) as HTMLElement;
+      const header = document.createElement("header");
       header.append(heading, close);
-      const body = (<div />) as HTMLDivElement;
+      const body = document.createElement("div");
       body.className = "all-items";
       items.forEach((item) => body.append(listLink(item)));
       if (!items.length)
         body.textContent = loading ? "Carregando as listas públicas…" : error || "Nenhuma lista disponível.";
-      const footer = (<footer />) as HTMLElement;
-      const native = (<a />) as HTMLAnchorElement;
+      const footer = document.createElement("footer");
+      const native = document.createElement("a");
       native.href = membershipURL();
       native.textContent = "Ver todas no X";
       footer.append(button("＋ Adicionar às minhas listas", addToLists), native);
@@ -147,9 +147,9 @@ export function initializeDeckProfileLists() {
       if (!shadow) return;
       let row = shadow.querySelector(RODX_SELECTORS.listRows);
       if (!row) {
-        const style = (<style />) as HTMLStyleElement;
+        const style = document.createElement("style");
         style.textContent = extractedCSS1;
-        row = (<section />) as HTMLElement;
+        row = document.createElement("section");
         row.className = "row";
         row.setAttribute("aria-label", "Listas deste perfil");
         shadow.append(style, row);
@@ -159,11 +159,11 @@ export function initializeDeckProfileLists() {
       const title = button("Listas" + (items.length ? " · " + items.length : ""), showAll);
       title.title = "RodX " + VERSION + " — listas deste perfil";
       row.append(title);
-      const strip = (<div />) as HTMLDivElement;
+      const strip = document.createElement("div");
       strip.className = "strip";
       items.forEach((item) => strip.append(listLink(item)));
       if (!items.length) {
-        const status = (<span />) as HTMLSpanElement;
+        const status = document.createElement("span");
         status.className = "status";
         status.textContent = loading
           ? "Consultando listas…"
@@ -174,7 +174,7 @@ export function initializeDeckProfileLists() {
         strip.append(status);
       }
       if (error) strip.append(button("Tentar novamente", load));
-      const native = (<a />) as HTMLAnchorElement;
+      const native = document.createElement("a");
       native.href = membershipURL();
       native.textContent = "Ver no X";
       native.style.setProperty("white-space", "nowrap", "important");
@@ -293,7 +293,7 @@ export function initializeDeckProfileLists() {
       host?.remove();
       handle = current;
       account = state.account;
-      host = (<div />) as HTMLDivElement;
+      host = document.createElement("div");
       host.id = "rodx-profile-lists";
       applyComponentStyle(host, "rx-profile-host", false);
       host.dataset.rodxVersion = VERSION;

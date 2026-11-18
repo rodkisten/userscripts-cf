@@ -47,7 +47,7 @@ export function initializeDeckSocialAppLinks() {
     function ensureStyle() {
       if (styled) return;
       styled = true;
-      const style = (<style />) as HTMLStyleElement;
+      const style = document.createElement("style");
       style.id = "rodx-social-app-links-css";
       style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);

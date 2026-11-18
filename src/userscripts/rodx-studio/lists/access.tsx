@@ -105,7 +105,7 @@ export function createListAccess(Studio, navigateSearch) {
   }
   function footer() {
     if (!footerButton) {
-      footerButton = (<button />) as HTMLButtonElement;
+      footerButton = document.createElement("button");
       footerButton.id = "rodx-footer-lists";
       footerButton.type = "button";
       mountView(footerButton, () => (
@@ -150,10 +150,10 @@ export function createListAccess(Studio, navigateSearch) {
     const identity = main?.querySelector(COMPOSITE_SELECTORS.profileIdentityOrUserName);
     if (!identity || identity.closest(DOM_SELECTORS.articles)) return;
     if (!profileHost) {
-      profileHost = (<div />) as HTMLDivElement;
+      profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";
       applyComponentStyle(profileHost, "rx-access-profileHost", false);
-      const button = (<button />) as HTMLButtonElement;
+      const button = document.createElement("button");
       button.type = "button";
       button.textContent = "＋ Adicionar à lista";
       applyComponentStyle(button, "rx-profile-add-to-list", false);

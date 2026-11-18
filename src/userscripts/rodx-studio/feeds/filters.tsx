@@ -166,7 +166,7 @@ export function initializeDeckFeedFilters() {
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
       if (!main) return;
       host?.remove();
-      host = (<div />) as HTMLDivElement;
+      host = document.createElement("div");
       host.id = "rodx-feed-filters";
       shadow = host.attachShadow({
         mode: "open",
@@ -202,7 +202,7 @@ export function initializeDeckFeedFilters() {
 export function FeedFilterButton(props: { summary: string; reposts: boolean; snap: boolean }) {
   return (
     <>
-      <style textContent={filterCSS} />
+      <style>{filterCSS}</style>
       <button
         className={styles.filter}
         type="button"
