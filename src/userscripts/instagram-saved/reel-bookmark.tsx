@@ -1,6 +1,5 @@
 import type { ScriptContext } from "../../core/runtime";
-import { createSignal } from "solid-js";
-import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
+import { createRoot, type Root } from "react-dom/client";
 import { css } from "./Settings.module.css";
 import { ReelBookmarkButton, type BookmarkState } from "./ReelBookmarkButton";
 
@@ -16,7 +15,7 @@ const ACTION_LABEL =
 
 function controls(): HTMLElement[] {
   return [...document.querySelectorAll<HTMLElement>('button, [role="button"]')]
-    .filter((button) => !button.closest("[data-solid-mount], [data-rod-collection-action]"))
+    .filter((button) => !button.closest("[data-rod-collection-action], [data-rod-collection-action]"))
     .filter((button) => {
       const label = [
         button.getAttribute("aria-label"),
@@ -135,14 +134,19 @@ export function mountReelBookmark(
 ) {
   const { signal } = ctx;
   ctx.pageStyle(css);
-  const [state, setState] = createSignal<BookmarkState>("unsaved");
+  let state: BookmarkState = "unsaved";
+  const setState = (next: BookmarkState) => {
+    state = next;
+    render();
+  };
   let selectedSave: HTMLElement | null = null;
   let activeReel = location.pathname;
   let operation = 0;
-  let mount: ReturnType<typeof mountPoint> | undefined;
+  let mount: { host: HTMLElement; root: Root } | undefined;
+  const render = () => mount?.root.render(<ReelBookmarkButton state={state} onActivate={() => void send()} />);
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (state() === "loading" || state() === "saved" || signal.aborted) return;
+    if (state === "loading" || state === "saved" || signal.aborted) return;
     const token = ++operation;
     const reel = location.pathname;
     const source = selectedSave;
@@ -161,7 +165,8 @@ export function mountReelBookmark(
     }
   };
   function clear() {
-    mount?.dispose();
+    mount?.root.unmount();
+    mount?.host.remove();
     mount = undefined;
     anchor = null;
     selectedSave = null;
@@ -182,10 +187,10 @@ export function mountReelBookmark(
       operation++;
       selectedSave = source;
       setState(source ? (nativeState(source) === "saved" ? "saved" : "unsaved") : "unsaved");
-    } else if (state() !== "loading") {
+    } else if (state !== "loading") {
       const observed = nativeState(source);
-      if (observed === "saved" && state() !== "saved") setState("saved");
-      if (observed === "unsaved" && state() === "saved") setState("unsaved");
+      if (observed === "saved" && state !== "saved") setState("saved");
+      if (observed === "unsaved" && state === "saved") setState("unsaved");
     }
     if (!target || !native || !native.isConnected) {
       clear();
@@ -194,15 +199,13 @@ export function mountReelBookmark(
     if (anchor === native && mount?.host.isConnected && mount.host.parentNode === native.parentNode) return;
     clear();
     anchor = native;
-    // Never clone an interactive element: a cloned button containing a Solid
-    // button would create invalid nested controls and duplicate native handlers.
-    // The shared Solid mount boundary owns the host element and its insertion.
-    // No imperative DOM construction belongs in the view component.
-    mount = mountPoint(
-      native.parentNode!,
-      () => <ReelBookmarkButton state={state()} onActivate={() => void send()} />,
-      { tag: "span", before: native.nextSibling },
-    );
+    // React owns the interactive button; keep the mount beside native controls.
+    const host = document.createElement("span");
+    host.dataset.rodCollectionAction = "true";
+    native.parentNode!.insertBefore(host, native.nextSibling);
+    const root = createRoot(host);
+    mount = { host, root };
+    render();
     mount.host.dataset.rodCollectionAction = "true";
     mount.host.style.display = "inline-flex";
   }
@@ -213,7 +216,7 @@ export function mountReelBookmark(
         records.some(
           (record) =>
             !(record.target instanceof Element ? record.target : record.target.parentElement)?.closest(
-              "[data-solid-mount]",
+              "[data-rod-collection-action]",
             ),
         )
       )
