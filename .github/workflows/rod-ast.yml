@@ -55,7 +55,7 @@ jobs:
         id: unit
         if: always()
         continue-on-error: true
-        run: node --test tests/rod-ast.test.mjs
+        run: npx vitest run tests/rod-ast.test.mjs
       - name: "🧪 Typecheck transformed fixture against real ScriptContext"
         id: fixture_types
         if: always()
