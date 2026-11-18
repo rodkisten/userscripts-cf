@@ -146,3 +146,25 @@ it("does not convert an existing ES module", () => {
   const source = "export default { init(ctx) { return ctx; } };";
   expect(migrateUserscriptIife(source).changed).toBe(false);
 });
+
+it("migrates the complete real-world legacy fixture and preserves metadata", () => {
+  const input = readFileSync("tests/fixtures/rod-ast.legacy.user.js", "utf8");
+  const result = migrateUserscriptIife(input, "rod-ast.legacy.user.js");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain("export default {");
+  expect(result.code).toContain("init(ctx)");
+  expect(result.code).toContain('ctx.http.fetch("/api/legacy")');
+  expect(result.code).toContain('ctx.http.fetch("/api/window")');
+  expect(result.code).toContain('self.fetch("/api/self")');
+  expect(result.code).toContain('parent.fetch("/api/parent")');
+  expect(result.code).toContain('new MutationObserver(');
+  expect(result.code).toContain('GM_getValue("key")');
+  expect(result.code).toContain('GM_setValue("key", read)');
+  expect(result.metadata.match).toHaveLength(2);
+  expect(result.metadata.grant).toEqual(["GM_getValue", "GM_setValue", "GM_addStyle"]);
+  expect(result.metadata.require).toEqual(["https://cdn.example.com/library.js"]);
+  expect(result.metadata.resource).toEqual(["ICON https://cdn.example.com/icon.svg"]);
+  expect(result.metadata["run-at"]).toEqual(["document-start"]);
+  expect(result.metadata.connect).toEqual(["api.example.com"]);
+  expect(transformRodAst(result.code, "output.js").changed).toBe(false);
+});
