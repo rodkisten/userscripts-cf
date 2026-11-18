@@ -533,3 +533,8 @@
 - [x] Convert independently owned timers even if another timer is manually cleared; preserve unknown/dynamic cleanup and variadic timer signatures.
 - [x] Add 4 regression tests and expand the matrix to 60 scenarios.
 - [ ] Confirm CI passes; next resolve listener callback/target/event identities and conservative escape analysis for timer aliases.
+
+### 🔐 Mandatory Runtime ↔ AST compatibility policy (2026-11-18)
+
+- [x] Document the non-optional runtime/AST compatibility gate in README.md and AGENTS.md, including tests, fixtures, React context adapters, IIFE migration and verification.
+- [ ] On each future runtime/context change, review AST behavior, add compatibility regression coverage, refresh relevant fixtures and record evidence in this workboard. No runtime-only completion claims.
