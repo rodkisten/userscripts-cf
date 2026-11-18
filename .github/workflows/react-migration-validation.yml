@@ -33,10 +33,33 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Legacy TypeScript
+        id: legacy
         run: npm run typecheck
       - name: React TypeScript
+        id: react
         if: success() || failure()
         run: npm run typecheck:react
       - name: Production build
+        id: build
         if: success() || failure()
         run: npm run build
+      - name: Publish validation summary
+        if: always()
+        env:
+          LEGACY_RESULT: ${{ steps.legacy.outcome }}
+          REACT_RESULT: ${{ steps.react.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo "## 🧪 React migration validation"
+            echo ""
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Legacy TypeScript | \`$LEGACY_RESULT\` |"
+            echo "| React TypeScript | \`$REACT_RESULT\` |"
+            echo "| Production build | \`$BUILD_RESULT\` |"
+            echo ""
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo ""
+            echo "Any failed check keeps this workflow red. Review the failing step logs for diagnostics."
+          } >> "$GITHUB_STEP_SUMMARY"
