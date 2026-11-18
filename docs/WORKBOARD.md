@@ -323,3 +323,10 @@
 - [`90a3dae0`](https://github.com/rodkisten/userscripts-cf/commit/90a3dae02c445b7a0bdccffc93ff78dbc39bf4eb): migrated `components/Markdown.tsx` from Solid For/Dynamic/createMemo to React JSX and keyed mapped children; preserved Markdown block parsing, inline links and safeURL checks.
 - [`3e4fc84d`](https://github.com/rodkisten/userscripts-cf/commit/3e4fc84d33cca4d5245b79120c01b3a6340ab246): migrated `components/Tags.tsx` from Solid For to React JSX with keys. Neither creates a shared basic UI primitive.
 - **Important:** parent SoundgasmApp, Player, Reddit adapter, store and Feed are still Solid; mixing these React children directly into Solid parents is not a validated working state. Must migrate the entire component tree and adapters before expecting Soundgasm/Reddit to work. Build/browser tests not run.
+
+### Soundgasm React subtree cutover (2026-11-18)
+
+- [`ade885c9`](https://github.com/rodkisten/userscripts-cf/commit/ade885c9c1d3cb64168d1178ca166542eca68b19): migrated SoundgasmApp, profile catalogue, search, sort, descriptions, copy and tags integration to React JSX/hooks.
+- [`0a81829a`](https://github.com/rodkisten/userscripts-cf/commit/0a81829aca8d8467a5e18c1f2d1d9368b175fdef) and [`f08b281b`](https://github.com/rodkisten/userscripts-cf/commit/f08b281b88f1e2fce2cafb3a8b1aec1e4266fadd): migrated Player from Solid lifecycle/store to React hooks and corrected initial ref declarations.
+- [`a4bdfb95`](https://github.com/rodkisten/userscripts-cf/commit/a4bdfb9571107de53502c4446347c783ad11fc50): migrated Soundgasm adapter to React root, error boundary and data rerenders, retaining native player visibility fallback.
+- **Not verified**: npm build, typecheck, Safari/iOS playback, delayed jPlayer source, error retry, waveform and catalogue. Treat this as a source migration, not proof the blank-screen bug is fixed. Reddit adapter/Feed/store remain Solid.
