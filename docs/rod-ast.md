@@ -4,14 +4,14 @@ This is a conservative source transform for userscripts, **not** a claim of full
 
 ## Verified starter mappings
 
-| Input | Output | Condition |
-| --- | --- | --- |
-| `fetch(url, init)` | `ctx.http.fetch(url, init)` | Unshadowed fetch inside ctx scope |
-| `window.fetch(url, init)` | `ctx.http.fetch(url, init)` | Unshadowed window |
-| `document.addEventListener(type, fn)` | `ctx.events.dom.add(document, type, fn)` | Explicit document |
-| `document.removeEventListener(type, fn)` | `ctx.events.dom.remove(document, type, fn)` | Explicit document |
-| `window.addEventListener(type, fn)` | `ctx.events.dom.add(window, type, fn)` | Explicit window |
-| `useRuntime()`, `useContext()` | `ctx` | No arguments, unshadowed |
+| Input                                    | Output                                      | Condition                         |
+| ---------------------------------------- | ------------------------------------------- | --------------------------------- |
+| `fetch(url, init)`                       | `ctx.http.fetch(url, init)`                 | Unshadowed fetch inside ctx scope |
+| `window.fetch(url, init)`                | `ctx.http.fetch(url, init)`                 | Unshadowed window                 |
+| `document.addEventListener(type, fn)`    | `ctx.events.dom.add(document, type, fn)`    | Explicit document                 |
+| `document.removeEventListener(type, fn)` | `ctx.events.dom.remove(document, type, fn)` | Explicit document                 |
+| `window.addEventListener(type, fn)`      | `ctx.events.dom.add(window, type, fn)`      | Explicit window                   |
+| `useRuntime()`, `useContext()`           | `ctx`                                       | No arguments, unshadowed          |
 
 **Caution:** `document.querySelector`, `querySelectorAll`, and `createElement` mappings are disabled by default (`domMethods: true` opt-in) until their exact helper contracts and return types are verified. `fetch` and event helper semantics must also be verified with runtime integration tests before enabling production builds. Existing `build/runtime-helpers.mjs` contains additional AST rules; this prototype is not yet integrated with it.
 
@@ -31,9 +31,7 @@ import { defineConfig } from "vite";
 import { rodAstPlugin } from "./build/rod-ast.mjs";
 
 export default defineConfig({
-  plugins: [
-    ...(process.env.ROD_AST === "1" ? [rodAstPlugin({ strict: true })] : []),
-  ],
+  plugins: [...(process.env.ROD_AST === "1" ? [rodAstPlugin({ strict: true })] : [])],
 });
 ```
 

@@ -481,7 +481,6 @@
 - Deleted archived Cloudflare playground, legacy Solid button validation and temporary focused debug workflows. Kept release, diagnostics, React migration validation, Fallow, Prettier and other purpose-specific workflows pending evidence of redundancy.
 - **Verification pending:** new Pages run and successful npm/build. A manual repair on main can still produce a separate push-triggered Pages run by design. Further workflow deletions require inspecting dependencies/triggers.
 
-
 ### 🧬 Optional Rod AST prototype (2026-11-18)
 
 - [x] Add conservative explicit-ctx AST transformer, optional Vite plugin, CLI, fixture, and workflow for diff/artifact/typecheck. Source: [build/rod-ast.mjs](../build/rod-ast.mjs), [workflow](../.github/workflows/rod-ast.yml).

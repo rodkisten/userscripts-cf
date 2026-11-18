@@ -74,10 +74,13 @@ for (const file of files) {
   );
   const edits = [];
   const blockers = [];
-  const addBlocker = (node, kind, name, suggestion) => blockers.push({
-    line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1,
-    kind, name, suggestion,
-  });
+  const addBlocker = (node, kind, name, suggestion) =>
+    blockers.push({
+      line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1,
+      kind,
+      name,
+      suggestion,
+    });
   if (sf.parseDiagnostics.length)
     blockers.push(
       ...sf.parseDiagnostics.map((d) => ({
@@ -152,11 +155,20 @@ for (const file of files) {
       });
     }
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-      if (ts.isIdentifier(node.tagName) && ["For", "Show", "Switch", "Match", "Index"].includes(node.tagName.text)) {
-        addBlocker(node, "Solid control-flow JSX", node.tagName.text,
-          node.tagName.text === "Show" ? "Review conditional rendering, fallback and render-prop semantics before using a React ternary." :
-          node.tagName.text === "For" ? "Review array mapping, stable keys and reactive source semantics before converting to .map()." :
-          "Review branching, ownership and reactive semantics before migrating to React JSX.");
+      if (
+        ts.isIdentifier(node.tagName) &&
+        ["For", "Show", "Switch", "Match", "Index"].includes(node.tagName.text)
+      ) {
+        addBlocker(
+          node,
+          "Solid control-flow JSX",
+          node.tagName.text,
+          node.tagName.text === "Show"
+            ? "Review conditional rendering, fallback and render-prop semantics before using a React ternary."
+            : node.tagName.text === "For"
+              ? "Review array mapping, stable keys and reactive source semantics before converting to .map()."
+              : "Review branching, ownership and reactive semantics before migrating to React JSX.",
+        );
       }
     }
     if (
@@ -165,14 +177,18 @@ for (const file of files) {
       solidNames.has(node.expression.text)
     ) {
       const primitive = node.expression.text;
-      const suggestion = ({
-        createSignal: "Candidate for useState only inside a React component or hook; update accessor reads and functional setters.",
-        createEffect: "Review reactive dependencies and cleanup before converting to useEffect; never invoke hooks in init(ctx).",
-        createMemo: "Review dependency tracking and memoized value reads before converting to useMemo.",
-        onCleanup: "Attach cleanup to the owning useEffect or ctx.onDispose, depending on lifecycle ownership.",
-        onMount: "Use a mount-only useEffect inside React, or ctx lifecycle APIs outside React.",
-        createStore: "Preserve per-instance ctx.store; bridge React via useSyncExternalStore.",
-      })[primitive] || "Requires semantic migration with instance-owned ctx lifecycle preserved.";
+      const suggestion =
+        {
+          createSignal:
+            "Candidate for useState only inside a React component or hook; update accessor reads and functional setters.",
+          createEffect:
+            "Review reactive dependencies and cleanup before converting to useEffect; never invoke hooks in init(ctx).",
+          createMemo: "Review dependency tracking and memoized value reads before converting to useMemo.",
+          onCleanup:
+            "Attach cleanup to the owning useEffect or ctx.onDispose, depending on lifecycle ownership.",
+          onMount: "Use a mount-only useEffect inside React, or ctx lifecycle APIs outside React.",
+          createStore: "Preserve per-instance ctx.store; bridge React via useSyncExternalStore.",
+        }[primitive] || "Requires semantic migration with instance-owned ctx lifecycle preserved.";
       addBlocker(node, "Solid primitive requires lifecycle review", primitive, suggestion);
     }
     ts.forEachChild(node, visit);
@@ -183,13 +199,34 @@ for (const file of files) {
   for (const edit of edits.sort((a, b) => b.start - a.start))
     updated = updated.slice(0, edit.start) + edit.text + updated.slice(edit.end);
   const changed = updated !== original;
-  const postParse = changed ? ts.createSourceFile(file, updated, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.JSX) : sf;
+  const postParse = changed
+    ? ts.createSourceFile(
+        file,
+        updated,
+        ts.ScriptTarget.Latest,
+        true,
+        file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.JSX,
+      )
+    : sf;
   const outputValid = postParse.parseDiagnostics.length === 0;
-  if (!outputValid && canWrite) addBlocker(sf, "Generated JSX failed parsing", "parse", "Changes skipped; review overlapping or invalid AST edits.");
+  if (!outputValid && canWrite)
+    addBlocker(
+      sf,
+      "Generated JSX failed parsing",
+      "parse",
+      "Changes skipped; review overlapping or invalid AST edits.",
+    );
   const written = write && changed && canWrite && outputValid;
   if (written) writeFileSync(file, updated);
   if (edits.length || blockers.length)
-    reports.push({ file: relative(process.cwd(), file), changed, written, skipped: changed && (!canWrite || !outputValid), replacements: edits.length, blockers });
+    reports.push({
+      file: relative(process.cwd(), file),
+      changed,
+      written,
+      skipped: changed && (!canWrite || !outputValid),
+      replacements: edits.length,
+      blockers,
+    });
 }
 const changedFiles = reports.filter((item) => item.changed).length;
 const writtenFiles = reports.filter((item) => item.written).length;
@@ -198,7 +235,16 @@ const blockerCount = reports.reduce((sum, item) => sum + item.blockers.length, 0
 const total = reports.reduce((sum, item) => sum + item.replacements, 0);
 console.log(
   JSON.stringify(
-    { mode: write ? "write" : "dry-run", files: files.length, changedFiles, writtenFiles, skippedFiles, blockerCount, replacements: total, reports },
+    {
+      mode: write ? "write" : "dry-run",
+      files: files.length,
+      changedFiles,
+      writtenFiles,
+      skippedFiles,
+      blockerCount,
+      replacements: total,
+      reports,
+    },
     null,
     2,
   ),

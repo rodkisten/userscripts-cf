@@ -10,4 +10,6 @@ export async function init(ctx: ScriptContext) {
   const nested = async () => fetch("/api/more");
   return { response, nested, native };
 }
-export function Preview() { return <button className="rounded">React JSX</button>; }
+export function Preview() {
+  return <button className="rounded">React JSX</button>;
+}
