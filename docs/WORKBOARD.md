@@ -179,3 +179,9 @@
 
 - Commit [`d76096ca`](https://github.com/rodkisten/userscripts-cf/commit/d76096ca4a82797d4a59cb19f8fb219071812a87): preserve dialog values across React re-renders, surface asynchronous action failures, disable concurrent submissions, and explicitly own/remove dropdown and dialog portal containers.
 - **Unverified:** CI, React typecheck, Safari/ShadowRoot behavior and full release. The menu bridge still mounts in the document body, not the script-owned ShadowRoot; this remains a P1 isolation issue. Do not mark migration complete.
+
+### React Radix portal targeting (2026-11-18)
+
+- [`0d4bae1c`](https://github.com/rodkisten/userscripts-cf/commit/0d4bae1cad2ebd6a40287316332fba24ddc18486): dropdown portal uses its trigger's ShadowRoot when present; dialog accepts an explicit portal target. Containers are removed on close.
+- [`be7a235b`](https://github.com/rodkisten/userscripts-cf/commit/be7a235beba4449b8271b770d111937007330ef9): `MenuSchema.container` accepts ShadowRoot or HTMLElement.
+- **Outstanding:** automatic script-owned `ctx` target propagation, typecheck/build, Shadow DOM focus and keyboard interaction, Safari verification. Fallback dialog target remains document.body when caller does not provide a container. No P1 item marked complete.
