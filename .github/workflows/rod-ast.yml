@@ -43,17 +43,6 @@ jobs:
           mkdir -p artifacts
           diff -u --label fixture/input.tsx tests/fixtures/rod-ast.input.tsx --label fixture/output.tsx artifacts/rod-ast.output.tsx > artifacts/rod-ast.diff || test "$?" -eq 1
           cat artifacts/rod-ast.diff
-          {
-            echo '## 🧬 Rod AST · Fixture diff'
-            echo ''
-            echo '<details open><summary>🔍 Diff completo</summary>'
-            echo ''
-            printf '%s\n' '~~~diff'
-            cat artifacts/rod-ast.diff
-            printf '%s\n' '~~~'
-            echo ''
-            echo '</details>'
-          } >> "$GITHUB_STEP_SUMMARY"
       - name: "🧪 AST unit tests"
         id: unit
         if: always()
