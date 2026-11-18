@@ -308,3 +308,10 @@ it("does not erase GM guards with missing-grant fallback", () => {
   const output = transformRodAst(input, "gm-guards.ts").code;
   expect(output).toBe(input);
 });
+
+it("does not rewrite already migrated context GM values", () => {
+  const input = 'async function init(ctx) { const value = await ctx.gm.values.get("key", null); await ctx.gm.values.set("key", value); }';
+  const result = transformRodAst(input, "gm-values.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toBe(input);
+});
