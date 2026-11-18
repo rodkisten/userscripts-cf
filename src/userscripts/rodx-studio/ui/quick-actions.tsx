@@ -36,12 +36,12 @@ export function initializeDeckQuickUI() {
           {"\n            "}
           <style textContent={extractedCSS1} />
           {"\n            "}
-          <div class={"rxq-editor"}>
+          <div className={"rxq-editor"}>
             {"\n              "}
-            <pre class={"rxq-syntax"} data-rxq={"syntax"} aria-hidden={"true"}></pre>
+            <pre className={"rxq-syntax"} data-rxq={"syntax"} aria-hidden={"true"}></pre>
             {"\n              "}
             <textarea
-              class={"rxq-input"}
+              className={"rxq-input"}
               data-rxq={"input"}
               name={"q"}
               spellcheck={"false"}
@@ -56,17 +56,17 @@ export function initializeDeckQuickUI() {
             {"\n            "}
           </div>
           {"\n            "}
-          <small class={"rxq-message"} data-rxq={"message"} role={"status"} aria-live={"polite"}></small>
+          <small className={"rxq-message"} data-rxq={"message"} role={"status"} aria-live={"polite"}></small>
           {"\n            "}
           <div
-            class={"rxq-suggestions"}
+            className={"rxq-suggestions"}
             id={"rodx-quick-suggestions"}
             data-rxq={"suggestions"}
             role={"listbox"}
             aria-label={"Sugestões da pesquisa"}
           ></div>
           {"\n            "}
-          <div class={"rxq-tools"} data-rxq={"tools"}>
+          <div className={"rxq-tools"} data-rxq={"tools"}>
             {"\n              "}
             <button type={"button"} data-rxq-action={"copy"}>
               {"Copiar query"}
