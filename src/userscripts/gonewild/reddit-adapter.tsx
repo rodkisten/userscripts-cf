@@ -1,4 +1,4 @@
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import { createStudioStore } from "./store.ts";
 import { FeedRoot, PostCard, SettingsShell, type FeedController } from "./components/Feed.tsx";
 import { normalize, KEYS } from "./domain.ts";
@@ -101,12 +101,15 @@ export function mountReddit(ctx: any, bridge: any) {
   const shellHost = document.createElement("div");
   shellHost.id = "gws-shell";
   shellHost.dataset.reactMount = "true";
+  // Keep the settings overlay above Reddit without blocking the feed while closed.
+  shellHost.style.cssText = "position:fixed;inset:0;z-index:2147483600;pointer-events:none;";
   document.body.append(shellHost);
   const shadow = shellHost.attachShadow({ mode: "open" });
   const sheet = document.createElement("style");
   sheet.textContent = css;
   shadow.append(sheet);
   const shellNode = document.createElement("div");
+  shellNode.style.pointerEvents = "none";
   shadow.append(shellNode);
   const shellRoot = createRoot(shellNode);
   const renderShell = () => shellRoot.render(
