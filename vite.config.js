@@ -33,7 +33,8 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
-  plugins: [transformSourceTsx(), runtimeHelpers(), inlineCSSModules(), inlineSVG()],
+  // Runtime helper rewrites must see original TSX before Oxc strips its syntax.
+  plugins: [runtimeHelpers(), transformSourceTsx(), inlineCSSModules(), inlineSVG()],
   css: {
     transformer: "postcss",
     postcss: { plugins: stylesPipeline() },
