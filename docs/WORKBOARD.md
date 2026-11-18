@@ -503,3 +503,6 @@
 
 - [x] Rod AST safety: do not rewrite timers that are explicitly cancelled via `clearInterval`; do not rewrite React `useContext` by name; preserve `MutationObserver` until ownership can be proven. Added Vitest regression cases.
 - [ ] Replace file-wide cleanup detection with TypeScript symbol/lexical-scope analysis and add safe observer conversion with ownership proof.
+
+- [x] Rod AST: replace whole-file cleanup regex with AST traversal scoped to each explicit context-owner function, including nested disposal callbacks; Vitest regression coverage for independent owners.
+- [ ] Still required: symbol identity and pairing of individual timer/listener instances; current owner-level scan deliberately avoids partial cleanup rewrites.
