@@ -238,7 +238,7 @@ export function transformRodAst(code, id, options = {}) {
           replacement = ctx + ".interval";
         if (options.gm !== false && !hasGMGuard(owner) && /^GM_[A-Za-z]+$/.test(callee.text)) {
           const method = callee.text.slice(3);
-          if (GM_LEGACY_METHODS.has(method)) replacement = ctx + ".gm.legacy." + method;
+          if (GM_LEGACY_METHODS.has(method)) replacement = method === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.legacy." + method;
         }
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
@@ -270,9 +270,9 @@ export function transformRodAst(code, id, options = {}) {
         !shadowed.has("GM") &&
         GM_LEGACY_METHODS.has(callee.name.text)
       ) {
-        replacement = ctx + ".gm.modern." + callee.name.text;
+        replacement = callee.name.text === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.modern." + callee.name.text;
       }
-      if (replacement && !optional) {
+      // GM.addStyle creates a page-level stylesheet. The UI helper owns the\n      // ShadowRoot and disposal instead; only migrate direct unguarded calls.\n      if (replacement && !optional) {
         const original = code.slice(callee.getStart(source), callee.end);
         edits.push({ start: callee.getStart(source), end: callee.end, before: original, after: replacement });
         if (extraArg)
