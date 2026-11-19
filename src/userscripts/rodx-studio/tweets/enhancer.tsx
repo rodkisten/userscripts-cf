@@ -358,37 +358,31 @@ export function initializeDeckResultEnhancer(): void {
         tray.replaceChildren();
         tray.dataset.signature = signature;
         for (const { tag, href } of tags) {
-          const item = (
-            <span className={CSS_CLASSES.hashtagItem} data-tag={tag}>
-              <a href={href || "/search?q=" + encodeURIComponent(tag)}>{tag}</a>
-              <button
-                type="button"
-                className={CSS_CLASSES.tagAdd}
-                title={`Adicionar ${tag} à pesquisa nativa`}
-                aria-label={`Adicionar ${tag} à pesquisa nativa`}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  appendToNativeSearch(tag);
-                }}
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className={CSS_CLASSES.tagExclude}
-                title={`Excluir ${tag} da pesquisa`}
-                aria-label={`Excluir ${tag} da pesquisa`}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  appendToNativeSearch(tag, "exclude");
-                }}
-              >
-                −
-              </button>
-            </span>
-          ) as HTMLSpanElement;
+          const item = document.createElement("span");
+          item.className = CSS_CLASSES.hashtagItem;
+          item.dataset.tag = tag;
+          const link = document.createElement("a");
+          link.href = href || "/search?q=" + encodeURIComponent(tag);
+          link.textContent = tag;
+          item.append(link);
+          for (const [mode, symbol, className, title] of [
+            ["include", "+", CSS_CLASSES.tagAdd, `Adicionar ${tag} à pesquisa nativa`],
+            ["exclude", "−", CSS_CLASSES.tagExclude, `Excluir ${tag} da pesquisa`],
+          ] as const) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = className;
+            button.title = title;
+            button.setAttribute("aria-label", title);
+            button.textContent = symbol;
+            button.addEventListener("click", (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              if (mode === "exclude") appendToNativeSearch(tag, "exclude");
+              else appendToNativeSearch(tag);
+            });
+            item.append(button);
+          }
 
           tray.append(item);
         }
