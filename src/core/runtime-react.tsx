@@ -9,11 +9,11 @@ import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
-import { createPortalRegistry } from "./portal-registry.js";
+import { createPortalRegistry, type PortalRegistry } from "./portal-registry.js";
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
+function PortalRegistry({ registry }: { registry: PortalRegistry<ReactNode, ReactScriptContext> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
   return (
     <>
