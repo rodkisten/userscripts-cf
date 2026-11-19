@@ -464,23 +464,25 @@ it("Vite compiles inline ShadowRoot CSS without injecting shared design-system s
   expect(result?.code).not.toContain("font-face");
 });
 
-
 describe("GM guard locality", () => {
   it("migrates an unguarded GM call beside a guarded one", () => {
-    const source = 'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("guarded"); GM_setValue("plain", 1); }';
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("guarded"); GM_setValue("plain", 1); }';
     const result = transformRodAst(source, "gm-local.ts");
     expect(result.code).toContain('GM_getValue("guarded")');
     expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 1)');
     expect(transformRodAst(result.code, "gm-local.ts").changed).toBe(false);
   });
   it("preserves guarded modern GM while migrating sibling calls", () => {
-    const source = 'function init(ctx) { if (typeof GM !== "undefined") { GM.getValue("guarded"); } GM.setValue("plain", 2); }';
+    const source =
+      'function init(ctx) { if (typeof GM !== "undefined") { GM.getValue("guarded"); } GM.setValue("plain", 2); }';
     const result = transformRodAst(source, "gm-modern.ts");
     expect(result.code).toContain('GM.getValue("guarded")');
     expect(result.code).toContain('ctx.gm.modern.setValue("plain", 2)');
   });
   it("preserves GM calls behind ternary availability guards", () => {
-    const source = 'function init(ctx) { return typeof GM_getValue === "function" ? GM_getValue("key") : null; }';
+    const source =
+      'function init(ctx) { return typeof GM_getValue === "function" ? GM_getValue("key") : null; }';
     expect(transformRodAst(source, "gm-ternary.ts").code).toBe(source);
   });
 });

@@ -65,7 +65,6 @@ Safety refinement: automatic style-triple migration requires a `const` declarati
 
 With `ROD_AST=1`, the Vite plugin processes static string arguments to `ctx.ui.style(css)` through the existing `stylesPipeline({scope:"shadow"})` PostCSS plugins and Lightning CSS targeting Safari 15. This includes migrated GM style calls and owned style triples. The result remains an inline string; dynamic CSS remains untouched. CSS Modules class hashing is deliberately not applied, because class consumers must be rewritten together. Shared tokens/core styles are injected by the pipeline; measure duplication and size before enabling production by default.
 
-
 ### Scoped GM availability guards
 
 GM availability checks are now evaluated at the individual call site. Calls inside a `typeof GM` or `typeof GM_getValue` guarded branch remain untouched, while independent unguarded calls in the same function can migrate to `ctx.gm.modern.*` or `ctx.gm.legacy.*`. Conditional-expression guards are preserved. Vitest regressions cover locality and idempotence.

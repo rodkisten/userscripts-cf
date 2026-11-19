@@ -179,7 +179,11 @@ export function transformRodAst(code, id, options = {}) {
     let current = node.parent;
     while (current && !ts.isSourceFile(current)) {
       if (ts.isFunctionLike(current)) break;
-      if (ts.isIfStatement(current) && current.thenStatement.pos <= node.pos && node.end <= current.thenStatement.end) {
+      if (
+        ts.isIfStatement(current) &&
+        current.thenStatement.pos <= node.pos &&
+        node.end <= current.thenStatement.end
+      ) {
         const condition = code.slice(current.expression.getStart(source), current.expression.end);
         if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(condition)) return true;
       }
