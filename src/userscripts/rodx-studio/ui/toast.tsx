@@ -10,6 +10,11 @@ let currentToast: ToastState = { message: "", kind: "info" };
 export let rodxToastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export function initializeDeckRodxToastTimer() {
+  disposeRodxToast();
+}
+
+/** Release pending timeout and portal before the runtime context is torn down. */
+export function disposeRodxToast() {
   clearTimeout(rodxToastTimer);
   rodxToastTimer = undefined;
   disposeToast();
