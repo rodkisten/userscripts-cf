@@ -134,7 +134,7 @@ function renderExamples() {
     button.textContent = "Abrir instância real";
     button.addEventListener("click", () => {
       const schema = schemaForExample(example, presentation(), (document.getElementById("menuSize") as HTMLSelectElement | null)?.value);
-      RodMenu.open(schema);
+      RodMenu.open(schema as MenuSchema);
       const output = document.getElementById("exampleCode");
       if (output) output.textContent = safeSource(schema);
     });
