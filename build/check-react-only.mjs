@@ -1,50 +1,92 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { parse } from "@babel/parser";
 
-const root = process.cwd();
-const sourceRoots = ["src", "playground", "studio"];
-const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
-const forbiddenImport =
-  /(?:\bfrom\s*|\bimport\s*\(|\brequire\s*\()\s*["'](?:solid-js(?:\/[^"']*)?|@solidjs\/[^"']*)["']|@jsxImportSource\s+@solidjs\//;
-const packageFile = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
-const packageScopes = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
-const violations = [];
+export const SOURCE_ROOTS = ["src", "playground", "studio"];
+const EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
+const PACKAGE_SCOPES = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
+const forbidden = (value) => typeof value === "string" && (value === "solid-js" || value.startsWith("solid-js/") || value.startsWith("@solidjs/"));
+const location = (node) => node?.loc?.start?.line ?? 1;
 
-for (const scope of packageScopes) {
-  for (const name of Object.keys(packageFile[scope] || {})) {
-    if (name === "solid-js" || name.startsWith("@solidjs/")) {
-      violations.push(`package.json: forbidden dependency ${name}`);
-    }
+export function inspectSolidReferences(source, filename = "source.tsx") {
+  const violations = [];
+  let ast;
+  try {
+    ast = parse(source, {
+      sourceType: "unambiguous",
+      sourceFilename: filename,
+      plugins: ["typescript", "jsx", "decorators-legacy"],
+      errorRecovery: false,
+    });
+  } catch (error) {
+    // Compilation/typecheck owns syntax errors; the migration guard must not
+    // reject unrelated legacy JavaScript that Babel cannot parse.
+    return [];
   }
+  const report = (node, kind) => violations.push({ line: location(node), kind });
+  const visit = (node) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "ImportDeclaration" || node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") {
+      if (forbidden(node.source?.value)) report(node, "Solid module import/export");
+    }
+    if (node.type === "ImportExpression" && forbidden(node.source?.value)) report(node, "Solid dynamic import");
+    if (node.type === "CallExpression") {
+      if (node.callee?.type === "Import" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid dynamic import");
+      if (node.callee?.type === "Identifier" && node.callee.name === "require" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid require");
+    }
+    if (node.type === "TSImportType" && forbidden(node.argument?.value)) report(node, "Solid type import");
+    if (node.type === "TSExternalModuleReference" && forbidden(node.expression?.value)) report(node, "Solid TypeScript require");
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "loc" || key === "start" || key === "end" || key === "extra" || key === "comments" || key === "tokens") continue;
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === "object") visit(value);
+    }
+  };
+  visit(ast.program);
+  const pragma = /@jsxImportSource\s+(?:solid-js(?:\/\S*)?|@solidjs\/\S*)/g;
+  for (const match of source.matchAll(pragma)) {
+    violations.push({ line: source.slice(0, match.index).split("\n").length, kind: "Solid JSX runtime pragma" });
+  }
+  return violations;
 }
 
-async function scan(directory) {
-  const entries = await fs.readdir(directory, { withFileTypes: true }).catch((error) => {
-    if (error.code === "ENOENT") return [];
-    throw error;
-  });
-  for (const entry of entries) {
-    if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
-    const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      await scan(absolute);
-      continue;
+export async function auditReactOnly(root = process.cwd()) {
+  const violations = [];
+  const pkg = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+  for (const scope of PACKAGE_SCOPES) {
+    for (const name of Object.keys(pkg[scope] || {})) {
+      if (forbidden(name)) violations.push(`package.json: forbidden ${scope} dependency ${name}`);
     }
-    if (!entry.isFile() || !sourceExtensions.has(path.extname(entry.name))) continue;
-    const content = await fs.readFile(absolute, "utf8");
-    if (!forbiddenImport.test(content)) continue;
-    const relative = path.relative(root, absolute).split(path.sep).join("/");
-    const line = content.slice(0, content.search(forbiddenImport)).split("\n").length;
-    violations.push(`${relative}:${line}: forbidden Solid import or JSX runtime pragma`);
   }
+  async function scan(directory) {
+    const entries = await fs.readdir(directory, { withFileTypes: true }).catch((error) => {
+      if (error.code === "ENOENT") return [];
+      throw error;
+    });
+    for (const entry of entries) {
+      if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) { await scan(absolute); continue; }
+      if (!entry.isFile() || !EXTENSIONS.has(path.extname(entry.name))) continue;
+      const relative = path.relative(root, absolute).split(path.sep).join("/");
+      const source = await fs.readFile(absolute, "utf8");
+      for (const issue of inspectSolidReferences(source, relative)) {
+        violations.push(`${relative}:${issue.line}: ${issue.kind}`);
+      }
+    }
+  }
+  for (const directory of SOURCE_ROOTS) await scan(path.join(root, directory));
+  return violations;
 }
 
-for (const directory of sourceRoots) await scan(path.join(root, directory));
-
-if (violations.length) {
-  console.error("[react-only] Solid runtime references are forbidden:");
-  for (const violation of violations) console.error(" - " + violation);
-  process.exitCode = 1;
-} else {
-  console.log("[react-only] No Solid runtime imports or dependencies found.");
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  const violations = await auditReactOnly();
+  if (violations.length) {
+    console.error("[react-only] Forbidden Solid references:");
+    for (const violation of violations) console.error(" - " + violation);
+    process.exitCode = 1;
+  } else {
+    console.log("[react-only] No Solid module imports, exports, type imports or dependencies found.");
+  }
 }
