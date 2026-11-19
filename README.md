@@ -238,9 +238,9 @@ A apresentação do RodX fica em módulos TSX: workspace, editor, blocos, pesqui
 
 Os painéis de busca e listas usam CSS Modules. `build/css-modules.mjs` exporta o mapa de classes e o CSS minificado na mesma importação, sem gerar uma folha externa. Os aliases de classes usados por seletores, drag e handlers continuam disponíveis; flags de estado de integração permanecem globais. CSS que modifica o X e os web components de terceiros continua em folhas de integração.
 
-Importe ícones como componentes com `?component`; o SVG original continua em `src/assets/icons/` e é otimizado pelo SVGO. `build/solid-dom.mjs` converte os templates estáticos do compilador em factories DOM durante o build. Nenhum template do RodX é interpretado como HTML no navegador.
+Importe ícones como componentes com `?component`; o SVG original continua em `src/assets/icons/` e é otimizado pelo SVGO. Os ícones SVG são otimizados no build e consumidos como componentes React; nenhum template de UI é interpretado como HTML no navegador.
 
-`ui/solid-mount.tsx` mantém um root Solid por ponto de integração, atualiza o conteúdo por signal e descarta roots/listeners quando o X remove seus hosts. A lógica de persistência continua usando as mesmas identidades Tampermonkey, chaves GM/localStorage e bancos IndexedDB; não há migração destrutiva de dados.
+`ui/react-mount.tsx` integra os pontos de UI do RodX ao root React pertencente ao runtime, usando portals e descartando mounts/listeners quando o X remove seus hosts. A lógica de persistência continua usando as mesmas identidades Tampermonkey, chaves GM/localStorage e bancos IndexedDB; não há migração destrutiva de dados.
 
 A criação explícita de elementos fica limitada à ponte de scripts entre contextos, ao decoder/canvas fora da tela e à integração com os custom elements do player. Consultas e ajustes de posicionamento do DOM nativo do X permanecem na camada de integração.
 
