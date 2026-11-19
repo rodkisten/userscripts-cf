@@ -20,8 +20,11 @@ function Inspector() {
   const source = useMemo(() => {
     const value = samples[sample];
     if (!filter.trim() || !value || typeof value !== "object") return value;
-    return Object.fromEntries(Object.entries(value).filter(([key, item]) =>
-      (key + " " + String(item)).toLowerCase().includes(filter.trim().toLowerCase())));
+    return Object.fromEntries(
+      Object.entries(value).filter(([key, item]) =>
+        (key + " " + String(item)).toLowerCase().includes(filter.trim().toLowerCase()),
+      ),
+    );
   }, [sample, filter]);
   const serialized = stringify(source);
   useEffect(() => {
@@ -57,9 +60,16 @@ function Inspector() {
   }, [sample, filter, depth, serialized]);
   return (
     <div data-rod-studio="react" data-depth={depth}>
-      <div role="status" aria-live="polite">{sample} · {Object.keys(source as object).length} propriedades</div>
-      {expanded ? <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><code>{serialized}</code></pre>
-        : <p>Visualização recolhida. Use Expandir tudo para abrir.</p>}
+      <div role="status" aria-live="polite">
+        {sample} · {Object.keys(source as object).length} propriedades
+      </div>
+      {expanded ? (
+        <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+          <code>{serialized}</code>
+        </pre>
+      ) : (
+        <p>Visualização recolhida. Use Expandir tudo para abrir.</p>
+      )}
     </div>
   );
 }
@@ -69,14 +79,27 @@ function Catalog() {
   const [category, setCategory] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const categories = useMemo(() => [...new Set(studioExamples.map((item) => item.category))], []);
-  const filtered = useMemo(() => studioExamples.filter((item) =>
-    (!category || item.category === category) &&
-    (!search || [item.title, item.description, item.category].join(" ").toLowerCase().includes(search.toLowerCase()))
-  ), [search, category]);
+  const filtered = useMemo(
+    () =>
+      studioExamples.filter(
+        (item) =>
+          (!category || item.category === category) &&
+          (!search ||
+            [item.title, item.description, item.category]
+              .join(" ")
+              .toLowerCase()
+              .includes(search.toLowerCase())),
+      ),
+    [search, category],
+  );
   useEffect(() => {
     const input = document.getElementById("examplesSearch") as HTMLInputElement | null;
     const select = document.getElementById("examplesCategory") as HTMLSelectElement | null;
-    if (select) select.replaceChildren(new Option("Todas as categorias", ""), ...categories.map((name) => new Option(name, name)));
+    if (select)
+      select.replaceChildren(
+        new Option("Todas as categorias", ""),
+        ...categories.map((name) => new Option(name, name)),
+      );
     const onSearch = () => setSearch(input?.value ?? "");
     const onCategory = () => setCategory(select?.value ?? "");
     input?.addEventListener("input", onSearch);
@@ -88,15 +111,26 @@ function Catalog() {
   }, [categories]);
   useEffect(() => {
     const output = document.getElementById("exampleCode");
-    if (output) output.textContent = selected ? stringify(studioExamples.find((item) => item.id === selected)) : "Selecione um exemplo para inspecionar o schema.";
+    if (output)
+      output.textContent = selected
+        ? stringify(studioExamples.find((item) => item.id === selected))
+        : "Selecione um exemplo para inspecionar o schema.";
   }, [selected]);
-  return <div data-rod-catalog="react">
-    <p>{filtered.length} exemplos de schema. A prévia interativa dos componentes ainda está em migração.</p>
-    {filtered.map((item) => <article className="card" key={item.id}>
-      <h3>{item.title}</h3><p>{item.description}</p><span className="token">{item.category}</span>
-      <button type="button" onClick={() => setSelected(item.id)}>Inspecionar schema</button>
-    </article>)}
-  </div>;
+  return (
+    <div data-rod-catalog="react">
+      <p>{filtered.length} exemplos de schema. A prévia interativa dos componentes ainda está em migração.</p>
+      {filtered.map((item) => (
+        <article className="card" key={item.id}>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+          <span className="token">{item.category}</span>
+          <button type="button" onClick={() => setSelected(item.id)}>
+            Inspecionar schema
+          </button>
+        </article>
+      ))}
+    </div>
+  );
 }
 
 const inspectorMount = document.getElementById("tree");

@@ -21,7 +21,6 @@ Do not describe the temporary inspector as a fully restored component gallery. T
 
 `node build/design-system.mjs` compiles the IIFE entry using Vite. The overall `Validate changed` workflow also runs a broader TypeScript check that currently reports React migration errors outside the playground; a successful studio build alone does not make that workflow green.
 
-
 ## Integration note
 
 The HTML shell still contains legacy inline behavior. React owns the `#tree` and `#examplesCatalog` mounts, but legacy scripts should be removed or migrated before treating the whole page as React-owned. The schema catalog is read-only: inspecting a schema does not instantiate a live menu.
