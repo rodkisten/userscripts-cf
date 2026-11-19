@@ -210,7 +210,7 @@ function mount(
   view: (close: () => void, portal: HTMLElement) => React.ReactNode,
   name: string,
   owner: Document,
-  target: ShadowRoot | HTMLElement = owner.body,
+  target: ShadowRoot | HTMLElement,
   mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ) {
   const host = owner.createElement("div");
