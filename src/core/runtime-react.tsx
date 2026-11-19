@@ -73,6 +73,7 @@ export function createRuntime(
     reactHost = undefined;
   };
   const runtime = createCoreRuntime(definitions, bridge, host, release, {
+    mountSharedReact: (component, container) => mountSharedReact(component, container),
     installHelpers: () => {
       const installed: string[] = [];
       for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
