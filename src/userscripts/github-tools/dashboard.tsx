@@ -20,7 +20,7 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [version, setVersion] = useState(0);
-  const [token, setToken] = useState("");
+  const [repoInput, setRepoInput] = useState("");
   useEffect(() => {
     const navigate = () => setRepo(currentRepo());
     window.addEventListener("popstate", navigate);
@@ -37,7 +37,7 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
       if (active) setSettings({ ...defaults, ...value });
     }).catch((error: unknown) => { if (active) setMessage(String(error)); });
     return () => { active = false; };
-  }, [ctx, repo, version]);
+  }, [ctx, repo]);
   useEffect(() => {
     if (!repo) return;
     let active = true;
@@ -66,14 +66,14 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
     setSettings(next);
     void ctx.storage.set("githubDashboard:" + repo, next);
   };
-  controller.toggleFile = (name, url) => {
+  useEffect(() => { controller.toggleFile = (name, url) => {
     setSettings(previous => {
       const next = { ...previous, files: previous.files.some(file => file.url === url)
         ? previous.files.filter(file => file.url !== url) : [...previous.files, { name, url }] };
       void ctx.storage.set("githubDashboard:" + repo, next);
       return next;
     });
-  };
+  }; }, [ctx, repo, controller]);
   const request = async (path: string, body?: object) => {
     setBusy(true);
     try {
@@ -98,8 +98,8 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
       <header><strong>GitHub · {repo || "Escolha um repositório"}</strong><button className={styles.button} onClick={() => setOpen(false)}>✕</button></header>
       <div className={styles.dashboardControls}>
         <button className={styles.button} disabled={busy} onClick={() => setVersion(value => value + 1)}>↻ Atualizar</button>
-        <label>Repositório <input value={token} onChange={event => setToken(event.target.value)} placeholder="owner/repo" /></label>
-        <button className={styles.button} onClick={() => { if (/^[\\w.-]+\\/[\\w.-]+$/.test(token)) { setRepo(token); setToken(""); } }}>Abrir</button>
+        <label>Repositório <input value={repoInput} onChange={event => setRepoInput(event.target.value)} placeholder="owner/repo" /></label>
+        <button className={styles.button} onClick={() => { if (/^[\w.-]+\/[\w.-]+$/.test(repoInput)) { setRepo(repoInput); setRepoInput(""); } }}>Abrir</button>
         <h3>Workflows</h3>
         {workflows.map(workflow => <div key={workflow.id} className={styles.favorite}>
           <span>{workflow.name}</span>
