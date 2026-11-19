@@ -147,7 +147,10 @@ export function mountReelBookmark(
     if (!mount) return;
     // The mounted React button reads the latest state through the shared portal.
     mount.dispose();
-    mount.dispose = ctx.ui.mountReact(<ReelBookmarkButton state={state} onActivate={() => void send()} />, mount.host);
+    mount.dispose = ctx.ui.mountReact(
+      <ReelBookmarkButton state={state} onActivate={() => void send()} />,
+      mount.host,
+    );
   };
   let anchor: HTMLElement | null = null;
   const send = async () => {
@@ -208,7 +211,10 @@ export function mountReelBookmark(
     const host = document.createElement("span");
     host.dataset.rodCollectionAction = "true";
     native.parentNode!.insertBefore(host, native.nextSibling);
-    const dispose = ctx.ui.mountReact(<ReelBookmarkButton state={state} onActivate={() => void send()} />, host);
+    const dispose = ctx.ui.mountReact(
+      <ReelBookmarkButton state={state} onActivate={() => void send()} />,
+      host,
+    );
     mount = { host, dispose };
     mount.host.dataset.rodCollectionAction = "true";
     mount.host.style.display = "inline-flex";

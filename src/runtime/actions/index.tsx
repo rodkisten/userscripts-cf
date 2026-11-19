@@ -113,7 +113,10 @@ function ActionsView({
   );
 }
 
-export function installRodActions(_menu?: unknown, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }): RodActionsHub {
+export function installRodActions(
+  _menu?: unknown,
+  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+): RodActionsHub {
   if (window.__RodActions) return window.__RodActions;
   const modules = new Map<string, RodActionsModule>();
   const registrations = new Map<string, symbol>();

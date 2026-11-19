@@ -25,6 +25,8 @@
 
 ## P0 · Restore reliable builds and releases (blocking)
 
+- [ ] **2026-11-19 audit:** `package.json` now routes `npm test` to `test:unit` via `build/run-runtime-utility-tests.mjs` (2026-11-19); verify selector coverage and actual Vitest results before marking compliant. Correction: React entrypoint is `src/core/runtime-react.tsx` (not `.ts`). `build/run-runtime-utility-tests.mjs` is absent. `mountReact` now uses a shared instance-owned root and portal registry (unverified build); `src/runtime/modular/features/toaster.tsx` still creates a module-global React root and must be migrated. Audit AST compatibility and test lifecycle before marking complete.
+
 - [ ] Diagnose current failing `Validate changed`, `Release · patch`, and `Playground Pages` workflows on `main`; record exact failed jobs and root causes.
 - [ ] Fix React/legacy mixed-build typecheck, lockfile and Vite/JSX configuration without bypassing required checks.
 - [ ] Ensure release artifact and installation URLs correspond to the current successful `main` commit, not an older bundle.
@@ -33,17 +35,16 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
-- [ ] **2026-11-19 validation blocker:** attempted to clone `rodkisten/userscripts-cf` for `npm ci && npm run typecheck`, but this execution environment cannot resolve `github.com`; no local checkout available. Do not claim build/typecheck/tests passed. Added `runtimeDisposed` guard in `runtime-react.tsx` to reject mounts after disposal. Next validation should run on GitHub Actions or a connected checkout before deploy.
+- [ ] **2026-11-19 validation run [44495288058](https://github.com/rodkisten/userscripts-cf/actions/runs/44495288058):** React typecheck PASSED; legacy TypeScript FAILED with 76 diagnostics (mostly RodX JSX DOM casts and event handlers, plus GitHub dashboard's Solid imports); production build FAILED on removed `../../runtime/solid-ui/mount-point.tsx` in `src/userscripts/github-tools/dashboard.tsx`. Do not restore Solid; finish dashboard React migration. Fixed invalid `<style textContent>` in RodX list typeahead (`<style>{extractedCSS1}</style>`). Next: migrate dashboard, correct RodX JSX types, rerun validation. No deploy.
 
+
+- [ ] **2026-11-19 validation blocker:** attempted to clone `rodkisten/userscripts-cf` for `npm ci && npm run typecheck`, but this execution environment cannot resolve `github.com`; no local checkout available. Do not claim build/typecheck/tests passed. Added `runtimeDisposed` guard in `runtime-react.tsx` to reject mounts after disposal. Next validation should run on GitHub Actions or a connected checkout before deploy.
 
 - [ ] **2026-11-19 menu/Actions integration (unverified):** Radix menu view and per-script/global menu facade now accept the bundle shared portal adapter. Instagram Rod Actions passes `ctx.ui.mountReact` adapter. Must verify TypeScript, formatting, runtime/AST tests, build, portal lifecycle and independent installs. Remaining direct `createRoot` userscripts must migrate; do not mark single-root done yet.
 
-
 - [ ] **2026-11-19 Instagram/Reel and Actions:** Reel bookmark now delegates to `ctx.ui.mountReact` instead of calling `createRoot`; validate rerender/cleanup and types. Rod Actions now accepts optional `mountSharedReact`, but the consuming installation path must pass it; standalone fallback still creates a root. Menu-view and Actions now expose optional shared portal adapters; remaining work is verifying all callers pass them, then TypeScript/build and actual root counts.
 
-
 - [ ] **2026-11-19 root audit:** independent `createRoot()` sites remain in `src/runtime/actions/index.tsx`, `src/runtime/modular/features/menu-view.tsx`, `src/userscripts/instagram-saved/reel-bookmark.tsx`, GitHub Tools, Gonewild, RodX Studio, Page REPL and Studio. Migrate active bundle consumers to the shared portal adapter without breaking standalone individual installs. `rod.toaster.destroy()` now runs during core runtime disposal. No CI verification yet.
-
 
 - [ ] **2026-11-19 Sonner bridge, unverified:** `createToasterFeature` accepts the shared portal mount from `createCoreRuntime` options; React runtime supplies the bundle-owned adapter. No standalone Sonner root is expected on that path. Fallback for independent callers still creates a root. Verify TypeScript, build, runtime lifecycle and actual standalone root counts before claiming completion.
 
