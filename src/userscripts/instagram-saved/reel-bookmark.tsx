@@ -1,5 +1,5 @@
 import type { ScriptContext } from "../../core/runtime";
-import { createRoot, type Root } from "react-dom/client";
+import type { ReactElement } from "react";
 import { css } from "./Settings.module.css";
 import { ReelBookmarkButton, type BookmarkState } from "./ReelBookmarkButton";
 
@@ -128,7 +128,7 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
 }
 
 export function mountReelBookmark(
-  ctx: Pick<ScriptContext, "signal" | "pageStyle" | "listen" | "onDispose" | "observe" | "interval">,
+  ctx: Pick<ScriptContext, "signal" | "pageStyle" | "listen" | "onDispose" | "observe" | "interval" | "ui">,
   getCollectionIds: () => Promise<string[]>,
   notify: (message: string) => void,
 ) {
@@ -142,9 +142,13 @@ export function mountReelBookmark(
   let selectedSave: HTMLElement | null = null;
   let activeReel = location.pathname;
   let operation = 0;
-  let mount: { host: HTMLElement; root: Root } | undefined;
-  const render = () =>
-    mount?.root.render(<ReelBookmarkButton state={state} onActivate={() => void send()} />);
+  let mount: { host: HTMLElement; dispose: () => void } | undefined;
+  const render = () => {
+    if (!mount) return;
+    // The mounted React button reads the latest state through the shared portal.
+    mount.dispose();
+    mount.dispose = ctx.ui.mountReact(<ReelBookmarkButton state={state} onActivate={() => void send()} />, mount.host);
+  };
   let anchor: HTMLElement | null = null;
   const send = async () => {
     if (state === "loading" || state === "saved" || signal.aborted) return;
@@ -166,7 +170,7 @@ export function mountReelBookmark(
     }
   };
   function clear() {
-    mount?.root.unmount();
+    mount?.dispose();
     mount?.host.remove();
     mount = undefined;
     anchor = null;
@@ -204,9 +208,8 @@ export function mountReelBookmark(
     const host = document.createElement("span");
     host.dataset.rodCollectionAction = "true";
     native.parentNode!.insertBefore(host, native.nextSibling);
-    const root = createRoot(host);
-    mount = { host, root };
-    render();
+    const dispose = ctx.ui.mountReact(<ReelBookmarkButton state={state} onActivate={() => void send()} />, host);
+    mount = { host, dispose };
     mount.host.dataset.rodCollectionAction = "true";
     mount.host.style.display = "inline-flex";
   }
