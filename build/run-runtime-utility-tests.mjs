@@ -54,10 +54,10 @@ for (const [index, batch] of batches.entries()) {
   console.log(
     `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
   );
+  const workers = batch.includes(compiledRuntimeSuite) ? 1 : 2;
   console.log(
     `Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`,
   );
-  const workers = batch.includes(compiledRuntimeSuite) ? 1 : 2;
   const result = spawnSync(
     "npx",
     ["vitest", "run", `--maxWorkers=${workers}`, "--no-file-parallelism", ...batch],
