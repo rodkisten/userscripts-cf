@@ -1,3 +1,8 @@
+
+
+### CI workflow integrity
+
+GitHub Actions workflow YAML must be validated after edits. In particular, each step must have a valid action or `run`, and environment variable keys must be unique. The selective validation workflow is responsible for affected userscript builds; the React foundation and Rod AST checks remain independent.
 # Rod’s Userscripts System
 
 ## 🌻 Standalone: uma instalação para todos os userscripts
@@ -18,7 +23,7 @@ Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separa
 
 A migração do runtime e das interfaces para React é a direção ativa do projeto. O objetivo arquitetural é manter **uma única React root por instalação standalone**, reutilizando portals para interfaces e destinos adicionais; roots independentes só são aceitáveis quando os userscripts forem instalados separadamente ou agrupados explicitamente por tags. Novas implementações de UI devem usar React com JSX/TSX e componentes Radix UI ou shadcn/ui, sem criar uma camada paralela de componentes proprietários.
 
-A migração é incremental e deve preservar o comportamento dos userscripts existentes. Não remova testes, reduza cobertura ou troque testes reais por snapshots simplificados para fazer a validação passar. Alterações de runtime devem manter os contratos do Rod AST, fixtures e testes atualizados conforme as regras acima.
+A migração é incremental e deve preservar o comportamento dos userscripts existentes. A política de testes vigente permite somente testes de runtime e utilitários; não criar ou migrar testes de componentes, UI ou userscripts. Typecheck e builds continuam obrigatórios. Alterações no contrato do runtime devem manter Rod AST, fixtures e testes de runtime/utilitários sincronizados.
 
 **Regra permanente de documentação:** toda alteração funcional ou arquitetural deve atualizar, no mesmo conjunto de mudanças, o README quando afetar arquitetura, comandos, setup, capacidades, estado ou decisões duráveis do projeto, e o [Workboard](docs/WORKBOARD.md) para registrar progresso, pendências, responsáveis e evidências de validação. Se uma mudança não afetar o README, registre essa avaliação no Workboard. Nunca deixe instruções antigas contradizerem a arquitetura atual.
 
@@ -243,9 +248,9 @@ A apresentação do RodX fica em módulos TSX: workspace, editor, blocos, pesqui
 
 Os painéis de busca e listas usam CSS Modules. `build/css-modules.mjs` exporta o mapa de classes e o CSS minificado na mesma importação, sem gerar uma folha externa. Os aliases de classes usados por seletores, drag e handlers continuam disponíveis; flags de estado de integração permanecem globais. CSS que modifica o X e os web components de terceiros continua em folhas de integração.
 
-Importe ícones como componentes com `?component`; o SVG original continua em `src/assets/icons/` e é otimizado pelo SVGO. `build/solid-dom.mjs` converte os templates estáticos do compilador em factories DOM durante o build. Nenhum template do RodX é interpretado como HTML no navegador.
+Importe ícones como componentes com `?component`; o SVG original continua em `src/assets/icons/` e é otimizado pelo SVGO. Os ícones SVG são otimizados no build e consumidos como componentes React; nenhum template de UI é interpretado como HTML no navegador.
 
-`ui/solid-mount.tsx` mantém um root Solid por ponto de integração, atualiza o conteúdo por signal e descarta roots/listeners quando o X remove seus hosts. A lógica de persistência continua usando as mesmas identidades Tampermonkey, chaves GM/localStorage e bancos IndexedDB; não há migração destrutiva de dados.
+`ui/react-mount.tsx` integra os pontos de UI do RodX ao root React pertencente ao runtime, usando portals e descartando mounts/listeners quando o X remove seus hosts. A lógica de persistência continua usando as mesmas identidades Tampermonkey, chaves GM/localStorage e bancos IndexedDB; não há migração destrutiva de dados.
 
 A criação explícita de elementos fica limitada à ponte de scripts entre contextos, ao decoder/canvas fora da tela e à integração com os custom elements do player. Consultas e ajustes de posicionamento do DOM nativo do X permanecem na camada de integração.
 

@@ -16,20 +16,21 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 
 ## Migration order
 
-- [ ] Add React 19, React DOM, JSX runtime, typings, compiler configuration, and lockfile changes as one tested unit.
+- [x] Add React 19, React DOM, JSX runtime, typings, compiler configuration, and lockfile changes. Validation of the current integrated branch remains pending.
 - [ ] Implement `runtime-react`, React ShadowRoot mount, `ctx.ui.mountReact`, context lifecycle tests, and React-only bundle smoke tests.
 - [ ] Migrate shared UI primitives: Button, Badge, Dialog, Dropdown, Toast, RodMenu, Dock, clipboard, object inspector, form controls.
 - [ ] Migrate Instagram bookmark UI and settings.
 - [ ] Migrate Reddit/GoneWild (including audio, player, search, and Soundgasm) without changing page-world behavior.
 - [ ] Migrate RodX Studio and Twitter/X UI, retaining interceptors and mobile gesture behavior.
 - [ ] Migrate DOM inspector, page REPL, GitHub tools, mobile editor, and remaining user interfaces.
-- [ ] Migrate Playground and all UI tests to React Testing Library and browser-level smoke tests.
-- [ ] Remove Solid imports, `solid-js`, `@solidjs/web`, compiler/Vite plugin, `runtime-solid`, Solid workflows, obsolete docs, and `solid-ui` naming.
+- [x] Retire the legacy Solid form-controls playground; `/playground/form-controls.html` redirects to the React Rod UI Studio. `playground/instagram-bookmark-app.tsx` is also React 19. No Solid playground entrypoints remain.
+- [x] Remove dead Solid-only adapters, `build/solid-dom.mjs`, obsolete Solid context test, unused `rod-libraries.js` facade, and the feature-branch-only form-controls sync workflow. No Solid runtime dependency remains in `package.json`. Remaining audit: classify framework-neutral utilities and historical naming under `src/runtime/solid-ui/`.
 - [ ] Enforce CI rule preventing new Solid imports and verify standalone/unified builds and Safari behavior.
 
 ## Verification gates
 
 Every migrated vertical must pass TypeScript, targeted tests, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes. The React root ownership gate is also mandatory: `npm run check:react-roots` must pass, and each built execution-world bundle must report exactly one root owned by `src/core/runtime-react.tsx`; see [the single-root ADR](react-single-root-portals.md).
+Every migrated vertical must pass TypeScript, applicable runtime/utility tests only, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes.
 
 ## Runtime context lifecycle (target)
 

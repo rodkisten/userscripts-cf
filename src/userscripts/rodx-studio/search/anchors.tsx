@@ -1,4 +1,4 @@
-import { mountView } from "../ui/solid-mount.tsx";
+import { mountView } from "../ui/react-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";

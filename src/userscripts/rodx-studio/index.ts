@@ -3,7 +3,7 @@ import { ScriptContext } from "../../core/runtime";
 import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
-import { configureSharedMount, disposeAllViews } from "./ui/solid-mount.tsx";
+import { configureSharedMount, disposeAllViews } from "./ui/react-mount.tsx";
 import { disposeRodxToast } from "./ui/toast.tsx";
 
 // ============================================================================
