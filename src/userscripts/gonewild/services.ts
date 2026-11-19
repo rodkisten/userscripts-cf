@@ -76,7 +76,7 @@ export function readNativeMedia(doc: Document = document) {
   for (const node of doc.querySelectorAll<HTMLMediaElement | HTMLSourceElement>(
     "audio[src], audio source[src]",
   )) {
-    if (node.closest("[data-solid-mount], #gws-sg-root")) continue;
+    if (node.closest("[data-react-mount], #gws-sg-root")) continue;
     const raw = (node as HTMLMediaElement).currentSrc || node.getAttribute("src") || "";
     const url = safeURL(raw);
     if (url && HOSTS.test(url.hostname) && AUDIO_EXT.test(url.href)) return url.href;
