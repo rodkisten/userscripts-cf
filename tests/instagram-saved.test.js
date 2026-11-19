@@ -176,3 +176,31 @@ test("processes the entire page before checkpointing a session limit", async () 
   assert.deepEqual(sent, ["one", "two"]);
   assert.deepEqual(cursors, ["next"]);
 });
+
+test("rejects empty channel configuration instead of marking items delivered", async () => {
+  assert.equal(classify({ channels: { inserted: [] } }, []).complete, false);
+  let fetched = false;
+  await assert.rejects(syncSaved({
+    channels: [],
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => { fetched = true; return { items: [] }; },
+    sendBatch: async () => ({ results: [] }),
+  }), /canal válido/);
+  assert.equal(fetched, false);
+});
+
+test("rejects surplus Relay acknowledgement entries", async () => {
+  await assert.rejects(syncSaved({
+    channels: ["-1"],
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async () => ({ results: [
+      { index: 0, channels: { inserted: ["-1"] } },
+      { index: 999, channels: { inserted: ["-1"] } },
+    ] }),
+  }), /confirmação por item/);
+});
