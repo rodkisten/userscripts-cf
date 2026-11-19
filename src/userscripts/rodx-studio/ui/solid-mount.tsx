@@ -1,18 +1,49 @@
 import type { ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { createPortal } from "react-dom";
 import { flushSync } from "react-dom";
 
 type MountTarget = HTMLElement | ShadowRoot | SVGElement;
-type Mount = { root: Root; dispose: () => void };
-const mounts = new WeakMap<MountTarget, Mount>();
-const active = new Map<MountTarget, { mount: Mount; connected: boolean }>();
+type Mount = { node: ReactNode; connected: boolean };
+const mounts = new Map<MountTarget, Mount>();
+let root: Root | undefined;
+let host: HTMLElement | undefined;
 let observer: MutationObserver | undefined;
 
+function ensureRoot() {
+  if (root) return root;
+  host = document.createElement("div");
+  host.dataset.rodxReactHost = "shared";
+  host.style.display = "none";
+  (document.body || document.documentElement).append(host);
+  root = createRoot(host);
+  return root;
+}
+
+function render() {
+  if (!root && mounts.size === 0) return;
+  const current = ensureRoot();
+  flushSync(() =>
+    current.render(
+      <>
+        {[...mounts].map(([target, mount]) =>
+          createPortal(<>{mount.node}</>, target),
+        )}
+      </>,
+    ),
+  );
+}
+
 function releaseDetachedViews() {
-  for (const [target, record] of active) {
+  let changed = false;
+  for (const [target, record] of mounts) {
     if (target.isConnected) record.connected = true;
-    else if (record.connected) record.mount.dispose();
+    else if (record.connected) {
+      mounts.delete(target);
+      changed = true;
+    }
   }
+  if (changed) render();
 }
 
 function observeMounts() {
@@ -21,30 +52,28 @@ function observeMounts() {
   observer.observe(document, { childList: true, subtree: true });
 }
 
-/** React root owned by each integration target. */
+/** One React root per RodX execution world, with a portal for each integration target. */
 export function mountView(target: MountTarget, read: () => ReactNode) {
   observeMounts();
-  for (const [child, record] of active)
-    if (child !== target && target.contains(child)) record.mount.dispose();
-  let mount = mounts.get(target);
-  if (!mount) {
-    const root = createRoot(target);
-    mount = {
-      root,
-      dispose: () => {
-        root.unmount();
-        mounts.delete(target);
-        active.delete(target);
-      },
-    };
-    mounts.set(target, mount);
-    active.set(target, { mount, connected: target.isConnected });
-  }
-  // Legacy integration code reads the mounted DOM immediately.
-  flushSync(() => mount.root.render(<>{read()}</>));
+  for (const child of mounts.keys())
+    if (child !== target && target.contains(child)) mounts.delete(child);
+  mounts.set(target, { node: read(), connected: target.isConnected });
+  render();
   releaseDetachedViews();
 }
 
 export function disposeView(target: MountTarget) {
-  mounts.get(target)?.dispose();
+  if (!mounts.delete(target)) return;
+  render();
+}
+
+/** Release the entire shared root on userscript teardown or explicit restart. */
+export function disposeAllViews() {
+  observer?.disconnect();
+  observer = undefined;
+  mounts.clear();
+  root?.unmount();
+  root = undefined;
+  host?.remove();
+  host = undefined;
 }
