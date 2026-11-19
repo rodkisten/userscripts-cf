@@ -32,7 +32,7 @@ export type DeliveryResult = {
 };
 export type SyncOptions = {
   fetchPage: (cursor: string) => Promise<Page>;
-  sendBatch: (items: MediaPayload[]) => Promise<{ results: DeliveryResult[] }>;
+  sendBatch: (items: MediaPayload[], channels?: string[]) => Promise<{ results: DeliveryResult[] }>;
   load: () => Promise<Record<string, number>>;
   save: (done: Record<string, number>) => Promise<unknown>;
   channels: string[];
@@ -46,6 +46,8 @@ export type SyncOptions = {
     jitterMs?: number;
   };
   onCursor?: (cursor: string) => Promise<unknown>;
+  loadChannels?: () => Promise<Record<string, Record<string, number>>>;
+  saveChannels?: (ledger: Record<string, Record<string, number>>) => Promise<unknown>;
 };
 export const SAVED_PATH = "/api/v1/feed/saved/posts/";
 export const COLLECTION_PATH = (id: string) => `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`;
@@ -117,11 +119,19 @@ export async function syncSaved({
   signal,
   settings = {},
   onCursor,
+  loadChannels,
+  saveChannels,
 }: SyncOptions) {
   if (!channels.length || channels.some((channel) => !channel.trim())) {
     throw Error("Configure pelo menos um canal válido para sincronizar");
   }
   const done = Object.assign(Object.create(null) as Record<string, number>, await load());
+  const ledger = loadChannels && saveChannels
+    ? Object.assign(Object.create(null) as Record<string, Record<string, number>>, await loadChannels())
+    : null;
+  const confirmed = (id: string) => ledger
+    ? channels.every((channel) => Object.hasOwn(ledger[id] || {}, channel))
+    : Object.hasOwn(done, id);
   const seen = new Set<string>();
   let processed = 0;
   let cursor = settings.cursor || "",
@@ -145,16 +155,26 @@ export async function syncSaved({
           return false;
         }
         seen.add(item.mediaId);
-        return !Object.hasOwn(done, item.mediaId);
+        return !confirmed(item.mediaId);
       });
     // Never advance the collection cursor past an unprocessed item.
     // A page is the smallest safe checkpoint with this endpoint.
     for (let offset = 0; offset < items.length; offset += limit) {
       const batch = items.slice(offset, offset + limit);
-      let pending = batch;
+      const groups = new Map<string, { channels: string[]; items: MediaPayload[] }>();
+      for (const item of batch) {
+        const missing = ledger ? channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel)) : channels;
+        if (!missing.length) continue;
+        const key = JSON.stringify(missing);
+        const group = groups.get(key) || { channels: missing, items: [] };
+        group.items.push(item);
+        groups.set(key, group);
+      }
+      for (const group of groups.values()) {
+      let pending = group.items;
       for (let attempt = 0; pending.length && attempt < 4; attempt++) {
         signal?.throwIfAborted();
-        const response = await sendBatch(pending);
+        const response = await sendBatch(pending, group.channels);
         signal?.throwIfAborted();
         if (!Array.isArray(response.results) || response.results.length !== pending.length) {
           throw Error("Relay sem confirmação por item");
@@ -164,7 +184,19 @@ export async function syncSaved({
           const matches = response.results.filter((r) => r.index === i);
           if (matches.length !== 1) throw Error("Confirmação Relay ausente ou duplicada");
           const result = matches[0];
-          const status = classify(result, channels);
+          const status = classify(result, group.channels);
+          if (ledger) {
+            const id = pending[i].mediaId;
+            const row = Object.assign(Object.create(null) as Record<string, number>, ledger[id] || {});
+            const acknowledged = new Set([
+              ...(result.channels?.inserted || []),
+              ...(result.channels?.covered || []),
+              ...(result.channels?.notSent || []).filter((entry) => entry.reason === "already_sent").map((entry) => entry.channelId),
+            ]);
+            for (const channel of group.channels) if (acknowledged.has(channel)) row[channel] = Date.now();
+            ledger[id] = row;
+            if (acknowledged.size) await saveChannels!(ledger);
+          }
           if (status.complete) {
             done[pending[i].mediaId] = Date.now();
             if (status.inserted) {
@@ -184,6 +216,7 @@ export async function syncSaved({
       }
       if (pending.length) {
         throw Error("Limite de tentativas do Relay");
+      }
       }
       processed += batch.length;
       await pause(
