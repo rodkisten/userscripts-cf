@@ -17,8 +17,11 @@ import { diagnosticPrelude } from "./diagnostics.mjs";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
+import { auditReactRootOwnership } from "./react-root-audit.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const reactRootOwnership = await auditReactRootOwnership(root);
+console.log("[React root ownership]", JSON.stringify(reactRootOwnership));
 const requestedArg = process.argv.find((arg) => arg.startsWith("--targets="));
 const requestedTargets = requestedArg ? new Set(requestedArg.slice(10).split(",").filter(Boolean)) : null;
 const out = path.join(root, "dist");
