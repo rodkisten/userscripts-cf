@@ -673,7 +673,8 @@ export function ensureEmbeddedTimeline() {
     ));
     root.append(markup);
     root.addEventListener("click", (event) => {
-      const action = (event.target as Element | null)?.closest<HTMLElement>(RODX_SELECTORS.dataActions)?.dataset.action;
+      const action = (event.target as Element | null)?.closest<HTMLElement>(RODX_SELECTORS.dataActions)
+        ?.dataset.action;
       if (action === "timeline-close") {
         listPresets[routeListId()] = {
           ...listPresets[routeListId()],
