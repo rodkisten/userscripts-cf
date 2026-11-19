@@ -110,7 +110,7 @@ export type ScriptContext = Record<string, unknown> & {
     style(css: string): HTMLStyleElement;
     pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
-    mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
+    mountReact(component: import("react").ReactElement, container?: Element | ShadowRoot): () => void;
   };
   readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
   readonly observe: (
