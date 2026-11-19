@@ -139,31 +139,60 @@ createRoot(inspectorMount).render(<Inspector />);
 const catalogMount = document.getElementById("examplesCatalog");
 if (catalogMount) createRoot(catalogMount).render(<Catalog />);
 
-type ThemeState = { accent: string; radius: string; scale: string; presentation: string; menuSize: string; titleInput: string };
+type ThemeState = {
+  accent: string;
+  radius: string;
+  scale: string;
+  presentation: string;
+  menuSize: string;
+  titleInput: string;
+};
 const themeDefaults: ThemeState = {
-  accent: "#a78bfa", radius: "18", scale: "100", presentation: "bottom-sheet",
-  menuSize: "md", titleInput: "Personalizar experiência",
+  accent: "#a78bfa",
+  radius: "18",
+  scale: "100",
+  presentation: "bottom-sheet",
+  menuSize: "md",
+  titleInput: "Personalizar experiência",
 };
 const themeKeys = Object.keys(themeDefaults) as (keyof ThemeState)[];
 const getTheme = (): ThemeState => {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem("rod-ui-studio-theme") ?? "{}");
     return stored && typeof stored === "object" && !Array.isArray(stored)
-      ? Object.fromEntries(themeKeys.map((key) => [key, typeof (stored as Record<string, unknown>)[key] === "string"
-        ? (stored as Record<string, string>)[key] : themeDefaults[key]])) as ThemeState
+      ? (Object.fromEntries(
+          themeKeys.map((key) => [
+            key,
+            typeof (stored as Record<string, unknown>)[key] === "string"
+              ? (stored as Record<string, string>)[key]
+              : themeDefaults[key],
+          ]),
+        ) as ThemeState)
       : { ...themeDefaults };
-  } catch { return { ...themeDefaults }; }
+  } catch {
+    return { ...themeDefaults };
+  }
 };
 function ThemeController() {
   const [theme, setTheme] = useState<ThemeState>(getTheme);
   const [toast, setToast] = useState("");
-  const update = (key: keyof ThemeState, value: string) => setTheme((previous) => ({ ...previous, [key]: value }));
+  const update = (key: keyof ThemeState, value: string) =>
+    setTheme((previous) => ({ ...previous, [key]: value }));
   const tokens = `:root {\n  --accent: ${theme.accent};\n  --radius: ${theme.radius}px;\n  --scale: ${Number(theme.scale) / 100};\n  --bg: #101016;\n  --surface: #1b1a24;\n  --ink: #f8f7fc;\n}`;
-  const schema = { id: "rod-ui-example", title: theme.titleInput, presentation: theme.presentation,
-    size: theme.menuSize, fields: [
+  const schema = {
+    id: "rod-ui-example",
+    title: theme.titleInput,
+    presentation: theme.presentation,
+    size: theme.menuSize,
+    fields: [
       { type: "text", name: "name", label: "Nome", value: "Minha configuração" },
       { type: "switch", name: "enabled", label: "Habilitado", value: true },
-    ], actions: [{ id: "cancel", label: "Cancelar", role: "cancel" }, { id: "save", label: "Salvar", role: "submit" }] };
+    ],
+    actions: [
+      { id: "cancel", label: "Cancelar", role: "cancel" },
+      { id: "save", label: "Salvar", role: "submit" },
+    ],
+  };
   const menuCode = `ctx.menu.open(${JSON.stringify(schema, null, 2)});`;
   useEffect(() => {
     const root = document.documentElement;
@@ -182,18 +211,31 @@ function ThemeController() {
     if (tokenCode) tokenCode.textContent = tokens;
     const preview = document.getElementById("menuPreview");
     if (preview) {
-      const sizes: Record<string, string> = { sm: "300px", md: "430px", lg: "570px", xl: "690px", fullscreen: "100%" };
+      const sizes: Record<string, string> = {
+        sm: "300px",
+        md: "430px",
+        lg: "570px",
+        xl: "690px",
+        fullscreen: "100%",
+      };
       preview.style.maxWidth = sizes[theme.menuSize] ?? sizes.md;
-      preview.style.borderRadius = theme.presentation === "bottom-sheet"
-        ? "var(--radius) var(--radius) 8px 8px" : "var(--radius)";
+      preview.style.borderRadius =
+        theme.presentation === "bottom-sheet" ? "var(--radius) var(--radius) 8px 8px" : "var(--radius)";
     }
-    document.querySelectorAll<HTMLButtonElement>("#menuModes [data-mode]").forEach((button) =>
-      button.setAttribute("aria-selected", String(button.dataset.mode === theme.presentation)));
+    document
+      .querySelectorAll<HTMLButtonElement>("#menuModes [data-mode]")
+      .forEach((button) =>
+        button.setAttribute("aria-selected", String(button.dataset.mode === theme.presentation)),
+      );
     const swatches = document.getElementById("swatches");
     if (swatches) {
       swatches.replaceChildren();
-      for (const [name, color] of [["Accent", theme.accent], ["Background", "#101016"],
-        ["Surface", "#1b1a24"], ["Text", "#f8f7fc"]]) {
+      for (const [name, color] of [
+        ["Accent", theme.accent],
+        ["Background", "#101016"],
+        ["Surface", "#1b1a24"],
+        ["Text", "#f8f7fc"],
+      ]) {
         const item = document.createElement("div");
         item.className = "swatch";
         const square = document.createElement("i");
@@ -207,7 +249,11 @@ function ThemeController() {
         swatches.append(item);
       }
     }
-    try { localStorage.setItem("rod-ui-studio-theme", JSON.stringify(theme)); } catch { /* storage optional */ }
+    try {
+      localStorage.setItem("rod-ui-studio-theme", JSON.stringify(theme));
+    } catch {
+      /* storage optional */
+    }
   }, [theme, menuCode, tokens]);
   useEffect(() => {
     const cleanup: Array<() => void> = [];
@@ -217,9 +263,12 @@ function ThemeController() {
       element.addEventListener(event, handler);
       cleanup.push(() => element.removeEventListener(event, handler));
     };
-    for (const key of themeKeys) listen("#" + key, "input", (event) =>
-      update(key, (event.target as HTMLInputElement).value));
-    listen("#reset", "click", () => { setTheme({ ...themeDefaults }); setToast("Tema restaurado"); });
+    for (const key of themeKeys)
+      listen("#" + key, "input", (event) => update(key, (event.target as HTMLInputElement).value));
+    listen("#reset", "click", () => {
+      setTheme({ ...themeDefaults });
+      setToast("Tema restaurado");
+    });
     listen("#menuModes", "click", (event) => {
       const button = (event.target as Element).closest<HTMLButtonElement>("[data-mode]");
       if (button?.dataset.mode) update("presentation", button.dataset.mode);
@@ -245,7 +294,10 @@ function ThemeController() {
   }, [tokens, menuCode]);
   useEffect(() => {
     const host = document.getElementById("toast");
-    if (host) { host.textContent = toast; host.classList.toggle("hidden", !toast); }
+    if (host) {
+      host.textContent = toast;
+      host.classList.toggle("hidden", !toast);
+    }
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(""), 2200);
     return () => window.clearTimeout(timeout);
@@ -259,10 +311,12 @@ createRoot(themeMount).render(<ThemeController />);
 const modeMount = document.getElementById("menuModes");
 if (modeMount) {
   const modes = ["bottom-sheet", "modal", "drawer", "popover", "auto"];
-  modeMount.replaceChildren(...modes.map((mode) => {
-    const button = document.createElement("button");
-    button.dataset.mode = mode;
-    button.textContent = mode;
-    return button;
-  }));
+  modeMount.replaceChildren(
+    ...modes.map((mode) => {
+      const button = document.createElement("button");
+      button.dataset.mode = mode;
+      button.textContent = mode;
+      return button;
+    }),
+  );
 }
