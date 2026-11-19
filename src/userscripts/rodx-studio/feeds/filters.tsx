@@ -1,5 +1,5 @@
 import styles, { css as filterCSS } from "./FeedFilters.module.css";
-import { mountView } from "../ui/solid-mount.tsx";
+import { mountView } from "../ui/react-mount.tsx";
 import { RODX_SELECTORS, DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { currentFullQuery, visibleLimit } from "./local-limits.js";
