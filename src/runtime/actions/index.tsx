@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles, { css } from "./Launcher.module.css";
@@ -116,7 +115,7 @@ function ActionsView({
 
 export function installRodActions(
   _menu?: unknown,
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ): RodActionsHub {
   // A detached host means the previous singleton can no longer render. Recreate it
   // instead of returning a stale hub after SPA navigation or external DOM cleanup.
@@ -197,14 +196,8 @@ export function installRodActions(
       }}
     />
   );
-  if (mountSharedReact) {
-    const shared = mountSharedReact(view, mount);
-    unmount = () => shared.dispose();
-  } else {
-    const root = createRoot(mount);
-    root.render(view);
-    unmount = () => root.unmount();
-  }
+  const shared = mountSharedReact(view, mount);
+  unmount = () => shared.dispose();
   window.__RodActions = hub;
   const clipboard = (window as Window & { __RodClipboard?: ClipboardApi }).__RodClipboard;
   if (clipboard)
