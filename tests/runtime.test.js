@@ -108,26 +108,34 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
       },
     },
   ];
+  console.log("[runtime test] SPA: creating runtime");
   const app = createRuntime(definitions, { call() {} }, host);
+  console.log("[runtime test] SPA: awaiting ready");
   await app.ready;
+  console.log("[runtime test] SPA: ready");
   host.history.pushState({}, "", "/search?q=abc");
   await app.navigate();
+  console.log("[runtime test] SPA: search navigation complete");
   assert.equal(starts, 1);
   host.dispatchEvent(new host.Event("click"));
   assert.equal(clicks, 1);
   host.history.pushState({}, "", "/settings");
   await app.navigate();
+  console.log("[runtime test] SPA: settings navigation complete");
   assert.equal(stops, 1);
   assert.equal(host.document.querySelector("style"), null);
   host.dispatchEvent(new host.Event("click"));
   assert.equal(clicks, 1);
   host.history.pushState({}, "", "/home");
   await app.navigate();
+  console.log("[runtime test] SPA: home navigation complete");
   assert.equal(starts, 2);
   await app.dispose();
+  console.log("[runtime test] SPA: runtime disposed");
   assert.equal(stops, 2);
   assert.equal(host.history.pushState, nativePush);
   await host.happyDOM.abort();
+  console.log("[runtime test] SPA: happy-dom aborted");
 });
 
 test("persistent storage is created only on first use and reused across SPA navigation", async () => {
