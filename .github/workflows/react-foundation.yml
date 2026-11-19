@@ -62,6 +62,8 @@ jobs:
         run: npm run check:react-roots
       - name: Test React root audit utility
         run: npx vitest run tests/runtime-react-root-audit.test.js
+      - name: Test runtime cleanup lifecycle
+        run: npx vitest run tests/runtime-cleanup-scope.test.ts
       - name: Check isolated React provider types
         run: npx tsc --noEmit -p tsconfig.react-context.json
       - name: Test React context ownership
