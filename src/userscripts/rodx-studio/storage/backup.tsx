@@ -23,7 +23,7 @@ export function exportJSON() {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
-  const link = (<a />) as HTMLAnchorElement;
+  const link = document.createElement("a");
   link.href = url;
   link.download = `rodx-searches-${state.account}-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(link);
