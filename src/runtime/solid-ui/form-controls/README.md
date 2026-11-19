@@ -1,3 +1,5 @@
+> **Status · React-only cutover (2026-11-19):** The legacy SolidJS form-controls playground has been retired. `playground/form-controls-app.tsx` was removed; `/playground/form-controls.html` now redirects to the React Rod UI Studio at `/design-system.html`. The React Studio is the maintained interactive showcase for RodMenu fields and surfaces. This document remains as historical/technical reference for the headless option utilities until their remaining consumers are audited. Do not restore Solid components or the old playground.
+
 # Form controls (SolidJS)
 
 Reusable, framework-local field contracts and headless option utilities. This package must not import RodMenu.
