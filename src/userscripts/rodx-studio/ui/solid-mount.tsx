@@ -68,10 +68,17 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
     const record: Mount = { id: ++nextMountId, node: read(), connected: target.isConnected };
     // The runtime portal registry owns all RodX views, including Shadow DOM targets.
     record.listeners = new Set();
-    flushSync(() => {
-      record.dispose = sharedMount(<SharedView record={record} />, target);
-    });
+    // Register before rendering: synchronous React effects may re-enter mountView.
     mounts.set(target, record);
+    try {
+      flushSync(() => {
+        record.dispose = sharedMount(<SharedView record={record} />, target);
+      });
+    } catch (error) {
+      record.dispose?.();
+      mounts.delete(target);
+      throw error;
+    }
   }
   releaseDetachedViews();
 }
