@@ -27,6 +27,7 @@ A migração é incremental e deve preservar o comportamento dos userscripts exi
 - Continuação da migração React após o merge do PR #114.
 - PR #115 aberto: [React shared-root lifecycle follow-up](https://github.com/rodkisten/userscripts-cf/pull/115).
 - O runtime React e o adaptador RodX estão sendo ajustados para lifecycle, teardown e destinos de portal tipados.
+- O runtime libera o Sonner toaster compartilhado durante o teardown, depois de encerrar os contextos ativos e antes de desmontar a root React; há regressão de lifecycle em `tests/runtime.test.js`.
 - Os checks independentes de React foundation, Userscripts e Rod AST passaram em rodadas anteriores.
 - A validação completa ainda **não está aprovada**: houve execuções canceladas/interrompidas pelo runner hospedado; não declarar CI verde sem uma execução completa bem-sucedida.
 - A concorrência de `diagnostics.yml` foi configurada para não cancelar uma validação ativa automaticamente. O workflow temporário de diagnóstico foi removido para evitar builds duplicados.
