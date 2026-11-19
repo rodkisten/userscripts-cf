@@ -1,7 +1,7 @@
 import type { MenuSchema, FieldDefinition } from "../src/runtime/react-ui/types";
 
-type RodMenuField = FieldDefinition & Record<string, unknown>;
-type RodMenuSchema = MenuSchema & Record<string, any>;
+type RodMenuField = Omit<FieldDefinition, "type"> & { type: string; [key: string]: any };
+type RodMenuSchema = Omit<MenuSchema, "fields"> & { fields?: RodMenuField[]; [key: string]: any };
 
 export interface StudioExample {
   id: string;
