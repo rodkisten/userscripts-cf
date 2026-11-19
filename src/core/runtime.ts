@@ -160,13 +160,13 @@ export interface RuntimeAPI {
   dispose: () => Promise<void>;
 }
 
-export function initializeRodFeatures(host: Window & typeof globalThis) {
+export function initializeRodFeatures(host: Window & typeof globalThis, mountSharedReact?: Parameters<typeof createToasterFeature>[0]) {
   return {
     menu:
       typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
     toaster:
       typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
-        ? createToasterFeature()
+        ? createToasterFeature(mountSharedReact)
         : undefined,
     storage: createStorageFeature(host),
   };
@@ -296,6 +296,7 @@ export function createCoreRuntime(
   host: Window & typeof globalThis = window,
   release?: { readonly id: string; readonly version: string; readonly manifestURL: string },
   options?: {
+    mountSharedReact?: Parameters<typeof createToasterFeature>[0];
     installHelpers?: () => Array<string>;
     removeHelpers?: (installedHelpers: Array<string>) => void;
     createSpecificContext: (params: {
@@ -322,7 +323,7 @@ export function createCoreRuntime(
     }) => Record<string, unknown>;
   },
 ) {
-  const rod = initializeRodFeatures(host);
+  const rod = initializeRodFeatures(host, options?.mountSharedReact);
   const updaterInstanceRef = { current: null as ReturnType<typeof createUpdateChecker> | null };
 
   updaterInstanceRef.current = release ? setupUpdateChecker(release, host, rod, updaterInstanceRef) : null;
