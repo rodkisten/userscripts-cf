@@ -12,7 +12,7 @@ import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shad
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-type PortalEntry = { id: number; target: HTMLElement; node: ReactNode; context: ReactScriptContext };
+type PortalEntry = { id: number; target: HTMLElement; node: ReactNode; context?: ReactScriptContext };
 function createPortalRegistry() {
   const entries = new Map<number, PortalEntry>();
   const listeners = new Set<() => void>();
@@ -43,7 +43,7 @@ function createPortalRegistry() {
 }
 function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
-  return <>{entries.map(({ id, target, node, context }) => createPortal(<RuntimeMount context={context}>{node}</RuntimeMount>, target, String(id)))}</>;
+  return <>{entries.map(({ id, target, node, context }) => createPortal(context ? <RuntimeMount context={context}>{node}</RuntimeMount> : node, target, String(id)))}</>;
 }
 
 export function createRuntime(
@@ -51,7 +51,7 @@ export function createRuntime(
   bridge: { call: (method: string, payload: unknown) => Promise<unknown>; dispose?: () => void },
   host: Window & typeof globalThis = window,
   release?: { id: string; version: string; manifestURL: string },
-): RuntimeAPI {
+): RuntimeAPI & { mountSharedReact: (component: ReactElement, container: HTMLElement) => { update: (component: ReactElement) => void; dispose: () => void } } {
   const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
   const registry = createPortalRegistry();
   let nextId = 0;
@@ -163,8 +163,27 @@ export function createRuntime(
       };
     },
   });
+  const mountSharedReact = (component: ReactElement, container: HTMLElement) => {
+    const id = ++nextId;
+    let disposed = false;
+    const update = (next: ReactElement) => {
+      if (disposed) return;
+      ensureReactHost();
+      registry.add({ id, target: container, node: next });
+    };
+    update(component);
+    return {
+      update,
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        registry.remove(id);
+      },
+    };
+  };
   const disposeRuntime = runtime.dispose.bind(runtime);
   return {
+    mountSharedReact,
     get ready() { return runtime.ready; },
     get active() { return runtime.active; },
     navigate: () => runtime.navigate(),
