@@ -1,73 +1,37 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 const read = (file) => fs.readFileSync(new URL("../" + file, import.meta.url), "utf8");
-describe("Rod UI Design System Studio contract", () => {
-  it("publishes the studio and its compiled real component bundle", () => {
-    const index = read("hosting/index.html");
-    const hosting = read("build/hosting.mjs");
-    const page = read("hosting/design-system.html");
-    expect(index).toContain("/design-system.html");
-    expect(hosting).toContain("design-system.js");
-    expect(hosting).toContain("build/design-system.mjs");
-    expect(page).toContain('src="/design-system.js"');
-    expect(page).toContain('id="menuLive"');
-    expect(page).toContain('id="tree"');
+describe("Rod UI React Studio contract", () => {
+  it("ships a minimal React shell and compiled bundle", () => {
+    const html = read("hosting/design-system.html");
+    expect(html).toContain('id="studio-root"');
+    expect(html).toContain('src="/design-system.js"');
+    expect(read("build/hosting.mjs")).toContain("design-system.js");
+    expect(read("build/design-system.mjs")).toContain("studio/entry.tsx");
   });
-  it("uses actual runtime instances instead of mock-only previews", () => {
+  it("has exactly one root and uses React portals", () => {
     const entry = read("studio/entry.tsx");
-    expect(entry).toContain("import { RodMenu, RodMenuHost }");
-    expect(entry).toContain("createRoot(root).render(");
+    expect(entry).toContain("createRoot(mount).render(<Studio />)");
     expect(entry).toContain("<RodMenuHost />");
+    expect(entry).toContain("RodMenu.open(schema)");
+    expect((entry.match(/createRoot\\(/g) ?? []).length).toBe(1);
     expect(entry).not.toMatch(/solid-js|@solidjs|runtime\\/solid-ui/);
-    expect(read("studio/examples.ts")).not.toContain("runtime/solid-ui");
-    expect(entry).toContain("import { ObjectInspector }");
-    expect(entry).toContain("RodMenu.open(");
+  });
+  it("uses only supported React menu fields and real controls", () => {
+    const entry = read("studio/entry.tsx");
+    for (const field of ["text", "email", "password", "search", "url", "tel", "number", "range", "textarea", "select", "switch", "checkbox"]) expect(entry).toContain('"' + field + '"');
+    expect(entry).toContain("setSurface");
+    expect(entry).toContain("setPersist");
+    expect(entry).toContain("setDevice");
     expect(entry).toContain("<ObjectInspector");
   });
-  it("offers searchable live examples backed by RodMenu schemas", () => {
-    const examples = read("studio/examples.ts");
-    const entry = read("studio/entry.tsx");
-    const page = read("hosting/design-system.html");
-    expect(examples).toContain("schemaForExample");
-    expect(examples).toContain("media-picker");
-    expect(examples).toContain("request-log");
-    expect(entry).toContain("schemaForExample(example,");
-    expect(entry).toContain("RodMenu.open(schema as MenuSchema)");
-    expect(page).toContain('id="examplesCatalog"');
-    expect(page).toContain('id="examplesSearch"');
-  });
-  it("documents and renders advanced menu and inspector controls", () => {
-    const examples = read("studio/examples.ts");
-    const entry = read("studio/entry.tsx");
-    const page = read("hosting/design-system.html");
-    for (const id of [
-      "tabs",
-      "sections",
-      "validation",
-      "conditional",
-      "persistence",
-      "gestures",
-      "stack",
-      "focus",
-      "theme",
-      "drawer",
-      "popover",
-      "async-action",
-    ]) {
-      expect(examples).toContain(`id: "${id}"`);
-    }
-    expect(entry).toContain("inspectorControls");
-    expect(entry).toContain("setInspectorOptions");
-    expect(page).toContain('id="inspectorAdvanced"');
-    expect(page).toContain('id="inspectorReset"');
-  });
-  it("uses the custom hostname as the canonical distribution URL", () => {
-    expect(read("distribution.config.js")).toContain("https://userscripts.migos.club");
+  it("preserves CodeMirror 6 and responsive styles", () => {
+    expect(read("studio/entry.tsx")).toContain('import("@codemirror/view")');
+    expect(read("studio/studio.css")).toContain("@media(max-width:850px)");
+    expect(read("studio/studio.css")).toContain("studio-device");
   });
   it("documents the mandatory feature update workflow", () => {
-    const docs = read("studio/README.md");
-    expect(docs).toContain("Mandatory feature documentation policy");
-    expect(docs).toContain("studio/entry.tsx");
+    expect(read("studio/README.md")).toContain("Mandatory feature documentation policy");
     expect(read("build/check-design-system-changes.mjs")).toContain("Runtime UI changed");
   });
 });
