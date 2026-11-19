@@ -14,13 +14,32 @@ A publicação automática é disparada após push na `main` quando ainda não e
 
 Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separados e um instalável unificado com roteamento por URL.
 
+## ⚛️ Migração React: estado e regras de manutenção
+
+A migração do runtime e das interfaces para React é a direção ativa do projeto. O objetivo arquitetural é manter **uma única React root por instalação standalone**, reutilizando portals para interfaces e destinos adicionais; roots independentes só são aceitáveis quando os userscripts forem instalados separadamente ou agrupados explicitamente por tags. Novas implementações de UI devem usar React com JSX/TSX e componentes Radix UI ou shadcn/ui, sem criar uma camada paralela de componentes proprietários.
+
+A migração é incremental e deve preservar o comportamento dos userscripts existentes. Não remova testes, reduza cobertura ou troque testes reais por snapshots simplificados para fazer a validação passar. Alterações de runtime devem manter os contratos do Rod AST, fixtures e testes atualizados conforme as regras acima.
+
+**Regra permanente de documentação:** toda alteração funcional ou arquitetural deve atualizar, no mesmo conjunto de mudanças, o README quando afetar arquitetura, comandos, setup, capacidades, estado ou decisões duráveis do projeto, e o [Workboard](docs/WORKBOARD.md) para registrar progresso, pendências, responsáveis e evidências de validação. Se uma mudança não afetar o README, registre essa avaliação no Workboard. Nunca deixe instruções antigas contradizerem a arquitetura atual.
+
+### Estado desta etapa: PR #115
+
+- Continuação da migração React após o merge do PR #114.
+- PR #115 aberto: [React shared-root lifecycle follow-up](https://github.com/rodkisten/userscripts-cf/pull/115).
+- O runtime React e o adaptador RodX estão sendo ajustados para lifecycle, teardown e destinos de portal tipados.
+- Os checks independentes de React foundation, Userscripts e Rod AST passaram em rodadas anteriores.
+- A validação completa ainda **não está aprovada**: houve execuções canceladas/interrompidas pelo runner hospedado; não declarar CI verde sem uma execução completa bem-sucedida.
+- A concorrência de `diagnostics.yml` foi configurada para não cancelar uma validação ativa automaticamente. O workflow temporário de diagnóstico foi removido para evitar builds duplicados.
+
+Consulte o [Workboard](docs/WORKBOARD.md) e o PR #115 para o estado mais recente. Atualize este resumo quando o estado mudar; não mantenha contagens de testes ou checks sem evidência da execução correspondente.
+
 ## Scripts Reddit, GitHub e Instagram
 
-[Recursos e configuração](docs/integrated-userscripts.md): Reddit/Soundgasm, ferramentas do GitHub com cópia integral dos logs por step e sincronização de coleções do Instagram para o Relay. As UIs usam Solid 2 e CSS Modules. O build mantém o código legível e remove comentários de implementação, preservando o cabeçalho do userscript e os comentários nos fontes.
+[Recursos e configuração](docs/integrated-userscripts.md): Reddit/Soundgasm, ferramentas do GitHub com cópia integral dos logs por step e sincronização de coleções do Instagram para o Relay. As UIs estão em migração para React; consulte a seção de estado da migração e o Workboard para identificar o que já foi convertido. CSS Modules permanece apenas onde ainda é necessário durante a transição. O build mantém o código legível e remove comentários de implementação, preservando o cabeçalho do userscript e os comentários nos fontes.
 
 ## Arquitetura do contexto e otimização
 
-🧬 [Ciclo de vida do Runtime Context](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth): diagrama Mermaid, criação do `ctx`, transformação AST, propagação Solid, teardown, exemplos e limites para módulos compartilhados. A manutenção deste guia é obrigatória pelo `AGENTS.md`.
+🧬 [Ciclo de vida do Runtime Context](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth): diagrama Mermaid, criação do `ctx`, transformação AST, integração com React, teardown, exemplos e limites para módulos compartilhados. A manutenção deste guia é obrigatória pelo `AGENTS.md`.
 
 📖 [Guia técnico de contexto, lifecycle, tree-shaking e estratégia de otimização](docs/context-and-optimization.md). Inclui contrato de `ctx`, análise de dependências, flags de build, auditoria de tamanho, prioridades e critérios de aceite.
 
