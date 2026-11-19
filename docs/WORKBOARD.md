@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 validation blocker:** attempted to clone `rodkisten/userscripts-cf` for `npm ci && npm run typecheck`, but this execution environment cannot resolve `github.com`; no local checkout available. Do not claim build/typecheck/tests passed. Added `runtimeDisposed` guard in `runtime-react.tsx` to reject mounts after disposal. Next validation should run on GitHub Actions or a connected checkout before deploy.
+
+
 - [ ] **2026-11-19 menu/Actions integration (unverified):** Radix menu view and per-script/global menu facade now accept the bundle shared portal adapter. Instagram Rod Actions passes `ctx.ui.mountReact` adapter. Must verify TypeScript, formatting, runtime/AST tests, build, portal lifecycle and independent installs. Remaining direct `createRoot` userscripts must migrate; do not mark single-root done yet.
 
 
