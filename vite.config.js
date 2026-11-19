@@ -28,7 +28,8 @@ export default defineConfig({
           warning.code === "MODULE_LEVEL_DIRECTIVE" &&
           /use client/.test(warning.message) &&
           /node_modules[/\\\\](?:@radix-ui|sonner)[/\\\\]/.test(warning.id ?? "")
-        ) return;
+        )
+          return;
         defaultHandler(warning);
       },
     },
