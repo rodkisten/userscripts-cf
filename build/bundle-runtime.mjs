@@ -14,7 +14,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     ? `import { installRodDock } from ${JSON.stringify(path.join(root, "src/runtime/react-ui/rod-dock.tsx"))};`
     : "";
   const dockBoot = options.dock
-    ? `const dock = installRodDock({ modules: [], scripts: ${JSON.stringify(options.catalog || definitions)} });
+    ? `const dock = installRodDock({ modules: [], scripts: ${JSON.stringify(options.catalog || definitions)}, mountSharedReact: api.mountSharedReact });
        const disposeRuntime = api.dispose.bind(api);
        api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
     : "";

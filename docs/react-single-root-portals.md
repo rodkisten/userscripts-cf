@@ -8,6 +8,19 @@ Use **one React `createRoot()` per shared userscript runtime instance**, not one
 
 This decision supersedes the per-component/per-post root wording in `docs/WORKBOARD.md` and the per-mount root diagram in `docs/react-only-migration.md`. **React 19 + React DOM + TypeScript + JSX only. No Solid.**
 
+## Bundle ownership clarification (2026-11-19)
+
+**A single installed bundle owns one React root per execution world, not one per module.**
+
+- `standalone.user.js`: all modules sharing its runtime and execution world share exactly **one React root** and one portal registry. Module-specific `ctx` is supplied by a provider **inside each portal**, not by creating a root for each module.
+- `unified.user.js` and bundles assembled from tags: the same rule applies, one root per resulting installed bundle/world, independent of how many definitions it contains.
+- Individually installed userscripts: each independent installation may own its own root. Do not rely on sharing React instances between independent Tampermonkey sandboxes.
+- A bundle with both `sandbox` and `page` worlds has separate JS runtimes. Their roots cannot be shared across the world boundary; this is a physical isolation exception, not permission for per-module roots.
+- Shared global UI (Sonner, Dock, menu) must use the bundle's portal registry. Never create a module-global singleton root that escapes bundle lifecycle.
+- Disposal of one module removes **only its portals**. Disposal of the entire bundle unmounts the single shared root. Preserve `ctx` isolation, stable keys, styles and event cleanup.
+
+**Acceptance gate:** For a given world, standalone/tag-group/unified bundle with N active modules and M mounted UI targets must create one root, not N or M. Distinct installations/worlds are independently owned.
+
 ## Logical topology
 
 ```text

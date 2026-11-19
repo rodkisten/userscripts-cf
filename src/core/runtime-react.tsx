@@ -1,7 +1,10 @@
 /** @jsxImportSource react */
 import type { ReactElement } from "react";
 import { RuntimeMount } from "./runtime-mount-react.js";
+import type { ReactScriptContext } from "./react-context-contract.js";
 import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
@@ -9,14 +12,67 @@ import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shad
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
+type PortalEntry = { id: number; target: HTMLElement; node: ReactNode; context?: ReactScriptContext };
+function createPortalRegistry() {
+  const entries = new Map<number, PortalEntry>();
+  const listeners = new Set<() => void>();
+  let snapshot: PortalEntry[] = [];
+  const publish = () => {
+    snapshot = Array.from(entries.values());
+    for (const listener of listeners) listener();
+  };
+  return {
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    getSnapshot: () => snapshot,
+    add: (entry: PortalEntry) => {
+      entries.set(entry.id, entry);
+      publish();
+    },
+    remove: (id: number) => {
+      if (entries.delete(id)) publish();
+    },
+    clear: () => {
+      if (!entries.size) return;
+      entries.clear();
+      publish();
+    },
+  };
+}
+function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
+  const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
+  return <>{entries.map(({ id, target, node, context }) => createPortal(context ? <RuntimeMount context={context}>{node}</RuntimeMount> : node, target, String(id)))}</>;
+}
+
 export function createRuntime(
   definitions: ScriptDefinition[],
   bridge: { call: (method: string, payload: unknown) => Promise<unknown>; dispose?: () => void },
   host: Window & typeof globalThis = window,
   release?: { id: string; version: string; manifestURL: string },
-): RuntimeAPI {
+): RuntimeAPI & { mountSharedReact: (component: ReactElement, container: HTMLElement) => { update: (component: ReactElement) => void; dispose: () => void } } {
   const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
-  return createCoreRuntime(definitions, bridge, host, release, {
+  const registry = createPortalRegistry();
+  let nextId = 0;
+  let reactHost: HTMLDivElement | undefined;
+  let reactRoot: ReturnType<typeof createRoot> | undefined;
+  const ensureReactHost = () => {
+    if (reactRoot) return;
+    reactHost = host.document.createElement("div");
+    reactHost.dataset.rodReactHost = "bundle";
+    (host.document.body || host.document.documentElement).append(reactHost);
+    reactRoot = createRoot(reactHost);
+    reactRoot.render(<PortalRegistry registry={registry} />);
+  };
+  const disposeReactHost = () => {
+    registry.clear();
+    reactRoot?.unmount();
+    reactRoot = undefined;
+    reactHost?.remove();
+    reactHost = undefined;
+  };
+  const runtime = createCoreRuntime(definitions, bridge, host, release, {
     installHelpers: () => {
       const installed: string[] = [];
       for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
@@ -32,8 +88,14 @@ export function createRuntime(
           delete (host as unknown as Record<string, unknown>)[name];
       }
     },
-    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => ({
-      ui: Object.freeze({
+    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
+      const ownedPortals = new Set<number>();
+      onDispose(() => {
+        for (const id of ownedPortals) registry.remove(id);
+        ownedPortals.clear();
+      });
+      return {
+        ui: Object.freeze({
         get root() {
           return ensureUIRoot();
         },
@@ -76,20 +138,19 @@ export function createRuntime(
           const mountPoint = container ?? host.document.createElement("div");
           const owned = !container;
           if (owned) ensureUIRoot().append(mountPoint);
-          let root: ReturnType<typeof createRoot> | undefined;
+          const id = ++nextId;
+          ownedPortals.add(id);
           let disposed = false;
           const dispose = () => {
             if (disposed) return;
             disposed = true;
-            try {
-              root?.unmount();
-            } finally {
-              if (owned) mountPoint.remove();
-            }
+            ownedPortals.delete(id);
+            registry.remove(id);
+            if (owned) mountPoint.remove();
           };
           try {
-            root = createRoot(mountPoint);
-            root.render(<RuntimeMount context={getContext()}>{component}</RuntimeMount>);
+            ensureReactHost();
+            registry.add({ id, target: mountPoint, node: component, context: getContext() });
             onDispose(dispose);
           } catch (error) {
             dispose();
@@ -98,7 +159,40 @@ export function createRuntime(
           }
           return dispose;
         },
-      }),
-    }),
+        }),
+      };
+    },
   });
+  const mountSharedReact = (component: ReactElement, container: HTMLElement) => {
+    const id = ++nextId;
+    let disposed = false;
+    const update = (next: ReactElement) => {
+      if (disposed) return;
+      ensureReactHost();
+      registry.add({ id, target: container, node: next });
+    };
+    update(component);
+    return {
+      update,
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        registry.remove(id);
+      },
+    };
+  };
+  const disposeRuntime = runtime.dispose.bind(runtime);
+  return {
+    mountSharedReact,
+    get ready() { return runtime.ready; },
+    get active() { return runtime.active; },
+    navigate: () => runtime.navigate(),
+    dispose: async () => {
+      try {
+        await disposeRuntime();
+      } finally {
+        disposeReactHost();
+      }
+    },
+  };
 }
