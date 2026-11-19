@@ -29,6 +29,7 @@ A migração é incremental e deve preservar o comportamento dos userscripts exi
 - O runtime React e o adaptador RodX estão sendo ajustados para lifecycle, teardown e destinos de portal tipados.
 - O runtime libera o Sonner toaster compartilhado durante o teardown, depois de encerrar os contextos ativos e antes de desmontar a root React; há regressão de lifecycle em `tests/runtime.test.js`.
 - O Rod Actions exige o adaptador de portal do runtime e não cria uma root React independente; seu consumidor de produção fornece `ctx.ui.mountReact`.
+- Menus Radix (`ctx.menu.open/dropdown`) também exigem o mount compartilhado e registram o descarte no `ctx.onDispose`; runtimes sem adaptador React não expõem esse recurso em vez de criar outra root.
 - Os checks independentes de React foundation, Userscripts e Rod AST passaram em rodadas anteriores.
 - A validação completa ainda **não está aprovada**: houve execuções canceladas/interrompidas pelo runner hospedado; não declarar CI verde sem uma execução completa bem-sucedida.
 - A concorrência de `diagnostics.yml` foi configurada para não cancelar uma validação ativa automaticamente. O workflow temporário de diagnóstico foi removido para evitar builds duplicados.
