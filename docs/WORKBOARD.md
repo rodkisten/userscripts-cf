@@ -17,7 +17,7 @@
 
 ## P0 · Restore reliable builds and releases (blocking)
 
-- [ ] **2026-11-19 audit:** `package.json` currently runs unrestricted Vitest in `npm test` and lacks the `test:unit` script called by `build/validate-changed.sh`; reconcile with `docs/testing-policy.md` before treating CI as compliant. `src/core/runtime-react.ts` and `build/run-runtime-utility-tests.mjs` are absent on `main`; inspect actual React mount implementations rather than assuming these paths exist.
+- [ ] **2026-11-19 audit:** `package.json` currently runs unrestricted Vitest in `npm test` and lacks the `test:unit` script called by `build/validate-changed.sh`; reconcile with `docs/testing-policy.md` before treating CI as compliant. Correction: React entrypoint is `src/core/runtime-react.tsx` (not `.ts`). `build/run-runtime-utility-tests.mjs` is absent. Actual `mountReact` currently calls `createRoot` per mount, and `src/runtime/modular/features/toaster.tsx` creates a module-global React root; both conflict with the single-root ADR. Consolidate without breaking legacy call sites.
 
 
 - [ ] Diagnose current failing `Validate changed`, `Release · patch`, and `Playground Pages` workflows on `main`; record exact failed jobs and root causes.
