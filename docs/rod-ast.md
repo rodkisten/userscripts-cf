@@ -89,7 +89,6 @@ A captured `ctx` or `context` is only propagated into nested lexical scopes whil
 
 The GM guard recognizer preserves modern calls inside `typeof GM.getValue === "function"` and `typeof GM["getValue"] === "function"` checks, including guarded short-circuit branches. Unguarded supported `GM.method(...)` calls remain eligible for `ctx.gm.modern.method(...)` migration. This is intentionally conservative because replacing a guarded branch may change fallback behavior. Vitest and the fixture matrix cover both paths.
 
-
 ## DOM and CSS migration safety (React)
 
 - **Do not turn imperative DOM construction into JSX without mounting React.** A JSX expression returns a React element descriptor, not an `HTMLElement`. For nodes that must be inserted into existing page DOM, use `document.createElement`, assign properties, and append the real node; for React-owned subtrees, use JSX inside `createRoot` or a portal.
