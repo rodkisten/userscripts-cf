@@ -36,7 +36,7 @@ export default {
     ctx.ui.registerStyles(css);
 
     if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
-    const hub = installRodActions(ctx.menu);
+    const hub = installRodActions(ctx.menu, (component, container) => ({ dispose: ctx.ui.mountReact(component, container) }));
     const runtime = {
       running: false,
       lastRun: 0,
