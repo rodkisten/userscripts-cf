@@ -72,3 +72,8 @@ GM availability checks are now evaluated at the individual call site. Calls insi
 ### Capability fallback safety
 
 The call-site GM guard analysis also preserves **both branches** of a `typeof GM` / `typeof GM_*` `if/else` fallback, plus guarded short-circuit `&&` and `||` expressions. This is intentionally conservative: changing one branch could alter capability fallback behavior. Independent calls outside the guarded expression remain eligible for migration. Vitest covers branch isolation, short-circuit semantics and idempotence.
+
+
+### AST-backed capability detection
+
+Capability guards are now detected from TypeScript `TypeOfExpression` nodes instead of regex matches over source text. Strings and comments containing `typeof GM_*` no longer accidentally disable transformations. The existing conservative handling of `if/else`, ternary and short-circuit fallbacks is retained. New Vitest tests cover strings, comments, real guards, nested branches and idempotence.

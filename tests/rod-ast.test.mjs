@@ -511,3 +511,26 @@ describe("GM capability fallback control flow", () => {
     expect(transformRodAst(source, "gm-sibling.ts").code).toContain('ctx.gm.legacy.setValue("y", 1)');
   });
 });
+
+describe("GM guards use AST syntax rather than matching source text", () => {
+  it("does not mistake a string containing typeof GM for a capability check", () => {
+    const source = 'function init(ctx) { if (message === "typeof GM_getValue") GM_setValue("key", 1); }';
+    const result = transformRodAst(source, "gm-string.ts");
+    expect(result.code).toContain('ctx.gm.legacy.setValue("key", 1)');
+    expect(transformRodAst(result.code, "gm-string.ts").changed).toBe(false);
+  });
+  it("does not mistake comments for capability checks", () => {
+    const source = 'function init(ctx) { if (enabled /* typeof GM_getValue */) GM_setValue("key", 1); }';
+    expect(transformRodAst(source, "gm-comment.ts").code).toContain('ctx.gm.legacy.setValue("key", 1)');
+  });
+  it("preserves actual typeof capability guards", () => {
+    const source = 'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("key"); }';
+    expect(transformRodAst(source, "gm-actual.ts").code).toBe(source);
+  });
+  it("preserves nested guarded fallback branches", () => {
+    const source = 'function init(ctx) { if (ready) { if (typeof GM_getValue === "function") GM_getValue("x"); else GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const result = transformRodAst(source, "gm-nested.ts");
+    expect(result.code).toContain('GM_setValue("fallback", 1)');
+    expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');
+  });
+});

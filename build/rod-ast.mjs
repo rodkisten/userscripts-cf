@@ -177,6 +177,25 @@ export function transformRodAst(code, id, options = {}) {
   // Evaluate availability guards at each call, not across the whole function.
   // Conservative call-site guards: preserve both sides of a capability fallback.
   // Rewriting either side can change the selected API or fallback behavior.
+  // Inspect actual typeof AST nodes: text matching would mistake strings/comments
+  // for capability guards and suppress otherwise safe migrations.
+  function containsGMTypeof(expression) {
+    let found = false;
+    function visit(node) {
+      if (found) return;
+      if (
+        ts.isTypeOfExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))
+      ) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(expression);
+    return found;
+  }
   function hasGMGuard(node) {
     let current = node.parent;
     while (current && !ts.isSourceFile(current)) {
@@ -187,27 +206,20 @@ export function transformRodAst(code, id, options = {}) {
           current.elseStatement &&
           current.elseStatement.pos <= node.pos &&
           node.end <= current.elseStatement.end;
-        if (inThen || inElse) {
-          const condition = code.slice(current.expression.getStart(source), current.expression.end);
-          if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(condition)) return true;
-        }
+        if ((inThen || inElse) && containsGMTypeof(current.expression)) return true;
       }
-      if (ts.isConditionalExpression(current) || ts.isBinaryExpression(current)) {
-        const condition = ts.isConditionalExpression(current) ? current.condition : current.left;
-        const text = code.slice(condition.getStart(source), condition.end);
-        if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(text)) {
-          if (ts.isConditionalExpression(current)) return true;
-          if (
-            [
-              ts.SyntaxKind.AmpersandAmpersandToken,
-              ts.SyntaxKind.BarBarToken,
-              ts.SyntaxKind.QuestionQuestionToken,
-            ].includes(current.operatorToken.kind) &&
-            current.right.pos <= node.pos &&
-            node.end <= current.right.end
-          )
-            return true;
-        }
+      if (ts.isConditionalExpression(current) && containsGMTypeof(current.condition)) return true;
+      if (ts.isBinaryExpression(current)) {
+        if (
+          [
+            ts.SyntaxKind.AmpersandAmpersandToken,
+            ts.SyntaxKind.BarBarToken,
+            ts.SyntaxKind.QuestionQuestionToken,
+          ].includes(current.operatorToken.kind) &&
+          current.right.pos <= node.pos &&
+          node.end <= current.right.end &&
+          containsGMTypeof(current.left)
+        ) return true;
       }
       current = current.parent;
     }
