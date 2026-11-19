@@ -659,3 +659,21 @@ describe("modern GM capability guards", () => {
     expect(transformRodAst(result.code, "gm-modern-unguarded.ts").changed).toBe(false);
   });
 });
+
+describe("named dynamic stylesheet migration", () => {
+  it("migrates a complete id + dynamic CSS + head append lifecycle", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.id = ELEMENT_IDS.compactLayoutStyle; node.textContent = extractedCSS1; document.head.appendChild(node); }';
+    const result = transformRodAst(source, "dynamic-style.ts");
+    expect(result.code).toContain("ctx.ui.pageStyle(extractedCSS1, { id: ELEMENT_IDS.compactLayoutStyle });");
+    expect(result.code).not.toContain('document.createElement("style")');
+    expect(transformRodAst(result.code, "dynamic-style.ts").changed).toBe(false);
+  });
+  it("does not rewrite a style whose node is used after append", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.id = "x"; node.textContent = css; document.head.append(node); node.remove(); }';
+    expect(transformRodAst(source, "escaping-style.ts").code).toBe(source);
+  });
+  it("does not rewrite a style inserted in a shadow root", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.id = "x"; node.textContent = css; shadow.append(node); }';
+    expect(transformRodAst(source, "shadow-style.ts").code).toBe(source);
+  });
+});
