@@ -19,6 +19,14 @@ jobs:
     name: "📚 Design system and lockfile checks"
     runs-on: ubuntu-latest
     steps:
+      - name: "[ROD ACTIONS] auth"
+      - id: auth
+        uses: rodkisten/github/actions/app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - name: Authenticate Rod GitHub App
         id: app-token
         uses: actions/create-github-app-token@v2
