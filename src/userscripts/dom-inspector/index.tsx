@@ -1,4 +1,4 @@
-import { createSignal, Show, createEffect } from "solid-js";
+import { useEffect, useSyncExternalStore } from "react";
 import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
@@ -17,17 +17,26 @@ export const INSPECTOR_CONFIG = Object.freeze({
 });
 export default {
   init(ctx) {
-    const [open, setOpen] = createSignal<boolean>(false);
-    const [tab, setTab] = createSignal("dom");
-    const [selector, setSelector] = createSignal("");
-    const [status, setStatus] = createSignal("");
-    const [full, setFull] = createSignal<boolean>(false);
-    const [scroll, setScroll] = createSignal<boolean>(INSPECTOR_CONFIG.autoScroll);
-    const [records, setRecords] = createSignal([]);
-    const [depth, setDepth] = createSignal(0);
-    const [selectionName, setSelectionName] = createSignal("Nenhum elemento");
-    const [picking, setPicking] = createSignal<boolean>(false);
-    const [live, setLive] = createSignal<boolean>(false);
+    const subscribers = new Set<() => void>();
+    const subscribe = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
+    const signal = <T,>(initial: T): [() => T, (next: T | ((previous: T) => T)) => void] => {
+      let value = initial;
+      return [() => value, (next) => {
+        value = typeof next === "function" ? (next as (previous: T) => T)(value) : next;
+        subscribers.forEach((listener) => listener());
+      }];
+    };
+    const [open, setOpen] = signal<boolean>(false);
+    const [tab, setTab] = signal<string>("dom");
+    const [selector, setSelector] = signal<string>("");
+    const [status, setStatus] = signal<string>("");
+    const [full, setFull] = signal<boolean>(false);
+    const [scroll, setScroll] = signal<boolean>(INSPECTOR_CONFIG.autoScroll);
+    const [records, setRecords] = signal<unknown[]>([]);
+    const [depth, setDepth] = signal<number>(0);
+    const [selectionName, setSelectionName] = signal<string>("Nenhum elemento");
+    const [picking, setPicking] = signal<boolean>(false);
+    const [live, setLive] = signal<boolean>(false);
     let editor,
       editorRoot,
       selected,
@@ -299,9 +308,9 @@ export default {
     } catch (error) {
       console.warn("[Rod DOM Inspector] Dock unavailable; standalone launcher remains active", error);
     }
-    const unmount = ctx.ui.mountSolid(
-      () => {
-        createEffect(() => {
+    function InspectorView() {
+      useSyncExternalStore(subscribe, () => [open(), tab(), live(), full(), picking(), selector(), status(), scroll(), depth(), selectionName(), records()] as const);
+      useEffect(() => {
           const isOpen = open();
           tab();
           live();
@@ -312,10 +321,10 @@ export default {
             editor = undefined;
             editorRoot = undefined;
           }
-        }, undefined);
-        return (
+      }, [open(), tab(), live()]);
+      return (
           <>
-            <Show when={!open() && !picking()}>
+            {(!open() && !picking()) && (
               <button
                 className={styles.launcher}
                 type="button"
@@ -325,8 +334,8 @@ export default {
               >
                 🔬
               </button>
-            </Show>
-            <Show when={picking()}>
+            )})})})}</Show>
+            {(picking()) && (
               <button
                 className={styles.cancelPicker}
                 type="button"
@@ -337,10 +346,10 @@ export default {
               >
                 Cancelar seleção ✕
               </button>
-            </Show>
-            <Show when={open()}>
+            )}</Show>
+            {(open()) && (
               <section
-                className={[styles.panel, { [styles.full]: full() }]}
+                className={[styles.panel, full() ? styles.full : ""].filter(Boolean).join(" ")}
                 role="dialog"
                 aria-modal="false"
                 aria-label="DOM Inspector"
@@ -364,7 +373,7 @@ export default {
                       type="button"
                       role="tab"
                       aria-selected={tab() === value ? "true" : "false"}
-                      className={{ [styles.active]: tab() === value }}
+                      className={tab() === value ? styles.active : ""}
                       onClick={() => {
                         setTab(value);
                         queueMicrotask(renderSource);
@@ -458,12 +467,12 @@ export default {
                   }}
                 />
               </section>
-            </Show>
+            )}</Show>
           </>
         );
-      },
-      { styles: [css] },
-    );
+    }
+    ctx.ui.registerStyles(css);
+    const unmount = ctx.ui.mountReact(<InspectorView />);
     // Refresh is explicit: observing our own CodeMirror mutations would cause a loop.
     ctx.onDispose(() => {
       stop();
