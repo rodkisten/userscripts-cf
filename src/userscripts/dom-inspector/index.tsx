@@ -19,14 +19,22 @@ export default {
   init(ctx) {
     const subscribers = new Set<() => void>();
     let revision = 0;
-    const subscribe = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
+    const subscribe = (listener: () => void) => {
+      subscribers.add(listener);
+      return () => {
+        subscribers.delete(listener);
+      };
+    };
     const signal = <T,>(initial: T): [() => T, (next: T | ((previous: T) => T)) => void] => {
       let value = initial;
-      return [() => value, (next) => {
-        value = typeof next === "function" ? (next as (previous: T) => T)(value) : next;
-        revision++;
-        subscribers.forEach((listener) => listener());
-      }];
+      return [
+        () => value,
+        (next) => {
+          value = typeof next === "function" ? (next as (previous: T) => T)(value) : next;
+          revision++;
+          subscribers.forEach((listener) => listener());
+        },
+      ];
     };
     const [open, setOpen] = signal<boolean>(false);
     const [tab, setTab] = signal<string>("dom");
@@ -313,165 +321,165 @@ export default {
     function InspectorView() {
       useSyncExternalStore(subscribe, () => revision);
       useEffect(() => {
-          const isOpen = open();
-          tab();
-          live();
-          updateLiveObserver();
-          if (isOpen) queueMicrotask(renderSource);
-          else {
-            editor?.destroy();
-            editor = undefined;
-            editorRoot = undefined;
-          }
+        const isOpen = open();
+        tab();
+        live();
+        updateLiveObserver();
+        if (isOpen) queueMicrotask(renderSource);
+        else {
+          editor?.destroy();
+          editor = undefined;
+          editorRoot = undefined;
+        }
       }, [open(), tab(), live()]);
       return (
-          <>
-            {(!open() && !picking()) && (
-              <button
-                className={styles.launcher}
-                type="button"
-                aria-label="Abrir DOM Inspector"
-                title="Abrir DOM Inspector"
-                onClick={() => setOpen(true)}
-              >
-                🔬
-              </button>
-            )}
-            {(picking()) && (
-              <button
-                className={styles.cancelPicker}
-                type="button"
-                onClick={() => {
-                  cancelPicker();
-                  setOpen(true);
-                }}
-              >
-                Cancelar seleção ✕
-              </button>
-            )}
-            {(open()) && (
-              <section
-                className={[styles.panel, full() ? styles.full : ""].filter(Boolean).join(" ")}
-                role="dialog"
-                aria-modal="false"
-                aria-label="DOM Inspector"
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") setOpen(false);
-                }}
-              >
-                <header className={styles.header}>
-                  <h2>Inspector</h2>
-                  <small>{status()}</small>
-                  <button type="button" aria-label="Alternar tela cheia" onClick={() => setFull((v) => !v)}>
-                    ⛶
-                  </button>
-                  <button type="button" aria-label="Fechar" onClick={() => setOpen(false)}>
-                    ✕
-                  </button>
-                </header>
-                <div className={styles.tabs} role="tablist" aria-label="Inspector views">
-                  {["dom", "css", "network"].map((value) => (
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={tab() === value ? "true" : "false"}
-                      className={tab() === value ? styles.active : ""}
-                      onClick={() => {
-                        setTab(value);
-                        queueMicrotask(renderSource);
-                      }}
-                    >
-                      {value.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-                <div className={styles.tools}>
-                  <input
-                    value={selector()}
-                    placeholder="CSS selector"
-                    aria-label="CSS selector"
-                    onInput={(e) => select(e.currentTarget.value)}
-                  />
-                  <button type="button" onClick={pick}>
-                    ◎
-                  </button>
-                  <button type="button" onClick={() => copy(selector())}>
-                    Copy
-                  </button>
-                </div>
-                <div className={styles.tools}>
-                  <button type="button" aria-label="Elemento pai" onClick={() => moveSelection("parent")}>
-                    ↑
-                  </button>
-                  <button type="button" aria-label="Primeiro filho" onClick={() => moveSelection("child")}>
-                    ↓
-                  </button>
-                  <button type="button" aria-label="Irmão anterior" onClick={() => moveSelection("previous")}>
-                    ←
-                  </button>
-                  <button type="button" aria-label="Próximo irmão" onClick={() => moveSelection("next")}>
-                    →
-                  </button>
-                  <label className={styles.switch}>
-                    <input
-                      type="checkbox"
-                      checked={scroll()}
-                      onChange={(event) => setScroll(event.currentTarget.checked)}
-                    />{" "}
-                    Scroll
-                  </label>
-                  <label className={styles.switch}>
-                    <input
-                      type="checkbox"
-                      checked={live()}
-                      onChange={(event) => setLive(event.currentTarget.checked)}
-                    />{" "}
-                    Live
-                  </label>
-                  <button type="button" onClick={renderSource}>
-                    Refresh
-                  </button>
+        <>
+          {!open() && !picking() && (
+            <button
+              className={styles.launcher}
+              type="button"
+              aria-label="Abrir DOM Inspector"
+              title="Abrir DOM Inspector"
+              onClick={() => setOpen(true)}
+            >
+              🔬
+            </button>
+          )}
+          {picking() && (
+            <button
+              className={styles.cancelPicker}
+              type="button"
+              onClick={() => {
+                cancelPicker();
+                setOpen(true);
+              }}
+            >
+              Cancelar seleção ✕
+            </button>
+          )}
+          {open() && (
+            <section
+              className={[styles.panel, full() ? styles.full : ""].filter(Boolean).join(" ")}
+              role="dialog"
+              aria-modal="false"
+              aria-label="DOM Inspector"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setOpen(false);
+              }}
+            >
+              <header className={styles.header}>
+                <h2>Inspector</h2>
+                <small>{status()}</small>
+                <button type="button" aria-label="Alternar tela cheia" onClick={() => setFull((v) => !v)}>
+                  ⛶
+                </button>
+                <button type="button" aria-label="Fechar" onClick={() => setOpen(false)}>
+                  ✕
+                </button>
+              </header>
+              <div className={styles.tabs} role="tablist" aria-label="Inspector views">
+                {["dom", "css", "network"].map((value) => (
                   <button
                     type="button"
-                    aria-label="Localizar elemento no código"
+                    role="tab"
+                    aria-selected={tab() === value ? "true" : "false"}
+                    className={tab() === value ? styles.active : ""}
                     onClick={() => {
-                      setTab("dom");
-                      queueMicrotask(() => {
-                        renderSource();
-                        locateInSource();
-                      });
+                      setTab(value);
+                      queueMicrotask(renderSource);
                     }}
                   >
-                    ⌕
+                    {value.toUpperCase()}
                   </button>
-                </div>
-                <div className={styles.hierarchy}>
-                  <output className={styles.selection} title={selectionName()}>
-                    {selectionName()}
-                  </output>
-                  <label htmlFor="inspector-depth">Nível {depth()}</label>
-                  <input
-                    id="inspector-depth"
-                    aria-label="Subir na hierarquia DOM"
-                    type="range"
-                    min="0"
-                    max={INSPECTOR_CONFIG.maxHierarchyDepth}
-                    value={depth()}
-                    disabled={!selected}
-                    onInput={(event) => traverse(Number(event.currentTarget.value))}
-                  />
-                </div>
-                <div
-                  className={styles.editor}
-                  ref={(el) => {
-                    editorRoot = el;
-                    queueMicrotask(renderSource);
-                  }}
+                ))}
+              </div>
+              <div className={styles.tools}>
+                <input
+                  value={selector()}
+                  placeholder="CSS selector"
+                  aria-label="CSS selector"
+                  onInput={(e) => select(e.currentTarget.value)}
                 />
-              </section>
-            )}
-          </>
-        );
+                <button type="button" onClick={pick}>
+                  ◎
+                </button>
+                <button type="button" onClick={() => copy(selector())}>
+                  Copy
+                </button>
+              </div>
+              <div className={styles.tools}>
+                <button type="button" aria-label="Elemento pai" onClick={() => moveSelection("parent")}>
+                  ↑
+                </button>
+                <button type="button" aria-label="Primeiro filho" onClick={() => moveSelection("child")}>
+                  ↓
+                </button>
+                <button type="button" aria-label="Irmão anterior" onClick={() => moveSelection("previous")}>
+                  ←
+                </button>
+                <button type="button" aria-label="Próximo irmão" onClick={() => moveSelection("next")}>
+                  →
+                </button>
+                <label className={styles.switch}>
+                  <input
+                    type="checkbox"
+                    checked={scroll()}
+                    onChange={(event) => setScroll(event.currentTarget.checked)}
+                  />{" "}
+                  Scroll
+                </label>
+                <label className={styles.switch}>
+                  <input
+                    type="checkbox"
+                    checked={live()}
+                    onChange={(event) => setLive(event.currentTarget.checked)}
+                  />{" "}
+                  Live
+                </label>
+                <button type="button" onClick={renderSource}>
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  aria-label="Localizar elemento no código"
+                  onClick={() => {
+                    setTab("dom");
+                    queueMicrotask(() => {
+                      renderSource();
+                      locateInSource();
+                    });
+                  }}
+                >
+                  ⌕
+                </button>
+              </div>
+              <div className={styles.hierarchy}>
+                <output className={styles.selection} title={selectionName()}>
+                  {selectionName()}
+                </output>
+                <label htmlFor="inspector-depth">Nível {depth()}</label>
+                <input
+                  id="inspector-depth"
+                  aria-label="Subir na hierarquia DOM"
+                  type="range"
+                  min="0"
+                  max={INSPECTOR_CONFIG.maxHierarchyDepth}
+                  value={depth()}
+                  disabled={!selected}
+                  onInput={(event) => traverse(Number(event.currentTarget.value))}
+                />
+              </div>
+              <div
+                className={styles.editor}
+                ref={(el) => {
+                  editorRoot = el;
+                  queueMicrotask(renderSource);
+                }}
+              />
+            </section>
+          )}
+        </>
+      );
     }
     ctx.ui.registerStyles(css);
     const unmount = ctx.ui.mountReact(<InspectorView />);
