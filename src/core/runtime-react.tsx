@@ -12,7 +12,12 @@ import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shad
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-type PortalEntry = { id: number; target: Element | ShadowRoot; node: ReactNode; context?: ReactScriptContext };
+type PortalEntry = {
+  id: number;
+  target: Element | ShadowRoot;
+  node: ReactNode;
+  context?: ReactScriptContext;
+};
 function createPortalRegistry() {
   const entries = new Map<number, PortalEntry>();
   const listeners = new Set<() => void>();
