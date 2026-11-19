@@ -170,7 +170,8 @@ export function initializeDeckCompactLayout(): void {
 
       let identity = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileIdentity);
       if (!identity) {
-        identity = (<div className={CSS_CLASSES.profileIdentity} />) as HTMLDivElement;
+        identity = document.createElement("div");
+        identity.className = CSS_CLASSES.profileIdentity;
         name.before(identity);
       }
 
@@ -184,11 +185,11 @@ export function initializeDeckCompactLayout(): void {
         identity.replaceChildren();
         identity.dataset[DATA_ATTRS.handle] = handle;
 
-        const title = (
-          <strong>{display.replace(new RegExp("@" + handle + "$", "i"), "").trim()}</strong>
-        ) as HTMLElement;
+        const title = document.createElement("strong");
+        title.textContent = display.replace(new RegExp("@" + handle + "$", "i"), "").trim();
 
-        const at = (<span>{"@" + handle}</span>) as HTMLSpanElement;
+        const at = document.createElement("span");
+        at.textContent = "@" + handle;
 
         identity.append(title, at);
 
