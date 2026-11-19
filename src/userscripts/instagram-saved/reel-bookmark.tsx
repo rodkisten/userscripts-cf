@@ -15,7 +15,7 @@ const ACTION_LABEL =
 
 function controls(): HTMLElement[] {
   return [...document.querySelectorAll<HTMLElement>('button, [role="button"]')]
-    .filter((button) => !button.closest("[data-rod-collection-action], [data-rod-collection-action]"))
+    .filter((button) => !button.closest("[data-rod-collection-action]"))
     .filter((button) => {
       const label = [
         button.getAttribute("aria-label"),
@@ -54,7 +54,7 @@ function actions(): HTMLElement | null {
   const scope = video?.closest('article, [role="dialog"], [data-testid="reel"], section') || document;
   const save = nativeSave(scope);
   if (save?.parentElement) return save.parentElement;
-  const buttons = controls();
+  const buttons = controls().filter((button) => scope === document || (scope instanceof Element && scope.contains(button)));
 
   const near = buttons.filter((button) => {
     const rect = button.getBoundingClientRect();
@@ -154,7 +154,7 @@ export function mountReelBookmark(
   };
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (state === "loading" || state === "saved" || signal.aborted) return;
+    if (state === "loading" || state === "saved" || state === "error" || signal.aborted) return;
     const token = ++operation;
     const reel = location.pathname;
     const source = selectedSave;
@@ -188,17 +188,17 @@ export function mountReelBookmark(
       clear();
     }
     const target = reelIsOpen() ? actions() : null;
-    const native =
-      target && (nativeSave(target) || target.querySelector<HTMLElement>('button, [role="button"]'));
-    const source = target && nativeSave(target);
+    const native = source;
+    const source = target ? nativeSave(target) : null;
     if (source !== selectedSave) {
       operation++;
       selectedSave = source;
-      setState(source ? (nativeState(source) === "saved" ? "saved" : "unsaved") : "unsaved");
+      setState(source ? (nativeState(source) === "saved" ? "saved" : nativeState(source) === "unsaved" ? "unsaved" : "error") : "error");
     } else if (state !== "loading") {
       const observed = nativeState(source);
       if (observed === "saved" && state !== "saved") setState("saved");
       if (observed === "unsaved" && state === "saved") setState("unsaved");
+      if (observed === "unknown" && state !== "error") setState("error");
     }
     if (!target || !native || !native.isConnected) {
       clear();
