@@ -2,16 +2,14 @@ import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
 import { mountDirectoryTree } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
-import { useSyncExternalStore, type ReactElement } from "react";
-import { createPortal } from "react-dom";
-import { createRoot } from "react-dom/client";
+import type { ReactElement } from "react";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
 import styles, { css } from "./GitHub.module.css";
 
 type ReactMount = { host: HTMLElement; dispose: () => void };
 
 /** Every GitHub Tools mount is a portal owned by this script's shared runtime. */
-function mountReactPoint(ctx, 
+function mountReactPoint(
   ctx: any,
   parent: Node,
   node: ReactElement,
@@ -21,7 +19,7 @@ function mountReactPoint(ctx,
   const target = options.shadow ? host.attachShadow({ mode: "open" }) : host;
   if (options.shadow && options.styles?.length) {
     const style = document.createElement("style");
-    style.textContent = options.styles.join("\\n");
+    style.textContent = options.styles.join("\n");
     target.append(style);
   }
   const portalContainer = document.createElement("div");
