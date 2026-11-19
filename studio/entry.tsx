@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
@@ -31,6 +31,32 @@ function safeSource(value: unknown): string {
     return item;
   }, 2) ?? "undefined";
 }
+function SourceEditor({ text }: { text: string }) {
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let disposed = false;
+    let destroy: (() => void) | undefined;
+    void Promise.all([
+      import("@codemirror/state"),
+      import("@codemirror/view"),
+      import("@codemirror/lang-javascript"),
+      import("@codemirror/language"),
+      import("@codemirror/theme-one-dark"),
+    ]).then(([{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }]) => {
+      if (disposed || !host.current) return;
+      const view = new EditorView({
+        parent: host.current,
+        state: EditorState.create({
+          doc: text,
+          extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false), javascript(), syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark],
+        }),
+      });
+      destroy = () => view.destroy();
+    }).catch(error => { if (host.current && !disposed) host.current.textContent = String(error); });
+    return () => { disposed = true; destroy?.(); };
+  }, [text]);
+  return <div ref={host} aria-label="CodeMirror Source Editor" />;
+}
 function StudioInspector() {
   const [sample, setSample] = useState<InspectorSample>("response");
   const [depth, setDepth] = useState(2);
@@ -59,7 +85,7 @@ function StudioInspector() {
       <button onClick={() => setInspectorOptions(defaultOptions)}>Restaurar</button>
       <pre>{JSON.stringify({ ...inspectorOptions, expandDepth: depth }, null, 2)}</pre>
     </details>
-    <details><summary>Source / Stack trace</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{safeSource(selected)}</pre></details>
+    <details><summary>CodeMirror · Source / Stack trace</summary><SourceEditor text={safeSource(selected)} /></details>
   </div>;
 }
 createRoot(root).render(<><StudioInspector /><RodMenuHost /></>);
