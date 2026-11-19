@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 root audit:** independent `createRoot()` sites remain in `src/runtime/actions/index.tsx`, `src/runtime/modular/features/menu-view.tsx`, `src/userscripts/instagram-saved/reel-bookmark.tsx`, GitHub Tools, Gonewild, RodX Studio, Page REPL and Studio. Migrate active bundle consumers to the shared portal adapter without breaking standalone individual installs. `rod.toaster.destroy()` now runs during core runtime disposal. No CI verification yet.
+
+
 - [ ] **2026-11-19 Sonner bridge, unverified:** `createToasterFeature` accepts the shared portal mount from `createCoreRuntime` options; React runtime supplies the bundle-owned adapter. No standalone Sonner root is expected on that path. Fallback for independent callers still creates a root. Verify TypeScript, build, runtime lifecycle and actual standalone root counts before claiming completion.
 
 
