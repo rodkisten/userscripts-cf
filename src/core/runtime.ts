@@ -922,6 +922,9 @@ export function createCoreRuntime(
       await scheduled;
 
       for (const instance of active.values()) await instance.context.dispose();
+      // The toaster is runtime-owned (shared across script contexts), so release it
+      // only after every context has completed its own cleanup.
+      rod.toaster?.destroy();
       active.clear();
       failures.clear();
       stateValues.clear();
