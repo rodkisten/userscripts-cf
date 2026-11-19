@@ -218,5 +218,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .surface, .surfaceModal { animation: none; }
+  .overlay,
+  .surface,
+  .surfaceModal {
+    animation: none;
+  }
 }

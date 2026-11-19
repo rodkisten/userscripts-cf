@@ -14,7 +14,9 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((listener) => listener());
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 };
 const snapshot = () => current;
 const serverSnapshot = (): MenuEntry | null => null;
@@ -31,19 +33,16 @@ export const RodMenu = {
     current = null;
     emit();
   },
-  get active() { return current?.schema ?? null; },
+  get active() {
+    return current?.schema ?? null;
+  },
 };
 
 export function RodMenuHost({ container }: { container?: Element | DocumentFragment | null }) {
   const entry = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   if (!entry) return null;
   const view = (
-    <RodMenuView
-      key={entry.token}
-      schema={entry.schema}
-      isOpen
-      onClose={() => RodMenu.close(entry.token)}
-    />
+    <RodMenuView key={entry.token} schema={entry.schema} isOpen onClose={() => RodMenu.close(entry.token)} />
   );
   const target = container ?? (typeof document !== "undefined" ? document.body : null);
   return target ? createPortal(view, target) : view;

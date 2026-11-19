@@ -2,7 +2,21 @@ export type SurfaceType = "bottom-sheet" | "modal" | "drawer" | "popover";
 
 export type Position = "top" | "bottom" | "left" | "right" | "center";
 
-export type FieldType = "text" | "email" | "password" | "search" | "url" | "tel" | "textarea" | "number" | "select" | "checkbox" | "toggle" | "switch" | "slider" | "range";
+export type FieldType =
+  | "text"
+  | "email"
+  | "password"
+  | "search"
+  | "url"
+  | "tel"
+  | "textarea"
+  | "number"
+  | "select"
+  | "checkbox"
+  | "toggle"
+  | "switch"
+  | "slider"
+  | "range";
 
 export interface FieldDefinition {
   id?: string;

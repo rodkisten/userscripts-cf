@@ -14,9 +14,9 @@ export function createInitialValues(
           ? field.defaultValue
           : field.value !== undefined
             ? field.value
-          : field.type === "checkbox" || field.type === "toggle" || field.type === "switch"
-            ? false
-            : "";
+            : field.type === "checkbox" || field.type === "toggle" || field.type === "switch"
+              ? false
+              : "";
     });
   }
   return { ...defaults, ...customInitial };

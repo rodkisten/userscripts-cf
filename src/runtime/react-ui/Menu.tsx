@@ -16,10 +16,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
   const handleChange = (fieldId: string, value: any) => {
@@ -60,12 +60,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         <div className={styles.body}>
           {schema.fields?.map((field, index) => {
             const fieldId = field.id ?? field.name ?? `field-${index}`;
-            const isCheckbox = field.type === "checkbox" || field.type === "toggle" || field.type === "switch";
+            const isCheckbox =
+              field.type === "checkbox" || field.type === "toggle" || field.type === "switch";
             return (
-              <div
-                key={fieldId}
-                className={`${styles.fieldGroup} ${isCheckbox ? styles.checkboxGroup : ""}`}
-              >
+              <div key={fieldId} className={`${styles.fieldGroup} ${isCheckbox ? styles.checkboxGroup : ""}`}>
                 <label htmlFor={fieldId}>{field.label}</label>
                 {field.type === "select" ? (
                   <select
@@ -90,7 +88,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                     max={field.max}
                     step={field.step}
                     value={values[fieldId] ?? field.min ?? 0}
-                    onChange={e => handleChange(fieldId, Number(e.target.value))}
+                    onChange={(e) => handleChange(fieldId, Number(e.target.value))}
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
@@ -109,10 +107,21 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                 ) : (
                   <input
                     id={fieldId}
-                    type={["number", "email", "password", "search", "url", "tel"].includes(field.type) ? field.type : "text"}
+                    type={
+                      ["number", "email", "password", "search", "url", "tel"].includes(field.type)
+                        ? field.type
+                        : "text"
+                    }
                     placeholder={field.placeholder}
                     value={values[fieldId] ?? ""}
-                    onChange={(e) => handleChange(fieldId, field.type === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
+                    onChange={(e) =>
+                      handleChange(
+                        fieldId,
+                        field.type === "number" && e.target.value !== ""
+                          ? Number(e.target.value)
+                          : e.target.value,
+                      )
+                    }
                   />
                 )}
               </div>
@@ -135,7 +144,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   key={action.id}
                   disabled={action.disabled}
                   className={`${styles.btn} ${variantClass}`}
-                  onClick={() => action.role === "cancel" ? onClose() : action.onClick?.(context)}
+                  onClick={() => (action.role === "cancel" ? onClose() : action.onClick?.(context))}
                 >
                   {action.label}
                 </button>
