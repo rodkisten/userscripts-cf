@@ -1,4 +1,3 @@
-import { mountView } from "../ui/solid-mount.tsx";
 import { applyComponentStyle } from "../../../core/css.js";
 import { RODX_SELECTORS, NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline";
