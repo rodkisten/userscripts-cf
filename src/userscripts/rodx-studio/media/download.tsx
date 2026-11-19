@@ -129,7 +129,7 @@ export function initializeDeckImmersiveDownload() {
     }
     function style() {
       if (styleAdded) return;
-      const css = (<style />) as HTMLStyleElement;
+      const css = document.createElement("style");
       css.id = "rodx-immersive-download-css";
       css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);
@@ -247,7 +247,7 @@ export function initializeDeckImmersiveDownload() {
         }
         if (!(blob instanceof Blob) || !blob.size) throw new Error("Resposta de mídia vazia.");
         const objectUrl = URL.createObjectURL(blob);
-        const anchor = (<a />) as HTMLAnchorElement;
+        const anchor = document.createElement("a");
         anchor.href = objectUrl;
         anchor.download = filename;
         anchor.style.setProperty("display", "none", "important");
@@ -307,7 +307,7 @@ export function initializeDeckImmersiveDownload() {
       style();
       if (!button || !button.isConnected || button.parentElement !== viewer.layer) {
         button?.remove();
-        button = (<button />) as HTMLButtonElement;
+        button = document.createElement("button");
         button.type = "button";
         button.id = "rodx-immersive-download";
         button.addEventListener("click", (event) => {
