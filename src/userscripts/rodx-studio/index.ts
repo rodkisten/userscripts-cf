@@ -3,6 +3,7 @@ import { ScriptContext } from "../../core/runtime";
 import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
+import { disposeAllViews } from "./ui/solid-mount.tsx";
 
 // ============================================================================
 // Constantes Semânticas
@@ -83,6 +84,7 @@ export function startRodX(ctx: ScriptContext): void {
   scheduleDeckInitialization(ctx);
   // Release the startup guard when the script context is disposed (SPA navigation).
   ctx.onDispose(() => {
+    disposeAllViews();
     delete window[WINDOW_RODX_FLAG];
   });
 }
