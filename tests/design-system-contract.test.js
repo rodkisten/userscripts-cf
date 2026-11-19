@@ -26,7 +26,7 @@ describe("Rod UI React Studio contract", () => {
     expect(entry).toContain("<ObjectInspector");
   });
   it("preserves CodeMirror 6 and responsive styles", () => {
-    expect(read("studio/entry.tsx")).toContain('import("@codemirror/view")');
+    expect(read("studio/entry.tsx")).toContain('from "@codemirror/view"');
     expect(read("studio/studio.css")).toContain("@media(max-width:850px)");
     expect(read("studio/studio.css")).toContain("studio-device");
   });
