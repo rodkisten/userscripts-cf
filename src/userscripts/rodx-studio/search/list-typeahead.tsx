@@ -83,7 +83,7 @@ export function installListTypeahead(Studio) {
     mountView(root, () => (
       <>
         {"\n        "}
-        <style textContent={extractedCSS1} />
+        <style>{extractedCSS1}</style>
         {"\n        "}
         <div role={"listbox"}></div>
         {"\n      "}
