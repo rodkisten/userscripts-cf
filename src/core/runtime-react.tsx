@@ -57,7 +57,9 @@ export function createRuntime(
   let nextId = 0;
   let reactHost: HTMLDivElement | undefined;
   let reactRoot: ReturnType<typeof createRoot> | undefined;
+  let runtimeDisposed = false;
   const ensureReactHost = () => {
+    if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
     if (reactRoot) return;
     reactHost = host.document.createElement("div");
     reactHost.dataset.rodReactHost = "bundle";
@@ -66,6 +68,7 @@ export function createRuntime(
     reactRoot.render(<PortalRegistry registry={registry} />);
   };
   const disposeReactHost = () => {
+    runtimeDisposed = true;
     registry.clear();
     reactRoot?.unmount();
     reactRoot = undefined;
@@ -73,6 +76,7 @@ export function createRuntime(
     reactHost = undefined;
   };
   const mountSharedReact = (component: ReactElement, container: HTMLElement) => {
+    if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
     const id = ++nextId;
     let disposed = false;
     const update = (next: ReactElement) => {
