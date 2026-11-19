@@ -136,6 +136,8 @@ export async function auditReactRootOwnership(root) {
   const callsites = [];
   for (const file of files) {
     const source = await fs.readFile(file.absolute, "utf8");
+    if (!/\\b(?:createRoot|hydrateRoot)\\b/.test(source) && !source.includes("react-dom/client"))
+      continue;
     callsites.push(...inspectReactRootCalls(source, file.relative));
   }
 
