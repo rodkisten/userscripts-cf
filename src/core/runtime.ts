@@ -782,8 +782,14 @@ export function createCoreRuntime(
         return addStyle(cssContent, ensureUIRoot());
       },
       pageStyle(cssContent: string, options?: { id?: string }) {
+        const id = options?.id;
+        const existing = id ? host.document.getElementById(id) : null;
+        if (existing instanceof HTMLStyleElement) {
+          existing.textContent = String(cssContent);
+          return existing;
+        }
         const node = addStyle(cssContent, host.document.head || host.document.documentElement);
-        if (options?.id) node.id = options.id;
+        if (id) node.id = id;
         return node;
       },
       css: Object.freeze({
