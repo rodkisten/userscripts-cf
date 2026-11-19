@@ -27,6 +27,7 @@ function createRuntime(definitions, bridge, host, beforeCreate) {
 }
 import { matchURL } from "../src/core/match.js";
 import { initializeRodFeatures } from "../src/core/runtime.js";
+import { createElement } from "react";
 
 test("React menus are unavailable without a runtime-owned shared mount", async () => {
   const host = new Window({ url: "https://example.com/" });
@@ -269,5 +270,32 @@ test("runtime disposal releases the shared React toaster host", async () => {
   assert.ok(host.document.querySelector("[data-rod-toaster='sonner']"));
   await app.dispose();
   assert.equal(host.document.querySelector("[data-rod-toaster='sonner']"), null);
+  await host.happyDOM.abort();
+});
+
+test("shared React mounts render, update and dispose through the single runtime root", async () => {
+  const host = new Window({ url: "https://example.com/" });
+  const container = host.document.createElement("section");
+  host.document.body.append(container);
+  const app = createRuntime([], { call: async () => undefined }, host);
+
+  const mount = app.mountSharedReact(createElement("span", null, "first"), container);
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+  await flush();
+
+  assert.equal(container.textContent, "first");
+  assert.equal(host.document.querySelectorAll("[data-rod-react-host='bundle']").length, 1);
+
+  mount.update(createElement("span", null, "updated"));
+  await flush();
+  assert.equal(container.textContent, "updated");
+
+  mount.dispose();
+  await flush();
+  assert.equal(container.textContent, "");
+  assert.equal(host.document.querySelectorAll("[data-rod-react-host='bundle']").length, 1);
+
+  await app.dispose();
+  assert.equal(host.document.querySelector("[data-rod-react-host='bundle']"), null);
   await host.happyDOM.abort();
 });
