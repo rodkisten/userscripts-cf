@@ -17,6 +17,8 @@ export async function bundleRuntime(root, definitions, options = {}) {
       if (!absoluteId.startsWith(sourceDirectory)) return null;
       if (![".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"].includes(path.extname(absoluteId)))
         return null;
+      if (!/\\b(?:createRoot|hydrateRoot)\\b/.test(code) && !code.includes("react-dom/client"))
+        return null;
       const relative = path.relative(root, absoluteId).split(path.sep).join("/");
       const calls = inspectReactRootCalls(code, relative);
       if (calls.length) rootCallsites.set(relative, calls);
