@@ -19,6 +19,17 @@ describe("React RodMenu data contract", () => {
     });
   });
 
+  it("normalizes legacy name/value fields", () => {
+    expect(createInitialValues({
+      id: "legacy",
+      fields: [
+        { name: "enabled", type: "switch", label: "Enabled", value: true },
+        { name: "volume", type: "range", label: "Volume", value: 25 },
+        { name: "email", type: "email", label: "Email", value: "rod@example.com" },
+      ],
+    })).toEqual({ enabled: true, volume: 25, email: "rod@example.com" });
+  });
+
   it("does not persist when no key is supplied", () => {
     expect(loadPersistence()).toEqual({});
     expect(() => savePersistence(undefined, { enabled: true })).not.toThrow();
