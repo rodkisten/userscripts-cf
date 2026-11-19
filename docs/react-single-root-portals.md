@@ -40,6 +40,7 @@ The bundle-owned portal registry now observes the document subtree with one runt
 
 - A portal target is eligible for automatic pruning only after it has been connected at least once. This preserves callers that create a target before inserting it.
 - If a previously connected target is detached, its portal is removed from the registry and its disposer runs. Owned mount nodes are removed as part of that disposal.
+- MutationObserver records are also reconciled: a target inserted and detached again before the observer callback is still recognized as having been connected, so it cannot become an orphaned registry entry.
 - If a target is removed and reinserted before the observer checkpoint, it remains connected and the portal is retained. This avoids false cleanup during DOM moves/reparenting.
 - A context cleanup releases every portal whose provider belongs to that exact ScriptContext. Other contexts remain untouched.
 - Runtime shutdown disconnects the observer before releasing all portal handles and unmounting the single React root.
