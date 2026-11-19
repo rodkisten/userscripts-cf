@@ -275,71 +275,103 @@ export function transformRodAst(code, id, options = {}) {
       // Only rewrite when all references are confined to the contiguous lifecycle.
       if (i + 3 < statements.length) {
         const [decl, first, second, insertion] = statements.slice(i, i + 4);
-        if (![decl, first, second, insertion].some(keep) &&
-            ts.isVariableStatement(decl) &&
-            (decl.declarationList.flags & ts.NodeFlags.Const) &&
-            decl.declarationList.declarations.length === 1) {
+        if (
+          ![decl, first, second, insertion].some(keep) &&
+          ts.isVariableStatement(decl) &&
+          decl.declarationList.flags & ts.NodeFlags.Const &&
+          decl.declarationList.declarations.length === 1
+        ) {
           const variable = decl.declarationList.declarations[0];
           const name = ts.isIdentifier(variable.name) ? variable.name.text : null;
           const create = variable.initializer;
-          const isStyle = name && create && ts.isCallExpression(create) &&
+          const isStyle =
+            name &&
+            create &&
+            ts.isCallExpression(create) &&
             ts.isPropertyAccessExpression(create.expression) &&
             ts.isIdentifier(create.expression.expression) &&
             create.expression.expression.text === "document" &&
             create.expression.name.text === "createElement" &&
-            !create.questionDotToken && !create.expression.questionDotToken &&
-            create.arguments.length === 1 && ts.isStringLiteral(create.arguments[0]) &&
+            !create.questionDotToken &&
+            !create.expression.questionDotToken &&
+            create.arguments.length === 1 &&
+            ts.isStringLiteral(create.arguments[0]) &&
             create.arguments[0].text.toLowerCase() === "style";
           const propertyWrite = (statement) => {
             if (!ts.isExpressionStatement(statement)) return null;
             const expr = statement.expression;
-            if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-                ts.isPropertyAccessExpression(expr.left) && ts.isIdentifier(expr.left.expression) &&
-                expr.left.expression.text === name &&
-                ["id", "textContent", "innerText"].includes(expr.left.name.text))
+            if (
+              ts.isBinaryExpression(expr) &&
+              expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+              ts.isPropertyAccessExpression(expr.left) &&
+              ts.isIdentifier(expr.left.expression) &&
+              expr.left.expression.text === name &&
+              ["id", "textContent", "innerText"].includes(expr.left.name.text)
+            )
               return { property: expr.left.name.text, value: expr.right };
-            if (ts.isCallExpression(expr) && ts.isPropertyAccessExpression(expr.expression) &&
-                ts.isIdentifier(expr.expression.expression) &&
-                expr.expression.expression.text === name && expr.expression.name.text === "setAttribute" &&
-                expr.arguments.length === 2 && ts.isStringLiteral(expr.arguments[0]) &&
-                expr.arguments[0].text === "id")
+            if (
+              ts.isCallExpression(expr) &&
+              ts.isPropertyAccessExpression(expr.expression) &&
+              ts.isIdentifier(expr.expression.expression) &&
+              expr.expression.expression.text === name &&
+              expr.expression.name.text === "setAttribute" &&
+              expr.arguments.length === 2 &&
+              ts.isStringLiteral(expr.arguments[0]) &&
+              expr.arguments[0].text === "id"
+            )
               return { property: "id", value: expr.arguments[1] };
             return null;
           };
           const writes = [propertyWrite(first), propertyWrite(second)];
           const idWrite = writes.find((item) => item?.property === "id");
           const cssWrite = writes.find((item) => ["textContent", "innerText"].includes(item?.property));
-          const append = ts.isExpressionStatement(insertion) && ts.isCallExpression(insertion.expression)
-            ? insertion.expression : null;
+          const append =
+            ts.isExpressionStatement(insertion) && ts.isCallExpression(insertion.expression)
+              ? insertion.expression
+              : null;
           const callee = append?.expression;
-          const head = callee && ts.isPropertyAccessExpression(callee) &&
+          const head =
+            callee &&
+            ts.isPropertyAccessExpression(callee) &&
             ts.isPropertyAccessExpression(callee.expression) &&
             ts.isIdentifier(callee.expression.expression) &&
             callee.expression.expression.text === "document" &&
             callee.expression.name.text === "head" &&
             ["append", "appendChild"].includes(callee.name.text) &&
-            !append.questionDotToken && !callee.questionDotToken;
-          if (isStyle && idWrite && cssWrite && head &&
-              append.arguments.length === 1 && ts.isIdentifier(append.arguments[0]) &&
-              append.arguments[0].text === name &&
-              !code.slice(decl.end, insertion.getStart(source)).includes("//") &&
-              !code.slice(decl.end, insertion.getStart(source)).includes("/*")) {
+            !append.questionDotToken &&
+            !callee.questionDotToken;
+          if (
+            isStyle &&
+            idWrite &&
+            cssWrite &&
+            head &&
+            append.arguments.length === 1 &&
+            ts.isIdentifier(append.arguments[0]) &&
+            append.arguments[0].text === name &&
+            !code.slice(decl.end, insertion.getStart(source)).includes("//") &&
+            !code.slice(decl.end, insertion.getStart(source)).includes("/*")
+          ) {
             const symbol = checker.getSymbolAtLocation(variable.name);
             let refs = 0;
             const count = (node) => {
-              if (ts.isIdentifier(node) && node.text === name &&
-                  checker.getSymbolAtLocation(node) === symbol) refs++;
+              if (ts.isIdentifier(node) && node.text === name && checker.getSymbolAtLocation(node) === symbol)
+                refs++;
               ts.forEachChild(node, count);
             };
             if (symbol) count(owner);
             // setAttribute contributes one extra identifier; no escaping references.
             if (symbol && refs === 4) {
               edits.push({
-                start: decl.getStart(source), end: insertion.end,
+                start: decl.getStart(source),
+                end: insertion.end,
                 before: code.slice(decl.getStart(source), insertion.end),
-                after: ctx + ".ui.pageStyle(" +
+                after:
+                  ctx +
+                  ".ui.pageStyle(" +
                   code.slice(cssWrite.value.getStart(source), cssWrite.value.end) +
-                  ", { id: " + code.slice(idWrite.value.getStart(source), idWrite.value.end) + " });",
+                  ", { id: " +
+                  code.slice(idWrite.value.getStart(source), idWrite.value.end) +
+                  " });",
               });
               i += 3;
               continue;
