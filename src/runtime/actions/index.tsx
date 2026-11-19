@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles, { css } from "./Launcher.module.css";
 import { ClipboardPanel, type ClipboardApi } from "./ClipboardPanel.tsx";
@@ -112,7 +113,7 @@ function ActionsView({
   );
 }
 
-export function installRodActions(_menu?: unknown): RodActionsHub {
+export function installRodActions(_menu?: unknown, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }): RodActionsHub {
   if (window.__RodActions) return window.__RodActions;
   const modules = new Map<string, RodActionsModule>();
   const registrations = new Map<string, symbol>();
@@ -157,8 +158,7 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
   shadow.append(sheet);
   const mount = document.createElement("div");
   shadow.append(mount);
-  const root: Root = createRoot(mount);
-  root.render(
+  const view = (
     <ActionsView
       hub={hub}
       portal={mount}
@@ -170,8 +170,10 @@ export function installRodActions(_menu?: unknown): RodActionsHub {
           listeners.delete(listener);
         };
       }}
-    />,
+    />
   );
+  if (mountSharedReact) mountSharedReact(view, mount);
+  else createRoot(mount).render(view);
   window.__RodActions = hub;
   const clipboard = (window as Window & { __RodClipboard?: ClipboardApi }).__RodClipboard;
   if (clipboard)
