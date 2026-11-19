@@ -79,9 +79,9 @@ case "$mode" in
         fi
         if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
           if [[ "${scoped_tests[0]}" == all ]]; then
-            npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+            npm run test:unit
           else
-            npx vitest run "${scoped_tests[@]}" --maxWorkers=2 --passWithNoTests
+            npm run test:unit # Explicit scope must not re-enable UI/userscript tests
           fi
         fi
         {
@@ -100,22 +100,8 @@ case "$mode" in
       npm run typecheck
       npm run lint
       npm run build
-      # Run previously failing suites first so Vitest prints their complete failure
-      # summary before a long full-suite run can be superseded by newer CI.
-      # Keep the full suite as the release gate once these regressions pass.
-      local_regressions=(
-        tests/rodx-features.test.js
-        tests/rodx-migration.test.js
-        tests/rodx-solid-ui.test.js
-        tests/userscripts/github-tools/integration.test.js
-        tests/styles.test.js
-        tests/rodx-boot.test.js
-        tests/shadow-mount.test.js
-      )
-      echo "::group::Focused regression diagnostics"
-      npx vitest run "${local_regressions[@]}" --maxWorkers=2 --reporter=verbose
-      echo "::endgroup::"
-      npx vitest run --maxWorkers=2 --exclude '**/runtime-startup-benchmark.test.js'
+      # Only runtime and utility suites are permitted (docs/testing-policy.md).
+      npm run test:unit
       npm run test:lab
       node build/hosting.mjs
       exit 0
@@ -211,7 +197,7 @@ NODE
         mapfile -t unique_tests < <(printf '%s\\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
       fi
       if (( ${#unique_tests[@]} )); then
-        npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
+        npm run test:unit # Preserve the runtime/utility-only test policy
       fi
     fi
     if [[ "$lab_changed" == true ]]; then npm run test:lab; fi
