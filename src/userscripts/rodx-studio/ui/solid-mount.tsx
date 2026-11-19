@@ -6,7 +6,7 @@ type Mount = { id: number; node: ReactNode; connected: boolean; dispose?: () => 
 let nextMountId = 0;
 const mounts = new Map<MountTarget, Mount>();
 let observer: MutationObserver | undefined;
-let sharedMount: ((component: ReactElement, target: HTMLElement) => () => void) | undefined;
+let sharedMount: ((component: ReactElement, target: Element | ShadowRoot) => () => void) | undefined;
 
 function SharedView({ record }: { record: Mount }) {
   const node = useSyncExternalStore(
@@ -62,7 +62,7 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
     // The runtime portal registry owns all RodX views, including Shadow DOM targets.
     record.listeners = new Set();
     flushSync(() => {
-      record.dispose = sharedMount(<SharedView record={record} />, target as HTMLElement);
+      record.dispose = sharedMount(<SharedView record={record} />, target);
     });
     mounts.set(target, record);
   }
