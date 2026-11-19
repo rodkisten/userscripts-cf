@@ -261,7 +261,7 @@ export function openRadixDropdown(
 }
 export function openRadixDialog(
   schema: MenuSchema,
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ) {
   const owner = schema.container?.ownerDocument ?? document;
   const target = schema.container ?? owner.body;
