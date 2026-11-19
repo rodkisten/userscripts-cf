@@ -223,7 +223,7 @@ export function mountReddit(ctx: any, bridge: any) {
         );
         const mount = {
           dispose: () => {
-            reactRoot.unmount();
+            disposePortal();
             host.remove();
           },
         };
