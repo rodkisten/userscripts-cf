@@ -121,7 +121,9 @@ export function initializeDeckResultEnhancer(): void {
 
     function ensureStyle(): void {
       if (style?.isConnected) return;
-      style = (<style id={SELECTORS_IDS.resultsStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
+      style = document.createElement("style");
+      style.id = SELECTORS_IDS.resultsStyle;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
     }
 
@@ -339,9 +341,9 @@ export function initializeDeckResultEnhancer(): void {
 
       const actions = findActions(article);
       if (!tray) {
-        tray = (
-          <div className={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />
-        ) as HTMLDivElement;
+        tray = document.createElement("div");
+        tray.className = CSS_CLASSES.hashtagsTray;
+        tray.setAttribute("aria-label", UI_TEXTS.hashtagsAriaLabel);
       }
 
       if (actions?.parentElement) {
