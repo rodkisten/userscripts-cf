@@ -339,10 +339,11 @@ for (const [target, measurements] of Object.entries(classAudit)) {
     gzipBytes: measurements.gzipBytes,
     debugBytes: measurements.debugBytes,
     debugGzipBytes: measurements.debugGzipBytes,
-    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({
+    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines, reactRootAudit }) => ({
       world,
       bytes,
       includedModuleCount,
+      reactRootAudit,
       topModules,
       featureDefines,
     })),
