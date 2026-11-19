@@ -69,7 +69,7 @@ export function initializeDeckSocialAppLinks() {
             ) : (
               <InstagramIcon />
             )}
-          </>
+          </>,
         );
       }
       anchor.dataset.rodxApp = app.name;
