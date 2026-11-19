@@ -2,65 +2,45 @@ import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
 import { mountDirectoryTree } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
 import styles, { css } from "./GitHub.module.css";
 
 type ReactMount = { host: HTMLElement; dispose: () => void };
-const portalEntries = new Map<HTMLElement, { node: ReactNode; target: Element | ShadowRoot }>();
-const portalSubscribers = new Set<() => void>();
-let portalSnapshot: { host: HTMLElement; node: ReactNode; target: Element | ShadowRoot }[] = [];
-let portalRoot: ReturnType<typeof createRoot> | undefined;
-let portalKey = 0;
-const subscribePortals = (notify: () => void) => {
-  portalSubscribers.add(notify);
-  return () => {
-    portalSubscribers.delete(notify);
-  };
-};
-function PortalHost() {
-  const entries = useSyncExternalStore(subscribePortals, () => portalSnapshot);
-  return (
-    <>{entries.map((entry) => createPortal(entry.node, entry.target, entry.host.dataset.ghftPortalKey))}</>
-  );
-}
-function publishPortals() {
-  portalSnapshot = [...portalEntries].map(([host, entry]) => ({ host, ...entry }));
-  portalSubscribers.forEach((notify) => notify());
-}
-function mountReactPoint(
+
+/** Every GitHub Tools mount is a portal owned by this script's shared runtime. */
+function mountReactPoint(ctx, 
+  ctx: any,
   parent: Node,
-  node: ReactNode,
+  node: ReactElement,
   options: { before?: Node | null; tag?: string; shadow?: boolean; styles?: string[] } = {},
 ): ReactMount {
-  if (!portalRoot) {
-    const portalContainer = document.createElement("div");
-    portalContainer.hidden = true;
-    document.documentElement.append(portalContainer);
-    portalRoot = createRoot(portalContainer);
-    portalRoot.render(<PortalHost />);
-  }
   const host = document.createElement(options.tag || "div");
-  host.dataset.ghftPortalKey = String(++portalKey);
   const target = options.shadow ? host.attachShadow({ mode: "open" }) : host;
   if (options.shadow && options.styles?.length) {
     const style = document.createElement("style");
-    style.textContent = options.styles.join("\n");
+    style.textContent = options.styles.join("\\n");
     target.append(style);
   }
   parent.insertBefore(host, options.before || null);
-  portalEntries.set(host, { node, target });
-  publishPortals();
-  return {
-    host,
-    dispose: () => {
-      portalEntries.delete(host);
-      publishPortals();
-      host.remove();
-    },
-  };
+  try {
+    const mount = ctx.ui.mountReact(node, target);
+    let disposed = false;
+    return {
+      host,
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        mount.dispose();
+        host.remove();
+      },
+    };
+  } catch (error) {
+    host.remove();
+    throw error;
+  }
 }
 
 // ============================================================================
@@ -610,7 +590,7 @@ function startGitHub(ctx: any): void {
       const currentInfo = useSyncExternalStore(subscribeInfo, () => info);
       return <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />;
     }
-    const mount = mountReactPoint(listContainer.parentNode!, <ToolbarView />, { before: listContainer });
+    const mount = mountReactPoint(ctx, listContainer.parentNode!, <ToolbarView />, { before: listContainer });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
     const disposeTree = mountDirectoryTree(ctx, listContainer, repo);
@@ -655,7 +635,7 @@ function startGitHub(ctx: any): void {
           item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') ||
           item.row.querySelector("a[href]");
         if (!anchor) continue;
-        const mount = mountReactPoint(
+        const mount = mountReactPoint(ctx, 
           anchor.parentNode!,
           <button
             type="button"
@@ -675,7 +655,7 @@ function startGitHub(ctx: any): void {
         mounts.set(mount.host, mount.dispose);
         if (item.type === "file") {
           const path = formatDisplayPathForItem(item);
-          const commitMount = mountReactPoint(
+          const commitMount = mountReactPoint(ctx, 
             item.row,
             <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />,
             { tag: "span", shadow: true, styles: [css] },
@@ -710,7 +690,7 @@ function startGitHub(ctx: any): void {
       const token = await ctx.storage.get("actionsToken", "");
       if (ctx.signal.aborted || request !== tokenRequest) return;
       tokenDialog?.dispose();
-      tokenDialog = mountReactPoint(
+      tokenDialog = mountReactPoint(ctx, 
         document.body,
         <GitHubTokenSettings
           token={token}
