@@ -3,7 +3,7 @@ import { Window } from "happy-dom";
 import { createPortalRegistry } from "../src/core/portal-registry.js";
 
 describe("React portal registry ownership", () => {
-  it("keeps snapshots stable until a registry mutation", () => {
+  it("keeps snapshots stable until a registry mutation", async () => {
     const host = new Window();
     const target = host.document.createElement("div");
     host.document.body.append(target);
@@ -17,10 +17,10 @@ describe("React portal registry ownership", () => {
     expect(registry.getSnapshot()).toBe(updated);
     registry.remove(1);
     expect(registry.getSnapshot()).not.toBe(updated);
-    host.happyDOM.abort();
+    await host.happyDOM.abort();
   });
 
-  it("prunes targets only after they were connected and later detached", () => {
+  it("prunes targets only after they were connected and later detached", async () => {
     const host = new Window();
     const registry = createPortalRegistry<string, object>();
     const detached = host.document.createElement("div");
@@ -34,10 +34,10 @@ describe("React portal registry ownership", () => {
 
     expect(registry.pruneDisconnected()).toEqual([2]);
     expect(registry.getSnapshot().map(({ id }) => id)).toEqual([1]);
-    host.happyDOM.abort();
+    await host.happyDOM.abort();
   });
 
-  it("does not prune a target removed and reinserted before the observer checkpoint", () => {
+  it("does not prune a target removed and reinserted before the observer checkpoint", async () => {
     const host = new Window();
     const target = host.document.createElement("div");
     host.document.body.append(target);
@@ -49,10 +49,10 @@ describe("React portal registry ownership", () => {
 
     expect(registry.pruneDisconnected()).toEqual([]);
     expect(registry.getSnapshot()).toHaveLength(1);
-    host.happyDOM.abort();
+    await host.happyDOM.abort();
   });
 
-  it("removes all portals owned by one context without touching another", () => {
+  it("removes all portals owned by one context without touching another", async () => {
     const host = new Window();
     const firstContext = {};
     const secondContext = {};
@@ -70,10 +70,10 @@ describe("React portal registry ownership", () => {
 
     expect(registry.getSnapshot().map(({ id }) => id)).toEqual([2]);
     expect(listener).toHaveBeenCalledTimes(1);
-    host.happyDOM.abort();
+    await host.happyDOM.abort();
   });
 
-  it("unsubscribes listeners and clears without redundant notifications", () => {
+  it("unsubscribes listeners and clears without redundant notifications", async () => {
     const host = new Window();
     const target = host.document.createElement("div");
     host.document.body.append(target);
@@ -88,6 +88,6 @@ describe("React portal registry ownership", () => {
 
     expect(listener).toHaveBeenCalledTimes(1);
     expect(registry.getSnapshot()).toEqual([]);
-    host.happyDOM.abort();
+    await host.happyDOM.abort();
   });
 });
