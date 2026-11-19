@@ -18,8 +18,8 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Checkpoint at completed page boundaries to avoid losing unprocessed items. `maxItemsPerSession` is a soft page-boundary limit and can be exceeded by one page.
 - [ ] Make persisted delivery state account + collection + channel safe, including channel changes.
 - [ ] Route Instagram HTTP and GM requests through ctx abstractions; preserve cancellation and retry-after.
-- [ ] Audit bookmark ownership across Feed, modal, grid and swiped Reels.
-- [ ] Confirm per-publication native save/unsave state, unavailable controls and collection selection errors.
+- [ ] Audit bookmark ownership across Feed, modal, grid and swiped Reels (initial native-control fallback hardening committed; per-publication identity still pending).
+- [ ] Confirm per-publication native save/unsave state, unavailable controls and collection selection errors (unknown state now blocks activation; Safari and collection selection remain unverified).
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
