@@ -30,6 +30,17 @@ describe("Rod UI React Studio contract", () => {
     expect(read("studio/studio.css")).toContain("@media(max-width:850px)");
     expect(read("studio/studio.css")).toContain("studio-device");
   });
+  it("uses Radix Dialog for accessible menu surfaces", () => {
+    const menu = read("src/runtime/react-ui/Menu.tsx");
+    const css = read("src/runtime/react-ui/Menu.module.css");
+    expect(menu).toContain('from "@radix-ui/react-dialog"');
+    expect(menu).toContain("<Dialog.Root");
+    expect(menu).toContain("<Dialog.Content");
+    expect(menu).toContain("<Dialog.Title");
+    expect(menu).toContain("<Dialog.Close");
+    expect(css).toContain(".surfaceDrawer");
+    expect(css).toContain(".surfacePopover");
+  });
   it("documents the mandatory feature update workflow", () => {
     expect(read("studio/README.md")).toContain("Mandatory feature documentation policy");
     expect(read("build/check-design-system-changes.mjs")).toContain("Runtime UI changed");
