@@ -53,8 +53,19 @@ export function createRuntime(
     reactHost = host.document.createElement("div");
     reactHost.dataset.rodReactHost = "bundle";
     (host.document.body || host.document.documentElement).append(reactHost);
-    portalObserver = new host.MutationObserver(() => {
-      for (const id of registry.pruneDisconnected()) portalDisposers.get(id)?.();
+    portalObserver = new host.MutationObserver((records) => {
+      const connectedTargets = new Set<Element | ShadowRoot>();
+      const entries = registry.getSnapshot();
+      for (const record of records) {
+        for (const addedNode of record.addedNodes) {
+          for (const { target } of entries) {
+            const candidate =
+              target.nodeType === 11 ? (target as ShadowRoot).host : target;
+            if (addedNode === candidate || addedNode.contains(candidate)) connectedTargets.add(target);
+          }
+        }
+      }
+      for (const id of registry.pruneDisconnected(connectedTargets)) portalDisposers.get(id)?.();
     });
     portalObserver.observe(host.document, { childList: true, subtree: true });
     reactRoot = createRoot(reactHost);
