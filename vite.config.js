@@ -21,6 +21,18 @@ export default defineConfig({
     lightningcss: { targets: { safari: 15 << 16 } },
   },
   build: {
+    // Browser IIFEs intentionally bundle client-only React dependencies.
+    // Their "use client" marker has no meaning outside an RSC server boundary.
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        if (
+          warning.code === "MODULE_LEVEL_DIRECTIVE" &&
+          /use client/.test(warning.message) &&
+          /node_modules[/\\\\](?:@radix-ui|sonner)[/\\\\]/.test(warning.id ?? "")
+        ) return;
+        defaultHandler(warning);
+      },
+    },
     target: "safari15",
     minify: false,
     cssMinify: "lightningcss",
