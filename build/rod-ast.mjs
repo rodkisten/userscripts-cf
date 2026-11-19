@@ -4,6 +4,9 @@
  * @keep on a statement opts out of rewrites for that statement.
  */
 import ts from "typescript";
+import postcss from "postcss";
+import { transform as transformCSS } from "lightningcss";
+import { stylesPipeline } from "./styles.mjs";
 
 const DEFAULT_RULES = Object.freeze({
   fetch: "ctx.http.fetch",
@@ -171,9 +174,57 @@ export function transformRodAst(code, id, options = {}) {
       (removal) => removal.target === target && removal.event === event.text && removal.symbol === symbol,
     );
   }
-  function hasGMGuard(owner) {
-    if (!owner) return true;
-    return /typeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(code.slice(owner.getStart(source), owner.end));
+  // Evaluate availability guards at each call, not across the whole function.
+  // Conservative call-site guards: preserve both sides of a capability fallback.
+  // Rewriting either side can change the selected API or fallback behavior.
+  // Inspect actual typeof AST nodes: text matching would mistake strings/comments
+  // for capability guards and suppress otherwise safe migrations.
+  function containsGMTypeof(expression) {
+    let found = false;
+    function visit(node) {
+      if (found) return;
+      if (
+        ts.isTypeOfExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))
+      ) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(expression);
+    return found;
+  }
+  function hasGMGuard(node) {
+    let current = node.parent;
+    while (current && !ts.isSourceFile(current)) {
+      if (ts.isFunctionLike(current)) break;
+      if (ts.isIfStatement(current)) {
+        const inThen = current.thenStatement.pos <= node.pos && node.end <= current.thenStatement.end;
+        const inElse =
+          current.elseStatement &&
+          current.elseStatement.pos <= node.pos &&
+          node.end <= current.elseStatement.end;
+        if ((inThen || inElse) && containsGMTypeof(current.expression)) return true;
+      }
+      if (ts.isConditionalExpression(current) && containsGMTypeof(current.condition)) return true;
+      if (ts.isBinaryExpression(current)) {
+        if (
+          [
+            ts.SyntaxKind.AmpersandAmpersandToken,
+            ts.SyntaxKind.BarBarToken,
+            ts.SyntaxKind.QuestionQuestionToken,
+          ].includes(current.operatorToken.kind) &&
+          current.right.pos <= node.pos &&
+          node.end <= current.right.end &&
+          containsGMTypeof(current.left)
+        )
+          return true;
+      }
+      current = current.parent;
+    }
+    return false;
   }
   // Opt-in migration only for already-awaited calls in async functions.
   // ctx.storage.local retains native string/null coercion and read-through.
@@ -185,6 +236,12 @@ export function transformRodAst(code, id, options = {}) {
     )
       return undefined;
     if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage")) return undefined;
+    // Preserve native synchronous exception handling until helper rejection semantics match.
+    let ancestor = node.parent;
+    while (ancestor && ancestor !== owner) {
+      if (ts.isTryStatement(ancestor)) return undefined;
+      ancestor = ancestor.parent;
+    }
     const callee = node.expression;
     if (
       !ts.isPropertyAccessExpression(callee) ||
@@ -196,6 +253,98 @@ export function transformRodAst(code, id, options = {}) {
     if (node.arguments.length !== (callee.name.text === "setItem" ? 2 : 1)) return undefined;
     if (!ts.isStringLiteral(node.arguments[0])) return undefined;
     return callee.name.text;
+  }
+  // Migrate only complete, contiguous style creation/write/append triples.
+  // Never rewrite an escaping style node or a partial mutation sequence.
+  function migrateStaticStyleTriples(owner, ctx, shadowed, blocked) {
+    if (blocked || options.styles === false || shadowed.has("document")) return;
+    const body = owner.body;
+    if (!body || !ts.isBlock(body)) return;
+    const statements = body.statements;
+    for (let i = 0; i + 2 < statements.length; i++) {
+      const [declaration, assignment, insertion] = statements.slice(i, i + 3);
+      if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
+      if (
+        !ts.isVariableStatement(declaration) ||
+        declaration.declarationList.declarations.length !== 1 ||
+        !(declaration.declarationList.flags & ts.NodeFlags.Const)
+      )
+        continue;
+      const variable = declaration.declarationList.declarations[0];
+      if (
+        !ts.isIdentifier(variable.name) ||
+        !variable.initializer ||
+        !ts.isCallExpression(variable.initializer)
+      )
+        continue;
+      const name = variable.name.text;
+      const create = variable.initializer;
+      if (
+        !ts.isPropertyAccessExpression(create.expression) ||
+        !ts.isIdentifier(create.expression.expression) ||
+        create.expression.expression.text !== "document" ||
+        create.expression.name.text !== "createElement" ||
+        create.questionDotToken ||
+        create.expression.questionDotToken ||
+        create.arguments.length !== 1 ||
+        !ts.isStringLiteral(create.arguments[0]) ||
+        create.arguments[0].text.toLowerCase() !== "style"
+      )
+        continue;
+      if (!ts.isExpressionStatement(assignment) || !ts.isBinaryExpression(assignment.expression)) continue;
+      const write = assignment.expression;
+      if (
+        write.operatorToken.kind !== ts.SyntaxKind.EqualsToken ||
+        !ts.isPropertyAccessExpression(write.left) ||
+        !ts.isIdentifier(write.left.expression) ||
+        write.left.expression.text !== name ||
+        !["textContent", "innerText"].includes(write.left.name.text)
+      )
+        continue;
+      if (!ts.isStringLiteral(write.right) && !ts.isNoSubstitutionTemplateLiteral(write.right)) continue;
+      if (!ts.isExpressionStatement(insertion) || !ts.isCallExpression(insertion.expression)) continue;
+      const append = insertion.expression;
+      if (
+        !ts.isPropertyAccessExpression(append.expression) ||
+        append.questionDotToken ||
+        append.expression.questionDotToken ||
+        !["append", "appendChild", "prepend"].includes(append.expression.name.text) ||
+        append.arguments.length !== 1 ||
+        !ts.isIdentifier(append.arguments[0]) ||
+        append.arguments[0].text !== name
+      )
+        continue;
+      const target = append.expression.expression;
+      const documentHead =
+        ts.isPropertyAccessExpression(target) &&
+        ts.isIdentifier(target.expression) &&
+        target.expression.text === "document" &&
+        ["head", "documentElement", "body"].includes(target.name.text);
+      if (!documentHead || target.name.text !== "head") continue;
+      // Retain comments and directives between statements instead of deleting them.
+      const between = code.slice(declaration.end, insertion.getStart(source));
+      if (between.includes("/*") || between.includes("//")) continue;
+      const symbol = checker.getSymbolAtLocation(variable.name);
+      if (!symbol) continue;
+      let references = 0;
+      const count = (node) => {
+        if (ts.isIdentifier(node) && node.text === name && checker.getSymbolAtLocation(node) === symbol)
+          references++;
+        ts.forEachChild(node, count);
+      };
+      count(owner);
+      // Declaration, write and append each reference the symbol exactly once.
+      if (references !== 3) continue;
+      // A declaration in a nested block must not be migrated as if it belonged
+      // to the outer function scope. The triple is intentionally local.
+      edits.push({
+        start: declaration.getStart(source),
+        end: insertion.end,
+        before: code.slice(declaration.getStart(source), insertion.end),
+        after: ctx + ".ui.style(" + code.slice(write.right.getStart(source), write.right.end) + ");",
+      });
+      i += 2;
+    }
   }
   const keep = (node) => {
     const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
@@ -213,6 +362,7 @@ export function transformRodAst(code, id, options = {}) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
+      if (explicit) migrateStaticStyleTriples(node, nextCtx, nextShadowed, blocked || keep(node));
       ts.forEachChild(node, (child) =>
         walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner),
       );
@@ -226,6 +376,11 @@ export function transformRodAst(code, id, options = {}) {
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
       const callee = node.expression;
+      // Optional calls/receivers short-circuit. A context helper is not
+      // guaranteed to preserve that behavior, so never rewrite either form.
+      const optional = Boolean(
+        node.questionDotToken || (ts.isPropertyAccessExpression(callee) && callee.questionDotToken),
+      );
       let replacement, extraArg;
       const storageMethod = storageRewrite(node, owner, shadowed);
       if (storageMethod) replacement = ctx + ".storage.local." + storageMethod;
@@ -233,9 +388,10 @@ export function transformRodAst(code, id, options = {}) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
         if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
           replacement = ctx + ".interval";
-        if (options.gm !== false && !hasGMGuard(owner) && /^GM_[A-Za-z]+$/.test(callee.text)) {
+        if (options.gm !== false && !hasGMGuard(node) && /^GM_[A-Za-z]+$/.test(callee.text)) {
           const method = callee.text.slice(3);
-          if (GM_LEGACY_METHODS.has(method)) replacement = ctx + ".gm.legacy." + method;
+          if (GM_LEGACY_METHODS.has(method))
+            replacement = method === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.legacy." + method;
         }
         // React useContext and project hooks must never be guessed by name.
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression)) {
@@ -260,16 +416,19 @@ export function transformRodAst(code, id, options = {}) {
       if (
         !replacement &&
         options.gm !== false &&
-        !hasGMGuard(owner) &&
+        !hasGMGuard(node) &&
         ts.isPropertyAccessExpression(callee) &&
         ts.isIdentifier(callee.expression) &&
         callee.expression.text === "GM" &&
         !shadowed.has("GM") &&
         GM_LEGACY_METHODS.has(callee.name.text)
       ) {
-        replacement = ctx + ".gm.modern." + callee.name.text;
+        replacement =
+          callee.name.text === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.modern." + callee.name.text;
       }
-      if (replacement) {
+      // GM.addStyle creates a page-level stylesheet. The UI helper owns the
+      // ShadowRoot and disposal instead; only migrate direct unguarded calls.
+      if (replacement && !optional) {
         const original = code.slice(callee.getStart(source), callee.end);
         edits.push({ start: callee.getStart(source), end: callee.end, before: original, after: replacement });
         if (extraArg)
@@ -284,8 +443,16 @@ export function transformRodAst(code, id, options = {}) {
     ts.forEachChild(node, (child) => walk(child, ctx, shadowed, blocked || keep(node), owner));
   }
   walk(source, null);
+  // Whole-statement replacements take precedence over their nested calls.
+  const safeEdits = edits.filter(
+    (edit) =>
+      !edits.some(
+        (outer) =>
+          outer !== edit && outer.start <= edit.start && outer.end >= edit.end && outer.end > outer.start,
+      ),
+  );
   let output = code;
-  for (const edit of [...edits].sort((a, b) => b.start - a.start))
+  for (const edit of [...safeEdits].sort((a, b) => b.start - a.start))
     output = output.slice(0, edit.start) + edit.after + output.slice(edit.end);
   const parsed = ts.createSourceFile(id, output, ts.ScriptTarget.Latest, true, scriptKind(id));
   if (parsed.parseDiagnostics.length)
@@ -301,12 +468,58 @@ export function rodAstPlugin(options = {}) {
   return {
     name: "rod-ast",
     enforce: "pre",
-    transform(code, id) {
+    async transform(code, id) {
       if (!/\.[cm]?[jt]sx?(?:\?.*)?$/.test(id) || id.includes("node_modules") || id.includes("/dist/"))
         return null;
       const result = transformRodAst(code, id.split("?")[0], options);
       if (result.diagnostics.length && options.strict) this.error(result.diagnostics.join("\n"));
-      return result.changed ? { code: result.code, map: null } : null;
+      let output = result.code;
+      if (options.css !== false) {
+        const parsed = ts.createSourceFile(id, output, ts.ScriptTarget.Latest, true, scriptKind(id));
+        const replacements = [];
+        const visit = (node) => {
+          if (
+            ts.isCallExpression(node) &&
+            node.arguments.length === 1 &&
+            ts.isPropertyAccessExpression(node.expression) &&
+            node.expression.name.text === "style" &&
+            ts.isPropertyAccessExpression(node.expression.expression) &&
+            node.expression.expression.name.text === "ui" &&
+            ts.isIdentifier(node.expression.expression.expression) &&
+            ["ctx", "context"].includes(node.expression.expression.expression.text)
+          ) {
+            const arg = node.arguments[0];
+            if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg))
+              replacements.push({ start: arg.getStart(parsed), end: arg.end, css: arg.text });
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(parsed);
+        for (const entry of replacements.reverse()) {
+          try {
+            const processed = await postcss(stylesPipeline({ scope: "shadow", includeBase: false })).process(
+              entry.css,
+              {
+                from: id.split("?")[0] + ".shadow.css",
+              },
+            );
+            const compiled = transformCSS({
+              filename: id.split("?")[0] + ".shadow.css",
+              code: Buffer.from(processed.css),
+              targets: { safari: 15 << 16 },
+              minify: true,
+            });
+            output =
+              output.slice(0, entry.start) +
+              JSON.stringify(compiled.code.toString()) +
+              output.slice(entry.end);
+          } catch (error) {
+            if (options.strict) this.error("Rod AST CSS: " + error.message);
+            this.warn?.("Rod AST CSS skipped: " + error.message);
+          }
+        }
+      }
+      return output !== code ? { code: output, map: null } : null;
     },
   };
 }

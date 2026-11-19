@@ -1,4 +1,4 @@
-import { it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { readFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -23,10 +23,10 @@ it("shadowed fetch is not rewritten", () => {
   const code = 'function init(ctx: unknown) { const fetch = (x: string) => x; return fetch("ok"); }';
   expect(transformRodAst(code, "shadow.ts").code).toBe(code);
 });
-it("optional Vite plugin is disabled unless registered", () => {
+it("optional Vite plugin is disabled unless registered", async () => {
   const plugin = rodAstPlugin();
   expect(plugin.name).toBe("rod-ast");
-  expect(plugin.transform('fetch("/")', "file.ts")).toBeNull();
+  expect(await plugin.transform('fetch("/")', "file.ts")).toBeNull();
 });
 
 it("rewrites typed DOM query aliases and preserves NodeList semantics", () => {
@@ -264,7 +264,7 @@ it("rewrites direct legacy and modern GM calls to the context bridge", () => {
   const output = transformRodAst(input, "gm.ts").code;
   expect(output).toContain('ctx.gm.legacy.setValue("key", 1)');
   expect(output).toContain('ctx.gm.legacy.getValue("key")');
-  expect(output).toContain('ctx.gm.modern.addStyle("body{}")');
+  expect(output).toContain('ctx.ui.style("body{}")');
   expect(output).toContain('ctx.gm.modern.xmlhttpRequest({ url: "/api" })');
 });
 it("does not rewrite shadowed GM bindings or unknown GM methods", () => {
@@ -355,4 +355,204 @@ it("storage opt-in keeps dynamic keys native even when awaited", () => {
   const input =
     "async function init(ctx) { await localStorage.setItem(key, value); await localStorage.getItem(key); }";
   expect(transformRodAst(input, "storage-dynamic.ts", { storage: "awaited" }).code).toBe(input);
+});
+
+it("preserves optional GM calls and receiver chains without changing short-circuit semantics", () => {
+  const input =
+    'function init(ctx) { GM?.getValue("key"); GM.getValue?.("key"); GM_getValue?.("key"); GM.getValue("plain"); }';
+  const result = transformRodAst(input, "optional-gm.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('GM?.getValue("key")');
+  expect(result.code).toContain('GM.getValue?.("key")');
+  expect(result.code).toContain('GM_getValue?.("key")');
+  expect(result.code).toContain('ctx.gm.modern.getValue("plain")');
+  expect(transformRodAst(result.code, "optional-gm.ts").changed).toBe(false);
+});
+
+it("preserves optional native calls across HTTP and DOM helpers", () => {
+  const input =
+    'function init(ctx) { fetch?.("/api"); window?.fetch("/api"); document.querySelector?.("main"); document?.querySelector("main"); }';
+  const result = transformRodAst(input, "optional-native.ts");
+  expect(result.code).toBe(input);
+  expect(result.diagnostics).toEqual([]);
+});
+
+it("routes unguarded GM style injection through the ShadowRoot UI helper", () => {
+  const input =
+    'function init(ctx) { GM_addStyle(".panel { color: red }"); GM.addStyle(".box { display: grid }"); }';
+  const result = transformRodAst(input, "gm-styles.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('ctx.ui.style(".panel { color: red }")');
+  expect(result.code).toContain('ctx.ui.style(".box { display: grid }")');
+  expect(transformRodAst(result.code, "gm-styles.ts").changed).toBe(false);
+});
+
+it("does not rewrite shadowed or availability-guarded GM style injections", () => {
+  const shadowed =
+    'function init(ctx) { const GM_addStyle = (css) => css; GM_addStyle(".x { color: red; }"); }';
+  expect(transformRodAst(shadowed, "shadowed-gm-style.ts").code).toBe(shadowed);
+  const guarded =
+    'function init(ctx) { if (typeof GM_addStyle === "function") GM_addStyle(".x { color: red; }"); }';
+  expect(transformRodAst(guarded, "guarded-gm-style.ts").code).toBe(guarded);
+});
+
+it("Vite AST plugin rewrites GM styles only when explicitly registered", async () => {
+  const plugin = rodAstPlugin();
+  const result = await plugin.transform(
+    'function init(ctx) { GM_addStyle(".x { color: red; }"); }',
+    "script.ts",
+  );
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain(".x");
+});
+
+it("migrates a fully owned static style triple to ShadowRoot and is idempotent", () => {
+  const input =
+    'function init(ctx) { const style = document.createElement("style"); style.textContent = ".card { color: red }"; document.head.appendChild(style); }';
+  const result = transformRodAst(input, "static-style.ts");
+  expect(result.diagnostics).toEqual([]);
+  expect(result.code).toContain('ctx.ui.style(".card { color: red }");');
+  expect(result.code).not.toContain('createElement("style")');
+  expect(transformRodAst(result.code, "static-style.ts").changed).toBe(false);
+});
+
+it("preserves style nodes with escaping references or dynamic content", () => {
+  const escaping =
+    'function init(ctx) { const style = document.createElement("style"); style.innerText = ".a{}"; document.head.append(style); return style; }';
+  const dynamic =
+    'function init(ctx) { const style = document.createElement("style"); style.textContent = css; document.head.append(style); }';
+  expect(transformRodAst(escaping, "escaping.ts").code).toBe(escaping);
+  expect(transformRodAst(dynamic, "dynamic.ts").code).toBe(dynamic);
+});
+
+it("preserves hoisted and externally targeted styles", () => {
+  const hoisted =
+    'function init(ctx) { var s = document.createElement("style"); s.textContent = ".x{}"; document.head.append(s); }';
+  const body =
+    'function init(ctx) { const s = document.createElement("style"); s.textContent = ".x{}"; document.body.append(s); }';
+  const comment =
+    'function init(ctx) { const s = document.createElement("style"); /* keep note */ s.textContent = ".x{}"; document.head.append(s); }';
+  for (const input of [hoisted, body, comment])
+    expect(transformRodAst(input, "preserve.ts").code).toBe(input);
+});
+
+it("Vite processes static ShadowRoot CSS through PostCSS and Lightning CSS", async () => {
+  const plugin = rodAstPlugin({ css: true });
+  const result = await plugin.transform(
+    'function init(ctx) { GM_addStyle(".card { color: red; }"); }',
+    "inline.ts",
+  );
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain(".card");
+  expect(result?.code).not.toContain("GM_addStyle(");
+});
+
+it("Vite leaves dynamic style expressions untouched", async () => {
+  const plugin = rodAstPlugin({ css: true });
+  expect(await plugin.transform("function init(ctx) { ctx.ui.style(cssText); }", "dynamic.ts")).toBeNull();
+});
+
+it("Vite compiles inline ShadowRoot CSS without injecting shared design-system styles", async () => {
+  const plugin = rodAstPlugin();
+  const result = await plugin.transform(
+    'function init(ctx) { GM_addStyle(".rod-inline-only { color: red; }"); }',
+    "isolated-inline.ts",
+  );
+  expect(result?.code).toContain("ctx.ui.style(");
+  expect(result?.code).toContain("rod-inline-only");
+  expect(result?.code).not.toContain("--rod-");
+  expect(result?.code).not.toContain("font-face");
+});
+
+describe("GM guard locality", () => {
+  it("migrates an unguarded GM call beside a guarded one", () => {
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("guarded"); GM_setValue("plain", 1); }';
+    const result = transformRodAst(source, "gm-local.ts");
+    expect(result.code).toContain('GM_getValue("guarded")');
+    expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 1)');
+    expect(transformRodAst(result.code, "gm-local.ts").changed).toBe(false);
+  });
+  it("preserves guarded modern GM while migrating sibling calls", () => {
+    const source =
+      'function init(ctx) { if (typeof GM !== "undefined") { GM.getValue("guarded"); } GM.setValue("plain", 2); }';
+    const result = transformRodAst(source, "gm-modern.ts");
+    expect(result.code).toContain('GM.getValue("guarded")');
+    expect(result.code).toContain('ctx.gm.modern.setValue("plain", 2)');
+  });
+  it("preserves GM calls behind ternary availability guards", () => {
+    const source =
+      'function init(ctx) { return typeof GM_getValue === "function" ? GM_getValue("key") : null; }';
+    expect(transformRodAst(source, "gm-ternary.ts").code).toBe(source);
+  });
+});
+
+describe("GM capability fallback control flow", () => {
+  it("preserves guarded if/else branches without affecting sibling calls", () => {
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } else { GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const result = transformRodAst(source, "gm-fallback.ts");
+    expect(result.code).toContain('GM_getValue("x")');
+    expect(result.code).toContain('GM_setValue("fallback", 1)');
+    expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');
+    expect(transformRodAst(result.code, "gm-fallback.ts").changed).toBe(false);
+  });
+  it("preserves GM inside logical short-circuit guards", () => {
+    const source = 'function init(ctx) { return typeof GM_getValue === "function" && GM_getValue("x"); }';
+    expect(transformRodAst(source, "gm-logical.ts").code).toBe(source);
+  });
+  it("preserves GM inside OR fallback guards", () => {
+    const source = 'function init(ctx) { return typeof GM_getValue !== "function" || GM_getValue("x"); }';
+    expect(transformRodAst(source, "gm-logical-or.ts").code).toBe(source);
+  });
+  it("does not treat an unrelated GM guard as a function-wide veto", () => {
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } return GM_setValue("y", 1); }';
+    expect(transformRodAst(source, "gm-sibling.ts").code).toContain('ctx.gm.legacy.setValue("y", 1)');
+  });
+});
+
+describe("GM guards use AST syntax rather than matching source text", () => {
+  it("does not mistake a string containing typeof GM for a capability check", () => {
+    const source = 'function init(ctx) { if (message === "typeof GM_getValue") GM_setValue("key", 1); }';
+    const result = transformRodAst(source, "gm-string.ts");
+    expect(result.code).toContain('ctx.gm.legacy.setValue("key", 1)');
+    expect(transformRodAst(result.code, "gm-string.ts").changed).toBe(false);
+  });
+  it("does not mistake comments for capability checks", () => {
+    const source = 'function init(ctx) { if (enabled /* typeof GM_getValue */) GM_setValue("key", 1); }';
+    expect(transformRodAst(source, "gm-comment.ts").code).toContain('ctx.gm.legacy.setValue("key", 1)');
+  });
+  it("preserves actual typeof capability guards", () => {
+    const source = 'function init(ctx) { if (typeof GM_getValue === "function") GM_getValue("key"); }';
+    expect(transformRodAst(source, "gm-actual.ts").code).toBe(source);
+  });
+  it("preserves nested guarded fallback branches", () => {
+    const source =
+      'function init(ctx) { if (ready) { if (typeof GM_getValue === "function") GM_getValue("x"); else GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const result = transformRodAst(source, "gm-nested.ts");
+    expect(result.code).toContain('GM_setValue("fallback", 1)');
+    expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');
+  });
+});
+
+describe("storage exception boundaries", () => {
+  it("preserves awaited native reads inside try/catch", () => {
+    const source =
+      'async function init(ctx) { try { return await localStorage.getItem("key"); } catch { return null; } }';
+    expect(transformRodAst(source, "storage-try.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("preserves awaited native writes inside try/finally", () => {
+    const source =
+      'async function init(ctx) { try { await localStorage.setItem("key", "value"); } finally { cleanup(); } }';
+    expect(transformRodAst(source, "storage-finally.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("migrates independent awaited storage outside a try block", () => {
+    const source =
+      'async function init(ctx) { try { await localStorage.getItem("guarded"); } catch {} await localStorage.removeItem("plain"); }';
+    const result = transformRodAst(source, "storage-sibling.ts", { storage: "awaited" });
+    expect(result.code).toContain('await localStorage.getItem("guarded")');
+    expect(result.code).toContain('await ctx.storage.local.removeItem("plain")');
+    expect(transformRodAst(result.code, "storage-sibling.ts", { storage: "awaited" }).changed).toBe(false);
+  });
 });

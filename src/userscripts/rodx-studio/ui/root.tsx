@@ -7,7 +7,7 @@ import { onClick, onFieldChange, onFileChange, onGroupToggle } from "./events.ts
 import { addChips, renderBlockEditor, renderRoot, renderTags } from "./search-workbench.tsx";
 
 export function initializeRoot() {
-  const host = (<div />) as HTMLDivElement;
+  const host = document.createElement("div");
   host.id = `${IDENT}-root`;
   applyComponentStyle(host, "rx-root-host", false);
   const shadow = host.attachShadow({

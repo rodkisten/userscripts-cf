@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { useSyncExternalStore } from "react";
 import styles, { css } from "./MobileEditorFab.module.css";
 
 type Editor = HTMLTextAreaElement | HTMLInputElement | HTMLElement;
@@ -9,7 +9,10 @@ type Context = {
     callback: EventListener,
     options?: AddEventListenerOptions,
   ) => void;
-  ui: { mountSolid: (component: () => any, options?: { styles?: string[]; id?: string }) => () => void };
+  ui: {
+    mountReact: (component: import("react").ReactElement, container?: HTMLElement) => () => void;
+    registerStyles: (...styles: string[]) => () => void;
+  };
   onDispose: (callback: () => void) => void;
   dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
 };
@@ -59,10 +62,10 @@ function Icon(props: { name: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      innerHTML={glyphs[props.name] || glyphs.keyboard}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      dangerouslySetInnerHTML={{ __html: glyphs[props.name] || glyphs.keyboard }}
     />
   );
 }
@@ -88,11 +91,39 @@ function nativeInsert(element: Editor, value: string) {
 }
 export default {
   init(ctx: Context) {
-    const [target, setTarget] = createSignal<Editor | null>(null);
-    const [open, setOpen] = createSignal(false);
-    const [ctrl, setCtrl] = createSignal(false);
-    const [shift, setShift] = createSignal(false);
-    const [position, setPosition] = createSignal({ x: 8, y: 8, visible: false });
+    let snapshot = {
+      target: null as Editor | null,
+      open: false,
+      ctrl: false,
+      shift: false,
+      position: { x: 8, y: 8, visible: false },
+    };
+    const subscribers = new Set<() => void>();
+    const subscribe = (notify: () => void) => {
+      subscribers.add(notify);
+      return () => {
+        subscribers.delete(notify);
+      };
+    };
+    const update = (patch: Partial<typeof snapshot>) => {
+      snapshot = { ...snapshot, ...patch };
+      subscribers.forEach((notify) => notify());
+    };
+    const target = () => snapshot.target;
+    const open = () => snapshot.open;
+    const ctrl = () => snapshot.ctrl;
+    const shift = () => snapshot.shift;
+    const position = () => snapshot.position;
+    const setTarget = (value: Editor | null) => update({ target: value });
+    const setOpen = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ open: typeof value === "function" ? value(open()) : value });
+    const setCtrl = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ ctrl: typeof value === "function" ? value(ctrl()) : value });
+    const setShift = (value: boolean | ((previous: boolean) => boolean)) =>
+      update({ shift: typeof value === "function" ? value(shift()) : value });
+    const setPosition = (
+      value: typeof snapshot.position | ((previous: typeof snapshot.position) => typeof snapshot.position),
+    ) => update({ position: typeof value === "function" ? value(position()) : value });
     const place = () => {
       const el = target();
       if (!el?.isConnected) {
@@ -222,10 +253,11 @@ export default {
       setCtrl(false);
       setShift(false);
     }
-    const dispose = ctx.ui.mountSolid(
-      () => (
+    function MobileEditorFab() {
+      useSyncExternalStore(subscribe, () => snapshot);
+      return (
         <>
-          <Show when={position().visible}>
+          {position().visible && (
             <button
               className={styles.fab}
               data-open={open()}
@@ -237,8 +269,8 @@ export default {
             >
               <Icon name="keyboard" />
             </button>
-          </Show>
-          <Show when={open() && position().visible}>
+          )}
+          {open() && position().visible && (
             <section
               className={styles.panel}
               role="group"
@@ -259,28 +291,34 @@ export default {
                 </button>
               </div>
               <div className={styles.grid}>
-                <For each={actions}>
-                  {([icon, label, action]) => (
-                    <button
-                      className={styles.key}
-                      data-active={action === "ctrl" ? ctrl() : action === "shift" ? shift() : false}
-                      aria-label={label}
-                      onPointerDown={(event) => event.preventDefault()}
-                      onClick={() => void run(action)}
-                    >
-                      <Icon name={icon} />
-                      <span>{label}</span>
-                    </button>
-                  )}
-                </For>
+                {actions.map(([icon, label, action]) => (
+                  <button
+                    className={styles.key}
+                    data-active={action === "ctrl" ? ctrl() : action === "shift" ? shift() : false}
+                    aria-label={label}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => void run(action)}
+                  >
+                    <Icon name={icon} />
+                    <span>{label}</span>
+                  </button>
+                ))}
               </div>
               <p className={styles.hint}>Ctrl e Shift: próximo comando</p>
             </section>
-          </Show>
+          )}
         </>
-      ),
-      { styles: [css], id: "mobile-editor-fab" },
-    );
-    ctx.onDispose(dispose);
+      );
+    }
+    const host = document.createElement("div");
+    host.id = "mobile-editor-fab";
+    document.documentElement.append(host);
+    const unregisterStyles = ctx.ui.registerStyles(css);
+    const unmount = ctx.ui.mountReact(<MobileEditorFab />, host);
+    ctx.onDispose(() => {
+      unmount();
+      unregisterStyles();
+      host.remove();
+    });
   },
 };

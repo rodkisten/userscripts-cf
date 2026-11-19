@@ -167,7 +167,7 @@ export function initializeDeckRelay() {
               <textarea
                 className={"ctrl"}
                 data-relay={"channels"}
-                rows={"3"}
+                rows={3}
                 placeholder={"-1003991698263:65"}
                 value={"\n                " + clean(settings.channels) + "\n              "}
               />
@@ -734,7 +734,7 @@ export function initializeDeckRelay() {
       if (!state.rootShadow) return;
       let node = state.rootShadow.querySelector(RODX_SELECTORS.relayNotice);
       if (!node) {
-        node = (<div />) as HTMLDivElement;
+        node = document.createElement("div");
         node.id = "rodx-relay-notice";
         node.setAttribute("role", "status");
         node.className = "relay-toast";
@@ -755,7 +755,7 @@ export function initializeDeckRelay() {
         destinations,
         onAccept,
       };
-      const wrapper = (<div />) as HTMLDivElement;
+      const wrapper = document.createElement("div");
       wrapper.id = "rodx-relay-confirm";
       mountView(wrapper, () => (
         <>
@@ -962,7 +962,7 @@ export function initializeDeckRelay() {
     }
     function ensureStyle() {
       if (styleAdded) return;
-      const css = (<style />) as HTMLStyleElement;
+      const css = document.createElement("style");
       css.id = "rodx-relay-native-css";
       css.textContent = extractedCSS1;
       document.head.append(css);
@@ -1007,7 +1007,7 @@ export function initializeDeckRelay() {
         article.querySelector(COMPOSITE_SELECTORS.replyButton)?.closest(DOM_SELECTORS.actionGroups) ||
         article.querySelector(DOM_SELECTORS.actionGroups);
       const container = action || article;
-      const button = (<button />) as HTMLButtonElement;
+      const button = document.createElement("button");
       button.type = "button";
       button.className = "rodx-tg-action";
       button.dataset.rodxRelayFor = post.id;
@@ -1042,7 +1042,7 @@ export function initializeDeckRelay() {
       if (!card) {
         if (getComputedStyle(wrapper).position === "static")
           wrapper.style.setProperty("position", "relative", "important");
-        const button = (<button />) as HTMLButtonElement;
+        const button = document.createElement("button");
         button.type = "button";
         button.className = "rodx-tg-action rodx-tg-video-overlay";
         button.setAttribute("data-rodx-player-control", "1");
@@ -1159,7 +1159,7 @@ export function initializeDeckRelay() {
         viewerButton.parentElement !== viewer.layer
       ) {
         viewerButton?.remove();
-        viewerButton = (<button />) as HTMLButtonElement;
+        viewerButton = document.createElement("button");
         viewerButton.type = "button";
         viewerButton.className = "rodx-tg-action rodx-tg-immersive";
         viewerButton.dataset.rodxRelayFor = viewer.id;

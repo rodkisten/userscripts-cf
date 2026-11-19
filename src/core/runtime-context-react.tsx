@@ -21,6 +21,12 @@ export function useRuntime(): ReactScriptContext {
   return useContext();
 }
 
+/** The shared-event bridge is optional and must be checked at runtime. */
+function sharedEvents(ctx: ReactScriptContext): unknown {
+  const events = ctx.events;
+  return events && typeof events === "object" && "shared" in events ? events.shared : undefined;
+}
+
 /** Explicitly bind asynchronous or non-React callbacks to their owning script. */
 export function bindRuntime(ctx: ReactScriptContext) {
   const current = () => {
@@ -30,11 +36,11 @@ export function bindRuntime(ctx: ReactScriptContext) {
   return Object.freeze({
     useContext: current,
     useRuntime: current,
-    useRuntimeWorld: () => current().events?.shared,
+    useRuntimeWorld: () => sharedEvents(current()),
   });
 }
 
 /** Shared events only; never exposes other scripts' private stores. */
 export function useRuntimeWorld() {
-  return useContext().events?.shared;
+  return sharedEvents(useContext());
 }

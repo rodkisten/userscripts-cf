@@ -284,7 +284,7 @@
   {
     "name": "GM addStyle bridge",
     "source": "function init(ctx) { GM_addStyle('body{}'); }",
-    "includes": ["ctx.gm.legacy.addStyle('body{}')"],
+    "includes": ["ctx.ui.style('body{}')"],
     "excludes": []
   },
   {
@@ -393,6 +393,78 @@
     "name": "GM modern bridge",
     "source": "function init(ctx) { GM.getValue('x'); }",
     "includes": ["ctx.gm.modern.getValue('x')"],
+    "excludes": []
+  },
+  {
+    "name": "optional GM calls preserved",
+    "source": "function init(ctx) { GM?.getValue('a'); GM.getValue?.('b'); GM_getValue?.('c'); }",
+    "includes": ["GM?.getValue('a')", "GM.getValue?.('b')", "GM_getValue?.('c')"],
+    "excludes": ["ctx.gm"]
+  },
+  {
+    "name": "optional DOM and fetch preserved",
+    "source": "function init(ctx) { fetch?.('/'); document?.querySelector('a'); window.fetch?.('/'); }",
+    "includes": ["fetch?.('/')", "document?.querySelector('a')", "window.fetch?.('/')"],
+    "excludes": ["ctx.http", "ctx.dom"]
+  },
+  {
+    "name": "GM style injection to UI helper",
+    "source": "function init(ctx) { GM_addStyle('.x{}'); GM.addStyle('.y{}'); }",
+    "includes": ["ctx.ui.style('.x{}')", "ctx.ui.style('.y{}')"],
+    "excludes": ["GM_addStyle(", "GM.addStyle("]
+  },
+  {
+    "name": "guarded GM styles stay native",
+    "source": "function init(ctx) { if (typeof GM_addStyle !== 'undefined') GM_addStyle('.x{}'); }",
+    "includes": ["GM_addStyle('.x{}')"],
+    "excludes": ["ctx.ui.style"]
+  },
+  {
+    "name": "owned style triple to ShadowRoot",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.innerText = '.x{}'; document.head.append(s); }",
+    "includes": ["ctx.ui.style('.x{}')"],
+    "excludes": ["document.createElement('style')"]
+  },
+  {
+    "name": "escaping style preserved",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.textContent = '.x{}'; document.head.append(s); return s; }",
+    "includes": ["document.createElement('style')", "return s"],
+    "excludes": ["ctx.ui.style"]
+  },
+  {
+    "name": "style node var preserved",
+    "source": "function init(ctx) { var s = document.createElement('style'); s.textContent = '.x{}'; document.head.append(s); }",
+    "includes": ["var s = document.createElement('style')"],
+    "excludes": ["ctx.ui.style"]
+  },
+  {
+    "name": "body style insertion preserved",
+    "source": "function init(ctx) { const s = document.createElement('style'); s.textContent = '.x{}'; document.body.append(s); }",
+    "includes": ["document.body.append(s)"],
+    "excludes": ["ctx.ui.style"]
+  },
+  {
+    "name": "GM guarded else fallback preserved",
+    "source": "function init(ctx) { if (typeof GM_getValue === \"function\") GM_getValue(\"key\"); else GM_setValue(\"fallback\", 1); }",
+    "includes": ["GM_getValue(\"key\")", "GM_setValue(\"fallback\", 1)"],
+    "excludes": ["ctx.gm."]
+  },
+  {
+    "name": "GM logical short circuit preserved",
+    "source": "function init(ctx) { return typeof GM_getValue === \"function\" && GM_getValue(\"key\"); }",
+    "includes": ["GM_getValue(\"key\")"],
+    "excludes": ["ctx.gm."]
+  },
+  {
+    "name": "GM typeof text in string is not a guard",
+    "source": "function init(ctx) { if (message === \"typeof GM_getValue\") GM_setValue(\"key\", 1); }",
+    "includes": ["ctx.gm.legacy.setValue(\"key\", 1)"],
+    "excludes": ["GM_setValue(\"key\", 1)"]
+  },
+  {
+    "name": "GM typeof text in comment is not a guard",
+    "source": "function init(ctx) { if (enabled /* typeof GM_getValue */) GM_setValue(\"key\", 1); }",
+    "includes": ["ctx.gm.legacy.setValue(\"key\", 1)"],
     "excludes": []
   }
 ]

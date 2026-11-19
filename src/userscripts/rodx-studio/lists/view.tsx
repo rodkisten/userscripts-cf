@@ -22,7 +22,7 @@ export function scheduleRefresh() {
 export let host;
 
 export function initializeListsHost() {
-  host = (<div />) as HTMLDivElement;
+  host = document.createElement("div");
 }
 
 export function initializeRodX_lists_74() {
@@ -40,7 +40,7 @@ export function initializeListsShadow() {
 export let style;
 
 export function initializeListsStyle() {
-  style = (<style />) as HTMLStyleElement;
+  style = document.createElement("style");
 }
 
 export function initializeRodX_lists_77() {

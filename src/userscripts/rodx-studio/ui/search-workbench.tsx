@@ -183,7 +183,7 @@ export function validateRawWorkbench(text) {
 export function renderField([key, title, type, data]) {
   const value = state.draft.fields[key] ?? "";
   const attr = { "data-field": key };
-  let ctrl: import("solid-js").Element = "";
+  let ctrl: import("react").ReactNode = "";
   if (type === "select") {
     ctrl = (
       <>
@@ -205,7 +205,7 @@ export function renderField([key, title, type, data]) {
           className={cx("ctrl")}
           {...attr}
           placeholder={data}
-          rows={"3"}
+          rows={3}
           value={"\n          " + value + "\n        "}
         />
       </>
@@ -538,7 +538,7 @@ export function PresetShelf() {
           {"\n        "}
           <input
             className={cx("ctrl rx-search-workbench-ctrl")}
-            maxLength={"100"}
+            maxLength={100}
             data-preset-name={""}
             value={state.draft.presetName || ""}
             placeholder={"Nome da base · Ex.: Mídia + hashtags"}
@@ -930,7 +930,7 @@ export function SearchEditor() {
             <input
               className={cx("ctrl")}
               data-meta={"name"}
-              maxLength={"100"}
+              maxLength={100}
               placeholder={"Ex.: Tech Brasil, Notícias, Futebol"}
               value={draft.name}
             />
@@ -942,7 +942,7 @@ export function SearchEditor() {
             <input
               className={cx("ctrl")}
               data-meta={"icon"}
-              maxLength={"4"}
+              maxLength={4}
               value={draft.icon}
               placeholder={"🔎"}
             />
@@ -1355,7 +1355,7 @@ export function DataSettings() {
               className={cx("ctrl rx-search-workbench-ctrl-flex")}
               data-manual-account={""}
               placeholder={"@meuusuario"}
-              maxLength={"16"}
+              maxLength={16}
             />
             {"\n          "}
             <button className={cx("btn")} data-act={"set-manual-account"}>

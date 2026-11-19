@@ -96,15 +96,12 @@ export function initializeDeckXInterfaceHygiene(): void {
     }
 
     function createOpenButton(article: HTMLElement): HTMLButtonElement {
-      const button = (
-        <button
-          type="button"
-          className={CSS_CLASSES.grokReplacement}
-          title={UI_TEXTS.openTweetTitle}
-          aria-label={UI_TEXTS.openTweetTitle}
-          onClick={(event: MouseEvent) => openTweet(article, event)}
-        />
-      ) as HTMLButtonElement;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = CSS_CLASSES.grokReplacement;
+      button.title = UI_TEXTS.openTweetTitle;
+      button.setAttribute("aria-label", UI_TEXTS.openTweetTitle);
+      button.addEventListener("click", (event: MouseEvent) => openTweet(article, event));
 
       mountView(button, () => <GrokReplacementSVGIcon />);
 
@@ -181,7 +178,9 @@ export function initializeDeckXInterfaceHygiene(): void {
     }
 
     function install(): void {
-      const style = (<style id={ELEMENT_IDS.hygieneStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
+      const style = document.createElement("style");
+      style.id = ELEMENT_IDS.hygieneStyle;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
 
       Studio.register("interface.hygiene", scan, {

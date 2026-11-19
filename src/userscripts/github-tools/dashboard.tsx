@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createSignal, For, Show } from "solid-js";
 import { mountPoint } from "../../runtime/solid-ui/mount-point.tsx";
 import styles, { css } from "./GitHub.module.css";
@@ -705,25 +706,29 @@ async function fetchLatestCommit(props: {
   }
 }
 export function FileCommit(props: { ctx: any; owner: string; repo: string; path: string; href: string }) {
-  const [commit, setCommit] = createSignal<{ sha: string; message: string; author: string } | null>(null);
-  const [error, setError] = createSignal("");
-  void (async () => {
-    try {
-      const entry = await fetchLatestCommit(props);
-      if (entry) setCommit(entry);
-    } catch (e) {
-      if (!props.ctx.signal.aborted) setError(String(e));
-    }
-  })();
+  const [commit, setCommit] = useState<CommitInfo | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    setCommit(null);
+    setError("");
+    void fetchLatestCommit(props)
+      .then((entry) => {
+        if (active) setCommit(entry);
+      })
+      .catch((caught) => {
+        if (active && !props.ctx.signal.aborted) setError(String(caught));
+      });
+    return () => {
+      active = false;
+    };
+  }, [props.ctx, props.owner, props.repo, props.path]);
+  if (!commit) return <span title={error} />;
   return (
-    <Show when={commit()} fallback={<span title={error()} />}>
-      {(entry) => (
-        <span className={styles.commitHint} title={entry().author + " · " + entry().sha}>
-          <a href={"/" + props.owner + "/" + props.repo + "/commit/" + entry().sha}>{entry().message}</a>
-          {" · "}
-          <a href={props.href.replace("/blob/", "/blame/")}>blame</a>
-        </span>
-      )}
-    </Show>
+    <span className={styles.commitHint} title={commit.author + " · " + commit.sha}>
+      <a href={"/" + props.owner + "/" + props.repo + "/commit/" + commit.sha}>{commit.message}</a>
+      {" · "}
+      <a href={props.href.replace("/blob/", "/blame/")}>blame</a>
+    </span>
   );
 }

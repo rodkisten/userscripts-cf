@@ -1,4 +1,4 @@
-import { createSignal, createStore, onSettled } from "solid-js";
+import { useEffect, useRef, useState } from "react";
 import { mountView } from "../ui/solid-mount.tsx";
 import VolumeMutedIcon from "../../../assets/icons/volume-muted.svg?component";
 import VolumeOnIcon from "../../../assets/icons/volume-on.svg?component";
@@ -19,22 +19,18 @@ function seekableDuration(video: HTMLVideoElement) {
   return 0;
 }
 export function VideoControls(props: { video: HTMLVideoElement }) {
-  const [playback, setPlayback] = createStore({ duration: 0, time: 0, paused: true, muted: true });
-  const [scrubbing, setScrubbing] = createSignal(false);
-  const [position, setPosition] = createSignal(0);
+  const [playback, setPlayback] = useState({ duration: 0, time: 0, paused: true, muted: true });
+  const [scrubbing, setScrubbing] = useState(false);
+  const scrubbingRef = useRef(false);
+  const [position, setPosition] = useState(0);
   const sync = () => {
     const video = props.video;
     const duration = seekableDuration(video);
     const time = Number.isFinite(video.currentTime) ? video.currentTime : 0;
-    setPlayback((draft) => {
-      draft.duration = duration;
-      draft.time = time;
-      draft.paused = video.paused;
-      draft.muted = video.muted || video.volume === 0;
-    });
-    if (!scrubbing()) setPosition(duration ? Math.round((time / duration) * 1000) : 0);
+    setPlayback({ duration, time, paused: video.paused, muted: video.muted || video.volume === 0 });
+    if (!scrubbingRef.current) setPosition(duration ? Math.round((time / duration) * 1000) : 0);
   };
-  onSettled(() => {
+  useEffect(() => {
     const events = [
       "timeupdate",
       "durationchange",
@@ -48,7 +44,11 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
     events.forEach((name) => props.video.addEventListener(name, sync));
     sync();
     return () => events.forEach((name) => props.video.removeEventListener(name, sync));
-  });
+  }, [props.video]);
+  const startSeek = () => {
+    scrubbingRef.current = true;
+    setScrubbing(true);
+  };
   const seek = (value: number) => {
     const duration = seekableDuration(props.video);
     setPosition(value);
@@ -58,19 +58,20 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
     } catch {}
   };
   const finishSeek = () => {
+    scrubbingRef.current = false;
     setScrubbing(false);
     sync();
   };
-  const stop = (event: Event) => event.stopPropagation();
+  const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
   return (
     <>
-      <style textContent={transportCSS + css} />
+      <style>{transportCSS + css}</style>
       <div
         className={`rodx-video-transport ${styles.transport}`}
         data-rodx-player-control="1"
         aria-label="Controles de reprodução RodX"
         onClick={stop}
-        onDblClick={stop}
+        onDoubleClick={stop}
         onTouchEnd={stop}
         onPointerUp={stop}
       >
@@ -94,12 +95,12 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
           min="0"
           max="1000"
           step="1"
-          value={position()}
+          value={position}
           disabled={!playback.duration}
           aria-label="Posição do vídeo"
           data-rodx-player-control="1"
-          onPointerDown={() => setScrubbing(true)}
-          onTouchStart={() => setScrubbing(true)}
+          onPointerDown={() => startSeek()}
+          onTouchStart={() => startSeek()}
           onInput={(event) => seek(Number(event.currentTarget.value))}
           onPointerUp={finishSeek}
           onTouchEnd={finishSeek}
@@ -107,7 +108,7 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
           onBlur={finishSeek}
         />
         <time className={styles.clock}>
-          {formatTime(scrubbing() ? (playback.duration * position()) / 1000 : playback.time)} /{" "}
+          {formatTime(scrubbing ? (playback.duration * position) / 1000 : playback.time)} /{" "}
           {formatTime(playback.duration)}
         </time>
         <button
@@ -142,7 +143,8 @@ export function initializeDeckVideoTransport() {
         if (rect.width && (rect.width < 135 || rect.height < 90)) continue;
         if (getComputedStyle(wrapper).position === "static")
           wrapper.style.setProperty("position", "relative", "important");
-        const host = (<div data-rodx-transport-mount="" />) as HTMLElement;
+        const host = document.createElement("div");
+        host.dataset.rodxTransportMount = "";
         wrapper.append(host);
         installed.set(video, host);
         mountView(host, () => <VideoControls video={video} />);

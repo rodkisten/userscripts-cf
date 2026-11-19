@@ -1,7 +1,7 @@
 import { Combobox } from "../../../form-controls/Combobox";
 import type { MultiSelectField, SelectField } from "../../types";
 
-/** Compatibility wrapper: legacy menu fields use the shared SolidJS combobox. */
+/** Compatibility wrapper: legacy menu fields use the shared React combobox. */
 export interface TypeaheadSelectProps {
   id: string;
   field: SelectField | MultiSelectField;

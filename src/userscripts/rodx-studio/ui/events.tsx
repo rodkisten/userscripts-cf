@@ -121,7 +121,7 @@ export async function performAction(action, id = "") {
       try {
         await navigator.clipboard.writeText(query);
       } catch (_) {
-        const ta = (<textarea />) as HTMLTextAreaElement;
+        const ta = document.createElement("textarea");
         ta.value = query;
         document.body.append(ta);
         ta.select();
@@ -224,7 +224,7 @@ export async function performAction(action, id = "") {
       try {
         await navigator.clipboard.writeText(q);
       } catch (_) {
-        const ta = (<textarea />) as HTMLTextAreaElement;
+        const ta = document.createElement("textarea");
         ta.value = q;
         applyComponentStyle(ta, "rx-clipboard-textarea", false);
         document.body.append(ta);

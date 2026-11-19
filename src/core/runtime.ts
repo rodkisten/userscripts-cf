@@ -88,11 +88,44 @@ export interface ScriptDefinition {
 export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
-  readonly events: ReturnType<typeof createEventBus> | undefined;
-  readonly storage: ReturnType<ReturnType<typeof createStorageFeature>["create"]>;
+  readonly events?: ReturnType<typeof createEventBus>;
+  readonly http: ReturnType<typeof createHttpFeature>["http"];
+  readonly gm: ReturnType<typeof createGMFeature> | undefined;
+  readonly dispose: () => Promise<void>;
+  readonly storage: {
+    readonly local: {
+      getItem(key: string): Promise<string | null>;
+      setItem(key: string, value: unknown): Promise<void>;
+      removeItem(key: string): Promise<void>;
+    };
+    get(key: string, fallback?: unknown): Promise<unknown>;
+    set(key: string, value: unknown): Promise<void>;
+    delete(key: string): Promise<void>;
+  };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui: ReturnType<typeof createUIFeature> | undefined;
-  readonly menu: ReturnType<typeof createMenuFeature>;
+  readonly ui?: ReturnType<typeof createUIFeature> & {
+    readonly root: ShadowRoot;
+    readonly host: HTMLDivElement;
+    mount(node: Node): Node;
+    style(css: string): HTMLStyleElement;
+    registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+    mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
+  };
+  readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
+  readonly observe: (
+    target: Node,
+    callback: MutationCallback,
+    options: MutationObserverInit,
+  ) => MutationObserver;
+  readonly pageStyle: (cssContent: string) => HTMLStyleElement;
+  readonly interval: (callback: () => void, milliseconds: number) => number;
+  readonly listen: (
+    target: EventTarget,
+    event: string,
+    callback: EventListenerOrEventListenerObject,
+    options?: AddEventListenerOptions | boolean,
+  ) => void;
+  readonly menu: ReturnType<typeof createMenuFeature> | undefined;
   readonly toaster: ReturnType<typeof createToasterFeature> | undefined;
   readonly onDispose: (cleanup: () => void | Promise<void>) => void;
 };
@@ -267,7 +300,7 @@ export function createCoreRuntime(
     createSpecificContext: (params: {
       readonly definition: ScriptDefinition;
       readonly abort: AbortController;
-      readonly getContext: () => unknown;
+      readonly getContext: () => ScriptContext;
       readonly onDispose: (cb: () => void | Promise<void>) => void;
       readonly ensureUIRoot: () => ShadowRoot;
       readonly addStyle: (css: string, target: ParentNode) => HTMLStyleElement;
@@ -395,7 +428,19 @@ export function createCoreRuntime(
 
   const rules = () => readScriptRules(host.localStorage);
   const permitted = (definition: ScriptDefinition, url: string) =>
-    matches({ ...definition, name: definition.name ?? definition.id }, url, rules()[definition.id]);
+    matches(
+      {
+        ...definition,
+        name: definition.name ?? definition.id,
+        matches: definition.matches ? [...definition.matches] : undefined,
+        includes: definition.includes ? [...definition.includes] : undefined,
+        exclude: definition.exclude ? [...definition.exclude] : undefined,
+        excludeMatches: definition.excludeMatches ? [...definition.excludeMatches] : undefined,
+        excludes: definition.excludes ? [...definition.excludes] : undefined,
+      },
+      url,
+      rules()[definition.id],
+    );
 
   const onRulesChange = () => {
     void navigate();
@@ -588,12 +633,7 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
-    let resolvedContext: Record<string, unknown> & {
-      readonly id: string;
-      readonly signal: AbortSignal;
-      readonly onDispose: (cleanup: () => void | Promise<void>) => void;
-      readonly dispose: () => Promise<void>;
-    };
+    let resolvedContext: ScriptContext;
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
       ? options.createSpecificContext({
@@ -765,7 +805,7 @@ export function createCoreRuntime(
       },
     };
 
-    resolvedContext = Object.assign(baseContext, specificContext);
+    resolvedContext = Object.assign(baseContext, specificContext) as ScriptContext;
     return resolvedContext;
   }
 

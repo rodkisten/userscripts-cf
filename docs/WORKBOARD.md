@@ -606,3 +606,65 @@
 - Added `tests/react-runtime-context.test.ts` for two independent contexts, disposal isolation, and optional shared events.
 - **Not verified:** React typecheck, Vitest, and bundles. `runtime-react.tsx` still imports `runtime.ts`; the full React project graph remains mixed. Do not mark P1 complete.
 - PR: https://github.com/rodkisten/userscripts-cf/pull/107 ; latest test commit: https://github.com/rodkisten/userscripts-cf/commit/bbe24c7a47e19c8f51f513af719d01c456052c0f
+
+### Rod AST optional-chain safety (2026-11-18)
+
+- [x] Guard AST rewriting of optional call/receiver syntax across GM, DOM, and HTTP; short-circuit semantics are not guaranteed by context helpers.
+- [x] Add Vitest regression cases and two matrix fixtures; verification in GitHub Actions remains pending.
+- [ ] Follow-up: type GM bridge signatures, analyze feature-detection guards by AST scope, and design async storage migration with explicit data/catch parity.
+
+### Rod AST style migration and Vite (2026-11-18)
+
+- [x] Route direct unguarded GM style injection to instance-owned `ctx.ui.style` in AST, with negative and idempotence tests and matrix cases.
+- [x] Wire `rodAstPlugin` into Vite as explicit `ROD_AST=1` opt-in ahead of runtime helpers and CSS Modules.
+- [ ] Verify Vitest, typecheck, Vite build and production Safari behavior; no successful CI run has been confirmed.
+- [ ] Add dataflow-safe migration for `createElement('style')`, `textContent`/`innerText`, `insertRule`, `adoptedStyleSheets`, insertion and disposal; process static styles through the existing CSS pipeline without changing selector semantics.
+
+- [x] Implement conservative AST migration for contiguous static style creation, text assignment and document insertion when the element does not escape; add positive/negative Vitest and matrix cases.
+- [ ] Expand to dynamic styles, CSSOM and adoptedStyleSheets only with proven ownership and CSS processing parity; validate CI before enabling ROD_AST by default.
+
+- [x] Tighten style-triple migration to const-only/document.head/no intervening comments, preserving hoisting and source annotations; add negative tests and fixtures.
+- [ ] Verify transformed source and tests with CI; no success claim until an actual run passes.
+
+- [x] Wire Vite static `ctx.ui.style` string compilation through the existing PostCSS shadow pipeline and Lightning CSS; add async plugin tests.
+- [ ] Benchmark duplicate CSS and run Vitest/typecheck/build before enabling production by default.
+
+- [x] Repair literal escaped-newline comment in AST transformer, which otherwise comments out its replacement branch.
+- [ ] Run Vitest, typecheck and bundle verification in an environment with repository checkout; GitHub connector cannot dispatch a fresh workflow.
+
+### 🧬 Rod AST / ShadowRoot stabilization (PR #108, 2026-11-18)
+
+- [x] Open draft PR with originating conversation URL: https://github.com/rodkisten/userscripts-cf/pull/108
+- [x] Replace obsolete GM style assertions with ctx.ui.style expectations; add inline CSS regression test.
+- [x] Restore valid JavaScript in AST style-triple migration and remove escaped newline syntax defects.
+- [x] Define concrete ScriptContext contracts for HTTP, GM bridge, async storage, React UI and dispose.
+- [x] Preserve typed React context and fix nonexistent events.shared access.
+- [x] Avoid reinjecting tokens/core.css for every AST-compiled inline ShadowRoot style; preserve the existing CSS Modules pipeline.
+- [ ] Confirm new Vitest and TypeScript results in Actions; investigate any remaining failures before merge.
+- [ ] Verify actual Vite userscript build with ROD_AST=1 and Safari-compatible output.
+- [ ] Verify CSS Modules class mapping and dynamic style injection separately before expanding AST rewrite patterns.
+
+### PR #108 · CI report reliability (2026-11-18)
+
+- [x] GitHub comparison confirms the PR branch is ahead of main with zero commits behind after the merge commit.
+- [x] GitHub reports PR #108 mergeable/clean; this does **not** mean tests are passing.
+- [x] Rod AST workflow watches pull requests and summary/test changes.
+- [x] Summary flags absent or invalid Vitest JSON instead of presenting 0/0/0 as success; diff previews capped at 300 lines while the full artifact remains available.
+- [x] Add Node test coverage for missing report, failing assertions and truncated diffs.
+- [ ] Confirm workflow actually starts for PR #108; no fresh run was visible at last check.
+- [ ] Verify React and transformed-fixture typechecks and actual build before marking this PR ready.
+
+### PR #108 · First automatic PR checks (2026-11-18)
+
+- [x] Automatic Rod AST workflow ran: https://github.com/rodkisten/userscripts-cf/actions/runs/44383607358
+- [x] Diagnose real results: 130 Vitest passed, 1 failed because Lightning CSS removes empty `.x{}`; replace test fixture with meaningful declaration.
+- [x] Diagnose transformed fixture TS2349 at four call sites: `ctx.interval` and `ctx.listen` missing from ScriptContext; declare both using runtime implementation signatures.
+- [x] Diagnose TS2352: feature-owned `events`/`ui` absent on baseContext; make declarations optional to match runtime shape.
+- [ ] Recheck new Actions results before declaring CI green.
+- [ ] Other global React-only cutover TS errors in rodx-studio are separate from this PR and must not be hidden with casts.
+
+### PR #108 · Concurrent formatting push safety (2026-11-18)
+
+- [x] Investigated formatter run 44383663525: Prettier passed, but direct git push failed because the PR branch advanced concurrently.
+- [x] Add bounded fetch/rebase/push retry to manual Prettier workflow, without force-push; stop on rebase conflicts and preserve other agents' commits.
+- [ ] Confirm the next formatter run and Rod AST/React checks before merge.

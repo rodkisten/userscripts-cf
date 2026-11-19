@@ -3,7 +3,7 @@ import postcss from "postcss";
 import nesting from "postcss-nesting";
 
 const directory = new URL("../src/styles/", import.meta.url);
-export function stylesPipeline({ scope = "module" } = {}) {
+export function stylesPipeline({ scope = "module", includeBase = true } = {}) {
   return [
     {
       postcssPlugin: "rodx-shared-design-system",
@@ -11,7 +11,7 @@ export function stylesPipeline({ scope = "module" } = {}) {
         const filename = root.source?.input.file || "";
         const tokens = fs.readFileSync(new URL("tokens.css", directory), "utf8");
         const core = fs.readFileSync(new URL("core.css", directory), "utf8");
-        if (!filename.endsWith("/tokens.css")) {
+        if (includeBase && !filename.endsWith("/tokens.css")) {
           root.prepend(
             postcss.parse(filename.endsWith("/core.css") ? tokens : tokens + "\n" + core, {
               from: new URL("core.css", directory).pathname,

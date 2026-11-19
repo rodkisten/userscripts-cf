@@ -1,11 +1,28 @@
 name: "🧬 Rod AST · Fixture, diff & typecheck"
 on:
+  pull_request:
+    paths:
+      - "build/rod-ast.mjs"
+      - "build/rod-ast-summary.mjs"
+      - "build/styles.mjs"
+      - "docs/rod-ast.md"
+      - "tests/fixtures/rod-ast.matrix.json"
+      - "tests/fixtures/rod-ast.input.tsx"
+      - "tests/rod-ast.test.mjs"
+      - "tests/rod-ast-summary.test.mjs"
+      - "src/core/runtime.ts"
+      - "src/core/runtime-context-react.tsx"
+      - "src/core/react-context-contract.ts"
+      - "vite.config.js"
+      - ".github/workflows/rod-ast.yml"
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - "build/rod-ast.mjs"
+      - "build/rod-ast-summary.mjs"
+      - "build/styles.mjs"
       - "build/rod-ast-iife.mjs"
       - "build/rod-ast-cli.mjs"
       - "build/rod-ast-summary.mjs"
@@ -13,6 +30,7 @@ on:
       - "tests/fixtures/rod-ast.matrix.json"
       - "tests/fixtures/rod-ast.legacy.user.js"
       - "tests/rod-ast.test.mjs"
+      - "tests/rod-ast-summary.test.mjs"
       - "src/core/runtime.ts"
       - "src/runtime/dom-engine.ts"
       - "src/runtime/gm-bridge.ts"
@@ -86,6 +104,11 @@ jobs:
         if: always()
         continue-on-error: true
         run: npm run typecheck:react
+      - name: "🧪 Verify summary report rendering"
+        id: summary_tests
+        if: always()
+        continue-on-error: true
+        run: node --test tests/rod-ast-summary.test.mjs
       - name: "🎨 Highlighted test report"
         if: always()
         run: node build/rod-ast-summary.mjs
@@ -104,6 +127,7 @@ jobs:
             echo "| unit | ${{ steps.unit.outcome }} |"
             echo "| fixture_types | ${{ steps.fixture_types.outcome }} |"
             echo "| react_types | ${{ steps.react_types.outcome }} |"
+            echo "| summary_tests | ${{ steps.summary_tests.outcome }} |"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: "📦 Reports"
         if: always()
@@ -117,7 +141,7 @@ jobs:
         shell: bash
         run: |
           failed=0
-          for outcome in "${{ steps.syntax.outcome }}" "${{ steps.legacy.outcome }}" "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}"; do
+          for outcome in "${{ steps.syntax.outcome }}" "${{ steps.legacy.outcome }}" "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}" "${{ steps.summary_tests.outcome }}"; do
             if [[ "$outcome" != "success" ]]; then failed=1; fi
           done
           if (( failed )); then

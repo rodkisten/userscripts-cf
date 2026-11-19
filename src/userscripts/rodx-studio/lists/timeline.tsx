@@ -226,7 +226,7 @@ export function postHTML(post) {
       <img
         className={"xls-avatar"}
         loading={"lazy"}
-        referrerpolicy={"no-referrer"}
+        referrerPolicy={"no-referrer"}
         src={post.avatar}
         alt={""}
       />
@@ -241,7 +241,7 @@ export function postHTML(post) {
       <>
         <video
           className={"xls-media"}
-          playsinline={true}
+          playsInline={true}
           controls={true}
           preload={"none"}
           poster={post.media.image}
@@ -641,15 +641,15 @@ export function ensureEmbeddedTimeline() {
   }
   if (!listToolbar?.isConnected) return;
   if (!embeddedTimeline) {
-    embeddedTimeline = (<section />) as HTMLElement;
+    embeddedTimeline = document.createElement("section");
     embeddedTimeline.id = "xls-timeline-inject";
     const root = embeddedTimeline.attachShadow({
       mode: "open",
     });
-    const styles = (<style />) as HTMLStyleElement;
+    const styles = document.createElement("style");
     styles.textContent = extractedCSS1;
     root.append(styles);
-    const markup = (<div />) as HTMLDivElement;
+    const markup = document.createElement("div");
     mountView(markup, () => (
       <>
         <div className={"head"}>
@@ -673,7 +673,8 @@ export function ensureEmbeddedTimeline() {
     ));
     root.append(markup);
     root.addEventListener("click", (event) => {
-      const action = event.target.closest(RODX_SELECTORS.dataActions)?.dataset.action;
+      const action = (event.target as Element | null)?.closest<HTMLElement>(RODX_SELECTORS.dataActions)
+        ?.dataset.action;
       if (action === "timeline-close") {
         listPresets[routeListId()] = {
           ...listPresets[routeListId()],
@@ -700,7 +701,7 @@ export function ensureEmbeddedTimeline() {
   if (listToolbar.nextElementSibling !== embeddedTimeline)
     listToolbar.insertAdjacentElement("afterend", embeddedTimeline);
   if (!document.getElementById("xls-custom-feed-style")) {
-    const style = (<style />) as HTMLStyleElement;
+    const style = document.createElement("style");
     style.id = "xls-custom-feed-style";
     style.textContent = extractedCSS2;
     document.head?.append(style);

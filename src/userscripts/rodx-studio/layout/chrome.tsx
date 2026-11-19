@@ -198,31 +198,28 @@ export function initializeDeckScrollChrome(): void {
       }
 
       if (!portal) {
-        portal = (
-          <div
-            id={ELEMENT_IDS.activeTweetBar}
-            className={CSS_CLASSES.tweetTopbar}
-            aria-label={UI_TEXTS.tweetBarAriaLabel}
-            onClick={(event: MouseEvent) => {
-              const target = (event.target as HTMLElement)?.closest<HTMLElement>(
-                RODX_SELECTORS.tweetTopbarControls,
-              );
-              if (!target || !active) return;
-              event.preventDefault();
-              event.stopImmediatePropagation();
+        portal = document.createElement("div");
+        portal.id = ELEMENT_IDS.activeTweetBar;
+        portal.className = CSS_CLASSES.tweetTopbar;
+        portal.setAttribute("aria-label", UI_TEXTS.tweetBarAriaLabel);
+        portal.addEventListener("click", (event: MouseEvent) => {
+          const target = (event.target as HTMLElement)?.closest<HTMLElement>(
+            RODX_SELECTORS.tweetTopbarControls,
+          );
+          if (!target || !active) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
 
-              const selector = target.hasAttribute(DATA_ATTRS.addList)
-                ? `[${DATA_ATTRS.addList}]`
-                : target.dataset.proxy
-                  ? `[${DATA_ATTRS.proxy}="${target.dataset.proxy}"]`
-                  : target.classList.contains(CSS_CLASSES.miniAvatar)
-                    ? `.${CSS_CLASSES.miniAvatar}`
-                    : `.${CSS_CLASSES.topbarAuthor}`;
+          const selector = target.hasAttribute(DATA_ATTRS.addList)
+            ? `[${DATA_ATTRS.addList}]`
+            : target.dataset.proxy
+              ? `[${DATA_ATTRS.proxy}="${target.dataset.proxy}"]`
+              : target.classList.contains(CSS_CLASSES.miniAvatar)
+                ? `.${CSS_CLASSES.miniAvatar}`
+                : `.${CSS_CLASSES.topbarAuthor}`;
 
-              active.querySelector<HTMLElement>(selector)?.click();
-            }}
-          />
-        ) as HTMLDivElement;
+          active.querySelector<HTMLElement>(selector)?.click();
+        });
 
         document.body.append(portal);
       }

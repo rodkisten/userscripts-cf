@@ -5,6 +5,6 @@
 export interface ReactScriptContext {
   readonly id: string;
   readonly signal: AbortSignal;
-  readonly events?: { readonly shared: unknown };
+  readonly events?: unknown;
   readonly [key: string]: unknown;
 }

@@ -301,11 +301,11 @@ export function Player(props: {
         <canvas
           ref={canvasRef}
           id="gws-sg-wave"
-          height="118"
+          height={118}
           role="slider"
           tabIndex={0}
           aria-label="Posição na gravação"
-          aria-valuemin="0"
+          aria-valuemin={0}
           aria-valuemax={state.duration}
           aria-valuenow={state.time}
           onPointerDown={(event) => {
