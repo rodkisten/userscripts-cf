@@ -236,6 +236,12 @@ export function transformRodAst(code, id, options = {}) {
     )
       return undefined;
     if (!ts.isAwaitExpression(node.parent) || shadowed.has("localStorage")) return undefined;
+    // Preserve native synchronous exception handling until helper rejection semantics match.
+    let ancestor = node.parent;
+    while (ancestor && ancestor !== owner) {
+      if (ts.isTryStatement(ancestor)) return undefined;
+      ancestor = ancestor.parent;
+    }
     const callee = node.expression;
     if (
       !ts.isPropertyAccessExpression(callee) ||
