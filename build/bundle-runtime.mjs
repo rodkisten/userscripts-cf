@@ -67,6 +67,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     logLevel: "warn",
     define: featureDefines,
     plugins: [
+      rootAuditPlugin,
       instrumentErrorsPlugin(root),
       {
         name: "userscripts-cf-entry",
@@ -86,7 +87,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     (call) => call.filename !== "src/core/runtime-react.tsx",
   );
   const includedRootModules = Object.keys(chunks[0]?.modules || {}).filter((id) =>
-    id.split("?")[0].replaceAll("\\\\", "/").endsWith("/src/core/runtime-react.tsx"),
+    id.split("?")[0].replaceAll("\\", "/").endsWith("/src/core/runtime-react.tsx"),
   );
   if (runtimeOwnerCalls.length !== 1 || unexpectedRootCalls.length || includedRootModules.length !== 1) {
     throw new Error(
