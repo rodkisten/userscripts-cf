@@ -118,7 +118,11 @@ export function installRodActions(
   _menu?: unknown,
   mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ): RodActionsHub {
-  if (window.__RodActions) return window.__RodActions;
+  // A detached host means the previous singleton can no longer render. Recreate it
+  // instead of returning a stale hub after SPA navigation or external DOM cleanup.
+  const existing = window.__RodActions;
+  if (existing && document.getElementById("rod-actions-hub")) return existing;
+  if (existing) existing.dispose();
   const modules = new Map<string, RodActionsModule>();
   const registrations = new Map<string, symbol>();
   const listeners = new Set<() => void>();
