@@ -2,7 +2,6 @@
 import type * as React from "react";
 import type { ReactElement } from "react";
 import { useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
@@ -212,7 +211,7 @@ function mount(
   name: string,
   owner: Document,
   target: ShadowRoot | HTMLElement = owner.body,
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ) {
   const host = owner.createElement("div");
   host.dataset.rodReactMenu = name;
@@ -220,22 +219,25 @@ function mount(
   portal.dataset.rodReactMenuPortal = name;
   target.append(host, portal);
   let shared: { dispose: () => void } | undefined;
-  const root = mountSharedReact ? undefined : createRoot(host);
   let disposed = false;
   const close = () => {
     if (disposed) return;
     disposed = true;
     // A Radix event can close its own React tree; defer unmount until the event finishes.
     queueMicrotask(() => {
-      shared?.dispose();
-      root?.unmount();
+      shared.dispose();
       host.remove();
       portal.remove();
     });
   };
   const element = view(close, portal);
-  if (mountSharedReact) shared = mountSharedReact(element as ReactElement, host);
-  else root?.render(element);
+  try {
+    shared = mountSharedReact(element as ReactElement, host);
+  } catch (error) {
+    host.remove();
+    portal.remove();
+    throw error;
+  }
   return { close, dispose: close };
 }
 
