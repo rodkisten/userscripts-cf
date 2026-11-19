@@ -99,9 +99,15 @@ if (
 const manifest = { schema: 1, version, baseURL, scripts: [] };
 const classAudit = {};
 const runtimeFeatureAudit = { scripts: {}, targets: {}, bundles: {} };
-for (const definition of definitions) {
-  runtimeFeatureAudit.scripts[definition.id] = await analyzeRuntimeGraph(definition.entry, { root });
-}
+// Analyze independent entry graphs concurrently. Preserve deterministic ordering
+// when writing the audit, regardless of which analysis finishes first.
+const analyzedScripts = await Promise.all(
+  definitions.map(async (definition) => ({
+    id: definition.id,
+    graph: await analyzeRuntimeGraph(definition.entry, { root }),
+  })),
+);
+for (const { id, graph } of analyzedScripts) runtimeFeatureAudit.scripts[id] = graph;
 // Shared source modules help identify repeated dependencies across independently
 // installed scripts. These are source bytes, not attributable output bundle bytes.
 const moduleConsumers = new Map();
