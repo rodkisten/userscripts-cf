@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { RodMenu as RodMenuView } from "./Menu";
 import type { MenuSchema } from "./types";
@@ -17,6 +17,7 @@ const subscribe = (listener: () => void) => {
   return () => { listeners.delete(listener); };
 };
 const snapshot = () => current;
+const serverSnapshot = (): MenuEntry | null => null;
 
 export const RodMenu = {
   open(schema: MenuSchema) {
@@ -34,7 +35,7 @@ export const RodMenu = {
 };
 
 export function RodMenuHost({ container }: { container?: Element | DocumentFragment | null }) {
-  const entry = useSyncExternalStore(subscribe, snapshot, snapshot);
+  const entry = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   if (!entry) return null;
   const view = (
     <RodMenuView
