@@ -46,15 +46,21 @@ import { matchURL } from "../src/core/match.js";
 import { initializeRodFeatures } from "../src/core/runtime.js";
 
 test("React menus are unavailable without a runtime-owned shared mount", async () => {
+  console.log("[runtime test] feature availability: start");
   const host = new Window({ url: "https://example.com/" });
+  console.log("[runtime test] feature availability: Window created");
   const legacyFeatures = initializeRodFeatures(host);
+  console.log("[runtime test] feature availability: legacy features initialized");
   assert.equal(legacyFeatures.menu, undefined);
   assert.equal(legacyFeatures.toaster, undefined);
   const reactFeatures = initializeRodFeatures(host, () => ({ update() {}, dispose() {} }));
+  console.log("[runtime test] feature availability: React features initialized");
   assert.equal(typeof reactFeatures.menu?.open, "function");
   assert.equal(typeof reactFeatures.menu?.dropdown, "function");
   assert.equal(typeof reactFeatures.toaster?.destroy, "function");
+  console.log("[runtime test] feature availability: aborting happy-dom");
   await host.happyDOM.abort();
+  console.log("[runtime test] feature availability: complete");
 });
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
