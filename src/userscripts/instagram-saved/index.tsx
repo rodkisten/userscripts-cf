@@ -120,55 +120,34 @@ export default {
     async function configure() {
       await settingsApi.open();
     }
-    function relay(config: Config, items: MediaPayload[]) {
-      return new Promise<{ results: import("./core.ts").DeliveryResult[] }>((resolve, reject) => {
-        const request =
-          typeof GM_xmlhttpRequest === "function"
-            ? GM_xmlhttpRequest
-            : (globalThis as any).GM?.xmlHttpRequest;
-        if (!request) {
-          return reject(Error("GM_xmlhttpRequest indisponível"));
-        }
-        const handle = request({
-          method: "POST",
-          url: RELAY,
-          anonymous: true,
-          timeout: 90000,
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.token}` },
-          data: JSON.stringify({ items, channels: config.channels, concurrency: 1, force: false }),
-          onload(response: any) {
-            abort.removeEventListener("abort", cancel);
-            try {
-              const data = JSON.parse(response.responseText);
-              if (Array.isArray(data.results)) {
-                return resolve(data);
-              }
-              const error = Error(`Relay HTTP ${response.status}`) as Error & {
-                status?: number;
-                retryAfter?: string;
-              };
-              error.status = response.status;
-              error.retryAfter = response.responseHeaders?.match(/^retry-after:\s*(.+)$/im)?.[1]?.trim();
-              reject(error);
-            } catch (error) {
-              reject(error);
-            }
-          },
-          onerror: () => {
-            abort.removeEventListener("abort", cancel);
-            reject(Error("Falha de rede Relay"));
-          },
-          ontimeout: () => {
-            abort.removeEventListener("abort", cancel);
-            reject(Error("Timeout Relay; entrega incerta"));
-          },
-          onabort: () => reject(Error("Envio interrompido")),
-        });
-        function cancel() {
-          handle?.abort();
-        }
-        abort.addEventListener("abort", cancel, { once: true });
+    async function relay(config: Config, items: MediaPayload[]) {
+      const response = await ctx.http.request(RELAY, {
+        method: "POST",
+        transport: "gm",
+        cacheMode: "off",
+        timeoutMs: 90000,
+        signal: abort,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.token}`,
+        },
+        body: JSON.stringify({ items, channels: config.channels, concurrency: 1, force: false }),
       });
+      if (!response.ok) {
+        const error = Error(`Relay HTTP ${response.status}`) as Error & {
+          status?: number;
+          retryAfter?: string | null;
+        };
+        error.status = response.status;
+        error.retryAfter = response.headers.get("retry-after");
+        throw error;
+      }
+      const data: unknown = await response.json();
+      if (!data || typeof data !== "object" || !("results" in data) ||
+          !Array.isArray(data.results)) {
+        throw Error("Relay sem confirmação por item");
+      }
+      return data as { results: import("./core.ts").DeliveryResult[] };
     }
     async function retry<T>(operation: () => Promise<T>, size: number): Promise<T> {
       for (let attempt = 0; ; attempt++) {
@@ -233,7 +212,7 @@ export default {
                   if (cursor) {
                     url.searchParams.set("max_id", cursor);
                   }
-                  const response = await fetch(url, {
+                  const response = await ctx.http.request(url, {\n                    transport: "fetch",\n                    cacheMode: "off",
                     credentials: "same-origin",
                     signal: abort,
                     headers: {
