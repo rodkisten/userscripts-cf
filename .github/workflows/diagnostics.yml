@@ -26,6 +26,7 @@ jobs:
   validate:
     name: "Validate affected files"
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     outputs:
       scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
     steps:
@@ -72,20 +73,12 @@ jobs:
           printf '%s\n' '.github/workflows/**' > .prettierignore
           npx prettier --check .
           rm -f .prettierignore
-      - name: Dispatch formatting repair
-        if: steps.formatting.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-        run: |
-          gh workflow run prettier-full.yml --ref "$BRANCH" -f target_branch="$BRANCH" -f create_pr=false
-          echo "Formatting repair requested for $BRANCH; its commit will trigger validation again." >> "$GITHUB_STEP_SUMMARY"
-      - name: Report formatting repair without blocking validation
+      - name: Report formatting without blocking validation
         if: steps.formatting.outcome == 'failure'
         run: |
           {
-            echo "### ⚠️ Formatting repair requested (non-blocking)"
-            echo "Prettier found changes. The separate repair workflow handles them."
+            echo "### ⚠️ Formatting differences detected (non-blocking)"
+            echo "Prettier found differences. No automatic commit or new workflow is triggered during validation."
             echo "Tests and release validation continue independently of formatting."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Restore exact-source validation result
