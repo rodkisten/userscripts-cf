@@ -2,12 +2,40 @@
 import type { ReactElement } from "react";
 import { RuntimeMount } from "./runtime-mount-react.js";
 import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
 
 const REACT_MOUNT_SOURCE = "react.mount";
+
+type PortalEntry = { id: number; target: HTMLElement; node: ReactNode };
+function createPortalRegistry() {
+  const entries = new Map<number, PortalEntry>();
+  const listeners = new Set<() => void>();
+  let snapshot: PortalEntry[] = [];
+  const publish = () => {
+    snapshot = [...entries.values()];
+    for (const listener of listeners) listener();
+  };
+  return {
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    getSnapshot: () => snapshot,
+    add: (entry: PortalEntry) => { entries.set(entry.id, entry); publish(); },
+    remove: (id: number) => { if (entries.delete(id)) publish(); },
+    clear: () => { entries.clear(); publish(); },
+  };
+}
+function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
+  const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
+  return <>{entries.map(({ id, target, node }) => createPortal(node, target, String(id)))}</>;
+}
+
 
 export function createRuntime(
   definitions: ScriptDefinition[],
@@ -32,8 +60,22 @@ export function createRuntime(
           delete (host as unknown as Record<string, unknown>)[name];
       }
     },
-    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => ({
-      ui: Object.freeze({
+    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
+      const registry = createPortalRegistry();
+      let nextId = 0;
+      let reactHost: HTMLDivElement | undefined;
+      let reactRoot: ReturnType<typeof createRoot> | undefined;
+      const ensureReactHost = () => {
+        if (!reactRoot) {
+          reactHost = host.document.createElement("div");
+          reactHost.dataset.rodReactHost = definition.id;
+          ensureUIRoot().append(reactHost);
+          reactRoot = createRoot(reactHost);
+          reactRoot.render(<RuntimeMount context={getContext()}><PortalRegistry registry={registry} /></RuntimeMount>);
+        }
+      };
+      onDispose(() => { registry.clear(); reactRoot?.unmount(); reactRoot = undefined; reactHost?.remove(); reactHost = undefined; });
+      return { ui: Object.freeze({
         get root() {
           return ensureUIRoot();
         },
@@ -76,20 +118,17 @@ export function createRuntime(
           const mountPoint = container ?? host.document.createElement("div");
           const owned = !container;
           if (owned) ensureUIRoot().append(mountPoint);
-          let root: ReturnType<typeof createRoot> | undefined;
+          const id = ++nextId;
           let disposed = false;
           const dispose = () => {
             if (disposed) return;
             disposed = true;
-            try {
-              root?.unmount();
-            } finally {
-              if (owned) mountPoint.remove();
-            }
+            registry.remove(id);
+            if (owned) mountPoint.remove();
           };
           try {
-            root = createRoot(mountPoint);
-            root.render(<RuntimeMount context={getContext()}>{component}</RuntimeMount>);
+            ensureReactHost();
+            registry.add({ id, target: mountPoint, node: component });
             onDispose(dispose);
           } catch (error) {
             dispose();
@@ -98,7 +137,7 @@ export function createRuntime(
           }
           return dispose;
         },
-      }),
-    }),
+      }) };
+    },
   });
 }
