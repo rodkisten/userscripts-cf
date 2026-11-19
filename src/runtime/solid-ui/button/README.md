@@ -1,3 +1,5 @@
+> **HISTORICAL DOCUMENTATION:** This README describes an earlier SolidJS button implementation and is retained only as migration history. Do not use its Solid APIs or `SolidDropdown` guidance for new work. Current interactive UI must use React 19 and the supported Radix/shadcn components.
+
 # Button system (SolidJS 2)
 
 ## Status
