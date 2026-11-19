@@ -667,11 +667,13 @@ export function createCoreRuntime(
         })
       : {};
 
-    const instanceMenu = createMenuFeature({
-      container: ensureUIRoot,
-      onDispose,
-      mountSharedReact: options?.mountSharedReact,
-    });
+    const instanceMenu = options?.mountSharedReact
+      ? createMenuFeature({
+          container: ensureUIRoot,
+          onDispose,
+          mountSharedReact: options.mountSharedReact,
+        })
+      : undefined;
 
     const baseContext = {
       id: definition.id,
