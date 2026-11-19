@@ -15,7 +15,7 @@ export interface PortalRegistry<TNode = unknown, TContext = unknown> {
   add(entry: Omit<PortalEntry<TNode, TContext>, "wasConnected">): void;
   remove(id: number): void;
   removeContext(context: TContext): void;
-  pruneDisconnected(): ReadonlyArray<number>;
+  pruneDisconnected(connectedTargets?: ReadonlySet<PortalTarget>): ReadonlyArray<number>;
   clear(): void;
 }
 
@@ -54,10 +54,10 @@ export function createPortalRegistry<TNode = unknown, TContext = unknown>(): Por
       }
       if (changed) publish();
     },
-    pruneDisconnected() {
+    pruneDisconnected(connectedTargets = new Set<PortalTarget>()) {
       const removed: number[] = [];
       for (const [id, entry] of entries) {
-        if (entry.target.isConnected) {
+        if (entry.target.isConnected || connectedTargets.has(entry.target)) {
           if (!entry.wasConnected) entries.set(id, { ...entry, wasConnected: true });
           continue;
         }
