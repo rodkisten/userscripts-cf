@@ -82,7 +82,7 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
-      <RodMenuHost container={portal} />
+      <RodMenuHost />
       {!open && (
         <button
           className="launcher"
