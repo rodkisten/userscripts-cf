@@ -87,7 +87,9 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
   const previous = mounts.get(target);
   if (previous) {
     previous.node = read();
-    flushSync(() => previous.listeners?.forEach((listener) => listener()));
+    if (previous.listeners?.size) {
+      flushSync(() => previous.listeners?.forEach((listener) => listener()));
+    }
   } else {
     const record: Mount = { id: ++nextMountId, node: read(), connected: target.isConnected };
     if (sharedMount) {
