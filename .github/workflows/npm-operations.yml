@@ -1,6 +1,6 @@
 name: 🥊 Package & Shell Operations
 
-run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || inputs.operation || 'install' }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
+run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || format('{0} {1}', inputs.operation, inputs.packages) }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
 
 on:
   workflow_dispatch:
@@ -17,8 +17,15 @@ on:
         type: choice
         options:
           - install
+          - add
           - update
+          - uninstall
           - custom
+      packages:
+        description: 'Package list (for add/uninstall, e.g. "zod axios -D")'
+        type: string
+        required: false
+        default: ''
       custom-command:
         description: 'Any shell command (ONLY used when operation is "custom")'
         type: string
@@ -94,35 +101,56 @@ jobs:
         env:
           PM: ${{ steps.detect-pm.outputs.pm }}
           OP: ${{ inputs.operation }}
+          PKGS: ${{ inputs.packages }}
           CMD: ${{ inputs.custom-command }}
         run: |
           set -euo pipefail
           
+          # Modo Custom (qualquer comando de shell)
           if [ "$OP" = "custom" ]; then
             if [ -z "$CMD" ]; then
               echo "❌ Error: 'custom-command' is required when operation is 'custom'."
               exit 1
             fi
+            [ -n "$PKGS" ] && echo "⚠️ Warning: 'packages' input is ignored in 'custom' mode."
             echo "🥊 Executing custom shell command: $CMD"
             eval "$CMD"
-          else
-            if [ -n "$CMD" ]; then
-              echo "⚠️ Warning: 'custom-command' is ignored because operation is '$OP'."
+            exit 0
+          fi
+
+          # Aviso se custom-command foi preenchido fora do modo custom
+          if [ -n "$CMD" ]; then
+            echo "⚠️ Warning: 'custom-command' is ignored because operation is '$OP'."
+          fi
+
+          # Validação da lista de pacotes para add e uninstall
+          if [ "$OP" = "add" ] || [ "$OP" = "uninstall" ]; then
+            if [ -z "$PKGS" ]; then
+              echo "❌ Error: 'packages' list is required for '$OP' operation."
+              exit 1
+            fi
+          fi
+
+          # Execução com pnpm
+          if [ "$PM" = "pnpm" ]; then
+            if [ "$OP" = "install" ]; then
+              pnpm install --frozen-lockfile
+            elif [ "$OP" = "add" ] || [ "$OP" = "uninstall" ]; then
+              pnpm "$OP" $PKGS
+            else
+              pnpm "$OP" $PKGS
             fi
 
-            echo "🥊 Executing $PM $OP..."
-            if [ "$PM" = "pnpm" ]; then
-              if [ "$OP" = "install" ]; then
-                pnpm install --frozen-lockfile
-              else
-                pnpm "$OP"
-              fi
+          # Execução com npm
+          else
+            if [ "$OP" = "install" ]; then
+              npm ci --legacy-peer-deps --no-audit --no-fund
+            elif [ "$OP" = "add" ]; then
+              npm install $PKGS --legacy-peer-deps --no-audit --no-fund
+            elif [ "$OP" = "uninstall" ]; then
+              npm uninstall $PKGS --legacy-peer-deps --no-audit --no-fund
             else
-              if [ "$OP" = "install" ]; then
-                npm ci --legacy-peer-deps --no-audit --no-fund
-              else
-                npm "$OP" --legacy-peer-deps --no-audit --no-fund
-              fi
+              npm update $PKGS --legacy-peer-deps --no-audit --no-fund
             fi
           fi
 
@@ -137,7 +165,6 @@ jobs:
           set -euo pipefail
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           
-          # Verifica se houve alteração em qualquer arquivo rastreado ou novo
           if [ -z "$(git status --porcelain)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✅ No files changed." >> "$GITHUB_STEP_SUMMARY"
