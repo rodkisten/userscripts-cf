@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { createPortal } from "react-dom";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 
 type MountTarget = HTMLElement | ShadowRoot | SVGElement;
 type Mount = { id: number; node: ReactNode; connected: boolean };
@@ -22,7 +21,10 @@ function ensureRoot() {
 }
 
 function render() {
-  if (!root && mounts.size === 0) return;
+  if (!mounts.size) {
+    if (root) flushSync(() => root?.render(null));
+    return;
+  }
   const current = ensureRoot();
   flushSync(() =>
     current.render(
@@ -73,7 +75,7 @@ export function disposeAllViews() {
   observer?.disconnect();
   observer = undefined;
   mounts.clear();
-  root?.unmount();
+  if (root) flushSync(() => root?.unmount());
   root = undefined;
   host?.remove();
   host = undefined;
