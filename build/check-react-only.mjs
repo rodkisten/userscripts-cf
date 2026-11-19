@@ -35,7 +35,8 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
       if (node.callee?.type === "Import" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid dynamic import");
       if (node.callee?.type === "Identifier" && node.callee.name === "require" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid require");
     }
-    if (node.type === "TSImportType" && forbidden(node.argument?.value)) report(node, "Solid type import");\n    if (node.type === "ImportAttribute" && forbidden(node.value?.value)) report(node, "Solid import attribute");
+    if (node.type === "TSImportType" && forbidden(node.argument?.value)) report(node, "Solid type import");
+    if (node.type === "ImportAttribute" && forbidden(node.value?.value)) report(node, "Solid import attribute");
     if (node.type === "TSExternalModuleReference" && forbidden(node.expression?.value)) report(node, "Solid TypeScript require");
     for (const [key, value] of Object.entries(node)) {
       if (key === "loc" || key === "start" || key === "end" || key === "extra" || key === "comments" || key === "tokens") continue;
