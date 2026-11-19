@@ -17,19 +17,19 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 ## Migration order
 
 - [ ] Add React 19, React DOM, JSX runtime, typings, compiler configuration, and lockfile changes as one tested unit.
-- [ ] Implement `runtime-react`, React ShadowRoot mount, `ctx.ui.mountReact`, context lifecycle tests, and React-only bundle smoke tests.
+- [ ] Implement `runtime-react`, React ShadowRoot mount, `ctx.ui.mountReact`, runtime/utility lifecycle tests, and React-only bundle build verification.
 - [ ] Migrate shared UI primitives: Button, Badge, Dialog, Dropdown, Toast, RodMenu, Dock, clipboard, object inspector, form controls.
 - [ ] Migrate Instagram bookmark UI and settings.
 - [ ] Migrate Reddit/GoneWild (including audio, player, search, and Soundgasm) without changing page-world behavior.
 - [ ] Migrate RodX Studio and Twitter/X UI, retaining interceptors and mobile gesture behavior.
 - [ ] Migrate DOM inspector, page REPL, GitHub tools, mobile editor, and remaining user interfaces.
-- [ ] Migrate Playground and all UI tests to React Testing Library and browser-level smoke tests.
+- [ ] Migrate Playground to real React components; validate interactive UI manually on Safari. Do not add component, snapshot, visual, or userscript UI tests.
 - [ ] Remove Solid imports, `solid-js`, `@solidjs/web`, compiler/Vite plugin, `runtime-solid`, Solid workflows, obsolete docs, and `solid-ui` naming.
 - [ ] Enforce CI rule preventing new Solid imports and verify standalone/unified builds and Safari behavior.
 
 ## Verification gates
 
-Every migrated vertical must pass TypeScript, targeted tests, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes.
+Every migrated vertical must pass TypeScript, runtime/utility tests where applicable, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes.
 
 ## Runtime context lifecycle (target)
 
