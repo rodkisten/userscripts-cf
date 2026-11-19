@@ -109,6 +109,12 @@ export function createRuntime(
       }
     },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
+      onDispose(() => {
+        const context = getContext();
+        for (const entry of registry.getSnapshot()) {
+          if (entry.context === context) portalDisposers.get(entry.id)?.();
+        }
+      });
       return {
         ui: Object.freeze({
           get root() {
