@@ -174,9 +174,22 @@ export function transformRodAst(code, id, options = {}) {
       (removal) => removal.target === target && removal.event === event.text && removal.symbol === symbol,
     );
   }
-  function hasGMGuard(owner) {
-    if (!owner) return true;
-    return /typeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(code.slice(owner.getStart(source), owner.end));
+  // Evaluate availability guards at each call, not across the whole function.
+  function hasGMGuard(node) {
+    let current = node.parent;
+    while (current && !ts.isSourceFile(current)) {
+      if (ts.isFunctionLike(current)) break;
+      if (ts.isIfStatement(current) && current.thenStatement.pos <= node.pos && node.end <= current.thenStatement.end) {
+        const condition = code.slice(current.expression.getStart(source), current.expression.end);
+        if (/\\btypeof\\s+(?:GM_[A-Za-z]+|GM)\\b/.test(condition)) return true;
+      }
+      if (ts.isConditionalExpression(current)) {
+        const condition = code.slice(current.condition.getStart(source), current.condition.end);
+        if (/\\btypeof\\s+(?:GM_[A-Za-z]+|GM)\\b/.test(condition)) return true;
+      }
+      current = current.parent;
+    }
+    return false;
   }
   // Opt-in migration only for already-awaited calls in async functions.
   // ctx.storage.local retains native string/null coercion and read-through.
@@ -334,7 +347,7 @@ export function transformRodAst(code, id, options = {}) {
         if (callee.text === "fetch") replacement = rules.fetch?.replace(/^ctx\./, ctx + ".");
         if (callee.text === "setInterval" && node.arguments.length === 2 && timerIsSafe(node, owner))
           replacement = ctx + ".interval";
-        if (options.gm !== false && !hasGMGuard(owner) && /^GM_[A-Za-z]+$/.test(callee.text)) {
+        if (options.gm !== false && !hasGMGuard(node) && /^GM_[A-Za-z]+$/.test(callee.text)) {
           const method = callee.text.slice(3);
           if (GM_LEGACY_METHODS.has(method))
             replacement = method === "addStyle" ? ctx + ".ui.style" : ctx + ".gm.legacy." + method;
@@ -362,7 +375,7 @@ export function transformRodAst(code, id, options = {}) {
       if (
         !replacement &&
         options.gm !== false &&
-        !hasGMGuard(owner) &&
+        !hasGMGuard(node) &&
         ts.isPropertyAccessExpression(callee) &&
         ts.isIdentifier(callee.expression) &&
         callee.expression.text === "GM" &&
