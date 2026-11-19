@@ -46,19 +46,22 @@ for (const [index, batch] of batches.entries()) {
   console.log(
     `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
   );
-  console.log(`Starting Vitest (timeout: ${timeoutMs}ms, isolated: ${isolateSuites})`);
+  console.log(
+    `Starting Vitest (timeout: ${timeoutMs}ms, isolated: ${isolateSuites})`,
+  );
   const result = spawnSync(
     "npx",
     ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...batch],
     {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-    timeout: timeoutMs,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+      timeout: timeoutMs,
       killSignal: "SIGKILL",
     },
   );
   console.log(
-    `Vitest batch finished after ${Date.now() - batchStartedAt}ms (exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
+    `Vitest batch finished after ${Date.now() - batchStartedAt}ms ` +
+      `(exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
   );
   if (result.error) {
     console.error(`Vitest execution error: ${result.error.message}`);
@@ -68,7 +71,10 @@ for (const [index, batch] of batches.entries()) {
   }
   console.log("::endgroup::");
   if (result.status !== 0 || result.error) {
-    console.error(`Runtime suite failed: ${batch.join(", ")} (total elapsed: ${Date.now() - startedAt}ms)`);
+    console.error(
+      `Runtime suite failed: ${batch.join(", ")} ` +
+        `(total elapsed: ${Date.now() - startedAt}ms)`,
+    );
     process.exit(1);
   }
 }
