@@ -486,3 +486,26 @@ describe("GM guard locality", () => {
     expect(transformRodAst(source, "gm-ternary.ts").code).toBe(source);
   });
 });
+
+describe("GM capability fallback control flow", () => {
+  it("preserves guarded if/else branches without affecting sibling calls", () => {
+    const source = 'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } else { GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const result = transformRodAst(source, "gm-fallback.ts");
+    expect(result.code).toContain('GM_getValue("x")');
+    expect(result.code).toContain('GM_setValue("fallback", 1)');
+    expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');
+    expect(transformRodAst(result.code, "gm-fallback.ts").changed).toBe(false);
+  });
+  it("preserves GM inside logical short-circuit guards", () => {
+    const source = 'function init(ctx) { return typeof GM_getValue === "function" && GM_getValue("x"); }';
+    expect(transformRodAst(source, "gm-logical.ts").code).toBe(source);
+  });
+  it("preserves GM inside OR fallback guards", () => {
+    const source = 'function init(ctx) { return typeof GM_getValue !== "function" || GM_getValue("x"); }';
+    expect(transformRodAst(source, "gm-logical-or.ts").code).toBe(source);
+  });
+  it("does not treat an unrelated GM guard as a function-wide veto", () => {
+    const source = 'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } return GM_setValue("y", 1); }';
+    expect(transformRodAst(source, "gm-sibling.ts").code).toContain('ctx.gm.legacy.setValue("y", 1)');
+  });
+});
