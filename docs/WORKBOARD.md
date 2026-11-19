@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 Dock bridge, unverified:** `build/bundle-runtime.mjs` now supplies `api.mountSharedReact` to standalone Dock, so Dock can render as a portal in the bundle root. `src/runtime/react-ui/rod-dock.tsx` retains standalone fallback for unrelated callers. Audit Sonner and all remaining `createRoot()` sites, confirm TypeScript/build and AST compatibility before checking off single-root acceptance.
+
+
 - [ ] **2026-11-19 bundle-root implementation (unverified):** `src/core/runtime-react.tsx` now creates one renderer per `createRuntime()` call, with module-scoped portal ownership and per-portal `RuntimeProvider`. Standalone/unified/tag bundles reuse it within each world. Must run typecheck, runtime/AST tests and build; ensure no extra roots from Sonner/Dock/feature modules before checking off. Different page/sandbox worlds remain isolated.
 
 
