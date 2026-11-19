@@ -483,22 +483,19 @@ export function initializeDeckCompactLayout(): void {
             RODX_SELECTORS.proxyActionByName(action),
           );
           if (!proxy) {
-            proxy = (
-              <button
-                type="button"
-                data-proxy={action}
-                title={label}
-                aria-label={label}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  const nativeEl = Array.from(
-                    (article as ParentNode).querySelectorAll<HTMLElement>(selector),
-                  ).find((el) => !top.contains(el));
-                  nativeEl?.click();
-                }}
-              />
-            ) as HTMLButtonElement;
+            proxy = document.createElement("button");
+            proxy.type = "button";
+            proxy.dataset.proxy = action;
+            proxy.title = label;
+            proxy.setAttribute("aria-label", label);
+            proxy.addEventListener("click", (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              const nativeEl = Array.from(
+                (article as ParentNode).querySelectorAll<HTMLElement>(selector),
+              ).find((el) => !top.contains(el));
+              nativeEl?.click();
+            });
             top.append(proxy);
           }
 
@@ -513,7 +510,8 @@ export function initializeDeckCompactLayout(): void {
               native.getAttribute(DATA_ATTRS.pressed) === "true" ||
               /unlike|unretweet|removeBookmark/.test(native.dataset.testid || "");
 
-            mountView(proxy, () => markup);
+            if (typeof markup === "string") proxy.textContent = markup;
+            else proxy.replaceChildren(markup);
             proxy.setAttribute(DATA_ATTRS.pressed, String(pressed));
           }
         }
