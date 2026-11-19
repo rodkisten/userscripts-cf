@@ -2,11 +2,28 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { Window } from "happy-dom";
 import { build } from "vite";
+let transformedModules = 0;
 const fixture = await build({
   configFile: new URL("../vite.config.js", import.meta.url).pathname,
-  logLevel: "silent",
+  logLevel: "info",
+  plugins: [
+    {
+      name: "runtime-test-build-progress",
+      buildStart() {
+        console.log("[runtime fixture] Compiling the runtime IIFE used by lifecycle tests.");
+      },
+      transform(_source, id) {
+        transformedModules++;
+        if (transformedModules % 25 === 0) {
+          console.log(`[runtime fixture] Transformed ${transformedModules} modules.`);
+        }
+        return null;
+      },
+    },
+  ],
   build: {
     write: false,
+    rollupOptions: { maxParallelFileOps: 32 },
     lib: {
       entry: new URL("../src/core/runtime-react.tsx", import.meta.url).pathname,
       name: "RuntimeFixture",
