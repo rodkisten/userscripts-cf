@@ -170,7 +170,7 @@ export function initializeRodFeatures(
         ? createMenuFeature({ mountSharedReact })
         : undefined,
     toaster:
-      typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
+      (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) && mountSharedReact
         ? createToasterFeature(mountSharedReact)
         : undefined,
     storage: createStorageFeature(host),
