@@ -15,7 +15,11 @@ describe("Rod UI Design System Studio contract", () => {
   });
   it("uses actual runtime instances instead of mock-only previews", () => {
     const entry = read("studio/entry.tsx");
-    expect(entry).toContain("import { RodMenu }");
+    expect(entry).toContain("import { RodMenu, RodMenuHost }");
+    expect(entry).toContain("createRoot(root).render(");
+    expect(entry).toContain("<RodMenuHost />");
+    expect(entry).not.toMatch(/solid-js|@solidjs|runtime\\/solid-ui/);
+    expect(read("studio/examples.ts")).not.toContain("runtime/solid-ui");
     expect(entry).toContain("import { ObjectInspector }");
     expect(entry).toContain("RodMenu.open(");
     expect(entry).toContain("<ObjectInspector");
