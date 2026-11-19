@@ -358,8 +358,10 @@ export function transformRodAst(code, id, options = {}) {
       const param = node.parameters?.[0];
       const explicit =
         param && ts.isIdentifier(param.name) && (param.name.text === "ctx" || param.name.text === "context");
-      const nextCtx = explicit ? param.name.text : ctx;
       const names = declaredNames(node);
+      // A nested parameter/local named ctx or context hides the captured
+      // runtime binding. Never redirect its calls to the shadowing value.
+      const nextCtx = explicit ? param.name.text : ctx && names.has(ctx) ? null : ctx;
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
       if (explicit) migrateStaticStyleTriples(node, nextCtx, nextShadowed, blocked || keep(node));
@@ -371,7 +373,8 @@ export function transformRodAst(code, id, options = {}) {
     if (ts.isBlock(node) || ts.isSourceFile(node)) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
-      ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node), owner));
+      const nextCtx = ctx && names.has(ctx) ? null : ctx;
+      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), owner));
       return;
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
