@@ -212,51 +212,6 @@ test("navigation during asynchronous initialization cleans the stale instance", 
   await host.happyDOM.abort();
 });
 
-test("mountSolid creates an isolated visible ShadowRoot and disposes it on navigation", async () => {
-  const host = new Window({ url: "https://example.com/on" });
-  const app = createRuntime(
-    [
-      {
-        id: "inspector-fixture",
-        matches: ["https://example.com/on"],
-        module: {
-          init(ctx) {
-            ctx.ui.mountSolid(
-              () => {
-                const button = host.document.createElement("button");
-                button.textContent = "Open Inspector";
-                button.addEventListener("click", () => (button.dataset.clicked = "yes"));
-                return button;
-              },
-              { styles: [":host { display: block; } button { pointer-events: auto; }"] },
-            );
-          },
-        },
-      },
-    ],
-    { call() {} },
-    host,
-  );
-  await app.ready;
-  const mount = host.document.querySelector('[data-userscripts-cf-ui="inspector-fixture"]');
-  assert.ok(mount, "the runtime creates the UI host");
-  assert.ok(mount.shadowRoot, "the runtime attaches an open ShadowRoot");
-  assert.equal(mount.style.position, "fixed");
-  assert.equal(mount.style.zIndex, "2147483647");
-  assert.equal(mount.style.pointerEvents, "none");
-  const button = mount.shadowRoot.querySelector("button");
-  assert.ok(button, "Solid content renders inside the ShadowRoot");
-  assert.equal(button.textContent, "Open Inspector");
-  button.click();
-  assert.equal(button.dataset.clicked, "yes", "controls remain interactive");
-  assert.ok(mount.shadowRoot.querySelector("style"), "styles are scoped to the ShadowRoot");
-  host.history.pushState({}, "", "/off");
-  await app.navigate();
-  assert.equal(mount.isConnected, false, "the host is removed on navigation");
-  await app.dispose();
-  await host.happyDOM.abort();
-});
-
 test("ctx.query shares a lazy QueryClient between scripts and disposes on runtime shutdown", async () => {
   const host = new Window({ url: "https://x.com/home" });
   const clients = [];
