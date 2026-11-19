@@ -148,6 +148,8 @@ export function installRodActions(
         registrations.delete(module.id);
         modules.delete(module.id);
         notify();
+        // Release the shared hub when its final owning module unregisters.
+        if (modules.size === 0) hub.dispose();
       };
     },
     open(tabId) {
