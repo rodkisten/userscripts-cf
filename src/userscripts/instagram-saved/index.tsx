@@ -120,7 +120,7 @@ export default {
       await settingsApi.open();
     }
     const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
-    async function relay(config: Config, items: MediaPayload[], account: string) {
+    async function relay(config: Config, items: MediaPayload[], account: string, channels: string[]) {
       if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
       const response = await ctx.http.request(RELAY, {
         method: "POST",
@@ -132,7 +132,7 @@ export default {
           "Content-Type": "application/json",
           Authorization: `Bearer ${config.token}`,
         },
-        body: JSON.stringify({ items, channels: config.channels, concurrency: 1, force: false }),
+        body: JSON.stringify({ items, channels, concurrency: 1, force: false }),
       });
       abort.throwIfAborted();
       if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
@@ -199,6 +199,7 @@ export default {
             abort.throwIfAborted();
             if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
+            const ledgerKey = `delivered-channels:v1:${account}:${collectionId}`;
             const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             count += await syncSaved({
               channels: config.channels,
@@ -208,7 +209,11 @@ export default {
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
-              sendBatch: (items) => retry(() => relay(config, items, account), items.length),
+              loadChannels: () => get(ledgerKey, {}),
+              saveChannels: (ledger) => set(ledgerKey, ledger),
+              sendBatch: (items, missingChannels) => retry(
+                () => relay(config, items, account, missingChannels || config.channels), items.length,
+              ),
               fetchPage: (cursor) =>
                 retry(async () => {
                   if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account) {
