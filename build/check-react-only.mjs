@@ -6,7 +6,9 @@ import { parse } from "@babel/parser";
 export const SOURCE_ROOTS = ["src", "playground", "studio"];
 const EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
 const PACKAGE_SCOPES = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
-const forbidden = (value) => typeof value === "string" && (value === "solid-js" || value.startsWith("solid-js/") || value.startsWith("@solidjs/"));
+const forbidden = (value) =>
+  typeof value === "string" &&
+  (value === "solid-js" || value.startsWith("solid-js/") || value.startsWith("@solidjs/"));
 const location = (node) => node?.loc?.start?.line ?? 1;
 
 export function inspectSolidReferences(source, filename = "source.tsx") {
@@ -29,19 +31,40 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
   const report = (node, kind) => violations.push({ line: location(node), kind });
   const visit = (node) => {
     if (!node || typeof node !== "object") return;
-    if (node.type === "ImportDeclaration" || node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") {
+    if (
+      node.type === "ImportDeclaration" ||
+      node.type === "ExportNamedDeclaration" ||
+      node.type === "ExportAllDeclaration"
+    ) {
       if (forbidden(node.source?.value)) report(node, "Solid module import/export");
     }
-    if (node.type === "ImportExpression" && forbidden(node.source?.value)) report(node, "Solid dynamic import");
+    if (node.type === "ImportExpression" && forbidden(node.source?.value))
+      report(node, "Solid dynamic import");
     if (node.type === "CallExpression") {
-      if (node.callee?.type === "Import" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid dynamic import");
-      if (node.callee?.type === "Identifier" && node.callee.name === "require" && forbidden(node.arguments?.[0]?.value)) report(node, "Solid require");
+      if (node.callee?.type === "Import" && forbidden(node.arguments?.[0]?.value))
+        report(node, "Solid dynamic import");
+      if (
+        node.callee?.type === "Identifier" &&
+        node.callee.name === "require" &&
+        forbidden(node.arguments?.[0]?.value)
+      )
+        report(node, "Solid require");
     }
     if (node.type === "TSImportType" && forbidden(node.argument?.value)) report(node, "Solid type import");
-    if (node.type === "ImportAttribute" && forbidden(node.value?.value)) report(node, "Solid import attribute");
-    if (node.type === "TSExternalModuleReference" && forbidden(node.expression?.value)) report(node, "Solid TypeScript require");
+    if (node.type === "ImportAttribute" && forbidden(node.value?.value))
+      report(node, "Solid import attribute");
+    if (node.type === "TSExternalModuleReference" && forbidden(node.expression?.value))
+      report(node, "Solid TypeScript require");
     for (const [key, value] of Object.entries(node)) {
-      if (key === "loc" || key === "start" || key === "end" || key === "extra" || key === "comments" || key === "tokens") continue;
+      if (
+        key === "loc" ||
+        key === "start" ||
+        key === "end" ||
+        key === "extra" ||
+        key === "comments" ||
+        key === "tokens"
+      )
+        continue;
       if (Array.isArray(value)) value.forEach(visit);
       else if (value && typeof value === "object") visit(value);
     }
@@ -49,7 +72,10 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
   visit(ast.program);
   const pragma = /@jsxImportSource\s+(?:solid-js(?:\/\S*)?|@solidjs\/\S*)/g;
   for (const match of source.matchAll(pragma)) {
-    violations.push({ line: source.slice(0, match.index).split("\n").length, kind: "Solid JSX runtime pragma" });
+    violations.push({
+      line: source.slice(0, match.index).split("\n").length,
+      kind: "Solid JSX runtime pragma",
+    });
   }
   return violations;
 }
@@ -70,7 +96,10 @@ export async function auditReactOnly(root = process.cwd()) {
     for (const entry of entries) {
       if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
       const absolute = path.join(directory, entry.name);
-      if (entry.isDirectory()) { await scan(absolute); continue; }
+      if (entry.isDirectory()) {
+        await scan(absolute);
+        continue;
+      }
       if (!entry.isFile() || !EXTENSIONS.has(path.extname(entry.name))) continue;
       const relative = path.relative(root, absolute).split(path.sep).join("/");
       const source = await fs.readFile(absolute, "utf8");

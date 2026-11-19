@@ -339,14 +339,16 @@ for (const [target, measurements] of Object.entries(classAudit)) {
     gzipBytes: measurements.gzipBytes,
     debugBytes: measurements.debugBytes,
     debugGzipBytes: measurements.debugGzipBytes,
-    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines, reactRootAudit }) => ({
-      world,
-      bytes,
-      includedModuleCount,
-      reactRootAudit,
-      topModules,
-      featureDefines,
-    })),
+    runtimes: runtime.map(
+      ({ world, bytes, includedModuleCount, topModules, featureDefines, reactRootAudit }) => ({
+        world,
+        bytes,
+        includedModuleCount,
+        reactRootAudit,
+        topModules,
+        featureDefines,
+      }),
+    ),
   };
 }
 console.log("\\nReact root ownership by generated target/execution world:");
@@ -360,8 +362,7 @@ console.table(
 if (
   Object.entries(runtimeFeatureAudit.bundles).some(
     ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 ||
-      stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
   )
 ) {
   throw new Error("[React root ownership] Missing or invalid per-world root audit report");

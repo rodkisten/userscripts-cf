@@ -59,7 +59,6 @@ The build now enforces this ownership contract at two levels:
 
 The separately-owned Studio application is intentionally excluded from userscript bundle graphs. A page-world runtime and a sandbox-world runtime remain independent owners, so the invariant is **one root per generated execution-world runtime**, not one root across the entire userscript file.
 
-
 ## Logical topology
 
 ```text

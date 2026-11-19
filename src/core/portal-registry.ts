@@ -19,10 +19,7 @@ export interface PortalRegistry<TNode = unknown, TContext = unknown> {
   clear(): void;
 }
 
-export function createPortalRegistry<TNode = unknown, TContext = unknown>(): PortalRegistry<
-  TNode,
-  TContext
-> {
+export function createPortalRegistry<TNode = unknown, TContext = unknown>(): PortalRegistry<TNode, TContext> {
   const entries = new Map<number, PortalEntry<TNode, TContext>>();
   const listeners = new Set<() => void>();
   let snapshot: ReadonlyArray<PortalEntry<TNode, TContext>> = [];

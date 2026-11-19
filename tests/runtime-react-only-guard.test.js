@@ -27,7 +27,7 @@ test("ignores comments, string literals and React imports", () => {
 });
 
 test("detects JSX runtime pragma", () => {
-  expect(inspectSolidReferences('/** @jsxImportSource solid-js */\nconst value = 1;')).toEqual([
+  expect(inspectSolidReferences("/** @jsxImportSource solid-js */\nconst value = 1;")).toEqual([
     { line: 1, kind: "Solid JSX runtime pragma" },
   ]);
 });
@@ -37,7 +37,10 @@ test("audits dependencies and nested source paths, ignoring generated dist", asy
   try {
     await fs.mkdir(path.join(root, "src/nested"), { recursive: true });
     await fs.mkdir(path.join(root, "src/dist"), { recursive: true });
-    await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ dependencies: { "solid-js": "1.0.0" } }));
+    await fs.writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({ dependencies: { "solid-js": "1.0.0" } }),
+    );
     await fs.writeFile(path.join(root, "src/nested/entry.ts"), 'export * from "@solidjs/router";');
     await fs.writeFile(path.join(root, "src/dist/ignored.ts"), 'import "solid-js";');
     expect(await auditReactOnly(root)).toEqual([
@@ -49,23 +52,28 @@ test("audits dependencies and nested source paths, ignoring generated dist", asy
   }
 });
 
-
 test("reports malformed source rather than silently passing the guard", () => {
   expect(inspectSolidReferences('import { broken from "solid-js";')[0].kind).toMatch(/Unparseable source/);
 });
 
 test("checks side-effect imports and TypeScript import-equals", () => {
-  const source = 'import "solid-js";\\nimport Solid = require("@solidjs/router");'.replace('\\n', '\n');
+  const source = 'import "solid-js";\\nimport Solid = require("@solidjs/router");'.replace("\\n", "\n");
   expect(inspectSolidReferences(source).map(({ line }) => line)).toEqual([1, 2]);
 });
 
-
 test("parses generic TypeScript arrow functions without JSX ambiguity", () => {
-  expect(inspectSolidReferences('const freeze = <T>(value: T): T => value;', "src/config/runtime.ts")).toEqual([]);
-  expect(inspectSolidReferences('const getValue = <T = unknown>(name: string) => name as T;', "src/runtime/vendor/menu.ts")).toEqual([]);
+  expect(
+    inspectSolidReferences("const freeze = <T>(value: T): T => value;", "src/config/runtime.ts"),
+  ).toEqual([]);
+  expect(
+    inspectSolidReferences(
+      "const getValue = <T = unknown>(name: string) => name as T;",
+      "src/runtime/vendor/menu.ts",
+    ),
+  ).toEqual([]);
 });
 
 test("keeps JSX parsing for TSX and detects forbidden imports", () => {
-  expect(inspectSolidReferences('const element = <div />;', "component.tsx")).toEqual([]);
+  expect(inspectSolidReferences("const element = <div />;", "component.tsx")).toEqual([]);
   expect(inspectSolidReferences('import "solid-js";', "component.tsx")).toHaveLength(1);
 });
