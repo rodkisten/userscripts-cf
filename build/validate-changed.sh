@@ -99,6 +99,7 @@ case "$mode" in
       echo "Shared infrastructure changed: running full validation."
       npm run typecheck
       npm run lint
+      export RUNTIME_TEST_SKIP_DIST=true
       # Full validation checks all shared contracts, but only builds affected bundles
       # unless the bundler/dependency configuration itself changed.
       if [[ -f changed-files.txt ]] && ! grep -Eq '^(build/(build\\.mjs|runtime-graph\\.mjs)|package(-lock)?\\.json$|userscripts\\.config\\.js$|vite\\.config\\.)' changed-files.txt; then
@@ -124,6 +125,7 @@ NODE
       else
         echo "Bundler or dependency configuration changed: building all userscripts."
         npm run build
+        unset RUNTIME_TEST_SKIP_DIST
       fi
       # Only runtime and utility suites are permitted (docs/testing-policy.md).
       npm run test:unit
@@ -182,6 +184,7 @@ const summary = ['#### Dependency graph', ...affected.map(id => '- \`' + id + '\
 await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
 NODE
     fi
+    export RUNTIME_TEST_SKIP_DIST=true
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
       if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
@@ -194,6 +197,7 @@ NODE
         fi
       else
         npm run build
+        unset RUNTIME_TEST_SKIP_DIST
       fi
     fi
     selected_tests=("${changed_tests[@]}")
