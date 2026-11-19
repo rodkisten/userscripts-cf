@@ -23,6 +23,14 @@ async function walk(dir) {
 }
 await walk(root.pathname);
 suites.sort();
+// The compiled-runtime fixture performs a Vite build during module initialization.
+// Run it first in a single worker so it cannot inherit memory pressure from other suites.
+const compiledRuntimeSuite = "tests/runtime.test.js";
+const compiledRuntimeIndex = suites.indexOf(compiledRuntimeSuite);
+if (compiledRuntimeIndex !== -1) {
+  suites.splice(compiledRuntimeIndex, 1);
+  suites.unshift(compiledRuntimeSuite);
+}
 if (process.env.RUNTIME_TEST_SKIP_DIST === "true") {
   const index = suites.indexOf("tests/build.test.js");
   if (index !== -1) suites.splice(index, 1);
@@ -47,11 +55,12 @@ for (const [index, batch] of batches.entries()) {
     `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
   );
   console.log(
-    `Starting Vitest (timeout: ${timeoutMs}ms, isolated: ${isolateSuites})`,
+    `Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`,
   );
+  const workers = batch.includes(compiledRuntimeSuite) ? 1 : 2;
   const result = spawnSync(
     "npx",
-    ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...batch],
+    ["vitest", "run", `--maxWorkers=${workers}`, "--no-file-parallelism", ...batch],
     {
       stdio: "inherit",
       shell: process.platform === "win32",

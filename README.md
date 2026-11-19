@@ -33,8 +33,9 @@ A migração é incremental e deve preservar o comportamento dos userscripts exi
 - A root compartilhada do runtime permanece em `src/core/runtime-react.tsx`; módulos montam UI pelo portal registry e pelo contrato `ctx.ui.mountReact`.
 - O lifecycle de ScriptContext usa `createRuntimeCleanupScope`, com cleanup LIFO, idempotência, Promise compartilhada e isolamento de falhas.
 - A política de testes vigente permite apenas testes de runtime e utilitários. Testes de componentes, UI renderizada e comportamento de userscripts não devem ser criados nem executados.
-- **Validação pós-merge pendente:** o último `Validate changed` encontrou TS1016 em `src/runtime/actions/index.tsx` e TS2304 em `src/userscripts/page-repl/Panel.tsx`. Consulte o [Workboard](docs/WORKBOARD.md) para os runs e a correção em andamento.
-- A release major executada sobre o merge do PR #119 concluiu com sucesso; a validação do commit atual de `main` ainda precisa ser confirmada.
+- **React Foundation:** aprovada no commit `9104096`, incluindo typecheck React e build de todos os targets. [Execução #44578973499](https://github.com/rodkisten/userscripts-cf/actions/runs/44578973499).
+- **Validate changed:** ainda pendente. As outras 15 suítes passaram; o runner hospedado foi encerrado repetidamente durante a inicialização do fixture compilado de `tests/runtime.test.js`. O executor agora prioriza essa suíte e limita seus workers. [Execução #44578973774](https://github.com/rodkisten/userscripts-cf/actions/runs/44578973774).
+- Release e Playground Pages exigem `[deploy]` ou despacho manual; foram corretamente ignorados neste commit, sem publicação. Consulte o [Workboard](docs/WORKBOARD.md) antes de qualquer deploy.
 
 Consulte o [Workboard](docs/WORKBOARD.md) para prioridades, evidências e próximos blocos. README e Workboard devem permanecer sincronizados em cada alteração arquitetural.
 
