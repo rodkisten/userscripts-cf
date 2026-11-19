@@ -52,6 +52,39 @@ describe("React portal registry ownership", () => {
     await host.happyDOM.abort();
   });
 
+  it("prunes a target attached and detached before the observer callback", async () => {
+    const host = new Window();
+    const target = host.document.createElement("div");
+    const registry = createPortalRegistry<string, object>();
+    registry.add({ id: 1, target, node: "transient" });
+
+    // MutationObserver records retain the inserted node even if it is detached
+    // again before the observer callback runs.
+    host.document.body.append(target);
+    target.remove();
+
+    expect(target.isConnected).toBe(false);
+    expect(registry.pruneDisconnected(new Set([target]))).toEqual([1]);
+    expect(registry.getSnapshot()).toEqual([]);
+    await host.happyDOM.abort();
+  });
+
+  it("marks a target as connected when an inserted ancestor contains it", async () => {
+    const host = new Window();
+    const ancestor = host.document.createElement("section");
+    const target = host.document.createElement("div");
+    ancestor.append(target);
+    const registry = createPortalRegistry<string, object>();
+    registry.add({ id: 1, target, node: "nested" });
+
+    host.document.body.append(ancestor);
+    ancestor.remove();
+
+    expect(registry.pruneDisconnected(new Set([target]))).toEqual([1]);
+    expect(registry.getSnapshot()).toEqual([]);
+    await host.happyDOM.abort();
+  });
+
   it("removes all portals owned by one context without touching another", async () => {
     const host = new Window();
     const firstContext = {};
