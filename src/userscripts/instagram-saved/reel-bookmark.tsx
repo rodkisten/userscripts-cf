@@ -188,8 +188,8 @@ export function mountReelBookmark(
       clear();
     }
     const target = reelIsOpen() ? actions() : null;
-    const native = source;
     const source = target ? nativeSave(target) : null;
+    const native = source;
     if (source !== selectedSave) {
       operation++;
       selectedSave = source;
