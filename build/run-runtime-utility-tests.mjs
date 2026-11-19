@@ -58,9 +58,17 @@ for (const [index, batch] of batches.entries()) {
   console.log(
     `Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`,
   );
+  const args = [
+    "vitest",
+    "run",
+    `--maxWorkers=${workers}`,
+    "--no-file-parallelism",
+    ...(batch.includes(compiledRuntimeSuite) ? ["--reporter=verbose", "--testTimeout=10000"] : []),
+    ...batch,
+  ];
   const result = spawnSync(
     "npx",
-    ["vitest", "run", `--maxWorkers=${workers}`, "--no-file-parallelism", ...batch],
+    args,
     {
       stdio: "inherit",
       shell: process.platform === "win32",

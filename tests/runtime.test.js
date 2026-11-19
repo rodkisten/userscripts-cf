@@ -23,7 +23,6 @@ const fixture = await build({
   ],
   build: {
     write: false,
-    rollupOptions: { maxParallelFileOps: 32 },
     lib: {
       entry: new URL("../src/core/runtime-react.tsx", import.meta.url).pathname,
       name: "RuntimeFixture",
