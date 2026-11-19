@@ -792,35 +792,6 @@ import { ObjectInspector } from "./object-inspector";
         menuSize: "md",
         titleInput: "Personalizar experiência",
       };
-      const examples = {
-        response: {
-          ok: true,
-          status: 200,
-          data: {
-            user: { id: 42, name: "Rod", roles: ["developer", "admin"] },
-            items: [
-              { id: "a", active: true },
-              { id: "b", active: false },
-            ],
-          },
-          durationMs: 127,
-        },
-        dom: {
-          nodeName: "DIV",
-          className: "rodx-panel",
-          dataset: { panel: "inspector", active: "true" },
-          children: [
-            { tagName: "BUTTON", textContent: "Abrir" },
-            { tagName: "INPUT", value: "pesquisa" },
-          ],
-        },
-        settings: {
-          theme: { accent: "#a78bfa", radius: 18 },
-          menu: { presentation: "bottom-sheet", size: "lg", scrollLock: true },
-          features: ["dock", "inspector", "menu"],
-        },
-      };
-      let currentObject = "response";
       const state = Object.assign(
         {},
         defaults,
@@ -967,7 +938,7 @@ import { ObjectInspector } from "./object-inspector";
         ["Ações", "Submit, cancel, destructive, secondary e handlers assíncronos.", "actions"],
         ["Persistência", "Hydrate, persist, debounce, versionamento e storage adapters.", "store"],
         ["Toast", "Notificações e feedback de ações.", "toastActions"],
-        ["Shadow DOM", "Montagem isolada e estilos registrados no runtime.", "mountSolidShadow"],
+        ["Shadow DOM", "Montagem isolada e estilos registrados no runtime.", "React ShadowRoot (planejado)"],
       ];
       $("#componentGrid").innerHTML = components
         .map(
@@ -986,7 +957,6 @@ import { ObjectInspector } from "./object-inspector";
           (b.onclick = () => {
             if (b.dataset.recipe === "network") {
               location.hash = "inspector";
-              currentObject = "response";
               document.querySelector('[data-object="response"]')?.click();
             } else {
               state.presentation = b.dataset.recipe === "mobile" ? "bottom-sheet" : "modal";
