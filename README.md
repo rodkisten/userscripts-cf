@@ -31,6 +31,7 @@ A migração é incremental e deve preservar o comportamento dos userscripts exi
 - O Rod Actions exige o adaptador de portal do runtime e não cria uma root React independente; seu consumidor de produção fornece `ctx.ui.mountReact`.
 - Menus Radix (`ctx.menu.open/dropdown`) também exigem o mount compartilhado e registram o descarte no `ctx.onDispose`; runtimes sem adaptador React não expõem esse recurso em vez de criar outra root.
 - Sonner, Rod Dock, Page REPL, GitHub directory tree e ícones sociais do RodX também usam o mesmo portal registry. O único `createRoot()` do bundle permanece no runtime; o playground `studio/entry.tsx` é uma aplicação independente.
+- `npm run check:react-roots` audita os callsites por AST; cada bundle de execução também verifica no grafo emitido exatamente uma root do runtime. O build falha se uma feature introduzir uma root independente.
 - Os checks independentes de React foundation, Userscripts e Rod AST passaram em rodadas anteriores.
 - A validação completa ainda **não está aprovada**: houve execuções canceladas/interrompidas pelo runner hospedado; não declarar CI verde sem uma execução completa bem-sucedida.
 - A concorrência de `diagnostics.yml` foi configurada para não cancelar uma validação ativa automaticamente. O workflow temporário de diagnóstico foi removido para evitar builds duplicados.
