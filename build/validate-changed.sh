@@ -102,7 +102,7 @@ case "$mode" in
       export RUNTIME_TEST_SKIP_DIST=true
       # Full validation checks all shared contracts, but only builds affected bundles
       # unless the bundler/dependency configuration itself changed.
-      if [[ -f changed-files.txt ]] && ! grep -Eq '^(build/(build\\.mjs|runtime-graph\\.mjs)|package(-lock)?\\.json$|userscripts\\.config\\.js$|vite\\.config\\.)' changed-files.txt; then
+      if [[ -f changed-files.txt ]] && ! grep -Eq '^(build/(build\\.mjs|runtime-graph\\.mjs|run-runtime-utility-tests\\.mjs)|package(-lock)?\\.json$|userscripts\\.config\\.js$|vite\\.config\\.)' changed-files.txt; then
         node --input-type=module <<'NODE'
 import fs from "node:fs/promises";
 import definitions from "./userscripts.config.js";
