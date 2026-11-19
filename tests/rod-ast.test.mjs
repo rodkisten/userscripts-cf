@@ -680,3 +680,24 @@ describe("named dynamic stylesheet migration", () => {
     expect(transformRodAst(source, "shadow-style.ts").code).toBe(source);
   });
 });
+
+describe("style lifecycle variants", () => {
+  it("accepts CSS before id and setAttribute for id", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.textContent = extractedCSS1; node.setAttribute("id", ELEMENT_IDS.compactLayoutStyle); document.head.appendChild(node); }';
+    const result = transformRodAst(source, "style-setattribute.ts");
+    expect(result.code).toContain("ctx.ui.pageStyle(extractedCSS1, { id: ELEMENT_IDS.compactLayoutStyle });");
+    expect(transformRodAst(result.code, "style-setattribute.ts").changed).toBe(false);
+  });
+  it("accepts CSS before a direct id assignment", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.innerText = css; node.id = "theme"; document.head.append(node); }';
+    expect(transformRodAst(source, "style-reordered.ts").code).toContain('ctx.ui.pageStyle(css, { id: "theme" });');
+  });
+  it("preserves replaceChildren because it clears existing children", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.id = "theme"; node.textContent = css; document.head.replaceChildren(node); }';
+    expect(transformRodAst(source, "style-replacechildren.ts").code).toBe(source);
+  });
+  it("preserves later stylesheet updates to retain the node handle", () => {
+    const source = 'function init(ctx) { const node = document.createElement("style"); node.id = "theme"; node.textContent = css; document.head.appendChild(node); node.textContent = nextCss; }';
+    expect(transformRodAst(source, "style-updated.ts").code).toBe(source);
+  });
+});
