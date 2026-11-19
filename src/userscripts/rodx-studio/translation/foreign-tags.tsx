@@ -59,7 +59,7 @@ export function initializeDeckForeignTags() {
         // only add parenthesized translation for languages outside PT/ES/EN.
         item.hidden = false;
         if (value?.translation) {
-          const span = (<span />) as HTMLSpanElement;
+          const span = document.createElement("span");
           span.className = "rodx-tag-translation";
           span.textContent = "(" + value.translation + ")";
           span.title = "Tradução do idioma " + value.lang;
