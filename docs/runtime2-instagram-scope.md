@@ -18,7 +18,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Run targeted Vitest (not yet verified).
 - [x] Checkpoint at completed page boundaries to avoid losing unprocessed items. `maxItemsPerSession` is a soft page-boundary limit and can be exceeded by one page.
 - [x] Scope delivery state and cursor checkpoints to account, collection and sorted channel IDs.
-- [ ] Reconcile channel-specific acknowledgements across channel changes to avoid redundant sends. Existing delivery keys remain channel-set scoped; partial channel delivery is not yet persisted individually.
+- [x] Add account/collection-scoped per-channel ledger; group pending destinations, persist partial acknowledgements and reuse them after channel changes.\n- [ ] Migrate legacy channel-set delivery keys into the per-channel ledger without losing historical confirmations.\n- [ ] Verify ledger behavior against live Relay responses and retry semantics.
 - [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.
 - [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
 - [x] Bind the visible Reel's native bookmark to its scoped publication identity and remount on swipe; refuse ambiguous multi-Reel identity.
@@ -29,7 +29,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Current verification
 
-Source hardening, account-switch guards, malformed acknowledgement checks, utility regression tests and HTTP migration committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. No deployment requested. Do not merge until validated.
+Source hardening, account-switch guards, per-channel ledger and utility regression tests committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. No deployment requested. Do not merge until validated.
 
 ## Coordination
 
