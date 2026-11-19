@@ -1,4 +1,3 @@
-import { createRoot } from "react-dom/client";
 import { createStudioStore } from "./store.ts";
 import { FeedRoot, PostCard, SettingsShell, type FeedController } from "./components/Feed.tsx";
 import { normalize, KEYS } from "./domain.ts";
@@ -118,9 +117,10 @@ export function mountReddit(ctx: any, bridge: any) {
   const shellNode = document.createElement("div");
   shellNode.style.pointerEvents = "none";
   shadow.append(shellNode);
-  const shellRoot = createRoot(shellNode);
-  const renderShell = () =>
-    shellRoot.render(
+  let disposeShell: (() => void) | undefined;
+  const renderShell = () => {
+    disposeShell?.();
+    disposeShell = ctx.ui.mountReact(
       <SettingsShell
         store={store}
         open={open}
@@ -134,7 +134,9 @@ export function mountReddit(ctx: any, bridge: any) {
         }}
         clear={clear}
       />,
+      shellNode,
     );
+  };
   renderShell();
   let root: { host: HTMLElement; dispose: () => void } | undefined;
   const setHidden = (node: Element, wanted: boolean) => {
@@ -166,12 +168,11 @@ export function mountReddit(ctx: any, bridge: any) {
         host.id = "gws-feed-root";
         host.dataset.reactMount = "true";
         main.insertBefore(host, main.firstChild);
-        const reactRoot = createRoot(host);
-        reactRoot.render(<FeedRoot controller={controller} />);
+        const disposePortal = ctx.ui.mountReact(<FeedRoot controller={controller} />, host);
         root = {
           host,
           dispose: () => {
-            reactRoot.unmount();
+            disposePortal();
             host.remove();
           },
         };
@@ -193,8 +194,7 @@ export function mountReddit(ctx: any, bridge: any) {
         const host = document.createElement("div");
         host.dataset.reactMount = "true";
         node.append(host);
-        const reactRoot = createRoot(host);
-        reactRoot.render(
+        const disposePortal = ctx.ui.mountReact(
           <PostCard
             post={post}
             controller={controller}
@@ -219,6 +219,7 @@ export function mountReddit(ctx: any, bridge: any) {
               }
             }}
           />,
+          host,
         );
         const mount = {
           dispose: () => {
@@ -311,7 +312,7 @@ export function mountReddit(ctx: any, bridge: any) {
     searchRequest?.abort();
     disposeEffects();
     root?.dispose();
-    shellRoot.unmount();
+    disposeShell?.();
     shellHost.remove();
     for (const [node] of mounts) remove(node);
     hidden.forEach((node) => node.classList.remove(styles["gws-hidden"]));
