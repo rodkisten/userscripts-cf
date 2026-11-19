@@ -1,6 +1,6 @@
-name: 🔒 Package Manager Operations
+name: 🥊 Package & Shell Operations
 
-run-name: "📦 ${{ inputs.runner || 'npm' }} ${{ inputs.operation == 'custom' && inputs.arguments || inputs.operation || 'install' }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
+run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || inputs.operation || 'install' }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
 
 on:
   workflow_dispatch:
@@ -10,16 +10,6 @@ on:
         type: string
         default: 'main'
         required: false
-      runner:
-        description: 'Package manager / executor'
-        required: true
-        default: 'npm'
-        type: choice
-        options:
-          - npm
-          - pnpm
-          - npx
-          - pnpx
       operation:
         description: 'Operation to execute'
         required: true
@@ -27,12 +17,10 @@ on:
         type: choice
         options:
           - install
-          - add
           - update
-          - uninstall
           - custom
-      arguments:
-        description: 'Custom arguments/command (ONLY used when operation is "custom")'
+      custom-command:
+        description: 'Any shell command (ONLY used when operation is "custom")'
         type: string
         required: false
         default: ''
@@ -46,7 +34,7 @@ concurrency:
 
 jobs:
   execute:
-    name: 🛠️ ${{ inputs.runner }} ${{ inputs.operation }} (${{ inputs.selected-branch || github.ref_name }})
+    name: 🥊 ${{ inputs.operation }} (${{ inputs.selected-branch || github.ref_name }})
     outputs:
       changed: ${{ steps.generated_output.outputs.changed }}
       branch: ${{ steps.generated_output.outputs.branch }}
@@ -67,16 +55,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: 📦 Setup pnpm (if selected)
-        if: inputs.runner == 'pnpm' || inputs.runner == 'pnpx'
-        uses: pnpm/action-setup@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: ${{ (inputs.runner == 'pnpm' || inputs.runner == 'pnpx') && 'pnpm' || 'npm' }}
-
       - name: 🪵 Verify branch and synchronize
         if: (inputs.selected-branch || github.ref_name) != 'main'
         shell: bash
@@ -88,43 +66,62 @@ jobs:
           git checkout "$BRANCH"
           git pull --ff-only origin "$BRANCH"
 
-      - name: ⚡ Run ${{ inputs.runner }} ${{ inputs.operation }}
+      - name: 🔍 Detect package manager (npm or pnpm)
+        id: detect-pm
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "pm=pnpm" >> "$GITHUB_OUTPUT"
+            echo "📦 Detected: pnpm (pnpm-lock.yaml found)"
+          else
+            echo "pm=npm" >> "$GITHUB_OUTPUT"
+            echo "📦 Detected: npm"
+          fi
+
+      - name: 📦 Setup pnpm (auto)
+        if: steps.detect-pm.outputs.pm == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: ${{ steps.detect-pm.outputs.pm }}
+
+      - name: 🥊 Run ${{ inputs.operation }}
         shell: bash
         env:
-          RUNNER: ${{ inputs.runner }}
+          PM: ${{ steps.detect-pm.outputs.pm }}
           OP: ${{ inputs.operation }}
-          ARGS: ${{ inputs.arguments }}
+          CMD: ${{ inputs.custom-command }}
         run: |
           set -euo pipefail
           
           if [ "$OP" = "custom" ]; then
-            if [ -z "$ARGS" ]; then
-              echo "❌ Error: 'arguments' input is required when operation is 'custom'."
+            if [ -z "$CMD" ]; then
+              echo "❌ Error: 'custom-command' is required when operation is 'custom'."
               exit 1
             fi
-            echo "🚀 Running custom command: $RUNNER $ARGS"
-            $RUNNER $ARGS
+            echo "🥊 Executing custom shell command: $CMD"
+            eval "$CMD"
           else
-            if [ -n "$ARGS" ]; then
-              echo "⚠️ Warning: 'arguments' are ignored unless operation is 'custom'."
-            fi
-            
-            if [ "$RUNNER" = "npx" ] || [ "$RUNNER" = "pnpx" ]; then
-              echo "❌ Error: '$RUNNER' requires operation to be set to 'custom'."
-              exit 1
+            if [ -n "$CMD" ]; then
+              echo "⚠️ Warning: 'custom-command' is ignored because operation is '$OP'."
             fi
 
-            if [ "$RUNNER" = "npm" ]; then
-              if [ "$OP" = "install" ]; then
-                npm ci --legacy-peer-deps --no-audit --no-fund
-              else
-                npm "$OP" --legacy-peer-deps --no-audit --no-fund
-              fi
-            elif [ "$RUNNER" = "pnpm" ]; then
+            echo "🥊 Executing $PM $OP..."
+            if [ "$PM" = "pnpm" ]; then
               if [ "$OP" = "install" ]; then
                 pnpm install --frozen-lockfile
               else
                 pnpm "$OP"
+              fi
+            else
+              if [ "$OP" = "install" ]; then
+                npm ci --legacy-peer-deps --no-audit --no-fund
+              else
+                npm "$OP" --legacy-peer-deps --no-audit --no-fund
               fi
             fi
           fi
@@ -134,28 +131,25 @@ jobs:
         shell: bash
         env:
           BRANCH: ${{ inputs.selected-branch || github.ref_name }}
-          RUNNER: ${{ inputs.runner }}
+          PM: ${{ steps.detect-pm.outputs.pm }}
           OP: ${{ inputs.operation }}
         run: |
           set -euo pipefail
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           
-          # Verifica mudanças no package.json, package-lock.json ou pnpm-lock.yaml
-          if git diff --quiet -- package.json package-lock.json pnpm-lock.yaml 2>/dev/null; then
+          # Verifica se houve alteração em qualquer arquivo rastreado ou novo
+          if [ -z "$(git status --porcelain)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "✅ No dependency files changed." >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ No files changed." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@://github.com"
           
-          git add package.json
-          [ -f package-lock.json ] && git add package-lock.json
-          [ -f pnpm-lock.yaml ] && git add pnpm-lock.yaml
-          
-          git commit -m "chore(deps): run $RUNNER $OP"
+          git add -A
+          git commit -m "chore: run $OP ($PM)"
           git push origin "HEAD:$BRANCH"
           
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "🚀 Executed $RUNNER $OP and pushed changes to $BRANCH." >> "$GITHUB_STEP_SUMMARY"
+          echo "🥊 Executed $OP and pushed changes to $BRANCH." >> "$GITHUB_STEP_SUMMARY"
