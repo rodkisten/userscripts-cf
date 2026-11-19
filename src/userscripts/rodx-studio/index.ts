@@ -3,7 +3,7 @@ import { ScriptContext } from "../../core/runtime";
 import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
-import { disposeAllViews } from "./ui/solid-mount.tsx";
+import { configureSharedMount, disposeAllViews } from "./ui/solid-mount.tsx";
 
 // ============================================================================
 // Constantes Semânticas
@@ -78,6 +78,7 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 export function startRodX(ctx: ScriptContext): void {
   if (hasRodXAlreadyStarted(window)) return;
   markRodXAsStarted(window);
+  configureSharedMount((component, target) => ctx.ui.mountReact(component, target));
 
   initializeNetwork();
   Studio.ctx = ctx;
