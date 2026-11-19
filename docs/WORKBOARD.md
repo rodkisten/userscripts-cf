@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 Instagram/Reel and Actions:** Reel bookmark now delegates to `ctx.ui.mountReact` instead of calling `createRoot`; validate rerender/cleanup and types. Rod Actions now accepts optional `mountSharedReact`, but the consuming installation path must pass it; standalone fallback still creates a root. Next: migrate menu-view and wire Actions, then validate TypeScript/build and actual root counts.
+
+
 - [ ] **2026-11-19 root audit:** independent `createRoot()` sites remain in `src/runtime/actions/index.tsx`, `src/runtime/modular/features/menu-view.tsx`, `src/userscripts/instagram-saved/reel-bookmark.tsx`, GitHub Tools, Gonewild, RodX Studio, Page REPL and Studio. Migrate active bundle consumers to the shared portal adapter without breaking standalone individual installs. `rod.toaster.destroy()` now runs during core runtime disposal. No CI verification yet.
 
 
