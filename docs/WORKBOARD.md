@@ -23,6 +23,18 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 validation blocker:** attempted to clone `rodkisten/userscripts-cf` for `npm ci && npm run typecheck`, but this execution environment cannot resolve `github.com`; no local checkout available. Do not claim build/typecheck/tests passed. Added `runtimeDisposed` guard in `runtime-react.tsx` to reject mounts after disposal. Next validation should run on GitHub Actions or a connected checkout before deploy.
+
+
+- [ ] **2026-11-19 menu/Actions integration (unverified):** Radix menu view and per-script/global menu facade now accept the bundle shared portal adapter. Instagram Rod Actions passes `ctx.ui.mountReact` adapter. Must verify TypeScript, formatting, runtime/AST tests, build, portal lifecycle and independent installs. Remaining direct `createRoot` userscripts must migrate; do not mark single-root done yet.
+
+
+- [ ] **2026-11-19 Instagram/Reel and Actions:** Reel bookmark now delegates to `ctx.ui.mountReact` instead of calling `createRoot`; validate rerender/cleanup and types. Rod Actions now accepts optional `mountSharedReact`, but the consuming installation path must pass it; standalone fallback still creates a root. Next: migrate menu-view and wire Actions, then validate TypeScript/build and actual root counts.
+
+
+- [ ] **2026-11-19 root audit:** independent `createRoot()` sites remain in `src/runtime/actions/index.tsx`, `src/runtime/modular/features/menu-view.tsx`, `src/userscripts/instagram-saved/reel-bookmark.tsx`, GitHub Tools, Gonewild, RodX Studio, Page REPL and Studio. Migrate active bundle consumers to the shared portal adapter without breaking standalone individual installs. `rod.toaster.destroy()` now runs during core runtime disposal. No CI verification yet.
+
+
 - [ ] **2026-11-19 Sonner bridge, unverified:** `createToasterFeature` accepts the shared portal mount from `createCoreRuntime` options; React runtime supplies the bundle-owned adapter. No standalone Sonner root is expected on that path. Fallback for independent callers still creates a root. Verify TypeScript, build, runtime lifecycle and actual standalone root counts before claiming completion.
 
 - [ ] **2026-11-19 Dock bridge, unverified:** `build/bundle-runtime.mjs` now supplies `api.mountSharedReact` to standalone Dock, so Dock can render as a portal in the bundle root. `src/runtime/react-ui/rod-dock.tsx` retains standalone fallback for unrelated callers. Audit Sonner and all remaining `createRoot()` sites, confirm TypeScript/build and AST compatibility before checking off single-root acceptance.

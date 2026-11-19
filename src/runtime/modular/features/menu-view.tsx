@@ -1,5 +1,6 @@
 /** @jsxImportSource react */
 import type * as React from "react";
+import type { ReactElement } from "react";
 import { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -211,25 +212,30 @@ function mount(
   name: string,
   owner: Document,
   target: ShadowRoot | HTMLElement = owner.body,
+  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ) {
   const host = owner.createElement("div");
   host.dataset.rodReactMenu = name;
   const portal = owner.createElement("div");
   portal.dataset.rodReactMenuPortal = name;
   target.append(host, portal);
-  const root = createRoot(host);
+  let shared: { dispose: () => void } | undefined;
+  const root = mountSharedReact ? undefined : createRoot(host);
   let disposed = false;
   const close = () => {
     if (disposed) return;
     disposed = true;
     // A Radix event can close its own React tree; defer unmount until the event finishes.
     queueMicrotask(() => {
-      root.unmount();
+      shared?.dispose();
+      root?.unmount();
       host.remove();
       portal.remove();
     });
   };
-  root.render(view(close, portal));
+  const element = view(close, portal);
+  if (mountSharedReact) shared = mountSharedReact(element as ReactElement, host);
+  else root?.render(element);
   return { close, dispose: close };
 }
 
@@ -239,15 +245,16 @@ function resolveMenuTarget(trigger: HTMLElement): ShadowRoot | HTMLElement {
   return root.nodeType === 11 && "host" in root ? (root as ShadowRoot) : trigger.ownerDocument.body;
 }
 
-export function openRadixDropdown(options: DropdownOptions) {
+export function openRadixDropdown(options: DropdownOptions, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }) {
   return mount(
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
     options.trigger.ownerDocument,
     options.container ?? resolveMenuTarget(options.trigger),
+    mountSharedReact,
   );
 }
-export function openRadixDialog(schema: MenuSchema) {
+export function openRadixDialog(schema: MenuSchema, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }) {
   const owner = schema.container?.ownerDocument ?? document;
   const target = schema.container ?? owner.body;
   return mount(
@@ -255,5 +262,6 @@ export function openRadixDialog(schema: MenuSchema) {
     schema.id ?? "dialog",
     owner,
     target,
+    mountSharedReact,
   );
 }
