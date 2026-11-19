@@ -556,3 +556,21 @@ describe("storage exception boundaries", () => {
     expect(transformRodAst(result.code, "storage-sibling.ts", { storage: "awaited" }).changed).toBe(false);
   });
 });
+
+describe("storage scope regression matrix", () => {
+  it("keeps native awaited access within a nested try/catch boundary", () => {
+    const source = 'async function init(ctx) { if (ready) { try { await localStorage.getItem("nested"); } catch { return; } } }';
+    expect(transformRodAst(source, "storage-nested-try.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("keeps native awaited access in a try/finally boundary", () => {
+    const source = 'async function init(ctx) { try { await localStorage.removeItem("key"); } finally { cleanup(); } }';
+    expect(transformRodAst(source, "storage-finally-nested.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("migrates independent awaited storage calls after exception handling", () => {
+    const source = 'async function init(ctx) { try { await localStorage.getItem("guarded"); } catch {} await localStorage.getItem("plain"); }';
+    const result = transformRodAst(source, "storage-independent.ts", { storage: "awaited" });
+    expect(result.code).toContain('await localStorage.getItem("guarded")');
+    expect(result.code).toContain('await ctx.storage.local.getItem("plain")');
+    expect(transformRodAst(result.code, "storage-independent.ts", { storage: "awaited" }).changed).toBe(false);
+  });
+});
