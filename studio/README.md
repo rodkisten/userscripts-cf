@@ -1,62 +1,54 @@
-# Rod UI Design System Studio
+# ✳ Rod UI Studio 2.0 · React-only
 
-The live playground is published at `https://userscripts.migos.club/design-system.html` and linked from `hosting/index.html`.
+Live: https://userscripts.migos.club/design-system.html
 
 ## Architecture
 
-- `hosting/design-system.html`: responsive catalog, theme tokens, visual controls, copyable examples, navigation and usage recipes.
-- `studio/examples.ts`: searchable live RodMenu field gallery with real schema-backed examples.\n- `studio/entry.tsx`: **real SolidJS 2 instances** of `RodMenu` and `ObjectInspector`, event bindings, datasets and runtime examples.
-- `build/design-system.mjs`: Vite compilation using the same Solid and CSS pipeline as the userscripts.
-- `build/hosting.mjs`: builds and publishes `design-system.js` and `design-system.html` as Cloudflare Worker assets.
-- `src/runtime/solid-ui/menu/types.ts`: authoritative menu schema and field contracts.
-- `src/runtime/solid-ui/object-inspector/types.ts`: authoritative inspector options and props.
+- `hosting/design-system.html`: minimal HTML shell with `#studio-root`.
+- `studio/entry.tsx`: single React 19 root, interactive component catalog, RodMenuHost portal, ObjectInspector, CodeMirror 6.
+- `studio/studio.css`: responsive mobile-first visual design.
+- `src/runtime/react-ui/Menu.tsx`: Radix Dialog-backed menu and native field controls.
+- `src/runtime/react-ui/types.ts`: authoritative supported field and menu schema.
+- `build/design-system.mjs`: standalone Vite IIFE, CodeMirror imports must remain **static** (IIFE does not support dynamic chunks).
+- `build/hosting.mjs`: publishes Studio assets to Cloudflare Worker.
 
-## Menu examples
+No SolidJS imports or legacy schema catalog belong in the Studio. Do not restore `studio/examples.ts`.
 
-Use **Abrir RodMenu real** to open the actual component. The controls select `presentation`, `size` and `title`. The example includes text, switch and select fields and cancel/submit actions.
+## Real examples
 
-Supported presentations: `bottom-sheet`, `modal`, `drawer`, `popover`, `auto`.
+The catalog has input types (text, email, password, search, URL, telephone), number/range, textarea, select, checkbox, switch, and combined form. All open the **actual** `RodMenu.open(schema)`, not a mock. Change presentation, title, persistence and preview dimensions. The device preview is an illustration of viewport proportions, **not** an iframe or a real resized portal.
 
-Menu feature families: text/email/password/search/url/tel/number/textarea; switch/checkbox/radio/range/rating; select/multiselect/checkbox-group/typeahead/channel-picker; media-picker/media-preview/file; provider-status/request-log/debug-json; custom/html/divider/button; sections/tabs; async actions, validation, persistence, gestures, stacking, themes and keyboard configuration. The type declarations are authoritative; do not infer that a feature is covered by a live example simply because it appears in the inventory.
+RodMenu presentations: bottom-sheet, centered modal, right drawer and compact centered popover. The popover is **not yet anchored** to a trigger. Dialog focus management, Escape and outside-click dismissal are handled by Radix.
 
-## Object Inspector examples
-
-The **Object Inspector** tab mounts the real `ObjectInspector` component with reactive props. Switch between JSON response, live DOM node and settings. Search top-level properties, adjust `expandDepth`, inspect nested objects, and copy sample JSON.
-
-Available inspector options include `inspectDepth`, `inspectItems`, `previewItems`, `previewMaxLength`, `expandDepth`, `showPrototype`, `showNonEnumerable`, `showObjectLength`, `virtualize`, `virtualizeAfter`, `virtualRowHeight`, `virtualOverscan`, `virtualMaxHeight`, `virtualRowCache`, `unmountOnCollapse`, `highlightDuration` and `theme`.
-
-## Customization
-
-The theme editor controls accent, radius, scale, menu size, presentation and title. Settings persist in `localStorage` under `rod-ui-studio-theme`. The copy actions export CSS tokens or menu examples. These tokens style the studio page; they are **not automatically injected into the isolated runtime ShadowRoot**.
+The Inspector tab shows the current menu schema and last submitted values. The Code tab shows a copyable API example in read-only CodeMirror 6. The displayed example omits executable callback bodies, which must be supplied by the consumer.
 
 ## Mandatory feature documentation policy
 
-Every PR that changes user-visible functionality in `src/runtime/solid-ui/menu/` or `src/runtime/solid-ui/object-inspector/` **must**:
+Every PR changing user-visible functionality in `src/runtime/react-ui/` **must**:
 
-1. Update this document with the feature contract, limitations and example.
-2. Add or update a working, interactive case in `studio/entry.tsx` and the corresponding controls in `hosting/design-system.html`.
-3. Add or update tests for the behavior, including teardown, accessibility and mobile considerations where applicable.
-4. Keep the hosted bundle wired through `build/hosting.mjs`.
-5. Ensure that the feature is discoverable from the catalog or recipe navigation.
-
-`tests/design-system-contract.test.js` checks the playground and documentation wiring. `build/check-design-system-changes.mjs` checks changed runtime files against the PR's documented playground updates. The change guard runs in CI when a base branch is available and is advisory when no base ref can be resolved locally.
+1. Update this README with supported behavior and limitations.
+2. Add or update an interactive case in `studio/entry.tsx` if the feature can be demonstrated.
+3. Add or update tests, including focus, teardown and Safari considerations where applicable.
+4. Keep the Studio compiled through `build/design-system.mjs` and published via `build/hosting.mjs`.
+5. Never advertise functionality that the React implementation does not provide.
 
 ## Validation
 
-Run `npm run build:hosting`, `npm run typecheck`, `npx vitest run tests/design-system-contract.test.js` and `npm run check:design-system`. Verify the built Worker serves `/design-system.html` and `/design-system.js`. Check real menu opening, inspector DOM highlighting, keyboard focus, scrolling and viewport resizing in Safari iPhone.
+Run:
+
+```sh
+npm ci
+npm run typecheck:react
+npm run test:design-system
+node build/design-system.mjs
+npm run build:hosting
+```
+
+Before merge, smoke-test on iPhone Safari: menu focus, Escape with hardware keyboard, touch scrolling, safe area, keyboard resize, closing by backdrop, persistence, and opening a second menu.
 
 ## Known gaps
 
-Not every schema field has its own interactive live example yet. Some catalog cards are documentation-only; the menu and inspector primary laboratories use actual runtime components. A successful bundle build and device validation are required before treating the studio as production-ready.
-
-## Live examples
-
-The **Exemplos interativos** gallery supports filtering by category and searching by title/description. Each example opens a real `RodMenu` with the selected presentation and size and shows a serializable schema preview. Available families include text inputs, boolean controls, range/rating, selection, date/time, color/file/media, diagnostics, layout and actions. Function callbacks are omitted from the JSON preview because JSON cannot serialize functions.
-
-When adding a new field type, add a concrete example in `studio/examples.ts` and update the corresponding documentation and contract tests. The canonical deployment domain is `https://userscripts.migos.club` (already attached to Worker `userscripts-cf` in Cloudflare). Set `USERSCRIPTS_BASE_URL` only when intentionally overriding this distribution URL.
-
-## Advanced examples
-
-The **Avançado** gallery includes live examples for tabs, collapsible sections, asynchronous field/form validation, conditional visibility and disabling, local persistence, mobile gestures and keyboard handling, stacking, focus management, instance theme tokens, side drawers, anchored popovers and async submit handlers. These use the production `RodMenuSchema` contract; the JSON viewer labels callbacks rather than executing code from JSON.
-
-The Object Inspector advanced panel exposes its options reactively: depth/item limits, previews, prototype and non-enumerable properties, virtual scrolling thresholds and row cache, collapse unmounting, highlight duration and theme. Use **Restaurar padrões** to reset controls. Validate Safari iPhone focus, viewport and gesture interactions before release.
+- No anchored popover placement.
+- No multi-select, radio groups, file/media controls, tabs, or custom renderers in the React menu schema.
+- No real iframe device emulation.
+- Build and browser validation are required before production release.
