@@ -1,29 +1,27 @@
 /** @jsxImportSource react */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
-import { studioExamples, schemaForExample } from "./examples";
-import type { MenuSchema } from "../src/runtime/react-ui/types";
+import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
+import "./studio.css";
 
-type InspectorSample = "response" | "dom" | "settings" | "syntax";
-const samples: Record<InspectorSample, unknown> = {
-  response: { ok: true, status: 200, data: { user: { id: 42, name: "Rod", roles: ["developer", "admin"] }, items: [{ id: "a", active: true }, { id: "b", active: false }] }, durationMs: 127 },
-  dom: document.querySelector("main") ?? document.body,
-  settings: { theme: { accent: "#a78bfa", radius: 18 }, menu: { presentation: "bottom-sheet", size: "lg" }, features: ["dock", "inspector", "menu"] },
-  syntax: { string: "Hello, syntax!", number: 42, bigint: 9007199254740993n, boolean: true, nil: null, missing: undefined, array: [1, "two", false], map: new Map([["key", 12]]), set: new Set(["one", "two"]), date: new Date("2026-11-15T12:00:00Z"), regexp: /syntax\\s+highlight/gi, error: new TypeError("Example error") },
-};
-const root = document.getElementById("tree");
-if (!root) throw new Error("[Rod UI Studio] Missing inspector mount");
-const inspectorControls = ["inspectDepth", "inspectItems", "previewItems", "virtualize", "theme"] as const;
-const defaultOptions = { inspectDepth: 12, inspectItems: 1000, previewItems: 5, virtualize: true, theme: "dark" as const };
-function safeSource(value: unknown): string {
+type Demo = { id: string; title: string; group: string; description: string; fields: FieldDefinition[] };
+const demos: Demo[] = [
+  { id: "text", title: "Inputs", group: "Formulários", description: "Texto, email, senha, busca, URL e telefone", fields: ["text","email","password","search","url","tel"].map(type => ({ id: type, type: type as FieldDefinition["type"], label: type, placeholder: "Digite aqui" })) },
+  { id: "numbers", title: "Números e range", group: "Formulários", description: "Valores numéricos e sliders com limites", fields: [{ id: "number", type: "number", label: "Quantidade", min: 0, max: 100, defaultValue: 42 }, { id: "range", type: "range", label: "Intensidade", min: 0, max: 100, step: 5, defaultValue: 35 }] },
+  { id: "textarea", title: "Textarea", group: "Formulários", description: "Conteúdo longo e multilinha", fields: [{ id: "notes", type: "textarea", label: "Anotações", defaultValue: "Escreva suas ideias…" }] },
+  { id: "selection", title: "Seleção", group: "Controles", description: "Select, checkbox e switch", fields: [{ id: "quality", type: "select", label: "Qualidade", defaultValue: "auto", options: [{ value: "auto", label: "Automática" }, { value: "high", label: "Alta" }, { value: "low", label: "Econômica" }] }, { id: "enabled", type: "switch", label: "Ativado", defaultValue: true }, { id: "remember", type: "checkbox", label: "Lembrar escolha" }] },
+  { id: "account", title: "Formulário completo", group: "Receitas", description: "Combina campos, persistência e ações", fields: [{ id: "name", type: "text", label: "Nome", defaultValue: "Rod" }, { id: "email", type: "email", label: "Email", placeholder: "nome@exemplo.com" }, { id: "bio", type: "textarea", label: "Bio" }, { id: "public", type: "switch", label: "Perfil público", defaultValue: true }] },
+];
+const surfaces: SurfaceType[] = ["bottom-sheet", "modal", "drawer", "popover"];
+function serialize(value: unknown) {
   const seen = new WeakSet<object>();
   return JSON.stringify(value, (_key, item: unknown) => {
     if (typeof item === "bigint" || typeof item === "symbol" || typeof item === "function") return String(item);
     if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack };
-    if (item instanceof Map) return Object.fromEntries(item);
-    if (item instanceof Set) return [...item];
+    if (item instanceof Map) return { type: "Map", entries: [...item] };
+    if (item instanceof Set) return { type: "Set", values: [...item] };
     if (typeof item === "object" && item !== null) {
       if (seen.has(item)) return "[Circular]";
       seen.add(item);
@@ -31,117 +29,77 @@ function safeSource(value: unknown): string {
     return item;
   }, 2) ?? "undefined";
 }
-function SourceEditor({ text }: { text: string }) {
+function CodeMirrorSource({ code }: { code: string }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    let disposed = false;
+    let cancelled = false;
     let destroy: (() => void) | undefined;
-    void Promise.all([
-      import("@codemirror/state"),
-      import("@codemirror/view"),
-      import("@codemirror/lang-javascript"),
-      import("@codemirror/language"),
-      import("@codemirror/theme-one-dark"),
-    ]).then(([{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }]) => {
-      if (disposed || !host.current) return;
-      const view = new EditorView({
-        parent: host.current,
-        state: EditorState.create({
-          doc: text,
-          extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false), javascript(), syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark],
-        }),
-      });
+    void Promise.all([import("@codemirror/state"), import("@codemirror/view"), import("@codemirror/lang-javascript"), import("@codemirror/language"), import("@codemirror/theme-one-dark")]).then(([{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }]) => {
+      if (cancelled || !host.current) return;
+      const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: code, extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false), javascript({ typescript: true }), syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark] }) });
       destroy = () => view.destroy();
-    }).catch(error => { if (host.current && !disposed) host.current.textContent = String(error); });
-    return () => { disposed = true; destroy?.(); };
-  }, [text]);
-  return <div ref={host} aria-label="CodeMirror Source Editor" />;
+    }).catch(error => { if (!cancelled && host.current) host.current.textContent = String(error); });
+    return () => { cancelled = true; destroy?.(); };
+  }, [code]);
+  return <div className="studio-code" ref={host} aria-label="Código de exemplo no CodeMirror 6" />;
 }
-function StudioInspector() {
-  const [sample, setSample] = useState<InspectorSample>("response");
+function Studio() {
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState("account");
+  const [surface, setSurface] = useState<SurfaceType>("bottom-sheet");
+  const [device, setDevice] = useState<"phone" | "desktop">("phone");
+  const [persist, setPersist] = useState(false);
+  const [title, setTitle] = useState("Rod UI");
+  const [tab, setTab] = useState<"code" | "inspector">("code");
   const [depth, setDepth] = useState(2);
-  const [filter, setFilter] = useState("");
-  const [revision, setRevision] = useState(0);
-  const [inspectorOptions, setInspectorOptions] = useState(defaultOptions);
-  const selected = samples[sample];
-  const value = filter.trim() && selected && typeof selected === "object" && !(selected instanceof Element)
-    ? Object.fromEntries(Object.entries(selected).filter(([key]) => key.toLowerCase().includes(filter.trim().toLowerCase())))
-    : selected;
-  return <div>
-    <div data-studio-inspector-revision={revision}>
-      <ObjectInspector key={revision + ":" + sample} data={value} options={{ ...inspectorOptions, expandDepth: depth }} />
-    </div>
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-      <input aria-label="Filtrar propriedades" value={filter} onChange={event => setFilter(event.target.value)} placeholder="Filtrar propriedades" />
-      <button onClick={() => setDepth(20)}>Expandir</button>
-      <button onClick={() => { setDepth(0); setRevision(v => v + 1); }}>Recolher</button>
-      <button onClick={() => navigator.clipboard?.writeText(safeSource(selected))}>Copiar JSON</button>
-    </div>
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-      {(Object.keys(samples) as InspectorSample[]).map(key => <button key={key} aria-selected={sample === key} onClick={() => setSample(key)}>{key}</button>)}
-    </div>
-    <details style={{ marginTop: 16 }}><summary>Configurações do inspector</summary>
-      {inspectorControls.map(key => <label key={key} style={{ display: "block", margin: 8 }}>{key}: <input type={key === "virtualize" ? "checkbox" : key === "theme" ? "text" : "number"} checked={key === "virtualize" ? inspectorOptions.virtualize : undefined} value={key === "virtualize" ? undefined : String(inspectorOptions[key])} onChange={event => setInspectorOptions(previous => ({ ...previous, [key]: key === "virtualize" ? event.target.checked : key === "theme" ? event.target.value as "dark" : Number(event.target.value) }))} /></label>)}
-      <button onClick={() => setInspectorOptions(defaultOptions)}>Restaurar</button>
-      <pre>{JSON.stringify({ ...inspectorOptions, expandDepth: depth }, null, 2)}</pre>
-    </details>
-    <details><summary>CodeMirror · Source / Stack trace</summary><SourceEditor text={safeSource(selected)} /></details>
+  const [lastAction, setLastAction] = useState<Record<string, unknown>>({ status: "Pronto para testar" });
+  const [copied, setCopied] = useState(false);
+  const demo = demos.find(item => item.id === selected) ?? demos[0]!;
+  const schema: MenuSchema = useMemo(() => ({
+    id: "studio-" + demo.id, title, description: demo.description, presentation: surface,
+    persistKey: persist ? "studio-" + demo.id : undefined, fields: demo.fields,
+    actions: [
+      { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
+      { id: "reset", label: "Limpar", variant: "secondary", onClick: ({ reset }) => reset() },
+      { id: "save", label: "Salvar", role: "submit", onClick: ({ values, close }) => { setLastAction({ action: "save", demo: demo.id, values }); close(); } },
+    ],
+  }), [demo, title, surface, persist]);
+  const code = useMemo(() => "import { RodMenu } from \"@rod/runtime/react-ui\";\n\nRodMenu.open(" + serialize({ ...schema, actions: schema.actions?.map(({ onClick, ...action }) => action) }) + ");", [schema]);
+  const filtered = demos.filter(item => (item.title + " " + item.group + " " + item.description).toLowerCase().includes(query.toLowerCase()));
+  const open = () => RodMenu.open(schema);
+  const copy = () => { void navigator.clipboard?.writeText(code).then(() => setCopied(true)).catch(() => setCopied(false)); };
+  return <div className="studio-shell">
+    <aside className="studio-side">
+      <div className="studio-brand"><span>✳</span> Rod UI <small>React Studio</small></div>
+      <label className="studio-label" htmlFor="studio-search">Buscar componentes</label>
+      <input id="studio-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar…" />
+      {["Formulários", "Controles", "Receitas"].map(group => <section key={group}>
+        <h3>{group}</h3>
+        {filtered.filter(item => item.group === group).map(item => <button key={item.id} className={selected === item.id ? "studio-active" : ""} onClick={() => setSelected(item.id)}>{item.title}<small>{item.description}</small></button>)}
+      </section>)}
+      <div className="studio-side-note">React 19 · Radix · CodeMirror 6</div>
+    </aside>
+    <main className="studio-main">
+      <header className="studio-top"><div><span className="studio-eyebrow">COMPONENT PLAYGROUND</span><h1>{demo.title}</h1><p>{demo.description}</p></div><button className="studio-primary" onClick={open}>Abrir componente ↗</button></header>
+      <div className="studio-grid">
+        <section className="studio-panel"><h2>Propriedades</h2>
+          <label>Título<input value={title} onChange={event => setTitle(event.target.value)} /></label>
+          <label>Apresentação<select value={surface} onChange={event => setSurface(event.target.value as SurfaceType)}>{surfaces.map(item => <option key={item}>{item}</option>)}</select></label>
+          <label className="studio-check"><input type="checkbox" checked={persist} onChange={event => setPersist(event.target.checked)} /> Persistir valores</label>
+          <h2>Viewport</h2><div className="studio-segments"><button aria-pressed={device === "phone"} onClick={() => setDevice("phone")}>📱 Mobile</button><button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>▣ Desktop</button></div>
+          <p className="studio-hint">O menu é aberto como portal React real. O viewport é uma prévia das dimensões, não um iframe simulado.</p>
+        </section>
+        <section className="studio-panel studio-preview"><div className="studio-panel-head"><h2>Preview</h2><span>{device === "phone" ? "390 × 720" : "Desktop"}</span></div>
+          <div className={"studio-device " + device}><div className="studio-device-bar"><span>9:41</span><span>●●●</span></div><div className="studio-device-content"><span className="studio-eyebrow">LIVE COMPONENT</span><h3>{title}</h3><p>{demo.description}</p><button className="studio-primary" onClick={open}>Testar {surface}</button><small>{demo.fields.length} campos · {schema.actions?.length} ações</small></div></div>
+        </section>
+      </div>
+      <section className="studio-panel studio-output"><div className="studio-panel-head"><div className="studio-segments"><button aria-pressed={tab === "code"} onClick={() => setTab("code")}>Código</button><button aria-pressed={tab === "inspector"} onClick={() => setTab("inspector")}>Inspector</button></div><button onClick={copy}>{copied ? "✓ Copiado" : "Copiar código"}</button></div>
+        {tab === "code" ? <CodeMirrorSource code={code} /> : <><div className="studio-segments"><button onClick={() => setDepth(20)}>Expandir</button><button onClick={() => setDepth(0)}>Recolher</button></div><ObjectInspector key={depth} data={{ schema, lastAction }} options={{ expandDepth: depth, inspectDepth: 12, inspectItems: 1000, theme: "dark" }} /></>}
+      </section>
+      <footer>Rod UI Studio · React-only · Componentes reais, sem legado Solid</footer>
+    </main><RodMenuHost />
   </div>;
 }
-createRoot(root).render(<><StudioInspector /><RodMenuHost /></>);
-
-function presentation(): MenuSchema["presentation"] {
-  const value = (document.getElementById("presentation") as HTMLSelectElement | null)?.value;
-  return value === "modal" || value === "drawer" || value === "popover" || value === "bottom-sheet" ? value : "bottom-sheet";
-}
-document.getElementById("menuLive")?.addEventListener("click", () => {
-  const title = (document.getElementById("titleInput") as HTMLInputElement | null)?.value || "RodMenu";
-  RodMenu.open({
-    id: "rod-ui-studio-live-menu", title, presentation: presentation(),
-    description: "Instância real do RodMenu React",
-    fields: [
-      { type: "text", name: "name", label: "Nome", value: "Minha configuração" },
-      { type: "switch", name: "enabled", label: "Habilitado", value: true },
-      { type: "select", name: "quality", label: "Qualidade", options: [{ value: "auto", label: "Automática" }, { value: "high", label: "Alta" }] },
-    ],
-    actions: [{ id: "cancel", label: "Cancelar", role: "cancel" }, { id: "save", label: "Salvar", role: "submit", onClick: ({ close }) => close() }],
-  });
-});
-const catalog = document.getElementById("examplesCatalog");
-const search = document.getElementById("examplesSearch") as HTMLInputElement | null;
-const category = document.getElementById("examplesCategory") as HTMLSelectElement | null;
-for (const name of new Set(studioExamples.map(example => example.category))) {
-  if (!category) break;
-  const option = document.createElement("option");
-  option.value = name;
-  option.textContent = name;
-  category.append(option);
-}
-function renderExamples() {
-  if (!catalog) return;
-  catalog.replaceChildren();
-  const query = search?.value.trim().toLocaleLowerCase() ?? "";
-  const selectedCategory = category?.value ?? "";
-  for (const example of studioExamples.filter(item => (!selectedCategory || item.category === selectedCategory) && (!query || [item.title, item.description, item.category].join(" ").toLocaleLowerCase().includes(query)))) {
-    const card = document.createElement("article");
-    card.className = "card";
-    const title = document.createElement("h3");
-    title.textContent = example.title;
-    const description = document.createElement("p");
-    description.textContent = example.description;
-    const button = document.createElement("button");
-    button.className = "primary";
-    button.textContent = "Abrir instância real";
-    button.addEventListener("click", () => {
-      const schema = schemaForExample(example, presentation(), (document.getElementById("menuSize") as HTMLSelectElement | null)?.value);
-      RodMenu.open(schema as MenuSchema);
-      const output = document.getElementById("exampleCode");
-      if (output) output.textContent = safeSource(schema);
-    });
-    card.append(title, description, button);
-    catalog.append(card);
-  }
-}
-search?.addEventListener("input", renderExamples);
-category?.addEventListener("change", renderExamples);
-renderExamples();
+const mount = document.getElementById("studio-root");
+if (!mount) throw new Error("[Rod UI Studio] Missing #studio-root");
+createRoot(mount).render(<Studio />);
