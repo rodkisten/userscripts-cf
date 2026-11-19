@@ -14,11 +14,15 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Reject missing or duplicate per-item Relay acknowledgements.
 - [x] Check cancellation after Instagram page and Relay batch requests.
 - [x] Treat the starting cursor as visited, to detect loops back to the resumed position.
-- [x] Add utility regression cases for inherited keys, duplicate acknowledgements, abort after fetch and cursor cycles.\n- [ ] Run targeted Vitest (not yet verified).
+- [x] Add utility regression cases for inherited keys, duplicate acknowledgements, abort after fetch and cursor cycles.
+- [ ] Run targeted Vitest (not yet verified).
 - [x] Checkpoint at completed page boundaries to avoid losing unprocessed items. `maxItemsPerSession` is a soft page-boundary limit and can be exceeded by one page.
-- [x] Scope delivery state and cursor checkpoints to account, collection and sorted channel IDs.\n- [ ] Reconcile channel-specific acknowledgements across channel changes to avoid redundant sends.
-- [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.\n- [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
-- [ ] Audit bookmark ownership across Feed, modal, grid and swiped Reels (initial native-control fallback hardening committed; per-publication identity still pending).
+- [x] Scope delivery state and cursor checkpoints to account, collection and sorted channel IDs.
+- [ ] Reconcile channel-specific acknowledgements across channel changes to avoid redundant sends.
+- [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.
+- [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
+- [x] Bind the visible Reel's native bookmark to its scoped publication identity and remount on swipe; refuse ambiguous multi-Reel identity.
+- [ ] Verify ownership in Feed, modal, grid and swiped Reels on Safari iPhone.
 - [ ] Confirm per-publication native save/unsave state, unavailable controls and collection selection errors (unknown state now blocks activation; Safari and collection selection remain unverified).
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
