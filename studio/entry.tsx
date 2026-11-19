@@ -4,7 +4,10 @@ import { createRoot } from "react-dom/client";
 import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
 import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
-import "./studio.css";
+import studioCss from "./studio.css?inline";
+const studioStyle = document.createElement("style");
+studioStyle.textContent = studioCss;
+document.head.append(studioStyle);
 
 type Demo = { id: string; title: string; group: string; description: string; fields: FieldDefinition[] };
 const demos: Demo[] = [
