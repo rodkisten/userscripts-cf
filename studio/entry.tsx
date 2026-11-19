@@ -1,6 +1,11 @@
 /** @jsxImportSource react */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { EditorState } from "@codemirror/state";
+import { EditorView, lineNumbers } from "@codemirror/view";
+import { javascript } from "@codemirror/lang-javascript";
+import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
+import { oneDark } from "@codemirror/theme-one-dark";
 import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
 import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
@@ -35,14 +40,15 @@ function serialize(value: unknown) {
 function CodeMirrorSource({ code }: { code: string }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    let cancelled = false;
-    let destroy: (() => void) | undefined;
-    void Promise.all([import("@codemirror/state"), import("@codemirror/view"), import("@codemirror/lang-javascript"), import("@codemirror/language"), import("@codemirror/theme-one-dark")]).then(([{ EditorState }, { EditorView, lineNumbers }, { javascript }, { syntaxHighlighting, defaultHighlightStyle }, { oneDark }]) => {
-      if (cancelled || !host.current) return;
-      const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: code, extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false), javascript({ typescript: true }), syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark] }) });
-      destroy = () => view.destroy();
-    }).catch(error => { if (!cancelled && host.current) host.current.textContent = String(error); });
-    return () => { cancelled = true; destroy?.(); };
+    if (!host.current) return;
+    const view = new EditorView({
+      parent: host.current,
+      state: EditorState.create({
+        doc: code,
+        extensions: [lineNumbers(), EditorView.lineWrapping, EditorView.editable.of(false), javascript({ typescript: true }), syntaxHighlighting(defaultHighlightStyle, { fallback: true }), oneDark],
+      }),
+    });
+    return () => view.destroy();
   }, [code]);
   return <div className="studio-code" ref={host} aria-label="Código de exemplo no CodeMirror 6" />;
 }
