@@ -57,11 +57,12 @@ function activeBookmark(): { source: HTMLElement; identity: string } | null {
   if (!source || !source.isConnected) return null;
   const link = [...scope.querySelectorAll<HTMLAnchorElement>('a[href*="/reel/"], a[href*="/p/"]')]
     .find((anchor) => /\/(?:reel|p)\/[^/]+/.test(anchor.pathname));
-  const identity = link?.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1] ||
-    (location.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1] ?? "");
-  // On multi-Reel views, a URL alone is not a reliable publication identity.
-  if (!identity && videos.length > 1) return null;
-  return { source, identity: identity || location.pathname };
+  const scopedId = link?.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1];
+  // Never borrow the current URL for a different visible slide.
+  if (!scopedId && videos.length > 1) return null;
+  const identity = scopedId || location.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1];
+  if (!identity) return null;
+  return { source, identity };
 }
 
 function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown" {
