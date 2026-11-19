@@ -16,7 +16,7 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
     ast = parse(source, {
       sourceType: "unambiguous",
       sourceFilename: filename,
-      plugins: ["typescript", "jsx", "decorators-legacy"],
+      plugins: [\n        ...(filename.endsWith(".jsx") || filename.endsWith(".tsx") ? ["jsx"] : []),\n        ...(filename.endsWith(".ts") || filename.endsWith(".tsx") ? ["typescript"] : []),\n        "decorators-legacy",\n      ],
       errorRecovery: false,
     });
   } catch (error) {

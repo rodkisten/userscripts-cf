@@ -58,3 +58,14 @@ test("checks side-effect imports and TypeScript import-equals", () => {
   const source = 'import "solid-js";\\nimport Solid = require("@solidjs/router");'.replace('\\n', '\n');
   expect(inspectSolidReferences(source).map(({ line }) => line)).toEqual([1, 2]);
 });
+
+
+test("parses generic TypeScript arrow functions without JSX ambiguity", () => {
+  expect(inspectSolidReferences('const freeze = <T>(value: T): T => value;', "src/config/runtime.ts")).toEqual([]);
+  expect(inspectSolidReferences('const getValue = <T = unknown>(name: string) => name as T;', "src/runtime/vendor/menu.ts")).toEqual([]);
+});
+
+test("keeps JSX parsing for TSX and detects forbidden imports", () => {
+  expect(inspectSolidReferences('const element = <div />;', "component.tsx")).toEqual([]);
+  expect(inspectSolidReferences('import "solid-js";', "component.tsx")).toHaveLength(1);
+});
