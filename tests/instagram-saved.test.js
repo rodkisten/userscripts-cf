@@ -86,3 +86,93 @@ test("backoff grows with retries and quantity and honors Retry-After", () => {
     120000,
   );
 });
+
+
+test("ignores inherited delivered keys and accepts only exact Relay acknowledgements", async () => {
+  const delivered = { inherited: 123 };
+  Object.setPrototypeOf(delivered, { abc: 456 });
+  const sent = [];
+  const options = {
+    channels: ["-1"],
+    load: async () => delivered,
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel("abc")] }),
+    sendBatch: async (items) => {
+      sent.push(...items.map((item) => item.mediaId));
+      return { results: [{ index: 0, channels: { inserted: ["-1"] } }] };
+    },
+  };
+  assert.equal(await syncSaved(options), 1);
+  assert.deepEqual(sent, ["abc"]);
+  await assert.rejects(
+    syncSaved({
+      ...options,
+      load: async () => ({}),
+      sendBatch: async () => ({ results: [
+        { index: 0, channels: { inserted: ["-1"] } },
+        { index: 0, channels: { inserted: ["-1"] } },
+      ] }),
+    }),
+    /ausente ou duplicada/,
+  );
+});
+
+test("rejects cursor loops returning to the resumed position", async () => {
+  await assert.rejects(
+    syncSaved({
+      channels: ["-1"],
+      settings: { cursor: "resume" },
+      load: async () => ({}),
+      save: async () => {},
+      pause: async () => {},
+      fetchPage: async () => ({ items: [], more_available: true, next_max_id: "resume" }),
+      sendBatch: async () => ({ results: [] }),
+    }),
+    /Cursor de salvos repetido/,
+  );
+});
+
+test("aborts after an in-flight page request before delivery", async () => {
+  const controller = new AbortController();
+  let sent = false;
+  await assert.rejects(
+    syncSaved({
+      channels: ["-1"],
+      signal: controller.signal,
+      load: async () => ({}),
+      save: async () => {},
+      pause: async () => {},
+      fetchPage: async () => {
+        controller.abort();
+        return { items: [reel()] };
+      },
+      sendBatch: async () => {
+        sent = true;
+        return { results: [] };
+      },
+    }),
+  );
+  assert.equal(sent, false);
+});
+
+test("processes the entire page before checkpointing a session limit", async () => {
+  const sent = [];
+  const cursors = [];
+  const result = await syncSaved({
+    channels: ["-1"],
+    settings: { maxItemsPerSession: 1, batchSize: 1 },
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    onCursor: async (cursor) => cursors.push(cursor),
+    fetchPage: async () => ({ items: [reel("one"), reel("two")], more_available: true, next_max_id: "next" }),
+    sendBatch: async (items) => {
+      sent.push(...items.map((item) => item.mediaId));
+      return { results: items.map((_, index) => ({ index, channels: { inserted: ["-1"] } })) };
+    },
+  });
+  assert.equal(result, 2);
+  assert.deepEqual(sent, ["one", "two"]);
+  assert.deepEqual(cursors, ["next"]);
+});
