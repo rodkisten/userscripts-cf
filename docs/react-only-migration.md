@@ -1,4 +1,4 @@
-# React-only refactor: migration contract
+> **TEST SCOPE (2026-11-19):** [docs/testing-policy.md](testing-policy.md) is authoritative. No component, UI, or individual userscript tests. Only runtime and utility tests are retained; typechecks and builds remain mandatory.\n\n# React-only refactor: migration contract
 
 Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JSX runtime, compatibility layer or parity requirement. Broken builds accepted until migration is complete.
 
