@@ -181,7 +181,7 @@ export function buildStudioPreferences(Studio, deck) {
               type: "custom",
               name: "feedNote",
               render() {
-                const p = (<p />) as HTMLElement;
+                const p = document.createElement("p");
                 p.textContent = "As escolhas específicas de cada feed prevalecem sobre o padrão global.";
                 return p;
               },
