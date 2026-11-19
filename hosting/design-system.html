@@ -782,146 +782,6 @@ import { ObjectInspector } from "./object-inspector";
     </div>
     <div id="toast" class="toast hidden" role="status"></div>
     <script>
-      const $ = (s) => document.querySelector(s),
-        $$ = (s) => Array.from(document.querySelectorAll(s));
-      const defaults = {
-        accent: "#a78bfa",
-        radius: "18",
-        scale: "100",
-        presentation: "bottom-sheet",
-        menuSize: "md",
-        titleInput: "Personalizar experiência",
-      };
-      const state = Object.assign(
-        {},
-        defaults,
-        JSON.parse(localStorage.getItem("rod-ui-studio-theme") || "{}"),
-      );
-      function notify(message) {
-        const t = $("#toast");
-        t.textContent = message;
-        t.classList.remove("hidden");
-        clearTimeout(window.__toastTimer);
-        window.__toastTimer = setTimeout(() => t.classList.add("hidden"), 2200);
-      }
-      function copy(value) {
-        navigator.clipboard
-          ?.writeText(value)
-          .then(() => notify("Copiado para a área de transferência"))
-          .catch(() => notify("Cópia indisponível neste navegador"));
-      }
-      function menuExample() {
-        return (
-          "ctx.menu.open(" +
-          JSON.stringify(
-            {
-              id: "rod-ui-example",
-              title: state.titleInput,
-              presentation: state.presentation,
-              size: state.menuSize,
-              fields: [
-                { type: "text", name: "name", label: "Nome", value: "Minha configuração" },
-                { type: "switch", name: "enabled", label: "Habilitado", value: true },
-              ],
-              actions: [
-                { id: "cancel", label: "Cancelar", role: "cancel" },
-                { id: "save", label: "Salvar", role: "submit" },
-              ],
-            },
-            null,
-            2,
-          ) +
-          ");"
-        );
-      }
-      function apply() {
-        for (const key of Object.keys(defaults)) if ($("#" + key)) $("#" + key).value = state[key];
-        document.documentElement.style.setProperty("--accent", state.accent);
-        document.documentElement.style.setProperty("--radius", state.radius + "px");
-        document.documentElement.style.setProperty("--scale", Number(state.scale) / 100);
-        $("#menuTitle").textContent = state.titleInput;
-        $("#menuCode").textContent = menuExample();
-        $("#tokensCode").textContent = tokens();
-        $("#menuPreview").style.maxWidth = {
-          sm: "300px",
-          md: "430px",
-          lg: "570px",
-          xl: "690px",
-          fullscreen: "100%",
-        }[state.menuSize];
-        $("#menuPreview").style.borderRadius =
-          state.presentation === "bottom-sheet" ? "var(--radius) var(--radius) 8px 8px" : "var(--radius)";
-        localStorage.setItem("rod-ui-studio-theme", JSON.stringify(state));
-        swatches();
-      }
-      function tokens() {
-        return (
-          ":root {\n  --accent: " +
-          state.accent +
-          ";\n  --radius: " +
-          state.radius +
-          "px;\n  --scale: " +
-          Number(state.scale) / 100 +
-          ";\n  --bg: #101016;\n  --surface: #1b1a24;\n  --ink: #f8f7fc;\n}"
-        );
-      }
-      function swatches() {
-        const entries = [
-          ["Accent", state.accent],
-          ["Background", "#101016"],
-          ["Surface", "#1b1a24"],
-          ["Text", "#f8f7fc"],
-        ];
-        $("#swatches").innerHTML = entries
-          .map(
-            ([name, color]) =>
-              '<div class="swatch"><i style="background:' +
-              color +
-              '"></i><strong>' +
-              name +
-              '</strong><div class="token">' +
-              color +
-              "</div></div>",
-          )
-          .join("");
-      }
-      for (const key of Object.keys(defaults))
-        $("#" + key)?.addEventListener("input", (e) => {
-          state[key] = e.target.value;
-          apply();
-        });
-      $("#reset").onclick = () => {
-        Object.assign(state, defaults);
-        apply();
-        notify("Tema restaurado");
-      };
-      $("#copyTheme").onclick = () => copy(tokens());
-      $("#copyMenu").onclick = () => copy(menuExample());
-      $("#cancelDemo").onclick = () => notify("Ação: cancelar");
-      $("#saveDemo").onclick = () => notify("Ação: salvar");
-      const modes = ["bottom-sheet", "modal", "drawer", "popover", "auto"];
-      $("#menuModes").innerHTML = modes
-        .map((m) => '<button data-mode="' + m + '">' + m + "</button>")
-        .join("");
-      function activeMode() {
-        $$("#menuModes button").forEach((b) =>
-          b.setAttribute("aria-selected", String(b.dataset.mode === state.presentation)),
-        );
-      }
-      $("#menuModes").onclick = (e) => {
-        const b = e.target.closest("button[data-mode]");
-        if (!b) return;
-        state.presentation = b.dataset.mode;
-        apply();
-        activeMode();
-      };
-      $("#presentation").addEventListener("change", activeMode);
-      function esc(s) {
-        return String(s).replace(
-          /[&<>"']/g,
-          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
-        );
-      }
       const components = [
         ["RodMenu", "Abas, seções, formulários, ações, presets e cinco apresentações.", "ctx.menu.open()"],
         [
@@ -940,7 +800,7 @@ import { ObjectInspector } from "./object-inspector";
         ["Toast", "Notificações e feedback de ações.", "toastActions"],
         ["Shadow DOM", "Montagem isolada e estilos registrados no runtime.", "React ShadowRoot (planejado)"],
       ];
-      $("#componentGrid").innerHTML = components
+      document.querySelector("#componentGrid").innerHTML = components
         .map(
           ([name, desc, api]) =>
             '<article class="card"><h3>' +
@@ -952,22 +812,7 @@ import { ObjectInspector } from "./object-inspector";
             "</span></article>",
         )
         .join("");
-      $$("[data-recipe]").forEach(
-        (b) =>
-          (b.onclick = () => {
-            if (b.dataset.recipe === "network") {
-              location.hash = "inspector";
-              document.querySelector('[data-object="response"]')?.click();
-            } else {
-              state.presentation = b.dataset.recipe === "mobile" ? "bottom-sheet" : "modal";
-              apply();
-              activeMode();
-              location.hash = "menu";
-            }
-          }),
-      );
-      apply();
-      activeMode();
+
     </script>
     <script src="/design-system.js" defer></script>
   </body>
