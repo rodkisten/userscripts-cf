@@ -14,8 +14,8 @@ describe("Rod UI React Studio contract", () => {
     expect(entry).toContain("createRoot(mount).render(<Studio />)");
     expect(entry).toContain("<RodMenuHost />");
     expect(entry).toContain("RodMenu.open(schema)");
-    expect((entry.match(/createRoot\\(/g) ?? []).length).toBe(1);
-    expect(entry).not.toMatch(/solid-js|@solidjs|runtime\\/solid-ui/);
+    expect((entry.match(/createRoot\(/g) ?? []).length).toBe(1);
+    expect(entry).not.toMatch(/solid-js|@solidjs|runtime\/solid-ui/);
   });
   it("uses only supported React menu fields and real controls", () => {
     const entry = read("studio/entry.tsx");
