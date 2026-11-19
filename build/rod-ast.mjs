@@ -365,9 +365,7 @@ export function transformRodAst(code, id, options = {}) {
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
       if (explicit) migrateStaticStyleTriples(node, nextCtx, nextShadowed, blocked || keep(node));
-      ts.forEachChild(node, (child) =>
-        walk(child, nextCtx, nextShadowed, blocked || keep(node), node),
-      );
+      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), node));
       return;
     }
     if (ts.isBlock(node) || ts.isSourceFile(node)) {

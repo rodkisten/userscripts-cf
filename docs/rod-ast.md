@@ -77,11 +77,9 @@ The call-site GM guard analysis also preserves **both branches** of a `typeof GM
 
 Capability guards are now detected from TypeScript `TypeOfExpression` nodes instead of regex matches over source text. Strings and comments containing `typeof GM_*` no longer accidentally disable transformations. The existing conservative handling of `if/else`, ternary and short-circuit fallbacks is retained. New Vitest tests cover strings, comments, real guards, nested branches and idempotence.
 
-
 ### Nested function ownership
 
 The AST walker tracks the **nearest function** as the owner of a call, even when a nested closure captures the outer `ctx`. This avoids inheriting an outer async function's eligibility or cleanup ownership. Awaited storage in an async nested closure remains eligible under `storage: "awaited"`, unless protected by its own `try/catch/finally`. Vitest covers nested synchronous and asynchronous closures and exception boundaries.
-
 
 ### Runtime context shadowing
 

@@ -582,24 +582,30 @@ describe("storage scope regression matrix", () => {
 
 describe("nearest function ownership for nested closures", () => {
   it("does not migrate awaited storage from a nested non-async closure", () => {
-    const source = 'async function init(ctx) { function nested() { return localStorage.getItem("x"); } return nested(); }';
+    const source =
+      'async function init(ctx) { function nested() { return localStorage.getItem("x"); } return nested(); }';
     expect(transformRodAst(source, "nested-sync-storage.ts", { storage: "awaited" }).code).toBe(source);
   });
   it("migrates awaited storage from an async closure that captures ctx", () => {
-    const source = 'function init(ctx) { const nested = async () => await localStorage.getItem("x"); return nested(); }';
+    const source =
+      'function init(ctx) { const nested = async () => await localStorage.getItem("x"); return nested(); }';
     const result = transformRodAst(source, "nested-async-storage.ts", { storage: "awaited" });
     expect(result.code).toContain('await ctx.storage.local.getItem("x")');
-    expect(transformRodAst(result.code, "nested-async-storage.ts", { storage: "awaited" }).changed).toBe(false);
+    expect(transformRodAst(result.code, "nested-async-storage.ts", { storage: "awaited" }).changed).toBe(
+      false,
+    );
   });
   it("does not migrate a nested async closure inside its own try/catch", () => {
-    const source = 'function init(ctx) { const nested = async () => { try { await localStorage.getItem("x"); } catch {} }; return nested(); }';
+    const source =
+      'function init(ctx) { const nested = async () => { try { await localStorage.getItem("x"); } catch {} }; return nested(); }';
     expect(transformRodAst(source, "nested-async-try.ts", { storage: "awaited" }).code).toBe(source);
   });
 });
 
 describe("runtime context lexical shadowing", () => {
   it("does not rewrite calls using a shadowed ctx parameter", () => {
-    const source = 'function init(ctx) { const nested = (value, ctx) => fetch("/shadowed"); fetch("/outer"); }';
+    const source =
+      'function init(ctx) { const nested = (value, ctx) => fetch("/shadowed"); fetch("/outer"); }';
     const result = transformRodAst(source, "ctx-param-shadow.ts");
     expect(result.code).toContain('=> fetch("/shadowed")');
     expect(result.code).toContain('ctx.http.fetch("/outer")');
@@ -618,7 +624,8 @@ describe("runtime context lexical shadowing", () => {
 
 describe("context alias shadowing", () => {
   it("does not rewrite a shadowed context alias in a nested parameter", () => {
-    const source = 'function init(context) { const nested = (value, context) => fetch("/shadowed"); fetch("/outer"); }';
+    const source =
+      'function init(context) { const nested = (value, context) => fetch("/shadowed"); fetch("/outer"); }';
     const result = transformRodAst(source, "context-param-shadow.ts");
     expect(result.code).toContain('=> fetch("/shadowed")');
     expect(result.code).toContain('context.http.fetch("/outer")');
