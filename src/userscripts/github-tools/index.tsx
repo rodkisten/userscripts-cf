@@ -24,9 +24,11 @@ function mountReactPoint(ctx,
     style.textContent = options.styles.join("\\n");
     target.append(style);
   }
+  const portalContainer = document.createElement("div");
+  target.append(portalContainer);
   parent.insertBefore(host, options.before || null);
   try {
-    const mount = ctx.ui.mountReact(node, target);
+    const mount = ctx.ui.mountReact(node, portalContainer);
     let disposed = false;
     return {
       host,
