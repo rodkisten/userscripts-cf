@@ -1,4 +1,6 @@
-> **Commit marker enforcement (2026-11-19):** Release and Playground Pages push jobs already require `[deploy]` and reject `[skip ci]`; React migration validation now also requires `[deploy]` on main pushes. Manual dispatch remains possible. GitHub's own skip marker can prevent push workflow creation; PR checks must remain independently available. **Cloudflare Git-connected automatic builds are not controlled by GitHub commit marker checks** and must be disabled or replaced with explicit GitHub-driven deployments separately. This Cloudflare configuration has not yet been changed or verified.\n\n# 🚦 Mandatory workboard: React migration and stabilization
+> **Commit marker enforcement (2026-11-19):** Release and Playground Pages push jobs already require `[deploy]` and reject `[skip ci]`; React migration validation now also requires `[deploy]` on main pushes. Manual dispatch remains possible. GitHub's own skip marker can prevent push workflow creation; PR checks must remain independently available. **Cloudflare Git-connected automatic builds are not controlled by GitHub commit marker checks** and must be disabled or replaced with explicit GitHub-driven deployments separately. This Cloudflare configuration has not yet been changed or verified.
+
+# 🚦 Mandatory workboard: React migration and stabilization
 
 > **STATUS: ACTIVE · Source of truth for priorities · Updated 2026-11-17**
 >
@@ -14,6 +16,9 @@
 **React 19 + React DOM + TypeScript is the sole target.** Do not add Solid components, signals, stores, providers, or `mountSolid` usages. Solid is forbidden as a compatibility target. Remove or replace legacy Solid immediately; breaking builds are explicitly acceptable. If a legacy rule says “Solid-first,” it is superseded by this document. Never reimplement an old Solid bug merely for parity.
 
 ## P0 · Restore reliable builds and releases (blocking)
+
+- [ ] **2026-11-19 audit:** `package.json` currently runs unrestricted Vitest in `npm test` and lacks the `test:unit` script called by `build/validate-changed.sh`; reconcile with `docs/testing-policy.md` before treating CI as compliant. `src/core/runtime-react.ts` and `build/run-runtime-utility-tests.mjs` are absent on `main`; inspect actual React mount implementations rather than assuming these paths exist.
+
 
 - [ ] Diagnose current failing `Validate changed`, `Release · patch`, and `Playground Pages` workflows on `main`; record exact failed jobs and root causes.
 - [ ] Fix React/legacy mixed-build typecheck, lockfile and Vite/JSX configuration without bypassing required checks.
