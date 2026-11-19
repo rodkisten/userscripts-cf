@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, useSyncExternalStore, type ErrorInfo, type ReactNode } from "react";
 import { SoundgasmApp, StudioFailure, type SoundgasmData } from "./components/SoundgasmApp.tsx";
 import { readNativeMedia, readRecordings } from "./services.ts";
 import { safeURL } from "./domain.ts";
@@ -108,22 +108,27 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   host.id = "gws-sg-root";
   host.dataset.reactMount = "true";
   document.body.append(host);
-  let disposePortal: (() => void) | undefined;
-  const render = () => {
-    disposePortal?.();
-    disposePortal = ctx.ui.mountReact(
+  // Keep the portal mounted across media refreshes so React retains player state.
+  const subscribers = new Set<() => void>();
+  const subscribe = (notify: () => void) => {
+    subscribers.add(notify);
+    return () => { subscribers.delete(notify); };
+  };
+  const getSnapshot = () => data;
+  function SoundgasmView() {
+    const current = useSyncExternalStore(subscribe, getSnapshot);
+    return (
       <SoundgasmBoundary
         onFailure={() => {
           failed = true;
           native(true);
         }}
       >
-        <SoundgasmApp data={data} bridge={bridge} onNative={native} />
-      </SoundgasmBoundary>,
-      host,
+        <SoundgasmApp data={current} bridge={bridge} onNative={native} />
+      </SoundgasmBoundary>
     );
-  };
-  render();
+  }
+  const disposePortal = ctx.ui.mountReact(<SoundgasmView />, host);
   // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty React root
   // without throwing. Never hide the native player until replacement content
   // exists. TODO: Add integration tests for recordings, profiles, delayed
@@ -152,7 +157,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     if (source && source !== data.source) patch.source = source;
     if (Object.keys(patch).length) {
       data = { ...data, ...patch };
-      render();
+      for (const notify of subscribers) notify();
     }
   };
   ctx.observe(
@@ -182,7 +187,8 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    disposePortal?.();
+    disposePortal();
+    subscribers.clear();
     host.remove();
     native(true);
     document.title = titleBefore;
