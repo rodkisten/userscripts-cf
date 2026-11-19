@@ -528,7 +528,8 @@ describe("GM guards use AST syntax rather than matching source text", () => {
     expect(transformRodAst(source, "gm-actual.ts").code).toBe(source);
   });
   it("preserves nested guarded fallback branches", () => {
-    const source = 'function init(ctx) { if (ready) { if (typeof GM_getValue === "function") GM_getValue("x"); else GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const source =
+      'function init(ctx) { if (ready) { if (typeof GM_getValue === "function") GM_getValue("x"); else GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
     const result = transformRodAst(source, "gm-nested.ts");
     expect(result.code).toContain('GM_setValue("fallback", 1)');
     expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');

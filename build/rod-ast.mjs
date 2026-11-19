@@ -219,7 +219,8 @@ export function transformRodAst(code, id, options = {}) {
           current.right.pos <= node.pos &&
           node.end <= current.right.end &&
           containsGMTypeof(current.left)
-        ) return true;
+        )
+          return true;
       }
       current = current.parent;
     }
