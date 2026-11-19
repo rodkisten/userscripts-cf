@@ -49,8 +49,8 @@ for (const definition of definitions) {
   // A configured .js entry may refer to checked-in TypeScript source.
   // Keep this validation aligned with analyzeRuntimeGraph's entry resolution.
   const candidates = [entry];
-  if (/\\.jsx?$/.test(entry)) {
-    const stem = entry.replace(/\\.jsx?$/, "");
+  if (/\.jsx?$/.test(entry)) {
+    const stem = entry.replace(/\.jsx?$/, "");
     candidates.push(stem + ".ts", stem + ".tsx", stem + ".jsx");
   }
   const exists = await Promise.all(
