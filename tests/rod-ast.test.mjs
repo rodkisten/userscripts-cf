@@ -596,3 +596,22 @@ describe("nearest function ownership for nested closures", () => {
     expect(transformRodAst(source, "nested-async-try.ts", { storage: "awaited" }).code).toBe(source);
   });
 });
+
+describe("runtime context lexical shadowing", () => {
+  it("does not rewrite calls using a shadowed ctx parameter", () => {
+    const source = 'function init(ctx) { const nested = (value, ctx) => fetch("/shadowed"); fetch("/outer"); }';
+    const result = transformRodAst(source, "ctx-param-shadow.ts");
+    expect(result.code).toContain('=> fetch("/shadowed")');
+    expect(result.code).toContain('ctx.http.fetch("/outer")');
+  });
+  it("does not rewrite calls inside a block that declares a local ctx", () => {
+    const source = 'function init(ctx) { { const ctx = {}; fetch("/shadowed"); } fetch("/outer"); }';
+    const result = transformRodAst(source, "ctx-block-shadow.ts");
+    expect(result.code).toContain('fetch("/shadowed")');
+    expect(result.code).toContain('ctx.http.fetch("/outer")');
+  });
+  it("keeps captured ctx available in unshadowed nested closures", () => {
+    const source = 'function init(ctx) { const nested = () => fetch("/nested"); }';
+    expect(transformRodAst(source, "ctx-captured.ts").code).toContain('ctx.http.fetch("/nested")');
+  });
+});
