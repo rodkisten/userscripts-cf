@@ -1,3 +1,8 @@
+
+
+### CI workflow integrity
+
+GitHub Actions workflow YAML must be validated after edits. In particular, each step must have a valid action or `run`, and environment variable keys must be unique. The selective validation workflow is responsible for affected userscript builds; the React foundation and Rod AST checks remain independent.
 # Rod’s Userscripts System
 
 ## 🌻 Standalone: uma instalação para todos os userscripts
