@@ -349,6 +349,23 @@ for (const [target, measurements] of Object.entries(classAudit)) {
     })),
   };
 }
+console.log("\\nReact root ownership by generated target/execution world:");
+console.table(
+  Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => ({
+    target,
+    roots: stats.reactRootAudit?.roots ?? "missing",
+    owner: stats.reactRootAudit?.owner ?? "missing",
+  })),
+);
+if (
+  Object.entries(runtimeFeatureAudit.bundles).some(
+    ([, stats]) =>
+      stats.reactRootAudit?.roots !== 1 ||
+      stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+  )
+) {
+  throw new Error("[React root ownership] Missing or invalid per-world root audit report");
+}
 const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
   (stats.topModules || [])
     .slice(0, 5)
