@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import { flushSync } from "react-dom";
 
 type MountTarget = HTMLElement | ShadowRoot | SVGElement;
-type Mount = { node: ReactNode; connected: boolean };
+type Mount = { id: number; node: ReactNode; connected: boolean };
+let nextMountId = 0;
 const mounts = new Map<MountTarget, Mount>();
 let root: Root | undefined;
 let host: HTMLElement | undefined;
@@ -27,7 +28,7 @@ function render() {
     current.render(
       <>
         {[...mounts].map(([target, mount]) =>
-          createPortal(<>{mount.node}</>, target),
+          createPortal(<>{mount.node}</>, target, String(mount.id)),
         )}
       </>,
     ),
@@ -57,7 +58,7 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
   observeMounts();
   for (const child of mounts.keys())
     if (child !== target && target.contains(child)) mounts.delete(child);
-  mounts.set(target, { node: read(), connected: target.isConnected });
+  mounts.set(target, { id: mounts.get(target)?.id ?? ++nextMountId, node: read(), connected: target.isConnected });
   render();
   releaseDetachedViews();
 }
