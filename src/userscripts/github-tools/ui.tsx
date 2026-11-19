@@ -1,7 +1,5 @@
 import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
 import { useState } from "react";
-import { createRoot } from "react-dom/client";
-import { flushSync } from "react-dom";
 import styles, { css } from "./GitHub.module.css";
 import { loadStepOutput, stepNumber } from "./logs.ts";
 
@@ -153,12 +151,16 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
     const style = document.createElement("style");
     style.textContent = css;
     shadow.append(style);
+    const portalContainer = document.createElement("span");
+    shadow.append(portalContainer);
     step.insertBefore(host, header?.nextSibling || step.firstChild);
-    const root = createRoot(shadow);
-    flushSync(() => root.render(<CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />));
+    const disposePortal = ctx.ui.mountReact(
+      <CopyStep address={{ owner, repo, jobId, stepNumber: number }} ctx={ctx} />,
+      portalContainer,
+    );
     host.dataset.ghftStepHost = key;
     mounts.set(host, () => {
-      root.unmount();
+      disposePortal();
       host.remove();
     });
   }
