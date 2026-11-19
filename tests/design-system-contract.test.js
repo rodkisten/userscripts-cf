@@ -41,6 +41,13 @@ describe("Rod UI React Studio contract", () => {
     expect(css).toContain(".surfaceDrawer");
     expect(css).toContain(".surfacePopover");
   });
+  it("does not build legacy Solid playground bundles", () => {
+    const hosting = read("build/hosting.mjs");
+    expect(hosting).not.toContain("playground/form-controls-app.tsx");
+    expect(hosting).not.toContain("playground/instagram-bookmark-app.tsx");
+    expect(hosting).toContain("redirectToStudio");
+    expect(read("build/check-design-system-changes.mjs")).toContain("runtime\\/react-ui");
+  });
   it("documents the mandatory feature update workflow", () => {
     expect(read("studio/README.md")).toContain("Mandatory feature documentation policy");
     expect(read("build/check-design-system-changes.mjs")).toContain("Runtime UI changed");
