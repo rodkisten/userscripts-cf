@@ -87,13 +87,15 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
   const previous = mounts.get(target);
   if (previous) {
     previous.node = read();
-    previous.listeners?.forEach((listener) => listener());
+    flushSync(() => previous.listeners?.forEach((listener) => listener()));
   } else {
     const record: Mount = { id: ++nextMountId, node: read(), connected: target.isConnected };
     if (sharedMount) {
       // React portals accept ShadowRoot and SVGElement too; runtime target typing is narrower.
       record.listeners = new Set();
-      record.dispose = sharedMount(<SharedView record={record} />, target as HTMLElement);
+      flushSync(() => {
+        record.dispose = sharedMount!(<SharedView record={record} />, target as HTMLElement);
+      });
     }
     mounts.set(target, record);
   }
