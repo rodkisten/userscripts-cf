@@ -2,12 +2,28 @@ export type SurfaceType = "bottom-sheet" | "modal" | "drawer" | "popover";
 
 export type Position = "top" | "bottom" | "left" | "right" | "center";
 
-export type FieldType = "text" | "number" | "select" | "checkbox" | "toggle" | "slider";
+export type FieldType =
+  | "text"
+  | "email"
+  | "password"
+  | "search"
+  | "url"
+  | "tel"
+  | "textarea"
+  | "number"
+  | "select"
+  | "checkbox"
+  | "toggle"
+  | "switch"
+  | "slider"
+  | "range";
 
 export interface FieldDefinition {
-  id: string;
+  id?: string;
+  name?: string;
   label: string;
   type: FieldType;
+  value?: unknown;
   defaultValue?: any;
   placeholder?: string;
   options?: { label: string; value: any }[];
@@ -23,13 +39,16 @@ export interface ActionDefinition {
   icon?: string;
   variant?: "primary" | "secondary" | "danger" | "ghost";
   disabled?: boolean;
-  onClick: (context: MenuContext) => void | Promise<void>;
+  onClick?: (context: MenuContext) => void | Promise<void>;
+  role?: "cancel" | "submit";
 }
 
 export interface MenuSchema {
   id: string;
   title?: string;
   subtitle?: string;
+  description?: string;
+  presentation?: SurfaceType | "auto";
   surface?: SurfaceType;
   position?: Position;
   fields?: FieldDefinition[];

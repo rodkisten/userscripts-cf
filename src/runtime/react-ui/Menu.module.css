@@ -6,7 +6,9 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 9999;
+  z-index: 2147483647;
+  pointer-events: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   animation: fadeIn 0.2s ease-out forwards;
 }
 
@@ -15,7 +17,7 @@
   color: var(--rod-menu-fg, #111827);
   width: 100%;
   max-width: 480px;
-  max-height: 90vh;
+  max-height: min(90dvh, 100%);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   box-shadow:
@@ -97,7 +99,8 @@
 }
 
 .fieldGroup input,
-.fieldGroup select {
+.fieldGroup select,
+.fieldGroup textarea {
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -109,7 +112,8 @@
 }
 
 .fieldGroup input:focus,
-.fieldGroup select:focus {
+.fieldGroup select:focus,
+.fieldGroup textarea:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
@@ -205,5 +209,18 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+.fieldGroup textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .surface,
+  .surfaceModal {
+    animation: none;
   }
 }

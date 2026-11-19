@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import * as Dialog from "@radix-ui/react-dialog";
+import { RodMenu, RodMenuHost } from "./index.js";
 import {
   matches,
   readScriptRules,
@@ -81,6 +82,7 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
+      <RodMenuHost />
       {!open && (
         <button
           className="launcher"
@@ -114,6 +116,31 @@ function DockView({ controller }: { controller: DockController }) {
               </Dialog.Close>
             </header>
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
+            <button
+              className="action"
+              onClick={() => {
+                setOpen(false);
+                RodMenu.open({
+                  id: "rod-dock-settings",
+                  title: "Preferências do Rod Dock",
+                  surface: "modal",
+                  fields: [{ id: "filter", type: "search", label: "Filtrar scripts", defaultValue: search }],
+                  actions: [
+                    {
+                      id: "apply",
+                      label: "Aplicar",
+                      onClick: ({ values, close }) => {
+                        setSearch(String(values.filter ?? ""));
+                        close();
+                      },
+                    },
+                    { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
+                  ],
+                });
+              }}
+            >
+              Preferências
+            </button>
             <details className="module" open>
               <summary>Scripts ({scripts.length})</summary>
               <input
@@ -291,6 +318,7 @@ export function installRodDock({
       disposed = true;
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
+      RodMenu.close();
       root.unmount();
       host.remove();
       if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")

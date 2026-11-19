@@ -7,12 +7,16 @@ export function createInitialValues(
   const defaults: Record<string, any> = {};
   if (schema.fields) {
     schema.fields.forEach((field) => {
-      defaults[field.id] =
+      const key = field.id ?? field.name;
+      if (!key) return;
+      defaults[key] =
         field.defaultValue !== undefined
           ? field.defaultValue
-          : field.type === "checkbox" || field.type === "toggle"
-            ? false
-            : "";
+          : field.value !== undefined
+            ? field.value
+            : field.type === "checkbox" || field.type === "toggle" || field.type === "switch"
+              ? false
+              : "";
     });
   }
   return { ...defaults, ...customInitial };
