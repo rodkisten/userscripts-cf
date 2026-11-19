@@ -52,10 +52,17 @@ export function createRuntime(
           return node;
         },
         pageStyle(css: string, options?: { id?: string }) {
+          const target = host.document.head || host.document.documentElement;
+          const id = options?.id;
+          const existing = id ? host.document.getElementById(id) : null;
+          if (existing instanceof HTMLStyleElement) {
+            existing.textContent = String(css);
+            return existing;
+          }
           const node = host.document.createElement("style");
-          if (options?.id) node.id = options.id;
+          if (id) node.id = id;
           node.textContent = String(css);
-          (host.document.head || host.document.documentElement).append(node);
+          target.append(node);
           onDispose(() => node.remove());
           return node;
         },
