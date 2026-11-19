@@ -43,18 +43,28 @@ const isolateSuites = process.env.RUNTIME_TEST_ISOLATE_SUITES !== "false";
 const batches = isolateSuites ? suites.map((suite) => [suite]) : [suites];
 for (const [index, batch] of batches.entries()) {
   const batchStartedAt = Date.now();
-  console.log(`::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`);
+  console.log(
+    `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
+  );
   console.log(`Starting Vitest (timeout: ${timeoutMs}ms, isolated: ${isolateSuites})`);
-  const result = spawnSync("npx", ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...batch], {
+  const result = spawnSync(
+    "npx",
+    ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...batch],
+    {
     stdio: "inherit",
     shell: process.platform === "win32",
     timeout: timeoutMs,
-    killSignal: "SIGKILL",
-  });
-  console.log(`Vitest batch finished after ${Date.now() - batchStartedAt}ms (exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`);
+      killSignal: "SIGKILL",
+    },
+  );
+  console.log(
+    `Vitest batch finished after ${Date.now() - batchStartedAt}ms (exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
+  );
   if (result.error) {
     console.error(`Vitest execution error: ${result.error.message}`);
-    if (result.error.code === "ETIMEDOUT") console.error(`Vitest exceeded ${timeoutMs}ms on: ${batch.join(", ")}`);
+    if (result.error.code === "ETIMEDOUT") {
+      console.error(`Vitest exceeded ${timeoutMs}ms on: ${batch.join(", ")}`);
+    }
   }
   console.log("::endgroup::");
   if (result.status !== 0 || result.error) {
