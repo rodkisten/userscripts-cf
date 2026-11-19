@@ -20,7 +20,7 @@ function SharedView({ record }: { record: Mount }) {
 }
 
 /** Attach RodX portals to the owning userscript runtime when available. */
-export function configureSharedMount(mount: (component: ReactElement, target: HTMLElement) => () => void) {
+export function configureSharedMount(mount: (component: ReactElement, target: Element | ShadowRoot) => () => void) {
   if (mounts.size) throw new Error("RodX mount adapter already initialized");
   sharedMount = mount;
 }
