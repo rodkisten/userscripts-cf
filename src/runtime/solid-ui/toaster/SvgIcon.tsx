@@ -1,7 +1,7 @@
-import type { JSX } from "@solidjs/web";
+import type { ReactNode } from "react";
 import type { SvgIconName } from "./types";
 
-const ICON_PATHS: Record<SvgIconName, JSX.Element> = {
+const ICON_PATHS: Record<SvgIconName, ReactNode> = {
   circle: <circle cx="12" cy="12" r="7.5" />,
   "circle-x": (
     <>
@@ -160,17 +160,17 @@ const ICON_PATHS: Record<SvgIconName, JSX.Element> = {
 };
 
 export function SvgIcon(props: { name: SvgIconName; size?: number }) {
-  const size = () => props.size ?? 18;
+  const size = props.size ?? 18;
   return (
     <svg
-      width={size()}
-      height={size()}
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
       {ICON_PATHS[props.name] ?? ICON_PATHS.circle}
