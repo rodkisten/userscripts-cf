@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
 import { SoundgasmApp, StudioFailure, type SoundgasmData } from "./components/SoundgasmApp.tsx";
 import { readNativeMedia, readRecordings } from "./services.ts";
 import { safeURL } from "./domain.ts";
@@ -109,9 +108,8 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   host.id = "gws-sg-root";
   host.dataset.reactMount = "true";
   document.body.append(host);
-  const root = createRoot(host);
   const render = () =>
-    root.render(
+    ctx.ui.mountReact(
       <SoundgasmBoundary
         onFailure={() => {
           failed = true;
@@ -180,7 +178,6 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    root.unmount();
     host.remove();
     native(true);
     document.title = titleBefore;
