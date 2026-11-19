@@ -305,6 +305,7 @@ export function installRodDock({
       disposed = true;
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
+      RodMenu.close();
       root.unmount();
       host.remove();
       if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")
