@@ -73,6 +73,28 @@ export function inspectReactRootCalls(source, filename = "source.tsx") {
 
     if (
       node.type === "VariableDeclarator" &&
+      node.id.type === "ObjectPattern" &&
+      node.init?.type === "Identifier" &&
+      namespaces.has(node.init.name)
+    ) {
+      for (const item of node.id.properties) {
+        if (item.type !== "ObjectProperty") continue;
+        const imported = propertyName(item.key);
+        if (["createRoot", "hydrateRoot"].includes(imported) && item.value.type === "Identifier")
+          bindings.add(item.value.name);
+      }
+    }
+
+    if (
+      node.type === "VariableDeclarator" &&
+      node.id.type === "Identifier" &&
+      node.init?.type === "MemberExpression" &&
+      namespaces.has(node.init.object?.name) &&
+      ["createRoot", "hydrateRoot"].includes(propertyName(node.init.property))
+    ) bindings.add(node.id.name);
+
+    if (
+      node.type === "VariableDeclarator" &&
       node.id.type === "Identifier" &&
       node.init?.type === "Identifier"
     ) aliases.push([node.id.name, node.init.name]);
@@ -91,7 +113,7 @@ export function inspectReactRootCalls(source, filename = "source.tsx") {
 
   const calls = [];
   visit(ast, (node) => {
-    if (node.type !== "CallExpression") return;
+    if (node.type !== "CallExpression" && node.type !== "OptionalCallExpression") return;
     const callee = node.callee;
     if (callee.type === "Identifier" && bindings.has(callee.name)) {
       calls.push({ name: callee.name, filename, start: node.start });
