@@ -513,7 +513,12 @@ function copyDirectoryItemsToClipboard(
 function startGitHub(ctx: any): void {
   const collator = new Intl.Collator(GITHUB_DATE_LOCALE, { numeric: true, sensitivity: "base" });
   const panels = new WeakMap<Element, any>();
-  const [prefs, setPreferences] = ctx.store(normalizeUserPreferences(null));
+  // Preferences are owned by this userscript instance, not by a React hook.
+  // React components receive the latest snapshot when the toolbar is rendered.
+  let prefs = normalizeUserPreferences(null);
+  const setPreferences = (next: GitHubPreferences): void => {
+    prefs = next;
+  };
   let preferencesChanged = false;
   // Hydrate asynchronously; never overwrite edits made while loading.
   void (async () => {
