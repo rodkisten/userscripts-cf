@@ -91,10 +91,9 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
   } else {
     const record: Mount = { id: ++nextMountId, node: read(), connected: target.isConnected };
     if (sharedMount) {
-      // Runtime mount targets must be HTMLElements; ShadowRoot/SVG use the legacy portal registry.
-      if (!(target instanceof HTMLElement)) throw new Error("RodX shared runtime mount requires HTMLElement target");
+      // React portals accept ShadowRoot and SVGElement too; runtime target typing is narrower.
       record.listeners = new Set();
-      record.dispose = sharedMount(<SharedView record={record} />, target);
+      record.dispose = sharedMount(<SharedView record={record} />, target as HTMLElement);
     }
     mounts.set(target, record);
   }
