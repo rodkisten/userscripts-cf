@@ -89,7 +89,26 @@ export function createRuntime(
     reactHost?.remove();
     reactHost = undefined;
   };
+  const mountSharedReact = (component: ReactElement, container: HTMLElement) => {
+    const id = ++nextId;
+    let disposed = false;
+    const update = (next: ReactElement) => {
+      if (disposed) return;
+      ensureReactHost();
+      registry.add({ id, target: container, node: next });
+    };
+    update(component);
+    return {
+      update,
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        registry.remove(id);
+      },
+    };
+  };
   const runtime = createCoreRuntime(definitions, bridge, host, release, {
+    mountSharedReact: (component, container) => mountSharedReact(component, container),
     installHelpers: () => {
       const installed: string[] = [];
       for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
@@ -180,24 +199,6 @@ export function createRuntime(
       };
     },
   });
-  const mountSharedReact = (component: ReactElement, container: HTMLElement) => {
-    const id = ++nextId;
-    let disposed = false;
-    const update = (next: ReactElement) => {
-      if (disposed) return;
-      ensureReactHost();
-      registry.add({ id, target: container, node: next });
-    };
-    update(component);
-    return {
-      update,
-      dispose: () => {
-        if (disposed) return;
-        disposed = true;
-        registry.remove(id);
-      },
-    };
-  };
   const disposeRuntime = runtime.dispose.bind(runtime);
   return {
     mountSharedReact,

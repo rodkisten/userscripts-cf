@@ -1,18 +1,28 @@
 /** @jsxImportSource react */
 import { ToasterView } from "./toaster-view.js";
 import { createRoot, type Root } from "react-dom/client";
+import type { ReactElement } from "react";
 import { toast as sonner } from "sonner";
 
 /** shadcn/ui's official Sonner integration; no custom toast visual primitives. */
+type SharedMount = (component: ReactElement, container: HTMLElement) => {
+  update: (component: ReactElement) => void;
+  dispose: () => void;
+};
+export function createToasterFeature(mountSharedReact?: SharedMount) {
 let root: Root | undefined;
+let sharedMount: ReturnType<SharedMount> | undefined;
 let host: HTMLDivElement | undefined;
 function ensureMounted() {
-  if (root || typeof document === "undefined") return;
+  if (root || sharedMount || typeof document === "undefined") return;
   host = document.createElement("div");
   host.dataset.rodToaster = "sonner";
   document.body.append(host);
-  root = createRoot(host);
-  root.render(<ToasterView />);
+  if (mountSharedReact) sharedMount = mountSharedReact(<ToasterView />, host);
+  else {
+    root = createRoot(host);
+    root.render(<ToasterView />);
+  }
 }
 function show(message: unknown, options?: Record<string, unknown>) {
   ensureMounted();
@@ -54,6 +64,8 @@ const toast = Object.assign((message: unknown, options?: Record<string, unknown>
   destroy() {
     sonner.dismiss();
     root?.unmount();
+    sharedMount?.dispose();
+    sharedMount = undefined;
     root = undefined;
     host?.remove();
     host = undefined;
@@ -61,6 +73,5 @@ const toast = Object.assign((message: unknown, options?: Record<string, unknown>
 });
 
 /** Shared runtime facade. UI is rendered by the upstream Sonner component. */
-export function createToasterFeature() {
-  return toast;
+return toast;
 }
