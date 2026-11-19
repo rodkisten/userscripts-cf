@@ -103,7 +103,10 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
           starts++;
           ctx.style("body { color: red; }");
           ctx.listen(host, "click", () => clicks++);
-          return () => stops++;
+          return () => {
+            stops++;
+            console.log("[runtime test] SPA: module cleanup callback");
+          };
         },
       },
     },
