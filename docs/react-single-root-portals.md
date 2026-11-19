@@ -21,6 +21,18 @@ This decision supersedes the per-component/per-post root wording in `docs/WORKBO
 
 **Acceptance gate:** For a given world, standalone/tag-group/unified bundle with N active modules and M mounted UI targets must create one root, not N or M. Distinct installations/worlds are independently owned.
 
+## Automated enforcement (2026-11-19)
+
+The build now enforces this ownership contract at two levels:
+
+1. `build/react-root-audit.mjs` parses source ASTs and permits exactly one `createRoot`/ `hydrateRoot` call in `src/core/runtime-react.tsx`, plus one separately-owned root in `studio/entry.tsx`. Any additional source callsite fails the audit. Run it directly with `npm run check:react-roots`.
+2. Every `bundleRuntime()` invocation audits the modules actually transformed and emitted for that execution world. It requires exactly one root call from `src/core/runtime-react.tsx`, rejects any other root owner in the runtime graph, and confirms the owner module is present exactly once in the output chunk. This covers standalone, unified, tag-group and individual builds without confusing independent page/sandbox worlds.
+3. `npm run build` runs the repository source audit before generating artifacts. Scoped calls to `node build/build.mjs --targets=...` run the same gate. Per-world counts are included in the runtime feature audit report.
+4. Runtime/utility regression coverage lives in `tests/runtime-react-root-audit.test.js`; no component or userscript UI tests are introduced.
+
+The separately-owned Studio application is intentionally excluded from userscript bundle graphs. A page-world runtime and a sandbox-world runtime remain independent owners, so the invariant is **one root per generated execution-world runtime**, not one root across the entire userscript file.
+
+
 ## Logical topology
 
 ```text
