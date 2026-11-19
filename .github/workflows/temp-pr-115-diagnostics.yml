@@ -1,14 +1,6 @@
 name: "🧯 TEMP · PR 115 isolated diagnostics"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [main]
-    paths:
-      - ".github/workflows/temp-pr-115-diagnostics.yml"
-      - "build/run-runtime-utility-tests.mjs"
-      - "src/core/**"
-      - "src/userscripts/rodx-studio/**"
   workflow_dispatch:
 
 permissions:
@@ -20,12 +12,11 @@ concurrency:
 
 jobs:
   diagnostic:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 115
     name: "🧪 PR #115 · isolated runtime checks"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout PR head
+      - name: Checkout selected branch
         uses: actions/checkout@v4
         with:
           persist-credentials: false
