@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import styles from "./GitHub.module.css";
+import styles, { css } from "./GitHub.module.css";
 
 type Favorite = { name: string; url: string };
 type Workflow = { id: number; name: string; path: string };
@@ -118,11 +118,12 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
 }
 export function mountGitHubDashboard(ctx: any) {
   const controller = { toggleFile: (_name: string, _url: string) => {} };
+  const stylesheet = ctx.ui.style(css);
   const dispose = ctx.ui.mountReact(<Dashboard ctx={ctx} controller={controller} />);
   return {
     toggleFile: (name: string, url: string) => controller.toggleFile(name, url),
     load: () => window.dispatchEvent(new Event("turbo:load")),
-    dispose,
+    dispose: () => { dispose(); stylesheet.remove(); },
   };
 }
 
