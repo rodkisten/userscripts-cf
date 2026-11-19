@@ -187,7 +187,7 @@ export function createSeekPreviews(Studio, getOptions) {
     const slider = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaTimeSlider),
       thumbnail = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaSliderThumbnail);
     if (!slider || !thumbnail) return;
-    const style = (<style />) as HTMLStyleElement;
+    const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";
     style.textContent = extractedCSS1;
     skin.toggleAttribute("data-rodx-no-dim", getOptions().videoPauseDim !== true);
