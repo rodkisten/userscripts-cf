@@ -2,7 +2,13 @@ import { useSyncExternalStore, type ReactElement, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 
 type MountTarget = HTMLElement | ShadowRoot | SVGElement;
-type Mount = { id: number; node: ReactNode; connected: boolean; dispose?: () => void; listeners?: Set<() => void> };
+type Mount = {
+  id: number;
+  node: ReactNode;
+  connected: boolean;
+  dispose?: () => void;
+  listeners?: Set<() => void>;
+};
 let nextMountId = 0;
 const mounts = new Map<MountTarget, Mount>();
 let observer: MutationObserver | undefined;
@@ -20,11 +26,12 @@ function SharedView({ record }: { record: Mount }) {
 }
 
 /** Attach RodX portals to the owning userscript runtime when available. */
-export function configureSharedMount(mount: (component: ReactElement, target: Element | ShadowRoot) => () => void) {
+export function configureSharedMount(
+  mount: (component: ReactElement, target: Element | ShadowRoot) => () => void,
+) {
   if (mounts.size) throw new Error("RodX mount adapter already initialized");
   sharedMount = mount;
 }
-
 
 function releaseDetachedViews() {
   for (const [target, record] of mounts) {

@@ -60,7 +60,9 @@ export default {
     const container = document.createElement("div");
     ctx.ui.mount(container);
     // Legacy REPL integrations query the mounted panel synchronously.
-    const ui = flushSync(() => mountPanel(container, (component, target) => ctx.ui.mountReact(component, target)));
+    const ui = flushSync(() =>
+      mountPanel(container, (component, target) => ctx.ui.mountReact(component, target)),
+    );
     const $ = (selector) => shadow.querySelector(selector);
     const panel = $(RODX_SELECTORS.replPanel),
       launcher = $(RODX_SELECTORS.replLauncher);

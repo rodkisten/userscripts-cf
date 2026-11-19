@@ -112,7 +112,9 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   const subscribers = new Set<() => void>();
   const subscribe = (notify: () => void) => {
     subscribers.add(notify);
-    return () => { subscribers.delete(notify); };
+    return () => {
+      subscribers.delete(notify);
+    };
   };
   const getSnapshot = () => data;
   function SoundgasmView() {

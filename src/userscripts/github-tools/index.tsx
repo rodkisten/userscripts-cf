@@ -635,7 +635,8 @@ function startGitHub(ctx: any): void {
           item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') ||
           item.row.querySelector("a[href]");
         if (!anchor) continue;
-        const mount = mountReactPoint(ctx, 
+        const mount = mountReactPoint(
+          ctx,
           anchor.parentNode!,
           <button
             type="button"
@@ -655,7 +656,8 @@ function startGitHub(ctx: any): void {
         mounts.set(mount.host, mount.dispose);
         if (item.type === "file") {
           const path = formatDisplayPathForItem(item);
-          const commitMount = mountReactPoint(ctx, 
+          const commitMount = mountReactPoint(
+            ctx,
             item.row,
             <FileCommit ctx={ctx} owner={repo.owner} repo={repo.repo} path={path} href={item.href} />,
             { tag: "span", shadow: true, styles: [css] },
@@ -690,7 +692,8 @@ function startGitHub(ctx: any): void {
       const token = await ctx.storage.get("actionsToken", "");
       if (ctx.signal.aborted || request !== tokenRequest) return;
       tokenDialog?.dispose();
-      tokenDialog = mountReactPoint(ctx, 
+      tokenDialog = mountReactPoint(
+        ctx,
         document.body,
         <GitHubTokenSettings
           token={token}

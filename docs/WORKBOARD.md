@@ -34,8 +34,8 @@
 
 > **PR follow-up (2026-11-19):** [#114](https://github.com/rodkisten/userscripts-cf/pull/114) is **merged**. New branch `refactor/react-root-lifecycle-nov19` starts from current `main`. React Actions hub now exposes idempotent `dispose()`, unmounts either its shared portal or standalone React root, clears subscriptions and registrations, removes its Shadow DOM host, and releases the window singleton for reinstall. Commit [041e7f3](https://github.com/rodkisten/userscripts-cf/commit/041e7f378ac87c9a5b2f2c044c125868ab7c6ff0). **Not yet verified** by CI, browser, or lifecycle tests. Next: audit consumers to invoke dispose on runtime teardown; check remaining root fallbacks and CI. Testing policy remains runtime/utilities only.
 
-
 - [x] **2026-11-19 GitHub Tools follow-up:** `dashboard.tsx` on `main` is now React-only (no `solid-js` or removed `mountPoint` import). Fixed missing `useSyncExternalStore` import in `github-tools/index.tsx` after [run 44495983924](https://github.com/rodkisten/userscripts-cf/actions/runs/44495983924) reported TS2304. [skip ci] commit needs fresh validation; do not mark overall build green yet.
+
 > **Root audit 2026-11-19:** `src/runtime/actions/index.tsx` and `src/runtime/modular/features/menu-view.tsx` already accept optional shared-root adapters and retain `createRoot` only as standalone fallbacks. Do **not** remove these fallbacks blindly: audit call sites and ownership/disposal first. Instagram Reel Bookmark uses `ctx.ui.mountReact`. GitHub Tools signature fix was committed as `b6ec688`; the previous failing CI run predates it. No post-fix validation result yet.
 
 > **CI triage 2026-11-19:** [Validate changed run 44495372589](https://github.com/rodkisten/userscripts-cf/actions/runs/44495372589) failed `tsc --noEmit` exclusively on GitHub Tools `mountReactPoint`: duplicate `ctx` parameter and ReactElement passed as DOM Node (cascading signature mismatch). Fixed in [b6ec688](https://github.com/rodkisten/userscripts-cf/commit/b6ec68846b00e16e01a8071cb8f8c988d0abcb03), which also removes obsolete React imports and restores CSS newline joining. In that earlier run [React foundation](https://github.com/rodkisten/userscripts-cf/actions/runs/44495372389) and [Rod AST](https://github.com/rodkisten/userscripts-cf/actions/runs/44495372404) succeeded, and the Design Studio build succeeded. **Fresh post-fix CI still pending; do not mark P0 complete.**
@@ -74,7 +74,6 @@
 ## P1 · React foundation (blocking new feature UI)
 
 - [ ] **2026-11-19 validation run [44495288058](https://github.com/rodkisten/userscripts-cf/actions/runs/44495288058):** React typecheck PASSED; legacy TypeScript FAILED with 76 diagnostics (mostly RodX JSX DOM casts and event handlers, plus GitHub dashboard's Solid imports); production build FAILED on removed `../../runtime/solid-ui/mount-point.tsx` in `src/userscripts/github-tools/dashboard.tsx`. Do not restore Solid; finish dashboard React migration. Fixed invalid `<style textContent>` in RodX list typeahead (`<style>{extractedCSS1}</style>`). Next: migrate dashboard, correct RodX JSX types, rerun validation. No deploy.
-
 
 - [ ] **2026-11-19 validation blocker:** attempted to clone `rodkisten/userscripts-cf` for `npm ci && npm run typecheck`, but this execution environment cannot resolve `github.com`; no local checkout available. Do not claim build/typecheck/tests passed. Added `runtimeDisposed` guard in `runtime-react.tsx` to reject mounts after disposal. Next validation should run on GitHub Actions or a connected checkout before deploy.
 
