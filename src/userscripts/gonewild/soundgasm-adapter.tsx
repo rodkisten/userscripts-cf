@@ -108,8 +108,10 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   host.id = "gws-sg-root";
   host.dataset.reactMount = "true";
   document.body.append(host);
-  const render = () =>
-    ctx.ui.mountReact(
+  let disposePortal: (() => void) | undefined;
+  const render = () => {
+    disposePortal?.();
+    disposePortal = ctx.ui.mountReact(
       <SoundgasmBoundary
         onFailure={() => {
           failed = true;
@@ -118,8 +120,10 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
       >
         <SoundgasmApp data={data} bridge={bridge} onNative={native} />
       </SoundgasmBoundary>,
+      host,
     );
-  const disposePortal = render();
+  };
+  render();
   // FIXME(SOUNDGASM-BLANK): Safari/Tampermonkey can mount an empty React root
   // without throwing. Never hide the native player until replacement content
   // exists. TODO: Add integration tests for recordings, profiles, delayed
@@ -178,7 +182,7 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   const titleBefore = document.title;
   document.title = `${data.title} · GoneWildStudio`;
   ctx.onDispose(() => {
-    disposePortal();
+    disposePortal?.();
     host.remove();
     native(true);
     document.title = titleBefore;
