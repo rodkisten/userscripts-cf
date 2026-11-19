@@ -1,5 +1,4 @@
 import type { ScriptContext } from "../../core/runtime";
-import type { ReactElement } from "react";
 import { css } from "./Settings.module.css";
 import { ReelBookmarkButton, type BookmarkState } from "./ReelBookmarkButton";
 
@@ -38,35 +37,31 @@ function nativeSave(scope: ParentNode = document): HTMLElement | null {
       ) || null
   );
 }
-function actions(): HTMLElement | null {
-  const video = [...document.querySelectorAll("video")]
-    .filter((node) => {
-      const rect = node.getBoundingClientRect();
-      return (
-        rect.width > 0 && rect.height > 0 && rect.top < innerHeight * 0.8 && rect.bottom > innerHeight * 0.2
-      );
+function activeBookmark(): { source: HTMLElement; identity: string } | null {
+  // A visible Reel must own its native control. Never fall back to a global
+  // bookmark, because Instagram keeps adjacent slides mounted during swipes.
+  const videos = [...document.querySelectorAll<HTMLVideoElement>("video")]
+    .map((video) => {
+      const rect = video.getBoundingClientRect();
+      const visibleHeight = Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
+      const visibleWidth = Math.max(0, Math.min(rect.right, innerWidth) - Math.max(rect.left, 0));
+      return { video, rect, visibleArea: visibleHeight * visibleWidth };
     })
-    .sort(
-      (a, b) =>
-        Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - innerHeight / 2) -
-        Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - innerHeight / 2),
-    )[0];
-  const scope = video?.closest('article, [role="dialog"], [data-testid="reel"], section') || document;
-  const save = nativeSave(scope);
-  if (save?.parentElement) return save.parentElement;
-  const buttons = controls().filter((button) => scope === document || (scope instanceof Element && scope.contains(button)));
-
-  const near = buttons.filter((button) => {
-    const rect = button.getBoundingClientRect();
-    if (!rect.width || !rect.height) return false;
-    if (!video) return true;
-    const bounds = video.getBoundingClientRect();
-    return rect.top >= bounds.top - 100 && rect.top <= bounds.bottom + 100;
-  });
-  return (
-    (near.find((button) => /share|compartilhar|like|curtir/i.test(button.innerHTML.slice(0, 600))) || near[0])
-      ?.parentElement || null
-  );
+    .filter(({ rect, visibleArea }) => rect.width > 0 && rect.height > 0 && visibleArea > 0)
+    .sort((a, b) => b.visibleArea - a.visibleArea);
+  const active = videos[0];
+  if (!active) return null;
+  const scope = active.video.closest<HTMLElement>('article, [role="dialog"], [data-testid="reel"]');
+  if (!scope) return null;
+  const source = nativeSave(scope);
+  if (!source || !source.isConnected) return null;
+  const link = [...scope.querySelectorAll<HTMLAnchorElement>('a[href*="/reel/"], a[href*="/p/"]')]
+    .find((anchor) => /\/(?:reel|p)\/[^/]+/.test(anchor.pathname));
+  const identity = link?.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1] ||
+    (location.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1] ?? "");
+  // On multi-Reel views, a URL alone is not a reliable publication identity.
+  if (!identity && videos.length > 1) return null;
+  return { source, identity: identity || location.pathname };
 }
 
 function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown" {
@@ -140,7 +135,7 @@ export function mountReelBookmark(
     render();
   };
   let selectedSave: HTMLElement | null = null;
-  let activeReel = location.pathname;
+  let activeReel = "";
   let operation = 0;
   let mount: { host: HTMLElement; dispose: () => void } | undefined;
   const render = () => {
@@ -148,7 +143,7 @@ export function mountReelBookmark(
     // The mounted React button reads the latest state through the shared portal.
     mount.dispose();
     mount.dispose = ctx.ui.mountReact(
-      <ReelBookmarkButton state={state} onActivate={() => void send()} />,
+      <ReelBookmarkButton state={state} disabled={state === "error"} onActivate={() => void send()} />,
       mount.host,
     );
   };
@@ -156,18 +151,18 @@ export function mountReelBookmark(
   const send = async () => {
     if (state === "loading" || state === "saved" || state === "error" || signal.aborted) return;
     const token = ++operation;
-    const reel = location.pathname;
+    const reel = activeReel;
     const source = selectedSave;
-    if (!source?.isConnected) return;
+    if (!source?.isConnected || !reel) return;
     setState("loading");
     try {
       await saveToCollections(await getCollectionIds(), signal, source);
-      if (token !== operation || signal.aborted || reel !== location.pathname || source !== selectedSave)
+      if (token !== operation || signal.aborted || reel !== activeReel || source !== selectedSave)
         return;
       setState("saved");
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
-      if (token !== operation || signal.aborted || reel !== location.pathname) return;
+      if (token !== operation || signal.aborted || reel !== activeReel) return;
       setState(nativeState(source) === "saved" ? "saved" : "error");
       notify((error as Error).message);
     }
@@ -181,43 +176,45 @@ export function mountReelBookmark(
   }
 
   function refresh() {
-    if (activeReel !== location.pathname) {
-      activeReel = location.pathname;
-      operation++;
-      setState("unsaved");
-      clear();
-    }
-    const target = reelIsOpen() ? actions() : null;
-    const source = target ? nativeSave(target) : null;
-    const native = source;
-    if (source !== selectedSave) {
-      operation++;
-      selectedSave = source;
-      setState(source ? (nativeState(source) === "saved" ? "saved" : nativeState(source) === "unsaved" ? "unsaved" : "error") : "error");
-    } else if (state !== "loading") {
-      const observed = nativeState(source);
-      if (observed === "saved" && state !== "saved") setState("saved");
-      if (observed === "unsaved" && state === "saved") setState("unsaved");
-      if (observed === "unknown" && state !== "error") setState("error");
-    }
-    if (!target || !native || !native.isConnected) {
-      clear();
+    const active = reelIsOpen() ? activeBookmark() : null;
+    const source = active?.source ?? null;
+    const identity = active?.identity ?? "";
+    if (!source) {
+      if (selectedSave || mount) {
+        operation++;
+        clear();
+      }
+      activeReel = "";
       return;
     }
-    if (anchor === native && mount?.host.isConnected && mount.host.parentNode === native.parentNode) return;
+    const changed = source !== selectedSave || identity !== activeReel;
+    if (changed) {
+      operation++;
+      // Dispose the old portal before rebinding to the newly active Reel.
+      clear();
+      activeReel = identity;
+      selectedSave = source;
+      const observed = nativeState(source);
+      state = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
+    } else if (state !== "loading") {
+      const observed = nativeState(source);
+      const next = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
+      if (next !== state) setState(next);
+    }
+    if (mount?.host.isConnected && anchor === source) return;
     clear();
-    anchor = native;
-    // React owns the interactive button; keep the mount beside native controls.
+    selectedSave = source;
+    anchor = source;
     const host = document.createElement("span");
     host.dataset.rodCollectionAction = "true";
-    native.parentNode!.insertBefore(host, native.nextSibling);
+    source.parentNode?.insertBefore(host, source.nextSibling);
+    if (!host.isConnected) return;
     const dispose = ctx.ui.mountReact(
-      <ReelBookmarkButton state={state} onActivate={() => void send()} />,
+      <ReelBookmarkButton state={state} disabled={state === "error"} onActivate={() => void send()} />,
       host,
     );
     mount = { host, dispose };
-    mount.host.dataset.rodCollectionAction = "true";
-    mount.host.style.display = "inline-flex";
+    host.style.display = "inline-flex";
   }
   ctx.observe(
     document.documentElement,
