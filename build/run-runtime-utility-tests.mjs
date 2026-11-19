@@ -3,8 +3,10 @@ import { join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = new URL("../tests/", import.meta.url);
-const allowed = /(?:^|[-_.])(runtime|utilities|utility|utils|parser|codemod|ast|storage|config|build|pr-ci-scope)(?:[-_.]|$)/i;
-const prohibited = /(?:component|userscript|solid|react-ui|design-system|visual|render|integration|boot|feature|benchmark|playground|shadow-mount)/i;
+const allowed =
+  /(?:^|[-_.])(runtime|utilities|utility|utils|parser|codemod|ast|storage|config|build|pr-ci-scope)(?:[-_.]|$)/i;
+const prohibited =
+  /(?:component|userscript|solid|react-ui|design-system|visual|render|integration|boot|feature|benchmark|playground|shadow-mount)/i;
 const suites = [];
 
 async function walk(dir) {
@@ -26,5 +28,8 @@ if (!suites.length) {
   process.exit(1);
 }
 console.log("Runtime and utility suites:", suites.join(", "));
-const result = spawnSync("npx", ["vitest", "run", ...suites], { stdio: "inherit", shell: process.platform === "win32" });
+const result = spawnSync("npx", ["vitest", "run", ...suites], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+});
 process.exit(result.status ?? 1);
