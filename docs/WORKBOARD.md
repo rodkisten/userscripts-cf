@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 menu/Actions integration (unverified):** Radix menu view and per-script/global menu facade now accept the bundle shared portal adapter. Instagram Rod Actions passes `ctx.ui.mountReact` adapter. Must verify TypeScript, formatting, runtime/AST tests, build, portal lifecycle and independent installs. Remaining direct `createRoot` userscripts must migrate; do not mark single-root done yet.
+
+
 - [ ] **2026-11-19 Instagram/Reel and Actions:** Reel bookmark now delegates to `ctx.ui.mountReact` instead of calling `createRoot`; validate rerender/cleanup and types. Rod Actions now accepts optional `mountSharedReact`, but the consuming installation path must pass it; standalone fallback still creates a root. Next: migrate menu-view and wire Actions, then validate TypeScript/build and actual root counts.
 
 
