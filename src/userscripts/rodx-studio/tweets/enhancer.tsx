@@ -657,14 +657,15 @@ export function initializeDeckResultEnhancer(): void {
           DOM_SELECTORS.resultActionsByClass(CSS_CLASSES.resultActions),
         );
         if (!actions) {
-          actions = (
-            <div className={CSS_CLASSES.resultActions}>
-              <button
-                type="button"
-                data-rodx-expand={DATA_ATTRS.expand}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
+          actions = document.createElement("div");
+          actions.className = CSS_CLASSES.resultActions;
+          const expand = document.createElement("button");
+          expand.type = "button";
+          expand.dataset.rodxExpand = DATA_ATTRS.expand;
+          expand.textContent = UI_TEXTS.expandSymbol;
+          expand.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
                   const anchor =
                     article
                       .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
@@ -676,24 +677,19 @@ export function initializeDeckResultEnhancer(): void {
                     return;
                   }
                   anchor.click();
-                }}
-              >
-                {UI_TEXTS.expandSymbol}
-              </button>
-              <button
-                type="button"
-                data-rodx-read-btn={DATA_ATTRS.readBtn}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopPropagation();
+          });
+          const read = document.createElement("button");
+          read.type = "button";
+          read.dataset.rodxReadBtn = DATA_ATTRS.readBtn;
+          read.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
                   if (state.seen.has(id)) state.seen.delete(id);
                   else state.seen.set(id, Date.now());
                   Seen.flushSoon?.();
                   setSeen(article, id);
-                }}
-              />
-            </div>
-          ) as HTMLDivElement;
+          });
+          actions.append(expand, read);
 
           const nativeActions = findActions(article);
           if (nativeActions) nativeActions.append(actions);
