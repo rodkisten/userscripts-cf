@@ -70,9 +70,11 @@ case "$mode" in
         echo "$scope_json"
         mapfile -t scoped_tests < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.tests||[])console.log(t)' "$scope_json")
         mapfile -t scoped_builds < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.builds||[])console.log(t)' "$scope_json")
-        if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]] && [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
-          if [[ "${scoped_builds[0]}" == all ]]; then npm run build
-          else
+        if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]]; then
+          if [[ "${scoped_builds[0]}" == all ]]; then
+            # "all" is intentionally a single full build in this job, never a matrix target.
+            npm run build
+          elif [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
             targets="$(IFS=,; echo "${scoped_builds[*]}")"
             node build/build.mjs "--targets=$targets"
           fi
