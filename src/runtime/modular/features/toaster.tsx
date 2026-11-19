@@ -1,6 +1,5 @@
 /** @jsxImportSource react */
 import { ToasterView } from "./toaster-view.js";
-import { createRoot, type Root } from "react-dom/client";
 import type { ReactElement } from "react";
 import { toast as sonner } from "sonner";
 
@@ -12,20 +11,15 @@ type SharedMount = (
   update: (component: ReactElement) => void;
   dispose: () => void;
 };
-export function createToasterFeature(mountSharedReact?: SharedMount) {
-  let root: Root | undefined;
+export function createToasterFeature(mountSharedReact: SharedMount) {
   let sharedMount: ReturnType<SharedMount> | undefined;
   let host: HTMLDivElement | undefined;
   function ensureMounted() {
-    if (root || sharedMount || typeof document === "undefined") return;
+    if (sharedMount || typeof document === "undefined") return;
     host = document.createElement("div");
     host.dataset.rodToaster = "sonner";
     document.body.append(host);
-    if (mountSharedReact) sharedMount = mountSharedReact(<ToasterView />, host);
-    else {
-      root = createRoot(host);
-      root.render(<ToasterView />);
-    }
+    sharedMount = mountSharedReact(<ToasterView />, host);
   }
   function show(message: unknown, options?: Record<string, unknown>) {
     ensureMounted();
@@ -68,10 +62,8 @@ export function createToasterFeature(mountSharedReact?: SharedMount) {
       configure: (_options?: Record<string, unknown>) => toast,
       destroy() {
         sonner.dismiss();
-        root?.unmount();
         sharedMount?.dispose();
         sharedMount = undefined;
-        root = undefined;
         host?.remove();
         host = undefined;
       },

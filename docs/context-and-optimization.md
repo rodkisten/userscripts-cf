@@ -11,14 +11,21 @@ flowchart TD
     A["createRuntime(definitions, bridge, host)"] --> B["reconcile(): identify eligible scripts"]
     B --> C["context(definition): create abort signal, cleanups and ScriptContext"]
     C --> D["definition.module.init(ctx)"]
-    D --> E["AST: useContext() and useRuntime() become ctx"]
-    D --> F["ctx.ui.mountSolid(component)"]
-    F --> G["RuntimeProvider receives getContext() of owning instance"]
-    G --> H["Solid useContext(ScriptScope)"]
+    D --> E["Rod AST: context-bound helpers resolve to local ctx"]
+    D --> F["ctx.ui.mountReact(component)"]
+    D --> M["ctx.menu.open/dropdown"]
+    M --> N["Runtime-owned shared mount + portal registry"]
+    D --> T["ctx.toaster / Rod Dock / Page REPL / feature portals"]
+    T --> N
+    N --> O["ctx.onDispose removes menu portal"]
+    F --> G["RuntimeProvider receives the owning ScriptContext"]
+    G --> H["React useContext(ScriptScope)"]
     D --> I["ctx.signal / ctx.onDispose / ctx.listen"]
     E --> J["ctx.dispose(): abort + cleanup + remove script-owned state"]
     H --> J
     I --> J
+    R["One runtime-owned React root"] --> F
+    J --> K["Runtime teardown: destroy shared toaster, clear portals, unmount root"]
 ```
 
 ### Where the value is assigned
@@ -27,7 +34,7 @@ flowchart TD
 2. `reconcile()` calls `context(definition)` for **each eligible script instance**. This creates a fresh `AbortController`, cleanup list and the actual `const scriptContext: ScriptContext = { ... }`.
 3. The context factory returns that object, then `reconcile()` calls `await definition.module.init(ctx)`. This is the explicit ownership boundary.
 4. **Compile-time path:** `build/runtime-helpers.mjs` rewrites unshadowed, zero-argument `useContext()` and `useRuntime()` calls inside lexically bound `init(ctx)` scopes to the local `ctx`; `useRuntimeWorld()` becomes `ctx.events.shared`. Destructuring, aliases and nested callbacks can close over that same local binding.
-5. **Solid path:** `ctx.ui.mountSolid` wraps the component in `RuntimeProvider`. `createCoreRuntime` supplies a per-instance `getContext()` closure to `createSpecificContext`; after `Object.assign(baseContext, specificContext)`, this closure resolves the **same** completed `ScriptContext`. It must never point to a module-global or uninitialized placeholder. `src/core/runtime-context.ts` reads it through Solid's context/owner tree.
+5. **React path:** `ctx.ui.mountReact` and `ctx.menu.open/dropdown` both delegate to the bundle-owned portal registry. Menus require the shared runtime mount adapter; they never create a fallback `createRoot()`. Each menu handle is registered with the owning context cleanup list, so leaving the matching route removes only that context's menu portal. The `RuntimeProvider` is attached inside each owned script portal and receives the same completed `ScriptContext`. Sonner, Rod Dock, Page REPL, GitHub directory tree and RodX social icons also use this registry. A runtime that has no React mount adapter does not expose menu/toaster rather than creating independent roots.
 6. When the script stops matching or the runtime closes, `ctx.dispose()` aborts the signal, runs registered cleanup callbacks, and removes instance-owned state. A later activation receives a **new** context.
 
 ```ts
@@ -44,9 +51,9 @@ export default {
 };
 ```
 
-### Solid provider regression and limitations (November 2026)
+### Historical Solid provider regression (November 2026)
 
-The provider previously used an uninitialized `specificContextRef` declared after a return statement. Commit `87f1f754d37e803a5430198f7614b429dfdce37f` replaces this with a closure bound to the script instance. A mounted Solid descendant can now resolve its owner through `useContext()` once the instance has been assembled. The closure must not be called during context construction, before `Object.assign` finishes. The instance lifecycle still owns mounting and disposal.
+The earlier Solid provider used an uninitialized `specificContextRef`; commit `87f1f754d37e803a5430198f7614b429dfdce37f` replaced it with an instance-bound closure. This is historical context only. Solid is no longer the active UI runtime; current interactive mounts use React and the bundle-owned portal registry.
 
 **Verification status:** the release typecheck failed in GitHub Actions run 44195003191 with unrelated and existing errors across runtime, Solid UI and userscripts, including missing `ScriptContext` export and feature flag declarations. This is **not** a green validation of the provider fix. Add a targeted provider lifecycle regression test (including two simultaneous instances and disposal) before claiming this migration complete.
 
@@ -266,3 +273,10 @@ flowchart TD
 ```
 
 A mounted React descendant reads the owning provider; asynchronous callbacks use `bindRuntime(ctx)`. The binding throws after the instance signal aborts. Two simultaneous instances must not share a mutable active-context pointer. Regression coverage was added in `tests/react-runtime-context.test.ts`, but **tests have not been run**; full isolation remains blocked because the React entry still imports the legacy runtime implementation. No claim of a green React build is made.
+
+
+### React root and shared UI ownership (PR #115)
+
+The React runtime owns one root for the lifetime of a runtime instance. `ctx.ui.mountReact` and shared runtime UI (menu, toaster, Dock/Actions adapters) register portals in that root; feature-level teardown removes only the portal owned by that feature. Runtime teardown first disposes active script contexts, then destroys the runtime-owned Sonner toaster, and finally clears the portal registry and unmounts the root. The toaster cleanup is covered by `tests/runtime.test.js`; it is a runtime lifecycle test, not a UI/component test.
+
+Rod AST was reviewed for this change: no `ctx` signature, helper rewrite, or source transformation changed, so no AST transform or fixture matrix entry is required. The runtime teardown regression test verifies the new ownership cleanup.

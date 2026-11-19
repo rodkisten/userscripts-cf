@@ -1,7 +1,6 @@
 import { createBridge } from "./bridge.js";
 import { mountReddit } from "./reddit-adapter.tsx";
 import { mountSoundgasm } from "./soundgasm-adapter.tsx";
-import { createRoot } from "react-dom/client";
 import { css } from "./Audiochan.module.css";
 
 export default {
@@ -23,14 +22,14 @@ export default {
         shadow.append(sheet);
         const container = document.createElement("div");
         shadow.append(container);
-        const root = createRoot(container);
-        root.render(
+        const dispose = ctx.ui.mountReact(
           <a href={post} rel="noopener noreferrer">
             ↶ Voltar ao post no Reddit
           </a>,
+          container,
         );
         ctx.onDispose(() => {
-          root.unmount();
+          dispose();
           host.remove();
         });
         return;

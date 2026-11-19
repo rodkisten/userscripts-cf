@@ -110,7 +110,7 @@ export type ScriptContext = Record<string, unknown> & {
     style(css: string): HTMLStyleElement;
     pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
-    mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
+    mountReact(component: import("react").ReactElement, container?: Element | ShadowRoot): () => void;
   };
   readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
   readonly observe: (
@@ -166,11 +166,11 @@ export function initializeRodFeatures(
 ) {
   return {
     menu:
-      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__
+      (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) && mountSharedReact
         ? createMenuFeature({ mountSharedReact })
         : undefined,
     toaster:
-      typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
+      (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) && mountSharedReact
         ? createToasterFeature(mountSharedReact)
         : undefined,
     storage: createStorageFeature(host),
@@ -667,11 +667,13 @@ export function createCoreRuntime(
         })
       : {};
 
-    const instanceMenu = createMenuFeature({
-      container: ensureUIRoot,
-      onDispose,
-      mountSharedReact: options?.mountSharedReact,
-    });
+    const instanceMenu = options?.mountSharedReact
+      ? createMenuFeature({
+          container: ensureUIRoot,
+          onDispose,
+          mountSharedReact: options.mountSharedReact,
+        })
+      : undefined;
 
     const baseContext = {
       id: definition.id,
@@ -922,6 +924,9 @@ export function createCoreRuntime(
       await scheduled;
 
       for (const instance of active.values()) await instance.context.dispose();
+      // The toaster is runtime-owned (shared across script contexts), so release it
+      // only after every context has completed its own cleanup.
+      rod.toaster?.destroy();
       active.clear();
       failures.clear();
       stateValues.clear();

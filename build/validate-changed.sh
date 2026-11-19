@@ -70,9 +70,12 @@ case "$mode" in
         echo "$scope_json"
         mapfile -t scoped_tests < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.tests||[])console.log(t)' "$scope_json")
         mapfile -t scoped_builds < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.builds||[])console.log(t)' "$scope_json")
-        if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]] && [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
-          if [[ "${scoped_builds[0]}" == all ]]; then npm run build
-          else
+        if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]]; then
+          if [[ "${scoped_builds[0]}" == all ]]; then
+            # "all" is intentionally a single full build in this job, never a matrix target.
+            npm run build
+            unset RUNTIME_TEST_SKIP_DIST
+          elif [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
             targets="$(IFS=,; echo "${scoped_builds[*]}")"
             node build/build.mjs "--targets=$targets"
           fi
@@ -99,7 +102,34 @@ case "$mode" in
       echo "Shared infrastructure changed: running full validation."
       npm run typecheck
       npm run lint
-      npm run build
+      export RUNTIME_TEST_SKIP_DIST=true
+      # Full validation checks all shared contracts, but only builds affected bundles
+      # unless the bundler/dependency configuration itself changed.
+      if [[ -f changed-files.txt ]] && ! grep -Eq '^(build/(build\\.mjs|runtime-graph\\.mjs|run-runtime-utility-tests\\.mjs)|package(-lock)?\\.json$|userscripts\\.config\\.js$|vite\\.config\\.)' changed-files.txt; then
+        node --input-type=module <<'NODE'
+import fs from "node:fs/promises";
+import definitions from "./userscripts.config.js";
+import { analyzeRuntimeGraph } from "./build/runtime-graph.mjs";
+const changed = (await fs.readFile("changed-files.txt", "utf8")).trim().split("\\n").filter(f => f.startsWith("src/"));
+const affected = [];
+for (const definition of definitions) {
+  const graph = await analyzeRuntimeGraph(definition.entry);
+  if (changed.some(file => graph.files.includes(file))) affected.push(definition.id);
+}
+const targets = [...new Set(affected.flatMap(id => [id, ...(definitions.find(d => d.id === id)?.unified === false ? [] : ["unified"])]))];
+console.log("Affected userscript builds:", targets.join(", ") || "(none)");
+if (targets.length) {
+  const { spawnSync } = await import("node:child_process");
+  const result = spawnSync(process.execPath, ["build/build.mjs", `--targets=${targets.join(",")}`], { stdio: "inherit" });
+  if (result.error) throw result.error;
+  process.exit(result.status ?? 1);
+}
+NODE
+      else
+        echo "Bundler or dependency configuration changed: building all userscripts."
+        npm run build
+        unset RUNTIME_TEST_SKIP_DIST
+      fi
       # Only runtime and utility suites are permitted (docs/testing-policy.md).
       npm run test:unit
       npm run test:lab
@@ -150,13 +180,14 @@ for (const definition of definitions) {
     reasons[definition.id] = matches;
   }
 }
-const report = { changed, affected, reasons, targets: [...new Set(affected.flatMap(id => [id, 'standalone', ...(definitions.find(d => d.id === id)?.unified === false ? [] : ['unified'])]))] };
+const report = { changed, affected, reasons, targets: [...new Set(affected.flatMap(id => [id, ...(definitions.find(d => d.id === id)?.unified === false ? [] : ['unified'])]))] };
 await fs.writeFile('affected-userscripts.json', JSON.stringify(report, null, 2) + '\n');
 console.log('Affected userscripts:', affected.join(', ') || '(no graph matches)');
 const summary = ['#### Dependency graph', ...affected.map(id => '- \`' + id + '\` ← ' + reasons[id].map(f => '\`' + f + '\`').join(', '))];
 await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
 NODE
     fi
+    export RUNTIME_TEST_SKIP_DIST=true
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
       if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
@@ -165,10 +196,11 @@ NODE
           echo "Building affected targets: $targets"
           node build/build.mjs "--targets=$targets"
         else
-          npm run build
+          echo "No affected userscript entrypoints; skipping bundle build."
         fi
       else
         npm run build
+        unset RUNTIME_TEST_SKIP_DIST
       fi
     fi
     selected_tests=("${changed_tests[@]}")

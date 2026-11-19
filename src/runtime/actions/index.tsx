@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles, { css } from "./Launcher.module.css";
@@ -10,6 +9,7 @@ export type RodActionsModule = { id: string; title: string; tabs: RodActionsTab[
 export type RodActionsHub = {
   register: (module: RodActionsModule) => () => void;
   open: (tabId?: string) => void;
+  dispose: () => void;
 };
 declare global {
   interface Window {
@@ -115,12 +115,19 @@ function ActionsView({
 
 export function installRodActions(
   _menu?: unknown,
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ): RodActionsHub {
-  if (window.__RodActions) return window.__RodActions;
+  // A detached host means the previous singleton can no longer render. Recreate it
+  // instead of returning a stale hub after SPA navigation or external DOM cleanup.
+  const existing = window.__RodActions;
+  if (existing && document.getElementById("rod-actions-hub")) return existing;
+  if (existing) existing.dispose();
   const modules = new Map<string, RodActionsModule>();
   const registrations = new Map<string, symbol>();
   const listeners = new Set<() => void>();
+  let disposed = false;
+  let unmount: (() => void) | undefined;
+  let host: HTMLElement;
   let selected = "";
   const entries = (): Entry[] =>
     [...modules.values()].flatMap((module) =>
@@ -133,6 +140,7 @@ export function installRodActions(
   const notify = () => listeners.forEach((listener) => listener());
   const hub: RodActionsHub = {
     register(module) {
+      if (disposed) throw Error("Rod Actions has been disposed");
       if (!module.id || !module.tabs.length) throw Error("Rod Actions requires module id and tabs");
       const token = Symbol(module.id);
       registrations.set(module.id, token);
@@ -143,16 +151,29 @@ export function installRodActions(
         registrations.delete(module.id);
         modules.delete(module.id);
         notify();
+        // Release the shared hub when its final owning module unregisters.
+        if (modules.size === 0) hub.dispose();
       };
     },
     open(tabId) {
+      if (disposed) return;
       const tabs = entries();
       if (!tabs.length) return;
       selected = tabs.some((tab) => tab.key === tabId) ? tabId! : tabs[0].key;
       notify();
     },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      unmount?.();
+      listeners.clear();
+      registrations.clear();
+      modules.clear();
+      host.remove();
+      if (window.__RodActions === hub) delete window.__RodActions;
+    },
   };
-  const host = document.createElement("div");
+  host = document.createElement("div");
   host.id = "rod-actions-hub";
   (document.body || document.documentElement).append(host);
   const shadow = host.attachShadow({ mode: "open" });
@@ -175,8 +196,8 @@ export function installRodActions(
       }}
     />
   );
-  if (mountSharedReact) mountSharedReact(view, mount);
-  else createRoot(mount).render(view);
+  const shared = mountSharedReact(view, mount);
+  unmount = () => shared.dispose();
   window.__RodActions = hub;
   const clipboard = (window as Window & { __RodClipboard?: ClipboardApi }).__RodClipboard;
   if (clipboard)

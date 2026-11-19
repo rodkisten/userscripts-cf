@@ -23,13 +23,59 @@ async function walk(dir) {
 }
 await walk(root.pathname);
 suites.sort();
+if (process.env.RUNTIME_TEST_SKIP_DIST === "true") {
+  const index = suites.indexOf("tests/build.test.js");
+  if (index !== -1) suites.splice(index, 1);
+  console.log("Skipping dist-dependent build tests because no full distribution was built.");
+}
 if (!suites.length) {
   console.error("No eligible runtime/utility test suites found. Refusing silent success.");
   process.exit(1);
 }
 console.log("Runtime and utility suites:", suites.join(", "));
-const result = spawnSync("npx", ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...suites], {
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
-process.exit(result.status ?? 1);
+const timeoutMs = Number(process.env.RUNTIME_TEST_TIMEOUT_MS ?? 180_000);
+if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000) {
+  console.error("RUNTIME_TEST_TIMEOUT_MS must be a positive integer >= 1000");
+  process.exit(2);
+}
+const startedAt = Date.now();
+const isolateSuites = process.env.RUNTIME_TEST_ISOLATE_SUITES !== "false";
+const batches = isolateSuites ? suites.map((suite) => [suite]) : [suites];
+for (const [index, batch] of batches.entries()) {
+  const batchStartedAt = Date.now();
+  console.log(
+    `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
+  );
+  console.log(
+    `Starting Vitest (timeout: ${timeoutMs}ms, isolated: ${isolateSuites})`,
+  );
+  const result = spawnSync(
+    "npx",
+    ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...batch],
+    {
+      stdio: "inherit",
+      shell: process.platform === "win32",
+      timeout: timeoutMs,
+      killSignal: "SIGKILL",
+    },
+  );
+  console.log(
+    `Vitest batch finished after ${Date.now() - batchStartedAt}ms ` +
+      `(exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
+  );
+  if (result.error) {
+    console.error(`Vitest execution error: ${result.error.message}`);
+    if (result.error.code === "ETIMEDOUT") {
+      console.error(`Vitest exceeded ${timeoutMs}ms on: ${batch.join(", ")}`);
+    }
+  }
+  console.log("::endgroup::");
+  if (result.status !== 0 || result.error) {
+    console.error(
+      `Runtime suite failed: ${batch.join(", ")} ` +
+        `(total elapsed: ${Date.now() - startedAt}ms)`,
+    );
+    process.exit(1);
+  }
+}
+console.log(`All ${suites.length} runtime/utility suites passed in ${Date.now() - startedAt}ms`);

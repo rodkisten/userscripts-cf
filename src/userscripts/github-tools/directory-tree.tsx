@@ -1,6 +1,4 @@
 import { useState, useSyncExternalStore } from "react";
-import { createRoot } from "react-dom/client";
-import { flushSync } from "react-dom";
 import { materialIcon } from "./material-icons.ts";
 import styles, { css } from "./GitHub.module.css";
 
@@ -315,8 +313,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   style.textContent = css;
   shadow.append(style);
   container.parentNode!.insertBefore(host, container);
-  const root = createRoot(shadow);
-  flushSync(() => root.render(<DirectoryTreeView />));
+  const disposePortal = ctx.ui.mountReact(<DirectoryTreeView />, shadow);
   host.dataset.ghftTreeHost = "";
   let originalDisplay = (container as HTMLElement).style.display;
   const load = async () => {
@@ -406,7 +403,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   return () => {
     controller.abort();
     (container as HTMLElement).style.display = originalDisplay;
-    root.unmount();
+    disposePortal();
     host.remove();
   };
 }

@@ -26,6 +26,19 @@ function createRuntime(definitions, bridge, host, beforeCreate) {
   return host.RuntimeFixture.createRuntime(definitions, bridge, host);
 }
 import { matchURL } from "../src/core/match.js";
+import { initializeRodFeatures } from "../src/core/runtime.js";
+
+test("React menus are unavailable without a runtime-owned shared mount", async () => {
+  const host = new Window({ url: "https://example.com/" });
+  const legacyFeatures = initializeRodFeatures(host);
+  assert.equal(legacyFeatures.menu, undefined);
+  assert.equal(legacyFeatures.toaster, undefined);
+  const reactFeatures = initializeRodFeatures(host, () => ({ update() {}, dispose() {} }));
+  assert.equal(typeof reactFeatures.menu?.open, "function");
+  assert.equal(typeof reactFeatures.menu?.dropdown, "function");
+  assert.equal(typeof reactFeatures.toaster?.destroy, "function");
+  await host.happyDOM.abort();
+});
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
   assert.equal(matchURL("https://*.example.com/*", "https://example.com/a"), true);
@@ -233,4 +246,28 @@ test("ctx.query shares a lazy QueryClient between scripts and disposes on runtim
   assert.deepEqual(JSON.parse(JSON.stringify(clients[1].getQueryData(["shared", "test"]))), { ok: true });
   await app.dispose();
   assert.equal(clients[0].getQueryData(["shared", "test"]), undefined);
+});
+
+test("runtime disposal releases the shared React toaster host", async () => {
+  const host = new Window({ url: "https://example.com/" });
+  const app = createRuntime(
+    [
+      {
+        id: "toaster-owner",
+        matches: ["https://example.com/*"],
+        module: {
+          init(ctx) {
+            ctx.toaster?.success("runtime lifecycle");
+          },
+        },
+      },
+    ],
+    { call: async () => undefined },
+    host,
+  );
+  await app.ready;
+  assert.ok(host.document.querySelector("[data-rod-toaster='sonner']"));
+  await app.dispose();
+  assert.equal(host.document.querySelector("[data-rod-toaster='sonner']"), null);
+  await host.happyDOM.abort();
 });

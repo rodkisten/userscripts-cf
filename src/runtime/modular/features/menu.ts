@@ -44,28 +44,26 @@ export interface MenuSchema {
   initialValues?: Record<string, unknown>;
 }
 
-export const menu = Object.freeze({
-  open: openRadixDialog,
-  dropdown: openRadixDropdown,
-  configure: (_options?: Record<string, unknown>) => menu,
-});
 export interface MenuFeatureOptions {
   /** Lazy so the instance ShadowRoot is created only when a menu opens. */
   container?: () => ShadowRoot | HTMLElement;
   /** The owning ScriptContext registers every menu handle for disposal. */
   onDispose?: (cleanup: () => void) => void;
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void };
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void };
 }
 
-export function createMenuFeature(options: MenuFeatureOptions = {}) {
-  if (!options.container && !options.onDispose && !options.mountSharedReact) return menu;
+export function createMenuFeature(options: MenuFeatureOptions) {
 
   const own = <T extends { close: () => void; dispose: () => void }>(handle: T): T => {
     options.onDispose?.(handle.dispose);
     return handle;
   };
 
-  return Object.freeze({
+  const feature: {
+    open(schema: MenuSchema): ReturnType<typeof openRadixDialog>;
+    dropdown(dropdownOptions: DropdownOptions): ReturnType<typeof openRadixDropdown>;
+    configure(options?: Record<string, unknown>): typeof feature;
+  } = {
     open(schema: MenuSchema) {
       return own(
         openRadixDialog(
@@ -88,6 +86,7 @@ export function createMenuFeature(options: MenuFeatureOptions = {}) {
         ),
       );
     },
-    configure: menu.configure,
-  });
+    configure: (_options?: Record<string, unknown>) => feature,
+  };
+  return Object.freeze(feature);
 }

@@ -12,7 +12,12 @@ import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shad
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-type PortalEntry = { id: number; target: HTMLElement; node: ReactNode; context?: ReactScriptContext };
+type PortalEntry = {
+  id: number;
+  target: Element | ShadowRoot;
+  node: ReactNode;
+  context?: ReactScriptContext;
+};
 function createPortalRegistry() {
   const entries = new Map<number, PortalEntry>();
   const listeners = new Set<() => void>();
@@ -173,7 +178,7 @@ export function createRuntime(
             onDispose(dispose);
             return dispose;
           },
-          mountReact(component: ReactElement, container?: HTMLElement) {
+          mountReact(component: ReactElement, container?: Element | ShadowRoot) {
             if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
             const mountPoint = container ?? host.document.createElement("div");
             const owned = !container;
@@ -186,7 +191,7 @@ export function createRuntime(
               disposed = true;
               ownedPortals.delete(id);
               registry.remove(id);
-              if (owned) mountPoint.remove();
+              if (owned) (mountPoint as Element).remove();
             };
             try {
               ensureReactHost();

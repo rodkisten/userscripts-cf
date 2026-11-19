@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
+import type { ReactElement } from "react";
 
 type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
@@ -14,7 +13,10 @@ const pretty = (value: unknown) => {
   }
 };
 
-export function mountPanel(container: HTMLElement) {
+export function mountPanel(
+  container: HTMLElement,
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => () => void,
+) {
   let updateRecords: (items: RecordItem[]) => void = () => {};
   let updateMethods: (items: MethodItem[]) => void = () => {};
   let updateHistory: (items: HistoryItem[]) => void = () => {};
@@ -201,13 +203,12 @@ export function mountPanel(container: HTMLElement) {
       </div>
     );
   }
-  const root = createRoot(container);
-  flushSync(() => root.render(<Panel />));
+  const dispose = mountSharedReact(<Panel />, container);
   return {
     setRecords: (items: RecordItem[]) => updateRecords(items),
     setMethods: (items: MethodItem[]) => updateMethods(items),
     setHistory: (items: HistoryItem[]) => updateHistory(items),
     callbacks,
-    dispose: () => root.unmount(),
+    dispose,
   };
 }

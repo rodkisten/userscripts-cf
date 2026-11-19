@@ -1,6 +1,5 @@
 /** @jsxImportSource react */
 import { useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { RodMenu, RodMenuHost } from "./index.js";
@@ -249,11 +248,11 @@ export function installRodDock({
   modules?: DockModule[];
   scripts?: DockScript[];
   registerMenu?: RegisterMenu;
-  mountSharedReact?: (
+  mountSharedReact: (
     component: ReactElement,
     container: HTMLElement,
   ) => { update: (component: ReactElement) => void; dispose: () => void };
-} = {}) {
+}) {
   const host = document.createElement("div");
   host.dataset.rodDock = "";
   host.style.cssText = "position:fixed;inset:0;width:0;height:0;z-index:2147483646;pointer-events:none";
@@ -261,7 +260,6 @@ export function installRodDock({
   const mountPoint = document.createElement("div");
   const portalPoint = document.createElement("div");
   shadow.append(mountPoint, portalPoint);
-  const root = mountSharedReact ? undefined : createRoot(mountPoint);
   let sharedMount: ReturnType<NonNullable<typeof mountSharedReact>> | undefined;
   let disposed = false;
   let currentModules = modules;
@@ -273,10 +271,8 @@ export function installRodDock({
         controller={{ modules: currentModules, scripts, open: isOpen, setOpen, portal: portalPoint }}
       />
     );
-    if (mountSharedReact) {
-      if (sharedMount) sharedMount.update(view);
-      else sharedMount = mountSharedReact(view, mountPoint);
-    } else root?.render(view);
+    if (sharedMount) sharedMount.update(view);
+    else sharedMount = mountSharedReact(view, mountPoint);
   };
   const setOpen = (next: boolean) => {
     isOpen = next;
@@ -331,7 +327,6 @@ export function installRodDock({
       document.removeEventListener("rod-dock:menu", onMenu);
       RodMenu.close();
       sharedMount?.dispose();
-      root?.unmount();
       host.remove();
       if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")
         gmMenu.GM_unregisterMenuCommand(command);

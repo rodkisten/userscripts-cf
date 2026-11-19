@@ -1,7 +1,7 @@
 import TelegramIcon from "../../../assets/icons/social-telegram.svg?component";
 import WhatsappIcon from "../../../assets/icons/social-whatsapp.svg?component";
 import InstagramIcon from "../../../assets/icons/social-instagram.svg?component";
-import { createRoot } from "react-dom/client";
+import { mountView } from "../ui/solid-mount.tsx";
 import { RODX_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-links-social-1.css?inline";
 export let SocialAppLinks;
@@ -60,7 +60,7 @@ export function initializeDeckSocialAppLinks() {
         icon.className = "rodx-app-icon";
         icon.setAttribute("aria-hidden", "true");
         anchor.insertBefore(icon, anchor.firstChild);
-        createRoot(icon).render(
+        mountView(icon, () =>
           <>
             {app.name === "telegram" ? (
               <TelegramIcon />
