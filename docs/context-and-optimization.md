@@ -15,6 +15,8 @@ flowchart TD
     D --> F["ctx.ui.mountReact(component)"]
     D --> M["ctx.menu.open/dropdown"]
     M --> N["Runtime-owned shared mount + portal registry"]
+    D --> T["ctx.toaster / Rod Dock / Page REPL / feature portals"]
+    T --> N
     N --> O["ctx.onDispose removes menu portal"]
     F --> G["RuntimeProvider receives the owning ScriptContext"]
     G --> H["React useContext(ScriptScope)"]
@@ -32,7 +34,7 @@ flowchart TD
 2. `reconcile()` calls `context(definition)` for **each eligible script instance**. This creates a fresh `AbortController`, cleanup list and the actual `const scriptContext: ScriptContext = { ... }`.
 3. The context factory returns that object, then `reconcile()` calls `await definition.module.init(ctx)`. This is the explicit ownership boundary.
 4. **Compile-time path:** `build/runtime-helpers.mjs` rewrites unshadowed, zero-argument `useContext()` and `useRuntime()` calls inside lexically bound `init(ctx)` scopes to the local `ctx`; `useRuntimeWorld()` becomes `ctx.events.shared`. Destructuring, aliases and nested callbacks can close over that same local binding.
-5. **React path:** `ctx.ui.mountReact` and `ctx.menu.open/dropdown` both delegate to the bundle-owned portal registry. Menus require the shared runtime mount adapter; they never create a fallback `createRoot()`. Each menu handle is registered with the owning context cleanup list, so leaving the matching route removes only that context's menu portal. The `RuntimeProvider` is attached inside each owned portal and receives the same completed `ScriptContext`. A runtime that has no React mount adapter does not expose the menu feature rather than creating an independent root.
+5. **React path:** `ctx.ui.mountReact` and `ctx.menu.open/dropdown` both delegate to the bundle-owned portal registry. Menus require the shared runtime mount adapter; they never create a fallback `createRoot()`. Each menu handle is registered with the owning context cleanup list, so leaving the matching route removes only that context's menu portal. The `RuntimeProvider` is attached inside each owned script portal and receives the same completed `ScriptContext`. Sonner, Rod Dock, Page REPL, GitHub directory tree and RodX social icons also use this registry. A runtime that has no React mount adapter does not expose menu/toaster rather than creating independent roots.
 6. When the script stops matching or the runtime closes, `ctx.dispose()` aborts the signal, runs registered cleanup callbacks, and removes instance-owned state. A later activation receives a **new** context.
 
 ```ts
