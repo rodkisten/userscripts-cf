@@ -25,12 +25,9 @@
 
 - [ ] **2026-11-19 Sonner bridge, unverified:** `createToasterFeature` accepts the shared portal mount from `createCoreRuntime` options; React runtime supplies the bundle-owned adapter. No standalone Sonner root is expected on that path. Fallback for independent callers still creates a root. Verify TypeScript, build, runtime lifecycle and actual standalone root counts before claiming completion.
 
-
 - [ ] **2026-11-19 Dock bridge, unverified:** `build/bundle-runtime.mjs` now supplies `api.mountSharedReact` to standalone Dock, so Dock can render as a portal in the bundle root. `src/runtime/react-ui/rod-dock.tsx` retains standalone fallback for unrelated callers. Audit Sonner and all remaining `createRoot()` sites, confirm TypeScript/build and AST compatibility before checking off single-root acceptance.
 
-
 - [ ] **2026-11-19 bundle-root implementation (unverified):** `src/core/runtime-react.tsx` now creates one renderer per `createRuntime()` call, with module-scoped portal ownership and per-portal `RuntimeProvider`. Standalone/unified/tag bundles reuse it within each world. Must run typecheck, runtime/AST tests and build; ensure no extra roots from Sonner/Dock/feature modules before checking off. Different page/sandbox worlds remain isolated.
-
 
 > **Architecture decision (2026-11-18):** [Single React root + portal registry](react-single-root-portals.md). One root per runtime instance; per-post/per-Reel **portals**, not separate roots. This supersedes any older per-target root wording.
 

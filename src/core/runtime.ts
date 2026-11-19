@@ -160,7 +160,10 @@ export interface RuntimeAPI {
   dispose: () => Promise<void>;
 }
 
-export function initializeRodFeatures(host: Window & typeof globalThis, mountSharedReact?: Parameters<typeof createToasterFeature>[0]) {
+export function initializeRodFeatures(
+  host: Window & typeof globalThis,
+  mountSharedReact?: Parameters<typeof createToasterFeature>[0],
+) {
   return {
     menu:
       typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature() : undefined,
