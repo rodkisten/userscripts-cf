@@ -556,3 +556,154 @@ describe("storage exception boundaries", () => {
     expect(transformRodAst(result.code, "storage-sibling.ts", { storage: "awaited" }).changed).toBe(false);
   });
 });
+
+describe("storage scope regression matrix", () => {
+  it("keeps native awaited access within a nested try/catch boundary", () => {
+    const source =
+      'async function init(ctx) { if (ready) { try { await localStorage.getItem("nested"); } catch { return; } } }';
+    expect(transformRodAst(source, "storage-nested-try.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("keeps native awaited access in a try/finally boundary", () => {
+    const source =
+      'async function init(ctx) { try { await localStorage.removeItem("key"); } finally { cleanup(); } }';
+    expect(transformRodAst(source, "storage-finally-nested.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("migrates independent awaited storage calls after exception handling", () => {
+    const source =
+      'async function init(ctx) { try { await localStorage.getItem("guarded"); } catch {} await localStorage.getItem("plain"); }';
+    const result = transformRodAst(source, "storage-independent.ts", { storage: "awaited" });
+    expect(result.code).toContain('await localStorage.getItem("guarded")');
+    expect(result.code).toContain('await ctx.storage.local.getItem("plain")');
+    expect(transformRodAst(result.code, "storage-independent.ts", { storage: "awaited" }).changed).toBe(
+      false,
+    );
+  });
+});
+
+describe("nearest function ownership for nested closures", () => {
+  it("does not migrate awaited storage from a nested non-async closure", () => {
+    const source =
+      'async function init(ctx) { function nested() { return localStorage.getItem("x"); } return nested(); }';
+    expect(transformRodAst(source, "nested-sync-storage.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("migrates awaited storage from an async closure that captures ctx", () => {
+    const source =
+      'function init(ctx) { const nested = async () => await localStorage.getItem("x"); return nested(); }';
+    const result = transformRodAst(source, "nested-async-storage.ts", { storage: "awaited" });
+    expect(result.code).toContain('await ctx.storage.local.getItem("x")');
+    expect(transformRodAst(result.code, "nested-async-storage.ts", { storage: "awaited" }).changed).toBe(
+      false,
+    );
+  });
+  it("does not migrate a nested async closure inside its own try/catch", () => {
+    const source =
+      'function init(ctx) { const nested = async () => { try { await localStorage.getItem("x"); } catch {} }; return nested(); }';
+    expect(transformRodAst(source, "nested-async-try.ts", { storage: "awaited" }).code).toBe(source);
+  });
+});
+
+describe("runtime context lexical shadowing", () => {
+  it("does not rewrite calls using a shadowed ctx parameter", () => {
+    const source =
+      'function init(ctx) { const nested = (value, ctx) => fetch("/shadowed"); fetch("/outer"); }';
+    const result = transformRodAst(source, "ctx-param-shadow.ts");
+    expect(result.code).toContain('=> fetch("/shadowed")');
+    expect(result.code).toContain('ctx.http.fetch("/outer")');
+  });
+  it("does not rewrite calls inside a block that declares a local ctx", () => {
+    const source = 'function init(ctx) { { const ctx = {}; fetch("/shadowed"); } fetch("/outer"); }';
+    const result = transformRodAst(source, "ctx-block-shadow.ts");
+    expect(result.code).toContain('fetch("/shadowed")');
+    expect(result.code).toContain('ctx.http.fetch("/outer")');
+  });
+  it("keeps captured ctx available in unshadowed nested closures", () => {
+    const source = 'function init(ctx) { const nested = () => fetch("/nested"); }';
+    expect(transformRodAst(source, "ctx-captured.ts").code).toContain('ctx.http.fetch("/nested")');
+  });
+});
+
+describe("context alias shadowing", () => {
+  it("does not rewrite a shadowed context alias in a nested parameter", () => {
+    const source =
+      'function init(context) { const nested = (value, context) => fetch("/shadowed"); fetch("/outer"); }';
+    const result = transformRodAst(source, "context-param-shadow.ts");
+    expect(result.code).toContain('=> fetch("/shadowed")');
+    expect(result.code).toContain('context.http.fetch("/outer")');
+    expect(transformRodAst(result.code, "context-param-shadow.ts").changed).toBe(false);
+  });
+  it("does not rewrite a shadowed context alias in an inner block", () => {
+    const source = 'function init(context) { { const context = {}; fetch("/shadowed"); } fetch("/outer"); }';
+    const result = transformRodAst(source, "context-block-shadow.ts");
+    expect(result.code).toContain('fetch("/shadowed")');
+    expect(result.code).toContain('context.http.fetch("/outer")');
+  });
+});
+
+describe("modern GM capability guards", () => {
+  it("preserves GM.getValue when guarded by typeof GM.getValue", () => {
+    const source = 'function init(ctx) { if (typeof GM.getValue === "function") GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-guard.ts").code).toBe(source);
+  });
+  it("preserves GM.getValue when guarded by indexed typeof GM property", () => {
+    const source = 'function init(ctx) { if (typeof GM["getValue"] === "function") GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-index-guard.ts").code).toBe(source);
+  });
+  it("preserves GM.getValue on the guarded short circuit right side", () => {
+    const source = 'function init(ctx) { return typeof GM.getValue === "function" && GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-short-circuit.ts").code).toBe(source);
+  });
+  it("still migrates an unguarded modern GM call", () => {
+    const source = 'function init(ctx) { GM.getValue("key"); }';
+    const result = transformRodAst(source, "gm-modern-unguarded.ts");
+    expect(result.code).toContain('ctx.gm.modern.getValue("key")');
+    expect(transformRodAst(result.code, "gm-modern-unguarded.ts").changed).toBe(false);
+  });
+});
+
+describe("named dynamic stylesheet migration", () => {
+  it("migrates a complete id + dynamic CSS + head append lifecycle", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.id = ELEMENT_IDS.compactLayoutStyle; node.textContent = extractedCSS1; document.head.appendChild(node); }';
+    const result = transformRodAst(source, "dynamic-style.ts");
+    expect(result.code).toContain("ctx.ui.pageStyle(extractedCSS1, { id: ELEMENT_IDS.compactLayoutStyle });");
+    expect(result.code).not.toContain('document.createElement("style")');
+    expect(transformRodAst(result.code, "dynamic-style.ts").changed).toBe(false);
+  });
+  it("does not rewrite a style whose node is used after append", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.id = "x"; node.textContent = css; document.head.append(node); node.remove(); }';
+    expect(transformRodAst(source, "escaping-style.ts").code).toBe(source);
+  });
+  it("does not rewrite a style inserted in a shadow root", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.id = "x"; node.textContent = css; shadow.append(node); }';
+    expect(transformRodAst(source, "shadow-style.ts").code).toBe(source);
+  });
+});
+
+describe("style lifecycle variants", () => {
+  it("accepts CSS before id and setAttribute for id", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.textContent = extractedCSS1; node.setAttribute("id", ELEMENT_IDS.compactLayoutStyle); document.head.appendChild(node); }';
+    const result = transformRodAst(source, "style-setattribute.ts");
+    expect(result.code).toContain("ctx.ui.pageStyle(extractedCSS1, { id: ELEMENT_IDS.compactLayoutStyle });");
+    expect(transformRodAst(result.code, "style-setattribute.ts").changed).toBe(false);
+  });
+  it("accepts CSS before a direct id assignment", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.innerText = css; node.id = "theme"; document.head.append(node); }';
+    expect(transformRodAst(source, "style-reordered.ts").code).toContain(
+      'ctx.ui.pageStyle(css, { id: "theme" });',
+    );
+  });
+  it("preserves replaceChildren because it clears existing children", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.id = "theme"; node.textContent = css; document.head.replaceChildren(node); }';
+    expect(transformRodAst(source, "style-replacechildren.ts").code).toBe(source);
+  });
+  it("preserves later stylesheet updates to retain the node handle", () => {
+    const source =
+      'function init(ctx) { const node = document.createElement("style"); node.id = "theme"; node.textContent = css; document.head.appendChild(node); node.textContent = nextCss; }';
+    expect(transformRodAst(source, "style-updated.ts").code).toBe(source);
+  });
+});
