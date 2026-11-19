@@ -70,11 +70,32 @@ case "$mode" in
         echo "$scope_json"
         mapfile -t scoped_tests < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.tests||[])console.log(t)' "$scope_json")
         mapfile -t scoped_builds < <(node -e 'const x=JSON.parse(process.argv[1]);for(const t of x.builds||[])console.log(t)' "$scope_json")
+        # Explicit PR scopes select test/build targets, never bypass quality gates.
+        # Check types and style before any bundle or dist-backed integration test.
+        echo "::group::TypeScript and lint"
+        npm run typecheck
+        npm run lint
+        echo "::endgroup::"
         if (( ${#scoped_builds[@]} )) && [[ "${scoped_builds[0]}" != none ]] && [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
           if [[ "${scoped_builds[0]}" == all ]]; then npm run build
           else
             targets="$(IFS=,; echo "${scoped_builds[*]}")"
             node build/build.mjs "--targets=$targets"
+          fi
+        fi
+        # A test-only scope can select dist-driven suites without selecting builds.
+        # Never let tests accidentally consume stale or absent generated bundles.
+        if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
+          needs_dist=false
+          if [[ "${scoped_tests[0]}" == all ]]; then
+            needs_dist=true
+          elif printf '%s\n' "${scoped_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
+            needs_dist=true
+          fi
+          if [[ "$needs_dist" == true ]] && [[ ! -f dist/manifest.json ]]; then
+            echo "::group::Build required by integration test scope"
+            npm run build
+            echo "::endgroup::"
           fi
         fi
         if (( ${#scoped_tests[@]} )) && [[ "${scoped_tests[0]}" != none ]]; then
@@ -173,7 +194,7 @@ NODE
     fi
     if [[ "$build_needed" == true ]]; then
       # Full bundles remain necessary for dist-driven integration tests.
-      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integrated|boot|standalone|page-repl).*\\.test\\.'; then
+      if [[ "$source_changed" == true ]] && [[ -f affected-userscripts.json ]] && ! printf '%s\n' "${changed_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
         targets="$(node -p 'require("./affected-userscripts.json").targets.join(",")')"
         if [[ -n "$targets" ]]; then
           echo "Building affected targets: $targets"
@@ -204,11 +225,20 @@ NODE
     fi
     # Test files named after a userscript directory are selected automatically.
     # Folder-based suites are selected from affected runtime dependency graphs.
+    # A selected integration suite consumes dist/*.user.js or dist/manifest.json.
+    # The dependency graph can be narrower than these cross-script fixtures.
+    if (( ${#selected_tests[@]} )) && printf '%s\n' "${selected_tests[@]}" | grep -Eq '(integration|integrated|boot|standalone|page-repl).*\.test\.'; then
+      if [[ ! -f dist/manifest.json ]]; then
+        echo "::group::Build integration fixtures"
+        npm run build
+        echo "::endgroup::"
+      fi
+    fi
     if (( ${#selected_tests[@]} )); then
-      mapfile -t unique_tests < <(printf '%s\\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
+      mapfile -t unique_tests < <(printf '%s\n' "${selected_tests[@]}" | sed -E 's|^.*(/tests/)|tests/|' | sort -u)
       echo "Selected tests: ${unique_tests[*]}"
       if [[ "${SCRIPT_TESTS_SEPARATE:-false}" == true ]]; then
-        mapfile -t unique_tests < <(printf '%s\\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
+        mapfile -t unique_tests < <(printf '%s\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
       fi
       if (( ${#unique_tests[@]} )); then
         npx vitest run "${unique_tests[@]}" --maxWorkers=2 --passWithNoTests --exclude '**/runtime-startup-benchmark.test.js'
