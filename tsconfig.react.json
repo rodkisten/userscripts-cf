@@ -22,7 +22,6 @@
     "src/runtime/react-ui/types.ts",
     "src/runtime/react-ui/index.tsx",
     "studio/entry.tsx",
-    "studio/examples.ts",
     "src/runtime/react-ui/src/**/*.tsx",
     "src/runtime/react-ui/src/**/*.ts"
   ]
