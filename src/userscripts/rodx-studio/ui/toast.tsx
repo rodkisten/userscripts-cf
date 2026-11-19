@@ -1,12 +1,12 @@
-import { createRoot, type Root } from "react-dom/client";
-import { flushSync } from "react-dom";
+import { mountView, disposeView } from "./solid-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import styles, { css } from "./toast.module.css";
 
 type ToastKind = "info" | "success" | "warning" | "error";
 type ToastState = { message: string; kind: ToastKind };
 let host: HTMLDivElement | undefined;
-let root: Root | undefined;
+let container: HTMLDivElement | undefined;
+let currentToast: ToastState = { message: "", kind: "info" };
 export let rodxToastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export function initializeDeckRodxToastTimer() {
@@ -15,14 +15,14 @@ export function initializeDeckRodxToastTimer() {
 }
 
 function disposeToast() {
-  root?.unmount();
-  root = undefined;
+  if (container) disposeView(container);
+  container = undefined;
   host?.remove();
   host = undefined;
 }
 
 function ensureToast() {
-  if (host?.isConnected && root) return;
+  if (host?.isConnected && container) return;
   disposeToast();
   host = document.createElement("div");
   host.id = "rodx-native-toast";
@@ -30,11 +30,11 @@ function ensureToast() {
   const sheet = document.createElement("style");
   sheet.textContent = css;
   shadow.append(sheet);
-  const container = document.createElement("div");
+  container = document.createElement("div");
   container.id = "rodx-toast";
   shadow.append(container);
   (document.body || document.documentElement).append(host);
-  root = createRoot(container);
+  mountView(container, () => <ToastView {...currentToast} />);
 }
 
 function ToastView({ message, kind }: ToastState) {
@@ -51,7 +51,8 @@ function ToastView({ message, kind }: ToastState) {
 
 export function showRodxToast(message: unknown, kind: ToastKind = "info") {
   ensureToast();
-  flushSync(() => root?.render(<ToastView message={String(message || "")} kind={kind} />));
+  currentToast = { message: String(message || ""), kind };
+  if (container) mountView(container, () => <ToastView {...currentToast} />);
   clearTimeout(rodxToastTimer);
   rodxToastTimer = setTimeout(() => {
     disposeToast();
