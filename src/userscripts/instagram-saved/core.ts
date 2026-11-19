@@ -120,6 +120,7 @@ export async function syncSaved({
 }: SyncOptions) {
   const done = Object.assign(Object.create(null) as Record<string, number>, await load());
   const seen = new Set<string>();
+  let processed = 0;
   let cursor = settings.cursor || "",
     count = 0,
     pages = 0;
@@ -143,6 +144,8 @@ export async function syncSaved({
         seen.add(item.mediaId);
         return !Object.hasOwn(done, item.mediaId);
       });
+    // Never advance the collection cursor past an unprocessed item.
+    // A page is the smallest safe checkpoint with this endpoint.
     for (let offset = 0; offset < items.length; offset += limit) {
       const batch = items.slice(offset, offset + limit);
       let pending = batch;
@@ -179,6 +182,7 @@ export async function syncSaved({
       if (pending.length) {
         throw Error("Limite de tentativas do Relay");
       }
+      processed += batch.length;
       await pause(
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
@@ -196,7 +200,7 @@ export async function syncSaved({
     cursors.add(next);
     cursor = next;
     await onCursor?.(cursor);
-    if (seen.size >= maxItems) {
+    if (processed >= maxItems) {
       break;
     }
     await pause(Math.min(8000, 1000 + pages * 100));
