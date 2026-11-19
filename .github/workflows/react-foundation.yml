@@ -26,6 +26,11 @@ on:
   pull_request:
     paths:
       - "src/core/runtime-react.tsx"
+      - "src/core/portal-registry.ts"
+      - "src/core/disposal.ts"
+      - "tests/runtime-portal-registry.test.ts"
+      - "tests/runtime-cleanup-scope.test.ts"
+      - "tests/runtime.test.js"
       - "src/core/runtime-context-react.tsx"
       - "src/core/runtime-mount-react.tsx"
       - "src/core/react-context-contract.ts"
@@ -69,6 +74,8 @@ jobs:
         run: npx vitest run tests/runtime-cleanup-scope.test.ts
       - name: Test React portal registry lifecycle
         run: npx vitest run tests/runtime-portal-registry.test.ts
+      - name: Test shared React runtime integration
+        run: npx vitest run tests/runtime.test.js
       - name: Check isolated React provider types
         run: npx tsc --noEmit -p tsconfig.react-context.json
       - name: Test React context ownership
