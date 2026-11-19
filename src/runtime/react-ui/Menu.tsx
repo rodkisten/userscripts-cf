@@ -37,10 +37,11 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         aria-describedby={undefined}
         className={`${styles.surface} ${surfaceClass} ${className || ""}`}
       >
-        {(schema.title || schema.subtitle) && (
+        <Dialog.Title className={styles.accessibleTitle}>{schema.title || "Rod Menu"}</Dialog.Title>
+        {(schema.title || schema.subtitle || schema.description) && (
           <div className={styles.header}>
             <div className={styles.titleWrapper}>
-              {schema.title && <Dialog.Title>{schema.title}</Dialog.Title>}
+              {schema.title && <h3>{schema.title}</h3>}
               {(schema.subtitle || schema.description) && <p>{schema.subtitle || schema.description}</p>}
             </div>
             <Dialog.Close className={styles.closeButton} aria-label="Fechar menu">
