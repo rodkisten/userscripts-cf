@@ -28,6 +28,9 @@
 
 ## P1 · React foundation (blocking new feature UI)
 
+- [ ] **2026-11-19 bundle-root implementation (unverified):** `src/core/runtime-react.tsx` now creates one renderer per `createRuntime()` call, with module-scoped portal ownership and per-portal `RuntimeProvider`. Standalone/unified/tag bundles reuse it within each world. Must run typecheck, runtime/AST tests and build; ensure no extra roots from Sonner/Dock/feature modules before checking off. Different page/sandbox worlds remain isolated.
+
+
 > **Architecture decision (2026-11-18):** [Single React root + portal registry](react-single-root-portals.md). One root per runtime instance; per-post/per-Reel **portals**, not separate roots. This supersedes any older per-target root wording.
 
 - [ ] Implement one instance-owned React root and keyed PortalRegistry for all feature UI, with shared providers and ShadowRoot style attachment; validate multiple simultaneous instances and cleanup.
