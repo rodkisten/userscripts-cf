@@ -18,11 +18,13 @@ export const INSPECTOR_CONFIG = Object.freeze({
 export default {
   init(ctx) {
     const subscribers = new Set<() => void>();
+    let revision = 0;
     const subscribe = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
     const signal = <T,>(initial: T): [() => T, (next: T | ((previous: T) => T)) => void] => {
       let value = initial;
       return [() => value, (next) => {
         value = typeof next === "function" ? (next as (previous: T) => T)(value) : next;
+        revision++;
         subscribers.forEach((listener) => listener());
       }];
     };
@@ -309,7 +311,7 @@ export default {
       console.warn("[Rod DOM Inspector] Dock unavailable; standalone launcher remains active", error);
     }
     function InspectorView() {
-      useSyncExternalStore(subscribe, () => [open(), tab(), live(), full(), picking(), selector(), status(), scroll(), depth(), selectionName(), records()] as const);
+      useSyncExternalStore(subscribe, () => revision);
       useEffect(() => {
           const isOpen = open();
           tab();
@@ -334,7 +336,7 @@ export default {
               >
                 🔬
               </button>
-            )})})})}</Show>
+            )}
             {(picking()) && (
               <button
                 className={styles.cancelPicker}
@@ -346,7 +348,7 @@ export default {
               >
                 Cancelar seleção ✕
               </button>
-            )}</Show>
+            )}
             {(open()) && (
               <section
                 className={[styles.panel, full() ? styles.full : ""].filter(Boolean).join(" ")}
@@ -467,7 +469,7 @@ export default {
                   }}
                 />
               </section>
-            )}</Show>
+            )}
           </>
         );
     }
