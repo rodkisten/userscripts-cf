@@ -3,7 +3,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["react", "react-dom"]
+    "types": [
+      "react",
+      "react-dom"
+    ]
   },
   "include": [
     "src/core/runtime-react.tsx",
@@ -17,6 +20,10 @@
     "src/runtime/react-ui/Menu.tsx",
     "src/runtime/react-ui/core.ts",
     "src/runtime/react-ui/types.ts",
-    "src/runtime/react-ui/index.tsx"
+    "src/runtime/react-ui/index.tsx",
+    "studio/entry.tsx",
+    "studio/examples.ts",
+    "src/runtime/react-ui/src/**/*.tsx",
+    "src/runtime/react-ui/src/**/*.ts"
   ]
 }
