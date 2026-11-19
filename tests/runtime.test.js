@@ -117,9 +117,13 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   await app.navigate();
   console.log("[runtime test] SPA: search navigation complete");
   assert.equal(starts, 1);
+  console.log("[runtime test] SPA: dispatching click");
   host.dispatchEvent(new host.Event("click"));
+  console.log("[runtime test] SPA: click dispatched");
   assert.equal(clicks, 1);
+  console.log("[runtime test] SPA: pushing settings route");
   host.history.pushState({}, "", "/settings");
+  console.log("[runtime test] SPA: awaiting settings navigation");
   await app.navigate();
   console.log("[runtime test] SPA: settings navigation complete");
   assert.equal(stops, 1);
