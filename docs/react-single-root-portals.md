@@ -46,7 +46,7 @@ The bundle-owned portal registry now observes the document subtree with one runt
 - Runtime shutdown disconnects the observer before releasing all portal handles and unmounting the single React root.
 - Shared mounts ignore updates after disposal or while their target is disconnected; callers must mount again after replacing a removed host.
 
-The registry is isolated in `src/core/portal-registry.ts`. Its Vitest suite covers stable snapshots, never-connected targets, detach pruning, remove/reinsert moves, context ownership and subscription cleanup. This is complementary to the existing runtime and userscript integration tests.
+The registry is isolated in `src/core/portal-registry.ts`. Runtime integration coverage in `tests/runtime.test.js` now exercises the compiled bundle's shared React mount, initial render, update, portal disposal and final root teardown; React foundation runs this suite alongside the registry unit tests. This verifies the actual runtime adapter, not only the registry utility. Its Vitest suite covers stable snapshots, never-connected targets, detach pruning, remove/reinsert moves, context ownership and subscription cleanup. This is complementary to the existing runtime and userscript integration tests.
 
 ## Automated enforcement (2026-11-19)
 
