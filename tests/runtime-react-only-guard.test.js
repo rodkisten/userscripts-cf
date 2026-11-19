@@ -48,3 +48,13 @@ test("audits dependencies and nested source paths, ignoring generated dist", asy
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+
+test("reports malformed source rather than silently passing the guard", () => {
+  expect(inspectSolidReferences('import { broken from "solid-js";')[0].kind).toMatch(/Unparseable source/);
+});
+
+test("checks side-effect imports and TypeScript import-equals", () => {
+  const source = 'import "solid-js";\\nimport Solid = require("@solidjs/router");'.replace('\\n', '\n');
+  expect(inspectSolidReferences(source).map(({ line }) => line)).toEqual([1, 2]);
+});
