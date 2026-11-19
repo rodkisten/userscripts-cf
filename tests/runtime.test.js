@@ -30,6 +30,7 @@ const fixture = await build({
     },
   },
 });
+console.log("[runtime fixture] Vite build promise resolved; registering runtime tests.");
 const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
   .flatMap((result) => result.output)
   .find((chunk) => chunk.type === "chunk").code;
