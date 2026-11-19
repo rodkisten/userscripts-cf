@@ -17,8 +17,11 @@ import { diagnosticPrelude } from "./diagnostics.mjs";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
+import { auditReactRootOwnership } from "./react-root-audit.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const reactRootOwnership = await auditReactRootOwnership(root);
+console.log("[React root ownership]", JSON.stringify(reactRootOwnership));
 const requestedArg = process.argv.find((arg) => arg.startsWith("--targets="));
 const requestedTargets = requestedArg ? new Set(requestedArg.slice(10).split(",").filter(Boolean)) : null;
 const out = path.join(root, "dist");
@@ -336,14 +339,32 @@ for (const [target, measurements] of Object.entries(classAudit)) {
     gzipBytes: measurements.gzipBytes,
     debugBytes: measurements.debugBytes,
     debugGzipBytes: measurements.debugGzipBytes,
-    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines }) => ({
+    runtimes: runtime.map(({ world, bytes, includedModuleCount, topModules, featureDefines, reactRootAudit }) => ({
       world,
       bytes,
       includedModuleCount,
+      reactRootAudit,
       topModules,
       featureDefines,
     })),
   };
+}
+console.log("\\nReact root ownership by generated target/execution world:");
+console.table(
+  Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => ({
+    target,
+    roots: stats.reactRootAudit?.roots ?? "missing",
+    owner: stats.reactRootAudit?.owner ?? "missing",
+  })),
+);
+if (
+  Object.entries(runtimeFeatureAudit.bundles).some(
+    ([, stats]) =>
+      stats.reactRootAudit?.roots !== 1 ||
+      stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+  )
+) {
+  throw new Error("[React root ownership] Missing or invalid per-world root audit report");
 }
 const topRuntimeModules = Object.entries(runtimeFeatureAudit.bundles).flatMap(([target, stats]) =>
   (stats.topModules || [])

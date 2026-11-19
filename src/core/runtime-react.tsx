@@ -9,46 +9,11 @@ import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
 import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
+import { createPortalRegistry, type PortalRegistry } from "./portal-registry.js";
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-type PortalEntry = {
-  id: number;
-  target: Element | ShadowRoot;
-  node: ReactNode;
-  context?: ReactScriptContext;
-};
-function createPortalRegistry() {
-  const entries = new Map<number, PortalEntry>();
-  const listeners = new Set<() => void>();
-  let snapshot: PortalEntry[] = [];
-  const publish = () => {
-    snapshot = Array.from(entries.values());
-    for (const listener of listeners) listener();
-  };
-  return {
-    subscribe: (listener: () => void) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    getSnapshot: () => snapshot,
-    add: (entry: PortalEntry) => {
-      entries.set(entry.id, entry);
-      publish();
-    },
-    remove: (id: number) => {
-      if (entries.delete(id)) publish();
-    },
-    clear: () => {
-      if (!entries.size) return;
-      entries.clear();
-      publish();
-    },
-  };
-}
-function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
+function PortalRegistry({ registry }: { registry: PortalRegistry<ReactNode, ReactScriptContext> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
   return (
     <>
@@ -75,10 +40,12 @@ export function createRuntime(
   ) => { update: (component: ReactElement) => void; dispose: () => void };
 } {
   const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
-  const registry = createPortalRegistry();
+  const registry = createPortalRegistry<ReactNode, ReactScriptContext>();
+  const portalDisposers = new Map<number, () => void>();
   let nextId = 0;
   let reactHost: HTMLDivElement | undefined;
   let reactRoot: ReturnType<typeof createRoot> | undefined;
+  let portalObserver: MutationObserver | undefined;
   let runtimeDisposed = false;
   const ensureReactHost = () => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
@@ -86,11 +53,30 @@ export function createRuntime(
     reactHost = host.document.createElement("div");
     reactHost.dataset.rodReactHost = "bundle";
     (host.document.body || host.document.documentElement).append(reactHost);
+    portalObserver = new host.MutationObserver((records) => {
+      const connectedTargets = new Set<Element | ShadowRoot>();
+      const entries = registry.getSnapshot();
+      for (const record of records) {
+        for (const addedNode of record.addedNodes) {
+          for (const { target } of entries) {
+            const candidate =
+              target.nodeType === 11 ? (target as ShadowRoot).host : target;
+            if (addedNode === candidate || addedNode.contains(candidate)) connectedTargets.add(target);
+          }
+        }
+      }
+      for (const id of registry.pruneDisconnected(connectedTargets)) portalDisposers.get(id)?.();
+    });
+    portalObserver.observe(host.document, { childList: true, subtree: true });
     reactRoot = createRoot(reactHost);
     reactRoot.render(<PortalRegistry registry={registry} />);
   };
   const disposeReactHost = () => {
     runtimeDisposed = true;
+    portalObserver?.disconnect();
+    portalObserver = undefined;
+    for (const dispose of [...portalDisposers.values()]) dispose();
+    portalDisposers.clear();
     registry.clear();
     reactRoot?.unmount();
     reactRoot = undefined;
@@ -101,20 +87,20 @@ export function createRuntime(
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
     const id = ++nextId;
     let disposed = false;
-    const update = (next: ReactElement) => {
+    const dispose = () => {
       if (disposed) return;
+      disposed = true;
+      portalDisposers.delete(id);
+      registry.remove(id);
+    };
+    portalDisposers.set(id, dispose);
+    const update = (next: ReactElement) => {
+      if (disposed || !container.isConnected) return;
       ensureReactHost();
       registry.add({ id, target: container, node: next });
     };
     update(component);
-    return {
-      update,
-      dispose: () => {
-        if (disposed) return;
-        disposed = true;
-        registry.remove(id);
-      },
-    };
+    return { update, dispose };
   };
   const runtime = createCoreRuntime(definitions, bridge, host, release, {
     mountSharedReact: (component, container) => mountSharedReact(component, container),
@@ -134,10 +120,11 @@ export function createRuntime(
       }
     },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
-      const ownedPortals = new Set<number>();
       onDispose(() => {
-        for (const id of ownedPortals) registry.remove(id);
-        ownedPortals.clear();
+        const context = getContext();
+        for (const entry of registry.getSnapshot()) {
+          if (entry.context === context) portalDisposers.get(entry.id)?.();
+        }
       });
       return {
         ui: Object.freeze({
@@ -184,15 +171,15 @@ export function createRuntime(
             const owned = !container;
             if (owned) ensureUIRoot().append(mountPoint);
             const id = ++nextId;
-            ownedPortals.add(id);
             let disposed = false;
             const dispose = () => {
               if (disposed) return;
               disposed = true;
-              ownedPortals.delete(id);
+              portalDisposers.delete(id);
               registry.remove(id);
               if (owned) (mountPoint as Element).remove();
             };
+            portalDisposers.set(id, dispose);
             try {
               ensureReactHost();
               registry.add({ id, target: mountPoint, node: component, context: getContext() });

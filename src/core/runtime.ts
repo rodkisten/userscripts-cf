@@ -16,6 +16,7 @@ import { createMenuFeature } from "../runtime/modular/features/menu.js";
 import { createToasterFeature } from "../runtime/modular/features/toaster.js";
 import { createStorageFeature } from "../runtime/modular/features/storage.js";
 import { createUIFeature } from "../runtime/modular/features/ui.js";
+import { createRuntimeCleanupScope } from "./disposal.js";
 
 declare const __ROD_FEATURE_MENU__: boolean;
 declare const __ROD_FEATURE_TOASTER__: boolean;
@@ -489,13 +490,17 @@ export function createCoreRuntime(
 
   function createContext(definition: ScriptDefinition) {
     const abort = new host.AbortController();
-    const cleanups: Array<() => void | Promise<void>> = [];
-    const onDispose = (callback: () => void | Promise<void>) => cleanups.push(callback);
+    const cleanupScope = createRuntimeCleanupScope((error) => {
+      console.error(LOG_TAG_CLEANUP, error);
+      captureDiagnostic(error, LOG_TAG_CLEANUP, definition.id, host);
+    });
+    const onDispose = cleanupScope.add;
 
     let uiHost: HTMLDivElement | undefined;
     let uiRoot: ShadowRoot | undefined;
 
     function ensureUIRoot(): ShadowRoot {
+      if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
       if (uiRoot?.isConnected) return uiRoot;
       const parent = host.document.body || host.document.documentElement;
       if (!parent) throw new Error("Document root is not available");
@@ -530,6 +535,7 @@ export function createCoreRuntime(
     }
 
     function addStyle(cssContent: string, target: ParentNode): HTMLStyleElement {
+      if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
       const node = host.document.createElement("style");
       node.textContent = String(cssContent);
       target.append(node);
@@ -551,6 +557,7 @@ export function createCoreRuntime(
 
     const databases = new Map<string, unknown>();
     function db(name: string = DEFAULT_DATABASE_NAME, options: Record<string, unknown> = {}) {
+      if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
       if (typeof name !== "string" || !name.trim() || name.includes("..")) {
         throw new TypeError("Database name must be a non-empty namespace segment");
       }
@@ -770,6 +777,7 @@ export function createCoreRuntime(
         callback: EventListenerOrEventListenerObject,
         options: AddEventListenerOptions | boolean = {},
       ) {
+        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
             const result: unknown =
@@ -812,15 +820,8 @@ export function createCoreRuntime(
         setCssProperties,
       }),
       async dispose() {
-        abort.abort();
-        for (const cleanup of [...cleanups].reverse()) {
-          try {
-            await cleanup();
-          } catch (error: unknown) {
-            console.error(LOG_TAG_CLEANUP, error);
-          }
-        }
-        cleanups.length = 0;
+        if (!abort.signal.aborted) abort.abort();
+        await cleanupScope.dispose();
         listeners.delete(definition.id);
         stateValues.delete(definition.id);
       },

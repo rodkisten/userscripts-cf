@@ -21,6 +21,45 @@ This decision supersedes the per-component/per-post root wording in `docs/WORKBO
 
 **Acceptance gate:** For a given world, standalone/tag-group/unified bundle with N active modules and M mounted UI targets must create one root, not N or M. Distinct installations/worlds are independently owned.
 
+## Runtime teardown guarantees (2026-11-19)
+
+Per-script resource ownership is managed by `createRuntimeCleanupScope` in `src/core/disposal.ts`:
+
+- Cleanup callbacks run exactly once in reverse registration order.
+- Concurrent calls to a context's `dispose()` share one Promise and cannot execute the same cleanup twice.
+- Cleanup failures are reported and isolated; remaining callbacks still run.
+- A cleanup registered after disposal begins is invoked immediately, preventing late registrations from silently leaking.
+- Context disposal aborts its signal before awaiting cleanup. UI-root creation, style insertion, database creation, and event-listener registration reject new resources after abort.
+- Disposing one script removes only its portals and context-owned resources. Runtime disposal first closes script contexts, then releases shared runtime UI and the single React root.
+
+Regression coverage: `tests/runtime-cleanup-scope.test.ts`, executed by React foundation CI. These tests cover LIFO ordering, concurrent/repeated disposal, late registration, invalid callbacks and cleanup failure isolation. They complement, rather than replace, existing runtime, React context, Rod AST and userscript tests.
+
+## Portal target lifecycle (2026-11-19)
+
+The bundle-owned portal registry now observes the document subtree with one runtime-owned `MutationObserver`:
+
+- A portal target is eligible for automatic pruning only after it has been connected at least once. This preserves callers that create a target before inserting it.
+- If a previously connected target is detached, its portal is removed from the registry and its disposer runs. Owned mount nodes are removed as part of that disposal.
+- MutationObserver records are also reconciled: a target inserted and detached again before the observer callback is still recognized as having been connected, so it cannot become an orphaned registry entry.
+- If a target is removed and reinserted before the observer checkpoint, it remains connected and the portal is retained. This avoids false cleanup during DOM moves/reparenting.
+- A context cleanup releases every portal whose provider belongs to that exact ScriptContext. Other contexts remain untouched.
+- Runtime shutdown disconnects the observer before releasing all portal handles and unmounting the single React root.
+- Shared mounts ignore updates after disposal or while their target is disconnected; callers must mount again after replacing a removed host.
+
+The registry is isolated in `src/core/portal-registry.ts`. Runtime integration coverage in `tests/runtime.test.js` now exercises the compiled bundle's shared React mount, initial render, update, portal disposal and final root teardown; React foundation runs this suite alongside the registry unit tests. This verifies the actual runtime adapter, not only the registry utility. Its Vitest suite covers stable snapshots, never-connected targets, detach pruning, remove/reinsert moves, context ownership and subscription cleanup. This is complementary to the existing runtime and userscript integration tests.
+
+## Automated enforcement (2026-11-19)
+
+The build now enforces this ownership contract at two levels:
+
+1. `build/react-root-audit.mjs` parses source ASTs and permits exactly one `createRoot`/ `hydrateRoot` call in `src/core/runtime-react.tsx`, plus one separately-owned root in `studio/entry.tsx`. Any additional source callsite fails the audit. Run it directly with `npm run check:react-roots`.
+2. Every `bundleRuntime()` invocation audits the modules actually transformed and emitted for that execution world. It requires exactly one root call from `src/core/runtime-react.tsx`, rejects any other root owner in the runtime graph, and confirms the owner module is present exactly once in the output chunk. This covers standalone, unified, tag-group and individual builds without confusing independent page/sandbox worlds.
+3. `npm run build` runs the repository source audit before generating artifacts. Scoped calls to `node build/build.mjs --targets=...` run the same gate. Per-world counts are included in the runtime feature audit report and printed as a dedicated CI table. The final build step rejects missing, duplicate, or incorrectly-owned per-world report entries.
+4. Runtime/utility regression coverage lives in `tests/runtime-react-root-audit.test.js`; no component or userscript UI tests are introduced.
+
+The separately-owned Studio application is intentionally excluded from userscript bundle graphs. A page-world runtime and a sandbox-world runtime remain independent owners, so the invariant is **one root per generated execution-world runtime**, not one root across the entire userscript file.
+
+
 ## Logical topology
 
 ```text

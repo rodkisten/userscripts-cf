@@ -3,9 +3,28 @@ import { build } from "vite";
 import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
 import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
+import { inspectReactRootCalls } from "./react-root-audit.mjs";
 
 export async function bundleRuntime(root, definitions, options = {}) {
   const virtualID = "\0userscripts-cf-entry";
+  const rootCallsites = new Map();
+  const rootAuditPlugin = {
+    name: "userscripts-react-root-ownership",
+    enforce: "pre",
+    transform(code, id) {
+      const absoluteId = path.resolve(id.split("?")[0]);
+      const sourceDirectory = path.resolve(root, "src") + path.sep;
+      if (!absoluteId.startsWith(sourceDirectory)) return null;
+      if (![".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"].includes(path.extname(absoluteId)))
+        return null;
+      if (!/\b(?:createRoot|hydrateRoot)\b/.test(code) && !code.includes("react-dom/client"))
+        return null;
+      const relative = path.relative(root, absoluteId).split(path.sep).join("/");
+      const calls = inspectReactRootCalls(code, relative);
+      if (calls.length) rootCallsites.set(relative, calls);
+      return null;
+    },
+  };
   const imports = definitions.map(
     (item, index) => `import module${index} from ${JSON.stringify(path.resolve(root, item.entry))};`,
   );
@@ -50,6 +69,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
     logLevel: "warn",
     define: featureDefines,
     plugins: [
+      rootAuditPlugin,
       instrumentErrorsPlugin(root),
       {
         name: "userscripts-cf-entry",
@@ -61,6 +81,23 @@ export async function bundleRuntime(root, definitions, options = {}) {
   });
   const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
   const chunks = output.filter((item) => item.type === "chunk");
+  const runtimeRootCalls = [...rootCallsites.entries()].flatMap(([file, calls]) =>
+    calls.map((call) => ({ ...call, filename: file })),
+  );
+  const runtimeOwnerCalls = runtimeRootCalls.filter((call) => call.filename === "src/core/runtime-react.tsx");
+  const unexpectedRootCalls = runtimeRootCalls.filter(
+    (call) => call.filename !== "src/core/runtime-react.tsx",
+  );
+  const includedRootModules = Object.keys(chunks[0]?.modules || {}).filter((id) =>
+    id.split("?")[0].replaceAll("\\", "/").endsWith("/src/core/runtime-react.tsx"),
+  );
+  if (runtimeOwnerCalls.length !== 1 || unexpectedRootCalls.length || includedRootModules.length !== 1) {
+    throw new Error(
+      "[React root ownership] Each built execution world must include exactly one root from src/core/runtime-react.tsx. " +
+        JSON.stringify({ runtimeOwnerCalls, unexpectedRootCalls, includedRootModules }),
+    );
+  }
+  const reactRootAudit = { roots: runtimeOwnerCalls.length, owner: "src/core/runtime-react.tsx" };
   const assets = output.filter((item) => item.type === "asset");
   const cssAssets = assets.filter((item) => item.fileName.endsWith(".css"));
   if (chunks.length !== 1 || assets.length !== cssAssets.length) {
@@ -88,6 +125,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
       }))
       .sort((a, b) => b.renderedBytes - a.renderedBytes || a.id.localeCompare(b.id));
     options.onBundleStats({
+      reactRootAudit,
       bytes: Buffer.byteLength(chunks[0].code),
       modules,
       totalRenderedModuleBytes: modules.reduce((sum, item) => sum + item.renderedBytes, 0),
