@@ -260,25 +260,20 @@ export function initializeDeckCompactLayout(): void {
 
       let toggle = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileMoreButton);
       if (!toggle && details.length) {
-        toggle = (
-          <button
-            type="button"
-            className={CSS_CLASSES.profileMore}
-            aria-expanded="false"
-            onClick={(event: MouseEvent) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
-              toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
-              toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
-              primary
-                .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
-                .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
-            }}
-          >
-            {UI_TEXTS.moreText}
-          </button>
-        ) as HTMLButtonElement;
+        toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = CSS_CLASSES.profileMore;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.textContent = UI_TEXTS.moreText;
+        toggle.addEventListener("click", (event: MouseEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
+          toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
+          toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
+          primary.querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
+            .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
+        });
 
         name.after(toggle);
       }
