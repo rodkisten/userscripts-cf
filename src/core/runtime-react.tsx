@@ -24,7 +24,9 @@ function createPortalRegistry() {
   return {
     subscribe: (listener: () => void) => {
       listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      return () => {
+        listeners.delete(listener);
+      };
     },
     getSnapshot: () => snapshot,
     add: (entry: PortalEntry) => {
@@ -43,7 +45,17 @@ function createPortalRegistry() {
 }
 function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
-  return <>{entries.map(({ id, target, node, context }) => createPortal(context ? <RuntimeMount context={context}>{node}</RuntimeMount> : node, target, String(id)))}</>;
+  return (
+    <>
+      {entries.map(({ id, target, node, context }) =>
+        createPortal(
+          context ? <RuntimeMount context={context}>{node}</RuntimeMount> : node,
+          target,
+          String(id),
+        ),
+      )}
+    </>
+  );
 }
 
 export function createRuntime(
@@ -51,7 +63,12 @@ export function createRuntime(
   bridge: { call: (method: string, payload: unknown) => Promise<unknown>; dispose?: () => void },
   host: Window & typeof globalThis = window,
   release?: { id: string; version: string; manifestURL: string },
-): RuntimeAPI & { mountSharedReact: (component: ReactElement, container: HTMLElement) => { update: (component: ReactElement) => void; dispose: () => void } } {
+): RuntimeAPI & {
+  mountSharedReact: (
+    component: ReactElement,
+    container: HTMLElement,
+  ) => { update: (component: ReactElement) => void; dispose: () => void };
+} {
   const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
   const registry = createPortalRegistry();
   let nextId = 0;
@@ -96,69 +113,69 @@ export function createRuntime(
       });
       return {
         ui: Object.freeze({
-        get root() {
-          return ensureUIRoot();
-        },
-        get host() {
-          return ensureUIRoot().host as unknown as HTMLDivElement;
-        },
-        mount(node: Node) {
-          ensureUIRoot().append(node);
-          return node;
-        },
-        style(css: string) {
-          const node = host.document.createElement("style");
-          node.textContent = String(css);
-          ensureUIRoot().append(node);
-          onDispose(() => node.remove());
-          return node;
-        },
-        pageStyle(css: string, options?: { id?: string }) {
-          const target = host.document.head || host.document.documentElement;
-          const id = options?.id;
-          const existing = id ? host.document.getElementById(id) : null;
-          if (existing instanceof HTMLStyleElement) {
-            existing.textContent = String(css);
-            return existing;
-          }
-          const node = host.document.createElement("style");
-          if (id) node.id = id;
-          node.textContent = String(css);
-          target.append(node);
-          onDispose(() => node.remove());
-          return node;
-        },
-        registerStyles(...styles: ShadowStyle[]) {
-          const dispose = registerShadowStyles(ensureUIRoot(), styles);
-          onDispose(dispose);
-          return dispose;
-        },
-        mountReact(component: ReactElement, container?: HTMLElement) {
-          if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
-          const mountPoint = container ?? host.document.createElement("div");
-          const owned = !container;
-          if (owned) ensureUIRoot().append(mountPoint);
-          const id = ++nextId;
-          ownedPortals.add(id);
-          let disposed = false;
-          const dispose = () => {
-            if (disposed) return;
-            disposed = true;
-            ownedPortals.delete(id);
-            registry.remove(id);
-            if (owned) mountPoint.remove();
-          };
-          try {
-            ensureReactHost();
-            registry.add({ id, target: mountPoint, node: component, context: getContext() });
+          get root() {
+            return ensureUIRoot();
+          },
+          get host() {
+            return ensureUIRoot().host as unknown as HTMLDivElement;
+          },
+          mount(node: Node) {
+            ensureUIRoot().append(node);
+            return node;
+          },
+          style(css: string) {
+            const node = host.document.createElement("style");
+            node.textContent = String(css);
+            ensureUIRoot().append(node);
+            onDispose(() => node.remove());
+            return node;
+          },
+          pageStyle(css: string, options?: { id?: string }) {
+            const target = host.document.head || host.document.documentElement;
+            const id = options?.id;
+            const existing = id ? host.document.getElementById(id) : null;
+            if (existing instanceof HTMLStyleElement) {
+              existing.textContent = String(css);
+              return existing;
+            }
+            const node = host.document.createElement("style");
+            if (id) node.id = id;
+            node.textContent = String(css);
+            target.append(node);
+            onDispose(() => node.remove());
+            return node;
+          },
+          registerStyles(...styles: ShadowStyle[]) {
+            const dispose = registerShadowStyles(ensureUIRoot(), styles);
             onDispose(dispose);
-          } catch (error) {
-            dispose();
-            captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
-            throw error;
-          }
-          return dispose;
-        },
+            return dispose;
+          },
+          mountReact(component: ReactElement, container?: HTMLElement) {
+            if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
+            const mountPoint = container ?? host.document.createElement("div");
+            const owned = !container;
+            if (owned) ensureUIRoot().append(mountPoint);
+            const id = ++nextId;
+            ownedPortals.add(id);
+            let disposed = false;
+            const dispose = () => {
+              if (disposed) return;
+              disposed = true;
+              ownedPortals.delete(id);
+              registry.remove(id);
+              if (owned) mountPoint.remove();
+            };
+            try {
+              ensureReactHost();
+              registry.add({ id, target: mountPoint, node: component, context: getContext() });
+              onDispose(dispose);
+            } catch (error) {
+              dispose();
+              captureDiagnostic(error, REACT_MOUNT_SOURCE, definition.id, host);
+              throw error;
+            }
+            return dispose;
+          },
         }),
       };
     },
@@ -184,8 +201,12 @@ export function createRuntime(
   const disposeRuntime = runtime.dispose.bind(runtime);
   return {
     mountSharedReact,
-    get ready() { return runtime.ready; },
-    get active() { return runtime.active; },
+    get ready() {
+      return runtime.ready;
+    },
+    get active() {
+      return runtime.active;
+    },
     navigate: () => runtime.navigate(),
     dispose: async () => {
       try {
