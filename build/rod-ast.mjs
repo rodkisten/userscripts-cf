@@ -271,6 +271,71 @@ export function transformRodAst(code, id, options = {}) {
     if (!body || !ts.isBlock(body)) return;
     const statements = body.statements;
     for (let i = 0; i + 2 < statements.length; i++) {
+      // Four-statement variant: create style, assign id, assign dynamic CSS, append to head.
+      // Keep the DOM target explicit: ui.style mounts in Shadow DOM, whereas
+      // pageStyle mounts in document.head.
+      if (i + 3 < statements.length) {
+        const [decl, idStatement, cssStatement, appendStatement] = statements.slice(i, i + 4);
+        if (![decl, idStatement, cssStatement, appendStatement].some(keep) &&
+            ts.isVariableStatement(decl) &&
+            (decl.declarationList.flags & ts.NodeFlags.Const) &&
+            decl.declarationList.declarations.length === 1) {
+          const variable = decl.declarationList.declarations[0];
+          const name = ts.isIdentifier(variable.name) ? variable.name.text : null;
+          const create = variable.initializer;
+          const getAssignment = (statement, property) => {
+            if (!ts.isExpressionStatement(statement) || !ts.isBinaryExpression(statement.expression)) return null;
+            const expr = statement.expression;
+            return expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+              ts.isPropertyAccessExpression(expr.left) &&
+              ts.isIdentifier(expr.left.expression) && expr.left.expression.text === name &&
+              expr.left.name.text === property ? expr.right : null;
+          };
+          const styleId = getAssignment(idStatement, "id");
+          const css = getAssignment(cssStatement, "textContent");
+          const append = ts.isExpressionStatement(appendStatement) && ts.isCallExpression(appendStatement.expression)
+            ? appendStatement.expression : null;
+          const callee = append?.expression;
+          const head = callee && ts.isPropertyAccessExpression(callee) &&
+            ts.isPropertyAccessExpression(callee.expression) &&
+            ts.isIdentifier(callee.expression.expression) &&
+            callee.expression.expression.text === "document" &&
+            callee.expression.name.text === "head" &&
+            ["append", "appendChild", "prepend"].includes(callee.name.text);
+          if (name && create && ts.isCallExpression(create) &&
+              ts.isPropertyAccessExpression(create.expression) &&
+              ts.isIdentifier(create.expression.expression) &&
+              create.expression.expression.text === "document" &&
+              create.expression.name.text === "createElement" &&
+              create.arguments.length === 1 && ts.isStringLiteral(create.arguments[0]) &&
+              create.arguments[0].text.toLowerCase() === "style" &&
+              styleId && css && head && append.arguments.length === 1 &&
+              ts.isIdentifier(append.arguments[0]) && append.arguments[0].text === name &&
+              !shadowed.has("document") &&
+              !code.slice(decl.end, appendStatement.getStart(source)).includes("//") &&
+              !code.slice(decl.end, appendStatement.getStart(source)).includes("/*")) {
+            const symbol = checker.getSymbolAtLocation(variable.name);
+            let refs = 0;
+            const count = (node) => {
+              if (ts.isIdentifier(node) && node.text === name &&
+                  checker.getSymbolAtLocation(node) === symbol) refs++;
+              ts.forEachChild(node, count);
+            };
+            if (symbol) count(owner);
+            if (symbol && refs === 4) {
+              edits.push({
+                start: decl.getStart(source), end: appendStatement.end,
+                before: code.slice(decl.getStart(source), appendStatement.end),
+                after: ctx + ".ui.pageStyle(" +
+                  code.slice(css.getStart(source), css.end) + ", { id: " +
+                  code.slice(styleId.getStart(source), styleId.end) + " });",
+              });
+              i += 3;
+              continue;
+            }
+          }
+        }
+      }
       const [declaration, assignment, insertion] = statements.slice(i, i + 3);
       if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
       if (
