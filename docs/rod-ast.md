@@ -69,7 +69,6 @@ With `ROD_AST=1`, the Vite plugin processes static string arguments to `ctx.ui.s
 
 GM availability checks are now evaluated at the individual call site. Calls inside a `typeof GM` or `typeof GM_getValue` guarded branch remain untouched, while independent unguarded calls in the same function can migrate to `ctx.gm.modern.*` or `ctx.gm.legacy.*`. Conditional-expression guards are preserved. Vitest regressions cover locality and idempotence.
 
-
 ### Capability fallback safety
 
 The call-site GM guard analysis also preserves **both branches** of a `typeof GM` / `typeof GM_*` `if/else` fallback, plus guarded short-circuit `&&` and `||` expressions. This is intentionally conservative: changing one branch could alter capability fallback behavior. Independent calls outside the guarded expression remain eligible for migration. Vitest covers branch isolation, short-circuit semantics and idempotence.

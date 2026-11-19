@@ -489,7 +489,8 @@ describe("GM guard locality", () => {
 
 describe("GM capability fallback control flow", () => {
   it("preserves guarded if/else branches without affecting sibling calls", () => {
-    const source = 'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } else { GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } else { GM_setValue("fallback", 1); } GM_setValue("plain", 2); }';
     const result = transformRodAst(source, "gm-fallback.ts");
     expect(result.code).toContain('GM_getValue("x")');
     expect(result.code).toContain('GM_setValue("fallback", 1)');
@@ -505,7 +506,8 @@ describe("GM capability fallback control flow", () => {
     expect(transformRodAst(source, "gm-logical-or.ts").code).toBe(source);
   });
   it("does not treat an unrelated GM guard as a function-wide veto", () => {
-    const source = 'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } return GM_setValue("y", 1); }';
+    const source =
+      'function init(ctx) { if (typeof GM_getValue === "function") { GM_getValue("x"); } return GM_setValue("y", 1); }';
     expect(transformRodAst(source, "gm-sibling.ts").code).toContain('ctx.gm.legacy.setValue("y", 1)');
   });
 });

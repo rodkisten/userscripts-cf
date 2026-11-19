@@ -183,20 +183,30 @@ export function transformRodAst(code, id, options = {}) {
       if (ts.isFunctionLike(current)) break;
       if (ts.isIfStatement(current)) {
         const inThen = current.thenStatement.pos <= node.pos && node.end <= current.thenStatement.end;
-        const inElse = current.elseStatement && current.elseStatement.pos <= node.pos && node.end <= current.elseStatement.end;
+        const inElse =
+          current.elseStatement &&
+          current.elseStatement.pos <= node.pos &&
+          node.end <= current.elseStatement.end;
         if (inThen || inElse) {
           const condition = code.slice(current.expression.getStart(source), current.expression.end);
           if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(condition)) return true;
         }
       }
       if (ts.isConditionalExpression(current) || ts.isBinaryExpression(current)) {
-        const condition = ts.isConditionalExpression(current)
-          ? current.condition
-          : current.left;
+        const condition = ts.isConditionalExpression(current) ? current.condition : current.left;
         const text = code.slice(condition.getStart(source), condition.end);
         if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(text)) {
           if (ts.isConditionalExpression(current)) return true;
-          if ([ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(current.operatorToken.kind) && current.right.pos <= node.pos && node.end <= current.right.end) return true;
+          if (
+            [
+              ts.SyntaxKind.AmpersandAmpersandToken,
+              ts.SyntaxKind.BarBarToken,
+              ts.SyntaxKind.QuestionQuestionToken,
+            ].includes(current.operatorToken.kind) &&
+            current.right.pos <= node.pos &&
+            node.end <= current.right.end
+          )
+            return true;
         }
       }
       current = current.parent;
