@@ -1,4 +1,4 @@
-# 🚦 Mandatory workboard: React migration and stabilization
+> **Commit marker enforcement (2026-11-19):** Release and Playground Pages push jobs already require `[deploy]` and reject `[skip ci]`; React migration validation now also requires `[deploy]` on main pushes. Manual dispatch remains possible. GitHub's own skip marker can prevent push workflow creation; PR checks must remain independently available. **Cloudflare Git-connected automatic builds are not controlled by GitHub commit marker checks** and must be disabled or replaced with explicit GitHub-driven deployments separately. This Cloudflare configuration has not yet been changed or verified.\n\n# 🚦 Mandatory workboard: React migration and stabilization
 
 > **STATUS: ACTIVE · Source of truth for priorities · Updated 2026-11-17**
 >
