@@ -32,9 +32,11 @@ test("React menus are unavailable without a runtime-owned shared mount", async (
   const host = new Window({ url: "https://example.com/" });
   const legacyFeatures = initializeRodFeatures(host);
   assert.equal(legacyFeatures.menu, undefined);
-  const reactFeatures = initializeRodFeatures(host, () => ({ dispose() {} }));
+  assert.equal(legacyFeatures.toaster, undefined);
+  const reactFeatures = initializeRodFeatures(host, () => ({ update() {}, dispose() {} }));
   assert.equal(typeof reactFeatures.menu?.open, "function");
   assert.equal(typeof reactFeatures.menu?.dropdown, "function");
+  assert.equal(typeof reactFeatures.toaster?.destroy, "function");
   await host.happyDOM.abort();
 });
 
