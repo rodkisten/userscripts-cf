@@ -28,7 +28,7 @@ if (!suites.length) {
   process.exit(1);
 }
 console.log("Runtime and utility suites:", suites.join(", "));
-const result = spawnSync("npx", ["vitest", "run", ...suites], {
+const result = spawnSync("npx", ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...suites], {
   stdio: "inherit",
   shell: process.platform === "win32",
 });
