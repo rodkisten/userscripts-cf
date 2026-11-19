@@ -245,7 +245,10 @@ function resolveMenuTarget(trigger: HTMLElement): ShadowRoot | HTMLElement {
   return root.nodeType === 11 && "host" in root ? (root as ShadowRoot) : trigger.ownerDocument.body;
 }
 
-export function openRadixDropdown(options: DropdownOptions, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }) {
+export function openRadixDropdown(
+  options: DropdownOptions,
+  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+) {
   return mount(
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
     options.id ?? "dropdown",
@@ -254,7 +257,10 @@ export function openRadixDropdown(options: DropdownOptions, mountSharedReact?: (
     mountSharedReact,
   );
 }
-export function openRadixDialog(schema: MenuSchema, mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void }) {
+export function openRadixDialog(
+  schema: MenuSchema,
+  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+) {
   const owner = schema.container?.ownerDocument ?? document;
   const target = schema.container ?? owner.body;
   return mount(

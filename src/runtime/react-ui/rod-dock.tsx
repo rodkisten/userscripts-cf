@@ -249,7 +249,10 @@ export function installRodDock({
   modules?: DockModule[];
   scripts?: DockScript[];
   registerMenu?: RegisterMenu;
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { update: (component: ReactElement) => void; dispose: () => void };
+  mountSharedReact?: (
+    component: ReactElement,
+    container: HTMLElement,
+  ) => { update: (component: ReactElement) => void; dispose: () => void };
 } = {}) {
   const host = document.createElement("div");
   host.dataset.rodDock = "";

@@ -160,10 +160,15 @@ export interface RuntimeAPI {
   dispose: () => Promise<void>;
 }
 
-export function initializeRodFeatures(host: Window & typeof globalThis, mountSharedReact?: Parameters<typeof createToasterFeature>[0]) {
+export function initializeRodFeatures(
+  host: Window & typeof globalThis,
+  mountSharedReact?: Parameters<typeof createToasterFeature>[0],
+) {
   return {
     menu:
-      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? createMenuFeature({ mountSharedReact }) : undefined,
+      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__
+        ? createMenuFeature({ mountSharedReact })
+        : undefined,
     toaster:
       typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__
         ? createToasterFeature(mountSharedReact)
@@ -662,7 +667,11 @@ export function createCoreRuntime(
         })
       : {};
 
-    const instanceMenu = createMenuFeature({ container: ensureUIRoot, onDispose, mountSharedReact: options?.mountSharedReact });
+    const instanceMenu = createMenuFeature({
+      container: ensureUIRoot,
+      onDispose,
+      mountSharedReact: options?.mountSharedReact,
+    });
 
     const baseContext = {
       id: definition.id,
