@@ -98,7 +98,6 @@ jobs:
           SCOPED_BUILDS_MATRIX: true
           RUNTIME_TEST_SKIP_DIST: 'true'
           PR_TITLE: ${{ github.event.pull_request.title }}
-          RUNTIME_TEST_SKIP_DIST: 'true'
         run: bash build/validate-changed.sh run
       # The playground is a visual preview, not a typecheck gate.
       # Always attempt its single build even when TypeScript validation fails.
