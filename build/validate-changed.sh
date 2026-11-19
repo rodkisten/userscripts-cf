@@ -99,7 +99,32 @@ case "$mode" in
       echo "Shared infrastructure changed: running full validation."
       npm run typecheck
       npm run lint
-      npm run build
+      # Full validation checks all shared contracts, but only builds affected bundles
+      # unless the bundler/dependency configuration itself changed.
+      if [[ -f changed-files.txt ]] && ! grep -Eq '^(build/(build\\.mjs|runtime-graph\\.mjs)|package(-lock)?\\.json$|userscripts\\.config\\.js$|vite\\.config\\.)' changed-files.txt; then
+        node --input-type=module <<'NODE'
+import fs from "node:fs/promises";
+import definitions from "./userscripts.config.js";
+import { analyzeRuntimeGraph } from "./build/runtime-graph.mjs";
+const changed = (await fs.readFile("changed-files.txt", "utf8")).trim().split("\\n").filter(f => f.startsWith("src/"));
+const affected = [];
+for (const definition of definitions) {
+  const graph = await analyzeRuntimeGraph(definition.entry);
+  if (changed.some(file => graph.files.includes(file))) affected.push(definition.id);
+}
+const targets = [...new Set(affected.flatMap(id => [id, "standalone", ...(definitions.find(d => d.id === id)?.unified === false ? [] : ["unified"])]))];
+console.log("Affected userscript builds:", targets.join(", ") || "(none)");
+if (targets.length) {
+  const { spawnSync } = await import("node:child_process");
+  const result = spawnSync(process.execPath, ["build/build.mjs", `--targets=${targets.join(",")}`], { stdio: "inherit" });
+  if (result.error) throw result.error;
+  process.exit(result.status ?? 1);
+}
+NODE
+      else
+        echo "Bundler or dependency configuration changed: building all userscripts."
+        npm run build
+      fi
       # Only runtime and utility suites are permitted (docs/testing-policy.md).
       npm run test:unit
       npm run test:lab
