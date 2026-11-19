@@ -225,7 +225,7 @@ function mount(
     disposed = true;
     // A Radix event can close its own React tree; defer unmount until the event finishes.
     queueMicrotask(() => {
-      shared.dispose();
+      shared?.dispose();
       host.remove();
       portal.remove();
     });
@@ -249,7 +249,7 @@ function resolveMenuTarget(trigger: HTMLElement): ShadowRoot | HTMLElement {
 
 export function openRadixDropdown(
   options: DropdownOptions,
-  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
+  mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ) {
   return mount(
     (close, portal) => <DropdownView options={options} close={close} portal={portal} />,
