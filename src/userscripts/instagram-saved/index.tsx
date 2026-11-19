@@ -172,7 +172,7 @@ export default {
       if (runtime.running || (!manual && (document.hidden || Date.now() - runtime.lastRun < 300000))) {
         return;
       }
-      const config = await get("config", null);
+      const config = await get<Config | null>("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
       if (!settings.enabled || !settings.collectionIds?.length) {
         return;
@@ -196,6 +196,8 @@ export default {
           abort.throwIfAborted();
           let count = 0;
           for (const collectionId of settings.collectionIds) {
+            abort.throwIfAborted();
+            if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             count += await syncSaved({
@@ -217,7 +219,9 @@ export default {
                   if (cursor) {
                     url.searchParams.set("max_id", cursor);
                   }
-                  const response = await ctx.http.request(url, {\n                    transport: "fetch",\n                    cacheMode: "off",
+                  const response = await ctx.http.request(url, {
+                    transport: "fetch",
+                    cacheMode: "off",
                     credentials: "same-origin",
                     signal: abort,
                     headers: {
