@@ -51,6 +51,14 @@ export function createRuntime(
           onDispose(() => node.remove());
           return node;
         },
+        pageStyle(css: string, options?: { id?: string }) {
+          const node = host.document.createElement("style");
+          if (options?.id) node.id = options.id;
+          node.textContent = String(css);
+          (host.document.head || host.document.documentElement).append(node);
+          onDispose(() => node.remove());
+          return node;
+        },
         registerStyles(...styles: ShadowStyle[]) {
           const dispose = registerShadowStyles(ensureUIRoot(), styles);
           onDispose(dispose);
