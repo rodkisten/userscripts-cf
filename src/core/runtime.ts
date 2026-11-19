@@ -535,6 +535,7 @@ export function createCoreRuntime(
     }
 
     function addStyle(cssContent: string, target: ParentNode): HTMLStyleElement {
+      if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
       const node = host.document.createElement("style");
       node.textContent = String(cssContent);
       target.append(node);
@@ -776,6 +777,7 @@ export function createCoreRuntime(
         callback: EventListenerOrEventListenerObject,
         options: AddEventListenerOptions | boolean = {},
       ) {
+        if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
         const wrapped: EventListener = function (this: EventTarget, value: Event) {
           try {
             const result: unknown =
