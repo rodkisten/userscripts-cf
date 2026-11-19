@@ -892,6 +892,7 @@ export function createCoreRuntime(
         options.removeHelpers(installedHelpers);
       }
       updaterInstanceRef.current?.stop();
+      rod.toaster?.destroy();
       host.document.removeEventListener("keydown", clipboardKeydown as EventListener, true);
       if ((host as unknown as Record<string, unknown>).__RodClipboard === clipboard)
         delete (host as unknown as Record<string, unknown>).__RodClipboard;
