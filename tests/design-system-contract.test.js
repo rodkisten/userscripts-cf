@@ -31,7 +31,8 @@ describe("Rod UI Design System Studio contract", () => {
     expect(examples).toContain("schemaForExample");
     expect(examples).toContain("media-picker");
     expect(examples).toContain("request-log");
-    expect(entry).toContain("RodMenu.open(schemaForExample(");
+    expect(entry).toContain("schemaForExample(example,");
+    expect(entry).toContain("RodMenu.open(schema as MenuSchema)");
     expect(page).toContain('id="examplesCatalog"');
     expect(page).toContain('id="examplesSearch"');
   });
