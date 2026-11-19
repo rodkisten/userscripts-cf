@@ -1,7 +1,7 @@
 import { componentClasses } from "../styles/deck.js";
 import { classNames } from "../ui/class-names.ts";
 const cx = (value: string) => classNames(componentClasses, value);
-import { mountView } from "./solid-mount.tsx";
+import { mountView } from "./react-mount.tsx";
 import workbenchOverrides2 from "../../../styles/workbench-overrides-2.css?inline";
 import workbenchOverrides1 from "../../../styles/workbench-overrides-1.css?inline";
 import { applyComponentStyle } from "../../../core/css.js";
