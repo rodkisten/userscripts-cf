@@ -35,12 +35,18 @@ const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
   .flatMap((result) => result.output)
   .find((chunk) => chunk.type === "chunk").code;
 function createRuntime(definitions, bridge, host, beforeCreate) {
+  console.log("[runtime fixture] enabling happy-dom evaluation");
   host.happyDOM.settings.enableJavaScriptEvaluation = true;
   host.happyDOM.settings.suppressInsecureJavaScriptEnvironmentWarning = true;
   host.process = process;
+  console.log("[runtime fixture] evaluating compiled runtime");
   host.eval(runtimeCode);
+  console.log("[runtime fixture] compiled runtime evaluated");
   beforeCreate?.(host);
-  return host.RuntimeFixture.createRuntime(definitions, bridge, host);
+  console.log("[runtime fixture] creating runtime instance");
+  const app = host.RuntimeFixture.createRuntime(definitions, bridge, host);
+  console.log("[runtime fixture] runtime instance created");
+  return app;
 }
 import { matchURL } from "../src/core/match.js";
 import { initializeRodFeatures } from "../src/core/runtime.js";
