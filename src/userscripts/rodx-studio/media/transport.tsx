@@ -71,7 +71,7 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
         data-rodx-player-control="1"
         aria-label="Controles de reprodução RodX"
         onClick={stop}
-        onDblClick={stop}
+        onDoubleClick={stop}
         onTouchEnd={stop}
         onPointerUp={stop}
       >
