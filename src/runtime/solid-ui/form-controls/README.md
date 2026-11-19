@@ -1,3 +1,5 @@
+> **ARCHIVED UI IMPLEMENTATION:** The SolidJS component implementation and its playground are retired. Only the framework-neutral option/parser/validation utilities and their allowed utility tests are retained pending a separate consumer audit. Do not use this document's Solid component examples as implementation guidance; new UI belongs in `src/runtime/react-ui/` and React Rod UI Studio.
+
 > **Status · React-only cutover (2026-11-19):** The legacy SolidJS form-controls playground has been retired. `playground/form-controls-app.tsx` was removed; `/playground/form-controls.html` now redirects to the React Rod UI Studio at `/design-system.html`. The React Studio is the maintained interactive showcase for RodMenu fields and surfaces. This document remains as historical/technical reference for the headless option utilities until their remaining consumers are audited. Do not restore Solid components or the old playground.
 
 # Form controls (SolidJS)
