@@ -5,6 +5,10 @@ import { build } from "vite";
 let transformedModules = 0;
 const fixture = await build({
   configFile: new URL("../vite.config.js", import.meta.url).pathname,
+  define: {
+    __ROD_FEATURE_HTTP__: "false",
+    __ROD_FEATURE_DOM__: "false",
+  },
   logLevel: "info",
   plugins: [
     {
