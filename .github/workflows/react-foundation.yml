@@ -49,7 +49,7 @@ jobs:
   typecheck:
     name: React 19 runtime TypeScript
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -68,3 +68,5 @@ jobs:
         run: npx vitest run tests/react-runtime-context.test.ts
       - name: Check full React runtime integration
         run: npm run typecheck:react
+      - name: Build every distribution target and audit each execution world
+        run: npm run build
