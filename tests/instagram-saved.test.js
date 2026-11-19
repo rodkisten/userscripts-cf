@@ -204,3 +204,51 @@ test("rejects surplus Relay acknowledgement entries", async () => {
     ] }),
   }), /confirmação por item/);
 });
+
+test("channel ledger sends only missing destinations after channel changes", async () => {
+  let ledger = {};
+  const calls = [];
+  const options = {
+    channels: ["one", "two"],
+    load: async () => ({}),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      calls.push(channels);
+      return { results: items.map((_, index) => ({ index, channels: { inserted: channels } })) };
+    },
+  };
+  assert.equal(await syncSaved(options), 1);
+  assert.deepEqual(calls, [["one", "two"]]);
+  assert.equal(await syncSaved({ ...options, channels: ["two", "three"] }), 1);
+  assert.deepEqual(calls, [["one", "two"], ["three"]]);
+  assert.equal(await syncSaved({ ...options, channels: ["one", "three"] }), 0);
+});
+
+test("partial acknowledgements survive failure and are not resent on restart", async () => {
+  let ledger = {};
+  const calls = [];
+  const options = {
+    channels: ["one", "two"],
+    load: async () => ({}),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      calls.push(channels);
+      return { results: items.map((_, index) => ({
+        index, status: calls.length === 1 ? 400 : 200,
+        channels: { inserted: calls.length === 1 ? ["one"] : ["two"] },
+      })) };
+    },
+  };
+  await assert.rejects(syncSaved(options), /não confirmada/);
+  assert.deepEqual(Object.keys(ledger.abc), ["one"]);
+  assert.equal(await syncSaved(options), 1);
+  assert.deepEqual(calls, [["one", "two"], ["two"]]);
+});
