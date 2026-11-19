@@ -165,7 +165,7 @@ NODE
           echo "Building affected targets: $targets"
           node build/build.mjs "--targets=$targets"
         else
-          npm run build
+          echo "No affected userscript entrypoints; skipping bundle build."
         fi
       else
         npm run build
