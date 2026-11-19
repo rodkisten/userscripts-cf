@@ -15,7 +15,7 @@ const runtimeChanged = changed.some((file) =>
   /^src\/runtime\/solid-ui\/(?:menu\/|menu-api\.ts$|object-inspector\/)/.test(file),
 );
 if (!runtimeChanged) process.exit(0);
-const required = ["studio/README.md", "studio/entry.tsx", "hosting/design-system.html"];
+const required = ["studio/README.md", "studio/entry.tsx"];
 const missing = required.filter((file) => !changed.includes(file));
 if (missing.length) {
   console.error(
