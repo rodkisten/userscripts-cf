@@ -16,8 +16,8 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Treat the starting cursor as visited, to detect loops back to the resumed position.
 - [x] Add utility regression cases for inherited keys, duplicate acknowledgements, abort after fetch and cursor cycles.\n- [ ] Run targeted Vitest (not yet verified).
 - [x] Checkpoint at completed page boundaries to avoid losing unprocessed items. `maxItemsPerSession` is a soft page-boundary limit and can be exceeded by one page.
-- [ ] Make persisted delivery state account + collection + channel safe, including channel changes.
-- [ ] Route Instagram HTTP and GM requests through ctx abstractions; preserve cancellation and retry-after.
+- [x] Scope delivery state and cursor checkpoints to account, collection and sorted channel IDs.\n- [ ] Reconcile channel-specific acknowledgements across channel changes to avoid redundant sends.
+- [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.\n- [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
 - [ ] Audit bookmark ownership across Feed, modal, grid and swiped Reels (initial native-control fallback hardening committed; per-publication identity still pending).
 - [ ] Confirm per-publication native save/unsave state, unavailable controls and collection selection errors (unknown state now blocks activation; Safari and collection selection remain unverified).
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
@@ -25,7 +25,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Current verification
 
-Source hardening and regression tests committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. No deployment requested. Do not merge until validated.
+Source hardening, utility regression tests and HTTP migration committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. No deployment requested. Do not merge until validated.
 
 ## Coordination
 
