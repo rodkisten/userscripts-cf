@@ -1,4 +1,4 @@
-import { mountView, disposeView } from "./solid-mount.tsx";
+import { mountView, disposeView } from "./react-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import styles, { css } from "./toast.module.css";
 
