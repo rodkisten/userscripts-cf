@@ -21,6 +21,17 @@ export default defineConfig({
     lightningcss: { targets: { safari: 15 << 16 } },
   },
   build: {
+    // Client-only IIFE bundles do not need React Server Components directives.
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        if (
+          warning.code === "MODULE_LEVEL_DIRECTIVE" &&
+          /use client/.test(warning.message) &&
+          /node_modules[/\\\\](?:@radix-ui|sonner)[/\\\\]/.test(warning.id ?? "")
+        ) return;
+        defaultHandler(warning);
+      },
+    },
     target: "safari15",
     minify: false,
     cssMinify: "lightningcss",
