@@ -181,11 +181,11 @@ export function transformRodAst(code, id, options = {}) {
       if (ts.isFunctionLike(current)) break;
       if (ts.isIfStatement(current) && current.thenStatement.pos <= node.pos && node.end <= current.thenStatement.end) {
         const condition = code.slice(current.expression.getStart(source), current.expression.end);
-        if (/\\btypeof\\s+(?:GM_[A-Za-z]+|GM)\\b/.test(condition)) return true;
+        if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(condition)) return true;
       }
       if (ts.isConditionalExpression(current)) {
         const condition = code.slice(current.condition.getStart(source), current.condition.end);
-        if (/\\btypeof\\s+(?:GM_[A-Za-z]+|GM)\\b/.test(condition)) return true;
+        if (/\btypeof\s+(?:GM_[A-Za-z]+|GM)\b/.test(condition)) return true;
       }
       current = current.parent;
     }
