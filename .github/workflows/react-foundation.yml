@@ -6,12 +6,15 @@ on:
     branches: [main]
     paths:
       - "src/core/runtime-react.tsx"
+      - "src/core/portal-registry.ts"
+      - "src/core/disposal.ts"
       - "src/core/runtime-context-react.tsx"
       - "src/core/runtime-mount-react.tsx"
       - "src/core/react-context-contract.ts"
       - "tsconfig.react-context.json"
       - "tests/react-runtime-context.test.ts"
       - "tests/runtime-react-root-audit.test.js"
+      - "tests/runtime-portal-registry.test.ts"
       - "build/react-root-audit.mjs"
       - "build/check-react-root-ownership.mjs"
       - "build/bundle-runtime.mjs"
@@ -64,6 +67,8 @@ jobs:
         run: npx vitest run tests/runtime-react-root-audit.test.js
       - name: Test runtime cleanup lifecycle
         run: npx vitest run tests/runtime-cleanup-scope.test.ts
+      - name: Test React portal registry lifecycle
+        run: npx vitest run tests/runtime-portal-registry.test.ts
       - name: Check isolated React provider types
         run: npx tsc --noEmit -p tsconfig.react-context.json
       - name: Test React context ownership
