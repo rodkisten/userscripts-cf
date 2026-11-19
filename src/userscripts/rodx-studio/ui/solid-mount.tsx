@@ -1,13 +1,10 @@
 import { useSyncExternalStore, type ReactElement, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { createPortal, flushSync } from "react-dom";
+import { flushSync } from "react-dom";
 
 type MountTarget = HTMLElement | ShadowRoot | SVGElement;
 type Mount = { id: number; node: ReactNode; connected: boolean; dispose?: () => void; listeners?: Set<() => void> };
 let nextMountId = 0;
 const mounts = new Map<MountTarget, Mount>();
-let root: Root | undefined;
-let host: HTMLElement | undefined;
 let observer: MutationObserver | undefined;
 let sharedMount: ((component: ReactElement, target: HTMLElement) => () => void) | undefined;
 
@@ -24,50 +21,19 @@ function SharedView({ record }: { record: Mount }) {
 
 /** Attach RodX portals to the owning userscript runtime when available. */
 export function configureSharedMount(mount: (component: ReactElement, target: HTMLElement) => () => void) {
-  if (mounts.size || root) throw new Error("RodX mount adapter already initialized");
+  if (mounts.size) throw new Error("RodX mount adapter already initialized");
   sharedMount = mount;
 }
 
 
-function ensureRoot() {
-  if (root) return root;
-  host = document.createElement("div");
-  host.dataset.rodxReactHost = "shared";
-  host.style.display = "none";
-  (document.body || document.documentElement).append(host);
-  root = createRoot(host);
-  return root;
-}
-
-function render() {
-  if (sharedMount) return;
-  if (!mounts.size) {
-    if (root) flushSync(() => root?.render(null));
-    return;
-  }
-  const current = ensureRoot();
-  flushSync(() =>
-    current.render(
-      <>
-        {[...mounts].map(([target, mount]) =>
-          createPortal(<>{mount.node}</>, target, String(mount.id)),
-        )}
-      </>,
-    ),
-  );
-}
-
 function releaseDetachedViews() {
-  let changed = false;
   for (const [target, record] of mounts) {
     if (target.isConnected) record.connected = true;
     else if (record.connected) {
       record.dispose?.();
       mounts.delete(target);
-      changed = true;
     }
   }
-  if (changed) render();
 }
 
 function observeMounts() {
@@ -78,6 +44,7 @@ function observeMounts() {
 
 /** One React root per RodX execution world, with a portal for each integration target. */
 export function mountView(target: MountTarget, read: () => ReactNode) {
+  if (!sharedMount) throw new Error("RodX React mount adapter must be configured before mounting views");
   observeMounts();
   for (const [child, record] of mounts)
     if (child !== target && target.contains(child)) {
@@ -92,16 +59,13 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
     }
   } else {
     const record: Mount = { id: ++nextMountId, node: read(), connected: target.isConnected };
-    if (sharedMount) {
-      // React portals accept ShadowRoot and SVGElement too; runtime target typing is narrower.
-      record.listeners = new Set();
-      flushSync(() => {
-        record.dispose = sharedMount!(<SharedView record={record} />, target as HTMLElement);
-      });
-    }
+    // The runtime portal registry owns all RodX views, including Shadow DOM targets.
+    record.listeners = new Set();
+    flushSync(() => {
+      record.dispose = sharedMount(<SharedView record={record} />, target as HTMLElement);
+    });
     mounts.set(target, record);
   }
-  render();
   releaseDetachedViews();
 }
 
@@ -110,7 +74,6 @@ export function disposeView(target: MountTarget) {
   if (!record) return;
   record.dispose?.();
   mounts.delete(target);
-  render();
 }
 
 /** Release the entire shared root on userscript teardown or explicit restart. */
@@ -120,8 +83,4 @@ export function disposeAllViews() {
   for (const record of mounts.values()) record.dispose?.();
   mounts.clear();
   sharedMount = undefined;
-  if (root) flushSync(() => root?.unmount());
-  root = undefined;
-  host?.remove();
-  host = undefined;
 }
