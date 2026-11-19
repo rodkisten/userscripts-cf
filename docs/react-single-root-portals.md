@@ -21,6 +21,19 @@ This decision supersedes the per-component/per-post root wording in `docs/WORKBO
 
 **Acceptance gate:** For a given world, standalone/tag-group/unified bundle with N active modules and M mounted UI targets must create one root, not N or M. Distinct installations/worlds are independently owned.
 
+## Runtime teardown guarantees (2026-11-19)
+
+Per-script resource ownership is managed by `createRuntimeCleanupScope` in `src/core/disposal.ts`:
+
+- Cleanup callbacks run exactly once in reverse registration order.
+- Concurrent calls to a context's `dispose()` share one Promise and cannot execute the same cleanup twice.
+- Cleanup failures are reported and isolated; remaining callbacks still run.
+- A cleanup registered after disposal begins is invoked immediately, preventing late registrations from silently leaking.
+- Context disposal aborts its signal before awaiting cleanup. UI-root creation, style insertion, database creation, and event-listener registration reject new resources after abort.
+- Disposing one script removes only its portals and context-owned resources. Runtime disposal first closes script contexts, then releases shared runtime UI and the single React root.
+
+Regression coverage: `tests/runtime-cleanup-scope.test.ts`, executed by React foundation CI. These tests cover LIFO ordering, concurrent/repeated disposal, late registration, invalid callbacks and cleanup failure isolation. They complement, rather than replace, existing runtime, React context, Rod AST and userscript tests.
+
 ## Automated enforcement (2026-11-19)
 
 The build now enforces this ownership contract at two levels:
