@@ -12,6 +12,7 @@ export let rodxToastTimer: ReturnType<typeof setTimeout> | undefined;
 export function initializeDeckRodxToastTimer() {
   clearTimeout(rodxToastTimer);
   rodxToastTimer = undefined;
+  disposeToast();
 }
 
 function disposeToast() {
@@ -34,7 +35,6 @@ function ensureToast() {
   container.id = "rodx-toast";
   shadow.append(container);
   (document.body || document.documentElement).append(host);
-  mountView(container, () => <ToastView {...currentToast} />);
 }
 
 function ToastView({ message, kind }: ToastState) {
