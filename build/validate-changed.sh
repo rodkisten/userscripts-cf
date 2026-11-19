@@ -112,7 +112,7 @@ for (const definition of definitions) {
   const graph = await analyzeRuntimeGraph(definition.entry);
   if (changed.some(file => graph.files.includes(file))) affected.push(definition.id);
 }
-const targets = [...new Set(affected.flatMap(id => [id, "standalone", ...(definitions.find(d => d.id === id)?.unified === false ? [] : ["unified"])]))];
+const targets = [...new Set(affected.flatMap(id => [id, ...(definitions.find(d => d.id === id)?.unified === false ? [] : ["unified"])]))];
 console.log("Affected userscript builds:", targets.join(", ") || "(none)");
 if (targets.length) {
   const { spawnSync } = await import("node:child_process");
@@ -175,7 +175,7 @@ for (const definition of definitions) {
     reasons[definition.id] = matches;
   }
 }
-const report = { changed, affected, reasons, targets: [...new Set(affected.flatMap(id => [id, 'standalone', ...(definitions.find(d => d.id === id)?.unified === false ? [] : ['unified'])]))] };
+const report = { changed, affected, reasons, targets: [...new Set(affected.flatMap(id => [id, ...(definitions.find(d => d.id === id)?.unified === false ? [] : ['unified'])]))] };
 await fs.writeFile('affected-userscripts.json', JSON.stringify(report, null, 2) + '\n');
 console.log('Affected userscripts:', affected.join(', ') || '(no graph matches)');
 const summary = ['#### Dependency graph', ...affected.map(id => '- \`' + id + '\` ← ' + reasons[id].map(f => '\`' + f + '\`').join(', '))];
