@@ -49,7 +49,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
           <div className={styles.header}>
             <div className={styles.titleWrapper}>
               {schema.title && <h3>{schema.title}</h3>}
-              {schema.subtitle && <p>{schema.subtitle}</p>}
+              {(schema.subtitle || schema.description) && <p>{schema.subtitle || schema.description}</p>}
             </div>
             <button className={styles.closeButton} onClick={onClose} aria-label="Close menu">
               &times;
@@ -84,13 +84,13 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   </select>
                 ) : field.type === "slider" || field.type === "range" ? (
                   <input
-                    id={field.id}
+                    id={fieldId}
                     type="range"
                     min={field.min}
                     max={field.max}
                     step={field.step}
-                    value={values[field.id] ?? field.min ?? 0}
-                    onChange={e => handleChange(field.id, Number(e.target.value))}
+                    value={values[fieldId] ?? field.min ?? 0}
+                    onChange={e => handleChange(fieldId, Number(e.target.value))}
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
@@ -101,18 +101,18 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   />
                 ) : isCheckbox ? (
                   <input
-                    id={field.id}
+                    id={fieldId}
                     type="checkbox"
-                    checked={!!values[field.id]}
-                    onChange={(e) => handleChange(field.id, e.target.checked)}
+                    checked={!!values[fieldId]}
+                    onChange={(e) => handleChange(fieldId, e.target.checked)}
                   />
                 ) : (
                   <input
-                    id={field.id}
+                    id={fieldId}
                     type={["number", "email", "password", "search", "url", "tel"].includes(field.type) ? field.type : "text"}
                     placeholder={field.placeholder}
-                    value={values[field.id] ?? ""}
-                    onChange={(e) => handleChange(field.id, field.type === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
+                    value={values[fieldId] ?? ""}
+                    onChange={(e) => handleChange(fieldId, field.type === "number" && e.target.value !== "" ? Number(e.target.value) : e.target.value)}
                   />
                 )}
               </div>
