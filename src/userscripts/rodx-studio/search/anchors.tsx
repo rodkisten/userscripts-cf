@@ -221,7 +221,7 @@ export function initializeDeckSearchAnchors() {
         });
         mountView(shadow, () => (
           <>
-            <style textContent={extractedCSS1} />
+            <style>{extractedCSS1}</style>
             {"\n"}
             <div className={"list-context"} role={"status"} hidden={true}></div>
             {"\n"}
