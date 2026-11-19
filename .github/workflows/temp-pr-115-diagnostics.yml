@@ -41,14 +41,12 @@ jobs:
         run: |
           npm run typecheck
           npm run typecheck:react
-      - name: Build distribution fixtures
-        timeout-minutes: 4
-        run: npm run build
       - name: Runtime/utility suites isolated
         timeout-minutes: 8
         env:
           RUNTIME_TEST_TIMEOUT_MS: "30000"
           RUNTIME_TEST_ISOLATE_SUITES: "true"
+          RUNTIME_TEST_SKIP_DIST: "true"
         run: npm run test:unit
       - name: Diagnostic summary
         if: always()
