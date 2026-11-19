@@ -213,7 +213,7 @@ export function initializeDeckSearchAnchors() {
       if (!main) return false;
       if (!host) {
         document.querySelectorAll<HTMLElement>(RODX_SELECTORS.searchAnchors).forEach((el) => el.remove());
-        host = (<section />) as HTMLElement;
+        host = document.createElement("section");
         host.id = "rodx-navigation-strip";
         applyComponentStyle(host, "rx-anchors-host", false);
         shadow = host.attachShadow({
