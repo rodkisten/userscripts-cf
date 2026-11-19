@@ -85,7 +85,6 @@ The AST walker tracks the **nearest function** as the owner of a call, even when
 
 A captured `ctx` or `context` is only propagated into nested lexical scopes while its binding remains visible. A nested function parameter or block-scoped declaration with the same name disables implicit context rewrites inside that scope; sibling code continues to use the original context. Vitest covers shadowed parameters, block declarations and unshadowed closures.
 
-
 ### Modern GM capability guards
 
 The GM guard recognizer preserves modern calls inside `typeof GM.getValue === "function"` and `typeof GM["getValue"] === "function"` checks, including guarded short-circuit branches. Unguarded supported `GM.method(...)` calls remain eligible for `ctx.gm.modern.method(...)` migration. This is intentionally conservative because replacing a guarded branch may change fallback behavior. Vitest and the fixture matrix cover both paths.

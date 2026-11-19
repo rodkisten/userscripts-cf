@@ -185,21 +185,17 @@ export function transformRodAst(code, id, options = {}) {
       if (found) return;
       if (
         ts.isTypeOfExpression(node) &&
-        ((
-          ts.isIdentifier(node.expression) &&
-          (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))
-        ) || (
-          ts.isPropertyAccessExpression(node.expression) &&
-          ts.isIdentifier(node.expression.expression) &&
-          node.expression.expression.text === "GM" &&
-          GM_LEGACY_METHODS.has(node.expression.name.text)
-        ) || (
-          ts.isElementAccessExpression(node.expression) &&
-          ts.isIdentifier(node.expression.expression) &&
-          node.expression.expression.text === "GM" &&
-          ts.isStringLiteral(node.expression.argumentExpression) &&
-          GM_LEGACY_METHODS.has(node.expression.argumentExpression.text)
-        ))
+        ((ts.isIdentifier(node.expression) &&
+          (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))) ||
+          (ts.isPropertyAccessExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "GM" &&
+            GM_LEGACY_METHODS.has(node.expression.name.text)) ||
+          (ts.isElementAccessExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "GM" &&
+            ts.isStringLiteral(node.expression.argumentExpression) &&
+            GM_LEGACY_METHODS.has(node.expression.argumentExpression.text)))
       ) {
         found = true;
         return;
