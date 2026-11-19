@@ -116,7 +116,7 @@ function DockView({ controller }: { controller: DockController }) {
               </Dialog.Close>
             </header>
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
-            <button className="action" onClick={() => RodMenu.open({
+            <button className="action" onClick={() => { setOpen(false); RodMenu.open({
               id: "rod-dock-settings",
               title: "Preferências do Rod Dock",
               surface: "modal",
@@ -127,7 +127,7 @@ function DockView({ controller }: { controller: DockController }) {
                 { id: "apply", label: "Aplicar", onClick: ({ values, close }) => { setSearch(String(values.filter ?? "")); close(); } },
                 { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
               ],
-            })}>Preferências</button>
+            }); }}>Preferências</button>
             <details className="module" open>
               <summary>Scripts ({scripts.length})</summary>
               <input
