@@ -131,7 +131,12 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   console.log("[runtime test] SPA: pushing settings route");
   host.history.pushState({}, "", "/settings");
   console.log("[runtime test] SPA: awaiting settings navigation");
-  await app.navigate();
+  await Promise.race([
+    app.navigate(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("SPA settings navigation did not settle after cleanup (5000ms)")), 5000),
+    ),
+  ]);
   console.log("[runtime test] SPA: settings navigation complete");
   assert.equal(stops, 1);
   assert.equal(host.document.querySelector("style"), null);
