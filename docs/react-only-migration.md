@@ -23,7 +23,7 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 - [ ] Migrate Reddit/GoneWild (including audio, player, search, and Soundgasm) without changing page-world behavior.
 - [ ] Migrate RodX Studio and Twitter/X UI, retaining interceptors and mobile gesture behavior.
 - [ ] Migrate DOM inspector, page REPL, GitHub tools, mobile editor, and remaining user interfaces.
-- [ ] Migrate Playground and all UI tests to React Testing Library and browser-level smoke tests.
+- [ ] Migrate remaining Playground entrypoints to React. `playground/instagram-bookmark-app.tsx` is now React 19; `playground/form-controls-app.tsx` remains legacy Solid and is the next playground cutover. UI/userscript tests are intentionally excluded by `docs/testing-policy.md`.
 - [ ] Remove Solid imports, `solid-js`, `@solidjs/web`, compiler/Vite plugin, `runtime-solid`, Solid workflows, obsolete docs, and `solid-ui` naming.
 - [ ] Enforce CI rule preventing new Solid imports and verify standalone/unified builds and Safari behavior.
 
