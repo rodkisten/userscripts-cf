@@ -16,7 +16,7 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 
 ## Migration order
 
-- [ ] Add React 19, React DOM, JSX runtime, typings, compiler configuration, and lockfile changes as one tested unit.
+- [x] Add React 19, React DOM, JSX runtime, typings, compiler configuration, and lockfile changes. Validation of the current integrated branch remains pending.
 - [ ] Implement `runtime-react`, React ShadowRoot mount, `ctx.ui.mountReact`, context lifecycle tests, and React-only bundle smoke tests.
 - [ ] Migrate shared UI primitives: Button, Badge, Dialog, Dropdown, Toast, RodMenu, Dock, clipboard, object inspector, form controls.
 - [ ] Migrate Instagram bookmark UI and settings.
@@ -24,7 +24,7 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 - [ ] Migrate RodX Studio and Twitter/X UI, retaining interceptors and mobile gesture behavior.
 - [ ] Migrate DOM inspector, page REPL, GitHub tools, mobile editor, and remaining user interfaces.
 - [x] Retire the legacy Solid form-controls playground; `/playground/form-controls.html` redirects to the React Rod UI Studio. `playground/instagram-bookmark-app.tsx` is also React 19. No Solid playground entrypoints remain.
-- [ ] Remove Solid imports, `solid-js`, `@solidjs/web`, compiler/Vite plugin, `runtime-solid`, Solid workflows, obsolete docs, and `solid-ui` naming.
+- [x] Remove dead Solid-only adapters, `build/solid-dom.mjs`, obsolete Solid context test, unused `rod-libraries.js` facade, and the feature-branch-only form-controls sync workflow. No Solid runtime dependency remains in `package.json`. Remaining audit: classify framework-neutral utilities and historical naming under `src/runtime/solid-ui/`.
 - [ ] Enforce CI rule preventing new Solid imports and verify standalone/unified builds and Safari behavior.
 
 ## Verification gates
