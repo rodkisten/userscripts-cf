@@ -10,19 +10,19 @@ type SharedMount = (component: ReactElement, container: HTMLElement) => {
   dispose: () => void;
 };
 export function createToasterFeature(mountSharedReact?: SharedMount) {
-let root: Root | undefined;
-let sharedMount: ReturnType<SharedMount> | undefined;
-let host: HTMLDivElement | undefined;
-function ensureMounted() {
-  if (root || sharedMount || typeof document === "undefined") return;
-  host = document.createElement("div");
-  host.dataset.rodToaster = "sonner";
-  document.body.append(host);
-  if (mountSharedReact) sharedMount = mountSharedReact(<ToasterView />, host);
-  else {
-    root = createRoot(host);
-    root.render(<ToasterView />);
-  }
+  let root: Root | undefined;
+  let sharedMount: ReturnType<SharedMount> | undefined;
+  let host: HTMLDivElement | undefined;
+  function ensureMounted() {
+    if (root || sharedMount || typeof document === "undefined") return;
+    host = document.createElement("div");
+    host.dataset.rodToaster = "sonner";
+    document.body.append(host);
+    if (mountSharedReact) sharedMount = mountSharedReact(<ToasterView />, host);
+    else {
+      root = createRoot(host);
+      root.render(<ToasterView />);
+    }
 }
 function show(message: unknown, options?: Record<string, unknown>) {
   ensureMounted();
