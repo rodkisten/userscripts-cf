@@ -26,6 +26,17 @@ function createRuntime(definitions, bridge, host, beforeCreate) {
   return host.RuntimeFixture.createRuntime(definitions, bridge, host);
 }
 import { matchURL } from "../src/core/match.js";
+import { initializeRodFeatures } from "../src/core/runtime.js";
+
+test("React menus are unavailable without a runtime-owned shared mount", async () => {
+  const host = new Window({ url: "https://example.com/" });
+  const legacyFeatures = initializeRodFeatures(host);
+  assert.equal(legacyFeatures.menu, undefined);
+  const reactFeatures = initializeRodFeatures(host, () => ({ dispose() {} }));
+  assert.equal(typeof reactFeatures.menu?.open, "function");
+  assert.equal(typeof reactFeatures.menu?.dropdown, "function");
+  await host.happyDOM.abort();
+});
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
   assert.equal(matchURL("https://*.example.com/*", "https://example.com/a"), true);
