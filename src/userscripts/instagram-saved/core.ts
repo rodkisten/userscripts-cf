@@ -118,17 +118,18 @@ export async function syncSaved({
   settings = {},
   onCursor,
 }: SyncOptions) {
-  const done = await load();
+  const done = Object.assign(Object.create(null) as Record<string, number>, await load());
   const seen = new Set<string>();
   let cursor = settings.cursor || "",
     count = 0,
     pages = 0;
   const limit = Math.max(1, Math.min(100, Number(settings.batchSize) || 5));
   const maxItems = Math.max(1, Math.min(10000, Number(settings.maxItemsPerSession) || 100));
-  const cursors = new Set();
+  const cursors = new Set<string>(cursor ? [cursor] : []);
   do {
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
+    signal?.throwIfAborted();
     if (!Array.isArray(page.items) || page.status === "fail") {
       throw Error("Resposta de salvos inválida");
     }
@@ -140,7 +141,7 @@ export async function syncSaved({
           return false;
         }
         seen.add(item.mediaId);
-        return !done[item.mediaId];
+        return !Object.hasOwn(done, item.mediaId);
       });
     for (let offset = 0; offset < items.length; offset += limit) {
       const batch = items.slice(offset, offset + limit);
@@ -148,12 +149,15 @@ export async function syncSaved({
       for (let attempt = 0; pending.length && attempt < 4; attempt++) {
         signal?.throwIfAborted();
         const response = await sendBatch(pending);
+        signal?.throwIfAborted();
         if (!Array.isArray(response.results)) {
           throw Error("Relay sem confirmação por item");
         }
         const retry: MediaPayload[] = [];
         for (let i = 0; i < pending.length; i++) {
-          const result = response.results.find((r) => r.index === i);
+          const matches = response.results.filter((r) => r.index === i);
+          if (matches.length !== 1) throw Error("Confirmação Relay ausente ou duplicada");
+          const result = matches[0];
           const status = classify(result, channels);
           if (status.complete) {
             done[pending[i].mediaId] = Date.now();
