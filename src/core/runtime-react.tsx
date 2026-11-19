@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
 import type { ReactElement } from "react";
 import { RuntimeMount } from "./runtime-mount-react.js";
+import type { ReactScriptContext } from "./react-context-contract.js";
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import { useSyncExternalStore, type ReactNode } from "react";
@@ -11,7 +12,7 @@ import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shad
 
 const REACT_MOUNT_SOURCE = "react.mount";
 
-type PortalEntry = { id: number; target: HTMLElement; node: ReactNode };
+type PortalEntry = { id: number; target: HTMLElement; node: ReactNode; context: ReactScriptContext };
 function createPortalRegistry() {
   const entries = new Map<number, PortalEntry>();
   const listeners = new Set<() => void>();
@@ -42,7 +43,7 @@ function createPortalRegistry() {
 }
 function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
-  return <>{entries.map(({ id, target, node }) => createPortal(node, target, String(id)))}</>;
+  return <>{entries.map(({ id, target, node, context }) => createPortal(<RuntimeMount context={context}>{node}</RuntimeMount>, target, String(id)))}</>;
 }
 
 export function createRuntime(
@@ -52,7 +53,26 @@ export function createRuntime(
   release?: { id: string; version: string; manifestURL: string },
 ): RuntimeAPI {
   const helpers = { useContext, useRuntime, useRuntimeWorld, bindRuntime };
-  return createCoreRuntime(definitions, bridge, host, release, {
+  const registry = createPortalRegistry();
+  let nextId = 0;
+  let reactHost: HTMLDivElement | undefined;
+  let reactRoot: ReturnType<typeof createRoot> | undefined;
+  const ensureReactHost = () => {
+    if (reactRoot) return;
+    reactHost = host.document.createElement("div");
+    reactHost.dataset.rodReactHost = "bundle";
+    (host.document.body || host.document.documentElement).append(reactHost);
+    reactRoot = createRoot(reactHost);
+    reactRoot.render(<PortalRegistry registry={registry} />);
+  };
+  const disposeReactHost = () => {
+    registry.clear();
+    reactRoot?.unmount();
+    reactRoot = undefined;
+    reactHost?.remove();
+    reactHost = undefined;
+  };
+  const runtime = createCoreRuntime(definitions, bridge, host, release, {
     installHelpers: () => {
       const installed: string[] = [];
       for (const name of Object.keys(helpers) as Array<keyof typeof helpers>) {
@@ -69,29 +89,10 @@ export function createRuntime(
       }
     },
     createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
-      const registry = createPortalRegistry();
-      let nextId = 0;
-      let reactHost: HTMLDivElement | undefined;
-      let reactRoot: ReturnType<typeof createRoot> | undefined;
-      const ensureReactHost = () => {
-        if (!reactRoot) {
-          reactHost = host.document.createElement("div");
-          reactHost.dataset.rodReactHost = definition.id;
-          ensureUIRoot().append(reactHost);
-          reactRoot = createRoot(reactHost);
-          reactRoot.render(
-            <RuntimeMount context={getContext()}>
-              <PortalRegistry registry={registry} />
-            </RuntimeMount>,
-          );
-        }
-      };
+      const ownedPortals = new Set<number>();
       onDispose(() => {
-        registry.clear();
-        reactRoot?.unmount();
-        reactRoot = undefined;
-        reactHost?.remove();
-        reactHost = undefined;
+        for (const id of ownedPortals) registry.remove(id);
+        ownedPortals.clear();
       });
       return {
         ui: Object.freeze({
@@ -138,16 +139,18 @@ export function createRuntime(
           const owned = !container;
           if (owned) ensureUIRoot().append(mountPoint);
           const id = ++nextId;
+          ownedPortals.add(id);
           let disposed = false;
           const dispose = () => {
             if (disposed) return;
             disposed = true;
+            ownedPortals.delete(id);
             registry.remove(id);
             if (owned) mountPoint.remove();
           };
           try {
             ensureReactHost();
-            registry.add({ id, target: mountPoint, node: component });
+            registry.add({ id, target: mountPoint, node: component, context: getContext() });
             onDispose(dispose);
           } catch (error) {
             dispose();
@@ -160,4 +163,15 @@ export function createRuntime(
       };
     },
   });
+  const disposeRuntime = runtime.dispose.bind(runtime);
+  return {
+    ...runtime,
+    dispose: async () => {
+      try {
+        await disposeRuntime();
+      } finally {
+        disposeReactHost();
+      }
+    },
+  };
 }
