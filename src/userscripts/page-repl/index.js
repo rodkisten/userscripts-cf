@@ -3,6 +3,7 @@ import { RUNTIME_LIMITS } from "../../config/runtime.js";
 import { DEFAULT_SETTINGS } from "../../config/defaults.js";
 import { RODX_SELECTORS } from "../../selectors.js";
 import { mountPanel } from "./Panel.tsx";
+import { flushSync } from "react-dom";
 import { createEditor } from "./editor.ts";
 import css from "./style.css?inline";
 import { compile } from "./compiler.js";
@@ -57,8 +58,9 @@ export default {
     applyComponentStyle(host, "rx-repl-host");
     ctx.ui.registerStyles(css);
     const container = document.createElement("div");
-    const ui = mountPanel(container);
     ctx.ui.mount(container);
+    // Legacy REPL integrations query the mounted panel synchronously.
+    const ui = flushSync(() => mountPanel(container, (component, target) => ctx.ui.mountReact(component, target)));
     const $ = (selector) => shadow.querySelector(selector);
     const panel = $(RODX_SELECTORS.replPanel),
       launcher = $(RODX_SELECTORS.replLauncher);
