@@ -159,7 +159,7 @@ export function createNetworkInspector(Studio) {
   mountView(root, () => (
     <>
       {"\n      "}
-      <style textContent={extractedCSS1} />
+      <style>{extractedCSS1}</style>
       {"\n      "}
       <div className={"rx-row"}>
         {"\n        "}
