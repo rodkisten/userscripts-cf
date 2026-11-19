@@ -92,7 +92,7 @@ export function classify(result: DeliveryResult | undefined, channels: string[])
     ...(c?.covered || []),
     ...(c?.notSent || []).filter((v) => v.reason === "already_sent").map((v) => v.channelId),
   ]);
-  return { complete: channels.every((c) => covered.has(c)), inserted: inserted.size > 0 };
+  return { complete: channels.length > 0 && channels.every((c) => covered.has(c)), inserted: inserted.size > 0 };
 }
 
 export function retryDelay(attempt: number, count: number, retryAfter?: string | null, random = Math.random) {
@@ -118,6 +118,9 @@ export async function syncSaved({
   settings = {},
   onCursor,
 }: SyncOptions) {
+  if (!channels.length || channels.some((channel) => !channel.trim())) {
+    throw Error("Configure pelo menos um canal válido para sincronizar");
+  }
   const done = Object.assign(Object.create(null) as Record<string, number>, await load());
   const seen = new Set<string>();
   let processed = 0;
@@ -153,7 +156,7 @@ export async function syncSaved({
         signal?.throwIfAborted();
         const response = await sendBatch(pending);
         signal?.throwIfAborted();
-        if (!Array.isArray(response.results)) {
+        if (!Array.isArray(response.results) || response.results.length !== pending.length) {
           throw Error("Relay sem confirmação por item");
         }
         const retry: MediaPayload[] = [];
