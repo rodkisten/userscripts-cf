@@ -271,7 +271,8 @@ export function initializeDeckCompactLayout(): void {
           const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
           toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
           toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
-          primary.querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
+          primary
+            .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
             .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
         });
 
@@ -415,16 +416,20 @@ export function initializeDeckCompactLayout(): void {
             event.preventDefault();
             event.stopImmediatePropagation();
             const native = Array.from(
-              (article as ParentNode).querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+              (article as ParentNode).querySelectorAll<HTMLAnchorElement>(
+                NATIVE_X_SELECTORS.authorProfileLinks,
+              ),
             ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
             if (native) native.click();
             else location.assign(mini!.href);
           });
           if (image) {
             const img = document.createElement("img");
-            img.src = image.getAttribute("src") ||
+            img.src =
+              image.getAttribute("src") ||
               (image as HTMLImageElement).currentSrc ||
-              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] || "";
+              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] ||
+              "";
             img.alt = "";
             img.width = 28;
             img.height = 28;
