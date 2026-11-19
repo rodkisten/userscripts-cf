@@ -17,7 +17,7 @@ function createPortalRegistry() {
   const listeners = new Set<() => void>();
   let snapshot: PortalEntry[] = [];
   const publish = () => {
-    snapshot = [...entries.values()];
+    snapshot = Array.from(entries.values());
     for (const listener of listeners) listener();
   };
   return {
@@ -26,16 +26,24 @@ function createPortalRegistry() {
       return () => { listeners.delete(listener); };
     },
     getSnapshot: () => snapshot,
-    add: (entry: PortalEntry) => { entries.set(entry.id, entry); publish(); },
-    remove: (id: number) => { if (entries.delete(id)) publish(); },
-    clear: () => { entries.clear(); publish(); },
+    add: (entry: PortalEntry) => {
+      entries.set(entry.id, entry);
+      publish();
+    },
+    remove: (id: number) => {
+      if (entries.delete(id)) publish();
+    },
+    clear: () => {
+      if (!entries.size) return;
+      entries.clear();
+      publish();
+    },
   };
 }
 function PortalRegistry({ registry }: { registry: ReturnType<typeof createPortalRegistry> }) {
   const entries = useSyncExternalStore(registry.subscribe, registry.getSnapshot);
   return <>{entries.map(({ id, target, node }) => createPortal(node, target, String(id)))}</>;
 }
-
 
 export function createRuntime(
   definitions: ScriptDefinition[],
@@ -71,11 +79,22 @@ export function createRuntime(
           reactHost.dataset.rodReactHost = definition.id;
           ensureUIRoot().append(reactHost);
           reactRoot = createRoot(reactHost);
-          reactRoot.render(<RuntimeMount context={getContext()}><PortalRegistry registry={registry} /></RuntimeMount>);
+          reactRoot.render(
+            <RuntimeMount context={getContext()}>
+              <PortalRegistry registry={registry} />
+            </RuntimeMount>,
+          );
         }
       };
-      onDispose(() => { registry.clear(); reactRoot?.unmount(); reactRoot = undefined; reactHost?.remove(); reactHost = undefined; });
-      return { ui: Object.freeze({
+      onDispose(() => {
+        registry.clear();
+        reactRoot?.unmount();
+        reactRoot = undefined;
+        reactHost?.remove();
+        reactHost = undefined;
+      });
+      return {
+        ui: Object.freeze({
         get root() {
           return ensureUIRoot();
         },
@@ -137,7 +156,8 @@ export function createRuntime(
           }
           return dispose;
         },
-      }) };
+        }),
+      };
     },
   });
 }
