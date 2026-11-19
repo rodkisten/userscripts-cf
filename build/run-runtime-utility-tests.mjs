@@ -23,6 +23,11 @@ async function walk(dir) {
 }
 await walk(root.pathname);
 suites.sort();
+if (process.env.RUNTIME_TEST_SKIP_DIST === "true") {
+  const index = suites.indexOf("tests/build.test.js");
+  if (index !== -1) suites.splice(index, 1);
+  console.log("Skipping dist-dependent build tests because no full distribution was built.");
+}
 if (!suites.length) {
   console.error("No eligible runtime/utility test suites found. Refusing silent success.");
   process.exit(1);
