@@ -6,7 +6,7 @@ const root = new URL("../tests/", import.meta.url);
 const allowed =
   /(?:^|[-_.])(runtime|utilities|utility|utils|parser|codemod|ast|storage|config|build|pr-ci-scope)(?:[-_.]|$)/i;
 const prohibited =
-  /(?:component|userscript|solid|react-ui|design-system|visual|render|integration|boot|feature|benchmark|playground|shadow-mount)/i;
+  /(?:component|userscript|solid|react-ui|design-system|visual|render|integration|boot|feature|benchmark|playground|shadow-mount|inspection-build|summary)/i;
 const suites = [];
 
 async function walk(dir) {
