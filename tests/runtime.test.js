@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test as vitestTest } from "vitest";
 import { Window } from "happy-dom";
 import { build } from "vite";
 let transformedModules = 0;
@@ -45,27 +45,31 @@ function createRuntime(definitions, bridge, host, beforeCreate) {
 import { matchURL } from "../src/core/match.js";
 import { initializeRodFeatures } from "../src/core/runtime.js";
 
+function test(name, callback) {
+  vitestTest(name, async () => {
+    console.log(`[runtime test] begin: ${name}`);
+    try {
+      return await callback();
+    } finally {
+      console.log(`[runtime test] end: ${name}`);
+    }
+  });
+}
+
 test("React menus are unavailable without a runtime-owned shared mount", async () => {
-  console.log("[runtime test] feature availability: start");
   const host = new Window({ url: "https://example.com/" });
-  console.log("[runtime test] feature availability: Window created");
   Object.defineProperty(host, "RodStorage", {
     configurable: true,
     value: { create: () => ({}) },
   });
-  console.log("[runtime test] feature availability: RodStorage stub installed");
   const legacyFeatures = initializeRodFeatures(host);
-  console.log("[runtime test] feature availability: legacy features initialized");
   assert.equal(legacyFeatures.menu, undefined);
   assert.equal(legacyFeatures.toaster, undefined);
   const reactFeatures = initializeRodFeatures(host, () => ({ update() {}, dispose() {} }));
-  console.log("[runtime test] feature availability: React features initialized");
   assert.equal(typeof reactFeatures.menu?.open, "function");
   assert.equal(typeof reactFeatures.menu?.dropdown, "function");
   assert.equal(typeof reactFeatures.toaster?.destroy, "function");
-  console.log("[runtime test] feature availability: aborting happy-dom");
   await host.happyDOM.abort();
-  console.log("[runtime test] feature availability: complete");
 });
 
 test("URL patterns use hostname boundaries, paths, query and exclusions", () => {
