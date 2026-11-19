@@ -1,0 +1,62 @@
+name: "🧯 TEMP · PR 115 isolated diagnostics"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - ".github/workflows/temp-pr-115-diagnostics.yml"
+      - "build/run-runtime-utility-tests.mjs"
+      - "src/core/**"
+      - "src/userscripts/rodx-studio/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: temp-pr-115-diagnostics-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 115
+    name: "🧪 PR #115 · isolated runtime checks"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: React and project typecheck
+        timeout-minutes: 3
+        run: |
+          npm run typecheck
+          npm run typecheck:react
+      - name: Runtime/utility suites isolated
+        timeout-minutes: 8
+        env:
+          RUNTIME_TEST_TIMEOUT_MS: "30000"
+          RUNTIME_TEST_ISOLATE_SUITES: "true"
+        run: npm run test:unit
+      - name: Build
+        timeout-minutes: 4
+        run: npm run build
+      - name: Diagnostic summary
+        if: always()
+        run: |
+          {
+            echo '## 🧯 Temporary PR #115 diagnostics'
+            echo ''
+            echo '- Commit: \`${{ github.sha }}\`'
+            echo '- Job result: \`${{ job.status }}\`'
+            echo '- This workflow is temporary; delete after investigation.'
+          } >> "$GITHUB_STEP_SUMMARY"
