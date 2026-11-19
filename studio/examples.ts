@@ -1,4 +1,7 @@
-import type { RodMenuField, RodMenuSchema } from "../src/runtime/solid-ui/menu/types";
+import type { MenuSchema, FieldDefinition } from "../src/runtime/react-ui/types";
+
+type RodMenuField = FieldDefinition & Record<string, unknown>;
+type RodMenuSchema = MenuSchema & Record<string, any>;
 
 export interface StudioExample {
   id: string;
@@ -16,7 +19,7 @@ const options = [
 ];
 
 const field = (
-  type: RodMenuField["type"],
+  type: string,
   value: unknown,
   extra: Record<string, unknown> = {},
 ): RodMenuField => ({ type, name: "example", label: type, value, ...extra }) as RodMenuField;
