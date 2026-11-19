@@ -1,4 +1,4 @@
-import { mountView } from "../ui/solid-mount.tsx";
+import { mountView } from "../ui/react-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import ListNotebookSVGIcon from "../../../assets/icons/list-notebook.svg?component";
 import { applyComponentStyle } from "../../../core/css.js";
