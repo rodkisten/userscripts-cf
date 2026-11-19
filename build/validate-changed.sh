@@ -74,6 +74,7 @@ case "$mode" in
           if [[ "${scoped_builds[0]}" == all ]]; then
             # "all" is intentionally a single full build in this job, never a matrix target.
             npm run build
+            unset RUNTIME_TEST_SKIP_DIST
           elif [[ "${SCOPED_BUILDS_MATRIX:-false}" != true ]]; then
             targets="$(IFS=,; echo "${scoped_builds[*]}")"
             node build/build.mjs "--targets=$targets"
