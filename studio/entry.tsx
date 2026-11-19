@@ -138,3 +138,131 @@ if (!inspectorMount) throw new Error("[Rod UI Studio] Missing #tree mount");
 createRoot(inspectorMount).render(<Inspector />);
 const catalogMount = document.getElementById("examplesCatalog");
 if (catalogMount) createRoot(catalogMount).render(<Catalog />);
+
+type ThemeState = { accent: string; radius: string; scale: string; presentation: string; menuSize: string; titleInput: string };
+const themeDefaults: ThemeState = {
+  accent: "#a78bfa", radius: "18", scale: "100", presentation: "bottom-sheet",
+  menuSize: "md", titleInput: "Personalizar experiência",
+};
+const themeKeys = Object.keys(themeDefaults) as (keyof ThemeState)[];
+const getTheme = (): ThemeState => {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem("rod-ui-studio-theme") ?? "{}");
+    return stored && typeof stored === "object" && !Array.isArray(stored)
+      ? Object.fromEntries(themeKeys.map((key) => [key, typeof (stored as Record<string, unknown>)[key] === "string"
+        ? (stored as Record<string, string>)[key] : themeDefaults[key]])) as ThemeState
+      : { ...themeDefaults };
+  } catch { return { ...themeDefaults }; }
+};
+function ThemeController() {
+  const [theme, setTheme] = useState<ThemeState>(getTheme);
+  const [toast, setToast] = useState("");
+  const update = (key: keyof ThemeState, value: string) => setTheme((previous) => ({ ...previous, [key]: value }));
+  const tokens = `:root {\n  --accent: ${theme.accent};\n  --radius: ${theme.radius}px;\n  --scale: ${Number(theme.scale) / 100};\n  --bg: #101016;\n  --surface: #1b1a24;\n  --ink: #f8f7fc;\n}`;
+  const schema = { id: "rod-ui-example", title: theme.titleInput, presentation: theme.presentation,
+    size: theme.menuSize, fields: [
+      { type: "text", name: "name", label: "Nome", value: "Minha configuração" },
+      { type: "switch", name: "enabled", label: "Habilitado", value: true },
+    ], actions: [{ id: "cancel", label: "Cancelar", role: "cancel" }, { id: "save", label: "Salvar", role: "submit" }] };
+  const menuCode = `ctx.menu.open(${JSON.stringify(schema, null, 2)});`;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--accent", theme.accent);
+    root.style.setProperty("--radius", theme.radius + "px");
+    root.style.setProperty("--scale", String(Number(theme.scale) / 100));
+    for (const key of themeKeys) {
+      const control = document.getElementById(key) as HTMLInputElement | HTMLSelectElement | null;
+      if (control && control.value !== theme[key]) control.value = theme[key];
+    }
+    const title = document.getElementById("menuTitle");
+    if (title) title.textContent = theme.titleInput;
+    const menu = document.getElementById("menuCode");
+    if (menu) menu.textContent = menuCode;
+    const tokenCode = document.getElementById("tokensCode");
+    if (tokenCode) tokenCode.textContent = tokens;
+    const preview = document.getElementById("menuPreview");
+    if (preview) {
+      const sizes: Record<string, string> = { sm: "300px", md: "430px", lg: "570px", xl: "690px", fullscreen: "100%" };
+      preview.style.maxWidth = sizes[theme.menuSize] ?? sizes.md;
+      preview.style.borderRadius = theme.presentation === "bottom-sheet"
+        ? "var(--radius) var(--radius) 8px 8px" : "var(--radius)";
+    }
+    document.querySelectorAll<HTMLButtonElement>("#menuModes [data-mode]").forEach((button) =>
+      button.setAttribute("aria-selected", String(button.dataset.mode === theme.presentation)));
+    const swatches = document.getElementById("swatches");
+    if (swatches) {
+      swatches.replaceChildren();
+      for (const [name, color] of [["Accent", theme.accent], ["Background", "#101016"],
+        ["Surface", "#1b1a24"], ["Text", "#f8f7fc"]]) {
+        const item = document.createElement("div");
+        item.className = "swatch";
+        const square = document.createElement("i");
+        square.style.background = color;
+        const label = document.createElement("strong");
+        label.textContent = name;
+        const value = document.createElement("div");
+        value.className = "token";
+        value.textContent = color;
+        item.append(square, label, value);
+        swatches.append(item);
+      }
+    }
+    try { localStorage.setItem("rod-ui-studio-theme", JSON.stringify(theme)); } catch { /* storage optional */ }
+  }, [theme, menuCode, tokens]);
+  useEffect(() => {
+    const cleanup: Array<() => void> = [];
+    const listen = (selector: string, event: string, handler: EventListener) => {
+      const element = document.querySelector(selector);
+      if (!element) return;
+      element.addEventListener(event, handler);
+      cleanup.push(() => element.removeEventListener(event, handler));
+    };
+    for (const key of themeKeys) listen("#" + key, "input", (event) =>
+      update(key, (event.target as HTMLInputElement).value));
+    listen("#reset", "click", () => { setTheme({ ...themeDefaults }); setToast("Tema restaurado"); });
+    listen("#menuModes", "click", (event) => {
+      const button = (event.target as Element).closest<HTMLButtonElement>("[data-mode]");
+      if (button?.dataset.mode) update("presentation", button.dataset.mode);
+    });
+    listen("#copyTheme", "click", () => void navigator.clipboard?.writeText(tokens));
+    listen("#copyMenu", "click", () => void navigator.clipboard?.writeText(menuCode));
+    listen("#cancelDemo", "click", () => setToast("Ação: cancelar"));
+    listen("#saveDemo", "click", () => setToast("Ação: salvar"));
+    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-recipe]")) {
+      const handler = () => {
+        if (button.dataset.recipe === "network") {
+          location.hash = "inspector";
+          document.querySelector<HTMLButtonElement>('[data-object="response"]')?.click();
+        } else {
+          update("presentation", button.dataset.recipe === "mobile" ? "bottom-sheet" : "modal");
+          location.hash = "menu";
+        }
+      };
+      button.addEventListener("click", handler);
+      cleanup.push(() => button.removeEventListener("click", handler));
+    }
+    return () => cleanup.forEach((remove) => remove());
+  }, [tokens, menuCode]);
+  useEffect(() => {
+    const host = document.getElementById("toast");
+    if (host) { host.textContent = toast; host.classList.toggle("hidden", !toast); }
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(""), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
+  return null;
+}
+const themeMount = document.createElement("div");
+themeMount.id = "rod-studio-theme-root";
+document.body.append(themeMount);
+createRoot(themeMount).render(<ThemeController />);
+const modeMount = document.getElementById("menuModes");
+if (modeMount) {
+  const modes = ["bottom-sheet", "modal", "drawer", "popover", "auto"];
+  modeMount.replaceChildren(...modes.map((mode) => {
+    const button = document.createElement("button");
+    button.dataset.mode = mode;
+    button.textContent = mode;
+    return button;
+  }));
+}
