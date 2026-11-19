@@ -14,7 +14,6 @@ type Settings = {
   maxItemsPerSession: number;
 };
 
-declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
 declare const unsafeWindow: (Window & typeof globalThis & { __XRodSettingsInstagram?: any }) | undefined;
 declare const RodMenu:
   { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void } | undefined;
@@ -120,7 +119,9 @@ export default {
     async function configure() {
       await settingsApi.open();
     }
-    async function relay(config: Config, items: MediaPayload[]) {
+    const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
+    async function relay(config: Config, items: MediaPayload[], account: string) {
+      if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
       const response = await ctx.http.request(RELAY, {
         method: "POST",
         transport: "gm",
@@ -133,6 +134,8 @@ export default {
         },
         body: JSON.stringify({ items, channels: config.channels, concurrency: 1, force: false }),
       });
+      abort.throwIfAborted();
+      if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
       if (!response.ok) {
         const error = Error(`Relay HTTP ${response.status}`) as Error & {
           status?: number;
@@ -143,6 +146,8 @@ export default {
         throw error;
       }
       const data: unknown = await response.json();
+      abort.throwIfAborted();
+      if (currentAccount() !== account) throw Error("Conta alterada após resposta do Relay");
       if (!data || typeof data !== "object" || !("results" in data) ||
           !Array.isArray(data.results)) {
         throw Error("Relay sem confirmação por item");
@@ -192,7 +197,7 @@ export default {
           let count = 0;
           for (const collectionId of settings.collectionIds) {
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
-            const cursorKey = `cursor:${account}:${collectionId}`;
+            const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             count += await syncSaved({
               channels: config.channels,
               signal: abort,
@@ -201,7 +206,7 @@ export default {
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
-              sendBatch: (items) => retry(() => relay(config, items), items.length),
+              sendBatch: (items) => retry(() => relay(config, items, account), items.length),
               fetchPage: (cursor) =>
                 retry(async () => {
                   if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account) {
@@ -232,7 +237,10 @@ export default {
                     error.retryAfter = response.headers.get("retry-after");
                     throw error;
                   }
-                  return response.json();
+                  const page = await response.json();
+                  abort.throwIfAborted();
+                  if (currentAccount() !== account) throw Error("Conta alterada após leitura do Instagram");
+                  return page;
                 }, 50),
             });
           }
