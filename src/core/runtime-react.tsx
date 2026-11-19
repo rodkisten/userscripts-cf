@@ -191,7 +191,7 @@ export function createRuntime(
               disposed = true;
               ownedPortals.delete(id);
               registry.remove(id);
-              if (owned) mountPoint.remove();
+              if (owned) (mountPoint as Element).remove();
             };
             try {
               ensureReactHost();
