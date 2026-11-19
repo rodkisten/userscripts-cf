@@ -105,7 +105,7 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
       module: {
         init(ctx) {
           starts++;
-          ctx.style("body { color: red; }");
+          ctx.pageStyle("body { color: red; }");
           ctx.listen(host, "click", () => clicks++);
           return () => {
             stops++;
