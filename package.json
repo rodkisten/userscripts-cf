@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node build/build.mjs",
+    "check:react-roots": "node build/check-react-root-ownership.mjs",
     "sync:rod-runtime": "node build/sync-rod-runtime.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
     "test:perf": "vitest run tests/runtime-startup-benchmark.test.js",
