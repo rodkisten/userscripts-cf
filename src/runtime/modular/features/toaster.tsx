@@ -15,7 +15,7 @@ export function createToasterFeature(mountSharedReact: SharedMount) {
   let sharedMount: ReturnType<SharedMount> | undefined;
   let host: HTMLDivElement | undefined;
   function ensureMounted() {
-    if (root || sharedMount || typeof document === "undefined") return;
+    if (sharedMount || typeof document === "undefined") return;
     host = document.createElement("div");
     host.dataset.rodToaster = "sonner";
     document.body.append(host);
@@ -64,7 +64,6 @@ export function createToasterFeature(mountSharedReact: SharedMount) {
         sonner.dismiss();
         sharedMount?.dispose();
         sharedMount = undefined;
-        root = undefined;
         host?.remove();
         host = undefined;
       },
