@@ -25,7 +25,7 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 - [ ] Migrate DOM inspector, page REPL, GitHub tools, mobile editor, and remaining user interfaces.
 - [x] Retire the legacy Solid form-controls playground; `/playground/form-controls.html` redirects to the React Rod UI Studio. `playground/instagram-bookmark-app.tsx` is also React 19. No Solid playground entrypoints remain.
 - [x] Remove dead Solid-only adapters, `build/solid-dom.mjs`, obsolete Solid context test, unused `rod-libraries.js` facade, and the feature-branch-only form-controls sync workflow. No Solid runtime dependency remains in `package.json`. Remaining audit: classify framework-neutral utilities and historical naming under `src/runtime/solid-ui/`.
-- [ ] Enforce CI rule preventing new Solid imports and verify standalone/unified builds and Safari behavior.
+- [ ] Confirmar CI pós-merge para standalone/unified builds e realizar smoke testing manual no Safari iPhone.
 
 ## Verification gates
 

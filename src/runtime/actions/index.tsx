@@ -114,7 +114,7 @@ function ActionsView({
 }
 
 export function installRodActions(
-  _menu?: unknown,
+  _menu: unknown,
   mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
 ): RodActionsHub {
   // A detached host means the previous singleton can no longer render. Recreate it

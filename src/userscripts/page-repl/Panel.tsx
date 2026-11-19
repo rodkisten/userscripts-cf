@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import type { ReactElement } from "react";
 
 type RecordItem = { kind: string; title: string; value: unknown };

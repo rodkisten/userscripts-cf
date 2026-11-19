@@ -27,25 +27,16 @@ A migração é incremental e deve preservar o comportamento dos userscripts exi
 
 **Regra permanente de documentação:** toda alteração funcional ou arquitetural deve atualizar, no mesmo conjunto de mudanças, o README quando afetar arquitetura, comandos, setup, capacidades, estado ou decisões duráveis do projeto, e o [Workboard](docs/WORKBOARD.md) para registrar progresso, pendências, responsáveis e evidências de validação. Se uma mudança não afetar o README, registre essa avaliação no Workboard. Nunca deixe instruções antigas contradizerem a arquitetura atual.
 
-### Estado desta etapa: PR #115
+### Estado desta etapa: main após PR #119
 
-- Continuação da migração React após o merge do PR #114.
-- PR #115 aberto: [React shared-root lifecycle follow-up](https://github.com/rodkisten/userscripts-cf/pull/115).
-- O runtime React e o adaptador RodX estão sendo ajustados para lifecycle, teardown e destinos de portal tipados.
-- O runtime libera o Sonner toaster compartilhado durante o teardown, depois de encerrar os contextos ativos e antes de desmontar a root React; há regressão de lifecycle em `tests/runtime.test.js`.
-- O Rod Actions exige o adaptador de portal do runtime e não cria uma root React independente; seu consumidor de produção fornece `ctx.ui.mountReact`.
-- Menus Radix (`ctx.menu.open/dropdown`) também exigem o mount compartilhado e registram o descarte no `ctx.onDispose`; runtimes sem adaptador React não expõem esse recurso em vez de criar outra root.
-- Sonner, Rod Dock, Page REPL, GitHub directory tree e ícones sociais do RodX também usam o mesmo portal registry. O único `createRoot()` do bundle permanece no runtime; o playground `studio/entry.tsx` é uma aplicação independente.
-- `npm run check:react-roots` audita os callsites por AST; cada bundle de execução também verifica no grafo emitido exatamente uma root do runtime. O build falha se uma feature introduzir uma root independente.
-- O lifecycle de cada ScriptContext usa `createRuntimeCleanupScope`: cleanups LIFO e idempotentes, chamadas concorrentes de `dispose()` compartilham a mesma Promise, erros isolados não interrompem a limpeza e registros tardios são executados imediatamente. Recursos que criam UI/estilos/listeners recusam novas alocações após o abort.
-- O portal registry observa o DOM do documento e descarta portais cujo target já esteve conectado e depois foi removido. Targets removidos e reinseridos antes do checkpoint do MutationObserver são preservados; cada portal é liberado junto do ScriptContext proprietário, sem desmontar portais de outros módulos.
-- O portal registry também reconcilia os `addedNodes` dos registros do MutationObserver: um target inserido e removido antes do callback ainda é reconhecido como conectado e descartado corretamente.
-- `tests/runtime.test.js` também exercita a integração real do bundle: mount React compartilhado, render inicial, update, dispose do portal e teardown da root única. A React foundation executa essa suíte além dos testes isolados do registry e cleanup.
-- Os checks independentes de React foundation, Userscripts e Rod AST passaram em rodadas anteriores.
-- A validação completa ainda **não está aprovada**: houve execuções canceladas/interrompidas pelo runner hospedado; não declarar CI verde sem uma execução completa bem-sucedida.
-- A concorrência de `diagnostics.yml` foi configurada para não cancelar uma validação ativa automaticamente. O workflow temporário de diagnóstico foi removido para evitar builds duplicados.
+- [PR #119](https://github.com/rodkisten/userscripts-cf/pull/119) foi mergeado em 19/11/2026. A `main` inclui auditoria de root por bundle/world, portal registry, cleanup idempotente e sincronização da documentação.
+- A root compartilhada do runtime permanece em `src/core/runtime-react.tsx`; módulos montam UI pelo portal registry e pelo contrato `ctx.ui.mountReact`.
+- O lifecycle de ScriptContext usa `createRuntimeCleanupScope`, com cleanup LIFO, idempotência, Promise compartilhada e isolamento de falhas.
+- A política de testes vigente permite apenas testes de runtime e utilitários. Testes de componentes, UI renderizada e comportamento de userscripts não devem ser criados nem executados.
+- **Validação pós-merge pendente:** o último `Validate changed` encontrou TS1016 em `src/runtime/actions/index.tsx` e TS2304 em `src/userscripts/page-repl/Panel.tsx`. Consulte o [Workboard](docs/WORKBOARD.md) para os runs e a correção em andamento.
+- A release major executada sobre o merge do PR #119 concluiu com sucesso; a validação do commit atual de `main` ainda precisa ser confirmada.
 
-Consulte o [Workboard](docs/WORKBOARD.md) e o PR #115 para o estado mais recente. Atualize este resumo quando o estado mudar; não mantenha contagens de testes ou checks sem evidência da execução correspondente.
+Consulte o [Workboard](docs/WORKBOARD.md) para prioridades, evidências e próximos blocos. README e Workboard devem permanecer sincronizados em cada alteração arquitetural.
 
 ## Scripts Reddit, GitHub e Instagram
 
