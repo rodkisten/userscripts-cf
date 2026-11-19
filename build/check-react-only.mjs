@@ -20,9 +20,7 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
       errorRecovery: false,
     });
   } catch (error) {
-    // Compilation/typecheck owns syntax errors; the migration guard must not
-    // reject unrelated legacy JavaScript that Babel cannot parse.
-    return [];
+    return [{ line: error.loc?.line ?? 1, kind: `Unparseable source: ${error.message}` }];
   }
   const report = (node, kind) => violations.push({ line: location(node), kind });
   const visit = (node) => {
