@@ -1,4 +1,4 @@
-# 🚦 Mandatory workboard: React migration and stabilization
+> **TEST SCOPE UPDATE (2026-11-19):** [docs/testing-policy.md](testing-policy.md) supersedes all UI/userscript test requirements. Runtime and utility tests only; TypeScript and builds remain required. Removed obsolete suites: rodx-solid-ui, rodx-boot, rodx-features, shadow-mount, github-tools integration, rodx-migration, styles and design-system-contract. The latest full CI after these deletions has **not** been verified.\n\n# 🚦 Mandatory workboard: React migration and stabilization
 
 > **STATUS: ACTIVE · Source of truth for priorities · Updated 2026-11-17**
 >
