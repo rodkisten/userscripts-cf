@@ -1,10 +1,30 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test as vitestTest } from "vitest";
 import { Window } from "happy-dom";
 import { build } from "vite";
+let transformedModules = 0;
 const fixture = await build({
   configFile: new URL("../vite.config.js", import.meta.url).pathname,
-  logLevel: "silent",
+  define: {
+    __ROD_FEATURE_HTTP__: "false",
+    __ROD_FEATURE_DOM__: "false",
+  },
+  logLevel: "info",
+  plugins: [
+    {
+      name: "runtime-test-build-progress",
+      buildStart() {
+        console.log("[runtime fixture] Compiling the runtime IIFE used by lifecycle tests.");
+      },
+      transform(_source, id) {
+        transformedModules++;
+        if (transformedModules % 25 === 0) {
+          console.log(`[runtime fixture] Transformed ${transformedModules} modules.`);
+        }
+        return null;
+      },
+    },
+  ],
   build: {
     write: false,
     lib: {
@@ -14,22 +34,44 @@ const fixture = await build({
     },
   },
 });
+console.log("[runtime fixture] Vite build promise resolved; registering runtime tests.");
 const runtimeCode = (Array.isArray(fixture) ? fixture : [fixture])
   .flatMap((result) => result.output)
   .find((chunk) => chunk.type === "chunk").code;
 function createRuntime(definitions, bridge, host, beforeCreate) {
+  console.log("[runtime fixture] enabling happy-dom evaluation");
   host.happyDOM.settings.enableJavaScriptEvaluation = true;
   host.happyDOM.settings.suppressInsecureJavaScriptEnvironmentWarning = true;
   host.process = process;
+  console.log("[runtime fixture] evaluating compiled runtime");
   host.eval(runtimeCode);
+  console.log("[runtime fixture] compiled runtime evaluated");
   beforeCreate?.(host);
-  return host.RuntimeFixture.createRuntime(definitions, bridge, host);
+  console.log("[runtime fixture] creating runtime instance");
+  const app = host.RuntimeFixture.createRuntime(definitions, bridge, host);
+  console.log("[runtime fixture] runtime instance created");
+  return app;
 }
 import { matchURL } from "../src/core/match.js";
 import { initializeRodFeatures } from "../src/core/runtime.js";
 
+function test(name, callback) {
+  vitestTest(name, async () => {
+    console.log(`[runtime test] begin: ${name}`);
+    try {
+      return await callback();
+    } finally {
+      console.log(`[runtime test] end: ${name}`);
+    }
+  });
+}
+
 test("React menus are unavailable without a runtime-owned shared mount", async () => {
   const host = new Window({ url: "https://example.com/" });
+  Object.defineProperty(host, "RodStorage", {
+    configurable: true,
+    value: { create: () => ({}) },
+  });
   const legacyFeatures = initializeRodFeatures(host);
   assert.equal(legacyFeatures.menu, undefined);
   assert.equal(legacyFeatures.toaster, undefined);
@@ -63,33 +105,48 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
       module: {
         init(ctx) {
           starts++;
-          ctx.style("body { color: red; }");
+          ctx.pageStyle("body { color: red; }");
           ctx.listen(host, "click", () => clicks++);
-          return () => stops++;
+          return () => {
+            stops++;
+            console.log("[runtime test] SPA: module cleanup callback");
+          };
         },
       },
     },
   ];
+  console.log("[runtime test] SPA: creating runtime");
   const app = createRuntime(definitions, { call() {} }, host);
+  console.log("[runtime test] SPA: awaiting ready");
   await app.ready;
+  console.log("[runtime test] SPA: ready");
   host.history.pushState({}, "", "/search?q=abc");
   await app.navigate();
+  console.log("[runtime test] SPA: search navigation complete");
   assert.equal(starts, 1);
+  console.log("[runtime test] SPA: dispatching click");
   host.dispatchEvent(new host.Event("click"));
+  console.log("[runtime test] SPA: click dispatched");
   assert.equal(clicks, 1);
+  console.log("[runtime test] SPA: pushing settings route");
   host.history.pushState({}, "", "/settings");
+  console.log("[runtime test] SPA: awaiting settings navigation");
   await app.navigate();
+  console.log("[runtime test] SPA: settings navigation complete");
   assert.equal(stops, 1);
   assert.equal(host.document.querySelector("style"), null);
   host.dispatchEvent(new host.Event("click"));
   assert.equal(clicks, 1);
   host.history.pushState({}, "", "/home");
   await app.navigate();
+  console.log("[runtime test] SPA: home navigation complete");
   assert.equal(starts, 2);
   await app.dispose();
+  console.log("[runtime test] SPA: runtime disposed");
   assert.equal(stops, 2);
   assert.equal(host.history.pushState, nativePush);
   await host.happyDOM.abort();
+  console.log("[runtime test] SPA: happy-dom aborted");
 });
 
 test("persistent storage is created only on first use and reused across SPA navigation", async () => {
