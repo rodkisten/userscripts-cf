@@ -28,8 +28,25 @@ if (!suites.length) {
   process.exit(1);
 }
 console.log("Runtime and utility suites:", suites.join(", "));
+const timeoutMs = Number(process.env.RUNTIME_TEST_TIMEOUT_MS ?? 180_000);
+if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000) {
+  console.error("RUNTIME_TEST_TIMEOUT_MS must be a positive integer >= 1000");
+  process.exit(2);
+}
+const startedAt = Date.now();
+console.log(`Starting Vitest runtime/utility suites (timeout: ${timeoutMs}ms)`);
 const result = spawnSync("npx", ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...suites], {
   stdio: "inherit",
   shell: process.platform === "win32",
+  timeout: timeoutMs,
+  killSignal: "SIGKILL",
 });
-process.exit(result.status ?? 1);
+const durationMs = Date.now() - startedAt;
+console.log(`Vitest runtime/utility suites finished after ${durationMs}ms (exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`);
+if (result.error) {
+  console.error(`Vitest execution error: ${result.error.message}`);
+  if (result.error.code === "ETIMEDOUT") {
+    console.error(`Vitest exceeded its ${timeoutMs}ms timeout. Inspect tests for open handles or blocked workers.`);
+  }
+}
+process.exit(result.status === 0 && !result.error ? 0 : 1);
