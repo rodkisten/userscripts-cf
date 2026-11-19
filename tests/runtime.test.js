@@ -234,3 +234,27 @@ test("ctx.query shares a lazy QueryClient between scripts and disposes on runtim
   await app.dispose();
   assert.equal(clients[0].getQueryData(["shared", "test"]), undefined);
 });
+
+test("runtime disposal releases the shared React toaster host", async () => {
+  const host = new Window({ url: "https://example.com/" });
+  const app = createRuntime(
+    [
+      {
+        id: "toaster-owner",
+        matches: ["https://example.com/*"],
+        module: {
+          init(ctx) {
+            ctx.toaster?.success("runtime lifecycle");
+          },
+        },
+      },
+    ],
+    { call: async () => undefined },
+    host,
+  );
+  await app.ready;
+  assert.ok(host.document.querySelector("[data-rod-toaster='sonner']"));
+  await app.dispose();
+  assert.equal(host.document.querySelector("[data-rod-toaster='sonner']"), null);
+  await host.happyDOM.abort();
+});
