@@ -49,6 +49,11 @@ test("React menus are unavailable without a runtime-owned shared mount", async (
   console.log("[runtime test] feature availability: start");
   const host = new Window({ url: "https://example.com/" });
   console.log("[runtime test] feature availability: Window created");
+  Object.defineProperty(host, "RodStorage", {
+    configurable: true,
+    value: { create: () => ({}) },
+  });
+  console.log("[runtime test] feature availability: RodStorage stub installed");
   const legacyFeatures = initializeRodFeatures(host);
   console.log("[runtime test] feature availability: legacy features initialized");
   assert.equal(legacyFeatures.menu, undefined);
