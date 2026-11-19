@@ -406,42 +406,33 @@ export function initializeDeckCompactLayout(): void {
         let mini = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.miniAvatar);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
-          mini = (
-            <a
-              className={CSS_CLASSES.miniAvatar}
-              href={sourceURL}
-              title={UI_TEXTS.openProfileTitle}
-              aria-label={UI_TEXTS.openProfileAriaPrefix + key.slice(1)}
-              onClick={(event: MouseEvent) => {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                const native = Array.from(
-                  (article as ParentNode).querySelectorAll<HTMLAnchorElement>(
-                    NATIVE_X_SELECTORS.authorProfileLinks,
-                  ),
-                ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
-                if (native) native.click();
-                else location.assign(mini!.href);
-              }}
-            >
-              {image ? (
-                <img
-                  src={
-                    image.getAttribute("src") ||
-                    (image as HTMLImageElement).currentSrc ||
-                    image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] ||
-                    ""
-                  }
-                  alt=""
-                  width="28"
-                  height="28"
-                  decoding="async"
-                />
-              ) : (
-                "●"
-              )}
-            </a>
-          ) as HTMLAnchorElement;
+          mini = document.createElement("a");
+          mini.className = CSS_CLASSES.miniAvatar;
+          mini.href = sourceURL;
+          mini.title = UI_TEXTS.openProfileTitle;
+          mini.setAttribute("aria-label", UI_TEXTS.openProfileAriaPrefix + key.slice(1));
+          mini.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const native = Array.from(
+              (article as ParentNode).querySelectorAll<HTMLAnchorElement>(NATIVE_X_SELECTORS.authorProfileLinks),
+            ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
+            if (native) native.click();
+            else location.assign(mini!.href);
+          });
+          if (image) {
+            const img = document.createElement("img");
+            img.src = image.getAttribute("src") ||
+              (image as HTMLImageElement).currentSrc ||
+              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] || "";
+            img.alt = "";
+            img.width = 28;
+            img.height = 28;
+            img.decoding = "async";
+            mini.append(img);
+          } else {
+            mini.textContent = "●";
+          }
 
           top.prepend(mini);
         }
