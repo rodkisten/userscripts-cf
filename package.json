@@ -11,7 +11,7 @@
     "sync:rod-runtime": "node build/sync-rod-runtime.mjs",
     "build:b": "node labs/remote-release/build-worker.mjs B",
     "test:perf": "vitest run tests/runtime-startup-benchmark.test.js",
-    "test": "npm run typecheck && npm run build && vitest run --exclude '**/runtime-startup-benchmark.test.js' && npm run test:lab",
+    "test": "npm run typecheck && npm run build && npm run test:unit && npm run test:lab",
     "format": "prettier --write .",
     "build:lab": "node labs/remote-release/build-worker.mjs A",
     "build:lab:b": "node labs/remote-release/build-worker.mjs B",
@@ -28,8 +28,9 @@
     "lint": "node build/check-style.mjs",
     "lint:fix": "node build/check-style.mjs --fix",
     "check:design-system": "node build/check-design-system-changes.mjs",
-    "test:design-system": "vitest run tests/design-system-contract.test.js",
-    "typecheck:react": "tsc --noEmit -p tsconfig.react.json"
+    "test:design-system": "npm run typecheck:react",
+    "typecheck:react": "tsc --noEmit -p tsconfig.react.json",
+    "test:unit": "node build/run-runtime-utility-tests.mjs"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
