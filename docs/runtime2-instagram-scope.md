@@ -14,8 +14,8 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Reject missing or duplicate per-item Relay acknowledgements.
 - [x] Check cancellation after Instagram page and Relay batch requests.
 - [x] Treat the starting cursor as visited, to detect loops back to the resumed position.
-- [ ] Add utility regression tests for these four cases and run targeted Vitest.
-- [ ] Enforce maxItemsPerSession without dropping unprocessed page entries or prematurely advancing cursor.
+- [x] Add utility regression cases for inherited keys, duplicate acknowledgements, abort after fetch and cursor cycles.\n- [ ] Run targeted Vitest (not yet verified).
+- [x] Checkpoint at completed page boundaries to avoid losing unprocessed items. `maxItemsPerSession` is a soft page-boundary limit and can be exceeded by one page.
 - [ ] Make persisted delivery state account + collection + channel safe, including channel changes.
 - [ ] Route Instagram HTTP and GM requests through ctx abstractions; preserve cancellation and retry-after.
 - [ ] Audit bookmark ownership across Feed, modal, grid and swiped Reels.
@@ -25,7 +25,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Current verification
 
-Initial source hardening only; **no tests, typecheck, build, or Safari verification claimed**. No deployment requested. Do not merge until validated.
+Source hardening and regression tests committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. No deployment requested. Do not merge until validated.
 
 ## Coordination
 
