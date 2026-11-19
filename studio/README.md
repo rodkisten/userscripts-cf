@@ -4,14 +4,14 @@ The playground entry at `studio/entry.tsx` now mounts a React 19 root at `#tree`
 
 ## Available now
 
-- Four selectable data samples (response, DOM-shaped data, settings, syntax)
-- Top-level property filtering
-- Expand/collapse JSON preview
-- Copy JSON to clipboard
+- Four selectable data samples using the existing HTML tabs
+- Existing filter, depth, expand/collapse and copy controls wired to React state
+- Searchable schema catalog with category filtering and JSON schema inspection
+- React-controlled output with event listener cleanup
 
 ## Not yet restored
 
-- Live RodMenu and component gallery
+- Live RodMenu and interactive component gallery (schema browsing is restored)
 - Legacy Solid ObjectInspector advanced controls, virtualization, syntax themes
 - Interactive design-system controls formerly imported from `solid-ui`
 
@@ -21,3 +21,7 @@ Do not describe the temporary inspector as a fully restored component gallery. T
 
 `node build/design-system.mjs` compiles the IIFE entry using Vite. The overall `Validate changed` workflow also runs a broader TypeScript check that currently reports React migration errors outside the playground; a successful studio build alone does not make that workflow green.
 
+
+## Integration note
+
+The HTML shell still contains legacy inline behavior. React owns the `#tree` and `#examplesCatalog` mounts, but legacy scripts should be removed or migrated before treating the whole page as React-owned. The schema catalog is read-only: inspecting a schema does not instantiate a live menu.
