@@ -11,6 +11,11 @@ on:
       - "src/core/react-context-contract.ts"
       - "tsconfig.react-context.json"
       - "tests/react-runtime-context.test.ts"
+      - "tests/runtime-react-root-audit.test.js"
+      - "build/react-root-audit.mjs"
+      - "build/check-react-root-ownership.mjs"
+      - "build/bundle-runtime.mjs"
+      - "build/build.mjs"
       - "tsconfig.react.json"
       - "package.json"
       - "package-lock.json"
@@ -23,6 +28,11 @@ on:
       - "src/core/react-context-contract.ts"
       - "tsconfig.react-context.json"
       - "tests/react-runtime-context.test.ts"
+      - "tests/runtime-react-root-audit.test.js"
+      - "build/react-root-audit.mjs"
+      - "build/check-react-root-ownership.mjs"
+      - "build/bundle-runtime.mjs"
+      - "build/build.mjs"
       - "tsconfig.react.json"
       - "package.json"
       - "package-lock.json"
@@ -48,6 +58,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Check React root ownership
+        run: npm run check:react-roots
       - name: Check isolated React provider types
         run: npx tsc --noEmit -p tsconfig.react-context.json
       - name: Test React context ownership
