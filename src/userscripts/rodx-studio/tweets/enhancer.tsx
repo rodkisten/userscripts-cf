@@ -423,48 +423,48 @@ export function initializeDeckResultEnhancer(): void {
       btn.addEventListener("click", (event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
-            const menuButton =
-              article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
-              article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
+        const menuButton =
+          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
+          article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
 
-            if (!menuButton) {
-              btn.title = UI_TEXTS.bookmarkMenuError;
-              return;
-            }
+        if (!menuButton) {
+          btn.title = UI_TEXTS.bookmarkMenuError;
+          return;
+        }
 
-            let observer: MutationObserver | null = null;
-            let timeout: ReturnType<typeof setTimeout> | null = null;
-            let committed = false;
+        let observer: MutationObserver | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        let committed = false;
 
-            const finish = (): void => {
-              observer?.disconnect();
-              if (timeout !== null) clearTimeout(timeout);
-            };
+        const finish = (): void => {
+          observer?.disconnect();
+          if (timeout !== null) clearTimeout(timeout);
+        };
 
-            const choose = (): void => {
-              if (committed) return;
-              const options = Array.from(
-                document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
-              ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
+        const choose = (): void => {
+          if (committed) return;
+          const options = Array.from(
+            document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
+          ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
 
-              const target =
-                options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
-                options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
+          const target =
+            options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
+            options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
 
-              if (!target) return;
-              committed = true;
-              finish();
-              target.click();
-            };
+          if (!target) return;
+          committed = true;
+          finish();
+          target.click();
+        };
 
-            observer = new MutationObserver(choose);
-            observer.observe(document.body, {
-              childList: true,
-              subtree: true,
-            });
-            timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
-            menuButton.click();
-            setTimeout(choose, 0);
+        observer = new MutationObserver(choose);
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+        timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
+        menuButton.click();
+        setTimeout(choose, 0);
       });
 
       mountView(btn, () => <BookmarkSVGIcon />);
@@ -666,17 +666,17 @@ export function initializeDeckResultEnhancer(): void {
           expand.addEventListener("click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-                  const anchor =
-                    article
-                      .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
-                      ?.closest<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
-                    article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
+            const anchor =
+              article
+                .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
+                ?.closest<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
+              article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
 
-                  if (!anchor) {
-                    showRodxToast(UI_TEXTS.toastAnchorError, "error");
-                    return;
-                  }
-                  anchor.click();
+            if (!anchor) {
+              showRodxToast(UI_TEXTS.toastAnchorError, "error");
+              return;
+            }
+            anchor.click();
           });
           const read = document.createElement("button");
           read.type = "button";
@@ -684,10 +684,10 @@ export function initializeDeckResultEnhancer(): void {
           read.addEventListener("click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-                  if (state.seen.has(id)) state.seen.delete(id);
-                  else state.seen.set(id, Date.now());
-                  Seen.flushSoon?.();
-                  setSeen(article, id);
+            if (state.seen.has(id)) state.seen.delete(id);
+            else state.seen.set(id, Date.now());
+            Seen.flushSoon?.();
+            setSeen(article, id);
           });
           actions.append(expand, read);
 
