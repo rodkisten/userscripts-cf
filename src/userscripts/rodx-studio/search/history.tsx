@@ -234,7 +234,7 @@ export function initializeDeckSearchHistory() {
       page(account, offset, limit);
     function installStyle() {
       if (document.getElementById("rodx-history-style")) return;
-      const sheet = (<style />) as HTMLStyleElement;
+      const sheet = document.createElement("style");
       sheet.id = "rodx-history-style";
       sheet.textContent = extractedCSS1;
       document.head.append(sheet);
@@ -261,21 +261,21 @@ export function initializeDeckSearchHistory() {
       close();
       visible = 40;
       searchTerm = "";
-      dialog = (<div />) as HTMLDivElement;
+      dialog = document.createElement("div");
       dialog.id = "rodx-recent-panel";
       dialog.setAttribute("role", "dialog");
       dialog.setAttribute("aria-label", "Pesquisas recentes");
-      const header = (<div />) as HTMLDivElement;
+      const header = document.createElement("div");
       header.className = "rh-head";
-      const title = (<strong />) as HTMLElement;
+      const title = document.createElement("strong");
       title.textContent = "Pesquisas recentes";
-      const closeBtn = (<button />) as HTMLButtonElement;
+      const closeBtn = document.createElement("button");
       closeBtn.className = "rh-icon";
       closeBtn.textContent = "×";
       closeBtn.title = "Fechar";
       closeBtn.onclick = close;
       header.append(title, closeBtn);
-      const input = (<input />) as HTMLInputElement;
+      const input = document.createElement("input");
       input.placeholder = "Filtrar histórico";
       input.setAttribute("aria-label", "Filtrar pesquisas recentes");
       input.oninput = () => {
@@ -283,7 +283,7 @@ export function initializeDeckSearchHistory() {
         visible = 40;
         void renderList();
       };
-      const rows = (<div />) as HTMLDivElement;
+      const rows = document.createElement("div");
       rows.className = "rh-rows";
       dialog.append(header, input, rows);
       document.body.append(dialog);
@@ -300,20 +300,20 @@ export function initializeDeckSearchHistory() {
         if (generation !== renderGeneration || !dialog || account !== accountKey()) return;
         target.replaceChildren();
         if (!rows.length) {
-          const empty = (<p />) as HTMLElement;
+          const empty = document.createElement("p");
           empty.className = "rh-empty";
           empty.textContent = "Nenhuma pesquisa registrada nesta conta.";
           target.append(empty);
         }
         for (const entry of rows) {
-          const row = (<div />) as HTMLDivElement;
+          const row = document.createElement("div");
           row.className = "rh-row";
-          const open = (<button />) as HTMLButtonElement;
+          const open = document.createElement("button");
           open.className = "rh-open";
-          const text = (<span />) as HTMLSpanElement;
+          const text = document.createElement("span");
           text.className = "rh-query";
           text.textContent = entry.query;
-          const meta = (<small />) as HTMLElement;
+          const meta = document.createElement("small");
           meta.textContent = `${new Date(entry.lastUsed).toLocaleString("pt-BR")} · ${entry.count}×`;
           open.append(text, meta);
           open.title = "Pesquisar novamente";
@@ -321,7 +321,7 @@ export function initializeDeckSearchHistory() {
             close();
             location.assign(hrefFor(entry.query, entry.sort || "live"));
           };
-          const del = (<button />) as HTMLButtonElement;
+          const del = document.createElement("button");
           del.className = "rh-icon";
           del.textContent = "×";
           del.title = "Remover do histórico";
@@ -333,7 +333,7 @@ export function initializeDeckSearchHistory() {
           target.append(row);
         }
         if (more) {
-          const moreBtn = (<button />) as HTMLButtonElement;
+          const moreBtn = document.createElement("button");
           moreBtn.className = "rh-more";
           moreBtn.textContent = "Mostrar mais";
           moreBtn.onclick = () => {
@@ -342,9 +342,9 @@ export function initializeDeckSearchHistory() {
           };
           target.append(moreBtn);
         }
-        const options = (<div />) as HTMLDivElement;
+        const options = document.createElement("div");
         applyComponentStyle(options, "rx-history-options", false);
-        const edit = (<button />) as HTMLButtonElement;
+        const edit = document.createElement("button");
         edit.className = "rh-more";
         edit.textContent = "Abrir Query Lab";
         edit.onclick = () => {
@@ -355,7 +355,7 @@ export function initializeDeckSearchHistory() {
         };
         options.append(edit);
         if (rows.length && !searchTerm) {
-          const clear = (<button />) as HTMLButtonElement;
+          const clear = document.createElement("button");
           clear.className = "rh-more";
           clear.textContent = "Limpar";
           clear.onclick = () => {
@@ -382,9 +382,9 @@ export function initializeDeckSearchHistory() {
       }
       installStyle();
       if (!launch) {
-        launch = (<div />) as HTMLDivElement;
+        launch = document.createElement("div");
         launch.id = "rodx-search-tools";
-        const recent = (<button />) as HTMLButtonElement;
+        const recent = document.createElement("button");
         recent.type = "button";
         recent.textContent = "◷";
         recent.title = "Pesquisas recentes (IndexedDB)";
@@ -394,7 +394,7 @@ export function initializeDeckSearchHistory() {
           if (dialog) close();
           else createPanel();
         };
-        const builder = (<button />) as HTMLButtonElement;
+        const builder = document.createElement("button");
         builder.type = "button";
         builder.textContent = "⌘";
         builder.title = "Abrir Query Lab";

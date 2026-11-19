@@ -1,7 +1,7 @@
 import TelegramIcon from "../../../assets/icons/social-telegram.svg?component";
 import WhatsappIcon from "../../../assets/icons/social-whatsapp.svg?component";
 import InstagramIcon from "../../../assets/icons/social-instagram.svg?component";
-import { mountView } from "../ui/solid-mount.tsx";
+import { createRoot } from "react-dom/client";
 import { RODX_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-links-social-1.css?inline";
 export let SocialAppLinks;
@@ -56,8 +56,12 @@ export function initializeDeckSocialAppLinks() {
       if (!app) return;
       if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(RODX_SELECTORS.appLinkIcon)) {
         anchor.querySelector(RODX_SELECTORS.appLinkIcon)?.remove();
-        const icon = (
-          <span className="rodx-app-icon" aria-hidden="true">
+        const icon = document.createElement("span");
+        icon.className = "rodx-app-icon";
+        icon.setAttribute("aria-hidden", "true");
+        anchor.insertBefore(icon, anchor.firstChild);
+        createRoot(icon).render(
+          <>
             {app.name === "telegram" ? (
               <TelegramIcon />
             ) : app.name === "whatsapp" ? (
@@ -65,9 +69,8 @@ export function initializeDeckSocialAppLinks() {
             ) : (
               <InstagramIcon />
             )}
-          </span>
-        ) as HTMLSpanElement;
-        anchor.insertBefore(icon, anchor.firstChild);
+          </>,
+        );
       }
       anchor.dataset.rodxApp = app.name;
       anchor.classList.add("rodx-app-link");

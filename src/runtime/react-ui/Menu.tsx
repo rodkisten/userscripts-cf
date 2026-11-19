@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { RodMenuProps } from "./types";
+import * as Dialog from "@radix-ui/react-dialog";
+import type { RodMenuProps } from "./types";
 import { createInitialValues, loadPersistence, savePersistence } from "./core";
 import styles from "./Menu.module.css";
 
@@ -13,15 +14,6 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
     if (isOpen) savePersistence(schema.persistKey, values);
   }, [isOpen, values, schema.persistKey]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, onClose]);
-
   const handleChange = (fieldId: string, value: any) => {
     setValues((prev) => ({ ...prev, [fieldId]: value }));
   };
@@ -33,33 +25,47 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
     reset: () => setValues(createInitialValues(schema, initialValues)),
   };
 
-  const isModal = (schema.surface ?? schema.presentation) === "modal";
+  const surface = schema.surface ?? schema.presentation ?? "bottom-sheet";
+  const surfaceClass =
+    surface === "modal"
+      ? styles.surfaceModal
+      : surface === "drawer"
+        ? styles.surfaceDrawer
+        : surface === "popover"
+          ? styles.surfacePopover
+          : "";
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog.Root
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <Dialog.Overlay className={styles.overlay} />
+      <Dialog.Content
         aria-label={schema.title || "Rod Menu"}
-        className={`${styles.surface} ${isModal ? styles.surfaceModal : ""} ${className || ""}`}
-        onClick={(e) => e.stopPropagation()}
+        aria-describedby={undefined}
+        className={`${styles.surface} ${surfaceClass} ${className || ""}`}
       >
-        {(schema.title || schema.subtitle) && (
+        <Dialog.Title className={styles.accessibleTitle}>{schema.title || "Rod Menu"}</Dialog.Title>
+        {(schema.title || schema.subtitle || schema.description) && (
           <div className={styles.header}>
             <div className={styles.titleWrapper}>
               {schema.title && <h3>{schema.title}</h3>}
               {(schema.subtitle || schema.description) && <p>{schema.subtitle || schema.description}</p>}
             </div>
-            <button className={styles.closeButton} onClick={onClose} aria-label="Close menu">
+            <Dialog.Close className={styles.closeButton} aria-label="Fechar menu">
               &times;
-            </button>
+            </Dialog.Close>
           </div>
         )}
 
         <div className={styles.body}>
           {schema.fields?.map((field, index) => {
-            const fieldId = field.id ?? field.name ?? `field-${index}`;
+            const fieldId = `${schema.id}-${field.id ?? field.name ?? `field-${index}`}`;
+            const valueKey = field.id ?? field.name ?? `field-${index}`;
             const isCheckbox =
               field.type === "checkbox" || field.type === "toggle" || field.type === "switch";
             return (
@@ -68,8 +74,8 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                 {field.type === "select" ? (
                   <select
                     id={fieldId}
-                    value={values[fieldId] ?? ""}
-                    onChange={(e) => handleChange(fieldId, e.target.value)}
+                    value={values[valueKey] ?? ""}
+                    onChange={(e) => handleChange(valueKey, e.target.value)}
                   >
                     <option value="" disabled>
                       {field.placeholder || "Select option..."}
@@ -144,7 +150,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   key={action.id}
                   disabled={action.disabled}
                   className={`${styles.btn} ${variantClass}`}
-                  onClick={() => (action.role === "cancel" ? onClose() : action.onClick?.(context))}
+                  onClick={() => {
+                    if (action.role === "cancel") onClose();
+                    else void action.onClick?.(context);
+                  }}
                 >
                   {action.label}
                 </button>
@@ -152,8 +161,8 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
             })}
           </div>
         )}
-      </div>
-    </div>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 };
 export default RodMenu;

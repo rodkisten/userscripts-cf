@@ -1,4 +1,3 @@
-import { mountView } from "../ui/solid-mount.tsx";
 import { applyComponentStyle } from "../../../core/css.js";
 import { RODX_SELECTORS, NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline";
@@ -258,27 +257,23 @@ export function initializeDeckCompactLayout(): void {
         add(el, CSS_CLASSES.profileDetail);
       }
 
-      let toggle = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileMoreButton);
+      let toggle = primary.querySelector<HTMLButtonElement>(RODX_SELECTORS.profileMoreButton);
       if (!toggle && details.length) {
-        toggle = (
-          <button
-            type="button"
-            className={CSS_CLASSES.profileMore}
-            aria-expanded="false"
-            onClick={(event: MouseEvent) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
-              toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
-              toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
-              primary
-                .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
-                .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
-            }}
-          >
-            {UI_TEXTS.moreText}
-          </button>
-        ) as HTMLButtonElement;
+        toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = CSS_CLASSES.profileMore;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.textContent = UI_TEXTS.moreText;
+        toggle.addEventListener("click", (event: MouseEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const isOpen = toggle!.getAttribute(DATA_ATTRS.expanded) !== "true";
+          toggle!.setAttribute(DATA_ATTRS.expanded, String(isOpen));
+          toggle!.textContent = isOpen ? UI_TEXTS.lessText : UI_TEXTS.moreText;
+          primary
+            .querySelectorAll<HTMLElement>(RODX_SELECTORS.profileDetail)
+            .forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
+        });
 
         name.after(toggle);
       }
@@ -394,9 +389,8 @@ export function initializeDeckCompactLayout(): void {
 
         let top = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
-          top = (
-            <div className={`${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`} />
-          ) as HTMLDivElement;
+          top = document.createElement("div");
+          top.className = `${CSS_CLASSES.tweetTopbar} ${CSS_CLASSES.glassActions}`;
         }
 
         if (top.parentElement !== column) {
@@ -412,49 +406,45 @@ export function initializeDeckCompactLayout(): void {
         let mini = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.miniAvatar);
         if (sourceURL && (!mini || mini.getAttribute("href") !== sourceURL)) {
           mini?.remove();
-          mini = (
-            <a
-              className={CSS_CLASSES.miniAvatar}
-              href={sourceURL}
-              title={UI_TEXTS.openProfileTitle}
-              aria-label={UI_TEXTS.openProfileAriaPrefix + key.slice(1)}
-              onClick={(event: MouseEvent) => {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                const native = Array.from(
-                  (article as ParentNode).querySelectorAll<HTMLAnchorElement>(
-                    NATIVE_X_SELECTORS.authorProfileLinks,
-                  ),
-                ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
-                if (native) native.click();
-                else location.assign(mini!.href);
-              }}
-            >
-              {image ? (
-                <img
-                  src={
-                    image.getAttribute("src") ||
-                    (image as HTMLImageElement).currentSrc ||
-                    image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] ||
-                    ""
-                  }
-                  alt=""
-                  width="28"
-                  height="28"
-                  decoding="async"
-                />
-              ) : (
-                "●"
-              )}
-            </a>
-          ) as HTMLAnchorElement;
+          mini = document.createElement("a");
+          mini.className = CSS_CLASSES.miniAvatar;
+          mini.href = sourceURL;
+          mini.title = UI_TEXTS.openProfileTitle;
+          mini.setAttribute("aria-label", UI_TEXTS.openProfileAriaPrefix + key.slice(1));
+          mini.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const native = Array.from(
+              (article as ParentNode).querySelectorAll<HTMLAnchorElement>(
+                NATIVE_X_SELECTORS.authorProfileLinks,
+              ),
+            ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
+            if (native) native.click();
+            else location.assign(mini!.href);
+          });
+          if (image) {
+            const img = document.createElement("img");
+            img.src =
+              image.getAttribute("src") ||
+              (image as HTMLImageElement).currentSrc ||
+              image.style?.backgroundImage?.match(REGEX_PATTERNS.backgroundImageUrl)?.[1] ||
+              "";
+            img.alt = "";
+            img.width = 28;
+            img.height = 28;
+            img.decoding = "async";
+            mini.append(img);
+          } else {
+            mini.textContent = "●";
+          }
 
           top.prepend(mini);
         }
 
         let authorLink = (top as ParentNode).querySelector<HTMLAnchorElement>(RODX_SELECTORS.topbarAuthor);
         if (!authorLink) {
-          authorLink = (<a className={CSS_CLASSES.topbarAuthor} />) as HTMLAnchorElement;
+          authorLink = document.createElement("a");
+          authorLink.className = CSS_CLASSES.topbarAuthor;
           top.insertBefore(authorLink, top.querySelector(RODX_SELECTORS.proxyActions));
         }
 
@@ -468,9 +458,11 @@ export function initializeDeckCompactLayout(): void {
             authorLink.replaceChildren();
             authorLink.dataset[DATA_ATTRS.author] = signature;
 
-            const nameEl = (<strong>{display}</strong>) as HTMLElement;
+            const nameEl = document.createElement("strong");
+            nameEl.textContent = display;
 
-            const atEl = (<span>{"@" + key.slice(1)}</span>) as HTMLSpanElement;
+            const atEl = document.createElement("span");
+            atEl.textContent = "@" + key.slice(1);
 
             authorLink.append(nameEl, atEl);
           }
@@ -495,22 +487,19 @@ export function initializeDeckCompactLayout(): void {
             RODX_SELECTORS.proxyActionByName(action),
           );
           if (!proxy) {
-            proxy = (
-              <button
-                type="button"
-                data-proxy={action}
-                title={label}
-                aria-label={label}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  const nativeEl = Array.from(
-                    (article as ParentNode).querySelectorAll<HTMLElement>(selector),
-                  ).find((el) => !top.contains(el));
-                  nativeEl?.click();
-                }}
-              />
-            ) as HTMLButtonElement;
+            proxy = document.createElement("button");
+            proxy.type = "button";
+            proxy.dataset.proxy = action;
+            proxy.title = label;
+            proxy.setAttribute("aria-label", label);
+            proxy.addEventListener("click", (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              const nativeEl = Array.from(
+                (article as ParentNode).querySelectorAll<HTMLElement>(selector),
+              ).find((el) => !top.contains(el));
+              nativeEl?.click();
+            });
             top.append(proxy);
           }
 
@@ -525,7 +514,8 @@ export function initializeDeckCompactLayout(): void {
               native.getAttribute(DATA_ATTRS.pressed) === "true" ||
               /unlike|unretweet|removeBookmark/.test(native.dataset.testid || "");
 
-            mountView(proxy, () => markup);
+            if (typeof markup === "string") proxy.textContent = markup;
+            else proxy.replaceChildren(markup);
             proxy.setAttribute(DATA_ATTRS.pressed, String(pressed));
           }
         }

@@ -81,7 +81,7 @@ case "$mode" in
           if [[ "${scoped_tests[0]}" == all ]]; then
             npm run test:unit
           else
-            npm run test:unit # Explicit scope cannot re-enable UI tests
+            npm run test:unit # Explicit scope must not re-enable UI/userscript tests
           fi
         fi
         {
@@ -100,7 +100,7 @@ case "$mode" in
       npm run typecheck
       npm run lint
       npm run build
-      # Only runtime and utility suites (docs/testing-policy.md).
+      # Only runtime and utility suites are permitted (docs/testing-policy.md).
       npm run test:unit
       npm run test:lab
       node build/hosting.mjs
@@ -197,7 +197,7 @@ NODE
         mapfile -t unique_tests < <(printf '%s\\n' "${unique_tests[@]}" | grep -Ev '^tests/userscripts/[^/]+/' || true)
       fi
       if (( ${#unique_tests[@]} )); then
-        npm run test:unit
+        npm run test:unit # Preserve the runtime/utility-only test policy
       fi
     fi
     if [[ "$lab_changed" == true ]]; then npm run test:lab; fi

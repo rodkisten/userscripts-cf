@@ -181,7 +181,7 @@ export function getMemberScope() {
 }
 
 export function quickButton(user) {
-  const b = (<button />) as HTMLButtonElement;
+  const b = document.createElement("button");
   b.type = "button";
   b.className = "xls-inline-list-picker";
   b.textContent = "☷ Listas ▾";

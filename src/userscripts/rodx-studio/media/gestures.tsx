@@ -270,7 +270,7 @@ export function initializeDeckVideoTapGuard() {
     function install() {
       // manipulation disables Safari's double-tap zoom on the video itself,
       // but preserves pinch-to-zoom and vertical scrolling elsewhere.
-      const css = (<style />) as HTMLStyleElement;
+      const css = document.createElement("style");
       css.id = "rodx-video-tap-guard-css";
       css.textContent = extractedCSS1;
       (document.head || document.documentElement).append(css);

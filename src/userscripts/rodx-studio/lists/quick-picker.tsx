@@ -29,7 +29,7 @@ export function initializeRodX_lists_78() {
 export let shell;
 
 export function initializeListsShell() {
-  shell = (<div />) as HTMLDivElement;
+  shell = document.createElement("div");
 }
 
 export function initializeRodX_lists_80() {
@@ -74,7 +74,7 @@ export function initializeRodX_lists_81() {
 export let quickRoot;
 
 export function initializeListsQuickRoot() {
-  quickRoot = (<div />) as HTMLDivElement;
+  quickRoot = document.createElement("div");
 }
 
 export function initializeRodX_lists_83() {

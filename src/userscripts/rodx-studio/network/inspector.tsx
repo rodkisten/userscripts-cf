@@ -153,7 +153,7 @@ export function createNetworkInspector(Studio) {
     sweep();
     refreshSoon();
   });
-  const root = (<section />) as HTMLElement;
+  const root = document.createElement("section");
   root.id = "rodx-network-root";
   root.style.setProperty("display", "none", "important");
   mountView(root, () => (
@@ -352,17 +352,17 @@ export function createNetworkInspector(Studio) {
   function makeTreeNode(label, value, path, depth = 0) {
     const object = value && typeof value === "object";
     if (!object) {
-      const node = (<div />) as HTMLDivElement;
+      const node = document.createElement("div");
       node.className = "leaf";
       node.textContent = `${label}: ${JSON.stringify(value)}`;
       return node;
     }
-    const details = (<details />) as HTMLElement;
-    const summary = (<summary />) as HTMLElement;
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
     const keys = Object.keys(value);
     summary.textContent = `${label} ${Array.isArray(value) ? "[" : "{"}${keys.length}${Array.isArray(value) ? "]" : "}"}`;
     details.append(summary);
-    const wrap = (<div />) as HTMLDivElement;
+    const wrap = document.createElement("div");
     details.append(wrap);
     details.dataset.path = path;
     details.addEventListener("toggle", () => {
@@ -380,7 +380,7 @@ export function createNetworkInspector(Studio) {
         wrap.querySelector<HTMLElement>(RODX_SELECTORS.inspectorPages)?.remove();
         wrap.append(fragment);
         if (offset < keys.length) {
-          const more = (<button />) as HTMLButtonElement;
+          const more = document.createElement("button");
           more.type = "button";
           more.dataset.rxPage = "1";
           more.textContent = `Exibir mais ${Math.min(70, keys.length - offset)} de ${keys.length}`;
@@ -485,20 +485,20 @@ export function createNetworkInspector(Studio) {
     ));
     const body = $(RODX_SELECTORS.inspectorBody);
     if (state.raw) {
-      const pre = (<pre />) as HTMLElement;
+      const pre = document.createElement("pre");
       pre.textContent = state.reveal ? String(raw) : String(redact(String(raw)));
       body.append(pre);
     } else {
       try {
         const json = redact(JSON.parse(raw));
-        const tree = (<div />) as HTMLDivElement;
+        const tree = document.createElement("div");
         tree.className = "rx-tree";
         const node = makeTreeNode("$", json, "$");
         (node as HTMLDetailsElement).open = true;
         tree.append(node);
         body.append(tree);
       } catch {
-        const pre = (<pre />) as HTMLElement;
+        const pre = document.createElement("pre");
         pre.textContent = text || "Aguardando resposta ou formato não JSON";
         body.append(pre);
       }
@@ -525,7 +525,7 @@ export function createNetworkInspector(Studio) {
       },
     );
     const href = URL.createObjectURL(blob);
-    const anchor = (<a />) as HTMLAnchorElement;
+    const anchor = document.createElement("a");
     anchor.href = href;
     anchor.download = "rodx-network-redacted.json";
     document.body.append(anchor);

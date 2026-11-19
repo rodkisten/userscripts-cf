@@ -21,7 +21,8 @@ export default defineConfig({
     lightningcss: { targets: { safari: 15 << 16 } },
   },
   build: {
-    // Client-only IIFE bundles do not need React Server Components directives.
+    // Browser IIFEs intentionally bundle client-only React dependencies.
+    // Their "use client" marker has no meaning outside an RSC server boundary.
     rollupOptions: {
       onwarn(warning, defaultHandler) {
         if (

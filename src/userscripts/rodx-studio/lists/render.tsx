@@ -1749,10 +1749,10 @@ export function drawListToolbar() {
   const anchor = document.getElementById("rodx-feed-filters");
   if (!anchor) return;
   if (!listToolbar) {
-    listToolbar = (<div />) as HTMLDivElement;
+    listToolbar = document.createElement("div");
     listToolbar.id = "xls-list-toolbar";
     applyComponentStyle(listToolbar, "rx-render-listToolbar", false);
-    const exit = (<button />) as HTMLButtonElement;
+    const exit = document.createElement("button");
     exit.textContent = "Voltar à timeline nativa";
     exit.onclick = () => {
       listPresets[id].customTimeline = false;

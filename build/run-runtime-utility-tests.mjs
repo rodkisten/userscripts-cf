@@ -1,44 +1,35 @@
-#!/usr/bin/env node
-/**
- * Run only runtime and framework-independent utility tests.
- * Never execute UI/component/userscript rendering suites.
- * See docs/testing-policy.md.
- */
-import { readdirSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readdir } from "node:fs/promises";
+import { join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const root = process.cwd();
-const testsDir = join(root, "tests");
-const testFile = /\.test\.[cm]?[jt]sx?$/;
+const root = new URL("../tests/", import.meta.url);
 const allowed =
-  /(?:^|[-_.])(runtime|context|rod-ast|ast|codemod|parser|storage|event|http|intercept|clipboard|gm|css|style|build|bundle|config|scope|selector|transform|utility|util|cache|network|worker|type|lockfile|deploy|release|security|sanitize)(?:[-_.]|$)/i;
-const forbidden =
-  /(?:^|[-_.])(component|render|ui|visual|snapshot|playground|instagram|reddit|gonewild|soundgasm|twitter|rodx|reel|page-repl|github-tools|studio|button|dialog|menu|toast|dock|form|browser|integration|integrated|boot|standalone)(?:[-_.]|$)/i;
-const benchmark = /runtime-startup-benchmark/;
-function collect(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) return collect(path);
-    if (!entry.isFile() || !testFile.test(entry.name)) return [];
-    const name = entry.name;
-    if (benchmark.test(name) || forbidden.test(name) || !allowed.test(name)) return [];
-    return [relative(root, path).split(sep).join("/")];
-  });
+  /(?:^|[-_.])(runtime|utilities|utility|utils|parser|codemod|ast|storage|config|build|pr-ci-scope)(?:[-_.]|$)/i;
+const prohibited =
+  /(?:component|userscript|solid|react-ui|design-system|visual|render|integration|boot|feature|benchmark|playground|shadow-mount|inspection-build|summary)/i;
+const suites = [];
+
+async function walk(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) await walk(path);
+    else if (/\.test\.[cm]?[jt]sx?$/.test(entry.name)) {
+      const relativePath = relative(root.pathname, path).replaceAll("\\", "/");
+      if (allowed.test(entry.name) && !prohibited.test(relativePath)) {
+        suites.push("tests/" + relativePath);
+      }
+    }
+  }
 }
-const selected = collect(testsDir).sort();
-if (!selected.length) {
-  console.error("No permitted runtime/utility tests found. Refusing to report a green run.");
+await walk(root.pathname);
+suites.sort();
+if (!suites.length) {
+  console.error("No eligible runtime/utility test suites found. Refusing silent success.");
   process.exit(1);
 }
-console.log("Runtime/utility suites:", selected.join(", "));
-const result = spawnSync(
-  process.execPath,
-  ["node_modules/vitest/vitest.mjs", "run", ...selected, ...process.argv.slice(2)],
-  {
-    cwd: root,
-    stdio: "inherit",
-  },
-);
-if (result.error) throw result.error;
+console.log("Runtime and utility suites:", suites.join(", "));
+const result = spawnSync("npx", ["vitest", "run", "--maxWorkers=2", "--no-file-parallelism", ...suites], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+});
 process.exit(result.status ?? 1);

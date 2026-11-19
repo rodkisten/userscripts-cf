@@ -1,24 +1,32 @@
-# 🧪 Testing policy · React-only migration
+# Política de testes: runtime e utilitários (obrigatória)
 
-**Status:** ACTIVE · 2026-11-19. The user's latest explicit instructions override older test plans.
+> Decisão do mantenedor, 19/11/2026. **Não escrever, executar ou manter testes de componentes, telas ou userscripts.**
 
-## Allowed automated tests
+## Escopo permitido
 
-- Runtime/context lifecycle, isolation, cleanup, storage, events, network and interceptors.
-- Framework-independent utilities, parsers, Rod AST transformations, codemods, build scripts and configuration logic.
-- TypeScript typechecks and production bundle/build verification remain mandatory.
+- Runtime e ciclo de vida do contexto, storage, rede, eventos, disposals, integração de APIs e contratos públicos do runtime.
+- Utilitários puros, parsers, transformadores, codemods AST, fixtures de transformação, algoritmos e infraestrutura de build.
+- Testes de segurança e compatibilidade dos utilitários/runtime, quando pertinentes.
 
-## Do not create or run
+## Escopo proibido
 
-- React or Solid UI/component tests, snapshots, visual tests, React Testing Library tests.
-- Individual userscript UI, boot, integration or interaction suites.
-- Tests whose primary purpose is rendering buttons, dialogs, menus, pages or playground views.
+- Testes de componentes React, Radix, shadcn, DOM renderizado, hooks de apresentação, snapshots visuais e UI.
+- Testes funcionais, integração, boot, simulação de navegador ou comportamento de userscripts específicos (GitHub Tools, RodX, Reddit, Instagram etc.).
+- Testes legados de Solid e fixtures destinadas apenas a testar a interface.
+- Não substituir esses testes por equivalentes React. **Excluir, não migrar.**
 
-## Maintenance rules
+## Validação
 
-- Never delete permitted runtime/utility coverage as a shortcut to green CI.
-- Runtime/context API changes require Rod AST review and compatible fixture/test updates as specified by AGENTS.md.
-- Playground is a real interactive demonstration of production React components, not an automated UI-test suite.
-- Manual iPhone Safari smoke checks remain important, but are not Vitest suites.
-- Before claiming CI success, verify the actual workflow run and commit SHA.
-- If a workflow or package script still runs prohibited tests, update that script; documentation alone does not enforce this policy.
+- Manter TypeScript, build e verificações estáticas de compilação. Isso não equivale a testes de componentes.
+- Rodar Vitest somente para runtime e utilitários. Não rodar `vitest run` indiscriminadamente sobre a pasta `tests`.
+- Ao adicionar um teste, justificar no PR que ele verifica uma API de runtime ou um utilitário, não uma funcionalidade de userscript.
+- Remover gradualmente testes fora do escopo, seus fixtures exclusivos e dependências de teste sem consumidores.
+- CI e documentação devem refletir o mesmo escopo. Não desativar typecheck/build para esconder regressões.
+- As regras antigas que exigem testes de UI, playground ou userscripts ficam revogadas onde conflitarem com esta política.
+
+## Critérios de aceite
+
+1. Testes de runtime e utilitários aprovados.
+2. Typecheck e build aprovados.
+3. Nenhuma suíte de componentes/userscripts incluída na seleção de testes.
+4. Falhas restantes documentadas com evidência; nunca declarar CI verde sem verificar.

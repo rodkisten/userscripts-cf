@@ -1,322 +1,321 @@
-import React, { useEffect, useMemo, useState } from "react";
+/** @jsxImportSource react */
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { studioExamples } from "./examples";
+import { EditorState } from "@codemirror/state";
+import { EditorView, lineNumbers } from "@codemirror/view";
+import { javascript } from "@codemirror/lang-javascript";
+import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
+import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
+import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
+import studioCss from "./studio.css?inline";
+const studioStyle = document.createElement("style");
+studioStyle.textContent = studioCss;
+document.head.append(studioStyle);
 
-type Sample = "response" | "dom" | "settings" | "syntax";
-const samples: Record<Sample, unknown> = {
-  response: { ok: true, status: 200, data: { user: { id: 42, name: "Rod" }, items: [1, 2, 3] } },
-  dom: { element: "main", attributes: { role: "main" } },
-  settings: { theme: { accent: "#a78bfa", radius: 18 }, features: ["inspector", "menu"] },
-  syntax: { string: "Hello, syntax!", number: 42, boolean: true, nil: null, array: [1, "two", false] },
-};
-const sampleNames = Object.keys(samples) as Sample[];
-const stringify = (value: unknown) => JSON.stringify(value, null, 2) ?? "undefined";
-
-function Inspector() {
-  const [sample, setSample] = useState<Sample>("response");
-  const [filter, setFilter] = useState("");
-  const [expanded, setExpanded] = useState(true);
-  const [depth, setDepth] = useState(2);
-  const source = useMemo(() => {
-    const value = samples[sample];
-    if (!filter.trim() || !value || typeof value !== "object") return value;
-    return Object.fromEntries(
-      Object.entries(value).filter(([key, item]) =>
-        (key + " " + String(item)).toLowerCase().includes(filter.trim().toLowerCase()),
-      ),
-    );
-  }, [sample, filter]);
-  const serialized = stringify(source);
-  useEffect(() => {
-    const listeners: Array<() => void> = [];
-    const listen = (element: Element | null, event: string, handler: EventListener) => {
-      if (!element) return;
-      element.addEventListener(event, handler);
-      listeners.push(() => element.removeEventListener(event, handler));
-    };
-    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-object]")) {
-      listen(button, "click", () => {
-        const next = button.dataset.object;
-        if (next && sampleNames.includes(next as Sample)) setSample(next as Sample);
-      });
-      button.setAttribute("aria-selected", String(button.dataset.object === sample));
-    }
-    const input = document.getElementById("filter") as HTMLInputElement | null;
-    if (input) {
-      input.value = filter;
-      listen(input, "input", () => setFilter(input.value));
-    }
-    const selector = document.getElementById("depth") as HTMLSelectElement | null;
-    if (selector) {
-      selector.value = String(depth);
-      listen(selector, "change", () => setDepth(Number(selector.value)));
-    }
-    listen(document.getElementById("expand"), "click", () => setExpanded(true));
-    listen(document.getElementById("collapse"), "click", () => setExpanded(false));
-    listen(document.getElementById("copyObject"), "click", () => {
-      void navigator.clipboard?.writeText(serialized);
-    });
-    return () => listeners.forEach((remove) => remove());
-  }, [sample, filter, depth, serialized]);
-  return (
-    <div data-rod-studio="react" data-depth={depth}>
-      <div role="status" aria-live="polite">
-        {sample} · {Object.keys(source as object).length} propriedades
-      </div>
-      {expanded ? (
-        <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-          <code>{serialized}</code>
-        </pre>
-      ) : (
-        <p>Visualização recolhida. Use Expandir tudo para abrir.</p>
-      )}
-    </div>
-  );
-}
-
-function Catalog() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
-  const categories = useMemo(() => [...new Set(studioExamples.map((item) => item.category))], []);
-  const filtered = useMemo(
-    () =>
-      studioExamples.filter(
-        (item) =>
-          (!category || item.category === category) &&
-          (!search ||
-            [item.title, item.description, item.category]
-              .join(" ")
-              .toLowerCase()
-              .includes(search.toLowerCase())),
-      ),
-    [search, category],
-  );
-  useEffect(() => {
-    const input = document.getElementById("examplesSearch") as HTMLInputElement | null;
-    const select = document.getElementById("examplesCategory") as HTMLSelectElement | null;
-    if (select)
-      select.replaceChildren(
-        new Option("Todas as categorias", ""),
-        ...categories.map((name) => new Option(name, name)),
-      );
-    const onSearch = () => setSearch(input?.value ?? "");
-    const onCategory = () => setCategory(select?.value ?? "");
-    input?.addEventListener("input", onSearch);
-    select?.addEventListener("change", onCategory);
-    return () => {
-      input?.removeEventListener("input", onSearch);
-      select?.removeEventListener("change", onCategory);
-    };
-  }, [categories]);
-  useEffect(() => {
-    const output = document.getElementById("exampleCode");
-    if (output)
-      output.textContent = selected
-        ? stringify(studioExamples.find((item) => item.id === selected))
-        : "Selecione um exemplo para inspecionar o schema.";
-  }, [selected]);
-  return (
-    <div data-rod-catalog="react">
-      <p>{filtered.length} exemplos de schema. A prévia interativa dos componentes ainda está em migração.</p>
-      {filtered.map((item) => (
-        <article className="card" key={item.id}>
-          <h3>{item.title}</h3>
-          <p>{item.description}</p>
-          <span className="token">{item.category}</span>
-          <button type="button" onClick={() => setSelected(item.id)}>
-            Inspecionar schema
-          </button>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-const inspectorMount = document.getElementById("tree");
-if (!inspectorMount) throw new Error("[Rod UI Studio] Missing #tree mount");
-createRoot(inspectorMount).render(<Inspector />);
-const catalogMount = document.getElementById("examplesCatalog");
-if (catalogMount) createRoot(catalogMount).render(<Catalog />);
-
-type ThemeState = {
-  accent: string;
-  radius: string;
-  scale: string;
-  presentation: string;
-  menuSize: string;
-  titleInput: string;
-};
-const themeDefaults: ThemeState = {
-  accent: "#a78bfa",
-  radius: "18",
-  scale: "100",
-  presentation: "bottom-sheet",
-  menuSize: "md",
-  titleInput: "Personalizar experiência",
-};
-const themeKeys = Object.keys(themeDefaults) as (keyof ThemeState)[];
-const getTheme = (): ThemeState => {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem("rod-ui-studio-theme") ?? "{}");
-    return stored && typeof stored === "object" && !Array.isArray(stored)
-      ? (Object.fromEntries(
-          themeKeys.map((key) => [
-            key,
-            typeof (stored as Record<string, unknown>)[key] === "string"
-              ? (stored as Record<string, string>)[key]
-              : themeDefaults[key],
-          ]),
-        ) as ThemeState)
-      : { ...themeDefaults };
-  } catch {
-    return { ...themeDefaults };
-  }
-};
-function ThemeController() {
-  const [theme, setTheme] = useState<ThemeState>(getTheme);
-  const [toast, setToast] = useState("");
-  const update = (key: keyof ThemeState, value: string) =>
-    setTheme((previous) => ({ ...previous, [key]: value }));
-  const tokens = `:root {\n  --accent: ${theme.accent};\n  --radius: ${theme.radius}px;\n  --scale: ${Number(theme.scale) / 100};\n  --bg: #101016;\n  --surface: #1b1a24;\n  --ink: #f8f7fc;\n}`;
-  const schema = {
-    id: "rod-ui-example",
-    title: theme.titleInput,
-    presentation: theme.presentation,
-    size: theme.menuSize,
+type Demo = { id: string; title: string; group: string; description: string; fields: FieldDefinition[] };
+const demos: Demo[] = [
+  {
+    id: "text",
+    title: "Inputs",
+    group: "Formulários",
+    description: "Texto, email, senha, busca, URL e telefone",
+    fields: ["text", "email", "password", "search", "url", "tel"].map((type) => ({
+      id: type,
+      type: type as FieldDefinition["type"],
+      label: type,
+      placeholder: "Digite aqui",
+    })),
+  },
+  {
+    id: "numbers",
+    title: "Números e range",
+    group: "Formulários",
+    description: "Valores numéricos e sliders com limites",
     fields: [
-      { type: "text", name: "name", label: "Nome", value: "Minha configuração" },
-      { type: "switch", name: "enabled", label: "Habilitado", value: true },
+      { id: "number", type: "number", label: "Quantidade", min: 0, max: 100, defaultValue: 42 },
+      { id: "range", type: "range", label: "Intensidade", min: 0, max: 100, step: 5, defaultValue: 35 },
     ],
-    actions: [
-      { id: "cancel", label: "Cancelar", role: "cancel" },
-      { id: "save", label: "Salvar", role: "submit" },
+  },
+  {
+    id: "textarea",
+    title: "Textarea",
+    group: "Formulários",
+    description: "Conteúdo longo e multilinha",
+    fields: [{ id: "notes", type: "textarea", label: "Anotações", defaultValue: "Escreva suas ideias…" }],
+  },
+  {
+    id: "selection",
+    title: "Seleção",
+    group: "Controles",
+    description: "Select, checkbox e switch",
+    fields: [
+      {
+        id: "quality",
+        type: "select",
+        label: "Qualidade",
+        defaultValue: "auto",
+        options: [
+          { value: "auto", label: "Automática" },
+          { value: "high", label: "Alta" },
+          { value: "low", label: "Econômica" },
+        ],
+      },
+      { id: "enabled", type: "switch", label: "Ativado", defaultValue: true },
+      { id: "remember", type: "checkbox", label: "Lembrar escolha" },
     ],
-  };
-  const menuCode = `ctx.menu.open(${JSON.stringify(schema, null, 2)});`;
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty("--accent", theme.accent);
-    root.style.setProperty("--radius", theme.radius + "px");
-    root.style.setProperty("--scale", String(Number(theme.scale) / 100));
-    for (const key of themeKeys) {
-      const control = document.getElementById(key) as HTMLInputElement | HTMLSelectElement | null;
-      if (control && control.value !== theme[key]) control.value = theme[key];
-    }
-    const title = document.getElementById("menuTitle");
-    if (title) title.textContent = theme.titleInput;
-    const menu = document.getElementById("menuCode");
-    if (menu) menu.textContent = menuCode;
-    const tokenCode = document.getElementById("tokensCode");
-    if (tokenCode) tokenCode.textContent = tokens;
-    const preview = document.getElementById("menuPreview");
-    if (preview) {
-      const sizes: Record<string, string> = {
-        sm: "300px",
-        md: "430px",
-        lg: "570px",
-        xl: "690px",
-        fullscreen: "100%",
-      };
-      preview.style.maxWidth = sizes[theme.menuSize] ?? sizes.md;
-      preview.style.borderRadius =
-        theme.presentation === "bottom-sheet" ? "var(--radius) var(--radius) 8px 8px" : "var(--radius)";
-    }
-    document
-      .querySelectorAll<HTMLButtonElement>("#menuModes [data-mode]")
-      .forEach((button) =>
-        button.setAttribute("aria-selected", String(button.dataset.mode === theme.presentation)),
-      );
-    const swatches = document.getElementById("swatches");
-    if (swatches) {
-      swatches.replaceChildren();
-      for (const [name, color] of [
-        ["Accent", theme.accent],
-        ["Background", "#101016"],
-        ["Surface", "#1b1a24"],
-        ["Text", "#f8f7fc"],
-      ]) {
-        const item = document.createElement("div");
-        item.className = "swatch";
-        const square = document.createElement("i");
-        square.style.background = color;
-        const label = document.createElement("strong");
-        label.textContent = name;
-        const value = document.createElement("div");
-        value.className = "token";
-        value.textContent = color;
-        item.append(square, label, value);
-        swatches.append(item);
-      }
-    }
-    try {
-      localStorage.setItem("rod-ui-studio-theme", JSON.stringify(theme));
-    } catch {
-      /* storage optional */
-    }
-  }, [theme, menuCode, tokens]);
-  useEffect(() => {
-    const cleanup: Array<() => void> = [];
-    const listen = (selector: string, event: string, handler: EventListener) => {
-      const element = document.querySelector(selector);
-      if (!element) return;
-      element.addEventListener(event, handler);
-      cleanup.push(() => element.removeEventListener(event, handler));
-    };
-    for (const key of themeKeys)
-      listen("#" + key, "input", (event) => update(key, (event.target as HTMLInputElement).value));
-    listen("#reset", "click", () => {
-      setTheme({ ...themeDefaults });
-      setToast("Tema restaurado");
-    });
-    listen("#menuModes", "click", (event) => {
-      const button = (event.target as Element).closest<HTMLButtonElement>("[data-mode]");
-      if (button?.dataset.mode) update("presentation", button.dataset.mode);
-    });
-    listen("#copyTheme", "click", () => void navigator.clipboard?.writeText(tokens));
-    listen("#copyMenu", "click", () => void navigator.clipboard?.writeText(menuCode));
-    listen("#cancelDemo", "click", () => setToast("Ação: cancelar"));
-    listen("#saveDemo", "click", () => setToast("Ação: salvar"));
-    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-recipe]")) {
-      const handler = () => {
-        if (button.dataset.recipe === "network") {
-          location.hash = "inspector";
-          document.querySelector<HTMLButtonElement>('[data-object="response"]')?.click();
-        } else {
-          update("presentation", button.dataset.recipe === "mobile" ? "bottom-sheet" : "modal");
-          location.hash = "menu";
+  },
+  {
+    id: "account",
+    title: "Formulário completo",
+    group: "Receitas",
+    description: "Combina campos, persistência e ações",
+    fields: [
+      { id: "name", type: "text", label: "Nome", defaultValue: "Rod" },
+      { id: "email", type: "email", label: "Email", placeholder: "nome@exemplo.com" },
+      { id: "bio", type: "textarea", label: "Bio" },
+      { id: "public", type: "switch", label: "Perfil público", defaultValue: true },
+    ],
+  },
+];
+const surfaces: SurfaceType[] = ["bottom-sheet", "modal", "drawer", "popover"];
+function serialize(value: unknown) {
+  const seen = new WeakSet<object>();
+  return (
+    JSON.stringify(
+      value,
+      (_key, item: unknown) => {
+        if (typeof item === "bigint" || typeof item === "symbol" || typeof item === "function")
+          return String(item);
+        if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack };
+        if (item instanceof Map) return { type: "Map", entries: [...item] };
+        if (item instanceof Set) return { type: "Set", values: [...item] };
+        if (typeof item === "object" && item !== null) {
+          if (seen.has(item)) return "[Circular]";
+          seen.add(item);
         }
-      };
-      button.addEventListener("click", handler);
-      cleanup.push(() => button.removeEventListener("click", handler));
-    }
-    return () => cleanup.forEach((remove) => remove());
-  }, [tokens, menuCode]);
-  useEffect(() => {
-    const host = document.getElementById("toast");
-    if (host) {
-      host.textContent = toast;
-      host.classList.toggle("hidden", !toast);
-    }
-    if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(""), 2200);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
-  return null;
-}
-const themeMount = document.createElement("div");
-themeMount.id = "rod-studio-theme-root";
-document.body.append(themeMount);
-createRoot(themeMount).render(<ThemeController />);
-const modeMount = document.getElementById("menuModes");
-if (modeMount) {
-  const modes = ["bottom-sheet", "modal", "drawer", "popover", "auto"];
-  modeMount.replaceChildren(
-    ...modes.map((mode) => {
-      const button = document.createElement("button");
-      button.dataset.mode = mode;
-      button.textContent = mode;
-      return button;
-    }),
+        return item;
+      },
+      2,
+    ) ?? "undefined"
   );
 }
+function CodeMirrorSource({ code }: { code: string }) {
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!host.current) return;
+    const view = new EditorView({
+      parent: host.current,
+      state: EditorState.create({
+        doc: code,
+        extensions: [
+          lineNumbers(),
+          EditorView.lineWrapping,
+          EditorView.editable.of(false),
+          javascript({ typescript: true }),
+          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          oneDark,
+        ],
+      }),
+    });
+    return () => view.destroy();
+  }, [code]);
+  return <div className="studio-code" ref={host} aria-label="Código de exemplo no CodeMirror 6" />;
+}
+function Studio() {
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState("account");
+  const [surface, setSurface] = useState<SurfaceType>("bottom-sheet");
+  const [device, setDevice] = useState<"phone" | "desktop">("phone");
+  const [persist, setPersist] = useState(false);
+  const [title, setTitle] = useState("Rod UI");
+  const [tab, setTab] = useState<"code" | "inspector">("code");
+  const [depth, setDepth] = useState(2);
+  const [lastAction, setLastAction] = useState<Record<string, unknown>>({ status: "Pronto para testar" });
+  const [copied, setCopied] = useState(false);
+  const demo = demos.find((item) => item.id === selected) ?? demos[0]!;
+  const schema: MenuSchema = useMemo(
+    () => ({
+      id: "studio-" + demo.id,
+      title,
+      description: demo.description,
+      presentation: surface,
+      persistKey: persist ? "studio-" + demo.id : undefined,
+      fields: demo.fields,
+      actions: [
+        { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
+        { id: "reset", label: "Limpar", variant: "secondary", onClick: ({ reset }) => reset() },
+        {
+          id: "save",
+          label: "Salvar",
+          role: "submit",
+          onClick: ({ values, close }) => {
+            setLastAction({ action: "save", demo: demo.id, values });
+            close();
+          },
+        },
+      ],
+    }),
+    [demo, title, surface, persist],
+  );
+  const code = useMemo(
+    () =>
+      'import { RodMenu } from "@rod/runtime/react-ui";\n\nRodMenu.open(' +
+      serialize({ ...schema, actions: schema.actions?.map(({ onClick, ...action }) => action) }) +
+      ");",
+    [schema],
+  );
+  const filtered = demos.filter((item) =>
+    (item.title + " " + item.group + " " + item.description).toLowerCase().includes(query.toLowerCase()),
+  );
+  const open = () => RodMenu.open(schema);
+  const copy = () => {
+    void navigator.clipboard
+      ?.writeText(code)
+      .then(() => setCopied(true))
+      .catch(() => setCopied(false));
+  };
+  return (
+    <div className="studio-shell">
+      <aside className="studio-side">
+        <div className="studio-brand">
+          <span>✳</span> Rod UI <small>React Studio</small>
+        </div>
+        <label className="studio-label" htmlFor="studio-search">
+          Buscar componentes
+        </label>
+        <input
+          id="studio-search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar…"
+        />
+        {["Formulários", "Controles", "Receitas"].map((group) => (
+          <section key={group}>
+            <h3>{group}</h3>
+            {filtered
+              .filter((item) => item.group === group)
+              .map((item) => (
+                <button
+                  key={item.id}
+                  className={selected === item.id ? "studio-active" : ""}
+                  onClick={() => setSelected(item.id)}
+                >
+                  {item.title}
+                  <small>{item.description}</small>
+                </button>
+              ))}
+          </section>
+        ))}
+        <div className="studio-side-note">React 19 · Radix · CodeMirror 6</div>
+      </aside>
+      <main className="studio-main">
+        <header className="studio-top">
+          <div>
+            <span className="studio-eyebrow">COMPONENT PLAYGROUND</span>
+            <h1>{demo.title}</h1>
+            <p>{demo.description}</p>
+          </div>
+          <button className="studio-primary" onClick={open}>
+            Abrir componente ↗
+          </button>
+        </header>
+        <div className="studio-grid">
+          <section className="studio-panel">
+            <h2>Propriedades</h2>
+            <label>
+              Título
+              <input value={title} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <label>
+              Apresentação
+              <select value={surface} onChange={(event) => setSurface(event.target.value as SurfaceType)}>
+                {surfaces.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="studio-check">
+              <input
+                type="checkbox"
+                checked={persist}
+                onChange={(event) => setPersist(event.target.checked)}
+              />{" "}
+              Persistir valores
+            </label>
+            <h2>Viewport</h2>
+            <div className="studio-segments">
+              <button aria-pressed={device === "phone"} onClick={() => setDevice("phone")}>
+                📱 Mobile
+              </button>
+              <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
+                ▣ Desktop
+              </button>
+            </div>
+            <p className="studio-hint">
+              O menu é aberto como portal React real. O viewport é uma prévia das dimensões, não um iframe
+              simulado.
+            </p>
+          </section>
+          <section className="studio-panel studio-preview">
+            <div className="studio-panel-head">
+              <h2>Preview</h2>
+              <span>{device === "phone" ? "390 × 720" : "Desktop"}</span>
+            </div>
+            <div className={"studio-device " + device}>
+              <div className="studio-device-bar">
+                <span>9:41</span>
+                <span>●●●</span>
+              </div>
+              <div className="studio-device-content">
+                <span className="studio-eyebrow">LIVE COMPONENT</span>
+                <h3>{title}</h3>
+                <p>{demo.description}</p>
+                <button className="studio-primary" onClick={open}>
+                  Testar {surface}
+                </button>
+                <small>
+                  {demo.fields.length} campos · {schema.actions?.length} ações
+                </small>
+              </div>
+            </div>
+          </section>
+        </div>
+        <section className="studio-panel studio-output">
+          <div className="studio-panel-head">
+            <div className="studio-segments">
+              <button aria-pressed={tab === "code"} onClick={() => setTab("code")}>
+                Código
+              </button>
+              <button aria-pressed={tab === "inspector"} onClick={() => setTab("inspector")}>
+                Inspector
+              </button>
+            </div>
+            <button onClick={copy}>{copied ? "✓ Copiado" : "Copiar código"}</button>
+          </div>
+          {tab === "code" ? (
+            <CodeMirrorSource code={code} />
+          ) : (
+            <>
+              <div className="studio-segments">
+                <button onClick={() => setDepth(20)}>Expandir</button>
+                <button onClick={() => setDepth(0)}>Recolher</button>
+              </div>
+              <ObjectInspector
+                key={depth}
+                data={{ schema, lastAction }}
+                options={{ expandDepth: depth, inspectDepth: 12, inspectItems: 1000, theme: "dark" }}
+              />
+            </>
+          )}
+        </section>
+        <footer>Rod UI Studio · React-only · Componentes reais, sem legado Solid</footer>
+      </main>
+      <RodMenuHost />
+    </div>
+  );
+}
+const mount = document.getElementById("studio-root");
+if (!mount) throw new Error("[Rod UI Studio] Missing #studio-root");
+createRoot(mount).render(<Studio />);

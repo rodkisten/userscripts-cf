@@ -121,7 +121,9 @@ export function initializeDeckResultEnhancer(): void {
 
     function ensureStyle(): void {
       if (style?.isConnected) return;
-      style = (<style id={SELECTORS_IDS.resultsStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
+      style = document.createElement("style");
+      style.id = SELECTORS_IDS.resultsStyle;
+      style.textContent = extractedCSS1;
       (document.head || document.documentElement).append(style);
     }
 
@@ -339,9 +341,9 @@ export function initializeDeckResultEnhancer(): void {
 
       const actions = findActions(article);
       if (!tray) {
-        tray = (
-          <div className={CSS_CLASSES.hashtagsTray} aria-label={UI_TEXTS.hashtagsAriaLabel} />
-        ) as HTMLDivElement;
+        tray = document.createElement("div");
+        tray.className = CSS_CLASSES.hashtagsTray;
+        tray.setAttribute("aria-label", UI_TEXTS.hashtagsAriaLabel);
       }
 
       if (actions?.parentElement) {
@@ -356,37 +358,31 @@ export function initializeDeckResultEnhancer(): void {
         tray.replaceChildren();
         tray.dataset.signature = signature;
         for (const { tag, href } of tags) {
-          const item = (
-            <span className={CSS_CLASSES.hashtagItem} data-tag={tag}>
-              <a href={href || "/search?q=" + encodeURIComponent(tag)}>{tag}</a>
-              <button
-                type="button"
-                className={CSS_CLASSES.tagAdd}
-                title={`Adicionar ${tag} à pesquisa nativa`}
-                aria-label={`Adicionar ${tag} à pesquisa nativa`}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  appendToNativeSearch(tag);
-                }}
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className={CSS_CLASSES.tagExclude}
-                title={`Excluir ${tag} da pesquisa`}
-                aria-label={`Excluir ${tag} da pesquisa`}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  appendToNativeSearch(tag, "exclude");
-                }}
-              >
-                −
-              </button>
-            </span>
-          ) as HTMLSpanElement;
+          const item = document.createElement("span");
+          item.className = CSS_CLASSES.hashtagItem;
+          item.dataset.tag = tag;
+          const link = document.createElement("a");
+          link.href = href || "/search?q=" + encodeURIComponent(tag);
+          link.textContent = tag;
+          item.append(link);
+          for (const [mode, symbol, className, title] of [
+            ["include", "+", CSS_CLASSES.tagAdd, `Adicionar ${tag} à pesquisa nativa`],
+            ["exclude", "−", CSS_CLASSES.tagExclude, `Excluir ${tag} da pesquisa`],
+          ] as const) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = className;
+            button.title = title;
+            button.setAttribute("aria-label", title);
+            button.textContent = symbol;
+            button.addEventListener("click", (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              if (mode === "exclude") appendToNativeSearch(tag, "exclude");
+              else appendToNativeSearch(tag);
+            });
+            item.append(button);
+          }
 
           tray.append(item);
         }
@@ -419,60 +415,57 @@ export function initializeDeckResultEnhancer(): void {
       }
       if (existing) return;
 
-      const btn = (
-        <button
-          type="button"
-          className={CSS_CLASSES.bookmarkBtn}
-          title={UI_TEXTS.bookmarkTitle}
-          aria-label={UI_TEXTS.bookmarkTitle}
-          onClick={(event: MouseEvent) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const menuButton =
-              article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
-              article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = CSS_CLASSES.bookmarkBtn;
+      btn.title = UI_TEXTS.bookmarkTitle;
+      btn.setAttribute("aria-label", UI_TEXTS.bookmarkTitle);
+      btn.addEventListener("click", (event: MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const menuButton =
+          article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
+          article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
 
-            if (!menuButton) {
-              btn.title = UI_TEXTS.bookmarkMenuError;
-              return;
-            }
+        if (!menuButton) {
+          btn.title = UI_TEXTS.bookmarkMenuError;
+          return;
+        }
 
-            let observer: MutationObserver | null = null;
-            let timeout: ReturnType<typeof setTimeout> | null = null;
-            let committed = false;
+        let observer: MutationObserver | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        let committed = false;
 
-            const finish = (): void => {
-              observer?.disconnect();
-              if (timeout !== null) clearTimeout(timeout);
-            };
+        const finish = (): void => {
+          observer?.disconnect();
+          if (timeout !== null) clearTimeout(timeout);
+        };
 
-            const choose = (): void => {
-              if (committed) return;
-              const options = Array.from(
-                document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
-              ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
+        const choose = (): void => {
+          if (committed) return;
+          const options = Array.from(
+            document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
+          ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
 
-              const target =
-                options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
-                options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
+          const target =
+            options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
+            options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
 
-              if (!target) return;
-              committed = true;
-              finish();
-              target.click();
-            };
+          if (!target) return;
+          committed = true;
+          finish();
+          target.click();
+        };
 
-            observer = new MutationObserver(choose);
-            observer.observe(document.body, {
-              childList: true,
-              subtree: true,
-            });
-            timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
-            menuButton.click();
-            setTimeout(choose, 0);
-          }}
-        />
-      ) as HTMLButtonElement;
+        observer = new MutationObserver(choose);
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+        timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
+        menuButton.click();
+        setTimeout(choose, 0);
+      });
 
       mountView(btn, () => <BookmarkSVGIcon />);
 
@@ -664,43 +657,39 @@ export function initializeDeckResultEnhancer(): void {
           DOM_SELECTORS.resultActionsByClass(CSS_CLASSES.resultActions),
         );
         if (!actions) {
-          actions = (
-            <div className={CSS_CLASSES.resultActions}>
-              <button
-                type="button"
-                data-rodx-expand={DATA_ATTRS.expand}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopImmediatePropagation();
-                  const anchor =
-                    article
-                      .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
-                      ?.closest<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
-                    article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
+          actions = document.createElement("div");
+          actions.className = CSS_CLASSES.resultActions;
+          const expand = document.createElement("button");
+          expand.type = "button";
+          expand.dataset.rodxExpand = DATA_ATTRS.expand;
+          expand.textContent = UI_TEXTS.expandSymbol;
+          expand.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const anchor =
+              article
+                .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
+                ?.closest<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
+              article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
 
-                  if (!anchor) {
-                    showRodxToast(UI_TEXTS.toastAnchorError, "error");
-                    return;
-                  }
-                  anchor.click();
-                }}
-              >
-                {UI_TEXTS.expandSymbol}
-              </button>
-              <button
-                type="button"
-                data-rodx-read-btn={DATA_ATTRS.readBtn}
-                onClick={(event: MouseEvent) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (state.seen.has(id)) state.seen.delete(id);
-                  else state.seen.set(id, Date.now());
-                  Seen.flushSoon?.();
-                  setSeen(article, id);
-                }}
-              />
-            </div>
-          ) as HTMLDivElement;
+            if (!anchor) {
+              showRodxToast(UI_TEXTS.toastAnchorError, "error");
+              return;
+            }
+            anchor.click();
+          });
+          const read = document.createElement("button");
+          read.type = "button";
+          read.dataset.rodxReadBtn = DATA_ATTRS.readBtn;
+          read.addEventListener("click", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (state.seen.has(id)) state.seen.delete(id);
+            else state.seen.set(id, Date.now());
+            Seen.flushSoon?.();
+            setSeen(article, id);
+          });
+          actions.append(expand, read);
 
           const nativeActions = findActions(article);
           if (nativeActions) nativeActions.append(actions);
