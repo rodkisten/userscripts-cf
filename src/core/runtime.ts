@@ -108,6 +108,7 @@ export type ScriptContext = Record<string, unknown> & {
     readonly host: HTMLDivElement;
     mount(node: Node): Node;
     style(css: string): HTMLStyleElement;
+    pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
     registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
     mountReact(component: import("react").ReactElement, container?: HTMLElement): () => void;
   };
@@ -780,8 +781,16 @@ export function createCoreRuntime(
       style(cssContent: string) {
         return addStyle(cssContent, ensureUIRoot());
       },
-      pageStyle(cssContent: string) {
-        return addStyle(cssContent, host.document.head || host.document.documentElement);
+      pageStyle(cssContent: string, options?: { id?: string }) {
+        const id = options?.id;
+        const existing = id ? host.document.getElementById(id) : null;
+        if (existing instanceof HTMLStyleElement) {
+          existing.textContent = String(cssContent);
+          return existing;
+        }
+        const node = addStyle(cssContent, host.document.head || host.document.documentElement);
+        if (id) node.id = id;
+        return node;
       },
       css: Object.freeze({
         installCoreStyles,

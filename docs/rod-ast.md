@@ -76,3 +76,23 @@ The call-site GM guard analysis also preserves **both branches** of a `typeof GM
 ### AST-backed capability detection
 
 Capability guards are now detected from TypeScript `TypeOfExpression` nodes instead of regex matches over source text. Strings and comments containing `typeof GM_*` no longer accidentally disable transformations. The existing conservative handling of `if/else`, ternary and short-circuit fallbacks is retained. New Vitest tests cover strings, comments, real guards, nested branches and idempotence.
+
+### Nested function ownership
+
+The AST walker tracks the **nearest function** as the owner of a call, even when a nested closure captures the outer `ctx`. This avoids inheriting an outer async function's eligibility or cleanup ownership. Awaited storage in an async nested closure remains eligible under `storage: "awaited"`, unless protected by its own `try/catch/finally`. Vitest covers nested synchronous and asynchronous closures and exception boundaries.
+
+### Runtime context shadowing
+
+A captured `ctx` or `context` is only propagated into nested lexical scopes while its binding remains visible. A nested function parameter or block-scoped declaration with the same name disables implicit context rewrites inside that scope; sibling code continues to use the original context. Vitest covers shadowed parameters, block declarations and unshadowed closures.
+
+### Modern GM capability guards
+
+The GM guard recognizer preserves modern calls inside `typeof GM.getValue === "function"` and `typeof GM["getValue"] === "function"` checks, including guarded short-circuit branches. Unguarded supported `GM.method(...)` calls remain eligible for `ctx.gm.modern.method(...)` migration. This is intentionally conservative because replacing a guarded branch may change fallback behavior. Vitest and the fixture matrix cover both paths.
+
+## DOM and CSS migration safety (React)
+
+- **Do not turn imperative DOM construction into JSX without mounting React.** A JSX expression returns a React element descriptor, not an `HTMLElement`. For nodes that must be inserted into existing page DOM, use `document.createElement`, assign properties, and append the real node; for React-owned subtrees, use JSX inside `createRoot` or a portal.
+- For styles inserted into `document.head`, `ctx.ui.pageStyle(css, { id })` supports named styles and updates an existing matching `HTMLStyleElement` in place. `ctx.ui.style(css)` targets the isolated UI root instead.
+- The AST migrates only a complete, local, non-escaping lifecycle. It deliberately leaves `replaceChildren`, mutable style handles, and ShadowRoot targets unchanged because a direct rewrite could alter removal semantics, DOM identity, or scope.
+- When adding a new DOM rewrite, extend the fixture matrix and add positive, negative, shadowing, and idempotence tests. Avoid `as unknown as HTMLElement` and TypeScript suppressions to conceal JSX/DOM mismatches.
+- Typecheck errors from old JSX-as-DOM conversions are real runtime defects. Fix the construction sites rather than weakening validation.

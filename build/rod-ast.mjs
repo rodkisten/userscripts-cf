@@ -185,8 +185,17 @@ export function transformRodAst(code, id, options = {}) {
       if (found) return;
       if (
         ts.isTypeOfExpression(node) &&
-        ts.isIdentifier(node.expression) &&
-        (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))
+        ((ts.isIdentifier(node.expression) &&
+          (node.expression.text === "GM" || /^GM_[A-Za-z]+$/.test(node.expression.text))) ||
+          (ts.isPropertyAccessExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "GM" &&
+            GM_LEGACY_METHODS.has(node.expression.name.text)) ||
+          (ts.isElementAccessExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "GM" &&
+            ts.isStringLiteral(node.expression.argumentExpression) &&
+            GM_LEGACY_METHODS.has(node.expression.argumentExpression.text)))
       ) {
         found = true;
         return;
@@ -262,6 +271,114 @@ export function transformRodAst(code, id, options = {}) {
     if (!body || !ts.isBlock(body)) return;
     const statements = body.statements;
     for (let i = 0; i + 2 < statements.length; i++) {
+      // Named styles: allow id and CSS in either order, including setAttribute.
+      // Only rewrite when all references are confined to the contiguous lifecycle.
+      if (i + 3 < statements.length) {
+        const [decl, first, second, insertion] = statements.slice(i, i + 4);
+        if (
+          ![decl, first, second, insertion].some(keep) &&
+          ts.isVariableStatement(decl) &&
+          decl.declarationList.flags & ts.NodeFlags.Const &&
+          decl.declarationList.declarations.length === 1
+        ) {
+          const variable = decl.declarationList.declarations[0];
+          const name = ts.isIdentifier(variable.name) ? variable.name.text : null;
+          const create = variable.initializer;
+          const isStyle =
+            name &&
+            create &&
+            ts.isCallExpression(create) &&
+            ts.isPropertyAccessExpression(create.expression) &&
+            ts.isIdentifier(create.expression.expression) &&
+            create.expression.expression.text === "document" &&
+            create.expression.name.text === "createElement" &&
+            !create.questionDotToken &&
+            !create.expression.questionDotToken &&
+            create.arguments.length === 1 &&
+            ts.isStringLiteral(create.arguments[0]) &&
+            create.arguments[0].text.toLowerCase() === "style";
+          const propertyWrite = (statement) => {
+            if (!ts.isExpressionStatement(statement)) return null;
+            const expr = statement.expression;
+            if (
+              ts.isBinaryExpression(expr) &&
+              expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+              ts.isPropertyAccessExpression(expr.left) &&
+              ts.isIdentifier(expr.left.expression) &&
+              expr.left.expression.text === name &&
+              ["id", "textContent", "innerText"].includes(expr.left.name.text)
+            )
+              return { property: expr.left.name.text, value: expr.right };
+            if (
+              ts.isCallExpression(expr) &&
+              ts.isPropertyAccessExpression(expr.expression) &&
+              ts.isIdentifier(expr.expression.expression) &&
+              expr.expression.expression.text === name &&
+              expr.expression.name.text === "setAttribute" &&
+              expr.arguments.length === 2 &&
+              ts.isStringLiteral(expr.arguments[0]) &&
+              expr.arguments[0].text === "id"
+            )
+              return { property: "id", value: expr.arguments[1] };
+            return null;
+          };
+          const writes = [propertyWrite(first), propertyWrite(second)];
+          const idWrite = writes.find((item) => item?.property === "id");
+          const cssWrite = writes.find((item) => ["textContent", "innerText"].includes(item?.property));
+          const append =
+            ts.isExpressionStatement(insertion) && ts.isCallExpression(insertion.expression)
+              ? insertion.expression
+              : null;
+          const callee = append?.expression;
+          const head =
+            callee &&
+            ts.isPropertyAccessExpression(callee) &&
+            ts.isPropertyAccessExpression(callee.expression) &&
+            ts.isIdentifier(callee.expression.expression) &&
+            callee.expression.expression.text === "document" &&
+            callee.expression.name.text === "head" &&
+            ["append", "appendChild"].includes(callee.name.text) &&
+            !append.questionDotToken &&
+            !callee.questionDotToken;
+          if (
+            isStyle &&
+            idWrite &&
+            cssWrite &&
+            head &&
+            append.arguments.length === 1 &&
+            ts.isIdentifier(append.arguments[0]) &&
+            append.arguments[0].text === name &&
+            !code.slice(decl.end, insertion.getStart(source)).includes("//") &&
+            !code.slice(decl.end, insertion.getStart(source)).includes("/*")
+          ) {
+            const symbol = checker.getSymbolAtLocation(variable.name);
+            let refs = 0;
+            const count = (node) => {
+              if (ts.isIdentifier(node) && node.text === name && checker.getSymbolAtLocation(node) === symbol)
+                refs++;
+              ts.forEachChild(node, count);
+            };
+            if (symbol) count(owner);
+            // setAttribute contributes one extra identifier; no escaping references.
+            if (symbol && refs === 4) {
+              edits.push({
+                start: decl.getStart(source),
+                end: insertion.end,
+                before: code.slice(decl.getStart(source), insertion.end),
+                after:
+                  ctx +
+                  ".ui.pageStyle(" +
+                  code.slice(cssWrite.value.getStart(source), cssWrite.value.end) +
+                  ", { id: " +
+                  code.slice(idWrite.value.getStart(source), idWrite.value.end) +
+                  " });",
+              });
+              i += 3;
+              continue;
+            }
+          }
+        }
+      }
       const [declaration, assignment, insertion] = statements.slice(i, i + 3);
       if (keep(declaration) || keep(assignment) || keep(insertion)) continue;
       if (
@@ -358,20 +475,21 @@ export function transformRodAst(code, id, options = {}) {
       const param = node.parameters?.[0];
       const explicit =
         param && ts.isIdentifier(param.name) && (param.name.text === "ctx" || param.name.text === "context");
-      const nextCtx = explicit ? param.name.text : ctx;
       const names = declaredNames(node);
+      // A nested parameter/local named ctx or context hides the captured
+      // runtime binding. Never redirect its calls to the shadowing value.
+      const nextCtx = explicit ? param.name.text : ctx && names.has(ctx) ? null : ctx;
       const nextShadowed = new Set([...shadowed, ...names]);
       if (explicit) nextShadowed.delete(param.name.text);
       if (explicit) migrateStaticStyleTriples(node, nextCtx, nextShadowed, blocked || keep(node));
-      ts.forEachChild(node, (child) =>
-        walk(child, nextCtx, nextShadowed, blocked || keep(node), explicit ? node : owner),
-      );
+      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), node));
       return;
     }
     if (ts.isBlock(node) || ts.isSourceFile(node)) {
       const names = declaredNames(node);
       const nextShadowed = new Set([...shadowed, ...names]);
-      ts.forEachChild(node, (child) => walk(child, ctx, nextShadowed, blocked || keep(node), owner));
+      const nextCtx = ctx && names.has(ctx) ? null : ctx;
+      ts.forEachChild(node, (child) => walk(child, nextCtx, nextShadowed, blocked || keep(node), owner));
       return;
     }
     if (ctx && !blocked && !keep(node) && ts.isCallExpression(node)) {
