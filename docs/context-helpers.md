@@ -48,18 +48,18 @@ The inspector history is a bounded record of events emitted through the bridge; 
 | Dedicated IndexedDB             | `ctx.db("history")`                                              |
 | Clipboard                       | `ctx.clipboard`                                                  |
 | Menu, toast and Dock            | `ctx.menu`, `ctx.toaster`, `ctx.dock.register`                   |
-| UI with isolated styles         | `ctx.ui.mountSolid`, `ctx.ui.registerStyles`                     |
+| UI with isolated styles         | `ctx.ui.mountReact`, `ctx.ui.registerStyles`                     |
 | Cleanup and cancellation        | `ctx.onDispose`, `ctx.signal`                                    |
 | Script state                    | `ctx.state.get/set/subscribe`                                    |
 
-Prefer Solid components, CSS Modules, and responsive mobile-first controls. The runtime internals may use browser primitives to implement these helpers; feature modules should not duplicate them.
+Prefer React components, Radix/shadcn primitives, CSS Modules, and responsive mobile-first controls. The runtime internals may use browser primitives to implement these helpers; feature modules should not duplicate them.
 
 ## Shared TanStack Query service
 
 The runtime exposes one lazy QueryClient per `createRuntime()` instance. All script contexts belonging to that runtime share the same client; it is cleared on **runtime** disposal, not on individual script navigation or control unmount.
 
 ```ts
-// Inside a userscript's init(ctx), with Solid signals created in a component/root:
+// Inside a userscript's init(ctx), inside a React component or hook:
 const suggestions = ctx.query.createAsyncOptions(
   () =>
     async (query, { signal }) => {
@@ -73,7 +73,7 @@ const suggestions = ctx.query.createAsyncOptions(
 
 `ctx.query.client` exposes the shared QueryClient for advanced operations. Do not instantiate a new client per component. Use distinct query keys for different sources and never cache private credentials. The standalone form-controls helper also has a module-local shared fallback for consumers without `ctx`; these are **separate** caches until explicitly injected. The runtime-scoped service does not share cache across independent bundles or tabs.
 
-**Follow-up:** validate `ctx.http` response and abort semantics in this example, run typecheck/build, add integration tests and a Playground harness for runtime contexts.
+**Follow-up:** validate `ctx.http` response and abort semantics in this example, run typecheck/build, add runtime/utility coverage where the public contract changes; do not add UI/userscript tests.
 
 ## Atualizações automáticas dos userscripts
 
@@ -81,7 +81,7 @@ O runtime inicializa o verificador para cada **instalável** (individual, `unifi
 
 - Verifica ao iniciar, depois a cada 6 horas enquanto a página estiver aberta, e quando a aba volta a ficar visível (respeitando o intervalo).
 - Só avisa quando a versão publicada for maior, com comparação SemVer incluindo prereleases.
-- Usa exclusivamente `runtime/solid-ui/toaster`, com botão **Atualizar** que solicita a abertura do instalador em nova aba, sem redirecionar a página atual. O Safari pode bloquear pop-ups dependendo do contexto.
+- Usa exclusivamente `React/Sonner runtime toaster`, com botão **Atualizar** que solicita a abertura do instalador em nova aba, sem redirecionar a página atual. O Safari pode bloquear pop-ups dependendo do contexto.
 - O aviso pode ser fechado e não reaparece para a mesma versão descartada. Erros de rede não bloqueiam o userscript.
 - Cada carregamento de página consulta novamente o manifesto para não perder um aviso por causa do cache de outra aba.
 

@@ -12,7 +12,7 @@ try {
   process.exit(0);
 }
 const runtimeChanged = changed.some((file) =>
-  /^src\/runtime\/solid-ui\/(?:menu\/|menu-api\.ts$|object-inspector\/)/.test(file),
+  /^src\/runtime\/(?:react-ui\/|solid-ui\/(?:menu\/|object-inspector\/))/.test(file),
 );
 if (!runtimeChanged) process.exit(0);
 const required = ["studio/README.md", "studio/entry.tsx"];

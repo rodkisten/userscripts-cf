@@ -8,7 +8,7 @@ declare module "*.module.css" {
   export default classes;
 }
 declare module "*.svg?component" {
-  const Icon: () => import("solid-js").Element;
+  const Icon: import("react").ComponentType<import("react").SVGProps<SVGSVGElement>>;
   export default Icon;
 }
 declare const GM: any;

@@ -34,26 +34,27 @@ fix: improve bookmarks (test: tests/pr-ci-scope.test.js | build: reddit,standalo
 
 ## Runtime context lifecycle and documentation (MANDATORY)
 
-Before changing userscript entrypoints, runtime helpers, context-scoped stores, listeners, UI mounting or AST transforms, **read the lifecycle guide in [docs/context-and-optimization.md](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth)**. The context belongs to the **script instance**, not the page, module or a mutable global. `reconcile()` creates a fresh `ScriptContext` using `context(definition)` and passes it into `definition.module.init(ctx)`. The AST rewrites `useContext()`/`useRuntime()` in provably context-bound lexical scopes; `ctx.ui.mountSolid` provides that same instance through `RuntimeProvider` to Solid descendants. `ctx.dispose()` aborts and cleans up resources.
+Before changing userscript entrypoints, runtime helpers, context-scoped stores, listeners, UI mounting or AST transforms, **read the lifecycle guide in [docs/context-and-optimization.md](docs/context-and-optimization.md#runtime-context-lifecycle-source-of-truth)**. The context belongs to the **script instance**, not the page, module or a mutable global. `reconcile()` creates a fresh `ScriptContext` using `context(definition)` and passes it into `definition.module.init(ctx)`. The AST rewrites `useContext()`/`useRuntime()` in provably context-bound lexical scopes; `ctx.ui.mountReact` provides that same instance through `RuntimeProvider` to React descendants. `ctx.dispose()` aborts and cleans up resources.
 
 **Always** use the instance-owned `ctx` API. Never register events, stores or styles outside its lifecycle; never introduce a mutable global current-context pointer. For shared modules, pass `ctx` explicitly or use a per-script factory until automatic per-instance binding is implemented. Do not assume a module-top-level `useContext()` can resolve safely. `useRuntimeWorld()` currently exposes shared events, not the page/sandbox execution world.
 
 **Whenever any of these mechanisms changes, update the lifecycle guide and its Mermaid diagram in the same work block.** Keep examples, limitations, regression tests and interactive Playground examples (when user-visible) synchronized. Run relevant tests, typecheck and build; document failures instead of claiming unverified success. This instruction applies to all future agents and code changes.
 
-## Repository-wide defaults: Solid-first and context-first (MANDATORY)
+## Repository-wide defaults: React-first and context-first (MANDATORY)
 
-**Everything interactive in this repository is SolidJS by default.** Do not introduce React, Vue, imperative DOM-rendered menus, manually assembled widgets, or another UI framework unless the user explicitly requests it. Use SolidJS components, signals/stores, and CSS Modules, including for shared runtime UI such as dropdowns, dialogs, inspectors, Dock controls, and toasts.
+**React 19 + React DOM + TypeScript is the only supported UI framework.** All new or migrated interactive UI must use React components, hooks, JSX/TSX, and the existing Radix/shadcn design system. Do not add SolidJS, Vue, another framework, or a parallel proprietary component system. Do not restore Solid compatibility layers. Historical Solid code may be inspected only to preserve behavior while replacing it.
 
 **Every feature must use the existing `ctx` contract first.** Before changing code, inspect the relevant helper and its usage, then prefer the public context API for events, elements/DOM, HTTP, request/response interception, storage, clipboard, menus, UI mounting, and cleanup. Do not introduce parallel helpers or bypass `ctx` for convenience.
 
 - Events: `ctx.events` for local events, `ctx.events.shared` for cross-userscript events, and `ctx.listen`/`ctx.events.dom` for browser listeners. Register disposal for all subscriptions.
 - Elements and DOM: `ctx.dom` for queries, observation and element interaction. Avoid ad-hoc MutationObservers and polling in features.
 - HTTP: `ctx.http` for requests and `ctx.interceptRequest`/`ctx.interceptResponse` for interception. Never patch fetch or XHR separately in a feature.
-- UI: SolidJS and CSS Modules, mounted via `ctx.ui.mountSolid` and styled via `ctx.ui.registerStyles`. Shared UI must be reusable from `ctx` (for example `ctx.menu.dropdown`), not implemented again inside individual userscripts.
+- UI: `ctx.ui.mountReact` and React portals, styled with CSS Modules or the approved shadcn/Tailwind tokens. Shared UI must be reusable from `ctx`.
 - Lifecycle: `ctx.signal` and `ctx.onDispose`; do not leave timers, observers, listeners or mounted UI orphaned.
+- State: React state/hooks for component-local state and the framework-neutral `ctx.state` store for shared state.
 - Existing native APIs inside shared runtime helpers are permitted when implementing the abstraction; do not copy that low-level code into feature modules.
 
-**Pre-commit gate:** inspect helpers, confirm SolidJS, verify no duplicated browser APIs, format, typecheck, test, and build. Report any check that could not be run. Never claim validation without evidence.
+**Pre-commit gate:** inspect helpers, confirm React ownership and lifecycle, verify no duplicated browser APIs, format, typecheck, run only allowed runtime/utility tests, and build. Report any check that could not be run. Never claim validation without evidence.
 
 ## Context-first rule: MUST
 
@@ -72,9 +73,9 @@ Before writing any userscript feature, inspect `src/core/runtime.js`, `src/runti
 | Clipboard                   | `ctx.clipboard`                                             | direct clipboard history implementations       |
 | Menus and notifications     | `ctx.menu`, `ctx.toaster`                                   | ad-hoc menus and toasts                        |
 | Dock actions                | `ctx.dock.register`                                         | direct registry CustomEvents                   |
-| UI and CSS isolation        | `ctx.ui.mountSolid`, CSS Modules, `ctx.ui.registerStyles`   | global CSS, scattered DOM builders             |
+| UI and CSS isolation        | `ctx.ui.mountReact`, React portals, CSS Modules and `ctx.ui.registerStyles`   | global CSS, scattered DOM builders             |
 | Lifecycle                   | `ctx.signal`, `ctx.onDispose`                               | orphan timers/listeners                        |
-| State                       | `ctx.state` or Solid signals/stores                         | duplicate global mutable state                 |
+| State                       | `ctx.state` or React state/hooks                         | duplicate global mutable state                 |
 
 These are feature-module rules. Runtime adapters and low-level helper implementations may use native APIs internally to implement the public abstraction.
 
@@ -87,7 +88,7 @@ When no existing helper covers a use case, document the gap, add or extend the s
 - [ ] Inspected existing context helpers before implementing
 - [ ] Reused or extended helpers rather than duplicating functionality
 - [ ] Registered disposal for every listener, observer, subscription and timer
-- [ ] Used SolidJS and CSS Modules for interactive UI, with mobile Safari support
+- [ ] Used React 19 and approved UI primitives for interactive UI, with mobile Safari support
 - [ ] Added tests for new behavior and failure paths
 - [ ] Ran formatting, typecheck, tests and build (report failures honestly)
 - [ ] Updated documentation when changing the public context API
@@ -97,58 +98,11 @@ When no existing helper covers a use case, document the gap, add or extend the s
 
 `ctx.events` is scoped to one script. `ctx.events.shared` is for cross-script communication on the same page, using `rod-<name>` DOM events. BroadcastChannel is opt-in, works only in supported same-origin contexts, and should never carry secrets. See `docs/context-helpers.md`.
 
-## Solid 2.0
-
-This project uses Solid 2.0 (`solid-js` 2.x with `@solidjs/web`). Components run once;
-there is no re-render. Read `node_modules/solid-js/CHEATSHEET.md` before writing Solid code,
-especially its last section, "What changed from 1.x".
-
-Rules that matter most:
-
-- Props are read, never destructured: `props.name` inside JSX, a memo, or an effect.
-  `function Comp({ name })` loses reactivity. Pass values, not accessors: `<Child count={count()} />`.
-- `createEffect(compute, apply)` takes two functions. The first reads reactive values and
-  returns a result; the second receives it and performs side effects. One argument is an error.
-- Stores are written through the draft: `setStore(s => { s.user.name = "Ada" })`.
-  There are no path setters and no `produce`.
-- Read reactive values inside JSX, a memo, or an effect, never at the top of a component body.
-- Do not write a signal or store from a memo, an effect's compute function, or a component body.
-  Write from event handlers, `onSettled`, or actions.
-
-Names that no longer exist, and what to use:
-
-- `solid-js/web` -> `@solidjs/web`; `solid-js/store` -> `solid-js`
-- `Suspense` -> `Loading`; `SuspenseList` -> `Reveal`; `ErrorBoundary` -> `Errored`
-- `mergeProps` -> `merge`; `splitProps` -> `omit`; `unwrap` -> `snapshot`; `onMount` -> `onSettled`
-- `createResource` -> an async `createMemo` or `createStore(fn)` read under `<Loading>`
-- `createSelector` -> `createProjection`; `createComputed` -> `createMemo` or a two-function `createEffect`
-- `batch` -> writes batch on a microtask (`flush()` applies them now); `on()` -> the compute half of `createEffect`
-- `startTransition` / `useTransition` -> built in; `isPending()` reports an in-flight change
-- `Index` -> `<For keyed={false}>`; `indexArray` -> `mapArray`; `createMutable` -> `createStore` with draft setters
-- `onError` / `catchError` -> `<Errored>` or the `error` option of `createEffect`
-- `classList` -> `class={{ active: isActive() }}`; `use:` directives -> `ref={factory(args)}`
-- `Context.Provider` -> `<Context value={...}>`; `equalFn` -> `isEqual`; `getListener` -> `getObserver`
-
-Tooling:
-
-- Skills: `node_modules/solid-js/skills/solid-2.0/SKILL.md` (primer),
-  `node_modules/solid-js/skills/reactivity-diagnostics/SKILL.md` (every warning code and its fix),
-  `node_modules/@solidjs/diagnostics/skills/agent-loops/SKILL.md` (capture evidence, assert budgets),
-  `node_modules/@solidjs/web/skills/server-components/SKILL.md` (server components and slots).
-- A console warning with a bracketed code, such as `[REACTIVE_WRITE_IN_OWNED_SCOPE]`, is a defect.
-  Look it up in the repair guide; do not suppress it.
-- Verify a reactive change with `captureArtifact` and `expectNoDiagnostics` from `@solidjs/diagnostics`,
-  or `POST /__solid/diagnostics` on the dev server with `{"method":"begin"}` ... `{"method":"end"}`.
-- Lint with `eslint-plugin-solid/configs/v2` (or `v2-strict`).
-- Docs: https://v2.solidjs.com/llms.txt; append `.md` to any page URL for its Markdown.
-
 ## Form controls documentation and playground contract (MANDATORY)
 
-Before any change to form controls, RodMenu field rendering, Combobox, TagsInput, or their adapters, **read** `src/runtime/solid-ui/form-controls/README.md` and the relevant Playground source (`playground/form-controls-app.tsx`). Inspect current implementation and tests, not just the roadmap.
+Before changing RodMenu fields, shared form utilities, or their adapters, read `src/runtime/solid-ui/form-controls/README.md`, inspect the current React implementation in `src/runtime/react-ui/`, and review the React Rod UI Studio entrypoint. The old Solid form-controls playground has been retired; do not restore or reference `playground/form-controls-app.tsx`.
 
-In the **same logical change**, update the component README with what is implemented, remaining gaps, compatibility/limitations, and verification status. Add or update a **working interactive Playground example** for each added or changed user-visible behavior. Keep the example linked from the Playground index, and ensure it exercises real component code, not a static mock. Add/update regression tests and run typecheck, build and relevant tests. Do not check off roadmap items or claim CI passed without evidence. If validation is blocked, record the exact failure and next action. Avoid one commit per file: group related changes into one logical commit.
-
-The README is the persistent source of truth for the renderer migration, 29 shared field variants, RodMenu compatibility adapter, and mobile/Shadow DOM validation.
+Keep the documentation explicit about which utilities remain framework-neutral, which UI components are React-owned, and which historical paths still carry legacy naming. Demonstrate user-visible field behavior in the React Rod UI Studio. Only runtime and utility tests are allowed under `docs/testing-policy.md`; do not add or migrate component, UI, or userscript tests.
 
 ## Commit and deployment marker policy (MANDATORY)
 

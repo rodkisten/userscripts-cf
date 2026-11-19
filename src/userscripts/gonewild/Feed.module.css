@@ -467,7 +467,7 @@ body.gws-studio-search-active [data-testid="post-container"]:not(.gws-result) {
 /* Mobile Reddit hosts can use multi-column/grid layouts. Keep our inserted
    content in the full post width rather than a narrow metadata column. */
 @media (max-width: 767px) {
-  :global(shreddit-post) > [data-solid-mount],
+  :global(shreddit-post) > [data-react-mount],
   :global([data-testid="post-container"]) > [data-solid-mount],
   :global([data-testid="search-post-unit"]) > [data-solid-mount] {
     grid-column: 1 / -1;

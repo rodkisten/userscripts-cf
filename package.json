@@ -24,13 +24,14 @@
     "ci:cloudflare": "npm run build:hosting",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "npm run check:react-only && tsc --noEmit -p tsconfig.json",
     "lint": "node build/check-style.mjs",
     "lint:fix": "node build/check-style.mjs --fix",
     "check:design-system": "node build/check-design-system-changes.mjs",
     "test:design-system": "npm run typecheck:react",
     "typecheck:react": "tsc --noEmit -p tsconfig.react.json",
-    "test:unit": "node build/run-runtime-utility-tests.mjs"
+    "test:unit": "node build/run-runtime-utility-tests.mjs",
+    "check:react-only": "node build/check-react-only.mjs"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
