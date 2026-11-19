@@ -1,0 +1,115 @@
+name: ⚡ PR Checkbox Executor
+
+on:
+  issue_comment:
+    types: [edited]
+
+# Run-name dinâmico mostrando quem clicou e em qual PR
+run-name: "⚡ Ação via Checkbox • PR #${{ github.event.issue.number }} por @${{ github.actor }}"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  handle-checkbox:
+    # Garante que é um PR, que é o nosso comentário marcador, e que NÃO foi o próprio bot editando
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '<!-- pr-interactive-actions -->') &&
+      !endsWith(github.actor, '[bot]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔑 Gerar Token do GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: 🔍 Identificar Checkboxes Marcados e Branch do PR
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const body = context.payload.comment.body;
+            const runPrettier = body.includes('- [x] 🎨 **Rodar Prettier**');
+            const runLockfile = body.includes('- [x] 📦 **Atualizar Lockfile**');
+
+            if (!runPrettier && !runLockfile) {
+              core.info('Nenhum checkbox válido foi marcado.');
+              core.setOutput('should_run', 'false');
+              return;
+            }
+
+            // Busca os dados do PR para descobrir o nome exato da branch (head.ref)
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            core.setOutput('should_run', 'true');
+            core.setOutput('prettier', runPrettier);
+            core.setOutput('lockfile', runLockfile);
+            core.setOutput('branch', pr.head.ref);
+            core.setOutput('head_repo', pr.head.repo.full_name);
+
+      - name: 📥 Checkout da Branch do PR
+        if: steps.parse.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.parse.outputs.head_repo }}
+          ref: ${{ steps.parse.outputs.branch }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🟢 Setup Node.js
+        if: steps.parse.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🎨 Executar Prettier
+        if: steps.parse.outputs.prettier == 'true'
+        run: |
+          npm install
+          npx prettier --write .
+
+      - name: 📦 Atualizar Lockfile
+        if: steps.parse.outputs.lockfile == 'true'
+        run: |
+          npm install --package-lock-only
+          # Se usar yarn ou pnpm, troque por: yarn install ou pnpm install
+
+      - name: 💾 Commit & Push na Branch do PR
+        if: steps.parse.outputs.should_run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status -s) ]]; then
+            git add .
+            git commit -m "chore: 🤖 automação executada via painel do PR"
+            git push
+          else
+            echo "Nenhuma alteração gerada para commitar."
+          fi
+
+      - name: 🔄 Resetar Checkboxes no Comentário
+        if: steps.parse.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            let body = context.payload.comment.body;
+            body = body.replace('- [x] 🎨 **Rodar Prettier**', '- [ ] 🎨 **Rodar Prettier**');
+            body = body.replace('- [x] 📦 **Atualizar Lockfile**', '- [ ] 📦 **Atualizar Lockfile**');
+
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              body,
+            });
