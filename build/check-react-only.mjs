@@ -16,7 +16,11 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
     ast = parse(source, {
       sourceType: "unambiguous",
       sourceFilename: filename,
-      plugins: [\n        ...(filename.endsWith(".jsx") || filename.endsWith(".tsx") ? ["jsx"] : []),\n        ...(filename.endsWith(".ts") || filename.endsWith(".tsx") ? ["typescript"] : []),\n        "decorators-legacy",\n      ],
+      plugins: [
+        ...(filename.endsWith(".jsx") || filename.endsWith(".tsx") ? ["jsx"] : []),
+        ...(filename.endsWith(".ts") || filename.endsWith(".tsx") ? ["typescript"] : []),
+        "decorators-legacy",
+      ],
       errorRecovery: false,
     });
   } catch (error) {
@@ -45,7 +49,8 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
   visit(ast.program);
   const pragma = /@jsxImportSource\s+(?:solid-js(?:\/\S*)?|@solidjs\/\S*)/g;
   for (const match of source.matchAll(pragma)) {
-    violations.push({ line: source.slice(0, match.index).split("\n").length, kind: "Solid JSX runtime pragma" });
+    violations.push({ line: source.slice(0, match.index).split("
+").length, kind: "Solid JSX runtime pragma" });
   }
   return violations;
 }
