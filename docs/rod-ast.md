@@ -81,3 +81,8 @@ Capability guards are now detected from TypeScript `TypeOfExpression` nodes inst
 ### Nested function ownership
 
 The AST walker tracks the **nearest function** as the owner of a call, even when a nested closure captures the outer `ctx`. This avoids inheriting an outer async function's eligibility or cleanup ownership. Awaited storage in an async nested closure remains eligible under `storage: "awaited"`, unless protected by its own `try/catch/finally`. Vitest covers nested synchronous and asynchronous closures and exception boundaries.
+
+
+### Runtime context shadowing
+
+A captured `ctx` or `context` is only propagated into nested lexical scopes while its binding remains visible. A nested function parameter or block-scoped declaration with the same name disables implicit context rewrites inside that scope; sibling code continues to use the original context. Vitest covers shadowed parameters, block declarations and unshadowed closures.
