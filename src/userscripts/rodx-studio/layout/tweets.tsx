@@ -257,7 +257,7 @@ export function initializeDeckCompactLayout(): void {
         add(el, CSS_CLASSES.profileDetail);
       }
 
-      let toggle = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileMoreButton);
+      let toggle = primary.querySelector<HTMLButtonElement>(RODX_SELECTORS.profileMoreButton);
       if (!toggle && details.length) {
         toggle = document.createElement("button");
         toggle.type = "button";
