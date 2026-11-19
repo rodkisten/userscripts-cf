@@ -60,7 +60,7 @@ export function installListTypeahead(Studio) {
       .slice(0, 30);
     index = 0;
     if (!host) {
-      host = (<div />) as HTMLDivElement;
+      host = document.createElement("div");
       host.id = "rodx-list-typeahead";
       root = host.attachShadow({ mode: "open" });
       document.body.append(host);
@@ -91,7 +91,7 @@ export function installListTypeahead(Studio) {
     ));
     const list = root.querySelector(DOM_SELECTORS.divElements);
     choices.forEach((row, i) => {
-      const button = (<button />) as HTMLButtonElement;
+      const button = document.createElement("button");
       button.type = "button";
       button.setAttribute("role", "option");
       button.setAttribute("aria-selected", String(i === index));
