@@ -128,7 +128,9 @@ export function initializeDeckCompactLayout(): void {
 
     function style(): void {
       if (document.getElementById(ELEMENT_IDS.compactLayoutStyle)) return;
-      const node = (<style id={ELEMENT_IDS.compactLayoutStyle}>{extractedCSS1}</style>) as HTMLStyleElement;
+      const node = document.createElement("style");
+      node.id = ELEMENT_IDS.compactLayoutStyle;
+      node.textContent = extractedCSS1;
       document.head.append(node);
     }
 
