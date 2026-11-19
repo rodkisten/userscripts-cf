@@ -615,3 +615,19 @@ describe("runtime context lexical shadowing", () => {
     expect(transformRodAst(source, "ctx-captured.ts").code).toContain('ctx.http.fetch("/nested")');
   });
 });
+
+describe("context alias shadowing", () => {
+  it("does not rewrite a shadowed context alias in a nested parameter", () => {
+    const source = 'function init(context) { const nested = (value, context) => fetch("/shadowed"); fetch("/outer"); }';
+    const result = transformRodAst(source, "context-param-shadow.ts");
+    expect(result.code).toContain('=> fetch("/shadowed")');
+    expect(result.code).toContain('context.http.fetch("/outer")');
+    expect(transformRodAst(result.code, "context-param-shadow.ts").changed).toBe(false);
+  });
+  it("does not rewrite a shadowed context alias in an inner block", () => {
+    const source = 'function init(context) { { const context = {}; fetch("/shadowed"); } fetch("/outer"); }';
+    const result = transformRodAst(source, "context-block-shadow.ts");
+    expect(result.code).toContain('fetch("/shadowed")');
+    expect(result.code).toContain('context.http.fetch("/outer")');
+  });
+});
