@@ -9,9 +9,16 @@ const defaults: DashboardSettings = { files: [], workflows: [] };
 function currentRepo() {
   const parts = location.pathname.split("/").filter(Boolean);
   return parts.length >= 2 && !["settings", "notifications", "search", "orgs"].includes(parts[0])
-    ? parts[0] + "/" + parts[1] : "";
+    ? parts[0] + "/" + parts[1]
+    : "";
 }
-function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (name: string, url: string) => void } }) {
+function Dashboard({
+  ctx,
+  controller,
+}: {
+  ctx: any;
+  controller: { toggleFile: (name: string, url: string) => void };
+}) {
   const [repo, setRepo] = useState(currentRepo);
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<DashboardSettings>(defaults);
@@ -25,7 +32,10 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
     const navigate = () => setRepo(currentRepo());
     window.addEventListener("popstate", navigate);
     window.addEventListener("turbo:load", navigate);
-    return () => { window.removeEventListener("popstate", navigate); window.removeEventListener("turbo:load", navigate); };
+    return () => {
+      window.removeEventListener("popstate", navigate);
+      window.removeEventListener("turbo:load", navigate);
+    };
   }, []);
   useEffect(() => {
     let active = true;
@@ -33,10 +43,17 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
     setRuns([]);
     setWorkflows([]);
     if (!repo) return;
-    void ctx.storage.get("githubDashboard:" + repo, defaults).then((value: DashboardSettings) => {
-      if (active) setSettings({ ...defaults, ...value });
-    }).catch((error: unknown) => { if (active) setMessage(String(error)); });
-    return () => { active = false; };
+    void ctx.storage
+      .get("githubDashboard:" + repo, defaults)
+      .then((value: DashboardSettings) => {
+        if (active) setSettings({ ...defaults, ...value });
+      })
+      .catch((error: unknown) => {
+        if (active) setMessage(String(error));
+      });
+    return () => {
+      active = false;
+    };
   }, [ctx, repo]);
   useEffect(() => {
     if (!repo) return;
@@ -47,7 +64,10 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
       const response = await fetch("https://api.github.com/repos/" + repo + path, {
         signal: ctx.signal,
         credentials: "omit",
-        headers: { Accept: "application/vnd.github+json", ...(savedToken ? { Authorization: "Bearer " + savedToken } : {}) },
+        headers: {
+          Accept: "application/vnd.github+json",
+          ...(savedToken ? { Authorization: "Bearer " + savedToken } : {}),
+        },
       });
       if (!response.ok) throw new Error("GitHub API " + response.status);
       return response.json();
@@ -58,63 +78,168 @@ function Dashboard({ ctx, controller }: { ctx: any; controller: { toggleFile: (n
         setWorkflows(workflowData.workflows ?? []);
         setRuns(runData.workflow_runs ?? []);
         setMessage("");
-      }).catch((error: unknown) => { if (active && !ctx.signal.aborted) setMessage(String(error)); })
-      .finally(() => { if (active) setBusy(false); });
-    return () => { active = false; };
+      })
+      .catch((error: unknown) => {
+        if (active && !ctx.signal.aborted) setMessage(String(error));
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [ctx, repo, version]);
   const save = (next: DashboardSettings) => {
     setSettings(next);
     void ctx.storage.set("githubDashboard:" + repo, next);
   };
-  useEffect(() => { controller.toggleFile = (name, url) => {
-    setSettings(previous => {
-      const next = { ...previous, files: previous.files.some(file => file.url === url)
-        ? previous.files.filter(file => file.url !== url) : [...previous.files, { name, url }] };
-      void ctx.storage.set("githubDashboard:" + repo, next);
-      return next;
-    });
-  }; }, [ctx, repo, controller]);
+  useEffect(() => {
+    controller.toggleFile = (name, url) => {
+      setSettings((previous) => {
+        const next = {
+          ...previous,
+          files: previous.files.some((file) => file.url === url)
+            ? previous.files.filter((file) => file.url !== url)
+            : [...previous.files, { name, url }],
+        };
+        void ctx.storage.set("githubDashboard:" + repo, next);
+        return next;
+      });
+    };
+  }, [ctx, repo, controller]);
   const request = async (path: string, body?: object) => {
     setBusy(true);
     try {
       const savedToken = await ctx.storage.get("actionsToken", "");
       const response = await fetch("https://api.github.com/repos/" + repo + path, {
-        method: "POST", signal: ctx.signal, credentials: "omit",
-        headers: { Accept: "application/vnd.github+json", ...(savedToken ? { Authorization: "Bearer " + savedToken } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
+        method: "POST",
+        signal: ctx.signal,
+        credentials: "omit",
+        headers: {
+          Accept: "application/vnd.github+json",
+          ...(savedToken ? { Authorization: "Bearer " + savedToken } : {}),
+          ...(body ? { "Content-Type": "application/json" } : {}),
+        },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
       if (!response.ok) throw new Error("GitHub API " + response.status);
       setMessage("Solicitação enviada.");
-      setVersion(value => value + 1);
-    } catch (error) { setMessage(String(error)); } finally { setBusy(false); }
+      setVersion((value) => value + 1);
+    } catch (error) {
+      setMessage(String(error));
+    } finally {
+      setBusy(false);
+    }
   };
-  return <section className={styles.dashboard} data-ghft-dashboard="">
-    <nav className={styles.favoriteBar} aria-label="Favoritos GitHub">
-      <button className={styles.button} onClick={() => setOpen(value => !value)} aria-expanded={open}>⌘ {open ? "Fechar" : "Favoritos"}</button>
-      {settings.files.map(file => <a key={file.url} className={styles.favorite} href={file.url}>{file.name}</a>)}
-      {settings.workflows.map(workflow => <a key={workflow.id} className={styles.favorite} href={"/" + repo + "/actions/workflows/" + workflow.path.split("/").pop()}>▶ {workflow.name}</a>)}
-    </nav>
-    {open && <div className={styles.dashboardPanel}>
-      <header><strong>GitHub · {repo || "Escolha um repositório"}</strong><button className={styles.button} onClick={() => setOpen(false)}>✕</button></header>
-      <div className={styles.dashboardControls}>
-        <button className={styles.button} disabled={busy} onClick={() => setVersion(value => value + 1)}>↻ Atualizar</button>
-        <label>Repositório <input value={repoInput} onChange={event => setRepoInput(event.target.value)} placeholder="owner/repo" /></label>
-        <button className={styles.button} onClick={() => { if (/^[\w.-]+\/[\w.-]+$/.test(repoInput)) { setRepo(repoInput); setRepoInput(""); } }}>Abrir</button>
-        <h3>Workflows</h3>
-        {workflows.map(workflow => <div key={workflow.id} className={styles.favorite}>
-          <span>{workflow.name}</span>
-          <button className={styles.button} onClick={() => save({ ...settings, workflows: settings.workflows.some(item => item.id === workflow.id) ? settings.workflows.filter(item => item.id !== workflow.id) : [...settings.workflows, workflow] })}>☆</button>
-          <button className={styles.button} disabled={busy} onClick={() => { if (confirm("Executar " + workflow.name + " na main?")) void request("/actions/workflows/" + workflow.id + "/dispatches", { ref: "main" }); }}>▶</button>
-        </div>)}
-        <h3>Execuções recentes</h3>
-        {runs.map(run => <div key={run.id} className={styles.favorite}>
-          <a href={run.html_url}>{run.name} · {run.status} · {run.conclusion ?? "..."}</a>
-          <button className={styles.button} disabled={busy || run.conclusion !== "failure"} onClick={() => { if (confirm("Reexecutar falhas #" + run.id + "?")) void request("/actions/runs/" + run.id + "/rerun-failed-jobs"); }}>↻</button>
-        </div>)}
-        <p role="status">{busy ? "Carregando…" : message}</p>
-      </div>
-    </div>}
-  </section>;
+  return (
+    <section className={styles.dashboard} data-ghft-dashboard="">
+      <nav className={styles.favoriteBar} aria-label="Favoritos GitHub">
+        <button className={styles.button} onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+          ⌘ {open ? "Fechar" : "Favoritos"}
+        </button>
+        {settings.files.map((file) => (
+          <a key={file.url} className={styles.favorite} href={file.url}>
+            {file.name}
+          </a>
+        ))}
+        {settings.workflows.map((workflow) => (
+          <a
+            key={workflow.id}
+            className={styles.favorite}
+            href={"/" + repo + "/actions/workflows/" + workflow.path.split("/").pop()}
+          >
+            ▶ {workflow.name}
+          </a>
+        ))}
+      </nav>
+      {open && (
+        <div className={styles.dashboardPanel}>
+          <header>
+            <strong>GitHub · {repo || "Escolha um repositório"}</strong>
+            <button className={styles.button} onClick={() => setOpen(false)}>
+              ✕
+            </button>
+          </header>
+          <div className={styles.dashboardControls}>
+            <button
+              className={styles.button}
+              disabled={busy}
+              onClick={() => setVersion((value) => value + 1)}
+            >
+              ↻ Atualizar
+            </button>
+            <label>
+              Repositório{" "}
+              <input
+                value={repoInput}
+                onChange={(event) => setRepoInput(event.target.value)}
+                placeholder="owner/repo"
+              />
+            </label>
+            <button
+              className={styles.button}
+              onClick={() => {
+                if (/^[\w.-]+\/[\w.-]+$/.test(repoInput)) {
+                  setRepo(repoInput);
+                  setRepoInput("");
+                }
+              }}
+            >
+              Abrir
+            </button>
+            <h3>Workflows</h3>
+            {workflows.map((workflow) => (
+              <div key={workflow.id} className={styles.favorite}>
+                <span>{workflow.name}</span>
+                <button
+                  className={styles.button}
+                  onClick={() =>
+                    save({
+                      ...settings,
+                      workflows: settings.workflows.some((item) => item.id === workflow.id)
+                        ? settings.workflows.filter((item) => item.id !== workflow.id)
+                        : [...settings.workflows, workflow],
+                    })
+                  }
+                >
+                  ☆
+                </button>
+                <button
+                  className={styles.button}
+                  disabled={busy}
+                  onClick={() => {
+                    if (confirm("Executar " + workflow.name + " na main?"))
+                      void request("/actions/workflows/" + workflow.id + "/dispatches", { ref: "main" });
+                  }}
+                >
+                  ▶
+                </button>
+              </div>
+            ))}
+            <h3>Execuções recentes</h3>
+            {runs.map((run) => (
+              <div key={run.id} className={styles.favorite}>
+                <a href={run.html_url}>
+                  {run.name} · {run.status} · {run.conclusion ?? "..."}
+                </a>
+                <button
+                  className={styles.button}
+                  disabled={busy || run.conclusion !== "failure"}
+                  onClick={() => {
+                    if (confirm("Reexecutar falhas #" + run.id + "?"))
+                      void request("/actions/runs/" + run.id + "/rerun-failed-jobs");
+                  }}
+                >
+                  ↻
+                </button>
+              </div>
+            ))}
+            <p role="status">{busy ? "Carregando…" : message}</p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
 export function mountGitHubDashboard(ctx: any) {
   const controller = { toggleFile: (_name: string, _url: string) => {} };
@@ -123,7 +248,10 @@ export function mountGitHubDashboard(ctx: any) {
   return {
     toggleFile: (name: string, url: string) => controller.toggleFile(name, url),
     load: () => window.dispatchEvent(new Event("turbo:load")),
-    dispose: () => { dispose(); stylesheet.remove(); },
+    dispose: () => {
+      dispose();
+      stylesheet.remove();
+    },
   };
 }
 

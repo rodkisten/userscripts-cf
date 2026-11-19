@@ -19,7 +19,21 @@ describe("Rod UI React Studio contract", () => {
   });
   it("uses only supported React menu fields and real controls", () => {
     const entry = read("studio/entry.tsx");
-    for (const field of ["text", "email", "password", "search", "url", "tel", "number", "range", "textarea", "select", "switch", "checkbox"]) expect(entry).toContain('"' + field + '"');
+    for (const field of [
+      "text",
+      "email",
+      "password",
+      "search",
+      "url",
+      "tel",
+      "number",
+      "range",
+      "textarea",
+      "select",
+      "switch",
+      "checkbox",
+    ])
+      expect(entry).toContain('"' + field + '"');
     expect(entry).toContain("setSurface");
     expect(entry).toContain("setPersist");
     expect(entry).toContain("setDevice");

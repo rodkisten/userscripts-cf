@@ -37,9 +37,9 @@ assets["playground/diagnostics.html"] = await fs.readFile(
 );
 assets["playground/inspector.html"] = await fs.readFile(path.join(root, "playground/inspector.html"), "utf8");
 
-
 // Legacy Solid playgrounds are intentionally retired. Serve the React Studio instead.
-const redirectToStudio = '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=/design-system.html"><title>Rod UI Studio</title><p><a href="/design-system.html">Abrir Rod UI Studio React</a></p></html>';
+const redirectToStudio =
+  '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=/design-system.html"><title>Rod UI Studio</title><p><a href="/design-system.html">Abrir Rod UI Studio React</a></p></html>';
 assets["playground/form-controls.html"] = redirectToStudio;
 assets["playground/instagram-bookmark.html"] = redirectToStudio;
 // Use a normal ESM build so TypeScript is split into an on-demand chunk.

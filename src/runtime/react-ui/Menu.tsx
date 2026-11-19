@@ -26,11 +26,23 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
   };
 
   const surface = schema.surface ?? schema.presentation ?? "bottom-sheet";
-  const surfaceClass = surface === "modal" ? styles.surfaceModal : surface === "drawer" ? styles.surfaceDrawer : surface === "popover" ? styles.surfacePopover : "";
+  const surfaceClass =
+    surface === "modal"
+      ? styles.surfaceModal
+      : surface === "drawer"
+        ? styles.surfaceDrawer
+        : surface === "popover"
+          ? styles.surfacePopover
+          : "";
   if (!isOpen) return null;
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog.Root
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <Dialog.Overlay className={styles.overlay} />
       <Dialog.Content
         aria-label={schema.title || "Rod Menu"}
@@ -138,7 +150,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                   key={action.id}
                   disabled={action.disabled}
                   className={`${styles.btn} ${variantClass}`}
-                  onClick={() => { if (action.role === "cancel") onClose(); else void action.onClick?.(context); }}
+                  onClick={() => {
+                    if (action.role === "cancel") onClose();
+                    else void action.onClick?.(context);
+                  }}
                 >
                   {action.label}
                 </button>

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-const source = readFileSync(new URL("../src/userscripts/github-tools/dashboard.tsx", import.meta.url), "utf8");
+const source = readFileSync(
+  new URL("../src/userscripts/github-tools/dashboard.tsx", import.meta.url),
+  "utf8",
+);
 describe("GitHub dashboard React migration", () => {
   it("does not load Solid runtime or legacy mountPoint", () => {
     expect(source).not.toMatch(/from ["'](?:solid-js|@solidjs\/web)/);
