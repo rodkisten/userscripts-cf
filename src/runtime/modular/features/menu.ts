@@ -1,4 +1,5 @@
 import { openRadixDialog, openRadixDropdown } from "./menu-view.js";
+import type { ReactElement } from "react";
 export interface DropdownItem {
   label?: string;
   type?: "item" | "separator" | "checkbox";
@@ -53,10 +54,11 @@ export interface MenuFeatureOptions {
   container?: () => ShadowRoot | HTMLElement;
   /** The owning ScriptContext registers every menu handle for disposal. */
   onDispose?: (cleanup: () => void) => void;
+  mountSharedReact?: (component: ReactElement, container: HTMLElement) => { dispose: () => void };
 }
 
 export function createMenuFeature(options: MenuFeatureOptions = {}) {
-  if (!options.container && !options.onDispose) return menu;
+  if (!options.container && !options.onDispose && !options.mountSharedReact) return menu;
 
   const own = <T extends { close: () => void; dispose: () => void }>(handle: T): T => {
     options.onDispose?.(handle.dispose);
@@ -69,7 +71,7 @@ export function createMenuFeature(options: MenuFeatureOptions = {}) {
         openRadixDialog({
           ...schema,
           container: schema.container ?? options.container?.(),
-        }),
+        }, options.mountSharedReact),
       );
     },
     dropdown(dropdownOptions: DropdownOptions) {
@@ -77,7 +79,7 @@ export function createMenuFeature(options: MenuFeatureOptions = {}) {
         openRadixDropdown({
           ...dropdownOptions,
           container: dropdownOptions.container ?? options.container?.(),
-        }),
+        }, options.mountSharedReact),
       );
     },
     configure: menu.configure,
