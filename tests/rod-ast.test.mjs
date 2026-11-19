@@ -638,3 +638,24 @@ describe("context alias shadowing", () => {
     expect(result.code).toContain('context.http.fetch("/outer")');
   });
 });
+
+describe("modern GM capability guards", () => {
+  it("preserves GM.getValue when guarded by typeof GM.getValue", () => {
+    const source = 'function init(ctx) { if (typeof GM.getValue === "function") GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-guard.ts").code).toBe(source);
+  });
+  it("preserves GM.getValue when guarded by indexed typeof GM property", () => {
+    const source = 'function init(ctx) { if (typeof GM["getValue"] === "function") GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-index-guard.ts").code).toBe(source);
+  });
+  it("preserves GM.getValue on the guarded short circuit right side", () => {
+    const source = 'function init(ctx) { return typeof GM.getValue === "function" && GM.getValue("key"); }';
+    expect(transformRodAst(source, "gm-modern-short-circuit.ts").code).toBe(source);
+  });
+  it("still migrates an unguarded modern GM call", () => {
+    const source = 'function init(ctx) { GM.getValue("key"); }';
+    const result = transformRodAst(source, "gm-modern-unguarded.ts");
+    expect(result.code).toContain('ctx.gm.modern.getValue("key")');
+    expect(transformRodAst(result.code, "gm-modern-unguarded.ts").changed).toBe(false);
+  });
+});
