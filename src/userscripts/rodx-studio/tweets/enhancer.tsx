@@ -415,15 +415,14 @@ export function initializeDeckResultEnhancer(): void {
       }
       if (existing) return;
 
-      const btn = (
-        <button
-          type="button"
-          className={CSS_CLASSES.bookmarkBtn}
-          title={UI_TEXTS.bookmarkTitle}
-          aria-label={UI_TEXTS.bookmarkTitle}
-          onClick={(event: MouseEvent) => {
-            event.preventDefault();
-            event.stopPropagation();
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = CSS_CLASSES.bookmarkBtn;
+      btn.title = UI_TEXTS.bookmarkTitle;
+      btn.setAttribute("aria-label", UI_TEXTS.bookmarkTitle);
+      btn.addEventListener("click", (event: MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
             const menuButton =
               article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.tweetCaret) ||
               article.querySelector<HTMLElement>(DOM_SELECTORS.localizedMoreButtons);
@@ -466,9 +465,7 @@ export function initializeDeckResultEnhancer(): void {
             timeout = setTimeout(finish, RUNTIME_LIMITS.tweetsEnhancer.finishDelayMs);
             menuButton.click();
             setTimeout(choose, 0);
-          }}
-        />
-      ) as HTMLButtonElement;
+      });
 
       mountView(btn, () => <BookmarkSVGIcon />);
 
