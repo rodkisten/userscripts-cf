@@ -198,12 +198,11 @@ export function initializeDeckScrollChrome(): void {
       }
 
       if (!portal) {
-        portal = (
-          <div
-            id={ELEMENT_IDS.activeTweetBar}
-            className={CSS_CLASSES.tweetTopbar}
-            aria-label={UI_TEXTS.tweetBarAriaLabel}
-            onClick={(event: MouseEvent) => {
+        portal = document.createElement("div");
+        portal.id = ELEMENT_IDS.activeTweetBar;
+        portal.className = CSS_CLASSES.tweetTopbar;
+        portal.setAttribute("aria-label", UI_TEXTS.tweetBarAriaLabel);
+        portal.addEventListener("click", (event: MouseEvent) => {
               const target = (event.target as HTMLElement)?.closest<HTMLElement>(
                 RODX_SELECTORS.tweetTopbarControls,
               );
@@ -220,9 +219,7 @@ export function initializeDeckScrollChrome(): void {
                     : `.${CSS_CLASSES.topbarAuthor}`;
 
               active.querySelector<HTMLElement>(selector)?.click();
-            }}
-          />
-        ) as HTMLDivElement;
+        });
 
         document.body.append(portal);
       }

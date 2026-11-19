@@ -226,7 +226,7 @@ export function postHTML(post) {
       <img
         className={"xls-avatar"}
         loading={"lazy"}
-        referrerpolicy={"no-referrer"}
+        referrerPolicy={"no-referrer"}
         src={post.avatar}
         alt={""}
       />
@@ -241,7 +241,7 @@ export function postHTML(post) {
       <>
         <video
           className={"xls-media"}
-          playsinline={true}
+          playsInline={true}
           controls={true}
           preload={"none"}
           poster={post.media.image}
