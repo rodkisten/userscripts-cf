@@ -165,7 +165,9 @@ export function createRuntime(
   });
   const disposeRuntime = runtime.dispose.bind(runtime);
   return {
-    ...runtime,
+    get ready() { return runtime.ready; },
+    get active() { return runtime.active; },
+    navigate: () => runtime.navigate(),
     dispose: async () => {
       try {
         await disposeRuntime();
