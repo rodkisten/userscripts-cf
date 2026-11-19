@@ -29,7 +29,7 @@ Status: React-only hard cutover authorized 2026-11-18. No Solid dependencies, JS
 
 ## Verification gates
 
-Every migrated vertical must pass TypeScript, targeted tests, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes.
+Every migrated vertical must pass TypeScript, targeted tests, bundle build, context isolation/disposal checks, and manual Safari smoke testing before replacing its production entrypoint. Full removal is complete only when a repository-wide import audit reports zero Solid references and release CI passes. The React root ownership gate is also mandatory: `npm run check:react-roots` must pass, and each built execution-world bundle must report exactly one root owned by `src/core/runtime-react.tsx`; see [the single-root ADR](react-single-root-portals.md).
 
 ## Runtime context lifecycle (target)
 
