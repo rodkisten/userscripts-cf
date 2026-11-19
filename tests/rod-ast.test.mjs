@@ -535,3 +535,21 @@ describe("GM guards use AST syntax rather than matching source text", () => {
     expect(result.code).toContain('ctx.gm.legacy.setValue("plain", 2)');
   });
 });
+
+describe("storage exception boundaries", () => {
+  it("preserves awaited native reads inside try/catch", () => {
+    const source = 'async function init(ctx) { try { return await localStorage.getItem("key"); } catch { return null; } }';
+    expect(transformRodAst(source, "storage-try.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("preserves awaited native writes inside try/finally", () => {
+    const source = 'async function init(ctx) { try { await localStorage.setItem("key", "value"); } finally { cleanup(); } }';
+    expect(transformRodAst(source, "storage-finally.ts", { storage: "awaited" }).code).toBe(source);
+  });
+  it("migrates independent awaited storage outside a try block", () => {
+    const source = 'async function init(ctx) { try { await localStorage.getItem("guarded"); } catch {} await localStorage.removeItem("plain"); }';
+    const result = transformRodAst(source, "storage-sibling.ts", { storage: "awaited" });
+    expect(result.code).toContain('await localStorage.getItem("guarded")');
+    expect(result.code).toContain('await ctx.storage.local.removeItem("plain")');
+    expect(transformRodAst(result.code, "storage-sibling.ts", { storage: "awaited" }).changed).toBe(false);
+  });
+});
