@@ -34,6 +34,19 @@ Per-script resource ownership is managed by `createRuntimeCleanupScope` in `src/
 
 Regression coverage: `tests/runtime-cleanup-scope.test.ts`, executed by React foundation CI. These tests cover LIFO ordering, concurrent/repeated disposal, late registration, invalid callbacks and cleanup failure isolation. They complement, rather than replace, existing runtime, React context, Rod AST and userscript tests.
 
+## Portal target lifecycle (2026-11-19)
+
+The bundle-owned portal registry now observes the document subtree with one runtime-owned `MutationObserver`:
+
+- A portal target is eligible for automatic pruning only after it has been connected at least once. This preserves callers that create a target before inserting it.
+- If a previously connected target is detached, its portal is removed from the registry and its disposer runs. Owned mount nodes are removed as part of that disposal.
+- If a target is removed and reinserted before the observer checkpoint, it remains connected and the portal is retained. This avoids false cleanup during DOM moves/reparenting.
+- A context cleanup releases every portal whose provider belongs to that exact ScriptContext. Other contexts remain untouched.
+- Runtime shutdown disconnects the observer before releasing all portal handles and unmounting the single React root.
+- Shared mounts ignore updates after disposal or while their target is disconnected; callers must mount again after replacing a removed host.
+
+The registry is isolated in `src/core/portal-registry.ts`. Its Vitest suite covers stable snapshots, never-connected targets, detach pruning, remove/reinsert moves, context ownership and subscription cleanup. This is complementary to the existing runtime and userscript integration tests.
+
 ## Automated enforcement (2026-11-19)
 
 The build now enforces this ownership contract at two levels:
