@@ -3,8 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { format } from "prettier";
 import { execFileSync } from "node:child_process";
-import { build as viteBuild, mergeConfig } from "vite";
-import baseViteConfig from "../vite.config.js";
+import { build as viteBuild } from "vite";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
@@ -45,50 +44,10 @@ assets["playground/form-controls.html"] = await fs.readFile(
   path.join(root, "playground/form-controls.html"),
   "utf8",
 );
-// Compile the actual SolidJS components instead of shipping a separate HTML mock.
-const playgroundDir = path.join(dist, "form-controls-playground");
-await viteBuild(
-  mergeConfig(baseViteConfig, {
-    configFile: false,
-    root,
-    build: {
-      outDir: playgroundDir,
-      emptyOutDir: true,
-      cssCodeSplit: false,
-      lib: {
-        entry: path.join(root, "playground/form-controls-app.tsx"),
-        formats: ["es"],
-        fileName: () => "form-controls.js",
-        cssFileName: "form-controls",
-      },
-      minify: false,
-      sourcemap: true,
-    },
-  }),
-);
-const bookmarkDir = path.join(dist, "instagram-bookmark-playground");
-await viteBuild(
-  mergeConfig(baseViteConfig, {
-    configFile: false,
-    root,
-    build: {
-      outDir: bookmarkDir,
-      emptyOutDir: true,
-      cssCodeSplit: false,
-      lib: {
-        entry: path.join(root, "playground/instagram-bookmark-app.tsx"),
-        formats: ["es"],
-        fileName: () => "instagram-bookmark.js",
-      },
-      minify: false,
-      sourcemap: true,
-    },
-  }),
-);
-assets["playground/instagram-bookmark.js"] = await fs.readFile(
-  path.join(bookmarkDir, "instagram-bookmark.js"),
-  "utf8",
-);
+// Legacy Solid playgrounds are intentionally retired. Serve the React Studio instead.
+const redirectToStudio = '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=/design-system.html"><title>Rod UI Studio</title><p><a href="/design-system.html">Abrir Rod UI Studio React</a></p></html>';
+assets["playground/form-controls.html"] = redirectToStudio;
+assets["playground/instagram-bookmark.html"] = redirectToStudio;
 // Use a normal ESM build so TypeScript is split into an on-demand chunk.
 // Library mode would otherwise force a single ~5 MB initial download.
 const astDir = path.join(dist, "ast-errors-playground");
@@ -114,23 +73,6 @@ for (const file of await fs.readdir(astDir)) {
   if (!/^ast-errors(?:-[a-zA-Z0-9_-]+)?(?:-[a-zA-Z0-9_-]+)?\.(?:js|css)$/.test(file)) continue;
   assets["playground/" + file] = await fs.readFile(path.join(astDir, file), "utf8");
 }
-assets["playground/form-controls.js"] = await fs.readFile(
-  path.join(playgroundDir, "form-controls.js"),
-  "utf8",
-);
-assets["playground/form-controls.js.map"] = await fs.readFile(
-  path.join(playgroundDir, "form-controls.js.map"),
-  "utf8",
-);
-// CSS may be inlined by the shared Vite CSS Modules pipeline. Do not fail the release
-// when no standalone stylesheet is emitted. Keep the URL valid for the playground.
-assets["playground/form-controls.css"] = await fs
-  .readFile(path.join(playgroundDir, "form-controls.css"), "utf8")
-  .catch((error) => {
-    if (error?.code !== "ENOENT") throw error;
-    console.log("Form controls CSS is inlined; no standalone stylesheet emitted.");
-    return "";
-  });
 if (isPreview) {
   const preview = JSON.parse(await fs.readFile(path.join(dist, "preview-manifest.json"), "utf8"));
   assets["manifest.json"] = JSON.stringify(preview);
@@ -142,15 +84,6 @@ if (isPreview) {
     process.env.GITHUB_SHA ||
     execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim()
   ).slice(0, 12);
-  assets["playground/form-controls.html"] = assets["playground/form-controls.html"]
-    .replace(
-      'const asset = "/playground/form-controls.js";',
-      'const asset = "/playground/form-controls.js?v=' + buildRevision + '";',
-    )
-    .replace(
-      "const status = { asset, userAgent:",
-      'const status = { buildRevision: "' + buildRevision + '", asset, userAgent:',
-    );
   assets["preview/index.html"] = assets["index.html"]
     .replaceAll("/manifest.json", "/preview/manifest.json")
     .replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
