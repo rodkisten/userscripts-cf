@@ -166,7 +166,7 @@ export function initializeRodFeatures(
 ) {
   return {
     menu:
-      typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__
+      (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) && mountSharedReact
         ? createMenuFeature({ mountSharedReact })
         : undefined,
     toaster:
