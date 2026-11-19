@@ -57,11 +57,13 @@ export function createPortalRegistry<TNode = unknown, TContext = unknown>(): Por
     pruneDisconnected(connectedTargets = new Set<PortalTarget>()) {
       const removed: number[] = [];
       for (const [id, entry] of entries) {
-        if (entry.target.isConnected || connectedTargets.has(entry.target)) {
+        const wasConnected =
+          entry.wasConnected || entry.target.isConnected || connectedTargets.has(entry.target);
+        if (!wasConnected) continue;
+        if (entry.target.isConnected) {
           if (!entry.wasConnected) entries.set(id, { ...entry, wasConnected: true });
           continue;
         }
-        if (!entry.wasConnected) continue;
         entries.delete(id);
         removed.push(id);
       }
