@@ -7,7 +7,7 @@ import { format } from "prettier";
 import { readableStrings } from "./readable-strings.mjs";
 import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
 import { inspectReactRootCalls } from "./react-root-audit.mjs";
-import { fmt } from "./build.js"; // @TODO: importar do reporter já extraído
+import { fmt } from "./build.mjs"; // @TODO: importar do reporter já extraído
 
 // ============================================================================
 // // @TODO: Mover para build/runtime-plugins.mjs
