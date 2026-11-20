@@ -261,7 +261,11 @@ export default {
                 });
               },
               pause,
-              settings: { ...settings, maxItemsPerSession: sessionLimit - processedTotal, cursor: await get(cursorKey, "") },
+              settings: {
+                ...settings,
+                maxItemsPerSession: sessionLimit - processedTotal,
+                cursor: await get(cursorKey, ""),
+              },
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
