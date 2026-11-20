@@ -1,11 +1,3 @@
-## Runtime 2.0 / React portal lifecycle · 2026-11-20
-
-- The standalone runtime retains **one** React root. If SPA navigation replaces the document body, its existing host is reattached instead of mounting a second root.
-- `mountSharedReact().update()` accepts updates while the target is temporarily detached. The latest node is rendered when the target reconnects.
-- Updating an existing portal entry no longer forgets that its target was previously connected, so detached portals can still be pruned after updates.
-- Existing ScriptContext ownership, disposal, ShadowRoot mounting and React portals remain unchanged. No new component tests or workflow changes.
-- Release run [44789723248](https://github.com/rodkisten/userscripts-cf/actions/runs/44789723248) used SHA `91fdb48` and reported legacy Instagram Saved `transport` typing errors plus a rejected git push. This work starts from main `46e0007`; release publication is a separate concern.
-
 > **PR #120 · merge cleanup (2026-11-20):** The merge with main reintroduced duplicate `fmt` and `BuildReporter` declarations in `build/build.mjs`, causing the React 19 build to fail at parse time. Removed the duplicated implementations, retained imports from shared modules, and re-exported the public symbols for compatibility. Prettier and lint still require validation.
 
 > **PR #120 · HTTP interceptor typing (2026-11-20):** Validation job #136233221152 identified two TS2353 errors in Instagram Saved because the interceptor's `request` type discarded the shared `HttpRequestOptions` extensions (`transport`, `cacheMode`, `timeoutMs`). The interceptor now preserves the HTTP client's request options type, without changing request behavior. Prettier remains pending on five files.
@@ -710,6 +702,8 @@
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
 
-- [x] PR #120 post-main-sync build repair: extract shared build formatting into `build/format.mjs` to remove `bundle-runtime` → `build` circular dependency; fix malformed standalone GitHub Actions highlighter selector list. Await fresh CI checks.
+- [ ] 2026-11-20 CI AST style scope: `build/check-style.mjs --changed --files-from=changed-files.txt` validates modified userscript files only; full `npm run lint` remains available for repository-wide debt audit. Autofix now reparses output before writing. CI validation pending.
 
-- [x] PR #120 CI follow-up: extract `BuildReporter` into `build/reporter.mjs` and fix malformed literal newline in the standalone GitHub Actions highlighter. Await fresh validation.
+- [ ] 2026-11-20 PR #126: restrict Prettier and ESLint diagnostics to changed PR files in `.github/workflows/diagnostics.yml`, preserving scoped autofix; validate the workflow run before merging.
+
+- [ ] PR #126 follow-up: `NetworkInterceptors` now preserves `HttpRequestOptions` (GM transport, cacheMode, timeoutMs) in its public and registry signatures; addresses TypeScript TS2353 errors in Instagram Saved without changing the transport behavior. Validate typecheck and runtime/AST synchronization gates before merge.

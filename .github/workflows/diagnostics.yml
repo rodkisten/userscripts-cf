@@ -139,6 +139,48 @@ jobs:
           CSS_FILES=()
           [ -s .changed_js_ts_files.txt ] && mapfile -t JS_TS_FILES < .changed_js_ts_files.txt
           [ -s .changed_css_files.txt ] && mapfile -t CSS_FILES < .changed_css_files.txt
+          mapfile -t PRETTIER_TARGETS < <(git diff --name-only --diff-filter=ACMRT "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$' | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
+
+          TOOLS_USED=()
+
+          # ESLint --fix apenas em JS/JSX/TS/TSX
+          if [ "$HAS_ESLINT" = "true" ] && [ "${#JS_TS_FILES[@]}" -gt 0 ]; then
+            npx eslint --fix --quiet "${JS_TS_FILES[@]}" >/dev/null 2>&1 || true
+            TOOLS_USED+=("ESLint (\`--fix\`)")
+          fi
+
+          # Prettier --write em JS/JSX/TS/TSX + CSS
+          if [ "$HAS_PRETTIER" = "true" ] && [ "${#PRETTIER_TARGETS[@]}" -gt 0 ]; then
+            npx prettier --write --loglevel silent "${PRETTIER_TARGETS[@]}" >/dev/null 2>&1 || true
+            TOOLS_USED+=("Prettier (\`--write\`)")
+          fi
+
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git diff --numstat > .autofix_numstat.txt
+            git diff > .autofix_patch.diff
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "style: auto-fix formatting and lint on changed files"
+
+            # Sincroniza caso um novo commit tenha sido feito no PR durante a execução
+            git pull --rebase --autostash origin "${PR_BRANCH}"
+            git push origin "HEAD:${PR_BRANCH}"
+
+            COMMIT_SHA=$(git rev-parse HEAD)
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            TOOLS_STR=$(IFS=" + "; echo "${TOOLS_USED[*]}")
+
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+            echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+            echo "tools_used=$TOOLS_STR" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+ | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
 
           TOOLS_USED=()
 
@@ -156,8 +198,6 @@ jobs:
             rm -f .prettierignore
             TOOLS_USED+=("Prettier (\`--write\`)")
           fi
-
-          rm -f .changed_js_ts_files.txt .changed_css_files.txt
 
           if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
             git diff --numstat > .autofix_numstat.txt
@@ -252,31 +292,39 @@ jobs:
 
           rm -f .autofix_numstat.txt .autofix_patch.diff .pr_autofix_comment.md
 
-      - name: 🎨 Run Prettier & ESLint diagnostics
+      - name: 🎨 Run Prettier & ESLint diagnostics on PR files only
         id: formatting
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         continue-on-error: true
         shell: bash
         env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier || 'true' }}
           HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint || 'false' }}
         run: |
-          rm -f .changed_js_ts_files.txt .changed_css_files.txt .autofix_numstat.txt .autofix_patch.diff .pr_autofix_comment.md
           EXIT_CODE=0
-
-          if [ "$HAS_PRETTIER" = "true" ] || [ -x "./node_modules/.bin/prettier" ]; then
-            echo "### Prettier Check"
-            printf '%s\n' '.github/workflows/**' > .prettierignore
-            npx prettier --check . || EXIT_CODE=$?
-            rm -f .prettierignore
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --name-only --diff-filter=ACMRT "$PR_BASE_SHA" "$PR_HEAD_SHA" > .format_changed_files.txt
+          elif [[ -f changed-files.txt ]]; then
+            cp changed-files.txt .format_changed_files.txt
+          else
+            echo "No changed-file manifest available; skipping scoped formatting."
+            exit 0
           fi
 
-          if [ "$HAS_ESLINT" = "true" ] || [ -x "./node_modules/.bin/eslint" ]; then
-            echo "### ESLint Diagnostics"
-            npx eslint . || EXIT_CODE=$?
-          fi
+          mapfile -t PRETTIER_FILES < <(grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
+          mapfile -t ESLINT_FILES < <(grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
 
-          exit $EXIT_CODE
+          echo "Prettier targets: ${#PRETTIER_FILES[@]}"
+          echo "ESLint targets: ${#ESLINT_FILES[@]}"
+          if [[ "$HAS_PRETTIER" == true ]] && (( ${#PRETTIER_FILES[@]} )); then
+            npx prettier --check --ignore-unknown "${PRETTIER_FILES[@]}" || EXIT_CODE=$?
+          fi
+          if [[ "$HAS_ESLINT" == true ]] && (( ${#ESLINT_FILES[@]} )); then
+            npx eslint "${ESLINT_FILES[@]}" || EXIT_CODE=$?
+          fi
+          exit "$EXIT_CODE"
 
       - name: ⚠️ Report lint & formatting diagnostics (non-blocking)
         if: steps.formatting.outcome == 'failure'

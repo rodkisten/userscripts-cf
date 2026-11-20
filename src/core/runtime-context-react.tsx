@@ -3,9 +3,7 @@ import { createContext, useContext as useReactContext, type ReactElement, type R
 import type { ReactScriptContext } from "./react-context-contract.js";
 
 // TODO(extract): Move to `@shared/types/guards.ts` if other modules need to extract optional contract properties.
-type SharedEventsOf<TEvents> = TEvents extends { readonly shared?: infer TShared }
-  ? TShared
-  : unknown;
+type SharedEventsOf<TEvents> = TEvents extends { readonly shared?: infer TShared } ? TShared : unknown;
 
 /** React context propagation without a mutable global current-script pointer. */
 const ScriptScope = createContext<ReactScriptContext | undefined>(undefined);

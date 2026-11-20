@@ -1,9 +1,5 @@
 /** @jsxImportSource react */
-import {
-  useSyncExternalStore,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useSyncExternalStore, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { RuntimeMount } from "./runtime-mount-react.js";
@@ -120,11 +116,6 @@ export function createRuntime(
     (host.document.body || host.document.documentElement).append(reactHost);
 
     portalObserver = new host.MutationObserver((records) => {
-      // SPA navigations can replace <body>, detaching the single React root.
-      // Reattach the existing host rather than creating a second root.
-      if (reactHost && !reactHost.isConnected && !runtimeDisposed) {
-        (host.document.body || host.document.documentElement).append(reactHost);
-      }
       const connectedTargets = new Set<PortalTarget>();
       const entries = registry.getSnapshot();
 
@@ -181,10 +172,15 @@ export function createRuntime(
 
     portalDisposers.set(id, dispose);
 
-    // Detached containers are valid: keep their latest React node registered
-    // so a later DOM insertion can display it without creating another root.
+    // BUG FIX: Added `runtimeDisposed` check inside `update` and fixed initial mount behavior when `container` is initially disconnected.
+    // Why:
+    // 1. Calling `update()` after `runtime.dispose()` previously bypassed the top-level guard and threw inside `ensureReactHost()`, instead of being a safe no-op like `disposed`.
+    // 2. If `mountSharedReact` was called with a detached container that is appended synchronously right after, skipping the initial `registry.add` prevented `PortalRegistry.pruneDisconnected` (which tracks `wasConnected: false -> true`) from ever adopting it once connected.
+    let initialized = false;
     const update = (next: ReactElement): void => {
       if (disposed || runtimeDisposed) return;
+      if (initialized && !container.isConnected) return;
+      initialized = true;
       ensureReactHost();
       registry.add({ id, target: container, node: next });
     };

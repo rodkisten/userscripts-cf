@@ -6,13 +6,19 @@ on:
 
 run-name: "⚡ Ação via Checkbox • PR #${{ github.event.issue.number }} por @${{ github.actor }}"
 
+env:
+  # Estratégia de resolução de conflito no fallback de rebase:
+  # "ours"   -> Prioriza o código da branch base (ex: main)
+  # "theirs" -> Prioriza os commits da branch do PR
+  # ""       -> Falha o step se houver conflito
+  CONFLICT_STRATEGY: "ours"
+
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
   handle-checkbox:
-    # Garante que é um PR, que é o nosso comentário marcador, e que NÃO foi o próprio bot editando
     if: |
       github.event.issue.pull_request &&
       contains(github.event.comment.body, '<!-- pr-interactive-actions -->') &&
@@ -27,6 +33,20 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
 
+      - name: 🤖 Obter Identidade do GitHub App
+        id: bot-identity
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { data: app } = await github.rest.apps.getAuthenticated();
+            const { data: botUser } = await github.rest.users.getByUsername({
+              username: `${app.slug}[bot]`
+            });
+
+            core.setOutput('name', `${app.slug}[bot]`);
+            core.setOutput('email', `${botUser.id}+${app.slug}[bot]@users.noreply.github.com`);
+
       - name: 🔍 Identificar Checkboxes Marcados e Branch do PR
         id: parse
         uses: actions/github-script@v7
@@ -34,10 +54,11 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const body = context.payload.comment.body;
+            const runSync = body.includes('- [x] 🔄 **Sincronizar Branch**');
             const runPrettier = body.includes('- [x] 🎨 **Rodar Prettier**');
             const runLockfile = body.includes('- [x] 📦 **Atualizar Lockfile**');
 
-            if (!runPrettier && !runLockfile) {
+            if (!runSync && !runPrettier && !runLockfile) {
               core.info('Nenhum checkbox válido foi marcado.');
               core.setOutput('should_run', 'false');
               return;
@@ -50,9 +71,11 @@ jobs:
             });
 
             core.setOutput('should_run', 'true');
+            core.setOutput('sync', runSync);
             core.setOutput('prettier', runPrettier);
             core.setOutput('lockfile', runLockfile);
             core.setOutput('branch', pr.head.ref);
+            core.setOutput('base_branch', pr.base.ref);
             core.setOutput('head_repo', pr.head.repo.full_name);
 
       - name: 📥 Checkout da Branch do PR
@@ -61,10 +84,93 @@ jobs:
         with:
           repository: ${{ steps.parse.outputs.head_repo }}
           ref: ${{ steps.parse.outputs.branch }}
+          fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: 🔄 Sincronizar Branch do PR com a Base
+        id: sync-branch
+        if: steps.parse.outputs.sync == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          HEAD_BRANCH: ${{ steps.parse.outputs.branch }}
+          BASE_BRANCH: ${{ steps.parse.outputs.base_branch }}
+          BOT_NAME: ${{ steps.bot-identity.outputs.name }}
+          BOT_EMAIL: ${{ steps.bot-identity.outputs.email }}
+        run: |
+          git config user.name "${BOT_NAME}"
+          git config user.email "${BOT_EMAIL}"
+
+          # 1. Tenta atualizar nativamente via API do GitHub (commit de merge assinado pelo App)
+          if gh api --method PUT "/repos/${{ github.repository }}/pulls/${PR_NUMBER}/update-branch" --silent; then
+            echo "✅ Branch atualizada diretamente via GitHub API por ${BOT_NAME}."
+            git pull origin "${HEAD_BRANCH}"
+            echo "sync_method=merge" >> $GITHUB_OUTPUT
+          else
+            # 2. Fallback: se houver conflito na API, executa o rebase local com a estratégia da variável
+            echo "⚠️ Atualização direta falhou. Iniciando fallback com rebase..."
+            
+            git remote add upstream "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" 2>/dev/null || true
+            git fetch upstream "${BASE_BRANCH}"
+
+            REBASE_ARGS=""
+            if [ -n "$CONFLICT_STRATEGY" ]; then
+              REBASE_ARGS="-X $CONFLICT_STRATEGY"
+            fi
+
+            git rebase $REBASE_ARGS "upstream/${BASE_BRANCH}"
+            git push --force-with-lease origin "${HEAD_BRANCH}"
+            echo "✅ Rebase concluído por ${BOT_NAME} com estratégia '${CONFLICT_STRATEGY:-padrão}'."
+            echo "sync_method=rebase" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Atualizar Comentário com Resultado do Sync
+        if: steps.parse.outputs.sync == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const method = '${{ steps.sync-branch.outputs.sync_method }}';
+            const baseBranch = '${{ steps.parse.outputs.base_branch }}';
+            const strategy = '${{ env.CONFLICT_STRATEGY }}' || 'padrão';
+
+            let syncReport = `### 🔄 Sincronização de Branch\n\n`;
+            syncReport += `> [!TIP]\n`;
+
+            if (method === 'merge') {
+              syncReport += `> ✅ Branch atualizada com \`${baseBranch}\` via **Merge direto** (sem conflitos).\n`;
+            } else {
+              syncReport += `> ✅ Conflitos detectados no merge direto. Branch sincronizada com \`${baseBranch}\` via **Rebase** (estratégia: \`${strategy}\`).\n`;
+            }
+
+            await core.summary.addRaw(syncReport).write();
+
+            const startMarker = '<!-- sync-report-start -->';
+            const endMarker = '<!-- sync-report-end -->';
+            const wrappedReport = `\n\n${startMarker}\n---\n${syncReport}\n${endMarker}`;
+
+            // Desmarca o checkbox do Sync e anexa/atualiza o relatório
+            let currentBody = context.payload.comment.body.replace(
+              '- [x] 🔄 **Sincronizar Branch**',
+              '- [ ] 🔄 **Sincronizar Branch**'
+            );
+
+            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            if (markerRegex.test(currentBody)) {
+              currentBody = currentBody.replace(markerRegex, wrappedReport);
+            } else {
+              currentBody += wrappedReport;
+            }
+
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              body: currentBody,
+            });
+
       - name: 🟢 Setup Node.js
-        if: steps.parse.outputs.should_run == 'true'
+        if: steps.parse.outputs.prettier == 'true' || steps.parse.outputs.lockfile == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -89,19 +195,22 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
+            const { data: latestComment } = await github.rest.issues.getComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+            });
+
             const rawLog = fs.existsSync('prettier-errors.log')
               ? fs.readFileSync('prettier-errors.log', 'utf8')
               : '';
 
-            // Remove códigos de cor ANSI
             const cleanLog = rawLog.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 
-            // Separa os blocos de erro por arquivo
             const errorBlocks = cleanLog
               .split(/(?=\[error\] )/g)
               .filter((block) => block.startsWith('[error] '));
 
-            // Mapeia a extensão do arquivo para Syntax Highlight no GitHub Markdown
             const getLang = (file) => {
               const ext = path.extname(file).replace('.', '').toLowerCase();
               const map = {
@@ -152,17 +261,19 @@ jobs:
               reportMd += `\n#### 🔍 Detalhes dos Erros\n\n` + detailsList.join('\n');
             }
 
-            // 1. Escreve no GitHub Actions Job Summary
             await core.summary.addRaw(reportMd).write();
 
-            // 2. Atualiza o comentário original do PR usando marcadores para não duplicar em futuras execuções
             const startMarker = '<!-- prettier-report-start -->';
             const endMarker = '<!-- prettier-report-end -->';
             const wrappedReport = `\n\n${startMarker}\n---\n${reportMd}\n${endMarker}`;
 
-            let currentBody = context.payload.comment.body;
-            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            // Desmarca o checkbox do Prettier e anexa/atualiza o relatório
+            let currentBody = latestComment.body.replace(
+              '- [x] 🎨 **Rodar Prettier**',
+              '- [ ] 🎨 **Rodar Prettier**'
+            );
 
+            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
             if (markerRegex.test(currentBody)) {
               currentBody = currentBody.replace(markerRegex, wrappedReport);
             } else {

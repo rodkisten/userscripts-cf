@@ -61,9 +61,7 @@ export class BuildReporter {
       const elapsed = performance.now() - stepStart;
       this.steps.push({ index: stepIndex, name, status: "passed", elapsed });
 
-      console.log(
-        ` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`,
-      );
+      console.log(` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`);
       if (isCI) console.log("::endgroup::");
       return result;
     } catch (err) {

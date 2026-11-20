@@ -257,6 +257,12 @@ A sincronização de Reels salvos usa `ctx.http` para o Instagram e o Relay e ma
 
 Independent React/Radix userscript `github-color-studio` for GitHub file views and textarea editors. Opens a mobile-friendly color inventory, color picker, CSS format conversion, variable reference counts and guarded single-file variable rename. Read-only views copy changes to the clipboard; the script does not automatically commit or modify other files. Uses the shared `ctx.ui.mountReact` portal and runtime disposal. Current limitations: viewer inline swatches, full CodeMirror/Monaco editing integration, semantic scope-aware cross-file rename, OKLCH conversion and full CSS syntax support remain pending. Validate typecheck/build and Safari before publishing.
 
+### AST style validation
+
+The PR validation workflow checks style rules only for modified userscripts with `node build/check-style.mjs --changed --files-from=changed-files.txt`. Run `npm run lint` to audit the entire repository, including existing style debt. Run `node build/check-style.mjs --changed --base=main` locally to check changes relative to main. The `--fix` option reparses the modified source before writing it to disk.
+
+PR diagnostics in `.github/workflows/diagnostics.yml` run Prettier and ESLint only against existing files in the PR diff. Prettier covers supported source and documentation formats; ESLint runs only when installed and only on changed JS/TS files. Unchanged legacy files are excluded from PR formatting diagnostics.
+
 ### Build reporter module
 
 Build output formatting is shared by `build/build.mjs` and `build/bundle-runtime.mjs` through `build/format.mjs`, avoiding a circular import. The GitHub Actions YAML standalone highlighter selector list is also kept syntactically valid.
