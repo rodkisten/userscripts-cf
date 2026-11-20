@@ -86,203 +86,229 @@ export async function detectLint() {
 // ============================================================================
 // 2. Aplicar auto-fix silencioso (ESLint + Prettier) e commitar na branch do PR
 // ============================================================================
-export async function runAutofix() {
-  const log = new AgentReporter('AUTO-FIX AGENT', 'ESLint & Prettier');
+// Substitua runAutofix e commentAutofix por esta função unificada em scripts/validate-pr-lint.mjs:
+
+export async function lintFixAndGate() {
+  const log = new AgentReporter('AUTO-FIX & GATE', 'ESLint & Prettier');
   log.banner();
 
-  return log.step('Executar auto-fix e sincronizar commit no PR', async (step) => {
-    const { hasPrettier, hasEslint, prBranch, baseSha, headSha } = resolveInputs({
+  return log.step('Verificar, corrigir lint/formatação e sincronizar PR', async (step) => {
+    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+    const context = buildCliContext();
+
+    const {
+      hasPrettier,
+      hasEslint,
+      prBranch,
+      baseSha,
+      headSha,
+      prNumber,
+      repoFull,
+    } = resolveInputs({
       hasPrettier: [process.env.HAS_PRETTIER],
       hasEslint: [process.env.HAS_ESLINT],
       prBranch: [process.env.PR_BRANCH, process.env.GITHUB_HEAD_REF],
       baseSha: [process.env.PR_BASE_SHA],
       headSha: [process.env.PR_HEAD_SHA],
+      prNumber: [process.env.PR_NUMBER, String(context.issue.number || '')],
+      repoFull: [process.env.REPO, process.env.GITHUB_REPOSITORY],
     });
 
-    const jsTsFiles = fs.existsSync(STATE_FILES.jsTs)
-      ? readLines(STATE_FILES.jsTs)
-      : getChangedFiles(baseSha, headSha, 'ACMRT').filter((f) => JS_TS_REGEX.test(f));
-
-    const prettierTargets = fs.existsSync(STATE_FILES.prettier)
-      ? readLines(STATE_FILES.prettier)
-      : getChangedFiles(baseSha, headSha, 'ACMRT').filter((f) => PRETTIER_REGEX.test(f));
+    const changedFiles = getChangedFiles(baseSha, headSha, 'ACMRT');
+    const jsTsFiles = changedFiles.filter((f) => JS_TS_REGEX.test(f));
+    const prettierTargets = changedFiles.filter((f) => PRETTIER_REGEX.test(f));
 
     const toolsUsed = [];
+    const diagnostics = [];
 
+    // 1. Captura diagnóstico inicial + aplica ESLint --fix
     if (hasEslint === 'true' && jsTsFiles.length > 0) {
-      step.status(`Rodando ESLint --fix em ${jsTsFiles.length} arquivo(s)...`);
-      runCmd('npx', ['eslint', '--fix', '--quiet', ...jsTsFiles]);
+      step.status(`Analisando e corrigindo ESLint em ${jsTsFiles.length} arquivo(s)...`);
+      const eslintRes = runCmd('npx', ['eslint', '--fix', '--format', 'compact', ...jsTsFiles], {
+        logger: log,
+      });
+      if (!eslintRes.ok && eslintRes.stdout) {
+        diagnostics.push(`### ESLint\n\`\`\`text\n${eslintRes.stdout.slice(0, 8000)}\n\`\`\``);
+      }
       toolsUsed.push('ESLint (`--fix`)');
     }
 
+    // 2. Captura diagnóstico inicial + aplica Prettier --write
     if (hasPrettier === 'true' && prettierTargets.length > 0) {
-      step.status(`Rodando Prettier --write em ${prettierTargets.length} arquivo(s)...`);
-      runCmd('npx', ['prettier', '--write', '--loglevel', 'silent', ...prettierTargets]);
+      step.status(`Formatando com Prettier ${prettierTargets.length} arquivo(s)...`);
+      const checkRes = runCmd('npx', ['prettier', '--list-different', ...prettierTargets], {
+        silent: true,
+      });
+      if (!checkRes.ok && checkRes.stdout) {
+        diagnostics.push(`### Prettier (arquivos fora do padrão)\n\`\`\`text\n${checkRes.stdout}\n\`\`\``);
+      }
+      runCmd('npx', ['prettier', '--write', '--loglevel', 'silent', ...prettierTargets], {
+        logger: log,
+      });
       toolsUsed.push('Prettier (`--write`)');
     }
 
-    const status = runCmd('git', ['status', '--porcelain', '--untracked-files=no']);
+    // 3. Verifica se o auto-fix modificou algum arquivo
+    const status = runCmd('git', ['status', '--porcelain', '--untracked-files=no'], { silent: true });
+
     if (!status.stdout) {
-      step.info('Nenhuma alteração necessária', 'Todos os arquivos já estavam formatados');
+      // Nenhum arquivo foi auto-corrigido, mas podem existir erros de ESLint não auto-corrigíveis
+      if (diagnostics.length > 0) {
+        step.warn('Erros de lint não auto-corrigíveis detectados');
+        setActionOutput('committed', 'false');
+        setActionOutput('has_unfixed_errors', 'true');
+        log.summary('warn', { Committed: 'false', 'Unfixed Lint': 'true' });
+        process.exitCode = 1;
+        return;
+      }
+
+      step.pass('Nenhum erro de lint ou formatação encontrado');
       setActionOutput('committed', 'false');
-      log.summary({ Committed: 'false' });
+      setActionOutput('has_unfixed_errors', 'false');
+      log.summary('success', { Committed: 'false' });
       return;
     }
 
-    const numstat = runCmd('git', ['diff', '--numstat']).stdout;
-    const patch = runCmd('git', ['diff']).stdout;
-    fs.writeFileSync(STATE_FILES.numstat, `${numstat}\n`, 'utf8');
-    fs.writeFileSync(STATE_FILES.patch, `${patch}\n`, 'utf8');
+    // 4. Coleta estatísticas e diff antes de commitar
+    const numstatLines = runCmd('git', ['diff', '--numstat'], { silent: true })
+      .stdout.split('\n')
+      .filter(Boolean);
+    const rawPatch = runCmd('git', ['diff'], { silent: true }).stdout;
 
-    step.status(`Commitando e enviando ajustes para ${prBranch}...`);
-    runCmd('git', ['config', 'user.name', 'github-actions[bot]']);
-    runCmd('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
-    runCmd('git', ['add', '-u']);
+    // 5. Commita e faz push na branch do PR
+    step.status(`Enviando commit de auto-fix para ${prBranch}...`);
+    runCmd('git', ['config', 'user.name', 'github-actions[bot]'], { silent: true });
+    runCmd('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], {
+      silent: true,
+    });
+    runCmd('git', ['add', '-u'], { silent: true });
 
-    const commitRes = runCmd('git', ['commit', '-m', 'style: auto-fix formatting and lint on changed files']);
+    const commitRes = runCmd(
+      'git',
+      ['commit', '-m', 'style: auto-fix formatting and lint on changed files'],
+      { logger: log },
+    );
     if (!commitRes.ok) {
       throw new Error(`Falha ao criar commit de auto-fix: ${commitRes.stderr}`);
     }
 
-    const pullRes = runCmd('git', ['pull', '--rebase', '--autostash', 'origin', prBranch]);
+    const pullRes = runCmd('git', ['pull', '--rebase', '--autostash', 'origin', prBranch], { logger: log });
     if (!pullRes.ok) {
       throw new Error(`Falha no git pull --rebase origin ${prBranch}: ${pullRes.stderr}`);
     }
 
-    const pushRes = runCmd('git', ['push', 'origin', `HEAD:${prBranch}`]);
+    const pushRes = runCmd('git', ['push', 'origin', `HEAD:${prBranch}`], { logger: log });
     if (!pushRes.ok) {
       throw new Error(`Falha no git push origin HEAD:${prBranch}: ${pushRes.stderr}`);
     }
 
-    const commitSha = runCmd('git', ['rev-parse', 'HEAD']).stdout;
-    const shortSha = runCmd('git', ['rev-parse', '--short', 'HEAD']).stdout;
+    const commitSha = runCmd('git', ['rev-parse', 'HEAD'], { silent: true }).stdout;
+    const shortSha = runCmd('git', ['rev-parse', '--short', 'HEAD'], { silent: true }).stdout;
     const toolsStr = toolsUsed.join(' + ');
+
+    // 6. Publica/atualiza o comentário no PR explicando o ciclo
+    if (token && prNumber && repoFull) {
+      const [owner, repo] = repoFull.split('/');
+      const marker = '<!-- autofix-bot-comment -->';
+
+      let totalAdded = 0;
+      let totalRemoved = 0;
+      const tableRows = ['| Arquivo | Adições | Remoções |', '| :--- | :---: | :---: |'];
+
+      for (const line of numstatLines) {
+        const [addedRaw, removedRaw, file] = line.split('\t');
+        totalAdded += Number.parseInt(addedRaw, 10) || 0;
+        totalRemoved += Number.parseInt(removedRaw, 10) || 0;
+        tableRows.push(`| \`${file}\` | \`+${addedRaw}\` | \`-${removedRaw}\` |`);
+      }
+
+      const maxBytes = 45_000;
+      const patchBuf = Buffer.from(rawPatch, 'utf8');
+      const diffContent = patchBuf.byteLength > maxBytes
+        ? patchBuf.subarray(0, maxBytes).toString('utf8')
+        : rawPatch;
+
+      const truncatedNote =
+        patchBuf.byteLength > maxBytes
+          ? `\n\n> ⚠️ *Diff truncado. Veja todas as alterações no commit [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha}).*`
+          : '';
+
+      const diagnosticsSection = diagnostics.length
+        ? [
+            '<details>',
+            '<summary>🚨 <b>Problemas de lint/formatação detectados antes da correção</b></summary>',
+            '',
+            ...diagnostics,
+            '</details>',
+            '',
+          ].join('\n')
+        : '';
+
+      const body = [
+        marker,
+        '## 🪄 Auto-fix de Lint & Formatação Aplicado',
+        '',
+        '> [!NOTE]',
+        `> Foram encontrados problemas de lint/formatação nos arquivos alterados. O auto-fix foi executado, commitado na branch **\`${prBranch}\`** e **este workflow será executado novamente automaticamente** no novo commit.`,
+        '',
+        '### 📋 Resumo da Ação',
+        `* **Commit criado:** [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha})`,
+        `* **Ferramentas executadas:** ${toolsStr}`,
+        `* **Arquivos corrigidos:** **${numstatLines.length}** (\`+${totalAdded}\` / \`-${totalRemoved}\` linhas)`,
+        '',
+        diagnosticsSection,
+        '### 📂 Arquivos Modificados',
+        ...tableRows,
+        '',
+        '<details>',
+        '<summary>🔍 <b>Visualizar diff aplicado pelo auto-fix</b></summary>',
+        '',
+        '```diff',
+        diffContent.trimEnd(),
+        '```' + truncatedNote,
+        '',
+        '</details>',
+        '',
+        '---',
+        `<sub>🤖 *Atualizado em ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC • Aguardando nova execução do CI no commit \`${shortSha}\`.*</sub>`,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const github = createNativeGithubClient(token);
+      await upsertMarkedComment({
+        github,
+        owner,
+        repo,
+        issueNumber: Number(prNumber),
+        marker,
+        body,
+      });
+    }
 
     setActionOutput('committed', 'true');
     setActionOutput('commit_sha', commitSha);
     setActionOutput('short_sha', shortSha);
-    setActionOutput('tools_used', toolsStr);
 
-    step.pass('Auto-fix enviado', `${ansi.cyan(shortSha)} → ${prBranch}`);
-    log.summary({
-      Committed: 'true',
+    step.warn(
+      'Auto-fix commitado; encerrando execução atual para aguardar o novo commit',
+      `${ansi.cyan(shortSha)} → ${prBranch}`,
+    );
+
+    log.summary('warn', {
       Commit: shortSha,
-      Ferramentas: toolsStr,
+      Branch: prBranch,
+      Status: 'Aguardando re-execução do workflow',
     });
+
+    // Encerra o step atual com falha controlada para abortar steps seguintes deste run
+    process.exitCode = 1;
   });
 }
 
 // ============================================================================
 // 3. Publicar ou atualizar comentário com o diff do auto-fix no PR
 // ============================================================================
-export async function commentAutofix() {
-  const log = new AgentReporter('AUTO-FIX COMMENT', 'Pull Request');
-  log.banner();
-
-  return log.step('Publicar detalhes do auto-fix no PR', async (step) => {
-    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-    if (!token) throw new Error('GH_TOKEN / GITHUB_TOKEN não definido.');
-
-    const context = buildCliContext();
-    const {
-      repoFull,
-      prNumber,
-      prBranch,
-      commitSha,
-      shortSha,
-      toolsUsed,
-    } = resolveInputs({
-      repoFull: [process.env.REPO, process.env.GITHUB_REPOSITORY],
-      prNumber: [process.env.PR_NUMBER, String(context.issue.number || '')],
-      prBranch: [process.env.PR_BRANCH, process.env.GITHUB_HEAD_REF],
-      commitSha: [process.env.COMMIT_SHA],
-      shortSha: [process.env.SHORT_SHA],
-      toolsUsed: [process.env.TOOLS_USED],
-    });
-
-    const [owner, repo] = repoFull.split('/');
-    const marker = '<!-- autofix-bot-comment -->';
-
-    const numstatLines = fs.existsSync(STATE_FILES.numstat)
-      ? fs.readFileSync(STATE_FILES.numstat, 'utf8').trim().split('\n').filter(Boolean)
-      : [];
-
-    let totalAdded = 0;
-    let totalRemoved = 0;
-    const tableRows = ['| Arquivo | Adições | Remoções |', '| :--- | :---: | :---: |'];
-
-    for (const line of numstatLines) {
-      const [addedRaw, removedRaw, file] = line.split('\t');
-      const added = Number.parseInt(addedRaw, 10) || 0;
-      const removed = Number.parseInt(removedRaw, 10) || 0;
-      totalAdded += added;
-      totalRemoved += removed;
-      tableRows.push(`| \`${file}\` | \`+${addedRaw}\` | \`-${removedRaw}\` |`);
-    }
-
-    const rawPatch = fs.existsSync(STATE_FILES.patch) ? fs.readFileSync(STATE_FILES.patch, 'utf8') : '';
-    const maxBytes = 55_000;
-    const patchBuffer = Buffer.from(rawPatch, 'utf8');
-    const isTruncated = patchBuffer.byteLength > maxBytes;
-    const diffContent = isTruncated ? patchBuffer.subarray(0, maxBytes).toString('utf8') : rawPatch;
-
-    const truncatedNote = isTruncated
-      ? `\n\n> ⚠️ *Diff truncado devido ao tamanho. Veja todas as alterações diretamente no commit [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha}).*`
-      : '';
-
-    const nowUtc = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
-
-    const body = [
-      marker,
-      '## 🪄 Auto-fix aplicado automaticamente',
-      '',
-      `Foram detectados ajustes de formatação/lint nos arquivos modificados deste Pull Request. O último commit automático foi enviado diretamente para a branch **\`${prBranch}\`**.`,
-      '',
-      '### 📋 Resumo da execução',
-      `* **Último commit:** [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha})`,
-      `* **Ferramentas executadas:** ${toolsUsed}`,
-      `* **Arquivos alterados neste ciclo:** **${numstatLines.length}** (\`+${totalAdded}\` / \`-${totalRemoved}\` linhas)`,
-      '',
-      '### 📂 Arquivos modificados',
-      ...tableRows,
-      '',
-      '<details>',
-      '<summary>🔍 <b>Visualizar diff completo das alterações</b></summary>',
-      '',
-      '```diff',
-      diffContent.trimEnd(),
-      '```' + truncatedNote,
-      '',
-      '</details>',
-      '',
-      '---',
-      `<sub>🤖 *Gerado automaticamente pelo workflow \`Validate changed userscripts\` • Atualizado em ${nowUtc}.*</sub>`,
-    ].join('\n');
-
-    step.status(`Enviando comentário para PR #${prNumber}...`);
-    const github = createNativeGithubClient(token);
-    const result = await upsertMarkedComment({
-      github,
-      owner,
-      repo,
-      issueNumber: Number(prNumber),
-      marker,
-      body,
-    });
-
-    // Limpa arquivos temporários
-    for (const tmp of [STATE_FILES.numstat, STATE_FILES.patch]) {
-      if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
-    }
-
-    step.pass(`Comentário ${result.action === 'updated' ? 'atualizado' : 'criado'}`, `ID #${result.commentId}`);
-    log.summary({
-      PR: `#${prNumber}`,
-      Arquivos: String(numstatLines.length),
-      Linhas: `+${totalAdded} / -${totalRemoved}`,
-    });
-  });
-}
 
 // ============================================================================
 // 4. Diagnóstico não-bloqueante de Prettier & ESLint
