@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import * as Checkbox from "@radix-ui/react-checkbox";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import styles, { css } from "./Settings.module.css";
 export { css };
 
@@ -80,14 +80,19 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
     <section className={styles.panel}>
       <style>{css}</style>
       <label className={styles.toggle}>
-        <Checkbox.Root
-          className={styles.radixCheckbox}
-          checked={form.enabled}
-          onCheckedChange={(checked) => update({ enabled: checked === true })}
-          aria-label="Sincronização automática"
-        >
-          <Checkbox.Indicator>✓</Checkbox.Indicator>
-        </Checkbox.Root>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger type="button" className={styles.radixCheckbox} aria-label="Configurar sincronização automática">
+            {form.enabled ? "✓" : "○"}
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className={styles.collectionMenu} sideOffset={6}>
+              <DropdownMenu.CheckboxItem checked={form.enabled} onCheckedChange={(checked) => update({ enabled: checked === true })}>
+                <DropdownMenu.ItemIndicator>✓ </DropdownMenu.ItemIndicator>
+                Sincronização automática
+              </DropdownMenu.CheckboxItem>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         Sincronização automática
       </label>
       <fieldset className={styles.collectionPicker}>
@@ -105,18 +110,26 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
           <div className={styles.collectionList}>
             {visibleCollectionIds.map((id) => (
               <label key={id} className={styles.toggle}>
-                <Checkbox.Root
-                  className={styles.radixCheckbox}
-                  checked
-                  onCheckedChange={(checked) => {
-                    if (checked !== true) {
-                      update({ collectionIds: form.collectionIds.filter((item) => item !== id) });
-                    }
-                  }}
-                  aria-label={`Remover coleção ${id}`}
-                >
-                  <Checkbox.Indicator>✓</Checkbox.Indicator>
-                </Checkbox.Root>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger type="button" className={styles.radixCheckbox} aria-label={`Gerenciar coleção ${id}`}>
+                    ✓
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className={styles.collectionMenu} sideOffset={6}>
+                      <DropdownMenu.CheckboxItem
+                        checked
+                        onCheckedChange={(checked) => {
+                          if (checked !== true) {
+                            update({ collectionIds: form.collectionIds.filter((item) => item !== id) });
+                          }
+                        }}
+                      >
+                        <DropdownMenu.ItemIndicator>✓ </DropdownMenu.ItemIndicator>
+                        Coleção ${id}
+                      </DropdownMenu.CheckboxItem>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
                 <span>{id}</span>
               </label>
             ))}
