@@ -2,9 +2,7 @@ name: 💬 PR Interactive Menu
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
 
-# Define um nome dinâmico e legível na aba Actions
 run-name: "💬 Menu Interativo • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
 
 permissions:
@@ -28,23 +26,25 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const marker = '<!-- pr-interactive-actions -->';
-            const body = `${marker}
+            const baseBranch = '${{ github.base_ref }}';
+            const headBranch = '${{ github.head_ref }}';
+
+            const menuBody = `${marker}
             ## 🤖 Painel de Ações Rápidas do PR
 
             Olá **@${{ github.event.pull_request.user.login }}**! 👋  
-            Marque uma das opções abaixo para executar tarefas automáticas diretamente na branch \`${{ github.head_ref }}\`:
+            Marque uma das opções abaixo para executar tarefas automáticas diretamente na branch \`${headBranch}\`:
 
+            - [ ] 🔄 **Sincronizar Branch** — *Atualiza com \`${baseBranch}\` (faz rebase automático se houver conflito)*
             - [ ] 🎨 **Rodar Prettier** — *Formata automaticamente todo o código e faz commit*
             - [ ] 📦 **Atualizar Lockfile** — *Executa \`npm install\` / \`yarn\` e atualiza as dependências*
 
             ---
-            > 💡 *Assim que você marcar uma caixa, o robô iniciará a execução, fará o commit na branch e desmarcará a opção.*
-            `;
+            > 💡 *Assim que você marcar uma caixa, o robô iniciará a execução, fará o commit na branch e desmarcará a opção.*`;
 
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
-            // Busca comentários existentes para não gerar spam a cada push
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
@@ -54,17 +54,28 @@ jobs:
             const botComment = comments.find(c => c.body.includes(marker));
 
             if (botComment) {
+              // Preserva relatórios anteriores (Sync / Prettier) anexados após o menu
+              const reportStart = botComment.body.indexOf('<!-- sync-report-start -->');
+              const prettierStart = botComment.body.indexOf('<!-- prettier-report-start -->');
+              
+              const indices = [reportStart, prettierStart].filter(i => i !== -1);
+              const firstReportIndex = indices.length > 0 ? Math.min(...indices) : -1;
+
+              const existingReports = firstReportIndex !== -1 
+                ? '\n\n' + botComment.body.slice(firstReportIndex).trim() 
+                : '';
+
               await github.rest.issues.updateComment({
                 owner,
                 repo,
                 comment_id: botComment.id,
-                body,
+                body: menuBody + existingReports,
               });
             } else {
               await github.rest.issues.createComment({
                 owner,
                 repo,
                 issue_number,
-                body,
+                body: menuBody,
               });
             }
