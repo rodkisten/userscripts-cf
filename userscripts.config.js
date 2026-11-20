@@ -1,6 +1,16 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
   {
+    id: "rod-dock",
+    name: "Rod Runtime · Dock",
+    entry: "src/userscripts/rod-dock-only/index.ts",
+    world: "sandbox",
+    unified: false,
+    tags: ["runtime", "dock"],
+    matches: ["http://*/*", "https://*/*"],
+    grants: ["GM_getValue", "GM_setValue"],
+  },
+  {
     id: "github-color-studio",
     name: "GitHub Color Studio",
     entry: "src/userscripts/github-color-studio/index.tsx",
