@@ -504,7 +504,10 @@ export async function auditDiagnosticPrelude(version = "1.0.0") {
       throw new Error("diagnosticPrelude must be self-contained for .toString() injection");
     }
 
-    log.pass("self-contained closure verified", `${fmt.bytes(bytes)} · ${fmt.duration(performance.now() - t0)}`);
+    log.pass(
+      "self-contained closure verified",
+      `${fmt.bytes(bytes)} · ${fmt.duration(performance.now() - t0)}`,
+    );
     return code;
   });
 

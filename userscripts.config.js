@@ -1,6 +1,15 @@
 // URL rules and metadata for each independently installable userscript.
 export default [
-  { id: "github-color-studio", name: "GitHub Color Studio", entry: "src/userscripts/github-color-studio/index.tsx", world: "sandbox", unified: false, tags: ["github","css","development"], matches: ["https://github.com/*"], grants: [] },
+  {
+    id: "github-color-studio",
+    name: "GitHub Color Studio",
+    entry: "src/userscripts/github-color-studio/index.tsx",
+    world: "sandbox",
+    unified: false,
+    tags: ["github", "css", "development"],
+    matches: ["https://github.com/*"],
+    grants: [],
+  },
 
   {
     id: "tiktok-cleaner",

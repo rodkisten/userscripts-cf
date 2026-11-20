@@ -30,16 +30,114 @@ const execFileAsync = promisify(execFile);
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
 // ============================================================================
+export const isCI = Boolean(process.env.GITHUB_ACTIONS);
 
 
+export const fmt = {
+  duration: (ms) => (ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(2)}s`),
+  bytes: (b) => (b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} kB`),
+  badge: (label, bg = C.bgCyan) => `${bg}${C.bold} ${label} ${C.reset}`,
+  dim: (str) => `${C.dim}${str}${C.reset}`,
+  bold: (str) => `${C.bold}${str}${C.reset}`,
+  cyan: (str) => `${C.cyan}${str}${C.reset}`,
+  green: (str) => `${C.green}${str}${C.reset}`,
+  yellow: (str) => `${C.yellow}${str}${C.reset}`,
+  red: (str) => `${C.red}${str}${C.reset}`,
+};
+
+export class BuildReporter {
+  constructor(title, version) {
+    this.title = title;
+    this.version = version;
+    this.startTime = performance.now();
+    this.steps = [];
+  }
 
 
+  /**
+   * Executa um step isolado no estilo suite do Vitest com medição automática,
+   * tratamento de erro e ::group:: no GitHub Actions.
+   */
+  async step(name, fn) {
+    const stepIndex = this.steps.length + 1;
+    const stepStart = performance.now();
+    const header = `${fmt.cyan("❯")} ${fmt.bold(name)}`;
 
+    if (isCI) {
+      console.log(`::group::${header}`);
+    } else {
+      console.log(` ${header}`);
+    }
+
+    const ctx = {
+      pass: (label, meta = "") => {
+        const suffix = meta ? ` ${fmt.dim(meta)}` : "";
+        console.log(`   ${fmt.green("✓")} ${label}${suffix}`);
+      },
+      skip: (label, reason = "") => {
+        const suffix = reason ? ` ${fmt.dim(`(${reason})`)}` : "";
+        console.log(`   ${fmt.yellow("↓")} ${fmt.dim(label)}${suffix}`);
+      },
+      info: (label, value = "") => {
+        const val = value !== "" ? ` ${fmt.cyan(String(value))}` : "";
+        console.log(`   ${fmt.dim("·")} ${fmt.dim(label)}${val}`);
+      },
+      warn: (msg) => {
+        if (isCI) console.log(`::warning::${msg}`);
+        else console.log(`   ${fmt.yellow("⚠")} ${fmt.yellow(msg)}`);
+      },
+      table: (title, rows) => {
+        if (!rows.length) return;
+        console.log(`\n   ${fmt.dim("┌─")} ${fmt.bold(title)}`);
+        console.table(rows);
+      },
+    };
+
+    try {
+      const result = await fn(ctx);
+      const elapsed = performance.now() - stepStart;
+      this.steps.push({ index: stepIndex, name, status: "passed", elapsed });
+
+      console.log(` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`);
+      if (isCI) console.log("::endgroup::");
+      return result;
+    } catch (err) {
+      const elapsed = performance.now() - stepStart;
+      this.steps.push({ index: stepIndex, name, status: "failed", elapsed });
+
+      if (isCI) {
+        console.error(`::error title=${name}::${err.message}`);
+        console.log("::endgroup::");
+      }
+      console.error(
+        `\n ${fmt.badge("FAIL", C.bgRed)} ${fmt.bold(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}`,
+      );
+      console.error(`   ${fmt.red("×")} ${fmt.red(err.stack || err.message)}\n`);
+      throw err;
+    }
+  }
+
+  summary(metrics = {}) {
+    const totalMs = performance.now() - this.startTime;
+    const passed = this.steps.filter((s) => s.status === "passed").length;
+
+    console.log(fmt.dim(" ─────────────────────────────────────────────────────────────"));
+    console.log(
+      ` ${fmt.bold("Steps")}      ${fmt.green(`${passed} passed`)} ${fmt.dim(`(${this.steps.length})`)}`,
+    );
+    for (const [key, val] of Object.entries(metrics)) {
+      console.log(` ${fmt.bold(key.padEnd(10))} ${fmt.cyan(String(val))}`);
+    }
+    console.log(
+      ` ${fmt.bold("Duration")}   ${fmt.bold(fmt.duration(totalMs))} ${fmt.dim(`(at ${new Date().toTimeString().slice(0, 8)})`)}\n`,
+    );
+  }
+}
 
 // ============================================================================
 // // @TODO: Mover para build/validate-config.mjs
 // ============================================================================
-async function validateConfiguration(root, defs, dist, pkgVersion) {
+export async function validateConfiguration(root, defs, dist, pkgVersion) {
   if (!/^\d+\.\d+\.\d+$/.test(pkgVersion)) {
     throw new Error("Use a stable x.y.z release version");
   }
@@ -109,7 +207,7 @@ async function validateConfiguration(root, defs, dist, pkgVersion) {
 // ============================================================================
 // // @TODO: Mover para build/metadata-generator.mjs
 // ============================================================================
-function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
+export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
   const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue"]);
   const requires = new Set();
   const connects = new Set();
@@ -152,7 +250,7 @@ function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
 // ============================================================================
 // // @TODO: Mover para build/icon-resolver.mjs
 // ============================================================================
-async function resolveTargetIcon(root, iconSourceDir, target, log) {
+export async function resolveTargetIcon(root, iconSourceDir, target, log) {
   const iconFile = path.join(iconSourceDir, `${target.id}.svg`);
   try {
     const svg = await fs.readFile(iconFile, "utf8");
@@ -175,7 +273,7 @@ async function resolveTargetIcon(root, iconSourceDir, target, log) {
 // ============================================================================
 // // @TODO: Mover para build/target-bundler.mjs
 // ============================================================================
-async function compileTarget(target, context) {
+export async function compileTarget(target, context) {
   const { root, out, iconSource, baseURL, version, catalog, runtimeFeatureAudit, log } = context;
   const targetStart = performance.now();
 
@@ -314,7 +412,7 @@ async function compileTarget(target, context) {
 // ============================================================================
 // // @TODO: Mover para build/audit-reporters.mjs
 // ============================================================================
-function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
+export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   const moduleConsumers = new Map();
 
   for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
@@ -359,7 +457,7 @@ function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   }
 }
 
-function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
+export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   for (const [target, measurements] of Object.entries(classAudit)) {
     const prefix = `${target}:`;
     const runtime = Object.entries(runtimeFeatureAudit.bundles)
@@ -387,8 +485,7 @@ function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
   const invalidRoot = bundleEntries.some(
     ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 ||
-      stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
   );
   if (invalidRoot) {
     throw new Error("[React root ownership] Missing or invalid per-world root audit report");
@@ -463,7 +560,7 @@ function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
 // ============================================================================
 // // @TODO: Mover para build/checksums.mjs
 // ============================================================================
-async function generateDirectoryChecksums(directory) {
+export async function generateDirectoryChecksums(directory) {
   async function collectFiles(dir, prefix = "") {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const tasks = entries.map(async (entry) => {
@@ -584,54 +681,51 @@ const runtimeFeatureAudit = await reporter.step(
 );
 
 // STEP 3: Compilação Paralela dos Targets
-const { manifest, classAudit } = await reporter.step(
-  "compile & minify userscript targets",
-  async (log) => {
-    const activeTargets = [];
-    for (const t of targets) {
-      if (!requestedTargets || requestedTargets.has(t.id)) {
-        activeTargets.push(t);
-      } else {
-        log.skip(t.id, "filtered by --targets");
-      }
+const { manifest, classAudit } = await reporter.step("compile & minify userscript targets", async (log) => {
+  const activeTargets = [];
+  for (const t of targets) {
+    if (!requestedTargets || requestedTargets.has(t.id)) {
+      activeTargets.push(t);
+    } else {
+      log.skip(t.id, "filtered by --targets");
     }
+  }
 
-    const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
-      id,
-      name,
-      matches,
-      exclude,
-      excludeMatches,
-      excludes,
-      includes,
-    }));
+  const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
+    id,
+    name,
+    matches,
+    exclude,
+    excludeMatches,
+    excludes,
+    includes,
+  }));
 
-    const buildResults = await Promise.all(
-      activeTargets.map((target) =>
-        compileTarget(target, {
-          root,
-          out,
-          iconSource,
-          baseURL,
-          version,
-          catalog,
-          runtimeFeatureAudit,
-          log,
-        }),
-      ),
-    );
-
-    return {
-      manifest: {
-        schema: 1,
-        version,
+  const buildResults = await Promise.all(
+    activeTargets.map((target) =>
+      compileTarget(target, {
+        root,
+        out,
+        iconSource,
         baseURL,
-        scripts: buildResults.map((r) => r.manifestEntry),
-      },
-      classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
-    };
-  },
-);
+        version,
+        catalog,
+        runtimeFeatureAudit,
+        log,
+      }),
+    ),
+  );
+
+  return {
+    manifest: {
+      schema: 1,
+      version,
+      baseURL,
+      scripts: buildResults.map((r) => r.manifestEntry),
+    },
+    classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
+  };
+});
 
 // STEP 4: Auditorias Pós-Build & Relatórios JSON
 await reporter.step("audit bundles, react roots & editor footprint", async (log) => {
@@ -693,7 +787,10 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
   await Promise.all([
     fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
     fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n"),
-    fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n"),
+    fs.writeFile(
+      path.join(out, "runtime-feature-audit.json"),
+      JSON.stringify(runtimeFeatureAudit, null, 2) + "\n",
+    ),
     fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n"),
   ]);
 

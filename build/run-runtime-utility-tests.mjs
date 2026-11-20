@@ -15,7 +15,10 @@ async function walk(dir) {
     if (entry.isDirectory()) await walk(path);
     else if (/\.test\.[cm]?[jt]sx?$/.test(entry.name)) {
       const relativePath = relative(root.pathname, path).replaceAll("\\", "/");
-      if (allowed.test(entry.name) && !prohibited.test(relativePath)) {
+      if (
+        (allowed.test(entry.name) || relativePath === "instagram-saved.test.js") &&
+        !prohibited.test(relativePath)
+      ) {
         suites.push("tests/" + relativePath);
       }
     }

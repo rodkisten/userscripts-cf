@@ -4,7 +4,6 @@ on:
   issue_comment:
     types: [edited]
 
-# Run-name dinâmico mostrando quem clicou e em qual PR
 run-name: "⚡ Ação via Checkbox • PR #${{ github.event.issue.number }} por @${{ github.actor }}"
 
 permissions:
@@ -44,7 +43,6 @@ jobs:
               return;
             }
 
-            // Busca os dados do PR para descobrir o nome exato da branch (head.ref)
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,

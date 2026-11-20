@@ -214,19 +214,13 @@ if (script && !/^[a-z0-9-]+$/.test(script)) {
 const root = path.resolve("src/userscripts");
 const selectedDir = script ? path.join(root, script) : root;
 
-const reporter = new BuildReporter(
-  fix ? "userscripts style-fix" : "userscripts style-check",
-  "AST",
-);
+const reporter = new BuildReporter(fix ? "userscripts style-fix" : "userscripts style-check", "AST");
 reporter.banner();
 
 // STEP 1: Descoberta paralela dos arquivos alvo
 const targets = await reporter.step("discover source files", async (log) => {
   const files = await discoverSourceFiles(selectedDir);
-  log.pass(
-    path.relative(process.cwd(), selectedDir) || "src/userscripts",
-    `${files.length} files matched`,
-  );
+  log.pass(path.relative(process.cwd(), selectedDir) || "src/userscripts", `${files.length} files matched`);
   return files;
 });
 
@@ -234,9 +228,7 @@ const targets = await reporter.step("discover source files", async (log) => {
 const { totalIssues, affectedFiles } = await reporter.step(
   fix ? "parse AST & apply style fixes" : "parse AST & validate style rules",
   async (log) => {
-    const results = await Promise.all(
-      targets.map((filename) => processSourceFile(filename, { fix })),
-    );
+    const results = await Promise.all(targets.map((filename) => processSourceFile(filename, { fix })));
 
     let issueCount = 0;
     let dirtyFiles = 0;
@@ -253,9 +245,7 @@ const { totalIssues, affectedFiles } = await reporter.step(
         log.warn(`${filename}: ${edits.length} style issue(s)`);
         for (const edit of edits) {
           if (isCI) {
-            console.error(
-              `::error file=${filename},line=${edit.line},col=${edit.column}::${edit.message}`,
-            );
+            console.error(`::error file=${filename},line=${edit.line},col=${edit.column}::${edit.message}`);
           } else {
             log.info(`L${edit.line}:${edit.column}`, edit.message);
           }

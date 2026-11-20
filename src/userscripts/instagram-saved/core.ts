@@ -32,7 +32,7 @@ export type DeliveryResult = {
 };
 export type SyncOptions = {
   fetchPage: (cursor: string) => Promise<Page>;
-  sendBatch: (items: MediaPayload[]) => Promise<{ results: DeliveryResult[] }>;
+  sendBatch: (items: MediaPayload[], channels?: string[]) => Promise<{ results: DeliveryResult[] }>;
   load: () => Promise<Record<string, number>>;
   save: (done: Record<string, number>) => Promise<unknown>;
   channels: string[];
@@ -46,17 +46,35 @@ export type SyncOptions = {
     jitterMs?: number;
   };
   onCursor?: (cursor: string) => Promise<unknown>;
+  loadChannels?: () => Promise<Record<string, Record<string, number>>>;
+  saveChannels?: (ledger: Record<string, Record<string, number>>) => Promise<unknown>;
 };
 export const SAVED_PATH = "/api/v1/feed/saved/posts/";
 export const COLLECTION_PATH = (id: string) => `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`;
 
 export function reelPayload(raw: Reel): MediaPayload | null {
+  if (!raw || typeof raw !== "object") return null;
   const m = raw.media || raw;
-  if (m.product_type !== "clips" || !m.code) {
+  if (
+    !m ||
+    typeof m !== "object" ||
+    m.product_type !== "clips" ||
+    typeof m.code !== "string" ||
+    !m.code.trim()
+  ) {
     return null;
   }
-  const variants = (m.video_versions || [])
-    .filter((v) => /^https:\/\//.test(v.url || ""))
+  const variants = (Array.isArray(m.video_versions) ? m.video_versions : [])
+    .filter(
+      (v) =>
+        v &&
+        typeof v.url === "string" &&
+        /^https:\/\//.test(v.url) &&
+        Number.isFinite(v.width) &&
+        Number.isFinite(v.height) &&
+        v.width > 0 &&
+        v.height > 0,
+    )
     .sort((a, b) => b.width * b.height - a.width * a.height);
   if (!variants.length) {
     return null;
@@ -86,13 +104,18 @@ export function reelPayload(raw: Reel): MediaPayload | null {
 
 export function classify(result: DeliveryResult | undefined, channels: string[]) {
   const c = result?.channels;
-  const inserted = new Set(c?.inserted || []);
+  const inserted = new Set(Array.isArray(c?.inserted) ? c.inserted : []);
   const covered = new Set([
     ...inserted,
-    ...(c?.covered || []),
-    ...(c?.notSent || []).filter((v) => v.reason === "already_sent").map((v) => v.channelId),
+    ...(Array.isArray(c?.covered) ? c.covered : []),
+    ...(Array.isArray(c?.notSent) ? c.notSent : [])
+      .filter((v) => v && v.reason === "already_sent")
+      .map((v) => v.channelId),
   ]);
-  return { complete: channels.every((c) => covered.has(c)), inserted: inserted.size > 0 };
+  return {
+    complete: channels.length > 0 && channels.every((channel) => covered.has(channel)),
+    inserted: channels.some((channel) => inserted.has(channel)),
+  };
 }
 
 export function retryDelay(attempt: number, count: number, retryAfter?: string | null, random = Math.random) {
@@ -117,18 +140,56 @@ export async function syncSaved({
   signal,
   settings = {},
   onCursor,
+  loadChannels,
+  saveChannels,
 }: SyncOptions) {
-  const done = await load();
+  if (
+    !channels.length ||
+    channels.some((channel) => !channel.trim()) ||
+    new Set(channels).size !== channels.length
+  ) {
+    throw Error("Configure pelo menos um canal válido para sincronizar");
+  }
+  signal?.throwIfAborted();
+  const done = Object.assign(Object.create(null) as Record<string, number>, await load());
+  signal?.throwIfAborted();
+  const ledger =
+    loadChannels && saveChannels
+      ? Object.assign(Object.create(null) as Record<string, Record<string, number>>, await loadChannels())
+      : null;
+  signal?.throwIfAborted();
+  // Legacy state represents a fully acknowledged channel set, never a partial result.
+  // Import only its exact channel set; do not infer delivery to any new destination.
+  if (ledger) {
+    let migrated = false;
+    for (const [id, timestamp] of Object.entries(done)) {
+      if (!Number.isFinite(timestamp) || timestamp <= 0) continue;
+      const row = Object.assign(Object.create(null) as Record<string, number>, ledger[id] || {});
+      for (const channel of channels) {
+        if (!Object.hasOwn(row, channel)) {
+          row[channel] = timestamp;
+          migrated = true;
+        }
+      }
+      ledger[id] = row;
+    }
+    if (migrated) await saveChannels!(ledger);
+  }
+  const confirmed = (id: string) =>
+    ledger ? channels.every((channel) => Object.hasOwn(ledger[id] || {}, channel)) : Object.hasOwn(done, id);
   const seen = new Set<string>();
+  const insertedInSession = new Set<string>();
+  let processed = 0;
   let cursor = settings.cursor || "",
     count = 0,
     pages = 0;
   const limit = Math.max(1, Math.min(100, Number(settings.batchSize) || 5));
   const maxItems = Math.max(1, Math.min(10000, Number(settings.maxItemsPerSession) || 100));
-  const cursors = new Set();
+  const cursors = new Set<string>(cursor ? [cursor] : []);
   do {
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
+    signal?.throwIfAborted();
     if (!Array.isArray(page.items) || page.status === "fail") {
       throw Error("Resposta de salvos inválida");
     }
@@ -140,41 +201,136 @@ export async function syncSaved({
           return false;
         }
         seen.add(item.mediaId);
-        return !done[item.mediaId];
+        return !confirmed(item.mediaId);
       });
+    // Never advance the collection cursor past an unprocessed item.
+    // A page is the smallest safe checkpoint with this endpoint.
     for (let offset = 0; offset < items.length; offset += limit) {
       const batch = items.slice(offset, offset + limit);
-      let pending = batch;
-      for (let attempt = 0; pending.length && attempt < 4; attempt++) {
-        signal?.throwIfAborted();
-        const response = await sendBatch(pending);
-        if (!Array.isArray(response.results)) {
-          throw Error("Relay sem confirmação por item");
-        }
-        const retry: MediaPayload[] = [];
-        for (let i = 0; i < pending.length; i++) {
-          const result = response.results.find((r) => r.index === i);
-          const status = classify(result, channels);
-          if (status.complete) {
-            done[pending[i].mediaId] = Date.now();
-            if (status.inserted) {
-              count++;
+      const groups = new Map<string, { channels: string[]; items: MediaPayload[] }>();
+      for (const item of batch) {
+        const missing = ledger
+          ? channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
+          : channels;
+        if (!missing.length) continue;
+        const key = JSON.stringify(missing);
+        const group = groups.get(key) || { channels: missing, items: [] };
+        group.items.push(item);
+        groups.set(key, group);
+      }
+      for (const group of groups.values()) {
+        // A retry is scoped to the channels still missing for each media item.
+        // Rebuild groups after every response, never resend an acknowledged channel.
+        let work = [{ items: group.items, channels: group.channels }];
+        for (let attempt = 0; work.length && attempt < 4; attempt++) {
+          const next = new Map<string, { items: MediaPayload[]; channels: string[] }>();
+          for (const job of work) {
+            signal?.throwIfAborted();
+            const response = await sendBatch(job.items, job.channels);
+            signal?.throwIfAborted();
+            if (!Array.isArray(response.results) || response.results.length !== job.items.length) {
+              throw Error("Relay sem confirmação por item");
             }
-            await save(done);
-          } else if (result && (result.status === 429 || result.status >= 500)) {
-            retry.push(pending[i]);
-          } else {
-            throw Error("Entrega não confirmada; sincronização interrompida");
+            const byIndex = new Map<number, DeliveryResult>();
+            for (const result of response.results) {
+              if (
+                !Number.isInteger(result?.index) ||
+                result.index < 0 ||
+                result.index >= job.items.length ||
+                byIndex.has(result.index)
+              ) {
+                throw Error("Confirmação Relay ausente ou duplicada");
+              }
+              byIndex.set(result.index, result);
+            }
+            // Validate the entire response before persisting any item: a malformed
+            // later acknowledgement must not partially checkpoint an invalid batch.
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i);
+              if (!result) throw Error("Confirmação Relay ausente ou duplicada");
+              const channelResult = result.channels;
+              if (
+                channelResult &&
+                ((channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
+                  (channelResult.covered !== undefined && !Array.isArray(channelResult.covered)) ||
+                  (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent)) ||
+                  (channelResult.inserted || []).some((id) => typeof id !== "string") ||
+                  (channelResult.covered || []).some((id) => typeof id !== "string") ||
+                  (channelResult.notSent || []).some(
+                    (entry) =>
+                      !entry || typeof entry.reason !== "string" || typeof entry.channelId !== "string",
+                  ))
+              )
+                throw Error("Relay retornou confirmação de canais inválida");
+            }
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i)!;
+              const item = job.items[i];
+              const status = classify(result, job.channels);
+              const acknowledged = new Set([
+                ...(result.channels?.inserted || []),
+                ...(result.channels?.covered || []),
+                ...(result.channels?.notSent || [])
+                  .filter((entry) => entry && entry.reason === "already_sent")
+                  .map((entry) => entry.channelId),
+              ]);
+              if (status.inserted && !insertedInSession.has(item.mediaId)) {
+                insertedInSession.add(item.mediaId);
+                count++;
+              }
+              if (ledger) {
+                const row = Object.assign(
+                  Object.create(null) as Record<string, number>,
+                  ledger[item.mediaId] || {},
+                );
+                let changed = false;
+                for (const channel of job.channels) {
+                  if (acknowledged.has(channel) && !Object.hasOwn(row, channel)) {
+                    row[channel] = Date.now();
+                    changed = true;
+                  }
+                }
+                if (changed) {
+                  ledger[item.mediaId] = row;
+                  await saveChannels!(ledger);
+                }
+              }
+              if (status.complete) {
+                if (
+                  !ledger ||
+                  channels.every((channel) => Object.hasOwn(ledger[item.mediaId] || {}, channel))
+                ) {
+                  done[item.mediaId] = Date.now();
+                  await save(done);
+                }
+                continue;
+              }
+              if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
+                throw Error("Entrega não confirmada; sincronização interrompida");
+              }
+              const missing = ledger
+                ? job.channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
+                : job.channels;
+              if (!missing.length) continue;
+              const key = JSON.stringify(missing);
+              const retry = next.get(key) || { items: [], channels: missing };
+              retry.items.push(item);
+              next.set(key, retry);
+            }
+          }
+          work = [...next.values()];
+          if (work.length && attempt < 3) {
+            await pause(
+              retryDelay(
+                attempt,
+                work.reduce((sum, job) => sum + job.items.length, 0),
+              ),
+            );
           }
         }
-        pending = retry;
-        if (pending.length) {
-          await pause(retryDelay(attempt, pending.length));
-        }
+        if (work.length) throw Error("Limite de tentativas do Relay");
       }
-      if (pending.length) {
-        throw Error("Limite de tentativas do Relay");
-      }
+      processed += batch.length;
       await pause(
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
@@ -192,7 +348,7 @@ export async function syncSaved({
     cursors.add(next);
     cursor = next;
     await onCursor?.(cursor);
-    if (seen.size >= maxItems) {
+    if (processed >= maxItems) {
       break;
     }
     await pause(Math.min(8000, 1000 + pages * 100));
