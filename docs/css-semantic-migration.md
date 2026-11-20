@@ -24,3 +24,7 @@ Only the temporary workflow runs isolated utility tests. Permanent CI and produc
 ## Static registration gate
 
 `build/css-style-registration.mjs` parses TS/TSX/JS AST and recognizes direct named `css` exports from imported CSS files passed to `ctx.ui.registerStyles(...)`. Preview groups are blocked unless **every** file in the group is registered by every identified owner. This deliberately rejects indirect registration through barrel exports, aliases not directly imported, and dynamic CSS. A passing check is not runtime proof, and no automatic CSS writes are enabled.
+
+## Barrel reexports
+
+The registration gate now follows static named CSS exports through TypeScript/TSX barrel modules, including `export { css as panelCSS } from "./Panel.module.css"` and `import { css as panelCSS } ...; export { panelCSS }`. Cyclic, namespace, dynamic and unresolved exports are conservatively rejected. This is static evidence, not runtime proof, and the preview remains read-only.
