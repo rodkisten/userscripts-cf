@@ -65,6 +65,50 @@ jobs:
       - name: Fail current validation on installation error
         if: steps.install.outcome == 'failure'
         run: exit 1
+      - name: "🧬 Repair and verify repository-wide TS/TSX syntax"
+        id: react_syntax
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check:react-syntax:fix
+          mapfile -d '' changed < <(git diff --name-only -z -- '*.ts' '*.tsx' '*.mts' '*.cts')
+          if (( ${#changed[@]} )); then
+            npx prettier --write "${changed[@]}"
+          fi
+          npm run check:react-syntax
+      - name: "🤖 Authenticate bot for verified syntax repair"
+        id: syntax_bot
+        if: steps.react_syntax.outcome == 'success' && github.event_name == 'pull_request'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+      - name: "🚀 Commit and push verified syntax repairs"
+        if: steps.react_syntax.outcome == 'success' && github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BOT_TOKEN: ${{ steps.syntax_bot.outputs.token }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- '*.ts' '*.tsx' '*.mts' '*.cts'; then
+            echo "No syntax repairs needed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$PR_REPO" != "$GITHUB_REPOSITORY" ]]; then
+            echo "::error::Automatic pushes to fork PRs are disabled."
+            exit 1
+          fi
+          git config user.name "rod-bot[bot]"
+          git config user.email "rod-bot[bot]@users.noreply.github.com"
+          git add -- '*.ts' '*.tsx' '*.mts' '*.cts'
+          git commit -m "fix(react): repair invalid source newlines"
+          git remote set-url origin "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:refs/heads/${PR_BRANCH}"
+          echo "Verified syntax repairs committed to ${PR_BRANCH}." >> "$GITHUB_STEP_SUMMARY"
       - name: Check formatting
         id: formatting
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'

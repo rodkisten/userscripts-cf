@@ -1,44 +1,59 @@
 #!/usr/bin/env node
 /**
- * Syntax-only guard for React/TypeScript source files.
- * Uses TypeScript's real parser, not regex-based source rewriting.
- * No test suites, compilation or output files.
+ * Repository-wide TypeScript/TSX syntax validation and conservative repair.
+ * Only replaces literal backslash-n tokens outside strings/comments when the
+ * TypeScript scanner identifies an invalid standalone backslash.
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { join, extname, relative } from "node:path";
 import process from "node:process";
 import ts from "typescript";
 
-const targets = process.argv.slice(2);
-if (!targets.length) {
-  console.error("Usage: node build/check-react-syntax.mjs <file.tsx|file.ts> [...]");
-  process.exit(2);
+const fix = process.argv.includes("--fix");
+const selected = process.argv.filter((arg) => !arg.startsWith("--"));
+const ignored = new Set([".git", "node_modules", "dist", "coverage", ".next", ".cache", "artifacts"]);
+const extensions = new Set([".ts", ".tsx", ".mts", ".cts"]);
+function* walk(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (ignored.has(entry.name)) continue;
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) yield* walk(path);
+    else if (entry.isFile() && extensions.has(extname(entry.name)) && !entry.name.endsWith(".d.ts")) yield path;
+  }
 }
-let failures = 0;
-for (const file of targets) {
-  const source = readFileSync(resolve(file), "utf8");
+const files = selected.length ? selected : [...walk(".")];
+let errors = 0;
+let repaired = 0;
+for (const file of files) {
+  let source = readFileSync(file, "utf8");
   const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
-  const diagnostics = parsed.parseDiagnostics;
-  // Literal backslash-n outside comments/strings/templates is invalid source.
-  // TypeScript parser reports it; this extra diagnostic makes the cause explicit.
-  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, kind, source);
-  let token;
-  while ((token = scanner.scan()) !== ts.SyntaxKind.EndOfFileToken) {
-    if (token === ts.SyntaxKind.Unknown && scanner.getTokenText() === "\\") {
-      const pos = scanner.getTokenPos();
-      if (source.slice(pos, pos + 2) === "\\n") {
-        const where = parsed.getLineAndCharacterOfPosition(pos);
-        console.error(`${file}:${where.line + 1}:${where.character + 1}: literal \\n outside a string; use an actual newline`);
-        failures++;
+  const parse = (content) => ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true, kind);
+  const original = parse(source);
+  if (fix && original.parseDiagnostics.length) {
+    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, kind, source);
+    const offsets = [];
+    for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
+      if (token === ts.SyntaxKind.Unknown && scanner.getTokenText() === "\\" && source.slice(scanner.getTokenPos(), scanner.getTokenPos() + 2) === "\\n") {
+        offsets.push(scanner.getTokenPos());
+      }
+    }
+    if (offsets.length) {
+      let candidate = source;
+      for (const offset of offsets.reverse()) candidate = candidate.slice(0, offset) + "\n" + candidate.slice(offset + 2);
+      if (parse(candidate).parseDiagnostics.length === 0) {
+        writeFileSync(file, candidate);
+        source = candidate;
+        repaired++;
+        console.log("🔧 Repaired:", file);
       }
     }
   }
-  for (const diagnostic of diagnostics) {
-    const where = parsed.getLineAndCharacterOfPosition(diagnostic.start ?? 0);
-    console.error(`${file}:${where.line + 1}:${where.character + 1}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`);
-    failures++;
+  const parsed = parse(source);
+  for (const diagnostic of parsed.parseDiagnostics) {
+    const pos = parsed.getLineAndCharacterOfPosition(diagnostic.start ?? 0);
+    console.error("❌", relative(".", file) + ":" + (pos.line + 1) + ":" + (pos.character + 1), ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
+    errors++;
   }
-  if (!diagnostics.length) console.log(`✓ Syntax parsed: ${file}`);
 }
-process.exitCode = failures ? 1 : 0;
+console.log("🧬 Syntax scan:", files.length, "files;", repaired, "repaired;", errors, "errors");
+process.exitCode = errors ? 1 : 0;

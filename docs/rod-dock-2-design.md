@@ -135,3 +135,11 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Destaque DOM limpa referência ao fechar a Dock fora da seleção.
 - [x] Leitura de Resource Timing tolera falhas sem derrubar o painel.
 - [ ] Validar parser TSX e compilação em ambiente com dependências instaladas. Sem testes.
+
+## Validação automática global no workflow Validate changed userscripts
+
+- [x] Parser TypeScript verifica todos os arquivos TS, TSX, MTS e CTS do repositório, não apenas a Dock.
+- [x] Reparação conservadora de `\\n` inválido, fora de strings e comentários, somente quando a análise sintática fica limpa.
+- [x] Prettier e segunda verificação antes de commit/push do bot na branch do PR.
+- [x] PRs de forks não recebem push; falhas sintáticas não são publicadas.
+- [ ] A execução real no GitHub Actions e a instalação do lockfile ainda precisam ser verificadas.

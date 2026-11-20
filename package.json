@@ -33,7 +33,8 @@
     "typecheck:react": "tsc --noEmit -p tsconfig.react.json",
     "test:unit": "node build/run-runtime-utility-tests.mjs",
     "check:react-only": "node build/check-react-only.mjs",
-    "check:react-syntax": "node build/check-react-syntax.mjs src/runtime/react-ui/rod-dock.tsx src/runtime/react-ui/primitives.ts"
+    "check:react-syntax": "node build/check-react-syntax.mjs",
+    "check:react-syntax:fix": "node build/check-react-syntax.mjs --fix"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
