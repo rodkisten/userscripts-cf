@@ -166,7 +166,7 @@ export function mountReelBookmark(
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
       if (token !== operation || signal.aborted || reel !== activeReel) return;
-      setState(nativeState(source) === "saved" ? "saved" : "error");
+      setState("error");
       notify((error as Error).message);
     }
   };
