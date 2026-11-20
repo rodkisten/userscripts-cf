@@ -266,6 +266,17 @@ export async function syncSaved({
               )
                 throw Error("Relay retornou confirmação de canais inválida");
             }
+            // Also reject non-retryable incomplete deliveries before writing any
+            // acknowledgements from this response. A mixed 200/400 response
+            // must not partially checkpoint an otherwise rejected batch.
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i)!;
+              const status = classify(result, job.channels);
+              if (!status.complete &&
+                  !(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
+                throw Error("Entrega não confirmada; sincronização interrompida");
+              }
+            }
             for (let i = 0; i < job.items.length; i++) {
               const result = byIndex.get(i)!;
               const item = job.items[i];
