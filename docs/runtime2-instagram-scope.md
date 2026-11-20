@@ -27,6 +27,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Count inserted media IDs once per sync session even when multiple channels acknowledge across separate retries.
 - [x] Ignore acknowledgements for channels not requested by the current Relay batch when computing insertion totals.
 - [x] Validate Relay channel-array shapes before persisting confirmations and discard video variants with invalid dimensions.
+- [x] Preflight every per-item Relay acknowledgement before any checkpoint write, including malformed entries later in a batch.
 - [x] Skip malformed/null Instagram saved entries without interrupting the page, and safely classify malformed already-sent acknowledgements.
 - [ ] Verify ledger behavior against live Relay responses. Duplicate channel IDs fail before fetching, and confirmed timestamps are not overwritten.
 - [ ] Run targeted tests and TypeScript/build checks; the previous branch head had no reported workflow runs or commit statuses.
