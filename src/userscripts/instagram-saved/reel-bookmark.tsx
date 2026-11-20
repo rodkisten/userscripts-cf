@@ -135,10 +135,10 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
     if (!option) {
       throw Error(`Reel salvo, mas o Instagram não expôs um identificador verificável para a coleção ${id}. Selecione-a manualmente.`);
     }
-    option.click();
-    // The click is not proof of membership. The Instagram picker must provide
-    // an explicit confirmation before we can claim a successful assignment.
-    throw Error(`Seleção da coleção ${id} iniciada, mas a confirmação de associação não está disponível. Verifique no Instagram.`);
+    // A visible matching option is still not proof that Instagram will
+    // persist membership. Avoid an unverified mutation until its confirmation
+    // contract is known.
+    throw Error(`Coleção ${id} encontrada, mas a confirmação de associação não está disponível. Selecione-a manualmente no Instagram.`);
   }
 }
 
