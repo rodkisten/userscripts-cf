@@ -1,4 +1,5 @@
-name: 🚀 Release userscripts
+name: 🚀 Release Userscripts
+
 run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 
 on:
@@ -12,13 +13,13 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Incremento semântico da versão"
+        description: "🏷️ Incremento semântico da versão"
         required: true
         default: patch
         type: choice
         options: [patch, minor, major]
       skip_tests:
-        description: "Ignorar testes no deploy manual (build continua obrigatório)"
+        description: "⚡ Ignorar testes e typecheck no deploy manual (build continua obrigatório)"
         required: false
         default: true
         type: boolean
@@ -33,6 +34,7 @@ concurrency:
 
 jobs:
   release:
+    name: 📦 Build, Deploy & Publish
     environment: production
     if: >-
       github.ref == 'refs/heads/main' &&
@@ -40,7 +42,7 @@ jobs:
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
-      - name: Authenticate Rod GitHub App
+      - name: 🔐 Authenticate GitHub App
         id: app-token
         uses: actions/create-github-app-token@v2
         with:
@@ -48,28 +50,39 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-      - uses: actions/checkout@v6
+
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v6
         with:
           ref: main
           persist-credentials: true
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+
       # The release workflow can recover from package.json updates merged without
       # a matching lockfile. The version commit below persists the repaired lock.
-      - name: Synchronize lockfile before clean install
+      - name: 🔄 Synchronize Lockfile Before Clean Install
+        id: lockfile
         run: |
           set -euo pipefail
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
           if ! git diff --quiet -- package-lock.json; then
+            echo "synced=true" >> "$GITHUB_OUTPUT"
             echo "::notice::package-lock.json was out of sync; it will be included in the release version commit."
             git diff --stat -- package-lock.json
+          else
+            echo "synced=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Install locked dependencies
+
+      - name: 📦 Install Locked Dependencies
         run: npm ci --legacy-peer-deps
-      - name: Skip dependency-bot commits
+
+      - name: 🤖 Check Dependency-Bot Commits
         id: source
         run: |
           set -euo pipefail
@@ -78,11 +91,12 @@ jobs:
           SUBJECT="$(git log -1 --format=%s)"
           if [[ "$AUTHOR $EMAIL $SUBJECT" =~ ([Rr]enovate|[Dd]ependabot) ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "Dependency bot change: publication skipped." >> "$GITHUB_STEP_SUMMARY"
+            echo "🤖 Dependency bot change detected: publication skipped."
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Select next version
+
+      - name: 🏷️ Select Next Version
         if: steps.source.outputs.skip != 'true'
         id: version
         env:
@@ -97,35 +111,65 @@ jobs:
           if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" && "$RELEASE_STATE" != "false" ]]; then
             VERSION="$CURRENT"
             echo "resume=true" >> "$GITHUB_OUTPUT"
+            echo "♻️ Resuming incomplete release v$VERSION"
           else
             npm version "$BUMP" --no-git-tag-version --ignore-scripts
             VERSION="$(node -p 'require("./package.json").version')"
             echo "resume=false" >> "$GITHUB_OUTPUT"
+            echo "🆕 Bumped version to v$VERSION ($BUMP)"
           fi
+          echo "previous=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-          echo "### Next userscripts release: v$VERSION" >> "$GITHUB_STEP_SUMMARY"
-      - name: Typecheck, build and test before publishing
+
+      - name: 🧪 Typecheck, Build & Test
         if: steps.source.outputs.skip != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.skip_tests)
         run: npm test
-      - name: Build without tests for manual deployment
+
+      - name: 🏗️ Build Userscripts (Tests & Typecheck Non-Blocking)
+        id: manual-build
         if: steps.source.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.skip_tests
-        run: npm run build
-      - name: Verify installable userscript metadata
+        run: |
+          set -euo pipefail
+          # Executa typecheck de forma informativa sem abortar o deploy manual
+          if npm run --if-present typecheck; then
+            echo "typecheck_status=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "typecheck_status=failed" >> "$GITHUB_OUTPUT"
+            echo "::warning::⚠️ Typecheck errors detected, proceeding because skip_tests=true."
+          fi
+
+          # Garante que o bundle seja gerado mesmo se o script "build" chamar tsc internamente
+          if ! npm run build; then
+            echo "::warning::⚠️ Default build script failed (possibly due to typecheck). Falling back to bundler-only build..."
+            if npm run --if-present build:scripts || npm run --if-present bundle; then
+              echo "build_fallback=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::❌ Bundle build failed."
+              exit 1
+            fi
+          else
+            echo "build_fallback=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🔍 Verify Installable Userscript Metadata
         if: steps.source.outputs.skip != 'true'
         run: |
           node --input-type=module -e 'import fs from "node:fs"; const manifest=JSON.parse(fs.readFileSync("dist/manifest.json","utf8")); if(!manifest.scripts.length) throw Error("No scripts built"); for(const script of manifest.scripts) {const source=fs.readFileSync(`dist/${script.file}`,"utf8"); if(!source.startsWith("// ==UserScript==")) throw Error(`Missing metadata: ${script.file}`)}'
+
       # Formatting is handled separately and must not block publishing.
-      - name: Reject superseded automatic release before version commit
+      - name: 🛡️ Guard Against Superseded Automatic Release
         if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
           if [[ "$latest" != "$GITHUB_SHA" ]]; then
-            echo "::error::Outdated workflow: current main is $latest, run started at $GITHUB_SHA"
+            echo "::error::❌ Outdated workflow: current main is $latest, run started at $GITHUB_SHA"
             exit 1
           fi
-      - name: Commit version to main
+
+      - name: 📝 Commit & Push Version to Main
+        id: version-commit
         if: steps.source.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -136,20 +180,26 @@ jobs:
           git add package.json package-lock.json
           git commit -m "chore(release): v$VERSION [skip ci]"
           git push origin HEAD:main
-      - name: Prepare Cloudflare Worker with versioned assets
+          SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: ⚙️ Prepare Cloudflare Worker Assets
         if: steps.source.outputs.skip != 'true'
         run: node build/hosting.mjs
-      - name: Reject outdated release before Cloudflare publication
+
+      - name: 🛡️ Guard Against Outdated Release Before Cloudflare Deploy
         if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
           local_head="$(git rev-parse HEAD)"
           if [[ "$latest" != "$local_head" ]]; then
-            echo "::error::Main moved after this release started: $latest (built from $local_head)"
+            echo "::error::❌ Main moved after this release started: $latest (built from $local_head)"
             exit 1
           fi
-      - name: Deploy versioned userscripts to Cloudflare
+
+      - name: ☁️ Deploy Versioned Userscripts to Cloudflare
+        id: cloudflare
         if: steps.source.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -158,20 +208,129 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment secrets"
+            echo "::error::❌ Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment secrets"
             exit 1
           fi
           npm run deploy:cloudflare
-      - name: Publish GitHub Release with userscripts and checksums
+
+      - name: 🎉 Publish GitHub Release & Checksums
+        id: gh-release
         if: steps.source.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: npm run release
-      - name: Release summary
-        if: steps.source.outputs.skip != 'true'
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          echo "Cloudflare Worker userscripts-cf deployed." >> "$GITHUB_STEP_SUMMARY"
-          echo "Published [$TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📊 Generate Rich Release Summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const skipped = '${{ steps.source.outputs.skip }}' === 'true';
+            const jobStatus = '${{ job.status }}';
+            const version = '${{ steps.version.outputs.version }}';
+            const previousVersion = '${{ steps.version.outputs.previous }}';
+            const tag = '${{ steps.version.outputs.tag }}';
+            const isResume = '${{ steps.version.outputs.resume }}' === 'true';
+            const bumpType = '${{ github.event_name == "workflow_dispatch" && inputs.bump || "patch" }}';
+            const skipTests = '${{ github.event_name == "workflow_dispatch" && inputs.skip_tests }}' === 'true';
+            const typecheckStatus = '${{ steps.manual-build.outputs.typecheck_status }}';
+            const lockSynced = '${{ steps.lockfile.outputs.synced }}' === 'true';
+            const commitSha = '${{ steps.version-commit.outputs.commit_sha }}' || process.env.GITHUB_SHA;
+            const baseUrl = 'https://userscripts.migos.club';
+            const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+
+            if (skipped) {
+              await core.summary
+                .addHeading('🤖 Release Skipped (Dependency Bot)', 2)
+                .addQuote('Commits authored by Renovate or Dependabot do not trigger production releases.')
+                .write();
+              return;
+            }
+
+            const statusBadge = jobStatus === 'success'
+              ? '✅ **Published & Deployed**'
+              : jobStatus === 'cancelled'
+                ? '🚫 **Cancelled (Superseded)**'
+                : '❌ **Failed**';
+
+            let qaStatusText = '✅ Executed (`npm test` + typecheck)';
+            if (skipTests) {
+              qaStatusText = typecheckStatus === 'failed'
+                ? '⚡ Skipped tests (⚠️ typecheck warnings ignored)'
+                : '⚡ Skipped tests (✅ typecheck passed)';
+            }
+
+            await core.summary
+              .addHeading(`🚀 Userscripts Release ${tag ? `· ${tag}` : ''}`, 2)
+              .addTable([
+                [
+                  { data: 'Property', header: true },
+                  { data: 'Details', header: true }
+                ],
+                ['📡 **Status**', statusBadge],
+                [
+                  '🏷️ **Version**',
+                  version
+                    ? isResume
+                      ? `\`${tag}\` *(resumed draft)*`
+                      : `\`v${previousVersion}\` → **\`${tag}\`** (\`${bumpType}\`)`
+                    : '—'
+                ],
+                ['🎯 **Trigger**', `\`${context.eventName}\` by **@${context.actor}**`],
+                ['🧪 **Tests & Typecheck**', qaStatusText],
+                ['🔄 **Lockfile**', lockSynced ? '🔧 Auto-repaired & committed' : '✅ In sync'],
+                [
+                  '🔗 **Version Commit**',
+                  commitSha ? `[\`${commitSha.slice(0, 7)}\`](${repoUrl}/commit/${commitSha})` : '—'
+                ],
+                [
+                  '☁️ **Cloudflare Worker**',
+                  jobStatus === 'success' ? `[${baseUrl}](${baseUrl})` : '⚠️ Not deployed'
+                ],
+                [
+                  '🎉 **GitHub Release**',
+                  jobStatus === 'success' && tag
+                    ? `[Release ${tag}](${repoUrl}/releases/tag/${tag})`
+                    : '⚠️ Not published'
+                ]
+              ]);
+
+            if (fs.existsSync('dist/manifest.json')) {
+              try {
+                const manifest = JSON.parse(fs.readFileSync('dist/manifest.json', 'utf8'));
+                const scripts = Array.isArray(manifest.scripts) ? manifest.scripts : [];
+
+                if (scripts.length > 0) {
+                  const scriptRows = [
+                    [
+                      { data: 'Userscript', header: true },
+                      { data: 'File', header: true },
+                      { data: 'Version', header: true },
+                      { data: 'Direct Install URL', header: true }
+                    ],
+                    ...scripts.map(s => {
+                      const displayName = s.name || s.id || s.file;
+                      const scriptVer = s.version ? `\`v${s.version}\`` : `\`${tag}\``;
+                      const installUrl = `${baseUrl}/${s.file}`;
+                      return [
+                        `**${displayName}**`,
+                        `\`${s.file}\``,
+                        scriptVer,
+                        `[Install](${installUrl})`
+                      ];
+                    })
+                  ];
+
+                  await core.summary
+                    .addHeading(`📜 Published Userscripts (${scripts.length})`, 3)
+                    .addTable(scriptRows);
+                }
+              } catch (err) {
+                core.warning(`Could not parse dist/manifest.json for summary: ${err.message}`);
+              }
+            }
+
+            await core.summary.write();
