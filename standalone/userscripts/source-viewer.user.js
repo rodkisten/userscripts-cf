@@ -94,10 +94,7 @@
   }
 
   function escapeHtml(value) {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+    return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
 
   async function waitForBody() {
@@ -142,7 +139,8 @@
     const meta = document.createElement("meta");
     meta.id = META_ID;
     meta.name = "viewport";
-    meta.content = "width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover";
+    meta.content =
+      "width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover";
     document.documentElement.appendChild(meta);
   }
 
@@ -195,8 +193,10 @@
   }
 
   function shouldAutoPretty() {
-    return state.rawSource.length <= AUTO_PRETTY_MAX_BYTES &&
-      state.rawSource.split("\n").length <= AUTO_PRETTY_MAX_LINES;
+    return (
+      state.rawSource.length <= AUTO_PRETTY_MAX_BYTES &&
+      state.rawSource.split("\n").length <= AUTO_PRETTY_MAX_LINES
+    );
   }
 
   function trimMiddle(value, maxLength = 12) {
@@ -208,9 +208,8 @@
 
   function trimLocation(value) {
     try {
-      const url = value instanceof URL
-        ? value
-        : new URL(value instanceof Location ? value.href : String(value));
+      const url =
+        value instanceof URL ? value : new URL(value instanceof Location ? value.href : String(value));
 
       const host = url.hostname
         .split(".")
@@ -403,7 +402,10 @@
       output += char;
     }
 
-    return output.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    return output
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
   }
 
   function formatCss(source) {
@@ -418,7 +420,10 @@
 
   function formatHtml(source) {
     const voidTags = new Set(["br", "hr", "img", "input", "meta", "link", "source", "area", "base"]);
-    const tokens = source.replace(/>\s+</g, "><").split(/(<[^>]+>)/g).filter(Boolean);
+    const tokens = source
+      .replace(/>\s+</g, "><")
+      .split(/(<[^>]+>)/g)
+      .filter(Boolean);
     const lines = [];
     let indent = 0;
 
@@ -465,22 +470,30 @@
         .replace(/^(\s*[.#]?[\w-]+)(?=\s*\{)/g, '<span class="tok-selector">$1</span>')
         .replace(/([\w-]+)(\s*:)/g, '<span class="tok-attr">$1</span>$2')
         .replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="tok-string">$1</span>')
-        .replace(/\b(\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw|dvh|dvw|s|ms)?)\b/g, '<span class="tok-number">$1</span>');
+        .replace(
+          /\b(\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw|dvh|dvw|s|ms)?)\b/g,
+          '<span class="tok-number">$1</span>',
+        );
     }
 
     const escaped = escapeHtml(source);
     const parts = escaped.split(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\/\/.*$)/g);
 
-    return parts.map((part) => {
-      if (!part) return "";
-      if (/^\/\//.test(part)) return `<span class="tok-comment">${part}</span>`;
-      if (/^["'`]/.test(part)) return `<span class="tok-string">${part}</span>`;
-      return part
-        .replace(/\b(async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|false|finally|for|from|function|if|import|in|instanceof|interface|let|new|null|return|switch|this|throw|true|try|type|typeof|undefined|var|void|while|yield)\b/g, '<span class="tok-keyword">$1</span>')
-        .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-number">$1</span>')
-        .replace(/\b([A-Z][A-Za-z0-9_$]*)\b/g, '<span class="tok-type">$1</span>')
-        .replace(/\b([a-zA-Z_$][\w$]*)(?=\()/g, '<span class="tok-title">$1</span>');
-    }).join("");
+    return parts
+      .map((part) => {
+        if (!part) return "";
+        if (/^\/\//.test(part)) return `<span class="tok-comment">${part}</span>`;
+        if (/^["'`]/.test(part)) return `<span class="tok-string">${part}</span>`;
+        return part
+          .replace(
+            /\b(async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|false|finally|for|from|function|if|import|in|instanceof|interface|let|new|null|return|switch|this|throw|true|try|type|typeof|undefined|var|void|while|yield)\b/g,
+            '<span class="tok-keyword">$1</span>',
+          )
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-number">$1</span>')
+          .replace(/\b([A-Z][A-Za-z0-9_$]*)\b/g, '<span class="tok-type">$1</span>')
+          .replace(/\b([a-zA-Z_$][\w$]*)(?=\()/g, '<span class="tok-title">$1</span>');
+      })
+      .join("");
   }
 
   /**
@@ -599,9 +612,8 @@
         if (start > cursor) fragment.append(document.createTextNode(value.slice(cursor, start)));
         if (end > start) {
           const mark = document.createElement("mark");
-          mark.className = range.index === state.searchIndex
-            ? "rod-search-hit rod-search-hit-current"
-            : "rod-search-hit";
+          mark.className =
+            range.index === state.searchIndex ? "rod-search-hit rod-search-hit-current" : "rod-search-hit";
           mark.dataset.searchIndex = String(range.index);
           mark.textContent = value.slice(start, end);
           fragment.append(mark);
@@ -850,9 +862,8 @@
     /** Updates only spacer geometry. It never mutates scrollTop. */
     function updateVirtualSpacers(first, last) {
       const top = first > 0 ? state.blockOffsets[first] || 0 : 0;
-      const renderedBottom = last >= state.blocks.length
-        ? state.totalHeight
-        : state.blockOffsets[last] || state.totalHeight;
+      const renderedBottom =
+        last >= state.blocks.length ? state.totalHeight : state.blockOffsets[last] || state.totalHeight;
       const bottom = Math.max(0, state.totalHeight - renderedBottom);
       topSpacer.style.height = `${top}px`;
       bottomSpacer.style.height = `${bottom}px`;
@@ -948,7 +959,7 @@
             `<div class="rod-line" data-line-index="${lineIndex}">` +
               `<div class="rod-line-number" aria-hidden="true">${lineIndex + 1}</div>` +
               `<div class="rod-line-code">${renderCodeLine(blockLines[localIndex], lineIndex)}</div>` +
-            `</div>`,
+              `</div>`,
           );
         }
         html.push("</div>");
@@ -1085,9 +1096,7 @@
             if (pass >= SEARCH_SETTLE_MAX_PASSES) return;
             const match = state.searchMatches[searchIndex];
             if (!match) return;
-            scroll.scrollTop = clampScrollTop(
-              estimateSearchMatchTop(match) - scroll.clientHeight / 2,
-            );
+            scroll.scrollTop = clampScrollTop(estimateSearchMatchTop(match) - scroll.clientHeight / 2);
             settleSearchMatch(searchIndex, jumpToken, pass + 1);
             return;
           }
@@ -1111,9 +1120,7 @@
     function jumpToSearchMatch(index, wrap = true) {
       if (!state.searchMatches.length) return;
       const total = state.searchMatches.length;
-      const nextIndex = wrap
-        ? (index + total) % total
-        : Math.max(0, Math.min(index, total - 1));
+      const nextIndex = wrap ? (index + total) % total : Math.max(0, Math.min(index, total - 1));
       const match = state.searchMatches[nextIndex];
       if (!match) return;
 
@@ -1121,9 +1128,7 @@
       updateSearchCount();
       const jumpToken = ++state.searchJumpToken;
 
-      scroll.scrollTop = clampScrollTop(
-        estimateSearchMatchTop(match) - scroll.clientHeight / 2,
-      );
+      scroll.scrollTop = clampScrollTop(estimateSearchMatchTop(match) - scroll.clientHeight / 2);
       forceViewportRender();
       settleSearchMatch(nextIndex, jumpToken);
     }
@@ -1212,15 +1217,19 @@
 
     scroll.addEventListener("scroll", queueRender, { passive: true });
 
-    window.addEventListener("resize", () => {
-      // Width changes alter soft-wrap height. Reset measurements because every
-      // block can now have a different natural height.
-      state.blockHeights = state.blocks.map((block) =>
-        Math.max(DEFAULT_LINE_HEIGHT, block.length * DEFAULT_LINE_HEIGHT),
-      );
-      rebuildBlockOffsets();
-      forceViewportRender();
-    }, { passive: true });
+    window.addEventListener(
+      "resize",
+      () => {
+        // Width changes alter soft-wrap height. Reset measurements because every
+        // block can now have a different natural height.
+        state.blockHeights = state.blocks.map((block) =>
+          Math.max(DEFAULT_LINE_HEIGHT, block.length * DEFAULT_LINE_HEIGHT),
+        );
+        rebuildBlockOffsets();
+        forceViewportRender();
+      },
+      { passive: true },
+    );
 
     rebuildLines();
     loading.remove();

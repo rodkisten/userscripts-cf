@@ -1,6 +1,7 @@
 // build/diagnostics.mjs
 import { performance } from "node:perf_hooks";
-import { BuildReporter, fmt } from "./build.mjs"; // @TODO: ajustar caminho caso o reporter esteja em ./vitest-reporter.mjs
+import { BuildReporter } from "./reporter.mjs";
+import { fmt } from "./format.mjs";
 
 // Lightweight diagnostic prelude injected into every generated userscript.
 // Shared across installations on the same JavaScript global.
