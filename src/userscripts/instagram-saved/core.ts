@@ -125,10 +125,13 @@ export async function syncSaved({
   if (!channels.length || channels.some((channel) => !channel.trim()) || new Set(channels).size !== channels.length) {
     throw Error("Configure pelo menos um canal válido para sincronizar");
   }
+  signal?.throwIfAborted();
   const done = Object.assign(Object.create(null) as Record<string, number>, await load());
+  signal?.throwIfAborted();
   const ledger = loadChannels && saveChannels
     ? Object.assign(Object.create(null) as Record<string, Record<string, number>>, await loadChannels())
     : null;
+  signal?.throwIfAborted();
   // Legacy state represents a fully acknowledged channel set, never a partial result.
   // Import only its exact channel set; do not infer delivery to any new destination.
   if (ledger) {
@@ -235,9 +238,14 @@ export async function syncSaved({
                 }
               }
               if (status.complete) {
-                done[item.mediaId] = Date.now();
+                if (ledger && !channels.every((channel) => Object.hasOwn(ledger[item.mediaId] || {}, channel))) {
+                  // Other configured channels may have been confirmed in earlier groups.
+                  // Only persist a legacy complete marker when the full set is covered.
+                } else {
+                  done[item.mediaId] = Date.now();
+                  await save(done);
+                }
                 if (status.inserted) count++;
-                await save(done);
                 continue;
               }
               if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
