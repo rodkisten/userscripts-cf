@@ -1,0 +1,32 @@
+name: "[TEMP] CSS Semantic Migration"
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "build/css-semantic-audit.mjs"
+      - ".github/workflows/temp-css-semantic.yml"
+permissions:
+  contents: read
+concurrency:
+  group: temp-css-semantic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated:
+    name: "[TEMP] CSS graph and parser"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: "[TEMP] Syntax"
+        run: node --check build/css-semantic-audit.mjs
+      - name: "[TEMP] CSS import graph"
+        run: node build/css-semantic-audit.mjs --write-report
+      - name: "[TEMP] Upload audit"
+        uses: actions/upload-artifact@v4
+        with:
+          name: temp-css-semantic-audit
+          path: artifacts/css-semantic-audit.json
