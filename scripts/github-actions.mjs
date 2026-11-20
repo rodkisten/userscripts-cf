@@ -1,4 +1,4 @@
-import { AgentReporter, ansi } from './utils/github-logger.mjs';
+import { AgentReporter, ansi } from './github/github-logger.mjs';
 
 async function collectComments({ github, context, core }) {
   const log = new AgentReporter('PR PREVIEW', `PR #${context.issue.number}`);
