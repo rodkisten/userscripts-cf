@@ -425,3 +425,25 @@ test("ignores invalid video variants without throwing or sending invalid URLs", 
   invalid.media.video_versions = [{ url: "https://cdn.example/bad.mp4", width: 0, height: 0 }];
   assert.equal(reelPayload(invalid), null);
 });
+
+test("malformed Instagram entries do not abort an otherwise valid page", async () => {
+  const sent = [];
+  const count = await syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => ({ items: [null, {}, { media: null }, { media: { product_type: "clips", code: "bad", video_versions: [null] } }, reel()] }),
+    sendBatch: async (items, channels) => {
+      sent.push(...items.map((item) => item.mediaId));
+      return { results: items.map((_, index) => ({ index, channels: { inserted: channels } })) };
+    },
+  });
+  assert.equal(count, 1);
+  assert.deepEqual(sent, ["abc"]);
+});
+
+test("classify safely ignores malformed already-sent entries", () => {
+  assert.deepEqual(classify({ channels: { notSent: [null, { reason: "already_sent", channelId: "alpha" }] } }, ["alpha"]),
+    { complete: true, inserted: false });
+});
