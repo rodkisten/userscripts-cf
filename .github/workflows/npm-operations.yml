@@ -47,6 +47,75 @@ jobs:
       branch: ${{ steps.generated_output.outputs.branch }}
     runs-on: ubuntu-latest
     steps:
+      - name: Kitchen Sink - GitHub Summary Markdown
+       uses: actions/github-script@v7
+       with:
+       script: |
+        await core.summary
+          // 1. Títulos (níveis 1 a 6, padrão é 1)
+          .addHeading('Relatório Completo (Kitchen Sink) 🚀', 1)
+          .addHeading('Subtítulo de Seção', 2)
+
+          // 2. Textos e parágrafos
+          .addRaw('Texto puro sem quebra de linha automática. ')
+          .addRaw('Texto com quebra de linha (EOL) no final.', true)
+          .addBreak() // Adiciona uma linha em branco (<br>)
+          .addEOL()   // Adiciona apenas um caractere de nova linha (\n)
+
+          // 3. Citações (Blockquotes) e Separadores
+          .addQuote('Deploy realizado com sucesso em produção.', 'Autor ou Fonte (opcional)')
+          .addSeparator() // Linha horizontal (<hr>)
+
+          // 4. Links e Imagens
+          .addLink('Acessar Documentação do GitHub', 'https://github.com')
+          .addBreak()
+          .addImage(
+            'https://githubassets.com',
+            'Logo do GitHub',
+            { width: '64', height: '64' } // Opções de dimensão
+          )
+
+          // 5. Listas (false = não ordenada / bullets, true = ordenada / numerada)
+          .addHeading('Checklist de Verificação', 3)
+          .addList(['Lint aprovado', 'Testes unitários OK', 'Build gerado'], false)
+          .addList(['Primeiro passo', 'Segundo passo', 'Terceiro passo'], true)
+
+          // 6. Blocos de Código (com syntax highlighting)
+          .addHeading('Exemplo de Payload', 3)
+          .addCodeBlock(
+            JSON.stringify({ status: 'ok', version: '2.1.0', env: 'prod' }, null, 2),
+            'json'
+          )
+
+          // 7. Tabelas (suporta células simples ou objetos com header, colspan e rowspan)
+          .addHeading('Métricas dos Serviços', 3)
+          .addTable([
+            [
+              { data: 'Serviço', header: true },
+              { data: 'Latência', header: true },
+              { data: 'Status', header: true }
+            ],
+            ['Auth API', '45ms', '✅ Online'],
+            ['Billing Worker', '120ms', '⚠️ Lento'],
+            [{ data: 'Todos os sistemas monitorados via Prometheus', colspan: '3' }]
+          ])
+
+          // 8. Acordeão / Seção expansível (<details>)
+          .addDetails(
+            'Clique para ver os logs brutos',
+            'INFO [2026-11-19]: Processo finalizado em 1.42s sem erros.'
+          )
+
+          // 9. Métodos de controle e saída
+          // .stringify() -> Retorna a string gerada sem salvar ainda (útil para comentar em PRs)
+          // .isEmptyBuffer() -> Retorna true/false se o buffer estiver vazio
+          // .emptyBuffer() -> Limpa tudo o que foi montado antes de escrever
+          // .clear() -> Apaga o arquivo de resumo existente e limpa o buffer
+          .write() // Grava no $GITHUB_STEP_SUMMARY (use { overwrite: true } para sobrescrever)
+
+
+
+
       - name: 🔑 Authenticate Rod GitHub App
         id: app-token
         uses: actions/create-github-app-token@v2
