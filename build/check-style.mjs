@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { parse } from "@babel/parser";
-import { BuildReporter, fmt, isCI } from "./build.js"; // @TODO: importar do reporter já extraído
+import { BuildReporter, fmt, isCI } from "./build.mjs"; // @TODO: importar do reporter já extraído
 
 // ============================================================================
 // // @TODO: Mover para scripts/ast-rules.mjs
