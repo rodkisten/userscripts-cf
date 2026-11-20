@@ -347,3 +347,27 @@ test("out-of-range Relay acknowledgement fails before persisting delivery", asyn
   }), /ausente ou duplicada/);
   assert.equal(saved, false);
 });
+
+test("partial group completion never checkpoints the entire configured channel set", async () => {
+  let ledger = { abc: { first: 123 } };
+  const checkpoints = [];
+  const calls = [];
+  await syncSaved({
+    channels: ["first", "second", "third"],
+    load: async () => ({}),
+    save: async (value) => { checkpoints.push(structuredClone(value)); },
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      calls.push(channels);
+      return { results: items.map((_, index) => ({
+        index, channels: { inserted: channels },
+      })) };
+    },
+  });
+  assert.deepEqual(calls, [["second", "third"]]);
+  assert.equal(checkpoints.length, 1);
+  assert.ok(checkpoints[0].abc);
+});
