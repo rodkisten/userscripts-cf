@@ -252,3 +252,29 @@ test("partial acknowledgements survive failure and are not resent on restart", a
   assert.equal(await syncSaved(options), 1);
   assert.deepEqual(calls, [["one", "two"], ["two"]]);
 });
+
+test("imports only exact legacy channel-set confirmations into the ledger", async () => {
+  let ledger = {};
+  const sent = [];
+  const options = {
+    channels: ["old-a", "old-b"],
+    load: async () => ({ abc: 123 }),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      sent.push(channels);
+      return { results: items.map((_, index) => ({ index, channels: { inserted: channels } })) };
+    },
+  };
+  assert.equal(await syncSaved(options), 0);
+  assert.deepEqual(ledger.abc, { "old-a": 123, "old-b": 123 });
+  assert.deepEqual(sent, []);
+  assert.equal(await syncSaved({
+    ...options, channels: ["old-b", "new"],
+    load: async () => ({}),
+  }), 1);
+  assert.deepEqual(sent, [["new"]]);
+});
