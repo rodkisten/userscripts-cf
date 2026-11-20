@@ -1,3 +1,5 @@
+import type { HttpRequestOptions } from "./http-client.js";
+
 export interface InterceptorOptions {
   priority?: number;
   once?: boolean;
@@ -10,7 +12,7 @@ export type InterceptorCallback<T = any> = (value: T) => any | Promise<any>;
 export interface NetworkInterceptors {
   interceptRequest: (callback: InterceptorCallback, options?: InterceptorOptions) => () => void;
   interceptResponse: (callback: InterceptorCallback, options?: InterceptorOptions) => () => void;
-  request: (url: RequestInfo | URL, options?: RequestInit) => Promise<Response>;
+  request: (url: RequestInfo | URL, options?: HttpRequestOptions) => Promise<Response>;
   dispose: () => void;
 }
 
@@ -29,13 +31,13 @@ interface RegistryItem {
 interface NetworkRegistry {
   requests: Set<RegistryItem>;
   responses: Set<RegistryItem>;
-  original: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+  original: (input: RequestInfo | URL, init?: HttpRequestOptions) => Promise<Response>;
 }
 
 const registries = new WeakMap<any, NetworkRegistry>();
 
 export function createNetworkInterceptors(
-  http: { request: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> },
+  http: { request: (input: RequestInfo | URL, init?: HttpRequestOptions) => Promise<Response> },
   { signal, onError = console.error }: NetworkInterceptorsConfig = {},
 ): NetworkInterceptors {
   let registry = registries.get(http);
