@@ -89,6 +89,7 @@ export default {
       return (
         <SavedPanel
           onOpen={() => void settingsApi.open()}
+          onSync={() => void run(true)}
           running={runtime.running}
           error={runtime.lastError}
           progress={runtime.progress || undefined}
