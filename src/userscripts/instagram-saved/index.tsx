@@ -134,8 +134,8 @@ export default {
       if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
       const relayOptions = {
         method: "POST",
-        transport: "gm",
-        cacheMode: "off",
+        transport: "gm" as const,
+        cacheMode: "off" as const,
         timeoutMs: 90000,
         signal: abort,
         headers: {
@@ -284,7 +284,7 @@ export default {
                     url.searchParams.set("max_id", cursor);
                   }
                   const instagramOptions = {
-                    transport: "fetch",
+                    transport: "fetch" as const,
                     cacheMode: "off",
                     credentials: "same-origin" as const,
                     signal: abort,
