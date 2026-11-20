@@ -42,6 +42,10 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Collection progress
+
+The React Saved panel now reports the current collection position, total selected collections, active collection ID and cumulative number of newly sent media items. Progress is cleared after completion or failure; persistent error messaging remains available. This is collection-level progress, not an estimated per-Reel completion percentage. Safari verification remains pending.
+
 ## Session limits and safe resume
 
 `maxItemsPerSession` now caps the number of eligible Reels actually processed, even when an Instagram page contains more items than the configured limit. If the cap cuts a page short, the current collection cursor is retained rather than advancing to the next page; on the next run, the per-channel delivery ledger skips confirmed Reels and resumes the remaining items. This behavior has not been verified on Safari. Instagram Saved automated tests remain intentionally disabled.
