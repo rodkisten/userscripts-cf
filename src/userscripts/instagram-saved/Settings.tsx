@@ -59,7 +59,10 @@ export function SavedPanel({
 export function SavedSettings({ settings, onChange }: { settings: Form; onChange: (next: Form) => void }) {
   const [form, setForm] = useState<Form>(() => ({ ...settings }));
   const [collectionSearch, setCollectionSearch] = useState("");
-  const visibleCollectionIds = useMemo(() => form.collectionIds.filter((id) => id.toLowerCase().includes(collectionSearch.trim().toLowerCase())), [form.collectionIds, collectionSearch]);
+  const visibleCollectionIds = useMemo(
+    () => form.collectionIds.filter((id) => id.toLowerCase().includes(collectionSearch.trim().toLowerCase())),
+    [form.collectionIds, collectionSearch],
+  );
   const update = (patch: Partial<Form>) => {
     const next = { ...form, ...patch };
     setForm(next);
@@ -91,7 +94,12 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
         <legend>Coleções selecionadas</legend>
         <label>
           Buscar nas coleções selecionadas
-          <input type="search" value={collectionSearch} onChange={(event) => setCollectionSearch(event.currentTarget.value)} placeholder="Filtrar IDs selecionados" />
+          <input
+            type="search"
+            value={collectionSearch}
+            onChange={(event) => setCollectionSearch(event.currentTarget.value)}
+            placeholder="Filtrar IDs selecionados"
+          />
         </label>
         {form.collectionIds.length ? (
           <div className={styles.collectionList}>
@@ -137,7 +145,10 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
             }}
           />
         </label>
-        <p>{form.collectionIds.length} coleção(ões) selecionada(s). Pressione Enter para adicionar; desmarque para remover.</p>
+        <p>
+          {form.collectionIds.length} coleção(ões) selecionada(s). Pressione Enter para adicionar; desmarque
+          para remover.
+        </p>
       </fieldset>
       <label>
         Token do Relay
