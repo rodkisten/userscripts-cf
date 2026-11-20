@@ -60,7 +60,7 @@ The React Saved panel now reports the current collection position, total selecte
 
 ## Session limits and safe resume
 
-`maxItemsPerSession` now caps the number of eligible Reels actually processed, even when an Instagram page contains more items than the configured limit. If the cap cuts a page short, the current collection cursor is retained rather than advancing to the next page; on the next run, the per-channel delivery ledger skips confirmed Reels and resumes the remaining items. This behavior has not been verified on Safari. Instagram Saved automated tests remain intentionally disabled.
+`maxItemsPerSession` now caps the number of eligible Reels actually processed **across all selected collections in a run**, not separately for each collection. The runner subtracts each collection's processed count from the remaining session budget and stops before starting another collection once exhausted. This also applies when an Instagram page contains more items than the remaining limit. If the cap cuts a page short, the current collection cursor is retained rather than advancing to the next page; on the next run, the per-channel delivery ledger skips confirmed Reels and resumes the remaining items. This behavior has not been verified on Safari. Instagram Saved automated tests remain intentionally disabled.
 
 ## Current verification
 
