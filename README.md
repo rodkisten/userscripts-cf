@@ -1,3 +1,4 @@
+[![🚀 Release userscripts](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml/badge.svg)](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml)
 
 
 ### CI workflow integrity
