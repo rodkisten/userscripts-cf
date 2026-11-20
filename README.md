@@ -264,3 +264,7 @@ O inspetor de propriedades globais não executa getters e bloqueia acessos a pro
 A busca global da Dock agora executa ações registradas diretamente nos resultados; o launcher móvel cancela corretamente o rastreamento de arraste interrompido.
 
 Na Dock, os toggles de scripts utilizam Radix Checkbox; o inspetor DOM oferece feedback ao copiar HTML e mantém o trecho visível para cópia manual.
+
+### Verificação obrigatória de sintaxe React
+
+Antes de commitar alterações em React/TSX, execute `npm run check:react-syntax` ou `node build/check-react-syntax.mjs caminho/do/arquivo.tsx`. O parser TypeScript identifica sintaxe inválida, inclusive sequências `\\n` literais fora de strings. Esta verificação não executa testes.

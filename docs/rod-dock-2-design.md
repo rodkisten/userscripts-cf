@@ -121,3 +121,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Controles de ativação dos scripts migrados de checkbox nativo para Radix Checkbox, com rótulo acessível e foco visível.
 - [x] Cópia de HTML com limite de 12.000 caracteres, feedback de sucesso/erro e opção manual quando Clipboard API não estiver disponível.
 - [ ] Migrar demais formulários e integrar DevTools completos; sincronizar lockfile e validar build/typecheck. Sem testes conforme solicitado.
+
+## Regra obrigatória: validade de TSX antes de commit
+
+- [x] Adicionar verificação de sintaxe com parser TypeScript para arquivos React/TSX alterados; identificar \\n literal fora de strings e comentários.
+- [x] Corrigir import ausente de `RodMenu`, portal de menu para Shadow DOM e estrutura de Radix Checkbox.
+- [ ] Executar `npm run check:react-syntax` antes de **cada** futuro commit que modifique React/TSX. Não confundir esta análise sintática com testes automatizados.
+- [ ] Regenerar package-lock e validar typecheck/build. Não executar suítes de testes.

@@ -12,7 +12,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
 import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity, MousePointer2, Copy, Layers3, Terminal, Trash2 } from "lucide-react";
-import { RodMenuHost } from "./index.js";
+import { RodMenu, RodMenuHost } from "./index.js";
 import {
   matches,
   readScriptRules,
@@ -346,7 +346,7 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
-      <RodMenuHost />
+      <RodMenuHost container={portal} />
       {!open && (
         <button className="launcher" style={{ top: `${settings.position}%`, [settings.side]: 0, opacity: scrolling && settings.fadeOnScroll ? settings.scrollOpacity : 1 }} aria-label="Abrir Rod Dock"
           onPointerDown={(event) => {
@@ -400,7 +400,7 @@ function DockView({ controller }: { controller: DockController }) {
                   {scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLowerCase().includes(search.toLowerCase())).map((script) => {
                     const enabled = preferences[script.id]?.enabled !== false;
                     const permitted = matches({ ...script, name: script.name ?? script.id }, location.href, preferences[script.id]);
-                    return <label className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span><Checkbox.Root className="scriptCheckbox" checked={enabled} onCheckedChange={(checked) => toggleScript(script.id, checked === true)} aria-label={`Ativar ${script.name ?? script.id}`}><Checkbox.Indicator>✓</Checkbox.Indicator></Checkbox.Root></label>;
+                    return <div className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span><Checkbox.Root className="scriptCheckbox" checked={enabled} onCheckedChange={(checked) => toggleScript(script.id, checked === true)} aria-label={`Ativar ${script.name ?? script.id}`}><Checkbox.Indicator>✓</Checkbox.Indicator></Checkbox.Root></div>;
                   })}
                 </Tabs.Content>
                 <Tabs.Content value="tools">
