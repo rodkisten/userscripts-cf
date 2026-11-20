@@ -260,3 +260,5 @@ Independent React/Radix userscript `github-color-studio` for GitHub file views a
 ### AST style validation
 
 The PR validation workflow checks style rules only for modified userscripts with `node build/check-style.mjs --changed --files-from=changed-files.txt`. Run `npm run lint` to audit the entire repository, including existing style debt. Run `node build/check-style.mjs --changed --base=main` locally to check changes relative to main. The `--fix` option reparses the modified source before writing it to disk.
+
+PR diagnostics in `.github/workflows/diagnostics.yml` run Prettier and ESLint only against existing files in the PR diff. Prettier covers supported source and documentation formats; ESLint runs only when installed and only on changed JS/TS files. Unchanged legacy files are excluded from PR formatting diagnostics.
