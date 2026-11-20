@@ -188,60 +188,77 @@ export async function syncSaved({
         groups.set(key, group);
       }
       for (const group of groups.values()) {
-        let pending = group.items;
-      for (let attempt = 0; pending.length && attempt < 4; attempt++) {
-        signal?.throwIfAborted();
-        const response = await sendBatch(pending, group.channels);
-        signal?.throwIfAborted();
-        if (!Array.isArray(response.results) || response.results.length !== pending.length) {
-          throw Error("Relay sem confirmação por item");
-        }
-        const retry: MediaPayload[] = [];
-        for (let i = 0; i < pending.length; i++) {
-          const matches = response.results.filter((r) => r.index === i);
-          if (matches.length !== 1) throw Error("Confirmação Relay ausente ou duplicada");
-          const result = matches[0];
-          const status = classify(result, group.channels);
-          if (ledger) {
-            const id = pending[i].mediaId;
-            const row = Object.assign(Object.create(null) as Record<string, number>, ledger[id] || {});
-            const acknowledged = new Set([
-              ...(result.channels?.inserted || []),
-              ...(result.channels?.covered || []),
-              ...(result.channels?.notSent || []).filter((entry) => entry.reason === "already_sent").map((entry) => entry.channelId),
-            ]);
-            let changed = false;
-            for (const channel of group.channels) {
-              if (acknowledged.has(channel) && !Object.hasOwn(row, channel)) {
-                row[channel] = Date.now();
-                changed = true;
+        // A retry is scoped to the channels still missing for each media item.
+        // Rebuild groups after every response, never resend an acknowledged channel.
+        let work = [{ items: group.items, channels: group.channels }];
+        for (let attempt = 0; work.length && attempt < 4; attempt++) {
+          const next = new Map<string, { items: MediaPayload[]; channels: string[] }>();
+          for (const job of work) {
+            signal?.throwIfAborted();
+            const response = await sendBatch(job.items, job.channels);
+            signal?.throwIfAborted();
+            if (!Array.isArray(response.results) || response.results.length !== job.items.length) {
+              throw Error("Relay sem confirmação por item");
+            }
+            const byIndex = new Map<number, DeliveryResult>();
+            for (const result of response.results) {
+              if (!Number.isInteger(result?.index) || result.index < 0 ||
+                  result.index >= job.items.length || byIndex.has(result.index)) {
+                throw Error("Confirmação Relay ausente ou duplicada");
               }
+              byIndex.set(result.index, result);
             }
-            if (changed) {
-              ledger[id] = row;
-              await saveChannels!(ledger);
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i);
+              if (!result) throw Error("Confirmação Relay ausente ou duplicada");
+              const item = job.items[i];
+              const status = classify(result, job.channels);
+              const acknowledged = new Set([
+                ...(result.channels?.inserted || []),
+                ...(result.channels?.covered || []),
+                ...(result.channels?.notSent || [])
+                  .filter((entry) => entry.reason === "already_sent")
+                  .map((entry) => entry.channelId),
+              ]);
+              if (ledger) {
+                const row = Object.assign(Object.create(null) as Record<string, number>, ledger[item.mediaId] || {});
+                let changed = false;
+                for (const channel of job.channels) {
+                  if (acknowledged.has(channel) && !Object.hasOwn(row, channel)) {
+                    row[channel] = Date.now();
+                    changed = true;
+                  }
+                }
+                if (changed) {
+                  ledger[item.mediaId] = row;
+                  await saveChannels!(ledger);
+                }
+              }
+              if (status.complete) {
+                done[item.mediaId] = Date.now();
+                if (status.inserted) count++;
+                await save(done);
+                continue;
+              }
+              if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
+                throw Error("Entrega não confirmada; sincronização interrompida");
+              }
+              const missing = ledger
+                ? job.channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
+                : job.channels;
+              if (!missing.length) continue;
+              const key = JSON.stringify(missing);
+              const retry = next.get(key) || { items: [], channels: missing };
+              retry.items.push(item);
+              next.set(key, retry);
             }
           }
-          if (status.complete) {
-            done[pending[i].mediaId] = Date.now();
-            if (status.inserted) {
-              count++;
-            }
-            await save(done);
-          } else if (result && (result.status === 429 || result.status >= 500)) {
-            retry.push(pending[i]);
-          } else {
-            throw Error("Entrega não confirmada; sincronização interrompida");
+          work = [...next.values()];
+          if (work.length && attempt < 3) {
+            await pause(retryDelay(attempt, work.reduce((sum, job) => sum + job.items.length, 0)));
           }
         }
-        pending = retry;
-        if (pending.length) {
-          await pause(retryDelay(attempt, pending.length));
-        }
-      }
-      if (pending.length) {
-        throw Error("Limite de tentativas do Relay");
-      }
+        if (work.length) throw Error("Limite de tentativas do Relay");
       }
       processed += batch.length;
       await pause(
