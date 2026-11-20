@@ -25,7 +25,14 @@ export function SavedPanel({
   onSync: () => void;
   running?: boolean;
   error?: string;
-  progress?: { current: number; total: number; collection: string; sent: number; processed: number; pageEligible: number };
+  progress?: {
+    current: number;
+    total: number;
+    collection: string;
+    sent: number;
+    processed: number;
+    pageEligible: number;
+  };
 }) {
   return (
     <section className={styles.panel}>

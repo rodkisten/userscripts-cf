@@ -236,7 +236,11 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!response || !Array.isArray(response.results) || response.results.length !== job.items.length) {
+            if (
+              !response ||
+              !Array.isArray(response.results) ||
+              response.results.length !== job.items.length
+            ) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
@@ -280,8 +284,10 @@ export async function syncSaved({
             for (let i = 0; i < job.items.length; i++) {
               const result = byIndex.get(i)!;
               const status = classify(result, job.channels);
-              if (!status.complete &&
-                  !(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
+              if (
+                !status.complete &&
+                !(result.status === 429 || (result.status !== undefined && result.status >= 500))
+              ) {
                 throw Error("Entrega não confirmada; sincronização interrompida");
               }
             }

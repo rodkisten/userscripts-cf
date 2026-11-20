@@ -42,7 +42,14 @@ export default {
       running: false,
       lastRun: 0,
       lastError: "",
-      progress: null as { current: number; total: number; collection: string; sent: number; processed: number; pageEligible: number } | null,
+      progress: null as {
+        current: number;
+        total: number;
+        collection: string;
+        sent: number;
+        processed: number;
+        pageEligible: number;
+      } | null,
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
     };
@@ -178,17 +185,18 @@ export default {
       const config = await get<Config | null>("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
       const account = currentAccount();
-      const reason = !settings.enabled && !manual
-        ? ""
-        : !settings.collectionIds?.length
-          ? "Selecione pelo menos uma coleção nas configurações."
-          : !config?.token?.trim()
-            ? "Configure o token do Relay antes de sincronizar."
-            : !config.channels?.length
-              ? "Configure pelo menos um canal de destino."
-              : !account
-                ? "Não foi possível identificar a conta do Instagram. Entre na sua conta e tente novamente."
-                : "";
+      const reason =
+        !settings.enabled && !manual
+          ? ""
+          : !settings.collectionIds?.length
+            ? "Selecione pelo menos uma coleção nas configurações."
+            : !config?.token?.trim()
+              ? "Configure o token do Relay antes de sincronizar."
+              : !config.channels?.length
+                ? "Configure pelo menos um canal de destino."
+                : !account
+                  ? "Não foi possível identificar a conta do Instagram. Entre na sua conta e tente novamente."
+                  : "";
       if (reason) {
         setRuntime((draft) => {
           draft.lastError = reason;
@@ -221,7 +229,14 @@ export default {
           let count = 0;
           for (const [index, collectionId] of settings.collectionIds.entries()) {
             setRuntime((draft) => {
-              draft.progress = { current: index + 1, total: settings.collectionIds.length, collection: collectionId, sent: count, processed: 0, pageEligible: 0 };
+              draft.progress = {
+                current: index + 1,
+                total: settings.collectionIds.length,
+                collection: collectionId,
+                sent: count,
+                processed: 0,
+                pageEligible: 0,
+              };
             });
             abort.throwIfAborted();
             if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
