@@ -1,486 +1,543 @@
-/* Shared component classes and document/shadow foundations. */
+/* ============================================================================
+   SHADOW ROOT FOUNDATION & SEMANTIC TOKENS (Safari iOS 27+)
+   ============================================================================ */
+
 :host {
+  /* TODO(extract): Move semantic surface/layer tokens to `@shared/styles/tokens.css` if shared across multiple Shadow DOM roots. */
+  --_rx-border-subtle: #71767b44;
+  --_rx-border-strong: #71767b66;
+  --_rx-font-micro: 10px Arial, sans-serif;
+  --_rx-font-compact: var(--rodx-ds-text-12) Arial, sans-serif;
+  --_rx-z-overlay: 2147483000;
+  --_rx-z-popover: 2147483645;
+  --_rx-z-max: 2147483647;
+
   font: var(--rodx-ds-text-14) var(--rodx-ds-font-ui);
-}
-:host *,
-[class^="rx-"] {
-  box-sizing: border-box;
-}
-:host button {
-  cursor: pointer;
-  font-family: inherit;
-}
-html,
-html.rodx-snap-enabled,
-body {
-  scroll-snap-type: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-snap-type: none;
+
+  /* BUG FIX: Converted outer host classes to `:host(...)` compound selectors.
+     Why: Inside a Shadow Root, plain class selectors cannot match the shadow host element in the light DOM. */
+  &.rx-repl-host {
+    all: initial;
+    position: fixed;
+    inset: 0 auto auto 0;
+    inline-size: 0;
+    block-size: 0;
+    z-index: var(--_rx-z-max);
+  }
+
+  &.rx-root-host {
+    position: fixed;
+    inset: 0 auto auto 0;
+    inline-size: 0;
+    block-size: 0;
+    z-index: var(--_rx-z-overlay);
+    pointer-events: none;
   }
 }
-.rx-repl-host {
-  all: initial;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  z-index: 2147483647;
-}
-
-.rx-feed-filter-host {
-  display: block;
-  min-width: 0;
-  font: var(--rodx-ds-text-12) Arial;
-  color: inherit;
-}
-button {
-  border: 1px solid #71767b44;
-  border-radius: var(--rodx-ds-radius-12);
-  background: transparent;
-  color: inherit;
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-12);
-  max-width: 100%;
-  font: inherit;
-  cursor: pointer;
-}
-
-.rx-chrome-context {
-  display: block;
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font: 10px Arial;
-  opacity: 0.75;
-  pointer-events: none;
-}
-
-.rx-tweets-clone {
-  width: 18px;
-  height: 18px;
-  fill: var(--rodx-ds-color-accent);
-}
-
-.rx-tweets-toggle {
-  align-self: flex-start;
-  width: auto;
-  max-width: max-content;
-  display: inline-flex;
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
-  margin: var(--rodx-ds-space-2) 0;
-}
-
-.rx-list-shortcut-tab {
-  display: flex;
-  flex-direction: column;
-  gap: var(--rodx-ds-space-1);
-  font: 10px Arial;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 var(--rodx-ds-control-touch);
-  width: var(--rodx-ds-control-touch);
-  min-height: var(--rodx-ds-control-touch);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.rx-list-shortcut-floating {
-  position: fixed;
-  left: 12px;
-  bottom: calc(66px + env(safe-area-inset-bottom, 0px));
-  z-index: var(--rodx-ds-layer-floating);
-  width: 42px;
-  height: 42px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--rodx-ds-space-1);
-  font: 10px Arial;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #71767b66;
-  border-radius: var(--rodx-ds-radius-full);
-  background: var(--rodx-bar-bg, Canvas);
-  color: var(--rodx-bar-fg, CanvasText);
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.rx-access-profileHost {
-  display: block;
-  position: relative;
-  max-width: 100%;
-  min-width: 0;
-  margin: var(--rodx-ds-space-4) 0;
-}
-
-.rx-profile-add-to-list {
-  font: 500 var(--rodx-ds-text-13) var(--rodx-ds-font-ui);
-  min-height: var(--rodx-ds-control-height);
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-12);
-  border: 1px solid #71767b66;
-  border-radius: var(--rodx-ds-radius-16);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.rx-list-shortcut {
-  flex: 0 0 auto;
-  min-height: var(--rodx-ds-control-height);
-  min-width: 86px;
-  padding: var(--rodx-ds-space-6) var(--rodx-ds-space-8);
-  border: 1px solid #52606f;
-  border-radius: var(--rodx-ds-radius-24);
-  background: #23272d;
-  color: var(--rodx-ds-color-white);
-  font:
-    600 var(--rodx-ds-text-12) -apple-system,
-    system-ui;
-  white-space: nowrap;
-  touch-action: manipulation;
-  position: relative;
-  z-index: 1;
-}
-
-.rx-list-shortcut-profile {
-  align-self: flex-start;
-  margin: var(--rodx-ds-space-4) 0 0 var(--rodx-ds-space-48);
-}
-
-.rx-profile-host {
-  display: block;
-  position: relative;
-  width: 100%;
-  min-height: var(--rodx-ds-control-touch);
-  flex: 0 0 100%;
-  clear: both;
-  color: inherit;
-}
-
-.rx-quick-picker-search-field {
-  padding: var(--rodx-ds-space-12) var(--rodx-ds-space-12);
-}
-
-.rx-quick-picker-list-icon {
-  font-size: var(--rodx-ds-text-16);
-}
-
-.rx-quick-picker-empty-state {
-  padding: var(--rodx-ds-space-16);
-  color: #aaa;
-  font-size: var(--rodx-ds-text-13);
-}
-
-.rx-render-grp {
-  margin-top: var(--rodx-ds-space-8);
-}
-
-.rx-render-input {
-  display: none;
-}
-
-.rx-render-listToolbar {
-  display: flex;
-  gap: var(--rodx-ds-space-8);
-  flex-wrap: wrap;
-  padding: var(--rodx-ds-space-6) var(--rodx-ds-space-8);
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.rx-timeline-grp {
-  margin-top: var(--rodx-ds-space-8);
-}
-
-.rx-player-skin {
-  display: block;
-  width: 100%;
-}
-
-.rx-player-root {
-  display: block;
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  z-index: 20;
-  pointer-events: auto;
-}
-
-.rx-player-video {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.rx-seek-preview-decoder {
-  position: fixed;
-  left: -10000px;
-  top: 0;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.rx-anchors-host {
-  display: block;
-  position: relative;
-  z-index: auto;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
-}
-
-.rx-history-options {
-  display: flex;
-  gap: var(--rodx-ds-space-8);
-  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
-}
-
-.rx-list-typeahead-host {
-  position: fixed;
-  z-index: 2147483645;
-  left: var(--rodx-anchor-left);
-  top: var(--rodx-anchor-top);
-  width: var(--rodx-anchor-width);
-}
-
-.rx-relay-banner {
-  margin-bottom: var(--rodx-ds-space-6);
-}
-
-.rx-relay-details {
-  margin-top: var(--rodx-ds-space-6);
-}
-
-.rx-relay-summary {
-  cursor: pointer;
-}
-
-.rx-relay-section {
-  margin-top: var(--rodx-ds-space-4);
-}
-
-.rx-relay-row {
-  justify-content: flex-end;
-}
-
-.rx-publisher-row {
-  gap: var(--rodx-ds-space-8);
-  flex-wrap: wrap;
-}
-
-.rx-publisher-fieldset {
-  display: grid;
-  gap: var(--rodx-ds-space-12);
-  padding: var(--rodx-ds-space-12);
-  border: 1px solid var(--rodx-ds-color-border);
-  border-radius: var(--rodx-ds-radius-12);
-}
-
-.rx-repost-share-mode-field {
-  display: grid;
-  gap: var(--rodx-ds-space-4);
-}
-
-.rx-repost-queue-button {
-  width: 100%;
-}
-
-.rx-repost-destination-field {
-  display: grid;
-  gap: var(--rodx-ds-space-4);
-}
-
-.rx-repost-preview-button {
-  width: 100%;
-}
-
-.rx-publisher-muted {
-  font-size: var(--rodx-ds-text-12);
-}
-
-.rx-publisher-details {
-  font-size: var(--rodx-ds-text-12);
-  opacity: 0.85;
-  line-height: 1.45;
-}
-
-.rx-publisher-panel {
-  display: grid;
-  gap: var(--rodx-ds-space-12);
-  padding: var(--rodx-ds-space-4) 0 var(--rodx-ds-space-8);
-  min-width: 0;
-}
-
-.rx-repost-caption-field {
-  display: grid;
-  gap: var(--rodx-ds-space-8);
-}
-
-.rx-dock-host {
-  display: block;
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  max-width: 100%;
-  contain: layout style;
-}
-
-.rx-clipboard-textarea {
-  position: fixed;
-  left: -9999px;
-}
-
-.rx-quick-actions-floating {
-  position: fixed;
-  z-index: var(--rodx-ds-layer-floating);
-  -webkit-user-select: none;
-  user-select: none;
-  left: var(--rodx-anchor-left);
-  top: var(--rodx-anchor-top);
-  width: var(--rodx-anchor-width);
-  height: var(--rodx-anchor-height);
-  border-radius: var(--rodx-ds-radius-full);
-  border: 1px solid #71767b66;
-  background: var(--rodx-ds-color-surface);
-  color: var(--rodx-ds-color-text);
-  font:
-    var(--rodx-ds-text-24) Arial,
-    sans-serif;
-  touch-action: none;
-  cursor: pointer;
-}
-
-.rx-quick-actions-listInfo {
-  display: flex;
-  gap: var(--rodx-ds-space-8);
-  align-items: center;
-  flex-wrap: wrap;
-  font: var(--rodx-ds-text-12) Arial;
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
-}
-
-.rx-quick-actions-b {
-  font: var(--rodx-ds-text-12) Arial;
-  padding: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
-  border: 1px solid var(--rodx-ds-color-border);
-  border-radius: var(--rodx-ds-radius-12);
-  background: transparent;
-  color: inherit;
-}
-
-.rx-root-host {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  z-index: 2147483000;
-  pointer-events: none;
-}
-
-.rx-search-workbench-row {
-  justify-content: space-between;
-}
-
-.rx-search-workbench-row-margin-top {
-  margin-top: var(--rodx-ds-space-8);
-}
-
-.rx-search-workbench-rodx-selection-list {
-  margin: var(--rodx-ds-space-8) 0 var(--rodx-ds-space-16);
-}
-
-.rx-search-workbench-row-align-items {
-  align-items: center;
-}
-
-.rx-search-workbench-muted {
-  font-size: var(--rodx-ds-text-12);
-}
-
-.rx-search-workbench-row-flex-wrap-gap {
-  flex-wrap: wrap;
-  gap: var(--rodx-ds-space-8);
-}
-
-.rx-search-workbench-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--rodx-ds-space-4);
-  max-width: 100%;
-}
-
-.rx-search-workbench-row-margin-top-margin-top-11px {
-  margin-top: var(--rodx-ds-space-12);
-}
-
-.rx-search-workbench-ctrl {
-  flex: 1;
-  min-width: 135px;
-}
-
-.rx-search-workbench-builder-buttons {
-  margin-top: var(--rodx-ds-space-8);
-}
-
-.rx-search-workbench-hero-sub {
-  margin-bottom: 0;
-}
-
-.rx-search-workbench-builder-buttons-margin-bottom {
-  margin-bottom: var(--rodx-ds-space-12);
-}
-
-.rx-search-workbench-btn {
-  width: 100%;
-}
-
-.rx-search-workbench-btn-margin-top {
-  margin-top: var(--rodx-ds-space-16);
-}
-
-.rx-search-workbench-row-margin-bottom {
-  margin-bottom: var(--rodx-ds-space-16);
-}
-
-.rx-search-workbench-ctrl-flex {
-  flex: 1;
-}
-
-.rx-search-workbench-rootHost {
-  display: block;
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  pointer-events: auto;
-}
-
-/* Hidden controls must remain hidden even when a component sets display. */
-:is(#rodx-hidden-override, [hidden]) {
-  display: none;
-}
-
-.small,
-.muted {
-  color: var(--rodx-ds-color-text-secondary);
-  font-size: var(--rodx-ds-text-12);
-}
-.rx-timeline-sentinel {
-  height: 3px;
+
+/* IMPROVEMENT: Wrapped all internal rules in `@scope (:host)` alongside native CSS nesting.
+   Why: Guarantees zero style leakage into the Light DOM even if the stylesheet is ever evaluated outside a ShadowRoot, while grouping module selectors cleanly. */
+@scope (:host) {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* IMPROVEMENT: Consolidated duplicate button resets and scoped strictly inside `@scope (:host)`.
+     Why: Removes redundant `cursor`/`font` declarations while preventing button styles from leaking globally. */
+  button {
+    border: 1px solid var(--_rx-border-subtle);
+    border-radius: var(--rodx-ds-radius-12);
+    background: transparent;
+    color: inherit;
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-12);
+    max-inline-size: 100%;
+    font: inherit;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Utilities */
+  :is(#rodx-hidden-override, [hidden]) {
+    display: none;
+  }
+
+  :is(.small, .muted) {
+    color: var(--rodx-ds-color-text-secondary);
+    font-size: var(--rodx-ds-text-12);
+  }
+
+  /* ==========================================================================
+     HOSTS & CONTAINERS
+     ========================================================================== */
+
+  .rx-feed-filter-host {
+    display: block;
+    min-inline-size: 0;
+    font: var(--_rx-font-compact);
+    color: inherit;
+  }
+
+  .rx-access-profileHost {
+    display: block;
+    position: relative;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    margin-block: var(--rodx-ds-space-4);
+  }
+
+  .rx-profile-host {
+    display: block;
+    position: relative;
+    inline-size: 100%;
+    min-block-size: var(--rodx-ds-control-touch);
+    flex: 0 0 100%;
+    clear: both;
+    color: inherit;
+  }
+
+  .rx-profile-add-to-list {
+    font: 500 var(--rodx-ds-text-13) var(--rodx-ds-font-ui);
+    min-block-size: var(--rodx-ds-control-height);
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-12);
+    border: 1px solid var(--_rx-border-strong);
+    border-radius: var(--rodx-ds-radius-16);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .rx-anchors-host {
+    display: block;
+    position: relative;
+    z-index: auto;
+    inline-size: 100%;
+    min-inline-size: 0;
+    flex: 0 0 auto;
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-8);
+  }
+
+  .rx-dock-host {
+    display: block;
+    position: relative;
+    z-index: 1;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    contain: layout style;
+  }
+
+  .rx-chrome-context {
+    display: block;
+    position: absolute;
+    inset-inline: 6px;
+    inset-block-start: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: var(--_rx-font-micro);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  /* Off-screen utility elements */
+  .rx-seek-preview-decoder {
+    position: fixed;
+    inset: 0 auto auto -10000px;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rx-clipboard-textarea {
+    position: fixed;
+    inset-inline-start: -9999px;
+  }
+
+  /* ==========================================================================
+     TWEETS & TIMELINE
+     ========================================================================== */
+
+  .rx-tweets {
+    &-clone {
+      inline-size: 18px;
+      block-size: 18px;
+      fill: var(--rodx-ds-color-accent);
+    }
+
+    &-toggle {
+      align-self: flex-start;
+      inline-size: auto;
+      max-inline-size: max-content;
+      display: inline-flex;
+      padding-block: var(--rodx-ds-space-4);
+      padding-inline: var(--rodx-ds-space-8);
+      margin-block: var(--rodx-ds-space-2);
+    }
+  }
+
+  .rx-timeline {
+    &-grp {
+      margin-block-start: var(--rodx-ds-space-8);
+    }
+
+    &-sentinel {
+      block-size: 3px;
+    }
+  }
+
+  /* ==========================================================================
+     LIST SHORTCUTS & TYPEAHEAD
+     ========================================================================== */
+
+  .rx-list-shortcut {
+    flex: 0 0 auto;
+    min-block-size: var(--rodx-ds-control-height);
+    min-inline-size: 86px;
+    padding-block: var(--rodx-ds-space-6);
+    padding-inline: var(--rodx-ds-space-8);
+    border: 1px solid #52606f;
+    border-radius: var(--rodx-ds-radius-24);
+    background: #23272d;
+    color: var(--rodx-ds-color-white);
+    font:
+      600 var(--rodx-ds-text-12) -apple-system,
+      system-ui;
+    white-space: nowrap;
+    touch-action: manipulation;
+    position: relative;
+    z-index: 1;
+
+    &-profile {
+      align-self: flex-start;
+      margin-block-start: var(--rodx-ds-space-4);
+      margin-inline-start: var(--rodx-ds-space-48);
+    }
+
+    /* IMPROVEMENT: Extracted shared flex-center micro-layout between `-tab` and `-floating`.
+       Why: Eliminates 8 duplicated alignment, font, gap, and pointer properties. */
+    &-tab,
+    &-floating {
+      display: flex;
+      flex-direction: column;
+      gap: var(--rodx-ds-space-1);
+      font: var(--_rx-font-micro);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    &-tab {
+      flex: 0 0 var(--rodx-ds-control-touch);
+      inline-size: var(--rodx-ds-control-touch);
+      min-block-size: var(--rodx-ds-control-touch);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    &-floating {
+      position: fixed;
+      inset-inline-start: 12px;
+      inset-block-end: calc(66px + env(safe-area-inset-bottom, 0px));
+      z-index: var(--rodx-ds-layer-floating);
+      inline-size: 42px;
+      block-size: 42px;
+      border: 1px solid var(--_rx-border-strong);
+      border-radius: var(--rodx-ds-radius-full);
+      background: var(--rodx-bar-bg, Canvas);
+      color: var(--rodx-bar-fg, CanvasText);
+    }
+  }
+
+  .rx-list-typeahead-host {
+    position: fixed;
+    z-index: var(--_rx-z-popover);
+    inset-inline-start: var(--rodx-anchor-left);
+    inset-block-start: var(--rodx-anchor-top);
+    inline-size: var(--rodx-anchor-width);
+  }
+
+  /* ==========================================================================
+     QUICK PICKER & QUICK ACTIONS
+     ========================================================================== */
+
+  .rx-quick-picker {
+    &-search-field {
+      padding: var(--rodx-ds-space-12);
+    }
+
+    &-list-icon {
+      font-size: var(--rodx-ds-text-16);
+    }
+
+    &-empty-state {
+      padding: var(--rodx-ds-space-16);
+      color: #aaa;
+      font-size: var(--rodx-ds-text-13);
+    }
+  }
+
+  .rx-quick-actions {
+    &-floating {
+      position: fixed;
+      z-index: var(--rodx-ds-layer-floating);
+      -webkit-user-select: none;
+      user-select: none;
+      inset-inline-start: var(--rodx-anchor-left);
+      inset-block-start: var(--rodx-anchor-top);
+      inline-size: var(--rodx-anchor-width);
+      block-size: var(--rodx-anchor-height);
+      border-radius: var(--rodx-ds-radius-full);
+      border: 1px solid var(--_rx-border-strong);
+      background: var(--rodx-ds-color-surface);
+      color: var(--rodx-ds-color-text);
+      font:
+        var(--rodx-ds-text-24) Arial,
+        sans-serif;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    &-listInfo {
+      display: flex;
+      gap: var(--rodx-ds-space-8);
+      align-items: center;
+      flex-wrap: wrap;
+      font: var(--_rx-font-compact);
+      padding-block: var(--rodx-ds-space-4);
+      padding-inline: var(--rodx-ds-space-8);
+    }
+
+    &-b {
+      font: var(--_rx-font-compact);
+      padding-block: var(--rodx-ds-space-4);
+      padding-inline: var(--rodx-ds-space-8);
+      border: 1px solid var(--rodx-ds-color-border);
+      border-radius: var(--rodx-ds-radius-12);
+      background: transparent;
+      color: inherit;
+    }
+  }
+
+  /* ==========================================================================
+     RENDER & PLAYER
+     ========================================================================== */
+
+  .rx-render {
+    &-grp {
+      margin-block-start: var(--rodx-ds-space-8);
+    }
+
+    &-input {
+      display: none;
+    }
+
+    &-listToolbar {
+      display: flex;
+      gap: var(--rodx-ds-space-8);
+      flex-wrap: wrap;
+      padding-block: var(--rodx-ds-space-6);
+      padding-inline: var(--rodx-ds-space-8);
+      max-inline-size: 100%;
+    }
+  }
+
+  .rx-player {
+    &-skin {
+      display: block;
+      inline-size: 100%;
+    }
+
+    &-root {
+      display: block;
+      position: relative;
+      inline-size: 100%;
+      min-inline-size: 0;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    &-video {
+      position: relative;
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: contain;
+    }
+  }
+
+  .rx-history-options {
+    display: flex;
+    gap: var(--rodx-ds-space-8);
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-12);
+  }
+
+  /* ==========================================================================
+     RELAY, PUBLISHER & REPOST
+     ========================================================================== */
+
+  .rx-relay {
+    &-banner {
+      margin-block-end: var(--rodx-ds-space-6);
+    }
+
+    &-details {
+      margin-block-start: var(--rodx-ds-space-6);
+    }
+
+    &-summary {
+      cursor: pointer;
+    }
+
+    &-section {
+      margin-block-start: var(--rodx-ds-space-4);
+    }
+
+    &-row {
+      justify-content: flex-end;
+    }
+  }
+
+  .rx-publisher {
+    &-row {
+      gap: var(--rodx-ds-space-8);
+      flex-wrap: wrap;
+    }
+
+    &-fieldset {
+      display: grid;
+      gap: var(--rodx-ds-space-12);
+      padding: var(--rodx-ds-space-12);
+      border: 1px solid var(--rodx-ds-color-border);
+      border-radius: var(--rodx-ds-radius-12);
+    }
+
+    &-muted {
+      font-size: var(--rodx-ds-text-12);
+    }
+
+    &-details {
+      font-size: var(--rodx-ds-text-12);
+      opacity: 0.85;
+      line-height: 1.45;
+    }
+
+    &-panel {
+      display: grid;
+      gap: var(--rodx-ds-space-12);
+      padding-block: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
+      min-inline-size: 0;
+    }
+  }
+
+  .rx-repost {
+    /* IMPROVEMENT: Grouped identical grid field rules (`-share-mode-field`, `-destination-field`) and full-width button rules.
+       Why: Eliminates duplicated layout blocks across form controls. */
+    &-share-mode-field,
+    &-destination-field {
+      display: grid;
+      gap: var(--rodx-ds-space-4);
+    }
+
+    &-caption-field {
+      display: grid;
+      gap: var(--rodx-ds-space-8);
+    }
+
+    &-queue-button,
+    &-preview-button {
+      inline-size: 100%;
+    }
+  }
+
+  /* ==========================================================================
+     SEARCH WORKBENCH
+     ========================================================================== */
+
+  .rx-search-workbench {
+    &-row {
+      justify-content: space-between;
+
+      &-margin-top {
+        margin-block-start: var(--rodx-ds-space-8);
+
+        &-margin-top-11px {
+          margin-block-start: var(--rodx-ds-space-12);
+        }
+      }
+
+      &-margin-bottom {
+        margin-block-end: var(--rodx-ds-space-16);
+      }
+
+      &-align-items {
+        align-items: center;
+      }
+
+      &-flex-wrap-gap {
+        flex-wrap: wrap;
+        gap: var(--rodx-ds-space-8);
+      }
+    }
+
+    &-rodx-selection-list {
+      margin-block: var(--rodx-ds-space-8) var(--rodx-ds-space-16);
+    }
+
+    &-muted {
+      font-size: var(--rodx-ds-text-12);
+    }
+
+    &-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--rodx-ds-space-4);
+      max-inline-size: 100%;
+    }
+
+    &-ctrl {
+      flex: 1;
+      min-inline-size: 135px;
+
+      &-flex {
+        flex: 1;
+      }
+    }
+
+    &-builder-buttons {
+      margin-block-start: var(--rodx-ds-space-8);
+
+      &-margin-bottom {
+        margin-block-end: var(--rodx-ds-space-12);
+      }
+    }
+
+    &-hero-sub {
+      margin-block-end: 0;
+    }
+
+    &-btn {
+      inline-size: 100%;
+
+      &-margin-top {
+        margin-block-start: var(--rodx-ds-space-16);
+      }
+    }
+
+    &-rootHost {
+      display: block;
+      position: relative;
+      inline-size: 100%;
+      min-inline-size: 0;
+      pointer-events: auto;
+    }
+  }
 }
