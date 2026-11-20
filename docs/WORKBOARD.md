@@ -696,3 +696,5 @@
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
+
+- [ ] 2026-11-20 CI AST style scope: `build/check-style.mjs --changed --files-from=changed-files.txt` validates modified userscript files only; full `npm run lint` remains available for repository-wide debt audit. Autofix now reparses output before writing. CI validation pending.
