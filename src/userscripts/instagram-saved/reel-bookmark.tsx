@@ -199,7 +199,7 @@ export function mountReelBookmark(
       selectedSave = source;
       const observed = nativeState(source);
       state = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
-    } else if (state !== "loading") {
+    } else if (state !== "loading" && state !== "error") {
       const observed = nativeState(source);
       const next = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
       if (next !== state) setState(next);
