@@ -398,3 +398,11 @@ test("counts one inserted reel even when two channels acknowledge on separate re
   assert.deepEqual(channelsSent, [["a", "b"], ["b"]]);
   assert.deepEqual(Object.keys(ledger.abc).sort(), ["a", "b"]);
 });
+
+test("does not count a Relay insertion for an unrequested destination", () => {
+  assert.deepEqual(
+    classify({ channels: { inserted: ["other"], covered: ["expected"] } }, ["expected"]),
+    { complete: true, inserted: false },
+  );
+  assert.equal(classify({ channels: { inserted: ["other"] } }, ["expected"]).complete, false);
+});
