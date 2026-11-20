@@ -371,3 +371,30 @@ test("partial group completion never checkpoints the entire configured channel s
   assert.equal(checkpoints.length, 1);
   assert.ok(checkpoints[0].abc);
 });
+
+test("counts one inserted reel even when two channels acknowledge on separate retries", async () => {
+  let ledger = {};
+  let attempts = 0;
+  const channelsSent = [];
+  const count = await syncSaved({
+    channels: ["a", "b"],
+    load: async () => ({}),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      channelsSent.push(channels);
+      attempts++;
+      return { results: items.map((_, index) => ({
+        index,
+        status: attempts === 1 ? 429 : 200,
+        channels: { inserted: attempts === 1 ? ["a"] : ["b"] },
+      })) };
+    },
+  });
+  assert.equal(count, 1);
+  assert.deepEqual(channelsSent, [["a", "b"], ["b"]]);
+  assert.deepEqual(Object.keys(ledger.abc).sort(), ["a", "b"]);
+});
