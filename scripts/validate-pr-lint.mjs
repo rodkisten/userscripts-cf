@@ -13,7 +13,7 @@ import {
   runInteractive,
   setActionOutput,
   upsertMarkedComment,
-} from './utils.mjs';
+} from './utils/ci-utils.mjs';
 
 const JS_TS_REGEX = /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$/;
 const CSS_REGEX = /\.css$/;
