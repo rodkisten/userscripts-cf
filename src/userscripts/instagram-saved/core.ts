@@ -129,6 +129,23 @@ export async function syncSaved({
   const ledger = loadChannels && saveChannels
     ? Object.assign(Object.create(null) as Record<string, Record<string, number>>, await loadChannels())
     : null;
+  // Legacy state represents a fully acknowledged channel set, never a partial result.
+  // Import only its exact channel set; do not infer delivery to any new destination.
+  if (ledger) {
+    let migrated = false;
+    for (const [id, timestamp] of Object.entries(done)) {
+      if (!Number.isFinite(timestamp) || timestamp <= 0) continue;
+      const row = Object.assign(Object.create(null) as Record<string, number>, ledger[id] || {});
+      for (const channel of channels) {
+        if (!Object.hasOwn(row, channel)) {
+          row[channel] = timestamp;
+          migrated = true;
+        }
+      }
+      ledger[id] = row;
+    }
+    if (migrated) await saveChannels!(ledger);
+  }
   const confirmed = (id: string) => ledger
     ? channels.every((channel) => Object.hasOwn(ledger[id] || {}, channel))
     : Object.hasOwn(done, id);
@@ -171,7 +188,7 @@ export async function syncSaved({
         groups.set(key, group);
       }
       for (const group of groups.values()) {
-      let pending = group.items;
+        let pending = group.items;
       for (let attempt = 0; pending.length && attempt < 4; attempt++) {
         signal?.throwIfAborted();
         const response = await sendBatch(pending, group.channels);
