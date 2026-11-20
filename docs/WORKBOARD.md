@@ -692,3 +692,5 @@
 - [x] Investigated formatter run 44383663525: Prettier passed, but direct git push failed because the PR branch advanced concurrently.
 - [x] Add bounded fetch/rebase/push retry to manual Prettier workflow, without force-push; stop on rebase conflicts and preserve other agents' commits.
 - [ ] Confirm the next formatter run and Rod AST/React checks before merge.
+
+- [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
