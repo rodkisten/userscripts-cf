@@ -4,8 +4,8 @@ import { normalizeColor, renameVariable, scanColors, scanVariables } from "./col
 import css from "./style.css?inline";
 
 type Editor = HTMLTextAreaElement;
-const SOURCE_SELECTOR = 'textarea, [role="textbox"][contenteditable="true"]';
-const VIEW_SELECTOR = 'table.highlight, .react-code-lines, [data-testid="code-viewer"]';
+const CODE_LINE_SELECTOR = '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
+const VIEW_SELECTOR = '[data-testid="code-viewer"], .react-code-lines, table.highlight';
 function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; applySource:(next:string)=>boolean; close:()=>void }) {
   const [source,setSource] = useState(getSource);
   const [selected,setSelected] = useState("");
@@ -71,9 +71,9 @@ export default {
     ctx.ui.pageStyle(css,{id:"rod-github-color-studio-style"});
     let dispose: (()=>void)|undefined;
     let button:HTMLButtonElement|undefined;
-    const getEditor=()=>document.querySelector<Editor>("textarea");
+    const getEditor=()=>document.querySelector<Editor>('textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]');
     const getViewer=()=>document.querySelector(VIEW_SELECTOR);
-    const getSource=()=>getEditor()?.value ?? getViewer()?.textContent ?? "";
+    const getSource=()=>getEditor()?.value ?? [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line=>line.textContent??"").join("\\n") || getViewer()?.textContent || "";
     const applySource=(next:string)=>{
       const editor=getEditor();
       if(!editor){navigator.clipboard.writeText(next);window.alert("Visualização somente leitura: código atualizado copiado. Abra Edit para aplicar.");return false;}
@@ -83,17 +83,31 @@ export default {
       return true;
     };
     const close=()=>{dispose?.();dispose=undefined;};
+    const decorated=new Set<HTMLElement>();
+    const decorate=()=>{
+      for(const line of document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)){
+        if(decorated.has(line))continue;
+        decorated.add(line);
+        const matches=scanColors(line.textContent??"");
+        if(!matches.length)continue;
+        const swatches=document.createElement("span");swatches.className="rcs-inline-swatches";swatches.dataset.rodColorSwatches="true";
+        for(const match of matches){const swatch=document.createElement("button");swatch.type="button";swatch.className="rcs-swatch";swatch.title=match.value;swatch.setAttribute("aria-label",`Cor ${match.value}`);swatch.style.backgroundColor=match.value;swatch.onclick=(event)=>{event.preventDefault();event.stopPropagation();button?.click();};swatches.append(swatch);}
+        line.prepend(swatches);
+      }
+    };
     const sync=()=>{
       const available=!!getEditor()||!!getViewer();
       if(!available){button?.remove();button=undefined;close();return;}
+      decorate();
       if(button?.isConnected)return;
       button=document.createElement("button");button.className="rcs-fab";button.textContent="🎨";button.title="GitHub Color Studio";button.setAttribute("aria-label","Abrir Color Studio");
       button.onclick=()=>{close();dispose=ctx.ui.mountReact(<ColorStudio getSource={getSource} applySource={applySource} close={close}/>).dispose;};
       document.body.append(button);
     };
     sync();
-    const observer=new MutationObserver(()=>sync());
+    let scheduled=false;
+    const observer=new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;sync();});});
     observer.observe(document.body,{subtree:true,childList:true});
-    ctx.onDispose(()=>{observer.disconnect();close();button?.remove();});
+    ctx.onDispose(()=>{observer.disconnect();for(const line of decorated)line.querySelectorAll("[data-rod-color-swatches]").forEach(node=>node.remove());decorated.clear();close();button?.remove();});
   }
 };
