@@ -5,7 +5,6 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
 
-type Editor = HTMLTextAreaElement;
 const CODE_LINE_SELECTOR = '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
 const VIEW_SELECTOR = '[data-testid="code-viewer"], .react-code-lines, table.highlight';
 function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; applySource:(next:string)=>boolean; close:()=>void }) {
@@ -32,7 +31,7 @@ function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; 
     const rgb=normalizeColor(value);
     if (!rgb.startsWith("rgb")) return value;
     if(format==="rgb") return rgb;
-    if(format==="hex") return normalizeColor(value);
+    if(format==="hex") return value.startsWith("#") ? value : normalizeColor(value);
     if(format==="hsl") {
       const m=rgb.match(/[\d.]+/g)?.map(Number);
       if(!m || m.length<3) return value;
@@ -69,10 +68,11 @@ function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; 
 function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
   const [open, setOpen] = useState(false);
   const [lines, setLines] = useState<HTMLElement[]>([]);
+  const [available, setAvailable] = useState(false);
   const [sourceVersion, setSourceVersion] = useState(0);
   const getEditor = () => document.querySelector<HTMLTextAreaElement>('textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]');
   const getViewer = () => document.querySelector(VIEW_SELECTOR);
-  const getSource = () => getEditor()?.value ?? ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line => line.textContent ?? "").join("\\n") || getViewer()?.textContent || "");
+  const getSource = () => getEditor()?.value ?? ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line => line.textContent ?? "").join("\n") || getViewer()?.textContent || "");
   const applySource = (next: string): boolean => {
     const editor = getEditor();
     if (!editor) {
@@ -90,6 +90,7 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     let scheduled = false;
     const refresh = () => {
       const next = [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)];
+      setAvailable(Boolean(getEditor() || getViewer()));
       setLines(previous => previous.length === next.length && previous.every((line, index) => line === next[index]) ? previous : next);
     };
     refresh();
@@ -100,12 +101,11 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     }, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [ctx]);
-  const available = !!getEditor() || !!getViewer();
   if (!available) return null;
   return <>
     <button type="button" className="rcs-fab" aria-label="Abrir Color Studio" title="GitHub Color Studio" onClick={() => setOpen(true)}>🎨</button>
     {lines.flatMap((line, lineIndex) => {
-      const colors = scanColors(line.textContent ?? "");
+      const colors = scanColors([...line.childNodes].filter(node => !(node instanceof HTMLElement && node.classList.contains("rcs-inline-swatches"))).map(node => node.textContent ?? "").join(""));
       return colors.length ? [createPortal(
         <span className="rcs-inline-swatches" aria-label="Cores da linha" key={lineIndex}>
           {colors.map(color => <button key={color.from} type="button" className="rcs-swatch" style={{ backgroundColor: color.value }} aria-label={`Editar cor ${color.value}`} title={color.value} onClick={event => { event.preventDefault(); event.stopPropagation(); setOpen(true); }} />)}
