@@ -260,3 +260,5 @@ A especificação de UX, pacotes e checklist está em [docs/rod-dock-2-design.md
 Os primitives reutilizáveis estão em `src/runtime/react-ui/primitives.ts`. Importe por componente para preservar tree shaking; o catálogo não obriga que todas as bibliotecas sejam usadas na mesma tela.
 
 A aba Rede da Dock exibe Resource Timing do navegador (recursos carregados e duração); não substitui ainda o inspector de rede completo.
+
+A aba DOM permite buscar por seletor CSS, selecionar elementos visualmente e copiar seu HTML. O inspector avançado com CodeMirror ainda precisa ser integrado.

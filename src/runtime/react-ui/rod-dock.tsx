@@ -10,7 +10,7 @@ import * as Slider from "@radix-ui/react-slider";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
-import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity } from "lucide-react";
+import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity, MousePointer2, Copy, Layers3 } from "lucide-react";
 import { RodMenuHost } from "./index.js";
 import {
   matches,
@@ -76,6 +76,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:4px
 .hint{font-size:11px;color:#a1a1aa;line-height:1.5}
 .resourceDetail{font-size:11px;overflow-wrap:anywhere;color:#a1a1aa;margin-top:8px}
 .action{display:inline-flex;align-items:center;gap:5px}
+.domSearch{display:flex;gap:7px;margin:10px 0}
+.domInput{min-width:0;flex:1;border:1px solid #3f3f46;border-radius:8px;padding:9px;background:#18181b;color:#fafafa;font-size:16px}
+.domElement{display:block;width:100%;text-align:left;background:#18181b;color:#fafafa;border:1px solid #27272a;border-radius:8px;padding:9px;margin:5px 0;overflow-wrap:anywhere;font-size:12px}
+.domElement small{display:block;color:#a1a1aa;margin-top:5px}
+.domSource{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:230px;overflow:auto}
 @media(min-width:720px){.panel{top:8px;bottom:8px;right:8px;height:calc(100dvh - 16px);border-radius:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
@@ -101,6 +106,58 @@ function DockView({ controller }: { controller: DockController }) {
   const [scrolling, setScrolling] = useState(false);
   const [tab, setTab] = useState("scripts");
   const [network, setNetwork] = useState<PerformanceResourceTiming[]>([]);
+  const [domSelector, setDomSelector] = useState("body");
+  const [domMessage, setDomMessage] = useState("");
+  const [domMatches, setDomMatches] = useState<Element[]>([]);
+  const [domPicking, setDomPicking] = useState(false);
+  const [domSelected, setDomSelected] = useState<Element | null>(null);
+  const highlightRef = useRef<HTMLElement | null>(null);
+  const queryDom = () => {
+    try {
+      const result = Array.from(document.querySelectorAll(domSelector)).slice(0, 100);
+      setDomMatches(result);
+      setDomMessage(result.length === 100 ? "Exibindo os primeiros 100 elementos." : `${result.length} elemento(s) encontrado(s).`);
+    } catch (error) {
+      setDomMatches([]);
+      setDomMessage(error instanceof Error ? error.message : "Seletor inválido");
+    }
+  };
+  const highlightElement = (element: Element | null) => {
+    highlightRef.current?.remove();
+    highlightRef.current = null;
+    setDomSelected(element);
+    if (!element?.isConnected) return;
+    const rect = element.getBoundingClientRect();
+    const overlay = document.createElement("div");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.style.cssText = `position:fixed;pointer-events:none;z-index:2147483645;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;outline:2px solid #a78bfa;background:#a78bfa33`;
+    document.documentElement.append(overlay);
+    highlightRef.current = overlay;
+  };
+  useEffect(() => () => highlightRef.current?.remove(), []);
+  useEffect(() => { if (!open) highlightRef.current?.remove(); }, [open]);
+  useEffect(() => {
+    if (!domPicking) return;
+    const onPointer = (event: PointerEvent) => {
+      const target = event.composedPath()[0];
+      if (!(target instanceof Element)) return;
+      if (target.getRootNode() instanceof ShadowRoot && (target.getRootNode() as ShadowRoot).host.hasAttribute("data-rod-dock")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const id = target.id ? `#${CSS.escape(target.id)}` : target.localName + Array.from(target.classList).slice(0, 2).map((name) => `.${CSS.escape(name)}`).join("");
+      setDomSelector(id);
+      setDomMatches([target]);
+      setDomMessage("Elemento selecionado da página.");
+      highlightElement(target);
+      setDomPicking(false);
+      setTab("dom");
+      setOpen(true);
+    };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setDomPicking(false); };
+    document.addEventListener("pointerdown", onPointer, true);
+    document.addEventListener("keydown", onKey, true);
+    return () => { document.removeEventListener("pointerdown", onPointer, true); document.removeEventListener("keydown", onKey, true); };
+  }, [domPicking]);
   const refreshNetwork = () => setNetwork(performance.getEntriesByType("resource").filter((entry): entry is PerformanceResourceTiming => entry.entryType === "resource").slice(-100).reverse());
   useEffect(() => {
     if (!open || tab !== "network") return;
@@ -116,6 +173,7 @@ function DockView({ controller }: { controller: DockController }) {
     { id: "settings", title: "Configurações posição opacidade dock", tab: "settings" },
     { id: "diagnostics", title: "Diagnósticos exportar logs", tab: "diagnostics" },
     { id: "network", title: "Rede recursos requisições performance", tab: "network" },
+    { id: "dom", title: "DOM inspecionar selecionar elemento CSS", tab: "dom" },
   ], [scripts, modules]);
   const suggestions = useMemo(() => search.trim() ? new Fuse(catalog, { keys: ["title"], threshold: 0.38 }).search(search).slice(0, 8).map((hit) => hit.item) : [], [catalog, search]);
   const suppressClick = useRef(false);
@@ -197,7 +255,7 @@ function DockView({ controller }: { controller: DockController }) {
             </Command>
             <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
               <Tabs.List className="tabs" aria-label="Ferramentas da Dock">
-                {["scripts", "tools", "network", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", network: "Rede", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
+                {["scripts", "tools", "network", "dom", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", network: "Rede", dom: "DOM", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
               </Tabs.List>
               <ScrollArea.Root className="scroll"><ScrollArea.Viewport className="viewport">
                 <Tabs.Content value="scripts">
@@ -215,6 +273,15 @@ function DockView({ controller }: { controller: DockController }) {
                   <p className="hint">Resource Timing da página. Não inclui corpos, cabeçalhos ou todas as chamadas fetch/XHR.</p>
                   {network.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())).map((entry, index) => <details className="module" key={`${entry.name}:${entry.startTime}:${index}`}><summary>{entry.initiatorType || "resource"} · {(() => { try { return new URL(entry.name).pathname || "/"; } catch { return entry.name; } })()}</summary><div className="resourceDetail">{entry.name}<p>Duração: {entry.duration.toFixed(1)} ms · Transferência: {entry.transferSize} bytes</p></div></details>)}
                   {network.length === 0 && <p className="hint">Nenhum recurso disponível no buffer de performance.</p>}
+                </Tabs.Content>
+                <Tabs.Content value="dom">
+                  <div className="networkHeader"><span><Layers3 size={14} /> Inspetor DOM</span><button className="action" onClick={() => { setDomPicking(true); setOpen(false); }}><MousePointer2 size={13} /> Selecionar na página</button></div>
+                  <p className="hint">Busque elementos por seletor CSS ou selecione um diretamente na página. Esc cancela a seleção.</p>
+                  <form className="domSearch" onSubmit={(event) => { event.preventDefault(); queryDom(); }}><input className="domInput" aria-label="Seletor CSS" value={domSelector} onChange={(event) => setDomSelector(event.target.value)} placeholder="Ex.: main article" /><button className="action" type="submit">Buscar</button></form>
+                  <p className="hint" role="status">{domMessage}</p>
+                  {domMatches.filter((element) => element.isConnected).map((element, index) => <button key={index} className="domElement" onClick={() => highlightElement(element)}><span>{element.localName}{element.id ? `#${element.id}` : ""}{element.classList.length ? `.${Array.from(element.classList).slice(0, 2).join(".")}` : ""}</span><small>{element.textContent?.trim().slice(0, 90) || "(sem texto)"}</small></button>)}
+                  {domSelected?.isConnected && <div className="module"><div className="networkHeader"><strong>Elemento selecionado</strong><button className="action" onClick={() => { void navigator.clipboard?.writeText(domSelected.outerHTML); }}><Copy size={13} /> Copiar HTML</button></div><pre className="domSource">{domSelected.outerHTML.slice(0, 12000)}</pre></div>}
+                  <button className="action" onClick={() => { highlightRef.current?.remove(); highlightRef.current = null; setDomSelected(null); }}>Limpar destaque</button>
                 </Tabs.Content>
                 <Tabs.Content value="diagnostics">
                   <button className="action" onClick={() => {

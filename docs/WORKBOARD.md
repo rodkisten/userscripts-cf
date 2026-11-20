@@ -702,3 +702,5 @@
 - [ ] Dock 2.0 bloco 2: `primitives.ts` expõe Radix/Vaul/cmdk/Motion/Floating UI/RHF/Zod; Dock integra cmdk+Fuse e Select/Slider/Tooltip. Dependências declaradas, mas lockfile/typecheck/build pendentes. Sem testes novos por pedido explícito. Sem alteração de APIs ctx/AST.
 
 - [ ] Dock 2.0 bloco 3: aba Rede com Resource Timing e PerformanceObserver dentro da Dock, sem captura de corpos/headers. Integração completa de interceptores/DOM/console, lockfile e compilação pendentes.
+
+- [ ] Dock 2.0 bloco 4: aba DOM básica com querySelectorAll, picker na página, highlight e copiar HTML; não substitui ainda o inspector completo. Sem testes, lockfile e build pendentes.
