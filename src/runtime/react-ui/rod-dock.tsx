@@ -10,7 +10,7 @@ import * as Slider from "@radix-ui/react-slider";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
-import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity, MousePointer2, Copy, Layers3 } from "lucide-react";
+import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity, MousePointer2, Copy, Layers3, Terminal, Trash2 } from "lucide-react";
 import { RodMenuHost } from "./index.js";
 import {
   matches,
@@ -81,6 +81,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:4px
 .domElement{display:block;width:100%;text-align:left;background:#18181b;color:#fafafa;border:1px solid #27272a;border-radius:8px;padding:9px;margin:5px 0;overflow-wrap:anywhere;font-size:12px}
 .domElement small{display:block;color:#a1a1aa;margin-top:5px}
 .domSource{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:230px;overflow:auto}
+.consoleFilters{display:flex;gap:4px;overflow-x:auto;padding:8px 0}
+.consoleFilters .action{font-size:11px;padding:5px 7px}
+.consoleFilters [aria-pressed=true]{background:#581c87;border-color:#a78bfa}
+.consoleLog{font-family:ui-monospace,monospace;font-size:11px;overflow-wrap:anywhere}
+.consoleEntry{display:flex;align-items:flex-start;gap:7px;padding:7px 3px;border-bottom:1px solid #27272a}
+.consoleEntry time{color:#71717a;white-space:nowrap}
+.consoleEntry strong{min-width:32px}
+.console-warn{color:#fbbf24}.console-error{color:#f87171}.console-info{color:#93c5fd}
 @media(min-width:720px){.panel{top:8px;bottom:8px;right:8px;height:calc(100dvh - 16px);border-radius:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
@@ -106,6 +114,45 @@ function DockView({ controller }: { controller: DockController }) {
   const [scrolling, setScrolling] = useState(false);
   const [tab, setTab] = useState("scripts");
   const [network, setNetwork] = useState<PerformanceResourceTiming[]>([]);
+  type ConsoleLevel = "log" | "info" | "warn" | "error" | "debug";
+  type ConsoleEntry = { id: number; level: ConsoleLevel; time: number; message: string };
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+  const [consoleFilter, setConsoleFilter] = useState<ConsoleLevel | "all">("all");
+  const [consoleExpression, setConsoleExpression] = useState("");
+  const consoleSequence = useRef(0);
+  const pushConsole = (level: ConsoleLevel, args: unknown[]) => {
+    const message = args.map((value) => {
+      if (typeof value === "string") return value;
+      try { return JSON.stringify(value); } catch { return String(value); }
+    }).join(" ").slice(0, 4000);
+    setConsoleEntries((previous) => [...previous.slice(-199), { id: ++consoleSequence.current, level, time: Date.now(), message }]);
+  };
+  useEffect(() => {
+    const methods: ConsoleLevel[] = ["log", "info", "warn", "error", "debug"];
+    const originals = new Map<ConsoleLevel, (...args: unknown[]) => void>();
+    for (const level of methods) {
+      const original = console[level].bind(console) as (...args: unknown[]) => void;
+      originals.set(level, original);
+      console[level] = (...args: unknown[]) => { original(...args); pushConsole(level, args); };
+    }
+    return () => { for (const level of methods) { const original = originals.get(level); if (original) console[level] = original; } };
+  }, []);
+  const inspectExpression = () => {
+    const expression = consoleExpression.trim();
+    if (!expression) return;
+    pushConsole("info", [`> ${expression}`]);
+    // Read-only property path evaluation; never eval or execute arbitrary page code.
+    if (!/^(?:window|document|location|navigator)(?:\\.[a-zA-Z_$][\\w$]*){0,5}$/.test(expression)) {
+      pushConsole("warn", ["Somente caminhos de propriedades globais são permitidos. Ex.: location.href"]);
+      return;
+    }
+    try {
+      const [root, ...keys] = expression.split(".");
+      const roots: Record<string, unknown> = { window, document, location, navigator };
+      const value = keys.reduce<unknown>((current, key) => current !== null && (typeof current === "object" || typeof current === "function") ? (current as Record<string, unknown>)[key] : undefined, roots[root]);
+      pushConsole("log", [value]);
+    } catch (error) { pushConsole("error", [error instanceof Error ? error.message : String(error)]); }
+  };
   const [domSelector, setDomSelector] = useState("body");
   const [domMessage, setDomMessage] = useState("");
   const [domMatches, setDomMatches] = useState<Element[]>([]);
@@ -174,6 +221,7 @@ function DockView({ controller }: { controller: DockController }) {
     { id: "diagnostics", title: "Diagnósticos exportar logs", tab: "diagnostics" },
     { id: "network", title: "Rede recursos requisições performance", tab: "network" },
     { id: "dom", title: "DOM inspecionar selecionar elemento CSS", tab: "dom" },
+    { id: "console", title: "Console logs avisos erros depuração", tab: "console" },
   ], [scripts, modules]);
   const suggestions = useMemo(() => search.trim() ? new Fuse(catalog, { keys: ["title"], threshold: 0.38 }).search(search).slice(0, 8).map((hit) => hit.item) : [], [catalog, search]);
   const suppressClick = useRef(false);
@@ -255,7 +303,7 @@ function DockView({ controller }: { controller: DockController }) {
             </Command>
             <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
               <Tabs.List className="tabs" aria-label="Ferramentas da Dock">
-                {["scripts", "tools", "network", "dom", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", network: "Rede", dom: "DOM", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
+                {["scripts", "tools", "console", "network", "dom", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", console: "Console", network: "Rede", dom: "DOM", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
               </Tabs.List>
               <ScrollArea.Root className="scroll"><ScrollArea.Viewport className="viewport">
                 <Tabs.Content value="scripts">
@@ -267,6 +315,13 @@ function DockView({ controller }: { controller: DockController }) {
                 </Tabs.Content>
                 <Tabs.Content value="tools">
                   {visibleModules.filter((module) => `${module.name} ${module.actions.map((a) => a.label).join(" ")}`.toLowerCase().includes(search.toLowerCase())).map((module) => <details className="module" key={module.id} open={Boolean(search)}><summary>{module.name}</summary><div className="actions">{module.actions.filter((action) => !search || `${module.name} ${action.label}`.toLowerCase().includes(search.toLowerCase())).map((action) => <button className="action" key={action.id} onClick={() => action.run()}>{action.label}</button>)}</div></details>)}
+                </Tabs.Content>
+                <Tabs.Content value="console">
+                  <div className="networkHeader"><span><Terminal size={14} /> Console ({consoleEntries.length})</span><button className="action" onClick={() => setConsoleEntries([])}><Trash2 size={13} /> Limpar</button></div>
+                  <div className="consoleFilters">{(["all", "log", "info", "warn", "error", "debug"] as const).map((level) => <button key={level} className="action" aria-pressed={consoleFilter === level} onClick={() => setConsoleFilter(level)}>{level}</button>)}</div>
+                  <p className="hint">Captura mensagens emitidas após a montagem da Dock. O campo abaixo lê propriedades simples, sem executar JavaScript arbitrário.</p>
+                  <form className="domSearch" onSubmit={(event) => { event.preventDefault(); inspectExpression(); }}><input className="domInput" value={consoleExpression} onChange={(event) => setConsoleExpression(event.target.value)} aria-label="Inspecionar propriedade global" placeholder="location.href" /><button className="action" type="submit">Inspecionar</button></form>
+                  <div className="consoleLog" role="log" aria-live="off">{consoleEntries.filter((entry) => (consoleFilter === "all" || entry.level === consoleFilter) && entry.message.toLowerCase().includes(search.toLowerCase())).map((entry) => <div className={`consoleEntry console-${entry.level}`} key={entry.id}><time>{new Date(entry.time).toLocaleTimeString()}</time><strong>{entry.level}</strong><span>{entry.message}</span></div>)}</div>
                 </Tabs.Content>
                 <Tabs.Content value="network">
                   <div className="networkHeader"><span><Activity size={14} /> Recursos carregados ({network.length})</span><button className="action" onClick={refreshNetwork}><RefreshCw size={13} /> Atualizar</button></div>

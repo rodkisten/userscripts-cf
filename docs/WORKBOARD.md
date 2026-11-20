@@ -704,3 +704,5 @@
 - [ ] Dock 2.0 bloco 3: aba Rede com Resource Timing e PerformanceObserver dentro da Dock, sem captura de corpos/headers. Integração completa de interceptores/DOM/console, lockfile e compilação pendentes.
 
 - [ ] Dock 2.0 bloco 4: aba DOM básica com querySelectorAll, picker na página, highlight e copiar HTML; não substitui ainda o inspector completo. Sem testes, lockfile e build pendentes.
+
+- [ ] Dock 2.0 bloco 5: Console integrado (níveis, filtros, captura limitada, inspeção read-only). Revisar wrappers de console, sincronizar lockfile e compilar. Sem testes novos.

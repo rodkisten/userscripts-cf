@@ -80,3 +80,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Aba DOM com seletor CSS, lista limitada a 100 elementos, seleção visual, cópia de HTML e modo de apontar elementos na página; Escape cancela a seleção.
 - [ ] Unificar com o inspector legado de CodeMirror, rede completa e console; retirar seus launchers próprios.
 - [ ] Lockfile e compilação continuam pendentes. Não executar testes conforme solicitação.
+
+## Bloco 5: console na Dock
+
+- [x] Aba Console com captura de console.log/info/warn/error/debug, filtro de severidade, busca, limite de 200 registros e limpeza.
+- [x] Campo de inspeção limitado a caminhos de propriedades globais, sem eval/execução arbitrária.
+- [ ] Avaliar isolamento da instrumentação e coexistência com outros wrappers de console antes do merge.
+- [ ] Lockfile, typecheck e build pendentes. Sem testes a pedido do mantenedor.
