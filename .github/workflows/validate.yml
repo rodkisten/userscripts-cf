@@ -34,7 +34,7 @@ jobs:
       - name: 🤖 Generate GitHub App token
         id: app_token
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -54,7 +54,6 @@ jobs:
 
       - name: 🧭 Detect changes and plan validation
         id: plan
-        shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
@@ -62,7 +61,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: bash build/validate-changed.sh plan
+        run: node build/validate-changed.mjs plan
 
       - name: 📦 Install dependencies
         id: install
@@ -91,40 +90,19 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/validate-pr-lint.mjs detect-lint
 
-      - name: 🪄 Silent auto-fix (ESLint & Prettier) and commit to PR branch
-        id: autofix
-        if: (steps.detect_lint.outputs.has_js_ts == 'true' && steps.detect_lint.outputs.has_eslint == 'true') || (steps.detect_lint.outputs.has_prettier_targets == 'true' && steps.detect_lint.outputs.has_prettier == 'true')
-        env:
-          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier }}
-          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint }}
-          PR_BRANCH: ${{ github.head_ref }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/validate-pr-lint.mjs autofix
-
-      - name: 💬 Comment or update auto-fix details on PR
-        if: github.event_name == 'pull_request' && steps.autofix.outputs.committed == 'true'
+      - name: 🪄 Lint & Format Gate (Auto-fix, Commit & Report)
+        id: lint_gate
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
+          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier }}
+          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_BRANCH: ${{ github.head_ref }}
           REPO: ${{ github.repository }}
-          COMMIT_SHA: ${{ steps.autofix.outputs.commit_sha }}
-          SHORT_SHA: ${{ steps.autofix.outputs.short_sha }}
-          TOOLS_USED: ${{ steps.autofix.outputs.tools_used }}
-        run: node scripts/validate-pr-lint.mjs comment-autofix
-
-      - name: 🎨 Run Prettier & ESLint diagnostics on PR files only
-        id: formatting
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
-        continue-on-error: true
-        env:
-          EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier || 'true' }}
-          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint || 'false' }}
-        run: node scripts/validate-pr-lint.mjs check-format
+        run: node scripts/validate-pr-lint.mjs fix-and-gate
 
       - name: ♻️ Restore exact-source validation result
         id: validation_cache
@@ -136,22 +114,20 @@ jobs:
 
       - name: ✅ Validate affected code
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
-        shell: bash
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
           SCOPED_BUILDS_MATRIX: true
           RUNTIME_TEST_SKIP_DIST: 'true'
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: bash build/validate-changed.sh run
+        run: node build/validate-changed.mjs run
 
       - name: 🎨 Build visual playground (independent of typecheck)
-        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
         run: node build/design-system.mjs
 
       - name: 📝 Record successful exact-source validation
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
-        shell: bash
         run: |
           mkdir -p .validation-cache
           printf '%s\n' "Validation passed for exact source fingerprint" > .validation-cache/passed
@@ -170,7 +146,7 @@ jobs:
   scoped-builds:
     name: "🏗️ Scoped build · ${{ matrix.target }}"
     needs: validate
-    if: ${{ always() && github.event_name == 'pull_request' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
+    if: ${{ github.event_name == 'pull_request' && needs.validate.result == 'success' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
