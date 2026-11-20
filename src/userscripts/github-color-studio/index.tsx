@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
@@ -67,7 +68,8 @@ function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; 
   </Dialog.Root>;
 }
 export default {
-  init(ctx:any) {
+  init(ctx: ScriptContext) {
+    if (!ctx.ui) return;
     ctx.ui.pageStyle(css,{id:"rod-github-color-studio-style"});
     let dispose: (()=>void)|undefined;
     let button:HTMLButtonElement|undefined;
@@ -101,13 +103,12 @@ export default {
       decorate();
       if(button?.isConnected)return;
       button=document.createElement("button");button.className="rcs-fab";button.textContent="🎨";button.title="GitHub Color Studio";button.setAttribute("aria-label","Abrir Color Studio");
-      button.onclick=()=>{close();dispose=ctx.ui.mountReact(<ColorStudio getSource={getSource} applySource={applySource} close={close}/>).dispose;};
+      button.onclick=()=>{close();dispose=ctx.ui!.mountReact(<ColorStudio getSource={getSource} applySource={applySource} close={close}/>);};
       document.body.append(button);
     };
     sync();
     let scheduled=false;
-    const observer=new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;sync();});});
-    observer.observe(document.body,{subtree:true,childList:true});
+    const observer=ctx.observe(document.body,()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;sync();});},{subtree:true,childList:true});
     ctx.onDispose(()=>{observer.disconnect();for(const line of decorated)line.querySelectorAll("[data-rod-color-swatches]").forEach(node=>node.remove());decorated.clear();close();button?.remove();});
   }
 };
