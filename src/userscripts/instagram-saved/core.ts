@@ -216,16 +216,25 @@ export async function syncSaved({
               }
               byIndex.set(result.index, result);
             }
+            // Validate the entire response before persisting any item: a malformed
+            // later acknowledgement must not partially checkpoint an invalid batch.
             for (let i = 0; i < job.items.length; i++) {
               const result = byIndex.get(i);
               if (!result) throw Error("Confirmação Relay ausente ou duplicada");
-              const item = job.items[i];
               const channelResult = result.channels;
               if (channelResult && (
                 (channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
                 (channelResult.covered !== undefined && !Array.isArray(channelResult.covered)) ||
-                (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent))
+                (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent)) ||
+                (channelResult.inserted || []).some((id) => typeof id !== "string") ||
+                (channelResult.covered || []).some((id) => typeof id !== "string") ||
+                (channelResult.notSent || []).some((entry) =>
+                  !entry || typeof entry.reason !== "string" || typeof entry.channelId !== "string")
               )) throw Error("Relay retornou confirmação de canais inválida");
+            }
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i)!;
+              const item = job.items[i];
               const status = classify(result, job.channels);
               const acknowledged = new Set([
                 ...(result.channels?.inserted || []),
