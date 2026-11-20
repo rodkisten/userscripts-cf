@@ -28,7 +28,7 @@ const execFileAsync = promisify(execFile);
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
 // ============================================================================
-const isCI = Boolean(process.env.GITHUB_ACTIONS);
+export const isCI = Boolean(process.env.GITHUB_ACTIONS);
 
 const C = {
   reset: "\x1b[0m",
@@ -47,7 +47,7 @@ const C = {
   bgMagenta: "\x1b[45m\x1b[37m",
 };
 
-const fmt = {
+export const fmt = {
   duration: (ms) => (ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(2)}s`),
   bytes: (b) => (b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} kB`),
   badge: (label, bg = C.bgCyan) => `${bg}${C.bold} ${label} ${C.reset}`,
@@ -158,7 +158,7 @@ class BuildReporter {
 // ============================================================================
 // // @TODO: Mover para build/validate-config.mjs
 // ============================================================================
-async function validateConfiguration(root, defs, dist, pkgVersion) {
+export async function validateConfiguration(root, defs, dist, pkgVersion) {
   if (!/^\d+\.\d+\.\d+$/.test(pkgVersion)) {
     throw new Error("Use a stable x.y.z release version");
   }
@@ -228,7 +228,7 @@ async function validateConfiguration(root, defs, dist, pkgVersion) {
 // ============================================================================
 // // @TODO: Mover para build/metadata-generator.mjs
 // ============================================================================
-function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
+export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
   const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue"]);
   const requires = new Set();
   const connects = new Set();
@@ -271,7 +271,7 @@ function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
 // ============================================================================
 // // @TODO: Mover para build/icon-resolver.mjs
 // ============================================================================
-async function resolveTargetIcon(root, iconSourceDir, target, log) {
+export async function resolveTargetIcon(root, iconSourceDir, target, log) {
   const iconFile = path.join(iconSourceDir, `${target.id}.svg`);
   try {
     const svg = await fs.readFile(iconFile, "utf8");
@@ -294,7 +294,7 @@ async function resolveTargetIcon(root, iconSourceDir, target, log) {
 // ============================================================================
 // // @TODO: Mover para build/target-bundler.mjs
 // ============================================================================
-async function compileTarget(target, context) {
+export async function compileTarget(target, context) {
   const { root, out, iconSource, baseURL, version, catalog, runtimeFeatureAudit, log } = context;
   const targetStart = performance.now();
 
@@ -433,7 +433,7 @@ async function compileTarget(target, context) {
 // ============================================================================
 // // @TODO: Mover para build/audit-reporters.mjs
 // ============================================================================
-function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
+export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   const moduleConsumers = new Map();
 
   for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
@@ -478,7 +478,7 @@ function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   }
 }
 
-function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
+export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   for (const [target, measurements] of Object.entries(classAudit)) {
     const prefix = `${target}:`;
     const runtime = Object.entries(runtimeFeatureAudit.bundles)
@@ -582,7 +582,7 @@ function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
 // ============================================================================
 // // @TODO: Mover para build/checksums.mjs
 // ============================================================================
-async function generateDirectoryChecksums(directory) {
+export async function generateDirectoryChecksums(directory) {
   async function collectFiles(dir, prefix = "") {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const tasks = entries.map(async (entry) => {
