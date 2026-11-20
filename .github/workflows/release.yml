@@ -1,5 +1,5 @@
-name: Release userscripts
-run-name: "Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
+name: 🚀 Release userscripts
+run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 
 on:
   push:
