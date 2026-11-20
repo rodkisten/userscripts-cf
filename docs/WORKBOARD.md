@@ -698,3 +698,5 @@
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
 
 - [ ] 2026-11-20 CI AST style scope: `build/check-style.mjs --changed --files-from=changed-files.txt` validates modified userscript files only; full `npm run lint` remains available for repository-wide debt audit. Autofix now reparses output before writing. CI validation pending.
+
+- [ ] 2026-11-20 PR #126: restrict Prettier and ESLint diagnostics to changed PR files in `.github/workflows/diagnostics.yml`, preserving scoped autofix; validate the workflow run before merging.
