@@ -247,3 +247,8 @@ Importe ícones como componentes com `?component`; o SVG original continua em `s
 A criação explícita de elementos fica limitada à ponte de scripts entre contextos, ao decoder/canvas fora da tela e à integração com os custom elements do player. Consultas e ajustes de posicionamento do DOM nativo do X permanecem na camada de integração.
 
 Validação: `npm run ci:cloudflare` executa formatação, checagem de tipos do REPL e RodX, geração dos quatro instaláveis, testes de inicialização/interação/persistência e laboratório de atualização/fallback. Os testes de interação usam o bundle real com DOM simulado e mocks dos serviços externos; não comprovam autenticação do X/Relay nem layout no Safari físico. A validação visual local ficou bloqueada por permissão de socket do Chromium e ausência do executável WebKit. Nenhum deploy faz parte desta refatoração.
+
+
+## Instagram Saved · confirmações por canal (PR #121)
+
+A sincronização de Reels salvos usa `ctx.http` para o Instagram e o Relay e mantém um ledger local por conta, coleção, mídia e canal. Ao adicionar destinos, somente os canais sem confirmação são enviados; confirmações parciais são preservadas para a próxima execução. O histórico antigo do conjunto exato de canais é importado sem declarar canais novos como entregues. A seleção de coleções e o bookmark nativo continuam sujeitos à validação no Safari iPhone. Veja [escopo e checklist](docs/runtime2-instagram-scope.md). Não instale a branch como release antes da validação.
