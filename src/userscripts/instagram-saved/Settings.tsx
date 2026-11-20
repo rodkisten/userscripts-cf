@@ -15,11 +15,13 @@ export type Form = {
 };
 export function SavedPanel({
   onOpen,
+  onSync,
   running,
   error,
   progress,
 }: {
   onOpen: () => void;
+  onSync: () => void;
   running?: boolean;
   error?: string;
   progress?: { current: number; total: number; collection: string; sent: number };
@@ -35,9 +37,14 @@ export function SavedPanel({
             : "Preparando sincronização…"
           : error || "Pronto"}
       </p>
-      <button type="button" onClick={onOpen}>
-        ⚙ Configurações de salvos
-      </button>
+      <div className={styles.actions}>
+        <button type="button" onClick={onSync} disabled={running}>
+          {running ? "⏳ Sincronizando" : "↻ Sincronizar agora"}
+        </button>
+        <button type="button" onClick={onOpen}>
+          ⚙ Configurações
+        </button>
+      </div>
     </section>
   );
 }
