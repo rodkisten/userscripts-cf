@@ -227,8 +227,65 @@ export class AgentReporter {
           ? badge.warn('COMPLETED WITH WARNINGS')
           : badge.fail('FAILED');
 
-    process.stdout.write(`\n${header} ${ansi.dim('in')} ${ansi.bold(total)}\n`);
+    process.stdout.write(`\n\n${header} ${ansi.dim('in')} ${ansi.bold(total)}\n`);
     this.kvTable(metrics);
     process.stdout.write('\n');
+  },
+  
+  cmdBlock(cmd, args = [], { maxLines = 3, width = 64 } = {}) {
+    const lineWidth = Math.max(40, Math.min(process.stdout.columns || width, 88) - 4);
+    const divider = `  ${ansi.dim(ansi.gray('·'.repeat(lineWidth)))}`;
+    const tag = badge.run('RUN');
+    const padIndent = '       '; // Alinha as linhas seguintes logo abaixo do comando
+
+    const formatArg = (arg) => (/[\s"'$`\\]/.test(arg) ? JSON.stringify(arg) : arg);
+    const tokens = [cmd, ...args.map(formatArg)];
+
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const prefix = lines.length === 0 ? '' : padIndent;
+      const available = lineWidth - (lines.length === 0 ? 6 : padIndent.length);
+
+      const candidate = currentLine ? `${currentLine} ${token}` : token;
+
+      if (candidate.length <= available) {
+        currentLine = candidate;
+      } else {
+        // Se for a última linha permitida, trunca e encerra com contagem de args restantes
+        if (lines.length === maxLines - 1) {
+          const remaining = tokens.length - i;
+          const suffix = ` … (+${remaining} arg${remaining > 1 ? 's' : ''})`;
+          const base = currentLine || token;
+          const trimmed = base.slice(0, Math.max(10, available - suffix.length));
+          lines.push(`${prefix}${ansi.cyan(trimmed)}${ansi.dim(suffix)}`);
+          currentLine = '';
+          break;
+        }
+
+        if (currentLine) {
+          lines.push(`${prefix}${ansi.cyan(currentLine)}`);
+          currentLine = token.length > available ? `${token.slice(0, available - 1)}…` : token;
+        } else {
+          lines.push(`${prefix}${ansi.cyan(`${token.slice(0, available - 1)}…`)}`);
+          currentLine = '';
+        }
+      }
+    }
+
+    if (currentLine && lines.length < maxLines) {
+      const prefix = lines.length === 0 ? '' : padIndent;
+      lines.push(`${prefix}${ansi.cyan(currentLine)}`);
+    }
+
+    this._writeLine(divider);
+    this._writeLine(`  ${tag} ${lines[0] || ansi.cyan(cmd)}`);
+    for (let i = 1; i < lines.length; i++) {
+      this._writeLine(`  ${lines[i]}`);
+    }
+    this._writeLine(divider);
   }
+
 }
