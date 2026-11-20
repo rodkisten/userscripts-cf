@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { AgentReporter, ansi } from './github/github-logger.mjs';
+import { AgentReporter, ansi } from './utils/ci-logger.mjs';
 import {
   appendStepSummary,
   buildCliContext,
