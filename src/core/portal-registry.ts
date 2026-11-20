@@ -79,9 +79,13 @@ export function createPortalRegistry<TNode = unknown, TContext = unknown>(): Por
     getSnapshot: () => snapshot,
 
     add(entry) {
+      const previous = entries.get(entry.id);
       entries.set(entry.id, {
         ...entry,
-        wasConnected: entry.target.isConnected,
+        wasConnected:
+          entry.target.isConnected ||
+          (previous?.target === entry.target && previous.wasConnected) ||
+          false,
       });
       publish();
     },

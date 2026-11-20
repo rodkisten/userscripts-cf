@@ -109,13 +109,21 @@ export function createRuntime(
 
   const ensureReactHost = (): void => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
-    if (reactRoot) return;
+    if (reactRoot) {
+      if (reactHost && !reactHost.isConnected) {
+        (host.document.body || host.document.documentElement).append(reactHost);
+      }
+      return;
+    }
 
     reactHost = host.document.createElement("div");
     reactHost.dataset.rodReactHost = "bundle";
     (host.document.body || host.document.documentElement).append(reactHost);
 
     portalObserver = new host.MutationObserver((records) => {
+      if (reactHost && !reactHost.isConnected && !runtimeDisposed) {
+        (host.document.body || host.document.documentElement).append(reactHost);
+      }
       const connectedTargets = new Set<PortalTarget>();
       const entries = registry.getSnapshot();
 
@@ -172,15 +180,9 @@ export function createRuntime(
 
     portalDisposers.set(id, dispose);
 
-    // BUG FIX: Added `runtimeDisposed` check inside `update` and fixed initial mount behavior when `container` is initially disconnected.
-    // Why:
-    // 1. Calling `update()` after `runtime.dispose()` previously bypassed the top-level guard and threw inside `ensureReactHost()`, instead of being a safe no-op like `disposed`.
-    // 2. If `mountSharedReact` was called with a detached container that is appended synchronously right after, skipping the initial `registry.add` prevented `PortalRegistry.pruneDisconnected` (which tracks `wasConnected: false -> true`) from ever adopting it once connected.
-    let initialized = false;
+    // Preserve updates while the portal target is temporarily detached.
     const update = (next: ReactElement): void => {
       if (disposed || runtimeDisposed) return;
-      if (initialized && !container.isConnected) return;
-      initialized = true;
       ensureReactHost();
       registry.add({ id, target: container, node: next });
     };
