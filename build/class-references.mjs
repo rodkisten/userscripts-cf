@@ -1,7 +1,7 @@
 // build/class-references.mjs
 import { performance } from "node:perf_hooks";
 import { parse } from "@babel/parser";
-import { fmt } from "./build.js"; // @TODO: ajustar caminho caso o reporter esteja em ./vitest-reporter.mjs ou ./logger.mjs
+import { fmt } from "./build.mjs"; // @TODO: ajustar caminho caso o reporter esteja em ./vitest-reporter.mjs ou ./logger.mjs
 
 // ============================================================================
 // // @TODO: Mover para build/ast-class-extractors.mjs
