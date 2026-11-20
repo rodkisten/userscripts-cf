@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { AgentReporter, ansi } from './github/github-logger.mjs';
+import { AgentReporter, ansi } from './utils/ci-logger.mjs';
 
 // ============================================================================
 // Utilitários Compartilhados (Inputs, Outputs, Summary & Auth)
