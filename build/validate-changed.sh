@@ -101,7 +101,11 @@ case "$mode" in
     if [[ "${FULL:-false}" == true ]]; then
       echo "Shared infrastructure changed: running full validation."
       npm run typecheck
-      npm run lint
+      if [[ -f changed-files.txt ]]; then
+        node build/check-style.mjs --changed --files-from=changed-files.txt
+      else
+        npm run lint
+      fi
       export RUNTIME_TEST_SKIP_DIST=true
       # Full validation checks all shared contracts, but only builds affected bundles
       # unless the bundler/dependency configuration itself changed.
@@ -160,7 +164,11 @@ NODE
     # The dedicated playground workflow step also runs with always().
     if [[ "$source_changed" == true ]]; then
       npm run typecheck
-      npm run lint
+      if [[ -f changed-files.txt ]]; then
+        node build/check-style.mjs --changed --files-from=changed-files.txt
+      else
+        npm run lint
+      fi
     fi
     # Resolve transitive source dependencies using the same graph as the bundler.
     # A shared source file can affect multiple independently installed scripts.
