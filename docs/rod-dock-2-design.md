@@ -128,3 +128,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Corrigir import ausente de `RodMenu`, portal de menu para Shadow DOM e estrutura de Radix Checkbox.
 - [ ] Executar `npm run check:react-syntax` antes de **cada** futuro commit que modifique React/TSX. Não confundir esta análise sintática com testes automatizados.
 - [ ] Regenerar package-lock e validar typecheck/build. Não executar suítes de testes.
+
+## Bloco 12: robustez do DOM picker e Resource Timing
+
+- [x] Picker ignora elementos da própria Dock no ShadowRoot e no host.
+- [x] Destaque DOM limpa referência ao fechar a Dock fora da seleção.
+- [x] Leitura de Resource Timing tolera falhas sem derrubar o painel.
+- [ ] Validar parser TSX e compilação em ambiente com dependências instaladas. Sem testes.

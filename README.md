@@ -268,3 +268,5 @@ Na Dock, os toggles de scripts utilizam Radix Checkbox; o inspetor DOM oferece f
 ### Verificação obrigatória de sintaxe React
 
 Antes de commitar alterações em React/TSX, execute `npm run check:react-syntax` ou `node build/check-react-syntax.mjs caminho/do/arquivo.tsx`. O parser TypeScript identifica sintaxe inválida, inclusive sequências `\\n` literais fora de strings. Esta verificação não executa testes.
+
+O inspetor DOM evita selecionar controles da própria Dock; a aba Rede mantém a interface disponível quando a API Resource Timing falha.

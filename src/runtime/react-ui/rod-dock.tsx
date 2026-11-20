@@ -249,7 +249,7 @@ function DockView({ controller }: { controller: DockController }) {
     frame = requestAnimationFrame(update);
     return () => cancelAnimationFrame(frame);
   }, [domSelected, open, tab]);
-  useEffect(() => { if (!open && !domPicking) highlightRef.current?.remove(); }, [open, domPicking]);
+  useEffect(() => { if (!open && !domPicking) { highlightRef.current?.remove(); highlightRef.current = null; } }, [open, domPicking]);
   useEffect(() => {
     if (!domPicking) return;
     const onPointer = (event: PointerEvent) => {
@@ -257,6 +257,7 @@ function DockView({ controller }: { controller: DockController }) {
       if (!(target instanceof Element)) return;
       const root = target.getRootNode();
       if (typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot && root.host.hasAttribute("data-rod-dock")) return;
+      if (target.closest("[data-rod-dock]")) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       const id = target.id ? `#${CSS.escape(target.id)}` : target.localName + Array.from(target.classList).slice(0, 2).map((name) => `.${CSS.escape(name)}`).join("");
@@ -273,7 +274,11 @@ function DockView({ controller }: { controller: DockController }) {
     document.addEventListener("keydown", onKey, true);
     return () => { document.removeEventListener("pointerdown", onPointer, true); document.removeEventListener("keydown", onKey, true); };
   }, [domPicking]);
-  const refreshNetwork = () => setNetwork(performance.getEntriesByType("resource").filter((entry): entry is PerformanceResourceTiming => entry.entryType === "resource").slice(-100).reverse());
+  const refreshNetwork = () => {
+    try {
+      setNetwork(performance.getEntriesByType("resource").filter((entry): entry is PerformanceResourceTiming => entry.entryType === "resource").slice(-100).reverse());
+    } catch { setNetwork([]); }
+  };
   useEffect(() => {
     if (!open || tab !== "network") return;
     refreshNetwork();
