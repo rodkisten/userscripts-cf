@@ -144,7 +144,8 @@
         });
       }
       nodes.forEach(node => node.dataset.rodActionsProcessed = '1');
-      lastUrl = signature;\n      debug('processed', {lines:nodes.length, blocks:parse(originalLines).length, hljs:!!window.hljs, path:location.pathname});
+      lastUrl = signature;
+      debug('processed', {lines:nodes.length, blocks:parse(originalLines).length, hljs:!!window.hljs, path:location.pathname});
     } finally { busy = false; }
   }
   let queued = false;
