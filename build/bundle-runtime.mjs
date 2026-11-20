@@ -7,7 +7,7 @@ import { build } from "vite";
 import { readableStrings } from "./readable-strings.mjs";
 import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
 import { inspectReactRootCalls } from "./react-root-audit.mjs";
-import { fmt } from "./build.mjs"; // @TODO: importar do reporter já extraído
+import { fmt } from "./format.mjs";
 
 // ============================================================================
 // // @TODO: Mover para build/runtime-plugins.mjs
