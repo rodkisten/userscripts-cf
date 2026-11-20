@@ -8,7 +8,6 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
 import { format } from "prettier";
-import { build as viteBuild } from "vite";
 
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
@@ -339,39 +338,11 @@ export async function compileTarget(target, context) {
   const debugFile = `${target.id}.js`;
   const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
+  // Each world bundle is already emitted as a self-contained IIFE by
+  // bundleRuntime and formattedBody contains no imports/exports, so a manual
+  // function wrapper replaces the previous second full Vite/Rolldown pass.
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
-  const chunks = await viteBuild({
-    configFile: false,
-    logLevel: "error",
-    plugins: [
-      {
-        name: "userscript-runtime-minify",
-        resolveId(id) {
-          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
-        },
-        load(id) {
-          if (id === "\0virtual:userscript-runtime") return formattedBody;
-        },
-      },
-    ],
-    build: {
-      write: false,
-      minify: false,
-      sourcemap: false,
-      rolldownOptions: {
-        input: "virtual:userscript-runtime",
-        output: { format: "iife", name: "UserscriptsCFBundle" },
-      },
-    },
-  });
-
-  const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
-  const result = output.find((entry) => entry.type === "chunk");
-  if (!result?.code) {
-    throw new Error(`Minification did not produce JavaScript for ${target.id}`);
-  }
-
-  const finalSource = `${metadata}\n\n${result.code}\n`;
+  const finalSource = `${metadata}\n\n(function() {\n${normalizedBody}})();\n`;
   const metaSource = `${metadata}\n`;
 
   const bodyBuffer = Buffer.from(formattedBody, "utf8");

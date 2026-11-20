@@ -1,8 +1,8 @@
 // build/bundle-runtime.mjs
 import path from "node:path";
+import { availableParallelism } from "node:os";
 import { performance } from "node:perf_hooks";
 import { build } from "vite";
-import { format } from "prettier";
 
 import { readableStrings } from "./readable-strings.mjs";
 import { instrumentErrorsPlugin } from "./instrument-errors.mjs";
@@ -228,6 +228,31 @@ function emitBundleStats(root, chunk, featureDefines, reactRootAudit, onBundleSt
 // ============================================================================
 // ORQUESTRADOR PRINCIPAL (build/bundle-runtime.mjs)
 // ============================================================================
+// Every bundleRuntime call is a full Vite/Rolldown build. compileTarget fans
+// out sandbox+page worlds across all targets with Promise.all, so without a
+// bound a 12-target build launches ~24 concurrent bundlers and oversubscribes
+// small CI runners. USERSCRIPTS_BUILD_CONCURRENCY overrides the default.
+const BUILD_CONCURRENCY = Math.max(
+  1,
+  Math.min(8, Number(process.env.USERSCRIPTS_BUILD_CONCURRENCY) || availableParallelism() || 2),
+);
+let activeBuilds = 0;
+const buildQueue = [];
+
+function acquireBuildSlot() {
+  if (activeBuilds < BUILD_CONCURRENCY) {
+    activeBuilds++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => buildQueue.push(resolve));
+}
+
+function releaseBuildSlot() {
+  const next = buildQueue.shift();
+  if (next) next();
+  else activeBuilds--;
+}
+
 export async function bundleRuntime(root, definitions, options = {}) {
   const t0 = performance.now();
   const virtualID = "\0userscripts-cf-entry";
@@ -236,21 +261,27 @@ export async function bundleRuntime(root, definitions, options = {}) {
   const entryCode = buildVirtualEntryCode(root, definitions, options);
   const featureDefines = resolveFeatureDefines(options);
 
-  const result = await build({
-    root,
-    configFile: path.join(root, "vite.config.js"),
-    logLevel: "warn",
-    define: featureDefines,
-    plugins: [
-      createRootAuditPlugin(root, rootCallsites),
-      instrumentErrorsPlugin(root),
-      createVirtualEntryPlugin(virtualID, entryCode),
-    ],
-    build: {
-      write: false,
-      lib: { entry: "userscripts-cf-entry" },
-    },
-  });
+  await acquireBuildSlot();
+  let result;
+  try {
+    result = await build({
+      root,
+      configFile: path.join(root, "vite.config.js"),
+      logLevel: "warn",
+      define: featureDefines,
+      plugins: [
+        createRootAuditPlugin(root, rootCallsites),
+        instrumentErrorsPlugin(root),
+        createVirtualEntryPlugin(virtualID, entryCode),
+      ],
+      build: {
+        write: false,
+        lib: { entry: "userscripts-cf-entry" },
+      },
+    });
+  } finally {
+    releaseBuildSlot();
+  }
 
   const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
   const { chunk, cssAssets } = validateSingleChunkOutput(output);
@@ -271,19 +302,18 @@ export async function bundleRuntime(root, definitions, options = {}) {
     }
   }
 
-  const formatted = await format(readableStrings(cssPrelude + chunk.code), {
-    parser: "babel",
-    printWidth: 110,
-  });
+  // compileTarget formats the assembled userscript body once per target.
+  // Skipping Prettier here avoids ~24 multi-MB parses per full build.
+  const bundled = readableStrings(cssPrelude + chunk.code);
 
   // Log opcional se o caller injetar o contexto `log` do BuildReporter
   if (options.log) {
     const label = options.release?.id ? `${options.release.id}` : `${definitions.length} module(s)`;
     options.log.info(
       `bundled ${fmt.bold(label)}`,
-      `${fmt.bytes(Buffer.byteLength(formatted))} · ${fmt.duration(performance.now() - t0)}`,
+      `${fmt.bytes(Buffer.byteLength(bundled))} · ${fmt.duration(performance.now() - t0)}`,
     );
   }
 
-  return formatted;
+  return bundled;
 }
