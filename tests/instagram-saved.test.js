@@ -584,3 +584,21 @@ test("invalid second acknowledgement does not checkpoint the first item", async 
   assert.equal(saved, false);
   assert.equal(savedChannels, false);
 });
+
+test("non-object Relay channel confirmation rejects the batch without checkpointing", async () => {
+  let writes = 0;
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => { writes++; },
+    loadChannels: async () => ({}),
+    saveChannels: async () => { writes++; },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel("first"), reel("second")] }),
+    sendBatch: async () => ({ results: [
+      { index: 0, channels: { inserted: ["alpha"] } },
+      { index: 1, channels: "alpha" },
+    ] }),
+  }), /canais inválida/);
+  assert.equal(writes, 0);
+});
