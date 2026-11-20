@@ -145,7 +145,7 @@ export async function syncSaved({
 }: SyncOptions) {
   if (
     !channels.length ||
-    channels.some((channel) => !channel.trim()) ||
+    channels.some((channel) => typeof channel !== "string" || !channel.trim()) ||
     new Set(channels).size !== channels.length
   ) {
     throw Error("Configure pelo menos um canal válido para sincronizar");
