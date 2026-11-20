@@ -99,15 +99,21 @@ function collectionOption(id: string): HTMLElement | null {
   const candidates = document.querySelectorAll<HTMLElement>(
     '[role="dialog"] [data-collection-id], [role="menu"] [data-collection-id], [role="listbox"] [data-collection-id]',
   );
-  return [...candidates].find((node) => {
-    if (node.getAttribute("data-collection-id") !== id) return false;
-    if (!node.isConnected || node.getAttribute("aria-disabled") === "true") return false;
-    const rect = node.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  }) || null;
+  return (
+    [...candidates].find((node) => {
+      if (node.getAttribute("data-collection-id") !== id) return false;
+      if (!node.isConnected || node.getAttribute("aria-disabled") === "true") return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }) || null
+  );
 }
 
-async function waitForCollection(id: string, signal: AbortSignal, timeout = 1800): Promise<HTMLElement | null> {
+async function waitForCollection(
+  id: string,
+  signal: AbortSignal,
+  timeout = 1800,
+): Promise<HTMLElement | null> {
   const end = Date.now() + timeout;
   while (!signal.aborted && Date.now() < end) {
     const option = collectionOption(id);
@@ -121,7 +127,9 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
   if (!source.isConnected) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
   if (nativeState(source) === "saved") {
-    throw Error("Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.");
+    throw Error(
+      "Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.",
+    );
   }
   if (nativeState(source) !== "unsaved")
     throw Error("Não foi possível confirmar o estado do bookmark nativo");
@@ -133,12 +141,16 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
     if (signal.aborted || !source.isConnected) throw Error("Operação cancelada ou Reel alterado");
     const option = await waitForCollection(id, signal);
     if (!option) {
-      throw Error(`Reel salvo, mas o Instagram não expôs um identificador verificável para a coleção ${id}. Selecione-a manualmente.`);
+      throw Error(
+        `Reel salvo, mas o Instagram não expôs um identificador verificável para a coleção ${id}. Selecione-a manualmente.`,
+      );
     }
     // A visible matching option is still not proof that Instagram will
     // persist membership. Avoid an unverified mutation until its confirmation
     // contract is known.
-    throw Error(`Coleção ${id} encontrada, mas a confirmação de associação não está disponível. Selecione-a manualmente no Instagram.`);
+    throw Error(
+      `Coleção ${id} encontrada, mas a confirmação de associação não está disponível. Selecione-a manualmente no Instagram.`,
+    );
   }
 }
 
