@@ -602,3 +602,36 @@ test("non-object Relay channel confirmation rejects the batch without checkpoint
   }), /canais inválida/);
   assert.equal(writes, 0);
 });
+
+test("invalid Reel shortcode is excluded from generated URLs", () => {
+  for (const code of ["../escape", "abc?next=1", "abc/def", "abc def", ""]) {
+    assert.equal(reelPayload(reel(code)), null);
+  }
+  assert.equal(reelPayload(reel("A_z-09")).mediaId, "A_z-09");
+});
+
+test("null Instagram page rejects with a controlled error", async () => {
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => null,
+    sendBatch: async () => { throw Error("unexpected send"); },
+  }), /Resposta de salvos inválida/);
+});
+
+test("null Relay response rejects without checkpoint writes", async () => {
+  let writes = 0;
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => { writes++; },
+    loadChannels: async () => ({}),
+    saveChannels: async () => { writes++; },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async () => null,
+  }), /Relay sem confirmação por item/);
+  assert.equal(writes, 0);
+});
