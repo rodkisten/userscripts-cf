@@ -109,7 +109,9 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
   if (nativeState(source) === "saved") {
-    throw Error("Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.");
+    throw Error(
+      "Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.",
+    );
   }
   if (nativeState(source) !== "unsaved")
     throw Error("Não foi possível confirmar o estado do bookmark nativo");

@@ -125,8 +125,8 @@
     /\/\.github\/workflows\/[^/?#]+\.ya?ml(?:$|[?#/])/.test(location.pathname) ||
     (/\.ya?ml$/.test(location.pathname) && document.body.textContent?.includes("run:"));
   let busy = false;
-  let lastUrl = '';
-  const debug = (...args) => console.debug('[Rod Actions Highlight]',...args);
+  let lastUrl = "";
+  const debug = (...args) => console.debug("[Rod Actions Highlight]", ...args);
   function update() {
     if (busy || !isWorkflow()) return;
     busy = true;
