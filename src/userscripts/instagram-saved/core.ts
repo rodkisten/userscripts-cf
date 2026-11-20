@@ -122,7 +122,7 @@ export async function syncSaved({
   loadChannels,
   saveChannels,
 }: SyncOptions) {
-  if (!channels.length || channels.some((channel) => !channel.trim())) {
+  if (!channels.length || channels.some((channel) => !channel.trim()) || new Set(channels).size !== channels.length) {
     throw Error("Configure pelo menos um canal válido para sincronizar");
   }
   const done = Object.assign(Object.create(null) as Record<string, number>, await load());
@@ -210,9 +210,17 @@ export async function syncSaved({
               ...(result.channels?.covered || []),
               ...(result.channels?.notSent || []).filter((entry) => entry.reason === "already_sent").map((entry) => entry.channelId),
             ]);
-            for (const channel of group.channels) if (acknowledged.has(channel)) row[channel] = Date.now();
-            ledger[id] = row;
-            if (acknowledged.size) await saveChannels!(ledger);
+            let changed = false;
+            for (const channel of group.channels) {
+              if (acknowledged.has(channel) && !Object.hasOwn(row, channel)) {
+                row[channel] = Date.now();
+                changed = true;
+              }
+            }
+            if (changed) {
+              ledger[id] = row;
+              await saveChannels!(ledger);
+            }
           }
           if (status.complete) {
             done[pending[i].mediaId] = Date.now();
