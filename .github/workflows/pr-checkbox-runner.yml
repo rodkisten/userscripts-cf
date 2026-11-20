@@ -19,7 +19,6 @@ permissions:
 
 jobs:
   handle-checkbox:
-    # Garante que é um PR, que é o nosso comentário marcador, e que NÃO foi o próprio bot editando
     if: |
       github.event.issue.pull_request &&
       contains(github.event.comment.body, '<!-- pr-interactive-actions -->') &&
@@ -102,7 +101,7 @@ jobs:
           git config user.name "${BOT_NAME}"
           git config user.email "${BOT_EMAIL}"
 
-          # 1. Tenta atualizar nativamente via API do GitHub (o commit de merge sai assinado pelo App)
+          # 1. Tenta atualizar nativamente via API do GitHub (commit de merge assinado pelo App)
           if gh api --method PUT "/repos/${{ github.repository }}/pulls/${PR_NUMBER}/update-branch" --silent; then
             echo "✅ Branch atualizada diretamente via GitHub API por ${BOT_NAME}."
             git pull origin "${HEAD_BRANCH}"
@@ -150,9 +149,13 @@ jobs:
             const endMarker = '<!-- sync-report-end -->';
             const wrappedReport = `\n\n${startMarker}\n---\n${syncReport}\n${endMarker}`;
 
-            let currentBody = context.payload.comment.body;
-            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            // Desmarca o checkbox do Sync e anexa/atualiza o relatório
+            let currentBody = context.payload.comment.body.replace(
+              '- [x] 🔄 **Sincronizar Branch**',
+              '- [ ] 🔄 **Sincronizar Branch**'
+            );
 
+            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
             if (markerRegex.test(currentBody)) {
               currentBody = currentBody.replace(markerRegex, wrappedReport);
             } else {
@@ -192,7 +195,6 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            // Busca o comentário atualizado (para não sobrescrever o relatório do Sync caso ambos tenham rodado)
             const { data: latestComment } = await github.rest.issues.getComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -203,15 +205,12 @@ jobs:
               ? fs.readFileSync('prettier-errors.log', 'utf8')
               : '';
 
-            // Remove códigos de cor ANSI
             const cleanLog = rawLog.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 
-            // Separa os blocos de erro por arquivo
             const errorBlocks = cleanLog
               .split(/(?=\[error\] )/g)
               .filter((block) => block.startsWith('[error] '));
 
-            // Mapeia a extensão do arquivo para Syntax Highlight no GitHub Markdown
             const getLang = (file) => {
               const ext = path.extname(file).replace('.', '').toLowerCase();
               const map = {
@@ -262,17 +261,19 @@ jobs:
               reportMd += `\n#### 🔍 Detalhes dos Erros\n\n` + detailsList.join('\n');
             }
 
-            // 1. Escreve no GitHub Actions Job Summary
             await core.summary.addRaw(reportMd).write();
 
-            // 2. Atualiza o comentário original do PR usando marcadores para não duplicar em futuras execuções
             const startMarker = '<!-- prettier-report-start -->';
             const endMarker = '<!-- prettier-report-end -->';
             const wrappedReport = `\n\n${startMarker}\n---\n${reportMd}\n${endMarker}`;
 
-            let currentBody = latestComment.body;
-            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+            // Desmarca o checkbox do Prettier e anexa/atualiza o relatório
+            let currentBody = latestComment.body.replace(
+              '- [x] 🎨 **Rodar Prettier**',
+              '- [ ] 🎨 **Rodar Prettier**'
+            );
 
+            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
             if (markerRegex.test(currentBody)) {
               currentBody = currentBody.replace(markerRegex, wrappedReport);
             } else {
