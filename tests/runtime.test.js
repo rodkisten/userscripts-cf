@@ -93,6 +93,7 @@ test("URL patterns use hostname boundaries, paths, query and exclusions", () => 
 
 test("SPA enters once, retains matching module, disposes events and styles on exit", async () => {
   const host = new Window({ url: "https://x.com/home" });
+  host.__ROD_RUNTIME_TRACE__ = true;
   let starts = 0,
     stops = 0,
     clicks = 0;

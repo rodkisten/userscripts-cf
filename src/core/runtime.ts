@@ -821,10 +821,18 @@ export function createCoreRuntime(
         setCssProperties,
       }),
       async dispose() {
+        const trace = (stage: string) => {
+          if ((host as unknown as { __ROD_RUNTIME_TRACE__?: boolean }).__ROD_RUNTIME_TRACE__)
+            console.info("[runtime lifecycle]", definition.id, stage);
+        };
+        trace("abort:start");
         if (!abort.signal.aborted) abort.abort();
+        trace("abort:done");
         await cleanupScope.dispose();
+        trace("cleanup:done");
         listeners.delete(definition.id);
         stateValues.delete(definition.id);
+        trace("dispose:done");
       },
     };
 
