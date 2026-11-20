@@ -44,7 +44,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Radix collection controls
 
-The settings dialog uses Radix Checkbox for the automatic-sync toggle and the selected collection list. Users can add multiple collection IDs via comma/whitespace input and Enter or blur, and remove individual collections by unchecking them. The list is mobile-scrollable and retains the existing settings persistence. Automatic collection discovery is **not** implemented yet; no undocumented Instagram endpoint is assumed. A future discovery adapter must be verified against live account responses before exposing collection names or thumbnails.
+The settings dialog uses Radix Checkbox for the automatic-sync toggle and the selected collection list. Users can add multiple collection IDs via comma/semicolon/whitespace input and Enter or blur, filter selected IDs with a local search field, see the selected count, and remove individual collections by unchecking them. The input parser now correctly recognizes whitespace rather than a literal backslash-s sequence. The list is mobile-scrollable and retains the existing settings persistence. Automatic collection discovery is **not** implemented yet; no undocumented Instagram endpoint is assumed. A future discovery adapter must be verified against live account responses before exposing collection names or thumbnails.
 
 ## Configuration and concurrency feedback
 
