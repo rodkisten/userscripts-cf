@@ -73,7 +73,7 @@ export default {
     let button:HTMLButtonElement|undefined;
     const getEditor=()=>document.querySelector<Editor>('textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]');
     const getViewer=()=>document.querySelector(VIEW_SELECTOR);
-    const getSource=()=>getEditor()?.value ?? [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line=>line.textContent??"").join("\\n") || getViewer()?.textContent || "";
+    const getSource=()=>getEditor()?.value ?? ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line=>line.textContent??"").join("\n") || getViewer()?.textContent || "");
     const applySource=(next:string)=>{
       const editor=getEditor();
       if(!editor){navigator.clipboard.writeText(next);window.alert("Visualização somente leitura: código atualizado copiado. Abra Edit para aplicar.");return false;}
