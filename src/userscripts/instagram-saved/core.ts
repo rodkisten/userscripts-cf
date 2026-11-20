@@ -203,10 +203,15 @@ export async function syncSaved({
         seen.add(item.mediaId);
         return !confirmed(item.mediaId);
       });
-    // Never advance the collection cursor past an unprocessed item.
-    // A page is the smallest safe checkpoint with this endpoint.
-    for (let offset = 0; offset < items.length; offset += limit) {
-      const batch = items.slice(offset, offset + limit);
+    // A partial page must keep its current cursor so the remaining Reels
+    // are revisited next session. Already acknowledged items are skipped.
+    const remaining = maxItems - processed;
+    if (remaining <= 0) {
+      return count;
+    }
+    const limitedItems = items.slice(0, remaining);
+    for (let offset = 0; offset < limitedItems.length; offset += limit) {
+      const batch = limitedItems.slice(offset, offset + limit);
       const groups = new Map<string, { channels: string[]; items: MediaPayload[] }>();
       for (const item of batch) {
         const missing = ledger
@@ -346,6 +351,11 @@ export async function syncSaved({
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
       );
+    }
+    // Do not persist the next page cursor if some eligible items remain.
+    // The per-channel ledger lets the next run safely replay this page.
+    if (limitedItems.length < items.length) {
+      return count;
     }
     pages++;
     const next = page.next_max_id;
