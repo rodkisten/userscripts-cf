@@ -53,12 +53,13 @@ export const SAVED_PATH = "/api/v1/feed/saved/posts/";
 export const COLLECTION_PATH = (id: string) => `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`;
 
 export function reelPayload(raw: Reel): MediaPayload | null {
+  if (!raw || typeof raw !== "object") return null;
   const m = raw.media || raw;
-  if (m.product_type !== "clips" || !m.code) {
+  if (!m || typeof m !== "object" || m.product_type !== "clips" || typeof m.code !== "string" || !m.code.trim()) {
     return null;
   }
-  const variants = (m.video_versions || [])
-    .filter((v) => /^https:\/\//.test(v.url || "") && Number.isFinite(v.width) && Number.isFinite(v.height) && v.width > 0 && v.height > 0)
+  const variants = (Array.isArray(m.video_versions) ? m.video_versions : [])
+    .filter((v) => v && typeof v.url === "string" && /^https:\/\//.test(v.url) && Number.isFinite(v.width) && Number.isFinite(v.height) && v.width > 0 && v.height > 0)
     .sort((a, b) => b.width * b.height - a.width * a.height);
   if (!variants.length) {
     return null;
@@ -88,11 +89,11 @@ export function reelPayload(raw: Reel): MediaPayload | null {
 
 export function classify(result: DeliveryResult | undefined, channels: string[]) {
   const c = result?.channels;
-  const inserted = new Set(c?.inserted || []);
+  const inserted = new Set(Array.isArray(c?.inserted) ? c.inserted : []);
   const covered = new Set([
     ...inserted,
-    ...(c?.covered || []),
-    ...(c?.notSent || []).filter((v) => v.reason === "already_sent").map((v) => v.channelId),
+    ...(Array.isArray(c?.covered) ? c.covered : []),
+    ...(Array.isArray(c?.notSent) ? c.notSent : []).filter((v) => v && v.reason === "already_sent").map((v) => v.channelId),
   ]);
   return {
     complete: channels.length > 0 && channels.every((channel) => covered.has(channel)),
