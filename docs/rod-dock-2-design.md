@@ -101,3 +101,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Inspeção de propriedades globais: corrigido escape de regex; seletor DOM volta à Dock quando cancelado com Escape.
 - [ ] Rodar build/typecheck e regenerar lockfile; não executar testes a pedido do mantenedor.
 - [ ] Migrar DevTools legados e desativar seus launchers após confirmar equivalência funcional.
+
+## Bloco 8: correção do inspetor e segurança
+
+- [x] Regex de inspeção corrigida para aceitar caminhos `location.href` e `document.title`.
+- [x] Leitura de propriedades sem invocar getters e com bloqueio de `constructor`, `prototype` e `__proto__`.
+- [x] Destaque DOM acompanha scroll e mudanças de layout enquanto a aba está aberta.
+- [ ] Lockfile e typecheck/build continuam sem validação; nenhuma suíte de testes executada.

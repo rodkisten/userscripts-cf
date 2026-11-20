@@ -157,14 +157,21 @@ function DockView({ controller }: { controller: DockController }) {
     if (!expression) return;
     pushConsole("info", [`> ${expression}`]);
     // Restricted property path inspection; no eval or arbitrary code execution.
-    if (!/^(?:window|document|location|navigator)(?:\\.[a-zA-Z_$][\\w$]*){0,5}$/.test(expression)) {
+    if (!/^(?:window|document|location|navigator)(?:\.[a-zA-Z_$][\w$]*){0,5}$/.test(expression)) {
       pushConsole("warn", ["Somente caminhos de propriedades globais são permitidos. Ex.: location.href"]);
       return;
     }
     try {
       const [root, ...keys] = expression.split(".");
       const roots: Record<string, unknown> = { window, document, location, navigator };
-      const value = keys.reduce<unknown>((current, key) => current !== null && (typeof current === "object" || typeof current === "function") ? (current as Record<string, unknown>)[key] : undefined, roots[root]);
+      const value = keys.reduce<unknown>((current, key) => {
+        if (["__proto__", "prototype", "constructor"].includes(key)) throw new Error("Propriedade bloqueada");
+        if (current === null || (typeof current !== "object" && typeof current !== "function")) return undefined;
+        const descriptor = Object.getOwnPropertyDescriptor(current, key);
+        if (!descriptor) return undefined;
+        if (!("value" in descriptor)) return "[getter não executado]";
+        return descriptor.value;
+      }, roots[root]);
       pushConsole("log", [value]);
     } catch (error) { pushConsole("error", [error instanceof Error ? error.message : String(error)]); }
   };
@@ -203,6 +210,27 @@ function DockView({ controller }: { controller: DockController }) {
     highlightRef.current = overlay;
   };
   useEffect(() => () => highlightRef.current?.remove(), []);
+  useEffect(() => {
+    if (!domSelected?.isConnected || !open || tab !== "dom") return;
+    let frame = 0;
+    let last = "";
+    const update = () => {
+      const overlay = highlightRef.current;
+      if (!overlay || !domSelected.isConnected) return;
+      const rect = domSelected.getBoundingClientRect();
+      const next = [rect.left, rect.top, rect.width, rect.height].join(":");
+      if (next !== last) {
+        overlay.style.left = `${rect.left}px`;
+        overlay.style.top = `${rect.top}px`;
+        overlay.style.width = `${rect.width}px`;
+        overlay.style.height = `${rect.height}px`;
+        last = next;
+      }
+      frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [domSelected, open, tab]);
   useEffect(() => { if (!open && !domPicking) highlightRef.current?.remove(); }, [open, domPicking]);
   useEffect(() => {
     if (!domPicking) return;
