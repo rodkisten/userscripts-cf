@@ -28,7 +28,13 @@ export function SavedPanel({
     <section className={styles.panel}>
       <style>{css}</style>
       <p>Sincronize as coleções escolhidas com o Relay, sem reenviar itens confirmados.</p>
-      <p role="status">{running ? progress ? `Coleção ${progress.current}/${progress.total}: ${progress.collection} · ${progress.sent} enviada(s)` : "Preparando sincronização…" : error || "Pronto"}</p>
+      <p role="status">
+        {running
+          ? progress
+            ? `Coleção ${progress.current}/${progress.total}: ${progress.collection} · ${progress.processed} processada(s) · ${progress.sent} enviada(s)`
+            : "Preparando sincronização…"
+          : error || "Pronto"}
+      </p>
       <button type="button" onClick={onOpen}>
         ⚙ Configurações de salvos
       </button>
