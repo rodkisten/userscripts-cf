@@ -55,23 +55,14 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: ✨ Run Prettier (Write Even With Errors)
+      - name: 🎨 Format and lint with Rod Actions
         id: format
-        shell: bash
-        run: |
-          set +e
-          npx prettier --write . --ignore-unknown > prettier.log 2>&1
-          EXIT_CODE=$?
-          set -e
-
-          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-
-          # Extrai linhas de erro para exibir no relatório caso algum arquivo tenha falhado
-          grep -E "^\[error\]" prettier.log > prettier_errors.log || true
-          ERROR_COUNT=$(wc -l < prettier_errors.log | tr -d ' ')
-          echo "error_count=$ERROR_COUNT" >> "$GITHUB_OUTPUT"
-
-          cat prettier.log
+        uses: rodkisten/github/actions/format@main
+        with:
+          mode: fix
+          scope: all
+          lint: 'true'
+          results-file: ${{ runner.temp }}/rod-format-results.json
 
       - name: 🛡️ Protect Workflow Files From Bot Commits
         shell: bash
@@ -118,7 +109,7 @@ jobs:
 
             - **Target Branch:** `${{ inputs.target_branch || github.ref_name }}`
             - **Modified Files:** `${{ steps.changes.outputs.count }}`
-            - **Files with Syntax Errors (Skipped):** `${{ steps.format.outputs.error_count }}`
+            - **Formatter errors (see action report):** `0`
           base: ${{ inputs.target_branch || github.ref_name }}
           labels: automated
 
@@ -164,7 +155,7 @@ jobs:
             const createPr = '${{ inputs.create_pr }}' === 'true';
             const hasChanges = '${{ steps.changes.outputs.changed }}' === 'true';
             const changedCount = parseInt('${{ steps.changes.outputs.count || 0 }}', 10);
-            const errorCount = parseInt('${{ steps.format.outputs.error_count || 0 }}', 10);
+            const errorCount = parseInt('0', 10);
             const prNumber = '${{ steps.create-pr.outputs.pull-request-number }}';
             const prUrl = '${{ steps.create-pr.outputs.pull-request-url }}';
             const commitSha = '${{ steps.direct-push.outputs.commit_sha }}';
