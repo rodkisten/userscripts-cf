@@ -262,10 +262,7 @@ export async function syncSaved({
                   (channelResult.notSent || []).some(
                     (entry) =>
                       !entry || typeof entry.reason !== "string" || typeof entry.channelId !== "string",
-                  ) ||
-                  (channelResult.inserted || []).some((id) => !job.channels.includes(id)) ||
-                  (channelResult.covered || []).some((id) => !job.channels.includes(id)) ||
-                  (channelResult.notSent || []).some((entry) => !job.channels.includes(entry.channelId)))
+                  ))
               )
                 throw Error("Relay retornou confirmação de canais inválida");
             }
