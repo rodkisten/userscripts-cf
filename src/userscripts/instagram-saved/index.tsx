@@ -42,6 +42,7 @@ export default {
       running: false,
       lastRun: 0,
       lastError: "",
+      progress: null as { current: number; total: number; collection: string; sent: number } | null,
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
     };
@@ -90,6 +91,7 @@ export default {
           onOpen={() => void settingsApi.open()}
           running={runtime.running}
           error={runtime.lastError}
+          progress={runtime.progress || undefined}
         />
       );
     }
@@ -183,6 +185,7 @@ export default {
       }
       setRuntime((draft) => {
         draft.running = true;
+        draft.progress = null;
         draft.lastRun = Date.now();
       });
       try {
@@ -195,7 +198,10 @@ export default {
           }
           abort.throwIfAborted();
           let count = 0;
-          for (const collectionId of settings.collectionIds) {
+          for (const [index, collectionId] of settings.collectionIds.entries()) {
+            setRuntime((draft) => {
+              draft.progress = { current: index + 1, total: settings.collectionIds.length, collection: collectionId, sent: count };
+            });
             abort.throwIfAborted();
             if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
@@ -252,6 +258,9 @@ export default {
                   return page;
                 }, 50),
             });
+            setRuntime((draft) => {
+              if (draft.progress) draft.progress.sent = count;
+            });
           }
           await set("lastError", null);
           setRuntime((draft) => {
@@ -272,6 +281,7 @@ export default {
       } finally {
         setRuntime((draft) => {
           draft.running = false;
+          draft.progress = null;
         });
       }
     }
