@@ -1,5 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Checkbox from "@radix-ui/react-checkbox";
 import styles, { css } from "./Settings.module.css";
 export { css };
 
@@ -24,7 +25,7 @@ export function SavedPanel({
   onSync: () => void;
   running?: boolean;
   error?: string;
-  progress?: { current: number; total: number; collection: string; sent: number };
+  progress?: { current: number; total: number; collection: string; sent: number; processed: number; pageEligible: number };
 }) {
   return (
     <section className={styles.panel}>
@@ -67,20 +68,63 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
     <section className={styles.panel}>
       <style>{css}</style>
       <label className={styles.toggle}>
-        <input
-          type="checkbox"
+        <Checkbox.Root
+          className={styles.radixCheckbox}
           checked={form.enabled}
-          onChange={(event) => update({ enabled: event.currentTarget.checked })}
-        />
+          onCheckedChange={(checked) => update({ enabled: checked === true })}
+          aria-label="Sincronização automática"
+        >
+          <Checkbox.Indicator>✓</Checkbox.Indicator>
+        </Checkbox.Root>
         Sincronização automática
       </label>
-      <label>
-        IDs das coleções (separados por vírgula)
-        <input
-          value={form.collectionIds.join(", ")}
-          onChange={(event) => update({ collectionIds: ids(event.currentTarget.value) })}
-        />
-      </label>
+      <fieldset className={styles.collectionPicker}>
+        <legend>Coleções selecionadas</legend>
+        {form.collectionIds.length ? (
+          <div className={styles.collectionList}>
+            {form.collectionIds.map((id) => (
+              <label key={id} className={styles.toggle}>
+                <Checkbox.Root
+                  className={styles.radixCheckbox}
+                  checked
+                  onCheckedChange={(checked) => {
+                    if (checked !== true) {
+                      update({ collectionIds: form.collectionIds.filter((item) => item !== id) });
+                    }
+                  }}
+                  aria-label={`Remover coleção ${id}`}
+                >
+                  <Checkbox.Indicator>✓</Checkbox.Indicator>
+                </Checkbox.Root>
+                <span>{id}</span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p>Nenhuma coleção selecionada.</p>
+        )}
+        <label>
+          Adicionar IDs de coleções (vírgula ou espaço)
+          <input
+            placeholder="Cole IDs das coleções"
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                const input = event.currentTarget;
+                update({ collectionIds: [...new Set([...form.collectionIds, ...ids(input.value)])] });
+                input.value = "";
+              }
+            }}
+            onBlur={(event) => {
+              const input = event.currentTarget;
+              if (!input.value.trim()) return;
+              update({ collectionIds: [...new Set([...form.collectionIds, ...ids(input.value)])] });
+              input.value = "";
+            }}
+          />
+        </label>
+        <p>Pressione Enter para adicionar. Desmarque uma coleção para removê-la.</p>
+      </fieldset>
       <label>
         Token do Relay
         <input
