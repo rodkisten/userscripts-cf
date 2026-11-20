@@ -1,15 +1,17 @@
 # [TEMP] CSS semantic migration
 
-## Current stage: guarded rewrite utility
+## Tools
 
-- `node build/css-semantic-audit.mjs --write-report` inventories CSS and relative imports.
-- `node build/css-semantic-rewrite.mjs src/path/file.css` previews a transformation.
-- Append `--fix` to write changes **only to explicitly supplied files**.
-- Only a top-level `:host` permits rewriting. Existing tokens are reused; duplicate simple values receive tokens.
-- CSS imports, conditional declarations, and unverified page-world ownership are intentionally excluded.
-- Lightning CSS validates generated output without minifying it.
-- The `[TEMP]` workflow runs isolated utility tests only. No permanent pipeline was changed.
+- `node build/css-semantic-audit.mjs --write-report`: inventories CSS and relative import edges.
+- `node build/css-style-ownership.mjs`: follows transitive CSS imports and reports shadow candidates vs files requiring manual ownership review in `artifacts/css-ownership.json`.
+- `node build/css-semantic-rewrite.mjs path/to/file.css`: previews conservative token extraction; add `--fix` only for explicitly approved files.
 
-## Still required before automated repository-wide migration
+The ownership report is **heuristic**, not proof that a stylesheet is safe to migrate. It recognizes relative CSS imports, `ctx.style`, `ctx.ui.registerStyles` and `ctx.pageStyle`, but dynamic CSS, aliased exports, CSS imported via build plugins and TS reexports need deeper graph resolution. Any ambiguous, orphaned or document-scoped file remains review-only. No automatic repository-wide rewrite is enabled.
 
-Resolve transitive CSS imports and ownership of CSS modules per runtime entrypoint. Distinguish explicit `ctx.pageStyle` website modifications from ShadowRoot UI. Handle themes, shorthand values and token collisions across imported files. Validate all affected TypeScript and build targets before enabling automated PR generation. Do not assume every CSS file belongs to a ShadowRoot.
+## Shadow DOM contract
+
+UI styles belong in `ctx.ui.registerStyles` or `ctx.style`, mounted in the script-owned ShadowRoot. Website modifications must remain explicit `ctx.pageStyle` exceptions. Existing CSS Modules and React portals remain unchanged. Shared `src/styles/core.css` mixes host and document selectors and must not be blindly migrated.
+
+## Verification
+
+The only added test suites are isolated utility tests in `[TEMP] CSS Semantic Migration`. No permanent CI modifications or component/userscript tests.
