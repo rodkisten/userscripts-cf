@@ -406,3 +406,22 @@ test("does not count a Relay insertion for an unrequested destination", () => {
   );
   assert.equal(classify({ channels: { inserted: ["other"] } }, ["expected"]).complete, false);
 });
+
+test("rejects malformed Relay channel arrays before writing delivery state", async () => {
+  let saved = false;
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => { saved = true; },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async () => ({ results: [{ index: 0, channels: { inserted: "alpha" } }] }),
+  }), /canais inválida/);
+  assert.equal(saved, false);
+});
+
+test("ignores invalid video variants without throwing or sending invalid URLs", () => {
+  const invalid = reel();
+  invalid.media.video_versions = [{ url: "https://cdn.example/bad.mp4", width: 0, height: 0 }];
+  assert.equal(reelPayload(invalid), null);
+});
