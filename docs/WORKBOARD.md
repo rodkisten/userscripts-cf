@@ -107,6 +107,7 @@
 
 ## Evidence log
 
+- 2026-11-20: Full `node build/build.mjs` on a 2-CPU host completed green in **13237s (~3h40m)**: 12 targets built including `standalone.user.js` (5,130,423 B / gzip 1,060,637 B); React root audit passed (1 root/world, owner `src/core/runtime-react.tsx`). Step timings: config+root audit 7s, runtime graph analysis **218s**, compile+minify **12882s (97%)**, post-build audits 1.7s, event audit+SHA256SUMS 127s. Hotspots: ~24 concurrent full Vite/Rolldown builds (12 targets × sandbox/page worlds) oversubscribed on 2 cores; `userscripts-cf:runtime-helpers` transform dominated plugin time (up to ~545s callbacks in one build — full TS AST per module per bundle, no cross-bundle cache, repeated subtree scans); `userscripts-inline-css-modules` load up to ~327s; `compileTarget` runs a second `viteBuild` per target with `minify:false` only to re-wrap in IIFE; Prettier `format()` on multi-MB bodies per world and per target; `analyzeRuntimeGraph` re-parses each module per entry with no shared cache. The `standalone/` directory is NOT part of this pipeline (hand-maintained `.user.js` files; category-bundle contract still unimplemented per `standalone/README.md`).
 - 2026-11-17: React-only migration contract exists but legacy `AGENTS.md` still said Solid-first; mandatory precedence established here.
 - 2026-11-17: Reddit mobile CSS attempt `c7cc3ec4`; Safari visual verification outstanding.
 - 2026-11-17: Instagram visible-Reel anchor `412f9911` and native save binding `12a17db4`; per-item mounting and React migration outstanding.
