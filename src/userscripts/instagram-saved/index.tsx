@@ -226,7 +226,7 @@ export default {
                   const instagramOptions = {
                     transport: "fetch",
                     cacheMode: "off",
-                    credentials: "same-origin",
+                    credentials: "same-origin" as const,
                     signal: abort,
                     headers: {
                       "X-IG-App-ID": "936619743392459",
