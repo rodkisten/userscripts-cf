@@ -278,3 +278,34 @@ test("imports only exact legacy channel-set confirmations into the ledger", asyn
   }), 1);
   assert.deepEqual(sent, [["new"]]);
 });
+
+test("rejects duplicate destination IDs before fetching Instagram", async () => {
+  let fetched = false;
+  await assert.rejects(syncSaved({
+    channels: ["same", "same"],
+    load: async () => ({}),
+    save: async () => {},
+    pause: async () => {},
+    fetchPage: async () => { fetched = true; return { items: [] }; },
+    sendBatch: async () => ({ results: [] }),
+  }), /canal válido/);
+  assert.equal(fetched, false);
+});
+
+test("does not overwrite an existing channel confirmation timestamp", async () => {
+  let ledger = { abc: { first: 100 } };
+  await syncSaved({
+    channels: ["first", "second"],
+    load: async () => ({}),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => ({
+      results: items.map((_, index) => ({ index, channels: { inserted: channels } })),
+    }),
+  });
+  assert.equal(ledger.abc.first, 100);
+  assert.ok(ledger.abc.second > 100);
+});
