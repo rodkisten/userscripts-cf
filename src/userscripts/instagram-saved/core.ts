@@ -94,7 +94,10 @@ export function classify(result: DeliveryResult | undefined, channels: string[])
     ...(c?.covered || []),
     ...(c?.notSent || []).filter((v) => v.reason === "already_sent").map((v) => v.channelId),
   ]);
-  return { complete: channels.length > 0 && channels.every((c) => covered.has(c)), inserted: inserted.size > 0 };
+  return {
+    complete: channels.length > 0 && channels.every((channel) => covered.has(channel)),
+    inserted: channels.some((channel) => inserted.has(channel)),
+  };
 }
 
 export function retryDelay(attempt: number, count: number, retryAfter?: string | null, random = Math.random) {
