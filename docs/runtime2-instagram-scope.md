@@ -32,7 +32,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Reject malformed Reel shortcodes before URL construction; reject null Instagram and Relay API responses with controlled errors and regression coverage.
 - [x] Skip malformed/null Instagram saved entries without interrupting the page, and safely classify malformed already-sent acknowledgements.
 - [ ] Verify ledger behavior against live Relay responses. Duplicate channel IDs fail before fetching, and confirmed timestamps are not overwritten.
-- [ ] Run targeted tests and TypeScript/build checks; the previous branch head had no reported workflow runs or commit statuses.
+- [ ] Run TypeScript/build checks; Instagram Saved feature tests were explicitly removed by request.
 - [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.
 - [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
 - [x] Bind the visible Reel's native bookmark to its scoped publication identity and remount on swipe; refuse ambiguous multi-Reel identity.
@@ -43,7 +43,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Current verification
 
-Source hardening, account-switch guards, per-channel ledger and utility regression tests committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. Git clone in the execution container failed because github.com DNS resolution is unavailable. No deployment requested. Do not merge until validated.
+Source hardening, account-switch guards and per-channel ledger committed; **Instagram Saved feature tests are intentionally absent, and no typecheck, build, or Safari verification is claimed**. Git clone in the execution container failed because github.com DNS resolution is unavailable. No deployment requested. Do not merge until validated.
 
 ## Coordination
 
