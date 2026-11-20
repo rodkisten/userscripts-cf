@@ -47,7 +47,7 @@ const C = {
   bgMagenta: "\x1b[45m\x1b[37m",
 };
 
-const fmt = {
+export const fmt = {
   duration: (ms) => (ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(2)}s`),
   bytes: (b) => (b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} kB`),
   badge: (label, bg = C.bgCyan) => `${bg}${C.bold} ${label} ${C.reset}`,
@@ -59,7 +59,7 @@ const fmt = {
   red: (str) => `${C.red}${str}${C.reset}`,
 };
 
-class BuildReporter {
+export class BuildReporter {
   constructor(title, version) {
     this.title = title;
     this.version = version;
