@@ -4,6 +4,7 @@ import { analyzeImportGraph } from "./css-import-graph.mjs";
 import { analyzeStyleOwnership } from "./css-style-ownership.mjs";
 import { rewriteShadowGroup } from "./css-semantic-group.mjs";
 import { validateTokenReachability } from "./css-token-reachability.mjs";
+import { verifyStyleRegistration } from "./css-style-registration.mjs";
 
 const normalize = file => file.replaceAll("\\", "/");
 const isSource = name => /\.(?:css|[jt]sx?)$/.test(name);
@@ -44,6 +45,12 @@ export function previewSemanticMigration(sources, groups) {
     if (!reachability.safe) {
       diagnostics.push(...reachability.diagnostics);
       previews.push({ files: names, status: "blocked", reasons: reachability.diagnostics });
+      continue;
+    }
+    const registration = verifyStyleRegistration(sources, names, ownership.classifications);
+    if (!registration.safe) {
+      diagnostics.push(...registration.failures);
+      previews.push({ files: names, status: "blocked", reasons: registration.failures });
       continue;
     }
     const input = Object.fromEntries(names.map(name => [name, sources[name]]));

@@ -20,3 +20,7 @@ Only the temporary workflow runs isolated utility tests. Permanent CI and produc
 ## Token reachability gate
 
 `build/css-token-reachability.mjs` requires one host token owner and static import reachability from each identified consumer to every stylesheet in the proposed group. The preview blocks groups that fail this check. This is only a static prerequisite: CSS Modules imported as strings may not be registered at runtime, so the gate does not yet authorize writes or guarantee ShadowRoot inclusion. Manual verification of `ctx.ui.registerStyles(css)` remains mandatory.
+
+## Static registration gate
+
+`build/css-style-registration.mjs` parses TS/TSX/JS AST and recognizes direct named `css` exports from imported CSS files passed to `ctx.ui.registerStyles(...)`. Preview groups are blocked unless **every** file in the group is registered by every identified owner. This deliberately rejects indirect registration through barrel exports, aliases not directly imported, and dynamic CSS. A passing check is not runtime proof, and no automatic CSS writes are enabled.
