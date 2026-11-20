@@ -42,6 +42,10 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Configuration and concurrency feedback
+
+A manual run now explains missing collection IDs, Relay token, destination channels or Instagram login instead of silently returning. Manual synchronization is allowed even if the automatic schedule is disabled; the scheduled path still respects the automatic-sync toggle. If another tab owns the account's Web Lock, the panel displays a concurrency message rather than appearing to complete successfully. No Instagram Saved automated tests were introduced.
+
 ## Manual sync control
 
 The Saved panel exposes a touch-friendly **Sync now** action beside Settings. It calls the existing manual sync entrypoint, disables itself while a run is active and keeps the progress/status visible. It does not bypass account, lock, collection or Relay configuration safeguards. Safari verification remains pending.
