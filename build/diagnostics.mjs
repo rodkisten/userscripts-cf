@@ -1,60 +1,300 @@
+// build/diagnostics.mjs
+import { performance } from "node:perf_hooks";
+import { BuildReporter, fmt } from "./build.js"; // @TODO: ajustar caminho caso o reporter esteja em ./vitest-reporter.mjs
+
 // Lightweight diagnostic prelude injected into every generated userscript.
 // Shared across installations on the same JavaScript global.
+// NOTA: Como esta função é serializada via `.toString()` no build, todos os
+// helpers de runtime permanecem encapsulados dentro do seu escopo.
 export function diagnosticPrelude(target, version, scripts) {
   const key = "__rodScriptDiagnosticsV1";
   const storageKey = "rod:script-diagnostics:v1";
+  const clearedAtKey = storageKey + ":clearedAt";
+  const signalKey = storageKey + ":signal";
+  const bridgeEvent = "rod-diagnostics:bridge:v1";
+  const changeEvent = "rod-diagnostics:change";
+  const MAX_HISTORY = 250;
+  const MAX_SEEN_IDS = 1000;
+
   const root = window;
   let state = root[key];
+
   if (!state) {
-    const history = (() => {
+    // ========================================================================
+    // // @TODO: Mover para src/core/diagnostics/storage.ts (quando bundled)
+    // ========================================================================
+    const readJSON = (k, fallback) => {
       try {
-        return JSON.parse(root.localStorage.getItem(storageKey) || "[]");
+        const raw = root.localStorage.getItem(k);
+        return raw ? JSON.parse(raw) : fallback;
       } catch {
-        return [];
+        return fallback;
+      }
+    };
+
+    let clearedAt = (() => {
+      try {
+        return Number(root.localStorage.getItem(clearedAtKey)) || 0;
+      } catch {
+        return 0;
       }
     })();
-    state = { scripts: {}, history: Array.isArray(history) ? history : [], capture: null };
-    // IndexedDB is the durable store; localStorage is a synchronous fallback.
-    // A single snapshot record avoids per-error transaction churn.
+
+    const rawHistory = readJSON(storageKey, []);
+    const initialHistory = Array.isArray(rawHistory)
+      ? rawHistory.filter((item) => item && Date.parse(item.lastSeen) > clearedAt)
+      : [];
+
+    state = { scripts: {}, history: initialHistory, capture: null };
+
+    // Índice O(1) sincronizado com state.history para evitar .find() lineares
+    const historyIndex = new Map();
+    for (let i = 0; i < state.history.length; i++) {
+      const rec = state.history[i];
+      if (rec?.fingerprint) historyIndex.set(rec.fingerprint, rec);
+    }
+
+    const trimAndSortHistory = () => {
+      state.history.sort((a, b) => (a.lastSeen < b.lastSeen ? 1 : a.lastSeen > b.lastSeen ? -1 : 0));
+      if (state.history.length > MAX_HISTORY) {
+        for (let i = MAX_HISTORY; i < state.history.length; i++) {
+          historyIndex.delete(state.history[i].fingerprint);
+        }
+        state.history.length = MAX_HISTORY;
+      }
+    };
+
+    // ========================================================================
+    // // @TODO: Mover para src/core/diagnostics/redact.ts (quando bundled)
+    // ========================================================================
+    const BEARER_RE = /(Bearer\s+)[\w.~-]+/gi;
+    const SECRET_PARAM_RE = /([?&](?:token|key|secret|password|authorization)=)[^&#\s]+/gi;
+
+    const redact = (value) =>
+      String(value ?? "")
+        .replace(BEARER_RE, "$1[REDACTED]")
+        .replace(SECRET_PARAM_RE, "$1[REDACTED]");
+
+    // ========================================================================
+    // // @TODO: Mover para src/core/diagnostics/persistence.ts (quando bundled)
+    // ========================================================================
     let database = null;
     let revision = 0;
-    let pending = false;
+    let pendingIdbSnapshot = false;
+    let pendingLocalSave = false;
     const durableQueue = [];
+
+    const scheduleLocalSave = () => {
+      if (pendingLocalSave) return;
+      pendingLocalSave = true;
+      queueMicrotask(() => {
+        pendingLocalSave = false;
+        try {
+          root.localStorage.setItem(storageKey, JSON.stringify(state.history));
+        } catch {}
+      });
+    };
+
     const flushDurable = () => {
       if (!database || !durableQueue.length) return;
       try {
         const tx = database.transaction("events", "readwrite");
         const store = tx.objectStore("events");
         const batch = durableQueue.splice(0);
-        for (const event of batch) store.put(event);
+        for (let i = 0; i < batch.length; i++) store.put(batch[i]);
         tx.onabort = () => durableQueue.unshift(...batch);
         tx.onerror = () => {};
         tx.oncomplete = () => {
-          // A successful transaction is the durability boundary.
           if (durableQueue.length) flushDurable();
         };
       } catch {}
     };
+
     const persist = () => {
-      if (!database || pending) return;
-      pending = true;
+      if (!database || pendingIdbSnapshot) return;
+      pendingIdbSnapshot = true;
       queueMicrotask(() => {
-        pending = false;
+        pendingIdbSnapshot = false;
         if (!database) return;
         try {
-          const transaction = database.transaction("snapshots", "readwrite");
-          transaction.objectStore("snapshots").put({ id: "history", records: state.history, revision });
+          const tx = database.transaction("snapshots", "readwrite");
+          tx.objectStore("snapshots").put({ id: "history", records: state.history, revision });
         } catch {}
       });
     };
+
+    const notify = () => {
+      try {
+        root.document.dispatchEvent(new CustomEvent(changeEvent));
+      } catch {}
+    };
+
+    // ========================================================================
+    // // @TODO: Mover para src/core/diagnostics/merge.ts (quando bundled)
+    // ========================================================================
+    const sumWriterCounts = (counts) => {
+      let total = 0;
+      const keys = Object.keys(counts);
+      for (let i = 0; i < keys.length; i++) {
+        total += counts[keys[i]] || 0;
+      }
+      return total;
+    };
+
+    const mergeWriterCounts = (targetRecord, incomingCounts, fallbackCount) => {
+      const counts = { ...(targetRecord.writerCounts || {}) };
+      let hasKeys = Object.keys(counts).length > 0;
+
+      if (incomingCounts) {
+        const incomingKeys = Object.keys(incomingCounts);
+        for (let i = 0; i < incomingKeys.length; i++) {
+          const w = incomingKeys[i];
+          const val = Number(incomingCounts[w]) || 0;
+          if (val > (counts[w] || 0)) counts[w] = val;
+          hasKeys = true;
+        }
+      }
+
+      if (!hasKeys && targetRecord.count) {
+        counts.legacy = targetRecord.count;
+        hasKeys = true;
+      }
+
+      targetRecord.writerCounts = counts;
+      targetRecord.count = hasKeys
+        ? sumWriterCounts(counts)
+        : Math.max(targetRecord.count || 1, fallbackCount || 1);
+    };
+
+    const merge = (records) => {
+      if (!Array.isArray(records) || !records.length) return false;
+      let changed = false;
+
+      for (let i = 0; i < records.length; i++) {
+        const item = records[i];
+        if (
+          !item ||
+          typeof item.fingerprint !== "string" ||
+          !item.lastSeen ||
+          Date.parse(item.lastSeen) <= clearedAt
+        ) {
+          continue;
+        }
+
+        const previous = historyIndex.get(item.fingerprint);
+        if (!previous) {
+          const clone = { ...item };
+          state.history.push(clone);
+          historyIndex.set(clone.fingerprint, clone);
+          changed = true;
+        } else if (
+          item.writerCounts ||
+          previous.writerCounts ||
+          item.lastSeen > previous.lastSeen ||
+          item.count > previous.count
+        ) {
+          mergeWriterCounts(previous, item.writerCounts, item.count);
+          if (item.lastSeen > previous.lastSeen) previous.lastSeen = item.lastSeen;
+          changed = true;
+        }
+      }
+
+      if (changed) trimAndSortHistory();
+      return changed;
+    };
+
+    // ========================================================================
+    // // @TODO: Mover para src/core/diagnostics/sync-bus.ts (quando bundled)
+    // ========================================================================
+    const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let sequence = 0;
+    const seen = new Set();
+    let channel;
+
+    const send = (payload) => {
+      const message = { ...payload, sender: tabId, id: tabId + ":" + ++sequence };
+      const serialized = JSON.stringify(message);
+      try {
+        channel?.postMessage(message);
+      } catch {}
+      try {
+        root.document.dispatchEvent(new CustomEvent(bridgeEvent, { detail: serialized }));
+      } catch {}
+      try {
+        root.localStorage.setItem(signalKey, serialized);
+      } catch {}
+    };
+
+    const clearLocalState = (atTimestamp) => {
+      clearedAt = atTimestamp;
+      try {
+        root.localStorage.setItem(clearedAtKey, String(clearedAt));
+        root.localStorage.removeItem(storageKey);
+      } catch {}
+      state.history.length = 0;
+      historyIndex.clear();
+      revision++;
+      durableQueue.length = 0;
+      persist();
+      try {
+        if (database) database.transaction("events", "readwrite").objectStore("events").clear();
+      } catch {}
+    };
+
+    const receive = (message) => {
+      if (!message || message.sender === tabId || typeof message.id !== "string" || seen.has(message.id)) {
+        return;
+      }
+      seen.add(message.id);
+      if (seen.size > MAX_SEEN_IDS) seen.clear();
+
+      if (message.type === "clear") {
+        if (!(message.at > clearedAt)) return;
+        clearLocalState(message.at);
+        notify();
+      } else if (message.type === "capture") {
+        const item = message.record;
+        if (!item || Date.parse(item.lastSeen) <= clearedAt) return;
+
+        const existing = historyIndex.get(item.fingerprint);
+        if (existing) {
+          mergeWriterCounts(existing, item.writerCounts, item.count);
+          if (item.lastSeen > existing.lastSeen) existing.lastSeen = item.lastSeen;
+        } else {
+          const clone = { ...item };
+          state.history.unshift(clone);
+          historyIndex.set(clone.fingerprint, clone);
+        }
+
+        trimAndSortHistory();
+        revision++;
+        scheduleLocalSave();
+        persist();
+        notify();
+      } else if (message.type === "snapshot") {
+        if (merge(message.records)) {
+          revision++;
+          scheduleLocalSave();
+          persist();
+          notify();
+        }
+      } else if (message.type === "hello") {
+        send({ type: "snapshot", records: state.history });
+      }
+    };
+
+    // Hidratação assíncrona do IndexedDB
     if (root.indexedDB) {
       try {
         const request = root.indexedDB.open("rod-script-diagnostics", 2);
         request.onupgradeneeded = () => {
           const db = request.result;
-          if (!db.objectStoreNames.contains("snapshots"))
+          if (!db.objectStoreNames.contains("snapshots")) {
             db.createObjectStore("snapshots", { keyPath: "id" });
-          if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
+          }
+          if (!db.objectStoreNames.contains("events")) {
+            db.createObjectStore("events", { keyPath: "id" });
+          }
         };
         request.onsuccess = () => {
           database = request.result;
@@ -63,45 +303,57 @@ export function diagnosticPrelude(target, version, scripts) {
             database = null;
           };
           flushDurable();
+
           try {
             const tx = database.transaction("events", "readonly");
             const read = tx.objectStore("events").getAll();
             read.onsuccess = () => {
-              for (const item of read.result || []) {
+              const items = read.result || [];
+              if (!items.length) return;
+              let mutated = false;
+
+              for (let i = 0; i < items.length; i++) {
+                const item = items[i];
                 if (!item || item.timestamp <= clearedAt) continue;
-                const existing = state.history.find((record) => record.fingerprint === item.fingerprint);
+
+                const existing = historyIndex.get(item.fingerprint);
                 if (existing) {
                   existing.writerCounts ||= {};
-                  existing.writerCounts[item.writer] = Math.max(
-                    existing.writerCounts[item.writer] || 0,
-                    item.sequence,
-                  );
-                  existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
-                } else
-                  state.history.push({
+                  const prevSeq = existing.writerCounts[item.writer] || 0;
+                  if (item.sequence > prevSeq) {
+                    existing.writerCounts[item.writer] = item.sequence;
+                    existing.count = sumWriterCounts(existing.writerCounts);
+                  }
+                } else {
+                  const hydrated = {
                     ...item.record,
                     writerCounts: { [item.writer]: item.sequence },
                     count: item.sequence,
-                  });
+                  };
+                  state.history.push(hydrated);
+                  historyIndex.set(hydrated.fingerprint, hydrated);
+                }
+                mutated = true;
               }
-              state.history.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
-              state.history.length = Math.min(state.history.length, 250);
-              notify();
+
+              if (mutated) {
+                trimAndSortHistory();
+                notify();
+              }
             };
           } catch {}
+
           try {
             const tx = database.transaction("snapshots", "readonly");
             const read = tx.objectStore("snapshots").get("history");
             read.onsuccess = () => {
               if (revision === 0 && Array.isArray(read.result?.records)) {
                 merge(read.result.records);
-                try {
-                  root.localStorage.setItem(storageKey, JSON.stringify(state.history));
-                } catch {}
-                try {
-                  root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change"));
-                } catch {}
-              } else persist();
+                scheduleLocalSave();
+                notify();
+              } else {
+                persist();
+              }
             };
             read.onerror = persist;
           } catch {
@@ -111,155 +363,26 @@ export function diagnosticPrelude(target, version, scripts) {
       } catch {}
     }
 
-    // Cross-tab synchronization is opt-in to the same origin and storage partition.
-    const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    let sequence = 0;
-    const seen = new Set();
-    const bridgeEvent = "rod-diagnostics:bridge:v1";
-    let clearedAt = (() => {
-      try {
-        return Number(root.localStorage.getItem(storageKey + ":clearedAt")) || 0;
-      } catch {
-        return 0;
-      }
-    })();
-    state.history.splice(
-      0,
-      state.history.length,
-      ...state.history.filter((item) => Date.parse(item.lastSeen) > clearedAt),
-    );
-    const signalKey = storageKey + ":signal";
-    let channel;
-    const notify = () => {
-      try {
-        root.document.dispatchEvent(new CustomEvent("rod-diagnostics:change"));
-      } catch {}
-    };
-    const send = (payload) => {
-      const message = { ...payload, sender: tabId, id: tabId + ":" + ++sequence };
-      try {
-        channel?.postMessage(message);
-      } catch {}
-      try {
-        root.document.dispatchEvent(new CustomEvent(bridgeEvent, { detail: JSON.stringify(message) }));
-      } catch {}
-      try {
-        root.localStorage.setItem(signalKey, JSON.stringify(message));
-      } catch {}
-    };
-    const merge = (records) => {
-      if (!Array.isArray(records)) return false;
-      let changed = false;
-      for (const item of records) {
-        if (
-          !item ||
-          typeof item.fingerprint !== "string" ||
-          !item.lastSeen ||
-          Date.parse(item.lastSeen) <= clearedAt
-        )
-          continue;
-        const previous = state.history.find((value) => value.fingerprint === item.fingerprint);
-        if (!previous) {
-          state.history.push({ ...item });
-          changed = true;
-        } else if (
-          item.writerCounts ||
-          previous.writerCounts ||
-          item.lastSeen > previous.lastSeen ||
-          item.count > previous.count
-        ) {
-          const counts = { ...(previous.writerCounts || {}) };
-          for (const [writer, count] of Object.entries(item.writerCounts || {}))
-            counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
-          if (!Object.keys(counts).length && previous.count) counts.legacy = previous.count;
-          previous.writerCounts = counts;
-          previous.count = Object.keys(counts).length
-            ? Object.values(counts).reduce((a, b) => a + b, 0)
-            : Math.max(previous.count || 1, item.count || 1);
-          previous.lastSeen = item.lastSeen > previous.lastSeen ? item.lastSeen : previous.lastSeen;
-          changed = true;
-        }
-      }
-      if (changed) {
-        state.history.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
-        state.history.length = Math.min(state.history.length, 250);
-      }
-      return changed;
-    };
-    const receive = (message) => {
-      if (!message || message.sender === tabId || typeof message.id !== "string" || seen.has(message.id))
-        return;
-      seen.add(message.id);
-      if (seen.size > 1000) seen.clear();
-      if (message.type === "clear") {
-        if (!(message.at > clearedAt)) return;
-        clearedAt = message.at;
-        try {
-          root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt));
-        } catch {}
-        state.history.length = 0;
-        revision++;
-        try {
-          root.localStorage.removeItem(storageKey);
-        } catch {}
-        persist();
-        durableQueue.length = 0;
-        try {
-          if (database) database.transaction("events", "readwrite").objectStore("events").clear();
-        } catch {}
-        notify();
-      } else if (message.type === "capture") {
-        const item = message.record;
-        if (!item || Date.parse(item.lastSeen) <= clearedAt) return;
-        const existing = state.history.find((value) => value.fingerprint === item.fingerprint);
-        if (existing) {
-          const counts = { ...(existing.writerCounts || {}) };
-          for (const [writer, count] of Object.entries(item.writerCounts || {}))
-            counts[writer] = Math.max(counts[writer] || 0, Number(count) || 0);
-          if (!Object.keys(counts).length && existing.count) counts.legacy = existing.count;
-          existing.writerCounts = counts;
-          existing.count = Object.keys(counts).length
-            ? Object.values(counts).reduce((a, b) => a + b, 0)
-            : Math.max(existing.count || 1, item.count || 1);
-          existing.lastSeen = item.lastSeen > existing.lastSeen ? item.lastSeen : existing.lastSeen;
-        } else state.history.unshift({ ...item });
-        state.history.length = Math.min(state.history.length, 250);
-        revision++;
-        try {
-          root.localStorage.setItem(storageKey, JSON.stringify(state.history));
-        } catch {}
-        persist();
-        notify();
-      } else if (message.type === "snapshot") {
-        if (merge(message.records)) {
-          revision++;
-          try {
-            root.localStorage.setItem(storageKey, JSON.stringify(state.history));
-          } catch {}
-          persist();
-          notify();
-        }
-      } else if (message.type === "hello") send({ type: "snapshot", records: state.history });
-    };
     try {
       if (typeof root.BroadcastChannel === "function") {
         channel = new root.BroadcastChannel(storageKey);
         channel.onmessage = (event) => receive(event.data);
       }
     } catch {}
+
     root.document.addEventListener(bridgeEvent, (event) => {
       if (typeof event.detail !== "string") return;
       try {
         receive(JSON.parse(event.detail));
       } catch {}
     });
+
     root.addEventListener("storage", (event) => {
       if (event.key === signalKey && event.newValue) {
         try {
           receive(JSON.parse(event.newValue));
         } catch {}
-      }
-      if (event.key === storageKey && event.newValue) {
+      } else if (event.key === storageKey && event.newValue) {
         try {
           if (merge(JSON.parse(event.newValue))) {
             revision++;
@@ -269,25 +392,30 @@ export function diagnosticPrelude(target, version, scripts) {
         } catch {}
       }
     });
+
     send({ type: "hello" });
-    const redact = (value) =>
-      String(value ?? "")
-        .replace(/(Bearer\s+)[\w.~-]+/gi, "$1[REDACTED]")
-        .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\s]+/gi, "$1[REDACTED]");
+
+    // ========================================================================
+    // API Pública de Captura & Controle
+    // ========================================================================
     state.capture = (error, source = "manual", owner = null) => {
       try {
+        const nowMs = Date.now();
+        const nowIso = new Date(nowMs).toISOString();
         const message = redact(error?.message || error || "Unknown error");
         const stack = redact(error?.stack || "");
         const script = owner || "unknown";
-        const fingerprint = [script, source, message, stack.split("\n")[1] || ""].join("|");
-        const existing = state.history.find((item) => item.fingerprint === fingerprint);
-        if (existing) {
-          existing.writerCounts ||= { legacy: existing.count || 1 };
-          existing.writerCounts[tabId] = (existing.writerCounts[tabId] || 0) + 1;
-          existing.count = Object.values(existing.writerCounts).reduce((a, b) => a + b, 0);
-          existing.lastSeen = new Date().toISOString();
-        } else
-          state.history.unshift({
+        const firstFrame = stack.split("\n", 2)[1] || "";
+        const fingerprint = `${script}|${source}|${message}|${firstFrame}`;
+
+        let record = historyIndex.get(fingerprint);
+        if (record) {
+          record.writerCounts ||= { legacy: record.count || 1 };
+          record.writerCounts[tabId] = (record.writerCounts[tabId] || 0) + 1;
+          record.count = sumWriterCounts(record.writerCounts);
+          record.lastSeen = nowIso;
+        } else {
+          record = {
             fingerprint,
             script,
             source,
@@ -295,65 +423,92 @@ export function diagnosticPrelude(target, version, scripts) {
             stack,
             count: 1,
             writerCounts: { [tabId]: 1 },
-            firstSeen: new Date().toISOString(),
-            lastSeen: new Date().toISOString(),
-            url: root.location?.origin + root.location?.pathname,
-          });
-        state.history.length = Math.min(state.history.length, 250);
+            firstSeen: nowIso,
+            lastSeen: nowIso,
+            url: (root.location?.origin || "") + (root.location?.pathname || ""),
+          };
+          state.history.unshift(record);
+          historyIndex.set(fingerprint, record);
+        }
+
+        trimAndSortHistory();
         revision++;
-        try {
-          root.localStorage.setItem(storageKey, JSON.stringify(state.history));
-        } catch {}
+        scheduleLocalSave();
         persist();
-        const record = state.history.find((item) => item.fingerprint === fingerprint);
+
+        const snapshotRecord = { ...record, writerCounts: { ...record.writerCounts } };
         durableQueue.push({
-          id: tabId + ":" + ++sequence + ":" + Date.now(),
+          id: `${tabId}:${++sequence}:${nowMs}`,
           fingerprint,
           writer: tabId,
           sequence: record.writerCounts[tabId],
-          timestamp: Date.now(),
-          record: { ...record },
+          timestamp: nowMs,
+          record: snapshotRecord,
         });
         flushDurable();
-        send({
-          type: "capture",
-          record: { ...state.history.find((item) => item.fingerprint === fingerprint) },
-        });
+        send({ type: "capture", record: snapshotRecord });
         notify();
       } catch {}
     };
+
     root.addEventListener(
       "error",
       (event) => {
-        if (event.error) state.capture(event.error, "window.error");
-        else if (event.target !== root)
+        if (event.error) {
+          state.capture(event.error, "window.error");
+        } else if (event.target !== root) {
           state.capture("Resource failed: " + (event.target?.tagName || "unknown"), "resource.error");
+        }
       },
       true,
     );
-    root.addEventListener("unhandledrejection", (event) => state.capture(event.reason, "unhandledrejection"));
+
+    root.addEventListener("unhandledrejection", (event) => {
+      state.capture(event.reason, "unhandledrejection");
+    });
+
     state.export = () =>
       JSON.stringify({ schema: 1, scripts: state.scripts, errors: state.history }, null, 2);
+
     state.clear = () => {
-      state.history.length = 0;
-      clearedAt = Date.now();
-      try {
-        root.localStorage.setItem(storageKey + ":clearedAt", String(clearedAt));
-      } catch {}
-      revision++;
-      try {
-        root.localStorage.removeItem(storageKey);
-      } catch {}
-      persist();
-      durableQueue.length = 0;
-      try {
-        if (database) database.transaction("events", "readwrite").objectStore("events").clear();
-      } catch {}
-      send({ type: "clear", at: clearedAt });
+      const nowMs = Date.now();
+      clearLocalState(nowMs);
+      send({ type: "clear", at: nowMs });
       notify();
     };
+
     root[key] = state;
   }
-  for (const script of scripts) state.scripts[script] = { target, version };
+
+  for (let i = 0; i < scripts.length; i++) {
+    state.scripts[scripts[i]] = { target, version };
+  }
+
   return state;
+}
+
+// ============================================================================
+// // @TODO: Mover para build/diagnostics-audit.mjs (CLI / CI Check)
+// ============================================================================
+export async function auditDiagnosticPrelude(version = "1.0.0") {
+  const reporter = new BuildReporter("diagnostic-prelude", version);
+  reporter.banner();
+
+  const serialized = await reporter.step("serialize & inspect diagnostic prelude", async (log) => {
+    const t0 = performance.now();
+    const code = diagnosticPrelude.toString();
+    const bytes = Buffer.byteLength(code, "utf8");
+
+    if (code.includes("import ") || code.includes("require(")) {
+      throw new Error("diagnosticPrelude must be self-contained for .toString() injection");
+    }
+
+    log.pass("self-contained closure verified", `${fmt.bytes(bytes)} · ${fmt.duration(performance.now() - t0)}`);
+    return code;
+  });
+
+  reporter.summary({
+    Payload: fmt.bytes(Buffer.byteLength(serialized, "utf8")),
+    Mode: "Self-contained IIFE",
+  });
 }
