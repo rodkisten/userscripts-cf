@@ -208,6 +208,7 @@ const fix = process.argv.includes("--fix");
 const scriptArg = process.argv.find((arg) => arg.startsWith("--script="));
 const script = scriptArg ? scriptArg.slice("--script=".length) : null;
 const changedOnly = process.argv.includes("--changed");
+const filesFromArg = process.argv.find((arg) => arg.startsWith("--files-from="));
 const baseArg = process.argv.find((arg) => arg.startsWith("--base="));
 const base = baseArg?.slice("--base=".length) || process.env.STYLE_BASE_REF || "HEAD^";
 
@@ -225,7 +226,10 @@ reporter.banner();
 const targets = await reporter.step("discover source files", async (log) => {
   let files = await discoverSourceFiles(selectedDir);
   if (changedOnly) {
-    const changed = new Set(execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMRT", base, "--"], { encoding: "utf8" }).trim().split("\n"));
+    const changedPaths = filesFromArg
+      ? await fs.readFile(filesFromArg.slice("--files-from=".length), "utf8")
+      : execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMRT", base, "--"], { encoding: "utf8" });
+    const changed = new Set(changedPaths.trim().split("\n"));
     files = files.filter((file) => changed.has(file));
   }
   log.pass(path.relative(process.cwd(), selectedDir) || "src/userscripts", `${files.length} files matched`);
