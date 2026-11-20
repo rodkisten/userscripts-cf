@@ -153,6 +153,7 @@ export async function syncSaved({
     ? channels.every((channel) => Object.hasOwn(ledger[id] || {}, channel))
     : Object.hasOwn(done, id);
   const seen = new Set<string>();
+  const insertedInSession = new Set<string>();
   let processed = 0;
   let cursor = settings.cursor || "",
     count = 0,
@@ -223,6 +224,10 @@ export async function syncSaved({
                   .filter((entry) => entry.reason === "already_sent")
                   .map((entry) => entry.channelId),
               ]);
+              if (status.inserted && !insertedInSession.has(item.mediaId)) {
+                insertedInSession.add(item.mediaId);
+                count++;
+              }
               if (ledger) {
                 const row = Object.assign(Object.create(null) as Record<string, number>, ledger[item.mediaId] || {});
                 let changed = false;
@@ -242,7 +247,6 @@ export async function syncSaved({
                   done[item.mediaId] = Date.now();
                   await save(done);
                 }
-                if (status.inserted) count++;
                 continue;
               }
               if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
