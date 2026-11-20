@@ -57,6 +57,7 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 12px;
+  flex-wrap: wrap;
 }
 .actions button {
   border: 1px solid #666;
@@ -64,6 +65,11 @@
   background: #303134;
   color: inherit;
   padding: 10px;
+  min-height: 44px;
+}
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .bookmark {
