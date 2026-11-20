@@ -37,7 +37,7 @@ interface NetworkRegistry {
 const registries = new WeakMap<any, NetworkRegistry>();
 
 export function createNetworkInterceptors(
-  http: { request: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> },
+  http: { request: (input: RequestInfo | URL, init?: HttpRequestOptions) => Promise<Response> },
   { signal, onError = console.error }: NetworkInterceptorsConfig = {},
 ): NetworkInterceptors {
   let registry = registries.get(http);

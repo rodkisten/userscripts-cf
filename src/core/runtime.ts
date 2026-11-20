@@ -793,10 +793,11 @@ export function createCoreRuntime(
             throw error;
           }
         };
-        target.addEventListener(event, wrapped, {
-          ...(typeof options === "object" ? options : {}),
-          signal: abort.signal,
-        });
+        // Explicit cleanup avoids AbortSignal listener quirks in embedded DOMs and
+        // preserves boolean capture options on Safari/Tampermonkey.
+        const listenerOptions = typeof options === "boolean" ? options : { ...options };
+        target.addEventListener(event, wrapped, listenerOptions);
+        onDispose(() => target.removeEventListener(event, wrapped, listenerOptions));
       },
       style(cssContent: string) {
         return addStyle(cssContent, ensureUIRoot());
@@ -820,10 +821,18 @@ export function createCoreRuntime(
         setCssProperties,
       }),
       async dispose() {
+        const trace = (stage: string) => {
+          if ((host as unknown as { __ROD_RUNTIME_TRACE__?: boolean }).__ROD_RUNTIME_TRACE__)
+            console.info("[runtime lifecycle]", definition.id, stage);
+        };
+        trace("abort:start");
         if (!abort.signal.aborted) abort.abort();
+        trace("abort:done");
         await cleanupScope.dispose();
+        trace("cleanup:done");
         listeners.delete(definition.id);
         stateValues.delete(definition.id);
+        trace("dispose:done");
       },
     };
 

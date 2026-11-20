@@ -262,3 +262,8 @@ Independent React/Radix userscript `github-color-studio` for GitHub file views a
 The PR validation workflow checks style rules only for modified userscripts with `node build/check-style.mjs --changed --files-from=changed-files.txt`. Run `npm run lint` to audit the entire repository, including existing style debt. Run `node build/check-style.mjs --changed --base=main` locally to check changes relative to main. The `--fix` option reparses the modified source before writing it to disk.
 
 PR diagnostics in `.github/workflows/diagnostics.yml` run Prettier and ESLint only against existing files in the PR diff. Prettier covers supported source and documentation formats; ESLint runs only when installed and only on changed JS/TS files. Unchanged legacy files are excluded from PR formatting diagnostics.
+### Build reporter module
+
+Build output formatting is shared by `build/build.mjs` and `build/bundle-runtime.mjs` through `build/format.mjs`, avoiding a circular import. The GitHub Actions YAML standalone highlighter selector list is also kept syntactically valid.
+
+The build reporter lives in `build/reporter.mjs`, with terminal formatting in `build/format.mjs`. Both `build/build.mjs` and diagnostics import the reporter without importing the build entrypoint, avoiding circular module initialization.

@@ -1,0 +1,2674 @@
+/* ============================================================================
+   TODO(extract): Move shared design tokens & reusable primitives to
+   `src/styles/shared/tokens-and-primitives.css` (or `@shared/styles/base.css`):
+   1. Semantic color & surface tokens (`--_rx-accent`, `--_rx-danger`, `--_rx-glass-bg`, etc.)
+   2. Font stack aliases (`--_rx-font-chirp`, `--_rx-font-ui-stack`)
+   3. Shared `.xls-feed` / `.xls-post` card & avatar rules duplicated between
+      `lists-timeline-1.css` and `lists-view-1.module.css`
+   4. Shared interactive pill/button reset & `[hidden]` utility rules
+   ============================================================================ */
+
+/* TODO(extract): Candidate shared custom properties for global/root token sheet */
+:root {
+  --_rx-accent: rgb(29 155 240);
+  --_rx-accent-soft: color-mix(in srgb, var(--_rx-accent) 10%, transparent);
+  --_rx-danger: rgb(244 33 46);
+  --_rx-danger-soft: color-mix(in srgb, var(--_rx-danger) 10%, transparent);
+  --_rx-brand-orange: #f97346;
+  --_rx-brand-orange-focus: #ff784e;
+  --_rx-success: #00ba7c;
+  --_rx-warning: #ffad3b;
+  --_rx-overlay-dark: rgb(15 20 25 / 0.88);
+  --_rx-backdrop-scrim: rgb(0 0 0 / 0.56);
+  --_rx-font-chirp: TwitterChirp, Chirp, var(--rodx-ds-font-sans);
+  --_rx-font-chirp-system: TwitterChirp, Chirp, -apple-system, system-ui, sans-serif;
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css === */
+a[href="/i/grok"],
+a[href^="/i/grok/"],
+a[href*="/i/grok-redirect"],
+[data-testid="AppTabBar_Grok_Link"],
+[data-testid="SideNav_Grok_Link"],
+[data-testid="GrokDrawer"],
+[data-testid="grokButton"],
+[data-testid="grok"],
+button[aria-label*="grok" i],
+button[data-testid*="grok" i],
+.rodx-native-grok-hidden {
+  display: none;
+}
+
+/* IMPROVEMENT: Grouped tweet-scoped Grok replacement & result actions using native nesting.
+   Why: Eliminates repeated `:is(article, [role="article"])[data-testid="tweet"]` ancestor selectors. */
+:is(article, [role="article"])[data-testid="tweet"] {
+  & .rodx-grok-replacement {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--rodx-ds-control-size);
+    min-inline-size: var(--rodx-ds-control-size);
+    min-block-size: var(--rodx-ds-control-size);
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: var(--rodx-ds-radius-full);
+    background: transparent;
+    color: var(--rodx-ds-color-muted);
+    cursor: pointer;
+    touch-action: manipulation;
+
+    &:is(:hover, :focus-visible) {
+      background: var(--rodx-ds-color-accent-soft);
+      color: var(--_rx-accent);
+    }
+  }
+
+  & .rodx-result-actions [data-rodx-expand][hidden] {
+    display: none;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-layout-tweets-1.css === */
+html,
+body {
+  max-inline-size: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+
+  @supports (overflow: clip) {
+    overflow-x: clip;
+  }
+}
+
+main,
+[role="main"],
+[data-testid="primaryColumn"],
+#rodx-feed-filters,
+#rodx-search-deck-dock {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+#rodx-search-anchors {
+  max-inline-size: 100vw;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.rodx-avatar-gutter,
+.rodx-feed-filtered,
+.rodx-who-to-follow,
+.rodx-profile-identity-source,
+[data-testid="cellInnerDiv"].rodx-feed-filtered-cell {
+  display: none;
+}
+
+[data-testid="cellInnerDiv"].rodx-feed-filtered-cell {
+  block-size: 0;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.rodx-edge-content {
+  margin-inline: 0;
+  padding-inline: 0;
+  min-inline-size: 0;
+  flex: 1;
+  max-inline-size: 100%;
+}
+
+/* IMPROVEMENT: Consolidated 4 separate `:is(article, [role="article"])[data-testid="tweet"]` blocks into a single nested rule.
+   Why: In the original file, later declarations overrode earlier `scroll-margin-top`, `position`, and `overflow` rules across scattered blocks; nesting resolves the final cascade cleanly in one place. */
+:is(article, [role="article"])[data-testid="tweet"] {
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  padding-inline: var(--rodx-ds-space-6);
+  margin-inline: 0;
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+  scroll-margin-top: calc(var(--rodx-chrome-offset, 0px) + 4px);
+
+  &[data-rodx-long="1"] {
+    scroll-snap-align: none;
+  }
+
+  & > div {
+    padding-inline: 0;
+    margin-inline: 0;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  & .rodx-tweet-topbar {
+    position: relative;
+    inset-block-start: auto;
+    z-index: 2;
+    flex: 0 0 auto;
+    align-self: stretch;
+    justify-content: flex-start;
+    min-inline-size: 0;
+    inline-size: auto;
+    max-inline-size: 100%;
+    min-block-size: 38px;
+    margin-block: 0 var(--rodx-ds-space-4);
+    margin-inline: 0;
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-1);
+  }
+}
+
+article {
+  &[data-rodx-repeat="1"] {
+    & .rodx-mini-avatar,
+    & .rodx-repeat-author {
+      display: none;
+    }
+
+    & .rodx-tweet-topbar .rodx-mini-avatar {
+      display: block;
+    }
+  }
+
+  &.rodx-author-in-topbar [data-testid="User-Name"] {
+    display: none;
+  }
+}
+
+.rodx-mini-avatar {
+  display: flex;
+  flex: 0 0 26px;
+  inline-size: 26px;
+  block-size: 26px;
+  overflow: hidden;
+  border-radius: var(--rodx-ds-radius-full);
+  margin-inline-end: var(--rodx-ds-space-4);
+
+  & img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+}
+
+/* IMPROVEMENT: Merged 3 duplicate `.rodx-tweet-topbar` & `#rodx-active-tweetbar` rule blocks into one nested block.
+   Why: Eliminates overridden `width`/`height`/`backdrop-filter`/`background` declarations that were repeated verbatim across the file. */
+.rodx-tweet-topbar,
+#rodx-active-tweetbar {
+  background-color: var(--rodx-bar-bg, #000);
+  background-image: none;
+  color: var(--rodx-bar-fg, inherit);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 0;
+  border-block-end: 1px solid #71767b35;
+  border-radius: 0;
+  box-shadow: none;
+  isolation: auto;
+  contain: paint;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-4);
+  block-size: 40px;
+  min-block-size: 40px;
+  max-block-size: 40px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rodx-tweet-topbar {
+  &::before,
+  &::after {
+    content: none;
+  }
+
+  & .rodx-mini-avatar {
+    position: relative;
+    inset: auto;
+    display: block;
+    overflow: hidden;
+    margin: 0;
+    inline-size: 28px;
+    block-size: 28px;
+    min-inline-size: 28px;
+    max-inline-size: 28px;
+    max-block-size: 28px;
+    flex: 0 0 28px;
+    border-radius: var(--rodx-ds-radius-full);
+    pointer-events: auto;
+    text-decoration: none;
+    color: inherit;
+    contain: paint;
+
+    & img {
+      position: static;
+      inset: auto;
+      display: block;
+      inline-size: 28px;
+      block-size: 28px;
+      max-inline-size: 28px;
+      max-block-size: 28px;
+      object-fit: cover;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  & .rodx-topbar-author {
+    display: flex;
+    align-items: baseline;
+    gap: var(--rodx-ds-space-4);
+    flex: 1 1 0;
+    min-inline-size: 0;
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    white-space: nowrap;
+
+    & strong {
+      font: 700 var(--rodx-ds-text-13) var(--rodx-ds-font-ui);
+      min-inline-size: 0;
+      max-inline-size: 66%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    & span {
+      font: var(--rodx-ds-text-12) var(--rodx-ds-font-ui);
+      color: var(--rodx-ds-color-muted);
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  & button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    inline-size: 28px;
+    min-inline-size: 28px;
+    block-size: var(--rodx-ds-control-size);
+    padding: var(--rodx-ds-space-4);
+    border: 0;
+    border-radius: var(--rodx-ds-radius-4);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &[aria-pressed="true"] {
+      color: #f91880;
+    }
+  }
+
+  & svg {
+    inline-size: 20px;
+    block-size: 20px;
+    fill: currentColor;
+    pointer-events: none;
+  }
+}
+
+#rodx-active-tweetbar {
+  position: fixed;
+  z-index: 1500;
+  padding-block: var(--rodx-ds-space-4);
+  padding-inline: var(--rodx-ds-space-8);
+  margin: 0;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.rodx-topbar-floating-source {
+  visibility: hidden;
+}
+
+/* Chrome visibility transitions */
+[data-rodx-chrome="1"] {
+  transition:
+    translate 0.16s ease,
+    opacity 0.16s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+html.rodx-chrome-hidden [data-rodx-chrome="1"] {
+  translate: 0 calc(-1 * var(--rodx-chrome-rise, 300px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Glass action bar & Profile header slots */
+.rodx-glass-actions {
+  background: rgb(100 110 120 / 0.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.7);
+  backdrop-filter: blur(18px) saturate(1.7);
+  border: 1px solid #8e99a32b;
+  border-radius: var(--rodx-ds-radius-16);
+  box-shadow: inset 0 1px 0 #ffffff16;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-2);
+  margin: var(--rodx-ds-space-4) var(--rodx-ds-space-4) var(--rodx-ds-space-2);
+  padding: var(--rodx-ds-space-4);
+  min-block-size: 34px;
+  box-sizing: border-box;
+  isolation: isolate;
+
+  & > div {
+    min-inline-size: 0;
+    flex-shrink: 1;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    background: var(--rodx-ds-color-surface);
+  }
+}
+
+/* IMPROVEMENT: Consolidated 3 scattered `.rodx-profile-name` blocks into one nested block.
+   Why: Prevents conflicting `gap`, `flex-wrap`, and `margin-bottom` rules from being split across lines 105 and 245. */
+.rodx-profile {
+  &-name {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: var(--rodx-ds-space-4);
+    margin-block: var(--rodx-ds-space-4) var(--rodx-ds-space-2);
+
+    & > div {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--rodx-ds-space-4);
+      margin: 0;
+      min-inline-size: 0;
+      flex-shrink: 1;
+
+      & > div {
+        margin: 0;
+      }
+    }
+  }
+
+  &-handle {
+    font-size: var(--rodx-ds-text-13);
+    opacity: 0.65;
+    white-space: nowrap;
+  }
+
+  &-detail:not(.rodx-detail-open) {
+    display: none;
+  }
+
+  &-more {
+    font: 500 var(--rodx-ds-text-12) var(--rodx-ds-font-ui);
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-16);
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-12);
+    margin-block: var(--rodx-ds-space-4) var(--rodx-ds-space-8);
+    cursor: pointer;
+  }
+
+  &-overlay-row {
+    position: relative;
+    block-size: 0;
+    min-block-size: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    display: block;
+    z-index: 3;
+  }
+
+  &-avatar-slot {
+    position: absolute;
+    inset-inline-start: 8px;
+    inset-block-end: 12px;
+    inline-size: 68px;
+    block-size: 68px;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    z-index: 2;
+
+    & > a {
+      inline-size: 100%;
+      block-size: 100%;
+      margin: 0;
+    }
+
+    & img {
+      object-fit: cover;
+    }
+  }
+
+  &-action-slot {
+    position: absolute;
+    inset-inline-end: 6px;
+    inset-block-end: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--rodx-ds-space-4);
+    max-inline-size: calc(100% - 88px);
+    margin: 0;
+    padding: var(--rodx-ds-space-4);
+    border-radius: var(--rodx-ds-radius-24);
+    background: var(--rodx-ds-glass-surface);
+    -webkit-backdrop-filter: var(--rodx-ds-glass-blur);
+    backdrop-filter: var(--rodx-ds-glass-blur);
+    box-shadow: var(--rodx-ds-glass-shadow);
+    color: var(--rodx-ds-color-white);
+    border: 1px solid var(--rodx-ds-glass-border);
+
+    & :is(button, [role="button"]) {
+      min-block-size: var(--rodx-ds-control-size);
+      margin: 0;
+      border-color: #ffffff50;
+      background: transparent;
+      color: var(--rodx-ds-color-white);
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      background: #20252e;
+    }
+  }
+
+  &-identity {
+    display: flex;
+    align-items: baseline;
+    gap: var(--rodx-ds-space-6);
+    padding-block: var(--rodx-ds-space-4);
+    margin: 0;
+    min-inline-size: 0;
+
+    & strong {
+      font-size: var(--rodx-ds-text-18);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--rodx-ds-space-4);
+      min-inline-size: 0;
+    }
+
+    & span {
+      font-size: var(--rodx-ds-text-13);
+      color: var(--rodx-ds-color-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-links-social-1.css === */
+:is(article, [role="article"])[data-testid="tweet"] a.rodx-app-link {
+  display: inline;
+  inline-size: auto;
+  max-inline-size: 100%;
+  padding-block: var(--rodx-ds-space-1);
+  padding-inline: var(--rodx-ds-space-4);
+  margin-inline-end: var(--rodx-ds-space-1);
+  border-radius: var(--rodx-ds-radius-4);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  color: var(--rodx-ds-color-accent);
+  text-decoration: none;
+  font-family: var(--_rx-font-chirp);
+  overflow-wrap: anywhere;
+
+  &[data-rodx-app="telegram"] {
+    background: var(--rodx-ds-social-telegram-bg);
+  }
+
+  &[data-rodx-app="whatsapp"] {
+    background: var(--rodx-ds-social-whatsapp-bg);
+  }
+
+  &[data-rodx-app="instagram"] {
+    background: var(--rodx-ds-social-instagram-bg);
+  }
+
+  & .rodx-app-icon {
+    display: inline-block;
+    vertical-align: -2px;
+    inline-size: var(--rodx-ds-icon-size-small);
+    block-size: var(--rodx-ds-icon-size-small);
+    margin-inline-end: var(--rodx-ds-space-4);
+    fill: currentColor;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-lists-profile-1.css === */
+:host {
+  display: block;
+  min-inline-size: 0;
+  color: inherit;
+}
+
+button,
+a {
+  font: inherit;
+  color: inherit;
+
+  &:hover {
+    background: var(--rodx-ds-color-hover);
+  }
+}
+
+button {
+  cursor: pointer;
+}
+
+button,
+.strip a {
+  background: transparent;
+  border: 1px solid var(--rodx-ds-color-border);
+  border-radius: var(--rodx-ds-radius-16);
+  padding-block: var(--rodx-ds-space-6);
+  padding-inline: var(--rodx-ds-space-12);
+  white-space: nowrap;
+  text-decoration: none;
+  flex: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-4);
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-16);
+  border-block-end: 1px solid #71767b33;
+  min-inline-size: 0;
+}
+
+.strip {
+  display: flex;
+  gap: var(--rodx-ds-space-6);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  min-inline-size: 0;
+  flex: 1;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.status {
+  opacity: 0.7;
+  white-space: nowrap;
+  font-size: var(--rodx-ds-text-12);
+}
+
+.all {
+  inline-size: min(520px, 92vw);
+  max-block-size: 80dvh;
+  border: 1px solid #71767b66;
+  border-radius: var(--rodx-ds-radius-16);
+  background: #15202b;
+  color: #e7e9ea;
+  padding: var(--rodx-ds-space-16);
+
+  &::backdrop {
+    background: #0008;
+  }
+
+  & :is(header, footer) {
+    display: flex;
+    gap: var(--rodx-ds-space-12);
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  & footer a {
+    font-size: var(--rodx-ds-text-12);
+  }
+
+  &-items {
+    display: grid;
+    gap: var(--rodx-ds-space-8);
+    overflow: auto;
+    max-block-size: 50dvh;
+    padding-block: var(--rodx-ds-space-16);
+
+    & a {
+      display: block;
+      padding: var(--rodx-ds-space-12);
+      border-radius: var(--rodx-ds-radius-8);
+      text-decoration: none;
+    }
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-lists-timeline-1.css === */
+:host {
+  display: block;
+  background: var(--rodx-ds-color-surface);
+  color: var(--rodx-ds-color-text);
+  padding: var(--rodx-ds-space-16) var(--rodx-ds-space-12) var(--rodx-ds-space-32);
+  min-inline-size: 0;
+}
+
+button {
+  min-block-size: var(--rodx-ds-control-height);
+
+  &:disabled {
+    opacity: 0.35;
+  }
+}
+
+.btn {
+  background: #25272b;
+  border: 1px solid #45484e;
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  border-radius: var(--rodx-ds-radius-12);
+  color: var(--rodx-ds-color-white);
+
+  &.primary {
+    background: var(--_rx-brand-orange);
+    color: #161616;
+    border-color: var(--_rx-brand-orange);
+  }
+}
+
+.grp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  flex-wrap: wrap;
+
+  & strong {
+    font-size: var(--rodx-ds-text-16);
+  }
+}
+
+.tag {
+  color: #f99c74;
+  font-size: var(--rodx-ds-text-11);
+  font-weight: 800;
+}
+
+.notice {
+  padding: var(--rodx-ds-space-12);
+  border: 1px solid #733e43;
+  background: #372024;
+  color: #ffb9c2;
+  border-radius: var(--rodx-ds-radius-8);
+  font-size: var(--rodx-ds-text-12);
+}
+
+/* TODO(extract): `.xls-feed`, `.xls-feed-status`, `.xls-post`, `.xls-avatar`, `.xls-post-body`, `.xls-post-date`, `.xls-post-text`, and `.xls-media` are duplicated in `lists-view-1.module.css`. Extract to `@shared/styles/xls-feed.css`. */
+.xls-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rodx-ds-space-12);
+  margin-block-start: var(--rodx-ds-space-12);
+
+  &-status {
+    font-size: var(--rodx-ds-text-12);
+    color: #b7bac2;
+    line-height: 1.45;
+  }
+}
+
+.xls-post {
+  display: flex;
+  gap: var(--rodx-ds-space-12);
+  border: 1px solid #32343b;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-12);
+  background: #191b21;
+  min-inline-size: 0;
+
+  & a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &-body {
+    flex: 1;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &-date {
+    color: #979ba5;
+    font-size: var(--rodx-ds-text-11);
+  }
+
+  &-text {
+    white-space: pre-wrap;
+    font-size: var(--rodx-ds-text-14);
+    line-height: 1.5;
+    margin-block: var(--rodx-ds-space-8);
+  }
+}
+
+.xls-avatar {
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: var(--rodx-ds-radius-full);
+  background: #555;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.xls-media {
+  inline-size: 100%;
+  max-block-size: 460px;
+  object-fit: contain;
+  background: #08090b;
+  border-radius: var(--rodx-ds-radius-12);
+  margin-block-start: var(--rodx-ds-space-4);
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-lists-timeline-2.css === */
+html.xls-custom-timeline [data-testid="primaryColumn"] [data-testid="cellInnerDiv"] {
+  display: none;
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-lists-view-1.module.css === */
+:host {
+  all: initial;
+  font: var(--rodx-ds-text-14) var(--rodx-ds-font-sans);
+  color: #f3f4f6;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: var(--rodx-ds-text-16);
+
+  &:focus-visible {
+    outline: 2px solid var(--_rx-brand-orange-focus);
+    outline-offset: 3px;
+  }
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
+
+.fab {
+  position: fixed;
+  inset-inline-end: 16px;
+  inset-block-end: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 2147483640;
+  block-size: 54px;
+  min-inline-size: 54px;
+  border-radius: var(--rodx-ds-radius-24);
+  background: var(--_rx-brand-orange);
+  border: 1px solid #ff9d79;
+  color: #161616;
+  box-shadow: 0 8px 28px #0008;
+  font-weight: 900;
+  padding-inline: var(--rodx-ds-space-16);
+}
+
+/* IMPROVEMENT: Consolidated duplicate `.overlay`, `.panel`, `.top`, and `.body` rules while preserving exact cascade precedence.
+   Why: Earlier rules at the top of this module were overridden by later drawer rules below; keeping the active drawer definition unified prevents dead rules while preserving `.overlay.open` inline-panel overrides. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483641;
+  display: none;
+  background: var(--_rx-backdrop-scrim);
+
+  &.open {
+    position: relative;
+    inset: auto;
+    display: block;
+    background: transparent;
+    padding: 0;
+  }
+}
+
+.panel {
+  position: relative;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: none;
+  background: #111214;
+  color: #f4f5f6;
+  border: 0;
+  box-shadow: none;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: appear 0.18s ease-out;
+  }
+}
+
+@keyframes appear {
+  from {
+    translate: 14px 0;
+    opacity: 0.6;
+  }
+  to {
+    translate: none;
+    opacity: 1;
+  }
+}
+
+.top {
+  display: none;
+  padding: calc(var(--rodx-ds-space-12) + env(safe-area-inset-top, var(--rodx-ds-space-1)))
+    var(--rodx-ds-space-16) var(--rodx-ds-space-12);
+  border-block-end: 1px solid #303236;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rodx-ds-space-12);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rodx-ds-space-4);
+
+  & strong {
+    font-size: var(--rodx-ds-text-18);
+    letter-spacing: -0.7px;
+  }
+
+  & small {
+    color: #a1a1aa;
+  }
+}
+
+.muted {
+  color: #a1a1aa;
+}
+
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-block-end: 1px solid #303236;
+  flex-shrink: 0;
+
+  & button {
+    background: transparent;
+    color: #a1a1aa;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    padding-block: var(--rodx-ds-space-12);
+    padding-inline: var(--rodx-ds-space-16);
+    white-space: nowrap;
+    font-size: var(--rodx-ds-text-13);
+    font-weight: 650;
+
+    &.on {
+      color: var(--rodx-ds-color-white);
+      border-color: var(--_rx-brand-orange-focus);
+    }
+  }
+}
+
+.body {
+  overflow: visible;
+  overscroll-behavior: contain;
+  padding: var(--rodx-ds-space-16) var(--rodx-ds-space-16)
+    calc(var(--rodx-ds-space-24) + env(safe-area-inset-bottom, var(--rodx-ds-space-1)));
+  flex: 1;
+}
+
+h3 {
+  font-size: var(--rodx-ds-text-16);
+  margin-block: var(--rodx-ds-space-12);
+  letter-spacing: -0.4px;
+}
+
+h4 {
+  font-size: var(--rodx-ds-text-13);
+  margin-block: var(--rodx-ds-space-16) var(--rodx-ds-space-6);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+}
+
+p {
+  line-height: 1.5;
+  color: #d1d5db;
+  margin-block: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
+}
+
+.small {
+  font-size: var(--rodx-ds-text-12);
+  line-height: 1.45;
+  color: #a1a1aa;
+}
+
+.stack,
+.items {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack {
+  gap: var(--rodx-ds-space-12);
+}
+
+.items {
+  gap: var(--rodx-ds-space-8);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rodx-ds-space-12);
+
+  &.wrap {
+    flex-wrap: wrap;
+  }
+}
+
+.grp {
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  flex-wrap: wrap;
+}
+
+:is(.field, .select, .textarea) {
+  inline-size: 100%;
+  border: 1px solid #414247;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-12);
+  color: var(--rodx-ds-color-white);
+  background: #1d1f22;
+  min-block-size: var(--rodx-ds-control-touch);
+}
+
+.field::placeholder {
+  color: #777983;
+}
+
+.textarea {
+  min-block-size: 90px;
+  resize: vertical;
+}
+
+.btn {
+  background: #292b30;
+  color: #fafafa;
+  border: 1px solid #44464a;
+  border-radius: var(--rodx-ds-radius-8);
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  min-block-size: 40px;
+  font-size: var(--rodx-ds-text-13);
+  font-weight: 700;
+
+  &.primary {
+    background: var(--_rx-brand-orange);
+    color: #191919;
+    border-color: var(--_rx-brand-orange);
+  }
+
+  &.danger {
+    background: #402526;
+    border-color: #803b3e;
+    color: #ffd0d0;
+  }
+
+  &.ghost {
+    background: transparent;
+  }
+
+  &.mini {
+    min-block-size: var(--rodx-ds-control-size);
+    padding-block: var(--rodx-ds-space-6);
+    padding-inline: var(--rodx-ds-space-8);
+    font-size: var(--rodx-ds-text-12);
+  }
+}
+
+.check {
+  display: flex;
+  gap: var(--rodx-ds-space-8);
+  align-items: center;
+  font-size: var(--rodx-ds-text-13);
+  min-block-size: var(--rodx-ds-control-height);
+
+  & input {
+    inline-size: 17px;
+    block-size: 17px;
+    accent-color: var(--_rx-brand-orange);
+    flex-shrink: 0;
+  }
+}
+
+.card {
+  border: 1px solid #35363b;
+  background: #191b1e;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-12);
+
+  &.active {
+    border-color: var(--_rx-brand-orange);
+  }
+
+  & strong {
+    font-size: var(--rodx-ds-text-14);
+    word-break: break-word;
+  }
+}
+
+.pill {
+  background: #2c2e32;
+  border-radius: var(--rodx-ds-radius-24);
+  padding-block: var(--rodx-ds-space-4);
+  padding-inline: var(--rodx-ds-space-8);
+  font-size: var(--rodx-ds-text-11);
+  color: #c4c4c8;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--rodx-ds-space-12);
+  border-block-end: 1px solid #2b2d30;
+  padding-block: var(--rodx-ds-space-8);
+
+  &:last-child {
+    border-block-end: 0;
+  }
+
+  & a {
+    color: #ffb092;
+    text-decoration: none;
+  }
+}
+
+.mono {
+  font: var(--rodx-ds-text-12) var(--rodx-ds-font-mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.code {
+  background: #08090a;
+  padding: var(--rodx-ds-space-12);
+  border: 1px solid #34363a;
+  border-radius: var(--rodx-ds-radius-8);
+}
+
+.notice {
+  background: #272b30;
+  border-radius: var(--rodx-ds-radius-8);
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  font-size: var(--rodx-ds-text-12);
+  line-height: 1.4;
+
+  &.error {
+    background: #3b1e21;
+    color: #ffc0c5;
+  }
+
+  &.ok {
+    background: #193029;
+    color: #aaf3ce;
+  }
+}
+
+.footer {
+  border-block-start: 1px solid #35363b;
+  padding: var(--rodx-ds-space-8) var(--rodx-ds-space-16)
+    calc(var(--rodx-ds-space-8) + env(safe-area-inset-bottom, var(--rodx-ds-space-1)));
+  color: #94969d;
+  font-size: var(--rodx-ds-text-11);
+}
+
+.homebar {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  overflow-x: auto;
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  background: #111214;
+  color: var(--rodx-ds-color-white);
+  border-block-end: 1px solid #333;
+  scrollbar-width: thin;
+  overscroll-behavior-inline: contain;
+
+  & .tablink {
+    flex: 0 0 auto;
+    background: #25272b;
+    border: 1px solid #45464b;
+    color: #f4f4f5;
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-12);
+    border-radius: var(--rodx-ds-radius-24);
+    font-size: var(--rodx-ds-text-12);
+    text-decoration: none;
+    max-inline-size: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:active {
+      background: var(--_rx-brand-orange);
+      color: #151515;
+    }
+  }
+
+  & .label {
+    font-size: var(--rodx-ds-text-11);
+    color: #fda17b;
+    white-space: nowrap;
+    font-weight: 800;
+  }
+}
+
+.xls-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rodx-ds-space-8);
+  margin-block-start: var(--rodx-ds-space-12);
+  min-inline-size: 0;
+
+  &-status {
+    font-size: var(--rodx-ds-text-12);
+    color: #b7bac2;
+    line-height: 1.5;
+  }
+}
+
+.xls-post {
+  display: flex;
+  gap: var(--rodx-ds-space-12);
+  border: 1px solid #36383b;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-12);
+  background: #181a1d;
+  min-inline-size: 0;
+
+  & .xls-avatar {
+    block-size: 38px;
+    inline-size: 38px;
+    border-radius: var(--rodx-ds-radius-full);
+    object-fit: cover;
+    flex: 0 0 auto;
+    background: #444;
+  }
+
+  & .xls-post-body {
+    flex: 1;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  & a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  & .xls-post-date {
+    font-size: var(--rodx-ds-text-11);
+    color: #8b919c;
+  }
+
+  & .xls-post-text {
+    white-space: pre-wrap;
+    font-size: var(--rodx-ds-text-14);
+    line-height: 1.45;
+    margin-block: var(--rodx-ds-space-8);
+  }
+
+  & .xls-media {
+    inline-size: 100%;
+    max-block-size: 420px;
+    object-fit: contain;
+    border-radius: var(--rodx-ds-radius-8);
+    background: #09090a;
+    margin-block-start: var(--rodx-ds-space-8);
+  }
+}
+
+.quick {
+  &-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483643;
+    display: none;
+    background: var(--_rx-backdrop-scrim);
+
+    &.open {
+      display: block;
+    }
+  }
+
+  &-picker {
+    position: fixed;
+    z-index: 2147483644;
+    display: none;
+    inline-size: min(350px, calc(100vw - 16px));
+    max-block-size: min(65dvh, 540px);
+    background: #18191c;
+    color: var(--rodx-ds-color-text);
+    border: 1px solid #3e4147;
+    border-radius: var(--rodx-ds-radius-16);
+    box-shadow: 0 18px 65px #000a;
+    overflow: hidden;
+    flex-direction: column;
+
+    &.open {
+      display: flex;
+    }
+  }
+
+  &-head {
+    padding: var(--rodx-ds-space-16);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rodx-ds-space-8);
+    border-block-end: 1px solid #33363a;
+
+    & strong {
+      font-size: var(--rodx-ds-text-14);
+    }
+  }
+
+  &-search {
+    font-size: var(--rodx-ds-text-16);
+    background: #282a2e;
+    border: 1px solid #4a4c50;
+    color: var(--rodx-ds-color-white);
+    border-radius: var(--rodx-ds-radius-8);
+    padding: var(--rodx-ds-space-12);
+    inline-size: 100%;
+    outline-offset: 2px;
+  }
+
+  &-options {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-block-size: 60px;
+    flex: 1;
+  }
+
+  &-option {
+    display: flex;
+    inline-size: 100%;
+    text-align: start;
+    align-items: center;
+    gap: var(--rodx-ds-space-12);
+    padding-block: var(--rodx-ds-space-12);
+    padding-inline: var(--rodx-ds-space-16);
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-block-end: 1px solid #303236;
+    min-block-size: 52px;
+
+    &:active {
+      background: #33363c;
+    }
+
+    & .copy {
+      font-size: var(--rodx-ds-text-13);
+      min-inline-size: 0;
+      flex: 1;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    & small {
+      display: block;
+      font-size: var(--rodx-ds-text-11);
+      color: #a8a8b0;
+      margin-block-start: var(--rodx-ds-space-4);
+    }
+
+    & .checkmark {
+      font-size: var(--rodx-ds-text-12);
+      color: #8ce5c7;
+    }
+  }
+
+  &-status {
+    border-block-start: 1px solid #33363a;
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-12);
+    color: #aaa;
+    font-size: var(--rodx-ds-text-11);
+    line-height: 1.4;
+  }
+
+  &-flags {
+    display: flex;
+    gap: var(--rodx-ds-space-12);
+    padding: var(--rodx-ds-space-8) var(--rodx-ds-space-16) var(--rodx-ds-space-12);
+    flex-wrap: wrap;
+    border-block-end: 1px solid #303236;
+
+    & label {
+      display: flex;
+      align-items: center;
+      gap: var(--rodx-ds-space-4);
+      font-size: var(--rodx-ds-text-12);
+    }
+
+    & input {
+      accent-color: var(--_rx-brand-orange);
+      inline-size: 17px;
+      block-size: 17px;
+    }
+  }
+
+  &-toast {
+    position: fixed;
+    z-index: 2147483646;
+    inset-inline-start: 50%;
+    inset-block-end: calc(26px + env(safe-area-inset-bottom, 0px));
+    translate: -50% 0;
+    background: #22262b;
+    color: var(--rodx-ds-color-white);
+    border: 1px solid #555;
+    border-radius: var(--rodx-ds-radius-12);
+    padding-block: var(--rodx-ds-space-12);
+    padding-inline: var(--rodx-ds-space-16);
+    font-size: var(--rodx-ds-text-13);
+    max-inline-size: calc(100vw - var(--rodx-ds-control-size));
+    display: none;
+    box-shadow: 0 10px 30px #0009;
+
+    &.show {
+      display: block;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    border-inline-start: 0;
+  }
+  .body {
+    padding: var(--rodx-ds-space-12);
+  }
+  .fab {
+    inset-inline-end: 12px;
+    inset-block-end: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .quick-picker {
+    inset: auto 0 0 0;
+    inline-size: 100%;
+    max-block-size: min(75dvh, 760px);
+    border-radius: var(--rodx-ds-radius-20) var(--rodx-ds-radius-20) 0 0;
+    padding-block-end: env(safe-area-inset-bottom, var(--rodx-ds-space-1));
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-media-download-1.css === */
+#rodx-immersive-download {
+  position: fixed;
+  inset-inline-end: max(14px, env(safe-area-inset-right));
+  inset-block-end: calc(76px + env(safe-area-inset-bottom));
+  z-index: 2147481100;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-8);
+  background: var(--_rx-overlay-dark);
+  color: var(--rodx-ds-color-white);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: var(--rodx-ds-radius-24);
+  padding-block: var(--rodx-ds-space-12);
+  padding-inline: var(--rodx-ds-space-16);
+  font: 700 var(--rodx-ds-text-14) / 1.2 var(--_rx-font-chirp);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  min-block-size: var(--rodx-ds-control-touch);
+  touch-action: manipulation;
+  box-shadow: 0 3px 13px rgb(0 0 0 / 0.2);
+
+  &:hover {
+    background: rgb(29 155 240 / 0.95);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  & svg {
+    flex: none;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-media-gestures-1.css === */
+:is(article, [role="article"])[data-testid="tweet"]
+  :is(video, [data-testid="videoPlayer"], [data-testid="videoPlayerContainer"], [data-testid="videoComponent"]) {
+  touch-action: manipulation;
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css === */
+:host([data-rodx-no-dim]) {
+  --media-controls-gradient: transparent;
+
+  & media-controls-backdrop.video-controls-backdrop {
+    background: transparent;
+    background-image: none;
+    opacity: 0;
+  }
+}
+
+media-slider-thumbnail {
+  min-inline-size: 160px;
+  max-inline-size: 240px;
+  min-block-size: 90px;
+
+  &[data-rodx-preview="unavailable"] {
+    display: none;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-media-transport-1.css === */
+.rodx-video-transport {
+  position: absolute;
+  inset: auto 5px 4px 5px;
+  z-index: 15;
+  block-size: 35px;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-6);
+  box-sizing: border-box;
+  padding-block: var(--rodx-ds-space-4);
+  padding-inline: var(--rodx-ds-space-8);
+  border-radius: var(--rodx-ds-radius-8);
+  font: var(--rodx-ds-text-11) var(--rodx-ds-font-ui);
+  color: var(--rodx-ds-color-white);
+  background: rgb(15 20 25 / 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  touch-action: pan-y;
+
+  &:focus-within {
+    outline: 1px solid rgb(29 155 240 / 0.7);
+  }
+
+  & button {
+    flex: none;
+    border: 0;
+    background: none;
+    color: var(--rodx-ds-color-white);
+    min-inline-size: 29px;
+    min-block-size: 29px;
+    padding-inline: var(--rodx-ds-space-4);
+    cursor: pointer;
+    font: 17px TwitterChirp, system-ui;
+    touch-action: manipulation;
+  }
+
+  & .rodx-transport-seek {
+    flex: 1;
+    min-inline-size: 28px;
+    inline-size: 100%;
+    margin: 0;
+    accent-color: var(--rodx-ds-color-accent);
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  & time {
+    font: 10px TwitterChirp, system-ui;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    min-inline-size: 36px;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-network-inspector-1.css === */
+#rodx-network-root {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  color: var(--rm-color, inherit);
+  font: var(--rodx-ds-text-13) var(--rodx-ds-font-sans);
+
+  & * {
+    box-sizing: border-box;
+  }
+
+  & .rx-row {
+    display: flex;
+    gap: var(--rodx-ds-space-8);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  & :is(button, input, select) {
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-8);
+    padding: var(--rodx-ds-space-8);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    min-block-size: var(--rodx-ds-control-height);
+  }
+
+  & button:is([aria-pressed="true"], .rx-current) {
+    border-color: var(--rodx-ds-color-accent);
+    color: var(--rodx-ds-color-accent);
+  }
+
+  & input[type="search"] {
+    flex: 1;
+    min-inline-size: 120px;
+    font-size: var(--rodx-ds-text-16);
+  }
+
+  & .rx-list {
+    max-block-size: 34dvh;
+    overflow: auto;
+    margin-block-start: var(--rodx-ds-space-12);
+  }
+
+  & .rx-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--rodx-ds-space-6);
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-4);
+    border-block-end: 1px solid var(--rodx-ds-color-border);
+
+    & button {
+      flex: 1;
+      min-inline-size: 0;
+      text-align: start;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  & .rx-small {
+    font-size: var(--rodx-ds-text-11);
+    opacity: 0.78;
+  }
+
+  & .rx-detail {
+    margin-block-start: var(--rodx-ds-space-12);
+    border-block-start: 1px solid var(--rodx-ds-color-border);
+    padding-block-start: var(--rodx-ds-space-12);
+  }
+
+  & pre {
+    inline-size: 100%;
+    max-block-size: 42dvh;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    -webkit-user-select: text;
+    user-select: text;
+    font: var(--rodx-ds-text-11) / 1.55 var(--rodx-ds-font-mono);
+    padding: var(--rodx-ds-space-12);
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-8);
+  }
+
+  & .rx-tree {
+    max-block-size: 45dvh;
+    overflow: auto;
+    font: var(--rodx-ds-text-12) / 1.55 var(--rodx-ds-font-mono);
+
+    & details {
+      margin-inline-start: var(--rodx-ds-space-12);
+      border-inline-start: 1px solid var(--rodx-ds-color-border);
+      padding-inline-start: var(--rodx-ds-space-4);
+    }
+
+    & summary {
+      cursor: pointer;
+      overflow-wrap: anywhere;
+    }
+
+    & .leaf {
+      margin-inline-start: var(--rodx-ds-space-8);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  & .rx-warning {
+    opacity: 0.78;
+    margin-block: var(--rodx-ds-space-8);
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-search-anchors-1.css === */
+:host {
+  color: inherit;
+  font: var(--rodx-ds-text-13) var(--rodx-ds-font-ui);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.list-context {
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  border-block-end: 1px solid #71767b33;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid #71767b44;
+  border-radius: var(--rodx-ds-radius-16);
+  background: transparent;
+  padding-block: var(--rodx-ds-space-4);
+  padding-inline: var(--rodx-ds-space-8);
+  flex: none;
+}
+
+.return {
+  display: flex;
+  gap: var(--rodx-ds-space-4);
+  align-items: center;
+  min-inline-size: 0;
+  margin-block-start: var(--rodx-ds-space-4);
+
+  & button:first-child {
+    flex: 1;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-inline-size: 0;
+    border: 0;
+    border-radius: 0;
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: 0;
+  }
+
+  & button:last-child {
+    border: 0;
+    font-size: var(--rodx-ds-text-18);
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-8);
+  }
+}
+
+small {
+  color: var(--rodx-ds-color-muted);
+}
+
+[hidden] {
+  display: none;
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-search-history-1.css === */
+#rodx-search-tools {
+  position: fixed;
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-2);
+  max-inline-size: 88px;
+  pointer-events: auto;
+  box-sizing: border-box;
+  font-family: var(--_rx-font-chirp-system);
+
+  & > button {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    min-inline-size: 36px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: var(--rodx-ds-radius-full);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: 500 21px / 1 TwitterChirp, Chirp, system-ui;
+    touch-action: manipulation;
+
+    &:is(:hover, :focus-visible) {
+      background: rgb(29 155 240 / 0.13);
+      color: var(--rodx-ds-color-accent);
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+}
+
+#rodx-recent-panel {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 10011;
+  inline-size: min(380px, calc(100vw - 20px));
+  max-block-size: min(66dvh, 540px);
+  overflow: auto;
+  background: #000;
+  color: #e7e9ea;
+  border: 1px solid #2f3336;
+  border-radius: var(--rodx-ds-radius-16);
+  box-shadow: 0 9px 36px #0008;
+  font: var(--rodx-ds-text-14) / 1.4 var(--_rx-font-chirp-system);
+  -webkit-overflow-scrolling: touch;
+
+  & .rh-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    padding: var(--rodx-ds-space-12);
+    background: inherit;
+    border-block-end: 1px solid #2f3336;
+  }
+
+  & button {
+    font: inherit;
+    cursor: pointer;
+  }
+
+  & .rh-icon {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    border-radius: var(--rodx-ds-radius-full);
+    min-inline-size: var(--rodx-ds-control-size);
+    min-block-size: var(--rodx-ds-control-size);
+  }
+
+  & input {
+    display: block;
+    inline-size: calc(100% - 24px);
+    margin-block: var(--rodx-ds-space-8);
+    margin-inline: var(--rodx-ds-space-12);
+    box-sizing: border-box;
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-12);
+    border-radius: var(--rodx-ds-radius-24);
+    background: #16181c;
+    border: 1px solid #2f3336;
+    color: inherit;
+    outline: none;
+    font: inherit;
+  }
+
+  & .rh-row {
+    display: flex;
+    align-items: center;
+    gap: var(--rodx-ds-space-4);
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-8);
+    border-block-end: 1px solid #22262a;
+    min-block-size: 46px;
+
+    &:is(:hover, :focus-within) {
+      background: #16181c;
+    }
+  }
+
+  & .rh-open {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: start;
+    flex: 1;
+    min-inline-size: 0;
+    padding-block: var(--rodx-ds-space-4);
+    padding-inline: var(--rodx-ds-space-6);
+    overflow-wrap: anywhere;
+  }
+
+  & .rh-query {
+    display: block;
+    max-block-size: 42px;
+    overflow: hidden;
+  }
+
+  & small {
+    display: block;
+    color: var(--rodx-ds-color-muted);
+    font-size: var(--rodx-ds-text-11);
+  }
+
+  & .rh-more {
+    display: block;
+    padding: var(--rodx-ds-space-12);
+    inline-size: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--rodx-ds-color-accent);
+  }
+
+  & .rh-empty {
+    padding: var(--rodx-ds-space-16);
+    color: var(--rodx-ds-color-muted);
+    text-align: center;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-search-list-typeahead-1.css === */
+:host {
+  color: var(--rodx-ds-color-text);
+  font: var(--rodx-ds-text-14) Arial, sans-serif;
+}
+
+div {
+  background: var(--rodx-ds-color-surface);
+  border: 1px solid var(--rodx-ds-color-border);
+  border-radius: var(--rodx-ds-radius-12);
+  max-block-size: 35dvh;
+  overflow: auto;
+  padding: var(--rodx-ds-space-4);
+}
+
+button {
+  display: block;
+  inline-size: 100%;
+  padding: var(--rodx-ds-space-12);
+  text-align: start;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+
+  &[aria-selected="true"] {
+    background: var(--rodx-ds-color-accent-selected);
+  }
+}
+
+[hidden] {
+  display: none;
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-telegram-relay-1.css === */
+button.rodx-tg-action {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--rodx-ds-color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rodx-ds-space-4);
+  min-block-size: 34px;
+  min-inline-size: 34px;
+  font: 400 var(--rodx-ds-text-12) / 1.2 system-ui, var(--rodx-ds-font-sans);
+  border-radius: var(--rodx-ds-radius-24);
+  padding-block: var(--rodx-ds-space-4);
+  padding-inline: var(--rodx-ds-space-8);
+  cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition:
+    color 0.12s,
+    background 0.12s;
+
+  @media (max-width: 500px) {
+    padding: var(--rodx-ds-space-4);
+  }
+
+  &:is(:hover, :focus-visible) {
+    color: var(--_rx-accent);
+    background: var(--_rx-accent-soft);
+  }
+
+  &[data-relay-state="sent"] {
+    color: var(--_rx-success);
+  }
+
+  &[data-relay-state="partial"] {
+    color: var(--_rx-warning);
+  }
+
+  &:is([data-relay-state="sending"], [data-relay-state="checking"]) {
+    opacity: 0.6;
+  }
+
+  &:disabled {
+    cursor: progress;
+  }
+
+  /* IMPROVEMENT: Deduplicated shared `[data-relay-state="sent"|"partial"]` color rules across `.rodx-tg-action`, `.rodx-tg-immersive`, and `.rodx-tg-video-overlay`.
+     Why: All three variants inherit the exact same state colors from `button.rodx-tg-action[data-relay-state]`. */
+  &.rodx-tg-immersive {
+    position: fixed;
+    inset-inline-end: max(131px, env(safe-area-inset-right));
+    inset-block-end: calc(76px + env(safe-area-inset-bottom));
+    min-inline-size: var(--rodx-ds-control-touch);
+    min-block-size: var(--rodx-ds-control-touch);
+    padding: var(--rodx-ds-space-8);
+    border-radius: var(--rodx-ds-radius-24);
+    border: 1px solid rgb(255 255 255 / 0.28);
+    color: var(--rodx-ds-color-white);
+    background: var(--_rx-overlay-dark);
+    z-index: 2147481101;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  &.rodx-tg-video-overlay {
+    position: absolute;
+    inset-block-start: 7px;
+    inset-inline-end: 7px;
+    z-index: 91;
+    inline-size: var(--rodx-ds-control-size);
+    block-size: var(--rodx-ds-control-size);
+    min-inline-size: var(--rodx-ds-control-size);
+    min-block-size: var(--rodx-ds-control-size);
+    padding: var(--rodx-ds-space-6);
+    color: var(--rodx-ds-color-white);
+    background: rgb(15 20 25 / 0.7);
+    opacity: 0.8;
+    border: 1px solid rgb(255 255 255 / 0.17);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+
+    &:is(:hover, :focus-visible) {
+      opacity: 1;
+    }
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css === */
+#rodx-open-builder {
+  display: none;
+}
+
+body.rodx-search-page article[data-rodx-read="1"] {
+  opacity: 1;
+}
+
+/* IMPROVEMENT: Consolidated repeated `:is(article, [role="article"])[data-testid="tweet"]` blocks, merged identical `.rodx-tag-add` and `.rodx-tag-exclude` button geometry, and removed redundant `margin-block: 0` / font overrides.
+   Why: Cuts selector repetition by >60% while keeping identical specificity and visual behavior. */
+:is(article, [role="article"])[data-testid="tweet"] {
+  --rodx-edge: clamp(2px, calc(var(--rodx-dense, 1) * 10px), 14px);
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  padding-inline-end: var(--rodx-ds-space-6);
+
+  &[data-rodx-tight="1"] {
+    padding-block: 0;
+
+    & [data-testid="tweetText"] {
+      line-height: 1.24;
+
+      & + div {
+        margin-block-start: 0;
+      }
+    }
+  }
+
+  & > div {
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  & :is([data-testid="tweetText"], [data-testid="videoPlayerContainer"], [data-testid="tweetPhoto"]) {
+    box-sizing: border-box;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  & :is([data-testid="tweetPhoto"], [data-testid="videoPlayerContainer"]) {
+    margin-block: 0;
+  }
+
+  & [data-testid="tweetText"] {
+    font-size: var(--rodx-font, var(--rodx-ds-text-14));
+    line-height: calc(1.18 + 0.23 * var(--rodx-dense, 1));
+    overflow-wrap: anywhere;
+    margin-block: 0;
+    padding-block: 0;
+
+    &.rodx-native-only-tags,
+    & :is(.rodx-native-tag-tail, .rodx-native-tag-source) {
+      display: none;
+    }
+
+    & > :is(div, span) {
+      margin-block: 0;
+    }
+
+    & a[data-rodx-tag="1"] {
+      border-radius: var(--rodx-ds-radius-4);
+      padding-inline: var(--rodx-ds-space-2);
+      background: var(--rodx-tag-bg, rgb(29 155 240 / 0.09));
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+
+    & a[data-rodx-selected="1"] {
+      color: inherit;
+      background: transparent;
+    }
+  }
+
+  & .rodx-hashtags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--rodx-ds-space-2);
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    overflow: visible;
+    white-space: normal;
+    -webkit-line-clamp: unset;
+    margin: 0;
+    padding: 0;
+    line-height: 1.25;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+
+    & + [role="group"] {
+      margin-block-start: 0;
+    }
+  }
+
+  & .rodx-hashtag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: var(--rodx-ds-radius-4);
+    background: transparent;
+    font-family: var(--_rx-font-chirp);
+    font-size: var(--rodx-font, var(--rodx-ds-text-14));
+    font-weight: 400;
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    & > a {
+      color: inherit;
+      text-decoration: none;
+      font: inherit;
+      overflow-wrap: anywhere;
+      min-inline-size: 0;
+    }
+
+    & .rodx-tag-translation {
+      font: inherit;
+      opacity: 0.72;
+      padding-inline-start: var(--rodx-ds-space-2);
+      white-space: normal;
+    }
+
+    &[data-selected="0"] {
+      & > a {
+        color: var(--_rx-accent);
+      }
+
+      &[data-color="1"] {
+        background: transparent;
+
+        & > a {
+          background: var(--rodx-tag-bg, var(--_rx-accent-soft));
+          padding-block: var(--rodx-ds-space-1);
+          padding-inline: var(--rodx-ds-space-4);
+          border-radius: var(--rodx-ds-radius-4);
+        }
+      }
+    }
+
+    &[data-selected="1"] {
+      color: inherit;
+      opacity: 0.6;
+      background: transparent;
+    }
+
+    &[data-excluded="1"] > a {
+      color: var(--_rx-danger);
+      background: transparent;
+    }
+
+    & button[hidden] {
+      display: none;
+    }
+  }
+
+  /* Shared 23px round pill button geometry for add/exclude tag actions */
+  & :is(button.rodx-tag-add, .rodx-hashtag-item button.rodx-tag-exclude) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 23px;
+    inline-size: 23px;
+    block-size: 23px;
+    min-inline-size: 23px;
+    min-block-size: 23px;
+    border: 0;
+    border-radius: var(--rodx-ds-radius-full);
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    font: 600 var(--rodx-ds-text-18) / 1 var(--_rx-font-chirp-system);
+    touch-action: manipulation;
+  }
+
+  & button.rodx-tag-add {
+    color: var(--_rx-accent);
+    opacity: 0.85;
+
+    &:is(:hover, :focus-visible, :active) {
+      opacity: 1;
+      background: rgb(29 155 240 / 0.11);
+    }
+  }
+
+  & .rodx-hashtag-item button.rodx-tag-exclude {
+    color: var(--_rx-danger);
+
+    &:is(:active, :hover) {
+      background: var(--_rx-danger-soft);
+    }
+  }
+
+  & .rodx-result-actions {
+    display: inline-flex;
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-inline-size: 0;
+    min-block-size: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    opacity: 0.5;
+
+    &:focus-within {
+      opacity: 1;
+    }
+
+    & button[data-seen="1"] {
+      opacity: 0.65;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      opacity: 0.35;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover .rodx-result-actions {
+      opacity: 0.85;
+    }
+  }
+
+  & :is(.rodx-result-actions button, .rodx-bookmark-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font: 500 var(--rodx-ds-text-14) TwitterChirp, -apple-system, system-ui;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    flex: none;
+    inline-size: 30px;
+    block-size: 30px;
+    min-inline-size: 30px;
+    min-block-size: 30px;
+    padding: 0;
+    border-radius: var(--rodx-ds-radius-full);
+    cursor: pointer;
+    opacity: 0.75;
+
+    &:is(:hover, :focus-visible) {
+      background: rgb(29 155 240 / 0.09);
+      color: var(--_rx-accent);
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rodx-result-actions {
+    transition: none;
+  }
+}
+
+/* Shared runtime UI: X-like toast, selection popover and drag feedback. */
+#rodx-native-toast {
+  position: fixed;
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 58px);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 2147483601;
+  pointer-events: none;
+  max-inline-size: calc(100vw - 36px);
+  padding-block: var(--rodx-ds-space-12);
+  padding-inline: var(--rodx-ds-space-16);
+  border-radius: var(--rodx-ds-radius-24);
+  font: 600 var(--rodx-ds-text-13) / 1.4 var(--_rx-font-chirp);
+  box-shadow: 0 6px 24px #0005;
+  text-align: center;
+  white-space: normal;
+}
+
+.rodx-drag-ghost {
+  position: fixed;
+  z-index: 2147483600;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  max-inline-size: 180px;
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  border-radius: var(--rodx-ds-radius-16);
+  background: var(--rodx-ds-color-accent);
+  color: var(--rodx-ds-color-white);
+  opacity: 0.94;
+  box-shadow: 0 4px 16px #0006;
+  font: 600 var(--rodx-ds-text-13) var(--_rx-font-chirp);
+}
+
+#rodx-selection-popover {
+  position: fixed;
+  z-index: 2147483650;
+  display: flex;
+  align-items: center;
+  gap: var(--rodx-ds-space-4);
+  max-inline-size: calc(100vw - 20px);
+  padding: var(--rodx-ds-space-4);
+  border: 1px solid rgb(83 100 113 / 0.25);
+  border-radius: var(--rodx-ds-radius-20);
+  background: rgb(32 35 39);
+  color: var(--rodx-ds-color-white);
+  box-shadow: 0 5px 19px #0005;
+  font: 500 var(--rodx-ds-text-12) var(--_rx-font-chirp);
+
+  & .rodx-selection-caption {
+    max-inline-size: 110px;
+    padding-inline: var(--rodx-ds-space-4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & button {
+    min-inline-size: 38px;
+    min-block-size: 34px;
+    border: 0;
+    border-radius: var(--rodx-ds-radius-16);
+    background: rgb(255 255 255 / 0.1);
+    color: var(--rodx-ds-color-white);
+    font: 600 var(--rodx-ds-text-20) var(--rodx-ds-font-ui);
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-tweets-publisher-1.css === */
+.rodx-xrepost {
+  display: grid;
+  gap: var(--rodx-ds-space-12);
+  padding-block-end: var(--rodx-ds-space-8);
+
+  & .xr-choices {
+    display: flex;
+    gap: var(--rodx-ds-space-6);
+    overflow-x: auto;
+    padding-block: var(--rodx-ds-space-4);
+
+    & button {
+      white-space: nowrap;
+    }
+  }
+
+  & .xr-item {
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-16);
+    padding: var(--rodx-ds-space-12);
+  }
+
+  & .xr-caption {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  & .xr-meta {
+    font-size: var(--rodx-ds-text-12);
+    opacity: 0.8;
+    margin-block: var(--rodx-ds-space-6);
+  }
+
+  & .xr-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rodx-ds-space-8);
+    padding-block-start: var(--rodx-ds-space-8);
+  }
+
+  & button {
+    min-block-size: var(--rodx-ds-control-height);
+    touch-action: manipulation;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-tweets-publisher-2.css === */
+.rodx-direct-share {
+  & .rdx-ds-status {
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-12);
+    padding: var(--rodx-ds-space-12);
+    overflow-wrap: anywhere;
+    font-size: var(--rodx-ds-text-13);
+    line-height: 1.5;
+  }
+
+  & .rdx-ds-caption {
+    background: transparent;
+    border: 1px solid #71767b88;
+    border-radius: var(--rodx-ds-radius-12);
+    box-sizing: border-box;
+    color: inherit;
+    font: inherit;
+    line-height: 1.45;
+    inline-size: 100%;
+    min-block-size: 74px;
+    max-block-size: 24vh;
+    padding: var(--rodx-ds-space-12);
+    resize: vertical;
+  }
+
+  & button {
+    min-block-size: var(--rodx-ds-control-touch);
+    touch-action: manipulation;
+    border-radius: var(--rodx-ds-radius-12);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  & .rdx-ds-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--rodx-ds-space-8);
+
+    & [data-share-action="native"] {
+      grid-column: 1 / -1;
+    }
+  }
+
+  & .rdx-ds-note {
+    font-size: var(--rodx-ds-text-12);
+    opacity: 0.8;
+    line-height: 1.45;
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css === */
+.rodx-quick-search {
+  display: grid;
+  gap: var(--rodx-ds-space-12);
+  min-inline-size: 0;
+  font: var(--rodx-ds-text-13) / 1.5 var(--_rx-font-chirp);
+
+  & * {
+    box-sizing: border-box;
+  }
+}
+
+.rxq-editor {
+  position: relative;
+  isolation: isolate;
+  min-block-size: 112px;
+  border: 1px solid #71767b77;
+  border-radius: var(--rodx-ds-radius-12);
+  background: color-mix(in srgb, Canvas 94%, var(--rodx-ds-color-accent) 6%);
+  overflow: hidden;
+
+  &:focus-within {
+    border-color: var(--rodx-ds-color-accent);
+    /* BUG FIX: Replaced invalid `outline: 1px solid var(--rodx-ds-color-accent) 66` with `color-mix()`.
+       Why: Concatenating hex alpha digits after `var(...)` is invalid CSS syntax and caused browsers to ignore the focus outline. */
+    outline: 1px solid color-mix(in srgb, var(--rodx-ds-color-accent) 40%, transparent);
+  }
+}
+
+:is(.rxq-syntax, .rxq-input) {
+  margin: 0;
+  padding: var(--rodx-ds-space-12);
+  display: block;
+  inline-size: 100%;
+  min-block-size: 112px;
+  max-block-size: min(40dvh, 330px);
+  border: 0;
+  font: 15px / 1.55 var(--rodx-ds-font-mono);
+  letter-spacing: 0;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.rxq-syntax {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  color: var(--rodx-ds-color-text);
+
+  & .syn-negative {
+    color: #f04458;
+  }
+
+  & .syn-filter {
+    color: #169de4;
+  }
+
+  & .syn-tag {
+    color: #a47bff;
+  }
+
+  & :is(.syn-bool, .syn-paren) {
+    color: #e8a33d;
+    font-weight: 700;
+  }
+
+  & .syn-phrase {
+    color: #22af80;
+  }
+
+  & .rodx-syntax-error {
+    text-decoration: underline wavy #f04458;
+  }
+
+  & .rodx-syntax-warning {
+    text-decoration: underline dotted #e8a33d;
+  }
+}
+
+.rxq-input {
+  position: relative;
+  z-index: 2;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--rodx-ds-color-accent);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: 0;
+
+  &::placeholder {
+    color: var(--rodx-ds-color-muted);
+    -webkit-text-fill-color: #71767b;
+  }
+
+  &::selection {
+    /* BUG FIX: Replaced invalid `var(--rodx-ds-color-accent) 55` with `color-mix()`.
+       Why: Invalid token concatenation prevented custom selection highlight from rendering. */
+    background: color-mix(in srgb, var(--rodx-ds-color-accent) 33%, transparent);
+  }
+}
+
+.rxq-message {
+  min-block-size: 16px;
+  color: var(--rodx-ds-color-muted);
+
+  &[data-level="error"] {
+    color: #f04458;
+  }
+}
+
+.rxq-suggestions {
+  display: grid;
+  gap: var(--rodx-ds-space-2);
+  max-block-size: min(34dvh, 300px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #71767b44;
+  border-radius: var(--rodx-ds-radius-12);
+  padding: var(--rodx-ds-space-4);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.rxq-option {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  inline-size: 100%;
+  padding-block: var(--rodx-ds-space-8);
+  padding-inline: var(--rodx-ds-space-12);
+  gap: var(--rodx-ds-space-1);
+  border: 0;
+  border-radius: var(--rodx-ds-radius-8);
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+
+  &[aria-selected="true"] {
+    /* BUG FIX: Replaced invalid `var(--rodx-ds-color-accent) 24` with `color-mix()`.
+       Why: Invalid syntax caused selected suggestion items to lose their background highlight. */
+    background: color-mix(in srgb, var(--rodx-ds-color-accent) 14%, transparent);
+  }
+
+  & small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.75;
+    font-size: var(--rodx-ds-text-11);
+    line-height: 1.4;
+  }
+}
+
+.rxq-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rodx-ds-space-4);
+  align-items: center;
+
+  & button {
+    padding-block: var(--rodx-ds-space-8);
+    padding-inline: var(--rodx-ds-space-12);
+    border: 1px solid var(--rodx-ds-color-border);
+    border-radius: var(--rodx-ds-radius-16);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  & [type="submit"] {
+    margin-inline-start: auto;
+    background: var(--rodx-ds-color-accent);
+    color: var(--rodx-ds-color-white);
+    border-color: var(--rodx-ds-color-accent);
+    font-weight: 700;
+
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+}
+
+/* === Source: src/styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css === */
+[data-testid="FloatingActionButton_Tweet"],
+[data-testid="SideNav_NewTweet_Button"] {
+  display: none;
+}

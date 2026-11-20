@@ -93,6 +93,7 @@ test("URL patterns use hostname boundaries, paths, query and exclusions", () => 
 
 test("SPA enters once, retains matching module, disposes events and styles on exit", async () => {
   const host = new Window({ url: "https://x.com/home" });
+  host.__ROD_RUNTIME_TRACE__ = true;
   let starts = 0,
     stops = 0,
     clicks = 0;
@@ -131,7 +132,12 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   console.log("[runtime test] SPA: pushing settings route");
   host.history.pushState({}, "", "/settings");
   console.log("[runtime test] SPA: awaiting settings navigation");
-  await app.navigate();
+  await Promise.race([
+    app.navigate(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("SPA settings navigation did not settle after cleanup (5000ms)")), 5000),
+    ),
+  ]);
   console.log("[runtime test] SPA: settings navigation complete");
   assert.equal(stops, 1);
   assert.equal(host.document.querySelector("style"), null);
@@ -147,6 +153,36 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   assert.equal(host.history.pushState, nativePush);
   await host.happyDOM.abort();
   console.log("[runtime test] SPA: happy-dom aborted");
+});
+
+test("context listeners preserve capture and are removed on SPA exit", async () => {
+  const host = new Window({ url: "https://example.com/on" });
+  let events = 0;
+  const app = createRuntime(
+    [{
+      id: "capture-listener",
+      matches: ["https://example.com/on"],
+      module: {
+        init(ctx) {
+          ctx.listen(host, "click", () => events++, true);
+        },
+      },
+    }],
+    { call() {} },
+    host,
+  );
+  try {
+    await app.ready;
+    host.dispatchEvent(new host.Event("click"));
+    assert.equal(events, 1);
+    host.history.pushState({}, "", "/off");
+    await app.navigate();
+    host.dispatchEvent(new host.Event("click"));
+    assert.equal(events, 1, "listener must be detached after route exit");
+  } finally {
+    await app.dispose();
+    await host.happyDOM.abort();
+  }
 });
 
 test("persistent storage is created only on first use and reused across SPA navigation", async () => {

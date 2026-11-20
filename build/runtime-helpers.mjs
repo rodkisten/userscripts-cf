@@ -1,9 +1,29 @@
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 
 // Load TypeScript directly in Node instead of bundling its CommonJS export
 // through Vite config / Rolldown interop.
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
+
+// The same module is transformed once per execution world and once per
+// target (~24 full builds). Results are deterministic per (id, source), so
+// cache them process-wide; plugin instances are recreated per Vite build.
+const TRANSFORM_CACHE_KEY = Symbol.for("rod.runtimeHelpers.transformCacheV1");
+const TRANSFORM_CACHE_LIMIT = 8192;
+
+function transformCache() {
+  let cache = globalThis[TRANSFORM_CACHE_KEY];
+  if (!(cache instanceof Map)) {
+    cache = new Map();
+    globalThis[TRANSFORM_CACHE_KEY] = cache;
+  }
+  return cache;
+}
+
+function cacheKey(id, code) {
+  return id + "\0" + createHash("sha1").update(code).digest("hex");
+}
 
 // Transform only inside functions that explicitly receive a context argument.
 // @keep on the same line or in the immediately preceding comment prevents rewriting.
@@ -19,9 +39,22 @@ export function runtimeHelpers() {
           ? ts.ScriptKind.JSX
           : ts.ScriptKind.TS;
       if (id.startsWith("\\0") || id.startsWith("\u0000")) return null;
+      const cache = transformCache();
+      const key = cacheKey(id, code);
+      if (cache.has(key)) return cache.get(key);
+      const remember = (value) => {
+        cache.set(key, value);
+        if (cache.size > TRANSFORM_CACHE_LIMIT) cache.clear();
+        return value;
+      };
       const source = ts.createSourceFile(id, code, ts.ScriptTarget.Latest, true, kind);
       const edits = [];
-      const keep = (node) => {
+      // Scope scans are pure functions of the AST node; memoize them because
+      // walk/checkUnresolved query the same nodes repeatedly.
+      const bindingsCache = new WeakMap();
+      const elementsCache = new WeakMap();
+      const keepCache = new WeakMap();
+      const computeKeep = (node) => {
         const ranges = ts.getLeadingCommentRanges(code, node.getFullStart()) ?? [];
         if (ranges.some((r) => /@keep\b/.test(code.slice(r.pos, r.end)))) return true;
         const start = node.getStart(source);
@@ -32,9 +65,19 @@ export function runtimeHelpers() {
           /\/\/[^\n]*@keep\b/.test(code.slice(lineStart, start)) || /^\s*\/\/[^\n]*@keep\b/.test(trailing)
         );
       };
+      const keep = (node) => {
+        let value = keepCache.get(node);
+        if (value === undefined) {
+          value = computeKeep(node);
+          keepCache.set(node, value);
+        }
+        return value;
+      };
       // Collect declarations before visiting expressions: let/const/var and function
       // declarations shadow globals even when declared later in the scope.
       function bindings(node) {
+        const cachedBindings = bindingsCache.get(node);
+        if (cachedBindings !== undefined) return cachedBindings;
         const names = new Set();
         const add = (name) => {
           if (ts.isIdentifier(name)) names.add(name.text);
@@ -73,10 +116,13 @@ export function runtimeHelpers() {
         if (ts.isSourceFile(node) || ts.isBlock(node) || ts.isFunctionLike(node)) {
           ts.forEachChild(node, collect);
         }
+        bindingsCache.set(node, names);
         return names;
       }
       // Infer only direct DOM element bindings, never arbitrary duck-typed objects.
       function elementBindings(node) {
+        const cachedElements = elementsCache.get(node);
+        if (cachedElements !== undefined) return cachedElements;
         const names = new Set();
         const visit = (child) => {
           if (ts.isVariableDeclaration(child) && ts.isIdentifier(child.name)) {
@@ -102,6 +148,7 @@ export function runtimeHelpers() {
           ts.forEachChild(child, visit);
         };
         ts.forEachChild(node, visit);
+        elementsCache.set(node, names);
         return names;
       }
       function walk(node, contextName, shadowed = new Set(), blocked = false, elements = new Set()) {
@@ -265,7 +312,7 @@ export function runtimeHelpers() {
       };
       checkUnresolved(source);
       const jsxFile = /\.[jt]sx(?:\?|$)/.test(id);
-      if (!edits.length && !jsxFile) return null;
+      if (!edits.length && !jsxFile) return remember(null);
       let output = code;
       for (const edit of edits.sort((a, b) => b.start - a.start)) {
         output = output.slice(0, edit.start) + edit.value + output.slice(edit.end);
@@ -287,7 +334,7 @@ export function runtimeHelpers() {
         });
         output = transformed.outputText;
       }
-      return { code: output, map: null };
+      return remember({ code: output, map: null });
     },
   };
 }

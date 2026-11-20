@@ -113,7 +113,8 @@
   const isWorkflow = () => /\/\.github\/workflows\/[^/?#]+\.ya?ml(?:$|[?#/])/.test(location.pathname) ||
     (/\.ya?ml$/.test(location.pathname) && document.body.textContent?.includes('run:'));
   let busy = false;
-  let lastUrl = '';\n  const debug = (...args) => console.debug('[Rod Actions Highlight]',...args);
+  let lastUrl = '';
+  const debug = (...args) => console.debug('[Rod Actions Highlight]',...args);
   function update() {
     if (busy || !isWorkflow()) return;
     busy = true;
@@ -143,7 +144,8 @@
         });
       }
       nodes.forEach(node => node.dataset.rodActionsProcessed = '1');
-      lastUrl = signature;\n      debug('processed', {lines:nodes.length, blocks:parse(originalLines).length, hljs:!!window.hljs, path:location.pathname});
+      lastUrl = signature;
+      debug('processed', {lines:nodes.length, blocks:parse(originalLines).length, hljs:!!window.hljs, path:location.pathname});
     } finally { busy = false; }
   }
   let queued = false;
