@@ -10,12 +10,12 @@ import process from "node:process";
 import ts from "typescript";
 
 const fix = process.argv.includes("--fix");
-const selected = process.argv.filter((arg) => !arg.startsWith("--"));
+const selected = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const ignored = new Set([".git", "node_modules", "dist", "coverage", ".next", ".cache", "artifacts"]);
 const extensions = new Set([".ts", ".tsx", ".mts", ".cts"]);
 function* walk(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (ignored.has(entry.name)) continue;
+  for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    if (ignored.has(entry.name) || entry.name.startsWith(".git")) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) yield* walk(path);
     else if (entry.isFile() && extensions.has(extname(entry.name)) && !entry.name.endsWith(".d.ts")) yield path;
@@ -40,7 +40,7 @@ for (const file of files) {
     if (offsets.length) {
       let candidate = source;
       for (const offset of offsets.reverse()) candidate = candidate.slice(0, offset) + "\n" + candidate.slice(offset + 2);
-      if (parse(candidate).parseDiagnostics.length === 0) {
+      if (parse(candidate).parseDiagnostics.length === 0 && candidate !== source) {
         writeFileSync(file, candidate);
         source = candidate;
         repaired++;

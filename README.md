@@ -274,3 +274,5 @@ O inspetor DOM evita selecionar controles da própria Dock; a aba Rede mantém a
 ### Sintaxe React/TypeScript em todo o repositório
 
 `npm run check:react-syntax` percorre todos os arquivos TS/TSX/MTS/CTS; `npm run check:react-syntax:fix` repara apenas tokens `\\n` inválidos que possam ser corrigidos sem erros de parse. O workflow `Validate changed userscripts` executa ambos, formata, revalida e publica alterações verificadas via GitHub App na branch do PR.
+
+O autofix só autentica o GitHub App quando há arquivos realmente corrigidos. Antes do push, compara o SHA remoto com o commit analisado para impedir sobrescrita de mudanças concorrentes.
