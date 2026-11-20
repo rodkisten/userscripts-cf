@@ -131,7 +131,6 @@ jobs:
         if: steps.source.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.skip_tests
         run: |
           set -euo pipefail
-          # Executa typecheck de forma informativa sem abortar o deploy manual
           if npm run --if-present typecheck; then
             echo "typecheck_status=passed" >> "$GITHUB_OUTPUT"
           else
@@ -139,7 +138,6 @@ jobs:
             echo "::warning::⚠️ Typecheck errors detected, proceeding because skip_tests=true."
           fi
 
-          # Garante que o bundle seja gerado mesmo se o script "build" chamar tsc internamente
           if ! npm run build; then
             echo "::warning::⚠️ Default build script failed (possibly due to typecheck). Falling back to bundler-only build..."
             if npm run --if-present build:scripts || npm run --if-present bundle; then
@@ -224,21 +222,33 @@ jobs:
       - name: 📊 Generate Rich Release Summary
         if: always()
         uses: actions/github-script@v7
+        env:
+          SKIPPED: ${{ steps.source.outputs.skip }}
+          JOB_STATUS: ${{ job.status }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
+          TAG: ${{ steps.version.outputs.tag }}
+          IS_RESUME: ${{ steps.version.outputs.resume }}
+          BUMP_TYPE: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
+          SKIP_TESTS: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_tests || 'false' }}
+          TYPECHECK_STATUS: ${{ steps.manual-build.outputs.typecheck_status }}
+          LOCK_SYNCED: ${{ steps.lockfile.outputs.synced }}
+          COMMIT_SHA: ${{ steps.version-commit.outputs.commit_sha }}
         with:
           script: |
             const fs = require('fs');
 
-            const skipped = '${{ steps.source.outputs.skip }}' === 'true';
-            const jobStatus = '${{ job.status }}';
-            const version = '${{ steps.version.outputs.version }}';
-            const previousVersion = '${{ steps.version.outputs.previous }}';
-            const tag = '${{ steps.version.outputs.tag }}';
-            const isResume = '${{ steps.version.outputs.resume }}' === 'true';
-            const bumpType = '${{ github.event_name == "workflow_dispatch" && inputs.bump || "patch" }}';
-            const skipTests = '${{ github.event_name == "workflow_dispatch" && inputs.skip_tests }}' === 'true';
-            const typecheckStatus = '${{ steps.manual-build.outputs.typecheck_status }}';
-            const lockSynced = '${{ steps.lockfile.outputs.synced }}' === 'true';
-            const commitSha = '${{ steps.version-commit.outputs.commit_sha }}' || process.env.GITHUB_SHA;
+            const skipped = process.env.SKIPPED === 'true';
+            const jobStatus = process.env.JOB_STATUS;
+            const version = process.env.VERSION || '';
+            const previousVersion = process.env.PREVIOUS_VERSION || '';
+            const tag = process.env.TAG || '';
+            const isResume = process.env.IS_RESUME === 'true';
+            const bumpType = process.env.BUMP_TYPE || 'patch';
+            const skipTests = process.env.SKIP_TESTS === 'true';
+            const typecheckStatus = process.env.TYPECHECK_STATUS || '';
+            const lockSynced = process.env.LOCK_SYNCED === 'true';
+            const commitSha = process.env.COMMIT_SHA || process.env.GITHUB_SHA || '';
             const baseUrl = 'https://userscripts.migos.club';
             const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
 
