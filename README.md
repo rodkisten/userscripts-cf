@@ -262,3 +262,5 @@ O desenvolvimento da Dock 2.0 segue na branch `feat/rod-dock-2-main-sync`; a int
 O inspetor de propriedades globais não executa getters e bloqueia acessos a propriedades de protótipo; o destaque DOM acompanha o deslocamento da página.
 
 A busca global da Dock agora executa ações registradas diretamente nos resultados; o launcher móvel cancela corretamente o rastreamento de arraste interrompido.
+
+Na Dock, os toggles de scripts utilizam Radix Checkbox; o inspetor DOM oferece feedback ao copiar HTML e mantém o trecho visível para cópia manual.

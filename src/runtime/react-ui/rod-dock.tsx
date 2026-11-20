@@ -5,6 +5,7 @@ import { Drawer } from "vaul";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Switch from "@radix-ui/react-switch";
+import * as Checkbox from "@radix-ui/react-checkbox";
 import * as Select from "@radix-ui/react-select";
 import * as Slider from "@radix-ui/react-slider";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -59,6 +60,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:4px
 .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .script{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #27272a;font-size:13px}
 .script small{display:block;color:#a1a1aa;margin-top:3px}
+.scriptCheckbox{display:grid;place-items:center;flex-shrink:0;width:20px;height:20px;border:1px solid #71717a;border-radius:5px;background:#18181b;color:#fff}
+.scriptCheckbox[data-state=checked]{background:#6d28d9;border-color:#a78bfa}
+.scriptCheckbox:focus-visible{outline:2px solid #c4b5fd;outline-offset:2px}
 .setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;font-size:13px}
 .setting input[type=range]{width:130px}
 .searchWrap{display:flex;align-items:center;gap:8px;margin:0 14px 8px;padding:0 10px;border:1px solid #3f3f46;border-radius:9px;background:#18181b}
@@ -177,6 +181,7 @@ function DockView({ controller }: { controller: DockController }) {
   };
   const [domSelector, setDomSelector] = useState("body");
   const [domMessage, setDomMessage] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const [domMatches, setDomMatches] = useState<Element[]>([]);
   const [domPicking, setDomPicking] = useState(false);
   const [drawerSide, setDrawerSide] = useState<"right" | "bottom">(() => window.innerWidth >= 720 ? "right" : "bottom");
@@ -188,6 +193,7 @@ function DockView({ controller }: { controller: DockController }) {
   const [domSelected, setDomSelected] = useState<Element | null>(null);
   const highlightRef = useRef<HTMLElement | null>(null);
   const queryDom = () => {
+    setCopyMessage("");
     try {
       const result = Array.from(document.querySelectorAll(domSelector)).slice(0, 100);
       setDomMatches(result);
@@ -197,10 +203,22 @@ function DockView({ controller }: { controller: DockController }) {
       setDomMessage(error instanceof Error ? error.message : "Seletor inválido");
     }
   };
+  const copySelectedHtml = async () => {
+    if (!domSelected?.isConnected) return;
+    const html = domSelected.outerHTML.slice(0, 12000);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API indisponível");
+      await navigator.clipboard.writeText(html);
+      setCopyMessage(html.length === 12000 ? "Trecho copiado (limite de 12.000 caracteres)." : "HTML copiado.");
+    } catch {
+      setCopyMessage("Não foi possível copiar. Selecione o HTML abaixo para copiar manualmente.");
+    }
+  };
   const highlightElement = (element: Element | null) => {
     highlightRef.current?.remove();
     highlightRef.current = null;
     setDomSelected(element);
+    setCopyMessage("");
     if (!element?.isConnected) return;
     const rect = element.getBoundingClientRect();
     const overlay = document.createElement("div");
@@ -382,7 +400,7 @@ function DockView({ controller }: { controller: DockController }) {
                   {scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLowerCase().includes(search.toLowerCase())).map((script) => {
                     const enabled = preferences[script.id]?.enabled !== false;
                     const permitted = matches({ ...script, name: script.name ?? script.id }, location.href, preferences[script.id]);
-                    return <label className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span><input type="checkbox" checked={enabled} onChange={(event) => toggleScript(script.id, event.target.checked)} /></label>;
+                    return <label className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span><Checkbox.Root className="scriptCheckbox" checked={enabled} onCheckedChange={(checked) => toggleScript(script.id, checked === true)} aria-label={`Ativar ${script.name ?? script.id}`}><Checkbox.Indicator>✓</Checkbox.Indicator></Checkbox.Root></label>;
                   })}
                 </Tabs.Content>
                 <Tabs.Content value="tools">
@@ -407,7 +425,7 @@ function DockView({ controller }: { controller: DockController }) {
                   <form className="domSearch" onSubmit={(event) => { event.preventDefault(); queryDom(); }}><input className="domInput" aria-label="Seletor CSS" value={domSelector} onChange={(event) => setDomSelector(event.target.value)} placeholder="Ex.: main article" /><button className="action" type="submit">Buscar</button></form>
                   <p className="hint" role="status">{domMessage}</p>
                   {domMatches.filter((element) => element.isConnected).map((element, index) => <button key={index} className="domElement" onClick={() => highlightElement(element)}><span>{element.localName}{element.id ? `#${element.id}` : ""}{element.classList.length ? `.${Array.from(element.classList).slice(0, 2).join(".")}` : ""}</span><small>{element.textContent?.trim().slice(0, 90) || "(sem texto)"}</small></button>)}
-                  {domSelected?.isConnected && <div className="module"><div className="networkHeader"><strong>Elemento selecionado</strong><button className="action" onClick={() => { void navigator.clipboard?.writeText(domSelected.outerHTML); }}><Copy size={13} /> Copiar HTML</button></div><pre className="domSource">{domSelected.outerHTML.slice(0, 12000)}</pre></div>}
+                  {domSelected?.isConnected && <div className="module"><div className="networkHeader"><strong>Elemento selecionado</strong><button className="action" onClick={() => { void copySelectedHtml(); }}><Copy size={13} /> Copiar HTML</button></div><p className="hint" role="status">{copyMessage}</p><pre className="domSource">{domSelected.outerHTML.slice(0, 12000)}</pre></div>}
                   <button className="action" onClick={() => { highlightRef.current?.remove(); highlightRef.current = null; setDomSelected(null); }}>Limpar destaque</button>
                 </Tabs.Content>
                 <Tabs.Content value="diagnostics">

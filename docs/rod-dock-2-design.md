@@ -115,3 +115,9 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Pesquisa limpa após escolha de resultado e mantém navegação entre abas.
 - [x] Launcher filtra pelo pointerId, cancela listeners no pointercancel e desmontagem, evitando vazamento após arraste interrompido.
 - [ ] Typecheck/build e lockfile continuam pendentes. Nenhum teste executado.
+
+## Bloco 10: formulários Radix e cópia DOM
+
+- [x] Controles de ativação dos scripts migrados de checkbox nativo para Radix Checkbox, com rótulo acessível e foco visível.
+- [x] Cópia de HTML com limite de 12.000 caracteres, feedback de sucesso/erro e opção manual quando Clipboard API não estiver disponível.
+- [ ] Migrar demais formulários e integrar DevTools completos; sincronizar lockfile e validar build/typecheck. Sem testes conforme solicitado.
