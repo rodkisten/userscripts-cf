@@ -58,7 +58,7 @@ export function reelPayload(raw: Reel): MediaPayload | null {
     return null;
   }
   const variants = (m.video_versions || [])
-    .filter((v) => /^https:\/\//.test(v.url || ""))
+    .filter((v) => /^https:\/\//.test(v.url || "") && Number.isFinite(v.width) && Number.isFinite(v.height) && v.width > 0 && v.height > 0)
     .sort((a, b) => b.width * b.height - a.width * a.height);
   if (!variants.length) {
     return null;
@@ -219,12 +219,18 @@ export async function syncSaved({
               const result = byIndex.get(i);
               if (!result) throw Error("Confirmação Relay ausente ou duplicada");
               const item = job.items[i];
+              const channelResult = result.channels;
+              if (channelResult && (
+                (channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
+                (channelResult.covered !== undefined && !Array.isArray(channelResult.covered)) ||
+                (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent))
+              )) throw Error("Relay retornou confirmação de canais inválida");
               const status = classify(result, job.channels);
               const acknowledged = new Set([
                 ...(result.channels?.inserted || []),
                 ...(result.channels?.covered || []),
                 ...(result.channels?.notSent || [])
-                  .filter((entry) => entry.reason === "already_sent")
+                  .filter((entry) => entry && entry.reason === "already_sent")
                   .map((entry) => entry.channelId),
               ]);
               if (status.inserted && !insertedInSession.has(item.mediaId)) {
