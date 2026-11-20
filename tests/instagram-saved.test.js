@@ -481,3 +481,23 @@ test("partial 429 does not checkpoint complete delivery before the remaining cha
   assert.ok(checkpoints[0].abc);
   assert.deepEqual(Object.keys(ledger.abc).sort(), ["first", "second", "third"]);
 });
+
+test("invalid second acknowledgement does not checkpoint the first item", async () => {
+  let saved = false;
+  let savedChannels = false;
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => { saved = true; },
+    loadChannels: async () => ({}),
+    saveChannels: async () => { savedChannels = true; },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel("first"), reel("second")] }),
+    sendBatch: async () => ({ results: [
+      { index: 0, channels: { inserted: ["alpha"] } },
+      { index: 1, channels: { inserted: [null] } },
+    ] }),
+  }), /canais inválida/);
+  assert.equal(saved, false);
+  assert.equal(savedChannels, false);
+});
