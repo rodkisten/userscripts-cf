@@ -7,20 +7,22 @@ describe("[TEMP] AST import graph", () => {
     const graph = analyzeImportGraph({
       "src/index.tsx": 'import { css } from "./view";',
       "src/view.ts": 'export { css } from "./Panel.module.css";',
-      "src/Panel.module.css": ".panel { color: red }"
+      "src/Panel.module.css": ".panel { color: red }",
     });
     expect(graph.edges["src/index.tsx"][0].target).toBe("src/view.ts");
     expect(graph.edges["src/view.ts"][0].target).toBe("src/Panel.module.css");
   });
   it("reports missing relative modules", () => {
-    expect(analyzeImportGraph({ "src/index.ts": 'import "./missing.css";' }).diagnostics[0].code).toBe("unresolved-module");
+    expect(analyzeImportGraph({ "src/index.ts": 'import "./missing.css";' }).diagnostics[0].code).toBe(
+      "unresolved-module",
+    );
   });
 });
 describe("[TEMP] multi-file CSS Modules rewrite", () => {
   const input = {
     "src/tokens.css": ":host { --already: #123456; }",
     "src/Panel.module.css": ".panel { color: #123456; padding: 8px; }",
-    "src/Dialog.module.css": ".dialog { color: #123456; padding: 8px; }"
+    "src/Dialog.module.css": ".dialog { color: #123456; padding: 8px; }",
   };
   it("shares tokens across CSS Modules without changing class names", () => {
     const result = rewriteShadowGroup(input);

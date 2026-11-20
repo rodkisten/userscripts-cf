@@ -2,8 +2,11 @@ import { parse } from "@babel/parser";
 import { analyzeImportGraph } from "./css-import-graph.mjs";
 
 function importedName(specifier) {
-  return specifier.type === "ImportDefaultSpecifier" ? "default" :
-    specifier.type === "ImportSpecifier" ? (specifier.imported.name ?? specifier.imported.value) : null;
+  return specifier.type === "ImportDefaultSpecifier"
+    ? "default"
+    : specifier.type === "ImportSpecifier"
+      ? (specifier.imported.name ?? specifier.imported.value)
+      : null;
 }
 function exportedName(specifier) {
   return specifier.exported.name ?? specifier.exported.value;
@@ -14,10 +17,10 @@ function exportedName(specifier) {
  */
 export function verifyStyleRegistration(sources, group, ownership) {
   const graph = analyzeImportGraph(sources);
-  const failures = [...graph.diagnostics.filter(d => group.includes(d.file))];
+  const failures = [...graph.diagnostics.filter((d) => group.includes(d.file))];
   const parsed = new Map();
-  const edgeTarget = (file, spec) => (graph.edges[file] || []).find(edge => edge.spec === spec)?.target;
-  const parseFile = file => {
+  const edgeTarget = (file, spec) => (graph.edges[file] || []).find((edge) => edge.spec === spec)?.target;
+  const parseFile = (file) => {
     if (parsed.has(file)) return parsed.get(file);
     try {
       const ast = parse(sources[file], { sourceType: "unambiguous", plugins: ["typescript", "jsx"] });
@@ -66,7 +69,7 @@ export function verifyStyleRegistration(sources, group, ownership) {
     }
     return null;
   };
-  const consumers = new Set(group.flatMap(name => ownership[name]?.owners || []));
+  const consumers = new Set(group.flatMap((name) => ownership[name]?.owners || []));
   if (!consumers.size) failures.push({ code: "no-consumers" });
   for (const consumer of consumers) {
     if (!sources[consumer] || !/\.[jt]sx?$/.test(consumer)) {
@@ -88,13 +91,18 @@ export function verifyStyleRegistration(sources, group, ownership) {
       }
     }
     const registered = new Set();
-    const visit = node => {
+    const visit = (node) => {
       if (!node || typeof node !== "object") return;
-      if (node.type === "CallExpression" && node.callee?.type === "MemberExpression" &&
-        node.callee.computed === false && node.callee.property?.name === "registerStyles" &&
+      if (
+        node.type === "CallExpression" &&
+        node.callee?.type === "MemberExpression" &&
+        node.callee.computed === false &&
+        node.callee.property?.name === "registerStyles" &&
         node.callee.object?.type === "MemberExpression" &&
-        node.callee.object.computed === false && node.callee.object.property?.name === "ui" &&
-        node.callee.object.object?.name === "ctx") {
+        node.callee.object.computed === false &&
+        node.callee.object.property?.name === "ui" &&
+        node.callee.object.object?.name === "ctx"
+      ) {
         for (const arg of node.arguments) {
           if (arg.type === "Identifier" && imports.has(arg.name)) registered.add(imports.get(arg.name));
         }

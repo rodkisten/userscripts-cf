@@ -2,8 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import postcss from "postcss";
 
-const norm = file => file.replaceAll("\\", "/");
-const cssImport = /(?:import|export)\s+(?:[^"'\n]*?\s+from\s+)?["']([^"']+\.css(?:\?[^"']*)?)["']|import\(\s*["']([^"']+\.css(?:\?[^"']*)?)["']\s*\)/g;
+const norm = (file) => file.replaceAll("\\", "/");
+const cssImport =
+  /(?:import|export)\s+(?:[^"'\n]*?\s+from\s+)?["']([^"']+\.css(?:\?[^"']*)?)["']|import\(\s*["']([^"']+\.css(?:\?[^"']*)?)["']\s*\)/g;
 const styleAPIs = /\bctx\.(?:pageStyle|style)\s*\(|\bctx\.ui\.(?:style|registerStyles)\s*\(/g;
 const directCSS = /\b(?:document\.head\.appendChild|insertRule|adoptedStyleSheets)\b/g;
 function relativeResolve(from, spec, exists) {
@@ -24,10 +25,10 @@ export function analyzeStyleOwnership(sources) {
     const deps = new Set();
     if (filename.endsWith(".css")) {
       const ast = postcss.parse(content, { from: filename });
-      ast.walkAtRules("import", rule => {
+      ast.walkAtRules("import", (rule) => {
         const match = rule.params.match(/^\s*(?:url\(\s*)?["']([^"']+)["']/);
         if (match) {
-          const resolved = relativeResolve(filename, match[1], f => files.has(f));
+          const resolved = relativeResolve(filename, match[1], (f) => files.has(f));
           if (resolved) deps.add(resolved);
           else diagnostics.push({ file: filename, code: "unresolved-css-import", spec: match[1] });
         }
@@ -35,13 +36,14 @@ export function analyzeStyleOwnership(sources) {
     } else {
       for (const match of content.matchAll(cssImport)) {
         const spec = match[1] || match[2];
-        const resolved = relativeResolve(filename, spec, f => files.has(f));
+        const resolved = relativeResolve(filename, spec, (f) => files.has(f));
         if (resolved) deps.add(resolved);
-        else if (spec.startsWith(".")) diagnostics.push({ file: filename, code: "unresolved-css-import", spec });
+        else if (spec.startsWith("."))
+          diagnostics.push({ file: filename, code: "unresolved-css-import", spec });
       }
-      const apiCalls = [...content.matchAll(styleAPIs)].map(match => match[0]);
-      const page = apiCalls.some(call => call.includes("pageStyle"));
-      const shadow = apiCalls.some(call => !call.includes("pageStyle"));
+      const apiCalls = [...content.matchAll(styleAPIs)].map((match) => match[0]);
+      const page = apiCalls.some((call) => call.includes("pageStyle"));
+      const shadow = apiCalls.some((call) => !call.includes("pageStyle"));
       if (page || shadow) entrypoints.set(filename, { page, shadow });
       if (directCSS.test(content)) diagnostics.push({ file: filename, code: "manual-global-style-review" });
       directCSS.lastIndex = 0;
@@ -69,20 +71,25 @@ export function analyzeStyleOwnership(sources) {
     }
     const text = files.get(filename);
     const ast = postcss.parse(text, { from: filename });
-    let host = false, documentSelector = false, rootSelector = false;
-    ast.walkRules(rule => {
+    let host = false,
+      documentSelector = false,
+      rootSelector = false;
+    ast.walkRules((rule) => {
       const selector = rule.selector;
       if (/(^|[,\s]):host(?:\b|\()/i.test(selector)) host = true;
       if (/(^|[,\s])(?:html|body)(?:\b|[.#:\[])/i.test(selector)) documentSelector = true;
       if (/(^|[,\s]):root\b/i.test(selector)) rootSelector = true;
     });
-    const ownership = [...owners].map(owner => entrypoints.get(owner));
-    const page = ownership.some(x => x.page);
-    const shadow = ownership.some(x => x.shadow);
+    const ownership = [...owners].map((owner) => entrypoints.get(owner));
+    const page = ownership.some((x) => x.page);
+    const shadow = ownership.some((x) => x.shadow);
     const ambiguous = !owners.size || (page && shadow) || documentSelector || rootSelector;
     classifications[filename] = {
       status: ambiguous ? "review" : shadow && !page ? "shadow-candidate" : "review",
-      owners: [...owners].sort(), host, documentSelector, rootSelector
+      owners: [...owners].sort(),
+      host,
+      documentSelector,
+      rootSelector,
     };
     if (ambiguous) diagnostics.push({ file: filename, code: "manual-ownership-review" });
   }
@@ -90,7 +97,7 @@ export function analyzeStyleOwnership(sources) {
 }
 export function auditRepository(directory = "src") {
   const sources = {};
-  const scan = dir => {
+  const scan = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory()) scan(path.join(dir, entry.name));
       else if (/\.(?:css|tsx?|jsx?)$/.test(entry.name)) {
@@ -106,10 +113,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url
   const report = auditRepository();
   fs.mkdirSync("artifacts", { recursive: true });
   fs.writeFileSync("artifacts/css-ownership.json", JSON.stringify(report, null, 2) + "\n");
-  console.log(JSON.stringify({
-    files: Object.keys(report.classifications).length,
-    candidates: Object.values(report.classifications).filter(x => x.status === "shadow-candidate").length,
-    review: Object.values(report.classifications).filter(x => x.status === "review").length,
-    diagnostics: report.diagnostics.length
-  }));
+  console.log(
+    JSON.stringify({
+      files: Object.keys(report.classifications).length,
+      candidates: Object.values(report.classifications).filter((x) => x.status === "shadow-candidate").length,
+      review: Object.values(report.classifications).filter((x) => x.status === "review").length,
+      diagnostics: report.diagnostics.length,
+    }),
+  );
 }

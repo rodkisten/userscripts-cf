@@ -3,7 +3,8 @@ import { rewriteShadowCSS } from "../build/css-semantic-rewrite.mjs";
 
 describe("[TEMP] semantic CSS utility", () => {
   it("reuses existing host tokens and is idempotent", () => {
-    const input = ":host { --accent: #123456; }\n.a { color: #123456; padding: 8px; }\n.b { color: #123456; padding: 8px; }";
+    const input =
+      ":host { --accent: #123456; }\n.a { color: #123456; padding: 8px; }\n.b { color: #123456; padding: 8px; }";
     const first = rewriteShadowCSS(input);
     expect(first.changed).toBe(true);
     expect(first.css).toContain("var(--accent)");

@@ -1,9 +1,5 @@
 /** @jsxImportSource react */
-import {
-  useSyncExternalStore,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useSyncExternalStore, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { RuntimeMount } from "./runtime-mount-react.js";
