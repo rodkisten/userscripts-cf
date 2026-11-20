@@ -42,6 +42,10 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Manual sync control
+
+The Saved panel exposes a touch-friendly **Sync now** action beside Settings. It calls the existing manual sync entrypoint, disables itself while a run is active and keeps the progress/status visible. It does not bypass account, lock, collection or Relay configuration safeguards. Safari verification remains pending.
+
 ## Collection progress
 
 The React Saved panel now reports the current collection position, total selected collections, active collection ID, per-collection processed media count and cumulative number of newly sent media items. The core emits progress after each completed batch, without assuming the number of remaining Instagram pages. Progress is cleared after completion or failure; persistent error messaging remains available. This is collection-level progress, not an estimated per-Reel completion percentage. Safari verification remains pending.
