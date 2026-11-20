@@ -309,3 +309,41 @@ test("does not overwrite an existing channel confirmation timestamp", async () =
   assert.equal(ledger.abc.first, 100);
   assert.ok(ledger.abc.second > 100);
 });
+
+test("429 partial delivery retries only the missing channel in the same session", async () => {
+  let ledger = {};
+  const calls = [];
+  const options = {
+    channels: ["alpha", "beta"],
+    load: async () => ({}),
+    save: async () => {},
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      calls.push(channels);
+      return { results: items.map((_, index) => ({
+        index,
+        status: calls.length === 1 ? 429 : 200,
+        channels: { inserted: calls.length === 1 ? ["alpha"] : ["beta"] },
+      })) };
+    },
+  };
+  assert.equal(await syncSaved(options), 1);
+  assert.deepEqual(calls, [["alpha", "beta"], ["beta"]]);
+  assert.deepEqual(Object.keys(ledger.abc).sort(), ["alpha", "beta"]);
+});
+
+test("out-of-range Relay acknowledgement fails before persisting delivery", async () => {
+  let saved = false;
+  await assert.rejects(syncSaved({
+    channels: ["alpha"],
+    load: async () => ({}),
+    save: async () => { saved = true; },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async () => ({ results: [{ index: 1, channels: { inserted: ["alpha"] } }] }),
+  }), /ausente ou duplicada/);
+  assert.equal(saved, false);
+});
