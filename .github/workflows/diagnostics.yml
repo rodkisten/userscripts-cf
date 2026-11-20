@@ -21,7 +21,7 @@ permissions:
 concurrency:
   group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
   # Keep the active PR validation alive; newer synchronize events wait instead of killing its runner.
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate:
