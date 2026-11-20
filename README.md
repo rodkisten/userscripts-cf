@@ -260,3 +260,5 @@ Independent React/Radix userscript `github-color-studio` for GitHub file views a
 O desenvolvimento da Dock 2.0 segue na branch `feat/rod-dock-2-main-sync`; a integração dos DevTools legados e a validação de dependências continuam em andamento.
 
 O inspetor de propriedades globais não executa getters e bloqueia acessos a propriedades de protótipo; o destaque DOM acompanha o deslocamento da página.
+
+A busca global da Dock agora executa ações registradas diretamente nos resultados; o launcher móvel cancela corretamente o rastreamento de arraste interrompido.

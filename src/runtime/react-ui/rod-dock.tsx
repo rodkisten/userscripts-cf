@@ -275,6 +275,16 @@ function DockView({ controller }: { controller: DockController }) {
   ], [scripts, modules]);
   const suggestions = useMemo(() => search.trim() ? new Fuse(catalog, { keys: ["title"], threshold: 0.38 }).search(search).slice(0, 8).map((hit) => hit.item) : [], [catalog, search]);
   const suppressClick = useRef(false);
+  const dragCleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanup.current?.(), []);
+  const executeSuggestion = (item: { id: string; tab: string }) => {
+    if (item.id.startsWith("action:")) {
+      const found = modules.flatMap((module) => module.actions.map((action) => ({ id: `action:${module.id}:${action.id}`, action }))).find((entry) => entry.id === item.id);
+      if (found) { found.action.run(); setSearch(""); return; }
+    }
+    setTab(item.tab);
+    setSearch("");
+  };
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* storage may be unavailable */ }
   }, [settings]);
@@ -322,20 +332,32 @@ function DockView({ controller }: { controller: DockController }) {
       {!open && (
         <button className="launcher" style={{ top: `${settings.position}%`, [settings.side]: 0, opacity: scrolling && settings.fadeOnScroll ? settings.scrollOpacity : 1 }} aria-label="Abrir Rod Dock"
           onPointerDown={(event) => {
+            if (event.button !== 0 || dragCleanup.current) return;
+            const pointerId = event.pointerId;
+            event.currentTarget.setPointerCapture?.(pointerId);
             const startY = event.clientY;
             const start = settings.position;
             let moved = false;
             const onMove = (next: PointerEvent) => {
+              if (next.pointerId !== pointerId) return;
               if (Math.abs(next.clientY - startY) > 6) moved = true;
               setSettings((prev) => ({ ...prev, position: Math.max(10, Math.min(90, start + ((next.clientY - startY) * 100) / innerHeight)) }));
             };
-            const onEnd = () => {
-              window.removeEventListener("pointermove", onMove);
-              window.removeEventListener("pointerup", onEnd);
+            const onEnd = (next: PointerEvent) => {
+              if (next.pointerId !== pointerId) return;
+              dragCleanup.current?.();
               if (moved) suppressClick.current = true;
             };
+            const cleanup = () => {
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onEnd);
+              window.removeEventListener("pointercancel", onEnd);
+              dragCleanup.current = null;
+            };
+            dragCleanup.current = cleanup;
             window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onEnd, { once: true });
+            window.addEventListener("pointerup", onEnd);
+            window.addEventListener("pointercancel", onEnd);
           }}
           onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } setOpen(true); }}
         ><PanelRightOpen size={16} /></button>
@@ -349,7 +371,7 @@ function DockView({ controller }: { controller: DockController }) {
             <Drawer.Description style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>Ferramentas e configurações</Drawer.Description>
             <Command shouldFilter={false} label="Pesquisa global da Dock" style={{ flexShrink: 0 }}>
               <div className="searchWrap"><Search size={15} /><Command.Input className="search" aria-label="Buscar na Dock" placeholder="Buscar scripts, ações e ferramentas..." value={search} onValueChange={setSearch} /></div>
-              {suggestions.length > 0 && <Command.List className="suggestions">{suggestions.map((item) => <Command.Item key={item.id} value={item.id} onSelect={() => { setTab(item.tab); if (item.id === "settings" || item.id === "diagnostics") setSearch(""); }} className="suggestion">{item.title}</Command.Item>)}</Command.List>}
+              {suggestions.length > 0 && <Command.List className="suggestions">{suggestions.map((item) => <Command.Item key={item.id} value={item.id} onSelect={() => executeSuggestion(item)} className="suggestion">{item.title}</Command.Item>)}</Command.List>}
             </Command>
             <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
               <Tabs.List className="tabs" aria-label="Ferramentas da Dock">

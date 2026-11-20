@@ -108,3 +108,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Leitura de propriedades sem invocar getters e com bloqueio de `constructor`, `prototype` e `__proto__`.
 - [x] Destaque DOM acompanha scroll e mudanças de layout enquanto a aba está aberta.
 - [ ] Lockfile e typecheck/build continuam sem validação; nenhuma suíte de testes executada.
+
+## Bloco 9: pesquisa acionável e arraste resiliente
+
+- [x] Seleção de ação pelo cmdk/Fuse executa callback registrado, em vez de somente navegar à aba Ferramentas.
+- [x] Pesquisa limpa após escolha de resultado e mantém navegação entre abas.
+- [x] Launcher filtra pelo pointerId, cancela listeners no pointercancel e desmontagem, evitando vazamento após arraste interrompido.
+- [ ] Typecheck/build e lockfile continuam pendentes. Nenhum teste executado.
