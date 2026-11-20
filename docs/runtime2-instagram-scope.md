@@ -29,6 +29,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Validate Relay channel-array shapes before persisting confirmations and discard video variants with invalid dimensions.
 - [x] Preflight every per-item Relay acknowledgement before any checkpoint write, including malformed entries later in a batch.
 - [x] Follow-up PR: reject non-object channel confirmation payloads before any item in the batch is checkpointed.
+- [x] Reject mixed batches with non-retryable incomplete confirmations before writing any acknowledgements for that Relay response.
 - [x] Reject malformed Reel shortcodes before URL construction; reject null Instagram and Relay API responses with controlled errors and regression coverage.
 - [x] Skip malformed/null Instagram saved entries without interrupting the page, and safely classify malformed already-sent acknowledgements.
 - [ ] Verify ledger behavior against live Relay responses. Duplicate channel IDs fail before fetching, and confirmed timestamps are not overwritten.
