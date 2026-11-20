@@ -84,6 +84,18 @@ jobs:
         if: steps.install.outcome == 'failure'
         run: exit 1
 
+      - name: "🧬 Repository-wide JS/TS syntax repair and verification"
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node build/check-source-syntax.mjs --fix
+          mapfile -d '' changed < <(git diff --name-only -z -- '*.js' '*.jsx' '*.mjs' '*.cjs' '*.ts' '*.tsx' '*.mts' '*.cts')
+          if (( ${#changed[@]} )); then
+            npx prettier --write "${changed[@]}"
+          fi
+          node build/check-source-syntax.mjs
+
       - name: 🔎 Detect modified JS/TS/CSS files and linters
         id: detect_lint
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
