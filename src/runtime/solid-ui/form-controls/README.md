@@ -46,8 +46,8 @@ for changes to runtime code.
 ## Follow-up
 
 - [ ] Audit every remaining import of this directory and classify it as an active
-  framework-neutral utility consumer or dead legacy reference.
+      framework-neutral utility consumer or dead legacy reference.
 - [ ] Move the surviving pure utilities to a neutral `src/runtime/form-controls/`
-  location once all imports are mapped and update the tests in the same work block.
+      location once all imports are mapped and update the tests in the same work block.
 - [ ] Remove the legacy `src/runtime/solid-ui/` directory name only after its
-  remaining consumers and files have been classified.
+      remaining consumers and files have been classified.

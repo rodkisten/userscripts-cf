@@ -28,9 +28,7 @@
     if (m.product_type !== "clips" || !m.code) return null;
     const variants = (m.video_versions || [])
       .filter((v) => /^https:\/\//.test(v.url || ""))
-      .sort(
-        (a, b) => b.width * b.height - a.width * a.height,
-      );
+      .sort((a, b) => b.width * b.height - a.width * a.height);
     if (!variants.length) return null;
     const sourceUrl = `https://www.instagram.com/reel/${m.code}/`;
     return {
@@ -41,11 +39,7 @@
       mediaUrl: variants[0].url,
       mediaType: "video",
       force: false,
-      caption: [
-        m.caption?.text,
-        m.user?.username && `@${m.user.username}`,
-        sourceUrl,
-      ]
+      caption: [m.caption?.text, m.user?.username && `@${m.user.username}`, sourceUrl]
         .filter(Boolean)
         .join("\n\n"),
       mediaVariants: variants.map((v) => ({
@@ -69,9 +63,7 @@
     const covered = new Set([
       ...inserted,
       ...(c?.covered || []),
-      ...(c?.notSent || [])
-        .filter((v) => v.reason === "already_sent")
-        .map((v) => v.channelId),
+      ...(c?.notSent || []).filter((v) => v.reason === "already_sent").map((v) => v.channelId),
     ]);
     return {
       complete: channels.every((c) => covered.has(c)),
@@ -79,12 +71,7 @@
     };
   }
 
-  function retryDelay(
-    attempt,
-    count,
-    retryAfter,
-    random = Math.random,
-  ) {
+  function retryDelay(attempt, count, retryAfter, random = Math.random) {
     const seconds = Number(retryAfter);
     const date = Date.parse(retryAfter);
     const server =
@@ -93,22 +80,10 @@
         : Number.isFinite(date)
           ? Math.max(0, date - Date.now())
           : 0;
-    return Math.max(
-      server,
-      Math.min(60000, (900 + count * 120) * 2 ** attempt) +
-        random() * 400,
-    );
+    return Math.max(server, Math.min(60000, (900 + count * 120) * 2 ** attempt) + random() * 400);
   }
 
-  async function syncSaved({
-    fetchPage,
-    sendBatch,
-    load,
-    save,
-    channels,
-    pause,
-    signal,
-  }) {
+  async function syncSaved({ fetchPage, sendBatch, load, save, channels, pause, signal }) {
     const done = await load();
     const seen = new Set();
     let cursor = "",
@@ -118,11 +93,7 @@
     do {
       signal?.throwIfAborted();
       const page = await fetchPage(cursor);
-      if (
-        !Array.isArray(page.items) ||
-        page.status === "fail"
-      )
-        throw Error("Resposta de salvos inválida");
+      if (!Array.isArray(page.items) || page.status === "fail") throw Error("Resposta de salvos inválida");
       const items = page.items
         .map(reelPayload)
         .filter(Boolean)
@@ -131,58 +102,34 @@
           seen.add(item.mediaId);
           return !done[item.mediaId];
         });
-      for (
-        let offset = 0;
-        offset < items.length;
-        offset += 5
-      ) {
+      for (let offset = 0; offset < items.length; offset += 5) {
         const batch = items.slice(offset, offset + 5);
         let pending = batch;
-        for (
-          let attempt = 0;
-          pending.length && attempt < 4;
-          attempt++
-        ) {
+        for (let attempt = 0; pending.length && attempt < 4; attempt++) {
           signal?.throwIfAborted();
           const response = await sendBatch(pending);
-          if (!Array.isArray(response.results))
-            throw Error("Relay sem confirmação por item");
+          if (!Array.isArray(response.results)) throw Error("Relay sem confirmação por item");
           const retry = [];
           for (let i = 0; i < pending.length; i++) {
-            const result = response.results.find(
-              (r) => r.index === i,
-            );
+            const result = response.results.find((r) => r.index === i);
             const status = classify(result, channels);
             if (status.complete) {
               done[pending[i].mediaId] = Date.now();
               if (status.inserted) count++;
               await save(done);
-            } else if (
-              result &&
-              (result.status === 429 ||
-                result.status >= 500)
-            )
-              retry.push(pending[i]);
-            else
-              throw Error(
-                "Entrega não confirmada; sincronização interrompida",
-              );
+            } else if (result && (result.status === 429 || result.status >= 500)) retry.push(pending[i]);
+            else throw Error("Entrega não confirmada; sincronização interrompida");
           }
           pending = retry;
-          if (pending.length)
-            await pause(
-              retryDelay(attempt, pending.length),
-            );
+          if (pending.length) await pause(retryDelay(attempt, pending.length));
         }
-        if (pending.length)
-          throw Error("Limite de tentativas do Relay");
+        if (pending.length) throw Error("Limite de tentativas do Relay");
         await pause(retryDelay(0, batch.length));
       }
       pages++;
       const next = page.next_max_id;
       if (!page.more_available) break;
-      if (!next || cursors.has(next))
-        throw Error("Cursor de salvos repetido ou ausente");
+      if (!next || cursors.has(next)) throw Error("Cursor de salvos repetido ou ausente");
       cursors.add(next);
       cursor = next;
       await pause(Math.min(8000, 1000 + pages * 100));
@@ -197,10 +144,8 @@
       const abort = ctx.signal;
       let running = false;
       let lastRun = 0;
-      const get = async (key, fallback) =>
-        ctx.storage.get(key, fallback);
-      const set = async (key, value) =>
-        ctx.storage.set(key, value);
+      const get = async (key, fallback) => ctx.storage.get(key, fallback);
+      const set = async (key, value) => ctx.storage.set(key, value);
       const pause = (ms) =>
         new Promise((resolve, reject) => {
           abort.throwIfAborted();
@@ -226,13 +171,9 @@
         setTimeout(() => node.remove(), 4000);
       }
       async function configure() {
-        const token = prompt(
-          "Token do XTelegram Relay (armazenado no userscript):",
-        );
+        const token = prompt("Token do XTelegram Relay (armazenado no userscript):");
         if (!token) return;
-        const channels = prompt(
-          "IDs dos canais Telegram, separados por vírgula:",
-        );
+        const channels = prompt("IDs dos canais Telegram, separados por vírgula:");
         if (!channels) return;
         const ids = [
           ...new Set(
@@ -252,13 +193,8 @@
       function relay(config, items) {
         return new Promise((resolve, reject) => {
           const request =
-            typeof GM_xmlhttpRequest === "function"
-              ? GM_xmlhttpRequest
-              : globalThis.GM?.xmlHttpRequest;
-          if (!request)
-            return reject(
-              Error("GM_xmlhttpRequest indisponível"),
-            );
+            typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : globalThis.GM?.xmlHttpRequest;
+          if (!request) return reject(Error("GM_xmlhttpRequest indisponível"));
           const handle = request({
             method: "POST",
             url: RELAY,
@@ -277,18 +213,11 @@
             onload(response) {
               abort.removeEventListener("abort", cancel);
               try {
-                const data = JSON.parse(
-                  response.responseText,
-                );
-                if (Array.isArray(data.results))
-                  return resolve(data);
-                const error = Error(
-                  `Relay HTTP ${response.status}`,
-                );
+                const data = JSON.parse(response.responseText);
+                if (Array.isArray(data.results)) return resolve(data);
+                const error = Error(`Relay HTTP ${response.status}`);
                 error.status = response.status;
-                error.retryAfter = response.responseHeaders
-                  ?.match(/^retry-after:\s*(.+)$/im)?.[1]
-                  ?.trim();
+                error.retryAfter = response.responseHeaders?.match(/^retry-after:\s*(.+)$/im)?.[1]?.trim();
                 reject(error);
               } catch (error) {
                 reject(error);
@@ -300,12 +229,9 @@
             },
             ontimeout: () => {
               abort.removeEventListener("abort", cancel);
-              reject(
-                Error("Timeout Relay; entrega incerta"),
-              );
+              reject(Error("Timeout Relay; entrega incerta"));
             },
-            onabort: () =>
-              reject(Error("Envio interrompido")),
+            onabort: () => reject(Error("Envio interrompido")),
           });
           function cancel() {
             handle?.abort();
@@ -321,104 +247,62 @@
           try {
             return await operation();
           } catch (error) {
-            if (
-              attempt >= 3 ||
-              !(error.status === 429 || error.status >= 500)
-            )
-              throw error;
-            await pause(
-              retryDelay(attempt, size, error.retryAfter),
-            );
+            if (attempt >= 3 || !(error.status === 429 || error.status >= 500)) throw error;
+            await pause(retryDelay(attempt, size, error.retryAfter));
           }
         }
       }
       async function run(manual = false) {
-        if (
-          running ||
-          (!manual &&
-            (document.hidden ||
-              Date.now() - lastRun < 300000))
-        )
-          return;
+        if (running || (!manual && (document.hidden || Date.now() - lastRun < 300000))) return;
         const config = await get("config", null);
-        const account = document.cookie.match(
-          /(?:^|;\s*)ds_user_id=([^;]+)/,
-        )?.[1];
+        const account = document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
         if (!config?.token || !account) return;
         running = true;
         lastRun = Date.now();
         try {
           if (!navigator.locks)
-            throw Error(
-              "Web Locks indisponível; sincronização desativada para evitar concorrência",
-            );
-          await navigator.locks.request(
-            `instagram-saved:${account}`,
-            { ifAvailable: true },
-            async (lock) => {
-              if (!lock) return;
-              abort.throwIfAborted();
-              const stateKey = `delivered:${account}:${[...config.channels].sort().join(",")}`;
-              const count = await syncSaved({
-                channels: config.channels,
-                signal: abort,
-                pause,
-                load: () => get(stateKey, {}),
-                save: (done) => set(stateKey, done),
-                sendBatch: (items) =>
-                  retry(
-                    () => relay(config, items),
-                    items.length,
-                  ),
-                fetchPage: (cursor) =>
-                  retry(async () => {
-                    if (
-                      document.cookie.match(
-                        /(?:^|;\s*)ds_user_id=([^;]+)/,
-                      )?.[1] !== account
-                    )
-                      throw Error("Conta alterada");
-                    const url = new URL(
-                      SAVED_PATH,
-                      location.origin,
-                    );
-                    url.searchParams.set("count", "50");
-                    if (cursor)
-                      url.searchParams.set(
-                        "max_id",
-                        cursor,
-                      );
-                    const response = await fetch(url, {
-                      credentials: "same-origin",
-                      signal: abort,
-                      headers: {
-                        "X-IG-App-ID": "936619743392459",
-                        "X-Requested-With":
-                          "XMLHttpRequest",
-                        "X-CSRFToken": decodeURIComponent(
-                          document.cookie.match(
-                            /(?:^|;\s*)csrftoken=([^;]+)/,
-                          )?.[1] || "",
-                        ),
-                      },
-                    });
-                    if (!response.ok) {
-                      const error = Error(
-                        `Instagram HTTP ${response.status}`,
-                      );
-                      error.status = response.status;
-                      error.retryAfter =
-                        response.headers.get("retry-after");
-                      throw error;
-                    }
-                    return response.json();
-                  }, 50),
-              });
-              await set("lastError", null);
-              if (count > 0)
-                toast(`${count} mídias enviadas`);
-            },
-          );
+            throw Error("Web Locks indisponível; sincronização desativada para evitar concorrência");
+          await navigator.locks.request(`instagram-saved:${account}`, { ifAvailable: true }, async (lock) => {
+            if (!lock) return;
+            abort.throwIfAborted();
+            const stateKey = `delivered:${account}:${[...config.channels].sort().join(",")}`;
+            const count = await syncSaved({
+              channels: config.channels,
+              signal: abort,
+              pause,
+              load: () => get(stateKey, {}),
+              save: (done) => set(stateKey, done),
+              sendBatch: (items) => retry(() => relay(config, items), items.length),
+              fetchPage: (cursor) =>
+                retry(async () => {
+                  if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account)
+                    throw Error("Conta alterada");
+                  const url = new URL(SAVED_PATH, location.origin);
+                  url.searchParams.set("count", "50");
+                  if (cursor) url.searchParams.set("max_id", cursor);
+                  const response = await fetch(url, {
+                    credentials: "same-origin",
+                    signal: abort,
+                    headers: {
+                      "X-IG-App-ID": "936619743392459",
+                      "X-Requested-With": "XMLHttpRequest",
+                      "X-CSRFToken": decodeURIComponent(
+                        document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] || "",
+                      ),
+                    },
+                  });
+                  if (!response.ok) {
+                    const error = Error(`Instagram HTTP ${response.status}`);
+                    error.status = response.status;
+                    error.retryAfter = response.headers.get("retry-after");
+                    throw error;
+                  }
+                  return response.json();
+                }, 50),
+            });
+            await set("lastError", null);
+            if (count > 0) toast(`${count} mídias enviadas`);
+          });
         } catch (error) {
           if (!abort.aborted)
             await set("lastError", {
@@ -431,44 +315,23 @@
       }
       const menus = [];
       if (typeof GM_registerMenuCommand === "function") {
+        menus.push(GM_registerMenuCommand("Instagram salvos · Configurar Relay", configure));
+        menus.push(GM_registerMenuCommand("Instagram salvos · Sincronizar agora", () => void run(true)));
         menus.push(
-          GM_registerMenuCommand(
-            "Instagram salvos · Configurar Relay",
-            configure,
-          ),
-        );
-        menus.push(
-          GM_registerMenuCommand(
-            "Instagram salvos · Sincronizar agora",
-            () => void run(true),
-          ),
-        );
-        menus.push(
-          GM_registerMenuCommand(
-            "Instagram salvos · Diagnóstico",
-            async () => {
-              const error = await get("lastError", null);
-              alert(
-                error
-                  ? `${error.message}\n${new Date(error.at).toLocaleString()}`
-                  : "Nenhum erro registrado",
-              );
-            },
-          ),
+          GM_registerMenuCommand("Instagram salvos · Diagnóstico", async () => {
+            const error = await get("lastError", null);
+            alert(
+              error ? `${error.message}\n${new Date(error.at).toLocaleString()}` : "Nenhum erro registrado",
+            );
+          }),
         );
       }
       const timer = setInterval(() => void run(), 60000);
-      ctx.listen(
-        document,
-        "visibilitychange",
-        () => void run(),
-      );
+      ctx.listen(document, "visibilitychange", () => void run());
       ctx.onDispose(() => {
         clearInterval(timer);
         if (typeof GM_unregisterMenuCommand === "function")
-          menus.forEach((id) =>
-            GM_unregisterMenuCommand(id),
-          );
+          menus.forEach((id) => GM_unregisterMenuCommand(id));
       });
       void run();
     },

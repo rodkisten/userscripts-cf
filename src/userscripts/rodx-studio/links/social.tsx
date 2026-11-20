@@ -60,7 +60,7 @@ export function initializeDeckSocialAppLinks() {
         icon.className = "rodx-app-icon";
         icon.setAttribute("aria-hidden", "true");
         anchor.insertBefore(icon, anchor.firstChild);
-        mountView(icon, () =>
+        mountView(icon, () => (
           <>
             {app.name === "telegram" ? (
               <TelegramIcon />
@@ -69,8 +69,8 @@ export function initializeDeckSocialAppLinks() {
             ) : (
               <InstagramIcon />
             )}
-          </>,
-        );
+          </>
+        ));
       }
       anchor.dataset.rodxApp = app.name;
       anchor.classList.add("rodx-app-link");

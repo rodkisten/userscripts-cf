@@ -15,7 +15,10 @@ async function walk(dir) {
     if (entry.isDirectory()) await walk(path);
     else if (/\.test\.[cm]?[jt]sx?$/.test(entry.name)) {
       const relativePath = relative(root.pathname, path).replaceAll("\\", "/");
-      if ((allowed.test(entry.name) || relativePath === "instagram-saved.test.js") && !prohibited.test(relativePath)) {
+      if (
+        (allowed.test(entry.name) || relativePath === "instagram-saved.test.js") &&
+        !prohibited.test(relativePath)
+      ) {
         suites.push("tests/" + relativePath);
       }
     }
@@ -51,13 +54,9 @@ const isolateSuites = process.env.RUNTIME_TEST_ISOLATE_SUITES !== "false";
 const batches = isolateSuites ? suites.map((suite) => [suite]) : [suites];
 for (const [index, batch] of batches.entries()) {
   const batchStartedAt = Date.now();
-  console.log(
-    `::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`,
-  );
+  console.log(`::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`);
   const workers = batch.includes(compiledRuntimeSuite) ? 1 : 2;
-  console.log(
-    `Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`,
-  );
+  console.log(`Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`);
   const args = [
     "vitest",
     "run",
@@ -66,16 +65,12 @@ for (const [index, batch] of batches.entries()) {
     ...(batch.includes(compiledRuntimeSuite) ? ["--reporter=verbose", "--testTimeout=10000"] : []),
     ...batch,
   ];
-  const result = spawnSync(
-    "npx",
-    args,
-    {
-      stdio: "inherit",
-      shell: process.platform === "win32",
-      timeout: timeoutMs,
-      killSignal: "SIGKILL",
-    },
-  );
+  const result = spawnSync("npx", args, {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+  });
   console.log(
     `Vitest batch finished after ${Date.now() - batchStartedAt}ms ` +
       `(exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
@@ -89,8 +84,7 @@ for (const [index, batch] of batches.entries()) {
   console.log("::endgroup::");
   if (result.status !== 0 || result.error) {
     console.error(
-      `Runtime suite failed: ${batch.join(", ")} ` +
-        `(total elapsed: ${Date.now() - startedAt}ms)`,
+      `Runtime suite failed: ${batch.join(", ")} ` + `(total elapsed: ${Date.now() - startedAt}ms)`,
     );
     process.exit(1);
   }

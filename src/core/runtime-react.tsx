@@ -59,8 +59,7 @@ export function createRuntime(
       for (const record of records) {
         for (const addedNode of record.addedNodes) {
           for (const { target } of entries) {
-            const candidate =
-              target.nodeType === 11 ? (target as ShadowRoot).host : target;
+            const candidate = target.nodeType === 11 ? (target as ShadowRoot).host : target;
             if (addedNode === candidate || addedNode.contains(candidate)) connectedTargets.add(target);
           }
         }

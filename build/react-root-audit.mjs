@@ -33,7 +33,8 @@ export function inspectReactRootCalls(source, filename = "source.tsx") {
     }
     if (typeof node.type === "string") callback(node);
     for (const [key, value] of Object.entries(node)) {
-      if (key === "loc" || key === "tokens" || key === "comments" || key === "start" || key === "end") continue;
+      if (key === "loc" || key === "tokens" || key === "comments" || key === "start" || key === "end")
+        continue;
       if (Array.isArray(value)) visit(value, callback);
       else if (value && typeof value === "object") visit(value, callback);
     }
@@ -91,13 +92,15 @@ export function inspectReactRootCalls(source, filename = "source.tsx") {
       node.init?.type === "MemberExpression" &&
       namespaces.has(node.init.object?.name) &&
       ["createRoot", "hydrateRoot"].includes(propertyName(node.init.property))
-    ) bindings.add(node.id.name);
+    )
+      bindings.add(node.id.name);
 
     if (
       node.type === "VariableDeclarator" &&
       node.id.type === "Identifier" &&
       node.init?.type === "Identifier"
-    ) aliases.push([node.id.name, node.init.name]);
+    )
+      aliases.push([node.id.name, node.init.name]);
   });
 
   let changed = true;
@@ -158,8 +161,7 @@ export async function auditReactRootOwnership(root) {
   const callsites = [];
   for (const file of files) {
     const source = await fs.readFile(file.absolute, "utf8");
-    if (!/\b(?:createRoot|hydrateRoot)\b/.test(source) && !source.includes("react-dom/client"))
-      continue;
+    if (!/\b(?:createRoot|hydrateRoot)\b/.test(source) && !source.includes("react-dom/client")) continue;
     callsites.push(...inspectReactRootCalls(source, file.relative));
   }
 
@@ -172,7 +174,9 @@ export async function auditReactRootOwnership(root) {
   if (runtimeCalls.length !== 1)
     errors.push(`Expected exactly one runtime root in ${ROOT_OWNER}; found ${runtimeCalls.length}`);
   if (studioCalls.length !== 1)
-    errors.push(`Expected exactly one standalone Studio root in ${STANDALONE_OWNER}; found ${studioCalls.length}`);
+    errors.push(
+      `Expected exactly one standalone Studio root in ${STANDALONE_OWNER}; found ${studioCalls.length}`,
+    );
   if (unexpected.length)
     errors.push(
       "Unexpected React root callsites: " +

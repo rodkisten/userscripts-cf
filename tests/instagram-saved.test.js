@@ -87,7 +87,6 @@ test("backoff grows with retries and quantity and honors Retry-After", () => {
   );
 });
 
-
 test("ignores inherited delivered keys and accepts only exact Relay acknowledgements", async () => {
   const delivered = { inherited: 123 };
   Object.setPrototypeOf(delivered, { abc: 456 });
@@ -109,10 +108,12 @@ test("ignores inherited delivered keys and accepts only exact Relay acknowledgem
     syncSaved({
       ...options,
       load: async () => ({}),
-      sendBatch: async () => ({ results: [
-        { index: 0, channels: { inserted: ["-1"] } },
-        { index: 0, channels: { inserted: ["-1"] } },
-      ] }),
+      sendBatch: async () => ({
+        results: [
+          { index: 0, channels: { inserted: ["-1"] } },
+          { index: 0, channels: { inserted: ["-1"] } },
+        ],
+      }),
     }),
     /ausente ou duplicada/,
   );
@@ -180,29 +181,40 @@ test("processes the entire page before checkpointing a session limit", async () 
 test("rejects empty channel configuration instead of marking items delivered", async () => {
   assert.equal(classify({ channels: { inserted: [] } }, []).complete, false);
   let fetched = false;
-  await assert.rejects(syncSaved({
-    channels: [],
-    load: async () => ({}),
-    save: async () => {},
-    pause: async () => {},
-    fetchPage: async () => { fetched = true; return { items: [] }; },
-    sendBatch: async () => ({ results: [] }),
-  }), /canal válido/);
+  await assert.rejects(
+    syncSaved({
+      channels: [],
+      load: async () => ({}),
+      save: async () => {},
+      pause: async () => {},
+      fetchPage: async () => {
+        fetched = true;
+        return { items: [] };
+      },
+      sendBatch: async () => ({ results: [] }),
+    }),
+    /canal válido/,
+  );
   assert.equal(fetched, false);
 });
 
 test("rejects surplus Relay acknowledgement entries", async () => {
-  await assert.rejects(syncSaved({
-    channels: ["-1"],
-    load: async () => ({}),
-    save: async () => {},
-    pause: async () => {},
-    fetchPage: async () => ({ items: [reel()] }),
-    sendBatch: async () => ({ results: [
-      { index: 0, channels: { inserted: ["-1"] } },
-      { index: 999, channels: { inserted: ["-1"] } },
-    ] }),
-  }), /confirmação por item/);
+  await assert.rejects(
+    syncSaved({
+      channels: ["-1"],
+      load: async () => ({}),
+      save: async () => {},
+      pause: async () => {},
+      fetchPage: async () => ({ items: [reel()] }),
+      sendBatch: async () => ({
+        results: [
+          { index: 0, channels: { inserted: ["-1"] } },
+          { index: 999, channels: { inserted: ["-1"] } },
+        ],
+      }),
+    }),
+    /confirmação por item/,
+  );
 });
 
 test("channel ledger sends only missing destinations after channel changes", async () => {
@@ -213,7 +225,9 @@ test("channel ledger sends only missing destinations after channel changes", asy
     load: async () => ({}),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
@@ -236,15 +250,20 @@ test("partial acknowledgements survive failure and are not resent on restart", a
     load: async () => ({}),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
       calls.push(channels);
-      return { results: items.map((_, index) => ({
-        index, status: calls.length === 1 ? 400 : 200,
-        channels: { inserted: calls.length === 1 ? ["one"] : ["two"] },
-      })) };
+      return {
+        results: items.map((_, index) => ({
+          index,
+          status: calls.length === 1 ? 400 : 200,
+          channels: { inserted: calls.length === 1 ? ["one"] : ["two"] },
+        })),
+      };
     },
   };
   await assert.rejects(syncSaved(options), /não confirmada/);
@@ -261,7 +280,9 @@ test("imports only exact legacy channel-set confirmations into the ledger", asyn
     load: async () => ({ abc: 123 }),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
@@ -272,23 +293,33 @@ test("imports only exact legacy channel-set confirmations into the ledger", asyn
   assert.equal(await syncSaved(options), 0);
   assert.deepEqual(ledger.abc, { "old-a": 123, "old-b": 123 });
   assert.deepEqual(sent, []);
-  assert.equal(await syncSaved({
-    ...options, channels: ["old-b", "new"],
-    load: async () => ({}),
-  }), 1);
+  assert.equal(
+    await syncSaved({
+      ...options,
+      channels: ["old-b", "new"],
+      load: async () => ({}),
+    }),
+    1,
+  );
   assert.deepEqual(sent, [["new"]]);
 });
 
 test("rejects duplicate destination IDs before fetching Instagram", async () => {
   let fetched = false;
-  await assert.rejects(syncSaved({
-    channels: ["same", "same"],
-    load: async () => ({}),
-    save: async () => {},
-    pause: async () => {},
-    fetchPage: async () => { fetched = true; return { items: [] }; },
-    sendBatch: async () => ({ results: [] }),
-  }), /canal válido/);
+  await assert.rejects(
+    syncSaved({
+      channels: ["same", "same"],
+      load: async () => ({}),
+      save: async () => {},
+      pause: async () => {},
+      fetchPage: async () => {
+        fetched = true;
+        return { items: [] };
+      },
+      sendBatch: async () => ({ results: [] }),
+    }),
+    /canal válido/,
+  );
   assert.equal(fetched, false);
 });
 
@@ -299,7 +330,9 @@ test("does not overwrite an existing channel confirmation timestamp", async () =
     load: async () => ({}),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => ({
@@ -318,16 +351,20 @@ test("429 partial delivery retries only the missing channel in the same session"
     load: async () => ({}),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
       calls.push(channels);
-      return { results: items.map((_, index) => ({
-        index,
-        status: calls.length === 1 ? 429 : 200,
-        channels: { inserted: calls.length === 1 ? ["alpha"] : ["beta"] },
-      })) };
+      return {
+        results: items.map((_, index) => ({
+          index,
+          status: calls.length === 1 ? 429 : 200,
+          channels: { inserted: calls.length === 1 ? ["alpha"] : ["beta"] },
+        })),
+      };
     },
   };
   assert.equal(await syncSaved(options), 1);
@@ -337,14 +374,19 @@ test("429 partial delivery retries only the missing channel in the same session"
 
 test("out-of-range Relay acknowledgement fails before persisting delivery", async () => {
   let saved = false;
-  await assert.rejects(syncSaved({
-    channels: ["alpha"],
-    load: async () => ({}),
-    save: async () => { saved = true; },
-    pause: async () => {},
-    fetchPage: async () => ({ items: [reel()] }),
-    sendBatch: async () => ({ results: [{ index: 1, channels: { inserted: ["alpha"] } }] }),
-  }), /ausente ou duplicada/);
+  await assert.rejects(
+    syncSaved({
+      channels: ["alpha"],
+      load: async () => ({}),
+      save: async () => {
+        saved = true;
+      },
+      pause: async () => {},
+      fetchPage: async () => ({ items: [reel()] }),
+      sendBatch: async () => ({ results: [{ index: 1, channels: { inserted: ["alpha"] } }] }),
+    }),
+    /ausente ou duplicada/,
+  );
   assert.equal(saved, false);
 });
 
@@ -355,16 +397,23 @@ test("partial group completion never checkpoints the entire configured channel s
   await syncSaved({
     channels: ["first", "second", "third"],
     load: async () => ({}),
-    save: async (value) => { checkpoints.push(structuredClone(value)); },
+    save: async (value) => {
+      checkpoints.push(structuredClone(value));
+    },
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
       calls.push(channels);
-      return { results: items.map((_, index) => ({
-        index, channels: { inserted: channels },
-      })) };
+      return {
+        results: items.map((_, index) => ({
+          index,
+          channels: { inserted: channels },
+        })),
+      };
     },
   });
   assert.deepEqual(calls, [["second", "third"]]);
@@ -381,17 +430,21 @@ test("counts one inserted reel even when two channels acknowledge on separate re
     load: async () => ({}),
     save: async () => {},
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
       channelsSent.push(channels);
       attempts++;
-      return { results: items.map((_, index) => ({
-        index,
-        status: attempts === 1 ? 429 : 200,
-        channels: { inserted: attempts === 1 ? ["a"] : ["b"] },
-      })) };
+      return {
+        results: items.map((_, index) => ({
+          index,
+          status: attempts === 1 ? 429 : 200,
+          channels: { inserted: attempts === 1 ? ["a"] : ["b"] },
+        })),
+      };
     },
   });
   assert.equal(count, 1);
@@ -400,23 +453,28 @@ test("counts one inserted reel even when two channels acknowledge on separate re
 });
 
 test("does not count a Relay insertion for an unrequested destination", () => {
-  assert.deepEqual(
-    classify({ channels: { inserted: ["other"], covered: ["expected"] } }, ["expected"]),
-    { complete: true, inserted: false },
-  );
+  assert.deepEqual(classify({ channels: { inserted: ["other"], covered: ["expected"] } }, ["expected"]), {
+    complete: true,
+    inserted: false,
+  });
   assert.equal(classify({ channels: { inserted: ["other"] } }, ["expected"]).complete, false);
 });
 
 test("rejects malformed Relay channel arrays before writing delivery state", async () => {
   let saved = false;
-  await assert.rejects(syncSaved({
-    channels: ["alpha"],
-    load: async () => ({}),
-    save: async () => { saved = true; },
-    pause: async () => {},
-    fetchPage: async () => ({ items: [reel()] }),
-    sendBatch: async () => ({ results: [{ index: 0, channels: { inserted: "alpha" } }] }),
-  }), /canais inválida/);
+  await assert.rejects(
+    syncSaved({
+      channels: ["alpha"],
+      load: async () => ({}),
+      save: async () => {
+        saved = true;
+      },
+      pause: async () => {},
+      fetchPage: async () => ({ items: [reel()] }),
+      sendBatch: async () => ({ results: [{ index: 0, channels: { inserted: "alpha" } }] }),
+    }),
+    /canais inválida/,
+  );
   assert.equal(saved, false);
 });
 
@@ -433,7 +491,15 @@ test("malformed Instagram entries do not abort an otherwise valid page", async (
     load: async () => ({}),
     save: async () => {},
     pause: async () => {},
-    fetchPage: async () => ({ items: [null, {}, { media: null }, { media: { product_type: "clips", code: "bad", video_versions: [null] } }, reel()] }),
+    fetchPage: async () => ({
+      items: [
+        null,
+        {},
+        { media: null },
+        { media: { product_type: "clips", code: "bad", video_versions: [null] } },
+        reel(),
+      ],
+    }),
     sendBatch: async (items, channels) => {
       sent.push(...items.map((item) => item.mediaId));
       return { results: items.map((_, index) => ({ index, channels: { inserted: channels } })) };
@@ -444,8 +510,10 @@ test("malformed Instagram entries do not abort an otherwise valid page", async (
 });
 
 test("classify safely ignores malformed already-sent entries", () => {
-  assert.deepEqual(classify({ channels: { notSent: [null, { reason: "already_sent", channelId: "alpha" }] } }, ["alpha"]),
-    { complete: true, inserted: false });
+  assert.deepEqual(
+    classify({ channels: { notSent: [null, { reason: "already_sent", channelId: "alpha" }] } }, ["alpha"]),
+    { complete: true, inserted: false },
+  );
 });
 
 test("partial 429 does not checkpoint complete delivery before the remaining channel acknowledges", async () => {
@@ -455,9 +523,13 @@ test("partial 429 does not checkpoint complete delivery before the remaining cha
   const count = await syncSaved({
     channels: ["first", "second", "third"],
     load: async () => ({}),
-    save: async (value) => { checkpoints.push(structuredClone(value)); },
+    save: async (value) => {
+      checkpoints.push(structuredClone(value));
+    },
     loadChannels: async () => ledger,
-    saveChannels: async (value) => { ledger = structuredClone(value); },
+    saveChannels: async (value) => {
+      ledger = structuredClone(value);
+    },
     pause: async () => {},
     fetchPage: async () => ({ items: [reel()] }),
     sendBatch: async (items, channels) => {
@@ -468,11 +540,13 @@ test("partial 429 does not checkpoint complete delivery before the remaining cha
         assert.ok(ledger.abc.second);
         assert.equal(Object.hasOwn(ledger.abc, "third"), false);
       }
-      return { results: items.map((_, index) => ({
-        index,
-        status: attempts === 1 ? 429 : 200,
-        channels: { inserted: attempts === 1 ? ["second"] : ["third"] },
-      })) };
+      return {
+        results: items.map((_, index) => ({
+          index,
+          status: attempts === 1 ? 429 : 200,
+          channels: { inserted: attempts === 1 ? ["second"] : ["third"] },
+        })),
+      };
     },
   });
   assert.equal(count, 1);
@@ -485,19 +559,28 @@ test("partial 429 does not checkpoint complete delivery before the remaining cha
 test("invalid second acknowledgement does not checkpoint the first item", async () => {
   let saved = false;
   let savedChannels = false;
-  await assert.rejects(syncSaved({
-    channels: ["alpha"],
-    load: async () => ({}),
-    save: async () => { saved = true; },
-    loadChannels: async () => ({}),
-    saveChannels: async () => { savedChannels = true; },
-    pause: async () => {},
-    fetchPage: async () => ({ items: [reel("first"), reel("second")] }),
-    sendBatch: async () => ({ results: [
-      { index: 0, channels: { inserted: ["alpha"] } },
-      { index: 1, channels: { inserted: [null] } },
-    ] }),
-  }), /canais inválida/);
+  await assert.rejects(
+    syncSaved({
+      channels: ["alpha"],
+      load: async () => ({}),
+      save: async () => {
+        saved = true;
+      },
+      loadChannels: async () => ({}),
+      saveChannels: async () => {
+        savedChannels = true;
+      },
+      pause: async () => {},
+      fetchPage: async () => ({ items: [reel("first"), reel("second")] }),
+      sendBatch: async () => ({
+        results: [
+          { index: 0, channels: { inserted: ["alpha"] } },
+          { index: 1, channels: { inserted: [null] } },
+        ],
+      }),
+    }),
+    /canais inválida/,
+  );
   assert.equal(saved, false);
   assert.equal(savedChannels, false);
 });

@@ -53,7 +53,6 @@ export interface MenuFeatureOptions {
 }
 
 export function createMenuFeature(options: MenuFeatureOptions) {
-
   const own = <T extends { close: () => void; dispose: () => void }>(handle: T): T => {
     options.onDispose?.(handle.dispose);
     return handle;

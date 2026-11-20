@@ -131,8 +131,7 @@ export function analyzeClassReferences(source, options = {}) {
         if (attrName === "classList") {
           extractObjectExpressionKeys(node.value?.expression, names, dynamic, "jsx-classList");
         } else if (JSX_CLASS_ATTRS.has(attrName)) {
-          const valNode =
-            node.value?.type === "JSXExpressionContainer" ? node.value.expression : node.value;
+          const valNode = node.value?.type === "JSXExpressionContainer" ? node.value.expression : node.value;
           const value = extractStringLiteral(valNode);
           if (value === null) dynamic.push("jsx-class");
           else addWhitespaceTokens(names, value);
@@ -151,7 +150,10 @@ export function analyzeClassReferences(source, options = {}) {
       }
 
       case "ObjectProperty": {
-        if (!node.computed && (node.key?.name === "classList" || extractStringLiteral(node.key) === "classList")) {
+        if (
+          !node.computed &&
+          (node.key?.name === "classList" || extractStringLiteral(node.key) === "classList")
+        ) {
           // Solid classList={{ active: signal() }}: keys are behavioral selectors.
           extractObjectExpressionKeys(node.value, names, dynamic, "classList-object");
         }

@@ -117,9 +117,7 @@ class BuildReporter {
       const elapsed = performance.now() - stepStart;
       this.steps.push({ index: stepIndex, name, status: "passed", elapsed });
 
-      console.log(
-        ` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`,
-      );
+      console.log(` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`);
       if (isCI) console.log("::endgroup::");
       return result;
     } catch (err) {
@@ -506,8 +504,7 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
   const invalidRoot = bundleEntries.some(
     ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 ||
-      stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
   );
   if (invalidRoot) {
     throw new Error("[React root ownership] Missing or invalid per-world root audit report");
@@ -703,54 +700,51 @@ const runtimeFeatureAudit = await reporter.step(
 );
 
 // STEP 3: Compilação Paralela dos Targets
-const { manifest, classAudit } = await reporter.step(
-  "compile & minify userscript targets",
-  async (log) => {
-    const activeTargets = [];
-    for (const t of targets) {
-      if (!requestedTargets || requestedTargets.has(t.id)) {
-        activeTargets.push(t);
-      } else {
-        log.skip(t.id, "filtered by --targets");
-      }
+const { manifest, classAudit } = await reporter.step("compile & minify userscript targets", async (log) => {
+  const activeTargets = [];
+  for (const t of targets) {
+    if (!requestedTargets || requestedTargets.has(t.id)) {
+      activeTargets.push(t);
+    } else {
+      log.skip(t.id, "filtered by --targets");
     }
+  }
 
-    const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
-      id,
-      name,
-      matches,
-      exclude,
-      excludeMatches,
-      excludes,
-      includes,
-    }));
+  const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
+    id,
+    name,
+    matches,
+    exclude,
+    excludeMatches,
+    excludes,
+    includes,
+  }));
 
-    const buildResults = await Promise.all(
-      activeTargets.map((target) =>
-        compileTarget(target, {
-          root,
-          out,
-          iconSource,
-          baseURL,
-          version,
-          catalog,
-          runtimeFeatureAudit,
-          log,
-        }),
-      ),
-    );
-
-    return {
-      manifest: {
-        schema: 1,
-        version,
+  const buildResults = await Promise.all(
+    activeTargets.map((target) =>
+      compileTarget(target, {
+        root,
+        out,
+        iconSource,
         baseURL,
-        scripts: buildResults.map((r) => r.manifestEntry),
-      },
-      classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
-    };
-  },
-);
+        version,
+        catalog,
+        runtimeFeatureAudit,
+        log,
+      }),
+    ),
+  );
+
+  return {
+    manifest: {
+      schema: 1,
+      version,
+      baseURL,
+      scripts: buildResults.map((r) => r.manifestEntry),
+    },
+    classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
+  };
+});
 
 // STEP 4: Auditorias Pós-Build & Relatórios JSON
 await reporter.step("audit bundles, react roots & editor footprint", async (log) => {
@@ -812,7 +806,10 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
   await Promise.all([
     fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
     fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n"),
-    fs.writeFile(path.join(out, "runtime-feature-audit.json"), JSON.stringify(runtimeFeatureAudit, null, 2) + "\n"),
+    fs.writeFile(
+      path.join(out, "runtime-feature-audit.json"),
+      JSON.stringify(runtimeFeatureAudit, null, 2) + "\n",
+    ),
     fs.writeFile(path.join(out, "css-class-audit.json"), JSON.stringify(classAudit, null, 2) + "\n"),
   ]);
 

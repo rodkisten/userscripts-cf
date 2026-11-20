@@ -274,7 +274,6 @@ flowchart TD
 
 A mounted React descendant reads the owning provider; asynchronous callbacks use `bindRuntime(ctx)`. The binding throws after the instance signal aborts. Two simultaneous instances must not share a mutable active-context pointer. Regression coverage was added in `tests/react-runtime-context.test.ts`, but **tests have not been run**; full isolation remains blocked because the React entry still imports the legacy runtime implementation. No claim of a green React build is made.
 
-
 ### React root and shared UI ownership (PR #115)
 
 The React runtime owns one root for the lifetime of a runtime instance. `ctx.ui.mountReact` and shared runtime UI (menu, toaster, Dock/Actions adapters) register portals in that root; feature-level teardown removes only the portal owned by that feature. Runtime teardown first disposes active script contexts, then destroys the runtime-owned Sonner toaster, and finally clears the portal registry and unmounts the root. The toaster cleanup is covered by `tests/runtime.test.js`; it is a runtime lifecycle test, not a UI/component test.

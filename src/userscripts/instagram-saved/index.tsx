@@ -148,8 +148,7 @@ export default {
       const data: unknown = await response.json();
       abort.throwIfAborted();
       if (currentAccount() !== account) throw Error("Conta alterada após resposta do Relay");
-      if (!data || typeof data !== "object" || !("results" in data) ||
-          !Array.isArray(data.results)) {
+      if (!data || typeof data !== "object" || !("results" in data) || !Array.isArray(data.results)) {
         throw Error("Relay sem confirmação por item");
       }
       return data as { results: import("./core.ts").DeliveryResult[] };
@@ -211,9 +210,8 @@ export default {
               save: (done) => set(stateKey, done),
               loadChannels: () => get(ledgerKey, {}),
               saveChannels: (ledger) => set(ledgerKey, ledger),
-              sendBatch: (items, missingChannels) => retry(
-                () => relay(config, items, account, missingChannels || config.channels), items.length,
-              ),
+              sendBatch: (items, missingChannels) =>
+                retry(() => relay(config, items, account, missingChannels || config.channels), items.length),
               fetchPage: (cursor) =>
                 retry(async () => {
                   if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account) {

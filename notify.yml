@@ -8,7 +8,7 @@ notifications:
     - success
     - cancelled
   filters:
-   # branches: [main]
+    # branches: [main]
     paths:
       - "apps/**"
       - ".github/workflows/**"
