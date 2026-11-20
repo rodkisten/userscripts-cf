@@ -127,21 +127,36 @@ function DockView({ controller }: { controller: DockController }) {
     }).join(" ").slice(0, 4000);
     setConsoleEntries((previous) => [...previous.slice(-199), { id: ++consoleSequence.current, level, time: Date.now(), message }]);
   };
+  const consoleListener = useRef(pushConsole);
+  consoleListener.current = pushConsole;
   useEffect(() => {
     const methods: ConsoleLevel[] = ["log", "info", "warn", "error", "debug"];
     const originals = new Map<ConsoleLevel, (...args: unknown[]) => void>();
+    const wrappers = new Map<ConsoleLevel, (...args: unknown[]) => void>();
     for (const level of methods) {
-      const original = console[level].bind(console) as (...args: unknown[]) => void;
+      const original = console[level];
       originals.set(level, original);
-      console[level] = (...args: unknown[]) => { original(...args); pushConsole(level, args); };
+      const wrapped = (...args: unknown[]) => {
+        original.apply(console, args);
+        consoleListener.current(level, args);
+      };
+      wrappers.set(level, wrapped);
+      try { console[level] = wrapped; } catch { /* console method may be immutable */ }
     }
-    return () => { for (const level of methods) { const original = originals.get(level); if (original) console[level] = original; } };
+    return () => {
+      for (const level of methods) {
+        const original = originals.get(level);
+        if (original && console[level] === wrappers.get(level)) {
+          try { console[level] = original; } catch { /* immutable console */ }
+        }
+      }
+    };
   }, []);
   const inspectExpression = () => {
     const expression = consoleExpression.trim();
     if (!expression) return;
     pushConsole("info", [`> ${expression}`]);
-    // Read-only property path evaluation; never eval or execute arbitrary page code.
+    // Restricted property path inspection; no eval or arbitrary code execution.
     if (!/^(?:window|document|location|navigator)(?:\\.[a-zA-Z_$][\\w$]*){0,5}$/.test(expression)) {
       pushConsole("warn", ["Somente caminhos de propriedades globais são permitidos. Ex.: location.href"]);
       return;
@@ -157,6 +172,12 @@ function DockView({ controller }: { controller: DockController }) {
   const [domMessage, setDomMessage] = useState("");
   const [domMatches, setDomMatches] = useState<Element[]>([]);
   const [domPicking, setDomPicking] = useState(false);
+  const [drawerSide, setDrawerSide] = useState<"right" | "bottom">(() => window.innerWidth >= 720 ? "right" : "bottom");
+  useEffect(() => {
+    const onResize = () => setDrawerSide(window.innerWidth >= 720 ? "right" : "bottom");
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const [domSelected, setDomSelected] = useState<Element | null>(null);
   const highlightRef = useRef<HTMLElement | null>(null);
   const queryDom = () => {
@@ -182,13 +203,14 @@ function DockView({ controller }: { controller: DockController }) {
     highlightRef.current = overlay;
   };
   useEffect(() => () => highlightRef.current?.remove(), []);
-  useEffect(() => { if (!open) highlightRef.current?.remove(); }, [open]);
+  useEffect(() => { if (!open && !domPicking) highlightRef.current?.remove(); }, [open, domPicking]);
   useEffect(() => {
     if (!domPicking) return;
     const onPointer = (event: PointerEvent) => {
       const target = event.composedPath()[0];
       if (!(target instanceof Element)) return;
-      if (target.getRootNode() instanceof ShadowRoot && (target.getRootNode() as ShadowRoot).host.hasAttribute("data-rod-dock")) return;
+      const root = target.getRootNode();
+      if (typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot && root.host.hasAttribute("data-rod-dock")) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       const id = target.id ? `#${CSS.escape(target.id)}` : target.localName + Array.from(target.classList).slice(0, 2).map((name) => `.${CSS.escape(name)}`).join("");
@@ -290,7 +312,7 @@ function DockView({ controller }: { controller: DockController }) {
           onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } setOpen(true); }}
         ><PanelRightOpen size={16} /></button>
       )}
-      <Drawer.Root open={open} onOpenChange={setOpen} direction={typeof window !== "undefined" && window.innerWidth >= 720 ? "right" : "bottom"}>
+      <Drawer.Root open={open} onOpenChange={setOpen} direction={drawerSide}>
         <Drawer.Portal container={portal}>
           <Drawer.Overlay className="overlay" />
           <Drawer.Content className="panel" aria-describedby={undefined}>

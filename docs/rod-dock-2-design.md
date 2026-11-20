@@ -87,3 +87,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Campo de inspeção limitado a caminhos de propriedades globais, sem eval/execução arbitrária.
 - [ ] Avaliar isolamento da instrumentação e coexistência com outros wrappers de console antes do merge.
 - [ ] Lockfile, typecheck e build pendentes. Sem testes a pedido do mantenedor.
+
+## Bloco 6: robustez de integração
+
+- [x] Wrappers do console preservam a função original, consultam o listener React atual e só restauram o método quando ainda são donos dele; falhas de escrita em métodos imutáveis não derrubam a Dock.
+- [x] Corrigida regex da inspeção de propriedades globais; direção do drawer reage a resize e orientação do dispositivo.
+- [ ] Console global ainda requer mecanismo central compartilhado para múltiplas instâncias; o wrapper atual deve ser revisado antes do merge.
+- [ ] npm lockfile, typecheck/build, integração completa dos DevTools e limpeza de launchers pendentes. Sem testes conforme solicitado.

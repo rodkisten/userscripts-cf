@@ -264,3 +264,5 @@ A aba Rede da Dock exibe Resource Timing do navegador (recursos carregados e dur
 A aba DOM permite buscar por seletor CSS, selecionar elementos visualmente e copiar seu HTML. O inspector avançado com CodeMirror ainda precisa ser integrado.
 
 A aba Console apresenta mensagens capturadas após a montagem da Dock, filtros por nível e inspeção restrita de propriedades globais, sem `eval`.
+
+A direção do drawer acompanha a largura da viewport, e a captura do console restaura métodos somente se o wrapper ainda estiver instalado.

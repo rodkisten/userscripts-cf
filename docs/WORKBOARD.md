@@ -706,3 +706,5 @@
 - [ ] Dock 2.0 bloco 4: aba DOM básica com querySelectorAll, picker na página, highlight e copiar HTML; não substitui ainda o inspector completo. Sem testes, lockfile e build pendentes.
 
 - [ ] Dock 2.0 bloco 5: Console integrado (níveis, filtros, captura limitada, inspeção read-only). Revisar wrappers de console, sincronizar lockfile e compilar. Sem testes novos.
+
+- [ ] Dock 2.0 bloco 6: correções de console wrapper/regex e drawer responsivo publicadas; validar build e lockfile antes do merge. Sem testes a pedido.
