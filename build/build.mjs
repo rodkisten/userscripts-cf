@@ -28,7 +28,7 @@ const execFileAsync = promisify(execFile);
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
 // ============================================================================
-const isCI = Boolean(process.env.GITHUB_ACTIONS);
+export const isCI = Boolean(process.env.GITHUB_ACTIONS);
 
 const C = {
   reset: "\x1b[0m",
