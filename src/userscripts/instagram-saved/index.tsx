@@ -14,7 +14,6 @@ type Settings = {
   maxItemsPerSession: number;
 };
 
-declare const GM_xmlhttpRequest: ((options: any) => { abort: () => void }) | undefined;
 declare const unsafeWindow: (Window & typeof globalThis & { __XRodSettingsInstagram?: any }) | undefined;
 declare const RodMenu:
   { open: (options: any) => { result: Promise<any> }; configure?: (options: any) => void } | undefined;
@@ -120,55 +119,40 @@ export default {
     async function configure() {
       await settingsApi.open();
     }
-    function relay(config: Config, items: MediaPayload[]) {
-      return new Promise<{ results: import("./core.ts").DeliveryResult[] }>((resolve, reject) => {
-        const request =
-          typeof GM_xmlhttpRequest === "function"
-            ? GM_xmlhttpRequest
-            : (globalThis as any).GM?.xmlHttpRequest;
-        if (!request) {
-          return reject(Error("GM_xmlhttpRequest indisponível"));
-        }
-        const handle = request({
-          method: "POST",
-          url: RELAY,
-          anonymous: true,
-          timeout: 90000,
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.token}` },
-          data: JSON.stringify({ items, channels: config.channels, concurrency: 1, force: false }),
-          onload(response: any) {
-            abort.removeEventListener("abort", cancel);
-            try {
-              const data = JSON.parse(response.responseText);
-              if (Array.isArray(data.results)) {
-                return resolve(data);
-              }
-              const error = Error(`Relay HTTP ${response.status}`) as Error & {
-                status?: number;
-                retryAfter?: string;
-              };
-              error.status = response.status;
-              error.retryAfter = response.responseHeaders?.match(/^retry-after:\s*(.+)$/im)?.[1]?.trim();
-              reject(error);
-            } catch (error) {
-              reject(error);
-            }
-          },
-          onerror: () => {
-            abort.removeEventListener("abort", cancel);
-            reject(Error("Falha de rede Relay"));
-          },
-          ontimeout: () => {
-            abort.removeEventListener("abort", cancel);
-            reject(Error("Timeout Relay; entrega incerta"));
-          },
-          onabort: () => reject(Error("Envio interrompido")),
-        });
-        function cancel() {
-          handle?.abort();
-        }
-        abort.addEventListener("abort", cancel, { once: true });
+    const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
+    async function relay(config: Config, items: MediaPayload[], account: string, channels: string[]) {
+      if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
+      const response = await ctx.http.request(RELAY, {
+        method: "POST",
+        transport: "gm",
+        cacheMode: "off",
+        timeoutMs: 90000,
+        signal: abort,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.token}`,
+        },
+        body: JSON.stringify({ items, channels, concurrency: 1, force: false }),
       });
+      abort.throwIfAborted();
+      if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
+      if (!response.ok) {
+        const error = Error(`Relay HTTP ${response.status}`) as Error & {
+          status?: number;
+          retryAfter?: string | null;
+        };
+        error.status = response.status;
+        error.retryAfter = response.headers.get("retry-after");
+        throw error;
+      }
+      const data: unknown = await response.json();
+      abort.throwIfAborted();
+      if (currentAccount() !== account) throw Error("Conta alterada após resposta do Relay");
+      if (!data || typeof data !== "object" || !("results" in data) ||
+          !Array.isArray(data.results)) {
+        throw Error("Relay sem confirmação por item");
+      }
+      return data as { results: import("./core.ts").DeliveryResult[] };
     }
     async function retry<T>(operation: () => Promise<T>, size: number): Promise<T> {
       for (let attempt = 0; ; attempt++) {
@@ -188,7 +172,7 @@ export default {
       if (runtime.running || (!manual && (document.hidden || Date.now() - runtime.lastRun < 300000))) {
         return;
       }
-      const config = await get("config", null);
+      const config = await get<Config | null>("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
       if (!settings.enabled || !settings.collectionIds?.length) {
         return;
@@ -212,8 +196,11 @@ export default {
           abort.throwIfAborted();
           let count = 0;
           for (const collectionId of settings.collectionIds) {
+            abort.throwIfAborted();
+            if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
-            const cursorKey = `cursor:${account}:${collectionId}`;
+            const ledgerKey = `delivered-channels:v1:${account}:${collectionId}`;
+            const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             count += await syncSaved({
               channels: config.channels,
               signal: abort,
@@ -222,7 +209,11 @@ export default {
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
-              sendBatch: (items) => retry(() => relay(config, items), items.length),
+              loadChannels: () => get(ledgerKey, {}),
+              saveChannels: (ledger) => set(ledgerKey, ledger),
+              sendBatch: (items, missingChannels) => retry(
+                () => relay(config, items, account, missingChannels || config.channels), items.length,
+              ),
               fetchPage: (cursor) =>
                 retry(async () => {
                   if (document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1] !== account) {
@@ -233,7 +224,9 @@ export default {
                   if (cursor) {
                     url.searchParams.set("max_id", cursor);
                   }
-                  const response = await fetch(url, {
+                  const response = await ctx.http.request(url, {
+                    transport: "fetch",
+                    cacheMode: "off",
                     credentials: "same-origin",
                     signal: abort,
                     headers: {
@@ -253,7 +246,10 @@ export default {
                     error.retryAfter = response.headers.get("retry-after");
                     throw error;
                   }
-                  return response.json();
+                  const page = await response.json();
+                  abort.throwIfAborted();
+                  if (currentAccount() !== account) throw Error("Conta alterada após leitura do Instagram");
+                  return page;
                 }, 50),
             });
           }
