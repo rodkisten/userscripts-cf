@@ -9,7 +9,7 @@ import {
   resolveBotLogin,
   resolveInputs,
   setActionOutput,
-} from './utils.mjs';
+} from './utils/ci-utils.mjs';
 
 // ============================================================================
 // 1. Coletar Diff e Metadados do Commit
