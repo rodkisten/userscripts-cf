@@ -1,23 +1,19 @@
-const { performance } = require('node:perf_hooks');
+import { performance } from 'node:perf_hooks';
 
-const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
-const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+export const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
+export const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+
 const supportsColor =
   !process.env.NO_COLOR &&
   (Boolean(process.env.FORCE_COLOR) || process.stdout.isTTY || isGitHubActions);
 
-// ============================================================================
-// ANSI Codes (Estilo Vitest: badges com fundo sólido + texto contrastante)
-// ============================================================================
 const code = (open, close) => (str) => (supportsColor ? `\x1b[${open}m${str}\x1b[${close}m` : String(str));
 
-const ansi = {
+export const ansi = {
   reset: code(0, 0),
   bold: code(1, 22),
   dim: code(2, 22),
   italic: code(3, 23),
-
-  // Foreground
   black: code(30, 39),
   red: code(31, 39),
   green: code(32, 39),
@@ -27,8 +23,6 @@ const ansi = {
   cyan: code(36, 39),
   white: code(37, 39),
   gray: code(90, 39),
-
-  // Background
   bgRed: code(41, 49),
   bgGreen: code(42, 49),
   bgYellow: code(43, 49),
@@ -38,7 +32,7 @@ const ansi = {
   bgWhite: code(47, 49),
 };
 
-const badge = {
+export const badge = {
   run: (label = 'RUN') => ansi.bold(ansi.bgCyan(ansi.black(` ${label} `))),
   pass: (label = 'PASS') => ansi.bold(ansi.bgGreen(ansi.black(` ${label} `))),
   warn: (label = 'WARN') => ansi.bold(ansi.bgYellow(ansi.black(` ${label} `))),
@@ -49,13 +43,9 @@ const badge = {
 };
 
 function formatDuration(ms) {
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  return `${(ms / 1000).toFixed(2)}s`;
+  return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`;
 }
 
-// ============================================================================
-// Spinner para Terminal Local (TTY)
-// ============================================================================
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 class LocalSpinner {
@@ -90,9 +80,7 @@ class LocalSpinner {
   }
 
   clearLine() {
-    if (this.active) {
-      process.stdout.write('\r\x1b[2K');
-    }
+    if (this.active) process.stdout.write('\r\x1b[2K');
   }
 
   stop(finalLine) {
@@ -101,17 +89,12 @@ class LocalSpinner {
       this.timer = null;
     }
     this.clearLine();
-    if (finalLine) {
-      process.stdout.write(`${finalLine}\n`);
-    }
+    if (finalLine) process.stdout.write(`${finalLine}\n`);
   }
 }
 
-// ============================================================================
-// Reporter Principal (CI + Local TUI)
-// ============================================================================
-class AgentReporter {
-  constructor(title = 'PR PREVIEW AGENT', subtitle = '') {
+export class AgentReporter {
+  constructor(title = 'AGENT', subtitle = '') {
     this.title = title;
     this.subtitle = subtitle;
     this.startTime = performance.now();
@@ -126,18 +109,13 @@ class AgentReporter {
       : isCI
         ? ansi.dim('[CI]')
         : ansi.dim('[Interactive TTY]');
-
     process.stdout.write(`\n${tag}${sub} ${mode}\n\n`);
   }
 
   _writeLine(line) {
-    if (this.activeSpinner) {
-      this.activeSpinner.clearLine();
-    }
+    if (this.activeSpinner) this.activeSpinner.clearLine();
     process.stdout.write(`${line}\n`);
-    if (this.activeSpinner) {
-      this.activeSpinner.render();
-    }
+    if (this.activeSpinner) this.activeSpinner.render();
   }
 
   pass(title, detail = '') {
@@ -172,18 +150,14 @@ class AgentReporter {
   }
 
   kvTable(rows) {
-    const maxKeyLen = Math.max(...rows.map(([k]) => k.length));
-    for (const [key, value] of rows) {
-      const paddedKey = ansi.dim(key.padEnd(maxKeyLen));
-      this._writeLine(`    ${paddedKey}  ${ansi.cyan(value)}`);
+    const entries = Array.isArray(rows) ? rows : Object.entries(rows);
+    if (!entries.length) return;
+    const maxKeyLen = Math.max(...entries.map(([k]) => k.length));
+    for (const [key, value] of entries) {
+      this._writeLine(`    ${ansi.dim(key.padEnd(maxKeyLen))}  ${ansi.cyan(value)}`);
     }
   }
 
-  /**
-   * Executa uma etapa assíncrona com:
-   * - ::group:: no GitHub Actions
-   * - Spinner animado no terminal local
-   */
   async step(label, fn) {
     const stepStart = performance.now();
 
@@ -221,10 +195,7 @@ class AgentReporter {
         process.stdout.write(`  ${badge.pass('DONE')} ${ansi.bold(label)} ${duration}\n`);
       }
 
-      if (isGitHubActions) {
-        process.stdout.write('::endgroup::\n');
-      }
-
+      if (isGitHubActions) process.stdout.write('::endgroup::\n');
       return result;
     } catch (err) {
       const duration = ansi.dim(formatDuration(performance.now() - stepStart));
@@ -237,15 +208,17 @@ class AgentReporter {
       }
 
       if (isGitHubActions) {
-        process.stdout.write(`::error::${err.message}\n`);
-        process.stdout.write('::endgroup::\n');
+        process.stdout.write(`::error::${err.message}\n::endgroup::\n`);
       }
-
       throw err;
     }
   }
 
-  summary(status = 'success', metrics = {}) {
+  summary(statusOrMetrics = 'success', maybeMetrics = {}) {
+    const isStatusStr = typeof statusOrMetrics === 'string';
+    const status = isStatusStr ? statusOrMetrics : 'success';
+    const metrics = isStatusStr ? maybeMetrics : statusOrMetrics;
+
     const total = formatDuration(performance.now() - this.startTime);
     const header =
       status === 'success'
@@ -255,19 +228,7 @@ class AgentReporter {
           : badge.fail('FAILED');
 
     process.stdout.write(`\n${header} ${ansi.dim('in')} ${ansi.bold(total)}\n`);
-
-    const entries = Object.entries(metrics);
-    if (entries.length > 0) {
-      this.kvTable(entries);
-    }
+    this.kvTable(metrics);
     process.stdout.write('\n');
   }
 }
-
-module.exports = {
-  AgentReporter,
-  ansi,
-  badge,
-  isCI,
-  isGitHubActions,
-};
