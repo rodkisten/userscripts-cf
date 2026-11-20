@@ -44,7 +44,7 @@ export function appendStepSummary(markdown) {
 export function buildCliContext() {
   const [owner, repo] = (process.env.GITHUB_REPOSITORY || '').split('/');
   if (!owner || !repo) {
-    throw new Error('Variável GITHUB_REPOSITORY (owner/repo) não definida.');
+    throw new Error('GITHUB_REPOSITORY (owner/repo) environment variable is not set.');
   }
 
   const eventPath = process.env.GITHUB_EVENT_PATH;
@@ -86,7 +86,7 @@ export function parseCliArgs(argv) {
 }
 
 // ============================================================================
-// Rich Step Summary Builder (compatível com core.summary e CLI nativa)
+// Rich Step Summary Builder (compatible with core.summary and native CLI)
 // ============================================================================
 export function createSummaryWriter(core) {
   if (core?.summary) return core.summary;
@@ -186,7 +186,7 @@ export function createSummaryWriter(core) {
 }
 
 // ============================================================================
-// Execução de Comandos & Git Helpers
+// Command Execution & Git Helpers
 // ============================================================================
 export function runCmd(cmd, args = [], options = {}) {
   const { silent = false, logger = defaultLogger, ...execOptions } = options;
@@ -226,15 +226,6 @@ export function runInteractive(cmd, args = [], options = {}) {
   return res.status ?? 1;
 }
 
-
-export function runInteractive(cmd, args = [], options = {}) {
-  const res = spawnSync(cmd, args, {
-    stdio: 'inherit',
-    ...options,
-  });
-  return res.status ?? 1;
-}
-
 export function getChangedFiles(baseSha, headSha, diffFilter = 'ACMR') {
   if (!baseSha || !headSha) return [];
   const res = runCmd('git', ['diff', '--name-only', `--diff-filter=${diffFilter}`, baseSha, headSha]);
@@ -261,7 +252,7 @@ export function hasPackageTool(rootDir, binName) {
 }
 
 // ============================================================================
-// Cliente GitHub API Nativo & Comentários Idempotentes
+// Native GitHub API Client, Bot Identity & Idempotent Comments
 // ============================================================================
 export function createNativeGithubClient(token) {
   const request = async (method, urlPath, body) => {
@@ -305,14 +296,46 @@ export function createNativeGithubClient(token) {
   };
 }
 
-export async function resolveBotLogin(github) {
-  try {
-    const { data: app } = await github.rest.apps.getAuthenticated();
-    if (app?.slug) return `${app.slug}[bot]`;
-  } catch {
-    // Fallback quando autenticado via GITHUB_TOKEN padrão
+/**
+ * Returns { name, email, login } for the authenticated GitHub App (including its
+ * numeric ID for the official GitHub noreply email) or falls back to github-actions[bot].
+ */
+export async function resolveBotIdentity(github) {
+  if (github) {
+    try {
+      const { data: app } = await github.rest.apps.getAuthenticated();
+      if (app?.slug) {
+        const login = `${app.slug}[bot]`;
+        const email = app.id
+          ? `${app.id}+${login}@users.noreply.github.com`
+          : `${login}@users.noreply.github.com`;
+        return { name: login, email, login };
+      }
+    } catch {
+      // Fallback when authenticated via default GITHUB_TOKEN or without App permissions
+    }
   }
-  return 'github-actions[bot]';
+
+  return {
+    name: 'github-actions[bot]',
+    email: '41898282+github-actions[bot]@users.noreply.github.com',
+    login: 'github-actions[bot]',
+  };
+}
+
+export async function resolveBotLogin(github) {
+  const { login } = await resolveBotIdentity(github);
+  return login;
+}
+
+/**
+ * Configures user.name and user.email in the local Git repository using the bot identity.
+ */
+export async function configureGitBotUser(github, { logger = defaultLogger, silent = true } = {}) {
+  const identity = await resolveBotIdentity(github);
+  runCmd('git', ['config', 'user.name', identity.name], { logger, silent });
+  runCmd('git', ['config', 'user.email', identity.email], { logger, silent });
+  return identity;
 }
 
 export async function upsertMarkedComment({
