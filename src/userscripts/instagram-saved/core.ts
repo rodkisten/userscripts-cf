@@ -238,10 +238,7 @@ export async function syncSaved({
                 }
               }
               if (status.complete) {
-                if (ledger && !channels.every((channel) => Object.hasOwn(ledger[item.mediaId] || {}, channel))) {
-                  // Other configured channels may have been confirmed in earlier groups.
-                  // Only persist a legacy complete marker when the full set is covered.
-                } else {
+                if (!ledger || channels.every((channel) => Object.hasOwn(ledger[item.mediaId] || {}, channel))) {
                   done[item.mediaId] = Date.now();
                   await save(done);
                 }
