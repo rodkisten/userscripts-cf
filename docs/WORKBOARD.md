@@ -1,3 +1,5 @@
+> **PR #120 · reporter export (2026-11-20):** Validate affected files #44667825860 identified `isCI` missing from `build/reporter.mjs` exports after the entrypoint import cleanup. Exported the existing constant so `check-style.mjs` can import it without loading `build.mjs`.
+
 > **PR #120 · circular build imports (2026-11-20):** CI rerun pinpointed a remaining import of `fmt` from the executable `build.mjs` in `build/class-references.mjs`; `build/check-style.mjs` also imported reporter symbols from the executable entrypoint. Both now use side-effect-free modules. CI must still validate the remaining build and formatting issues.
 
 

@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { C, fmt } from "./format.mjs";
 
-const isCI = Boolean(process.env.GITHUB_ACTIONS);
+export const isCI = Boolean(process.env.GITHUB_ACTIONS);
 
 export class BuildReporter {
   constructor(title, version) {
