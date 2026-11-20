@@ -287,5 +287,9 @@ export class AgentReporter {
     }
     this._writeLine(divider);
   }
-
 }
+
+
+export const defaultLogger = new AgentReporter('EXEC');
+
+
