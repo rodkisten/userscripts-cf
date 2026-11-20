@@ -23,6 +23,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Backfill other historical channel sets only when their original key names can be enumerated safely; no speculative coverage.
 - [x] Add utility regression for 429 partial acknowledgement retrying only the missing destination in the same session, plus strict index range validation.
 - [x] Require all configured channels before writing the legacy complete checkpoint; add cancellation checks after state loads.
+- [x] Regression: after a partial HTTP 429 acknowledgement, verify the legacy complete checkpoint remains absent until the last missing destination is confirmed.
 - [x] Count inserted media IDs once per sync session even when multiple channels acknowledge across separate retries.
 - [x] Ignore acknowledgements for channels not requested by the current Relay batch when computing insertion totals.
 - [x] Validate Relay channel-array shapes before persisting confirmations and discard video variants with invalid dimensions.
