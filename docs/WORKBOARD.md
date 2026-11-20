@@ -698,3 +698,5 @@
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
 
 - [ ] Dock 2.0 (branch docs/rod-dock-2-spec): primeira implementação React/Vaul/Radix de launcher compacto, posição persistida, tabs, busca e scroll interno. Pendente lockfile, typecheck/build, integração DevTools e Safari. Sem mudanças de contratos ctx/runtime/AST.
+
+- [ ] Dock 2.0 bloco 2: `primitives.ts` expõe Radix/Vaul/cmdk/Motion/Floating UI/RHF/Zod; Dock integra cmdk+Fuse e Select/Slider/Tooltip. Dependências declaradas, mas lockfile/typecheck/build pendentes. Sem testes novos por pedido explícito. Sem alteração de APIs ctx/AST.

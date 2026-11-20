@@ -256,3 +256,5 @@ Independent React/Radix userscript `github-color-studio` for GitHub file views a
 ### Rod Dock 2.0 (em desenvolvimento)
 
 A especificação de UX, pacotes e checklist está em [docs/rod-dock-2-design.md](docs/rod-dock-2-design.md). A nova Dock usa Vaul/Radix, pesquisa no topo, posição persistente e controles compactos. Integração completa de DevTools e validação ainda pendentes.
+
+Os primitives reutilizáveis estão em `src/runtime/react-ui/primitives.ts`. Importe por componente para preservar tree shaking; o catálogo não obriga que todas as bibliotecas sejam usadas na mesma tela.

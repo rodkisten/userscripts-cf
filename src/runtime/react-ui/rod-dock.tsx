@@ -5,6 +5,12 @@ import { Drawer } from "vaul";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Switch from "@radix-ui/react-switch";
+import * as Select from "@radix-ui/react-select";
+import * as Slider from "@radix-ui/react-slider";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { Command } from "cmdk";
+import Fuse from "fuse.js";
+import { Settings2, Search, X, PanelRightOpen } from "lucide-react";
 import { RodMenuHost } from "./index.js";
 import {
   matches,
@@ -55,6 +61,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:4px
 .script small{display:block;color:#a1a1aa;margin-top:3px}
 .setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;font-size:13px}
 .setting input[type=range]{width:130px}
+.searchWrap{display:flex;align-items:center;gap:8px;margin:0 14px 8px;padding:0 10px;border:1px solid #3f3f46;border-radius:9px;background:#18181b}
+.searchWrap .search{margin:0;border:0;padding:10px 0;width:100%;outline:none;background:transparent}
+.suggestions{max-height:135px;overflow:auto;padding:0 14px 8px}
+.suggestion{padding:8px 10px;font-size:12px;cursor:pointer;border-radius:7px;color:#fafafa;outline:none}
+.suggestion[data-selected=true],.suggestion[data-highlighted]{background:#3b0764}
+.selectContent{background:#18181b;color:#fafafa;border:1px solid #3f3f46;border-radius:9px;padding:6px;z-index:2147483647}
+.slider{position:relative;display:flex;align-items:center;width:125px;height:24px;touch-action:none}
+.sliderTrack{position:relative;height:4px;background:#3f3f46;flex:1;border-radius:4px}
+.sliderRange{position:absolute;height:100%;background:#a78bfa;border-radius:4px}
+.sliderThumb{display:block;width:15px;height:15px;border-radius:50%;background:#fafafa;box-shadow:0 0 0 2px #6d28d9}
 @media(min-width:720px){.panel{top:8px;bottom:8px;right:8px;height:calc(100dvh - 16px);border-radius:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
@@ -79,6 +95,13 @@ function DockView({ controller }: { controller: DockController }) {
   });
   const [scrolling, setScrolling] = useState(false);
   const [tab, setTab] = useState("scripts");
+  const catalog = useMemo(() => [
+    ...scripts.map((script) => ({ id: `script:${script.id}`, title: script.name ?? script.id, tab: "scripts" })),
+    ...modules.flatMap((module) => module.actions.map((action) => ({ id: `action:${module.id}:${action.id}`, title: `${module.name} ${action.label}`, tab: "tools" }))),
+    { id: "settings", title: "Configurações posição opacidade dock", tab: "settings" },
+    { id: "diagnostics", title: "Diagnósticos exportar logs", tab: "diagnostics" },
+  ], [scripts, modules]);
+  const suggestions = useMemo(() => search.trim() ? new Fuse(catalog, { keys: ["title"], threshold: 0.38 }).search(search).slice(0, 8).map((hit) => hit.item) : [], [catalog, search]);
   const suppressClick = useRef(false);
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* storage may be unavailable */ }
@@ -143,16 +166,19 @@ function DockView({ controller }: { controller: DockController }) {
             window.addEventListener("pointerup", onEnd, { once: true });
           }}
           onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } setOpen(true); }}
-        >☰</button>
+        ><PanelRightOpen size={16} /></button>
       )}
       <Drawer.Root open={open} onOpenChange={setOpen} direction={typeof window !== "undefined" && window.innerWidth >= 720 ? "right" : "bottom"}>
         <Drawer.Portal container={portal}>
           <Drawer.Overlay className="overlay" />
           <Drawer.Content className="panel" aria-describedby={undefined}>
             <div className="handle" aria-hidden="true" />
-            <header><Drawer.Title>Rod Dock</Drawer.Title><button className="close" onClick={() => setOpen(false)} aria-label="Fechar Dock">✕</button></header>
+            <header><Drawer.Title>Rod Dock</Drawer.Title><button className="close" onClick={() => setOpen(false)} aria-label="Fechar Dock"><X size={16} /></button></header>
             <Drawer.Description style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>Ferramentas e configurações</Drawer.Description>
-            <input className="search" type="search" aria-label="Buscar na Dock" placeholder="Buscar scripts, ações e ferramentas..." value={search} onChange={(event) => setSearch(event.target.value)} />
+            <Command shouldFilter={false} label="Pesquisa global da Dock" style={{ flexShrink: 0 }}>
+              <div className="searchWrap"><Search size={15} /><Command.Input className="search" aria-label="Buscar na Dock" placeholder="Buscar scripts, ações e ferramentas..." value={search} onValueChange={setSearch} /></div>
+              {suggestions.length > 0 && <Command.List className="suggestions">{suggestions.map((item) => <Command.Item key={item.id} value={item.id} onSelect={() => { setTab(item.tab); if (item.id === "settings" || item.id === "diagnostics") setSearch(""); }} className="suggestion">{item.title}</Command.Item>)}</Command.List>}
+            </Command>
             <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
               <Tabs.List className="tabs" aria-label="Ferramentas da Dock">
                 {["scripts", "tools", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
@@ -178,11 +204,11 @@ function DockView({ controller }: { controller: DockController }) {
                   {diagnostics.filter((item) => item.message.toLowerCase().includes(search.toLowerCase())).slice(0, 30).map((item, index) => <details className="module" key={index}><summary>{item.message}</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{item.stack ?? item.message}</pre></details>)}
                 </Tabs.Content>
                 <Tabs.Content value="settings">
-                  <label className="setting">Lado<select value={settings.side} onChange={(event) => setSettings((prev) => ({ ...prev, side: event.target.value as DockSide }))}><option value="left">Esquerda</option><option value="right">Direita</option></select></label>
-                  <label className="setting">Altura ({Math.round(settings.position)}%)<input type="range" min="10" max="90" value={settings.position} onChange={(event) => setSettings((prev) => ({ ...prev, position: Number(event.target.value) }))} /></label>
-                  <label className="setting">Opacidade ao rolar ({Math.round(settings.scrollOpacity * 100)}%)<input type="range" min="15" max="100" value={Math.round(settings.scrollOpacity * 100)} onChange={(event) => setSettings((prev) => ({ ...prev, scrollOpacity: Number(event.target.value) / 100 }))} /></label>
+                  <label className="setting">Lado<Select.Root value={settings.side} onValueChange={(value) => setSettings((prev) => ({ ...prev, side: value as DockSide }))}><Select.Trigger className="action" aria-label="Lado da Dock"><Select.Value /></Select.Trigger><Select.Portal container={portal}><Select.Content className="selectContent" position="popper"><Select.Viewport><Select.Item value="left" className="suggestion"><Select.ItemText>Esquerda</Select.ItemText></Select.Item><Select.Item value="right" className="suggestion"><Select.ItemText>Direita</Select.ItemText></Select.Item></Select.Viewport></Select.Content></Select.Portal></Select.Root></label>
+                  <label className="setting">Altura ({Math.round(settings.position)}%)<Slider.Root className="slider" min={10} max={90} value={[settings.position]} onValueChange={([value]) => setSettings((prev) => ({ ...prev, position: value }))}><Slider.Track className="sliderTrack"><Slider.Range className="sliderRange" /></Slider.Track><Slider.Thumb className="sliderThumb" aria-label="Altura da Dock" /></Slider.Root></label>
+                  <label className="setting">Opacidade ao rolar ({Math.round(settings.scrollOpacity * 100)}%)<Slider.Root className="slider" min={15} max={100} value={[Math.round(settings.scrollOpacity * 100)]} onValueChange={([value]) => setSettings((prev) => ({ ...prev, scrollOpacity: value / 100 }))}><Slider.Track className="sliderTrack"><Slider.Range className="sliderRange" /></Slider.Track><Slider.Thumb className="sliderThumb" aria-label="Opacidade da Dock" /></Slider.Root></label>
                   <label className="setting">Diminuir opacidade ao rolar<Switch.Root checked={settings.fadeOnScroll} onCheckedChange={(value) => setSettings((prev) => ({ ...prev, fadeOnScroll: value }))} className="action">{settings.fadeOnScroll ? "Ativado" : "Desativado"}</Switch.Root></label>
-                  <button className="action" onClick={() => setSettings(defaults)}>Restaurar posição padrão</button>
+                  <Tooltip.Provider><Tooltip.Root><Tooltip.Trigger asChild><button className="action" onClick={() => setSettings(defaults)}><Settings2 size={14} /> Restaurar posição padrão</button></Tooltip.Trigger><Tooltip.Portal container={portal}><Tooltip.Content className="selectContent">Restaurar preferências iniciais</Tooltip.Content></Tooltip.Portal></Tooltip.Root></Tooltip.Provider>
                 </Tabs.Content>
               </ScrollArea.Viewport></ScrollArea.Root>
             </Tabs.Root>

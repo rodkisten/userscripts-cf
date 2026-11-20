@@ -62,3 +62,9 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [ ] Integração completa de DevTools/Network/DOM e remoção dos launchers externos.
 - [ ] Migrar todos os formulários para Radix, adicionar cmdk e verificar compatibilidade com Safari.
 - [ ] Regenerar lockfile com npm install, executar typecheck/build e corrigir eventuais falhas antes de merge.
+
+## Bloco 2: biblioteca de primitives e busca
+
+- [x] Catálogo compartilhado de Radix primitives, Vaul, cmdk, Motion, Floating UI, React Hook Form e Zod em `src/runtime/react-ui/primitives.ts`.
+- [x] Pesquisa cmdk com sugestões Fuse; controles Select/Slider/Tooltip Radix nas configurações.
+- [ ] Versões fixas e lockfile devem ser sincronizados por `npm install` antes do merge. Sem execução de testes a pedido do mantenedor; typecheck/build ainda pendentes.
