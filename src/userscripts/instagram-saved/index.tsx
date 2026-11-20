@@ -42,7 +42,7 @@ export default {
       running: false,
       lastRun: 0,
       lastError: "",
-      progress: null as { current: number; total: number; collection: string; sent: number } | null,
+      progress: null as { current: number; total: number; collection: string; sent: number; processed: number; pageEligible: number } | null,
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
     };
@@ -200,7 +200,7 @@ export default {
           let count = 0;
           for (const [index, collectionId] of settings.collectionIds.entries()) {
             setRuntime((draft) => {
-              draft.progress = { current: index + 1, total: settings.collectionIds.length, collection: collectionId, sent: count };
+              draft.progress = { current: index + 1, total: settings.collectionIds.length, collection: collectionId, sent: count, processed: 0, pageEligible: 0 };
             });
             abort.throwIfAborted();
             if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
@@ -210,6 +210,15 @@ export default {
             count += await syncSaved({
               channels: config.channels,
               signal: abort,
+              onProgress: ({ processed, sent, pageEligible }) => {
+                setRuntime((draft) => {
+                  if (draft.progress?.collection === collectionId) {
+                    draft.progress.processed = processed;
+                    draft.progress.pageEligible = pageEligible;
+                    draft.progress.sent = count + sent;
+                  }
+                });
+              },
               pause,
               settings: { ...settings, cursor: await get(cursorKey, "") },
               onCursor: (cursor) => set(cursorKey, cursor),
