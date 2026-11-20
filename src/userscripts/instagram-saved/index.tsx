@@ -122,7 +122,7 @@ export default {
     const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
     async function relay(config: Config, items: MediaPayload[], account: string, channels: string[]) {
       if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
-      const response = await ctx.http.request(RELAY, {
+      const relayOptions = {
         method: "POST",
         transport: "gm",
         cacheMode: "off",
@@ -133,7 +133,8 @@ export default {
           Authorization: `Bearer ${config.token}`,
         },
         body: JSON.stringify({ items, channels, concurrency: 1, force: false }),
-      });
+      };
+      const response = await ctx.http.request(RELAY, relayOptions);
       abort.throwIfAborted();
       if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
       if (!response.ok) {
@@ -222,7 +223,7 @@ export default {
                   if (cursor) {
                     url.searchParams.set("max_id", cursor);
                   }
-                  const response = await ctx.http.request(url, {
+                  const instagramOptions = {
                     transport: "fetch",
                     cacheMode: "off",
                     credentials: "same-origin",
@@ -234,7 +235,8 @@ export default {
                         document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] || "",
                       ),
                     },
-                  });
+                  };
+                  const response = await ctx.http.request(url, instagramOptions);
                   if (!response.ok) {
                     const error = Error(`Instagram HTTP ${response.status}`) as Error & {
                       status?: number;
