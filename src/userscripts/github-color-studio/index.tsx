@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
@@ -28,11 +29,8 @@ function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; 
     if(window.confirm(`Renomear ${selected} para ${rename} em ${selectedRefs.length+selectedDefs.length} ocorrências deste arquivo?`) && applySource(next)) { setSource(next); setSelected(rename); setRename(""); }
   }
   function convert(value:string):string {
-    const el=document.createElement("span");
-    el.style.color=value;
-    document.body.append(el);
-    const rgb=getComputedStyle(el).color;
-    el.remove();
+    const rgb=normalizeColor(value);
+    if (!rgb.startsWith("rgb")) return value;
     if(format==="rgb") return rgb;
     if(format==="hex") return normalizeColor(value);
     if(format==="hsl") {
@@ -67,48 +65,61 @@ function ColorStudio({ getSource, applySource, close }: { getSource:()=>string; 
     </Dialog.Portal>
   </Dialog.Root>;
 }
+
+function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
+  const [open, setOpen] = useState(false);
+  const [lines, setLines] = useState<HTMLElement[]>([]);
+  const [sourceVersion, setSourceVersion] = useState(0);
+  const getEditor = () => document.querySelector<HTMLTextAreaElement>('textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]');
+  const getViewer = () => document.querySelector(VIEW_SELECTOR);
+  const getSource = () => getEditor()?.value ?? ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line => line.textContent ?? "").join("\\n") || getViewer()?.textContent || "");
+  const applySource = (next: string): boolean => {
+    const editor = getEditor();
+    if (!editor) {
+      void navigator.clipboard.writeText(next);
+      window.alert("Visualização somente leitura: código atualizado copiado. Abra Edit para aplicar.");
+      return false;
+    }
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    setter?.call(editor, next);
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    setSourceVersion(version => version + 1);
+    return true;
+  };
+  useEffect(() => {
+    let scheduled = false;
+    const refresh = () => {
+      const next = [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)];
+      setLines(previous => previous.length === next.length && previous.every((line, index) => line === next[index]) ? previous : next);
+    };
+    refresh();
+    const observer = ctx.observe(document.body, () => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => { scheduled = false; refresh(); });
+    }, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [ctx]);
+  const available = !!getEditor() || !!getViewer();
+  if (!available) return null;
+  return <>
+    <button type="button" className="rcs-fab" aria-label="Abrir Color Studio" title="GitHub Color Studio" onClick={() => setOpen(true)}>🎨</button>
+    {lines.flatMap((line, lineIndex) => {
+      const colors = scanColors(line.textContent ?? "");
+      return colors.length ? [createPortal(
+        <span className="rcs-inline-swatches" aria-label="Cores da linha" key={lineIndex}>
+          {colors.map(color => <button key={color.from} type="button" className="rcs-swatch" style={{ backgroundColor: color.value }} aria-label={`Editar cor ${color.value}`} title={color.value} onClick={event => { event.preventDefault(); event.stopPropagation(); setOpen(true); }} />)}
+        </span>, line, `colors-${lineIndex}`)] : [];
+    })}
+    {open && <ColorStudio key={sourceVersion} getSource={getSource} applySource={applySource} close={() => setOpen(false)} />}
+  </>;
+}
+
 export default {
-  init(ctx: ScriptContext) {
+  init(ctx: ScriptContext): void {
     if (!ctx.ui) return;
-    ctx.ui.pageStyle(css,{id:"rod-github-color-studio-style"});
-    let dispose: (()=>void)|undefined;
-    let button:HTMLButtonElement|undefined;
-    const getEditor=()=>document.querySelector<Editor>('textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]');
-    const getViewer=()=>document.querySelector(VIEW_SELECTOR);
-    const getSource=()=>getEditor()?.value ?? ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)].map(line=>line.textContent??"").join("\n") || getViewer()?.textContent || "");
-    const applySource=(next:string)=>{
-      const editor=getEditor();
-      if(!editor){navigator.clipboard.writeText(next);window.alert("Visualização somente leitura: código atualizado copiado. Abra Edit para aplicar.");return false;}
-      const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value")?.set;
-      setter?.call(editor,next);
-      editor.dispatchEvent(new Event("input",{bubbles:true}));
-      return true;
-    };
-    const close=()=>{dispose?.();dispose=undefined;};
-    const decorated=new Set<HTMLElement>();
-    const decorate=()=>{
-      for(const line of document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)){
-        if(decorated.has(line))continue;
-        decorated.add(line);
-        const matches=scanColors(line.textContent??"");
-        if(!matches.length)continue;
-        const swatches=document.createElement("span");swatches.className="rcs-inline-swatches";swatches.dataset.rodColorSwatches="true";
-        for(const match of matches){const swatch=document.createElement("button");swatch.type="button";swatch.className="rcs-swatch";swatch.title=match.value;swatch.setAttribute("aria-label",`Cor ${match.value}`);swatch.style.backgroundColor=match.value;swatch.onclick=(event)=>{event.preventDefault();event.stopPropagation();button?.click();};swatches.append(swatch);}
-        line.prepend(swatches);
-      }
-    };
-    const sync=()=>{
-      const available=!!getEditor()||!!getViewer();
-      if(!available){button?.remove();button=undefined;close();return;}
-      decorate();
-      if(button?.isConnected)return;
-      button=document.createElement("button");button.className="rcs-fab";button.textContent="🎨";button.title="GitHub Color Studio";button.setAttribute("aria-label","Abrir Color Studio");
-      button.onclick=()=>{close();dispose=ctx.ui!.mountReact(<ColorStudio getSource={getSource} applySource={applySource} close={close}/>);};
-      document.body.append(button);
-    };
-    sync();
-    let scheduled=false;
-    const observer=ctx.observe(document.body,()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;sync();});},{subtree:true,childList:true});
-    ctx.onDispose(()=>{observer.disconnect();for(const line of decorated)line.querySelectorAll("[data-rod-color-swatches]").forEach(node=>node.remove());decorated.clear();close();button?.remove();});
-  }
+    ctx.ui.pageStyle(css, { id: "rod-github-color-studio-style" });
+    const dispose = ctx.ui.mountReact(<GitHubColorStudioApp ctx={ctx} />);
+    ctx.onDispose(dispose);
+  },
 };
