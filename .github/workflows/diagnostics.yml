@@ -271,8 +271,8 @@ jobs:
             exit 0
           fi
 
-          mapfile -t PRETTIER_FILES < <(grep -E '\\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\\n' "$file"; done)
-          mapfile -t ESLINT_FILES < <(grep -E '\\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\\n' "$file"; done)
+          mapfile -t PRETTIER_FILES < <(grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
+          mapfile -t ESLINT_FILES < <(grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$' .format_changed_files.txt | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
 
           echo "Prettier targets: ${#PRETTIER_FILES[@]}"
           echo "ESLint targets: ${#ESLINT_FILES[@]}"
