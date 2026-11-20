@@ -63,6 +63,9 @@ jobs:
           path: .rod-actions
           persist-credentials: false
 
+      - name: 🛡️ Exclude downloaded Actions from formatting commits
+        run: node -e "require('node:fs').appendFileSync('.git/info/exclude', '\\n.rod-actions/\\n')"
+
       - name: 📦 Build shared TypeScript Actions
         working-directory: .rod-actions
         run: npm ci --no-audit --no-fund && npm run build
