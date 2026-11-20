@@ -71,9 +71,14 @@ jobs:
 
       - name: 🎨 Executar Prettier
         if: steps.parse.outputs.prettier == 'true'
+        shell: bash
         run: |
           npm install
-          npx prettier --write . --ignore-unknown 2> prettier-errors.log || true
+          set +e
+          npx prettier --write . --ignore-unknown 2> prettier-errors.log
+          EXIT_CODE=$?
+          set -e
+          echo "Prettier finalizou com código: $EXIT_CODE"
 
       - name: 📊 Gerar Resumo e Atualizar Comentário no PR
         if: steps.parse.outputs.prettier == 'true'
@@ -137,10 +142,8 @@ jobs:
                 const shortError = firstLineMatch ? firstLineMatch[2].replace(/\|/g, '\\|') : 'Erro de sintaxe';
                 const lang = getLang(filePath);
 
-                mdRow = `| ${index + 1} | \`${filePath}\` | ${shortError} |\n`;
-                reportMd += mdRow;
+                reportMd += `| ${index + 1} | \`${filePath}\` | ${shortError} |\n`;
 
-                // Adiciona o trecho de código com syntax highlight da linguagem do arquivo
                 detailsList.push(
                   `<details>\n<summary>🔴 <code>${filePath}</code> — Clique para ver o erro completo</summary>\n\n\`\`\`${lang}\n${block.trim()}\n\`\`\`\n</details>\n`
                 );
