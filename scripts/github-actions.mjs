@@ -1,151 +1,15 @@
 import fs from 'node:fs';
-import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { AgentReporter, ansi } from './utils/ci-logger.mjs';
-
-// ============================================================================
-// Utilitários Compartilhados (Inputs, Outputs, Summary & Auth)
-// ============================================================================
-function resolveInputs(sources, fallbackMap) {
-  const resolved = {};
-  for (const [key, candidates] of Object.entries(fallbackMap)) {
-    const found = candidates.find((val) => val !== undefined && val !== null && val !== '');
-    resolved[key] = found ?? '';
-  }
-  return resolved;
-}
-
-function setActionOutput(name, value, core) {
-  const strValue = String(value ?? '');
-  if (core && typeof core.setOutput === 'function') {
-    core.setOutput(name, strValue);
-    return;
-  }
-
-  const outputFile = process.env.GITHUB_OUTPUT;
-  if (outputFile) {
-    const delimiter = `EOF_${crypto.randomBytes(8).toString('hex')}`;
-    fs.appendFileSync(outputFile, `${name}<<${delimiter}\n${strValue}\n${delimiter}\n`, 'utf8');
-  } else {
-    console.log(`[output] ${name}=\n${strValue}`);
-  }
-}
-
-async function resolveBotLogin(github) {
-  try {
-    const { data: app } = await github.rest.apps.getAuthenticated();
-    if (app?.slug) return `${app.slug}[bot]`;
-  } catch {
-    // Fallback quando autenticado via GITHUB_TOKEN padrão
-  }
-  return 'github-actions[bot]';
-}
-
-/**
- * Retorna `core.summary` se disponível (github-script) ou um builder compatível
- * que grava diretamente em `GITHUB_STEP_SUMMARY` (CLI nativa sem dependências).
- */
-function createSummaryWriter(core) {
-  if (core?.summary) return core.summary;
-
-  const chunks = [];
-  const escapeHtml = (str) =>
-    String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-  const api = {
-    addHeading(text, level = 1) {
-      chunks.push(`<h${level}>${text}</h${level}>\n`);
-      return api;
-    },
-    addRaw(text, addEOL = false) {
-      chunks.push(`${text}${addEOL ? '\n' : ''}`);
-      return api;
-    },
-    addBreak() {
-      chunks.push('<br>\n');
-      return api;
-    },
-    addEOL() {
-      chunks.push('\n');
-      return api;
-    },
-    addQuote(text, cite) {
-      const citeAttr = cite ? ` cite="${escapeHtml(cite)}"` : '';
-      chunks.push(`<blockquote${citeAttr}>\n${text}\n</blockquote>\n`);
-      return api;
-    },
-    addSeparator() {
-      chunks.push('<hr>\n');
-      return api;
-    },
-    addLink(text, href) {
-      chunks.push(`<a href="${escapeHtml(href)}">${text}</a>\n`);
-      return api;
-    },
-    addImage(src, alt, opts = {}) {
-      const attrs = [
-        `src="${escapeHtml(src)}"`,
-        `alt="${escapeHtml(alt)}"`,
-        opts.width ? `width="${opts.width}"` : '',
-        opts.height ? `height="${opts.height}"` : '',
-      ]
-        .filter(Boolean)
-        .join(' ');
-      chunks.push(`<img ${attrs}>\n`);
-      return api;
-    },
-    addList(items, ordered = false) {
-      const tag = ordered ? 'ol' : 'ul';
-      const li = items.map((item) => `<li>${item}</li>`).join('\n');
-      chunks.push(`<${tag}>\n${li}\n</${tag}>\n`);
-      return api;
-    },
-    addCodeBlock(code, lang = '') {
-      const langAttr = lang ? ` lang="${escapeHtml(lang)}"` : '';
-      chunks.push(`<pre${langAttr}><code>${escapeHtml(code)}</code></pre>\n`);
-      return api;
-    },
-    addTable(rows) {
-      const htmlRows = rows
-        .map((row) => {
-          const cells = row
-            .map((cell) => {
-              if (typeof cell === 'object' && cell !== null) {
-                const tag = cell.header ? 'th' : 'td';
-                const colspan = cell.colspan ? ` colspan="${cell.colspan}"` : '';
-                const rowspan = cell.rowspan ? ` rowspan="${cell.rowspan}"` : '';
-                return `<${tag}${colspan}${rowspan}>${cell.data}</${tag}>`;
-              }
-              return `<td>${cell}</td>`;
-            })
-            .join('');
-          return `<tr>${cells}</tr>`;
-        })
-        .join('\n');
-      chunks.push(`<table>\n${htmlRows}\n</table>\n`);
-      return api;
-    },
-    addDetails(label, content) {
-      chunks.push(`<details>\n<summary>${label}</summary>\n\n${content}\n</details>\n`);
-      return api;
-    },
-    async write() {
-      const output = chunks.join('\n');
-      const summaryFile = process.env.GITHUB_STEP_SUMMARY;
-      if (summaryFile) {
-        fs.appendFileSync(summaryFile, `${output}\n`, 'utf8');
-      } else {
-        process.stdout.write(`\n--- STEP SUMMARY PREVIEW ---\n${output}\n`);
-      }
-      chunks.length = 0;
-    },
-  };
-
-  return api;
-}
+import {
+  buildCliContext,
+  createNativeGithubClient,
+  createSummaryWriter,
+  parseCliArgs,
+  resolveBotLogin,
+  resolveInputs,
+  setActionOutput,
+} from './utils.mjs';
 
 // ============================================================================
 // 1. Coletar Diff e Metadados do Commit
@@ -254,7 +118,7 @@ export async function publishComment({ github, context, options = {} }) {
       throw new Error('Não foi possível determinar o número do PR.');
     }
 
-    const { previewUrl, shortSha, commitUrl, diffEntry, branchName } = resolveInputs(options, {
+    const { previewUrl, shortSha, commitUrl, diffEntry, branchName } = resolveInputs({
       previewUrl: [options.previewUrl, process.env.PREVIEW_URL],
       shortSha: [
         options.shortSha,
@@ -375,7 +239,7 @@ export async function generateOperationSummary({ context, core, options = {} }) 
     customCmd: INPUT_CUSTOM_CMD,
     outChanged: OUT_CHANGED,
     outBranch: OUT_BRANCH,
-  } = resolveInputs(options, {
+  } = resolveInputs({
     operation: [options.operation, process.env.INPUT_OPERATION, 'unknown'],
     branch: [options.branch, process.env.INPUT_BRANCH, context.refName],
     packages: [options.packages, process.env.INPUT_PACKAGES],
@@ -487,94 +351,8 @@ export async function generateOperationSummary({ context, core, options = {} }) 
 }
 
 // ============================================================================
-// Cliente GitHub Nativo & Dispatcher CLI / Module
+// Dispatcher CLI & Module Export
 // ============================================================================
-function createNativeGithubClient(token) {
-  const request = async (method, urlPath, body) => {
-    const res = await fetch(`https://api.github.com${urlPath}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`GitHub API ${method} ${urlPath} failed (${res.status}): ${errText}`);
-    }
-    return { data: res.status === 204 ? null : await res.json() };
-  };
-
-  return {
-    rest: {
-      apps: {
-        getAuthenticated: () => request('GET', '/app'),
-      },
-      repos: {
-        getCommit: ({ owner, repo, ref }) => request('GET', `/repos/${owner}/${repo}/commits/${ref}`),
-        compareCommits: ({ owner, repo, base, head }) =>
-          request('GET', `/repos/${owner}/${repo}/compare/${base}...${head}`),
-      },
-      issues: {
-        listComments: ({ owner, repo, issue_number, per_page = 100 }) =>
-          request('GET', `/repos/${owner}/${repo}/issues/${issue_number}/comments?per_page=${per_page}`),
-        createComment: ({ owner, repo, issue_number, body }) =>
-          request('POST', `/repos/${owner}/${repo}/issues/${issue_number}/comments`, { body }),
-        updateComment: ({ owner, repo, comment_id, body }) =>
-          request('PATCH', `/repos/${owner}/${repo}/issues/comments/${comment_id}`, { body }),
-      },
-    },
-  };
-}
-
-function parseCliArgs(argv) {
-  const args = { _: [] };
-  for (let i = 0; i < argv.length; i++) {
-    const token = argv[i];
-    if (token.startsWith('--')) {
-      const eqIdx = token.indexOf('=');
-      if (eqIdx !== -1) {
-        args[token.slice(2, eqIdx)] = token.slice(eqIdx + 1);
-      } else if (argv[i + 1] && !argv[i + 1].startsWith('--')) {
-        args[token.slice(2)] = argv[++i];
-      } else {
-        args[token.slice(2)] = true;
-      }
-    } else {
-      args._.push(token);
-    }
-  }
-  return args;
-}
-
-function buildCliContext() {
-  const [owner, repo] = (process.env.GITHUB_REPOSITORY || '').split('/');
-  if (!owner || !repo) {
-    throw new Error('Variável GITHUB_REPOSITORY (owner/repo) não definida.');
-  }
-
-  const eventPath = process.env.GITHUB_EVENT_PATH;
-  const payload =
-    eventPath && fs.existsSync(eventPath) ? JSON.parse(fs.readFileSync(eventPath, 'utf8')) : {};
-
-  return {
-    repo: { owner, repo },
-    issue: { number: payload.pull_request?.number || payload.issue?.number },
-    payload,
-    serverUrl: process.env.GITHUB_SERVER_URL || 'https://github.com',
-    runId: process.env.GITHUB_RUN_ID || '0',
-    runNumber: process.env.GITHUB_RUN_NUMBER || '0',
-    actor: process.env.GITHUB_ACTOR || 'unknown',
-    eventName: process.env.GITHUB_EVENT_NAME || 'workflow_dispatch',
-    sha: process.env.GITHUB_SHA || payload.pull_request?.head?.sha || '',
-    refName: process.env.GITHUB_REF_NAME || '',
-  };
-}
-
 const COMMANDS = {
   collect: ({ github, context, core }) => collectComments({ github, context, core }),
   publish: ({ github, context, args, options }) =>
@@ -616,7 +394,6 @@ async function runCli() {
     process.exit(1);
   }
 
-  // O comando "summary" não precisa de token da API do GitHub
   const token = args.token || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (!token && command !== 'summary') {
     throw new Error('Token ausente. Informe --token ou defina GITHUB_TOKEN / GH_TOKEN.');
