@@ -68,3 +68,9 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Catálogo compartilhado de Radix primitives, Vaul, cmdk, Motion, Floating UI, React Hook Form e Zod em `src/runtime/react-ui/primitives.ts`.
 - [x] Pesquisa cmdk com sugestões Fuse; controles Select/Slider/Tooltip Radix nas configurações.
 - [ ] Versões fixas e lockfile devem ser sincronizados por `npm install` antes do merge. Sem execução de testes a pedido do mantenedor; typecheck/build ainda pendentes.
+
+## Bloco 3: painel Rede integrado
+
+- [x] Aba Rede dentro da Dock, usando Resource Timing/PerformanceObserver com filtro, duração, tamanho de transferência e atualização manual. **Não é ainda um interceptor completo de fetch/XHR**, nem disponibiliza headers/body/status.
+- [ ] Integrar interceptores existentes e ferramentas DOM/console sem launchers adicionais; preservar política de isolamento e privacidade.
+- [ ] Sincronizar lockfile; executar typecheck e build antes de qualquer merge. Nenhum teste novo solicitado.

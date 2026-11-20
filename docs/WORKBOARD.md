@@ -700,3 +700,5 @@
 - [ ] Dock 2.0 (branch docs/rod-dock-2-spec): primeira implementação React/Vaul/Radix de launcher compacto, posição persistida, tabs, busca e scroll interno. Pendente lockfile, typecheck/build, integração DevTools e Safari. Sem mudanças de contratos ctx/runtime/AST.
 
 - [ ] Dock 2.0 bloco 2: `primitives.ts` expõe Radix/Vaul/cmdk/Motion/Floating UI/RHF/Zod; Dock integra cmdk+Fuse e Select/Slider/Tooltip. Dependências declaradas, mas lockfile/typecheck/build pendentes. Sem testes novos por pedido explícito. Sem alteração de APIs ctx/AST.
+
+- [ ] Dock 2.0 bloco 3: aba Rede com Resource Timing e PerformanceObserver dentro da Dock, sem captura de corpos/headers. Integração completa de interceptores/DOM/console, lockfile e compilação pendentes.

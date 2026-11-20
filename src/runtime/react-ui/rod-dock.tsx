@@ -10,7 +10,7 @@ import * as Slider from "@radix-ui/react-slider";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
-import { Settings2, Search, X, PanelRightOpen } from "lucide-react";
+import { Settings2, Search, X, PanelRightOpen, RefreshCw, Activity } from "lucide-react";
 import { RodMenuHost } from "./index.js";
 import {
   matches,
@@ -71,6 +71,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:4px
 .sliderTrack{position:relative;height:4px;background:#3f3f46;flex:1;border-radius:4px}
 .sliderRange{position:absolute;height:100%;background:#a78bfa;border-radius:4px}
 .sliderThumb{display:block;width:15px;height:15px;border-radius:50%;background:#fafafa;box-shadow:0 0 0 2px #6d28d9}
+.networkHeader,.networkHeader span{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.networkHeader{font-size:12px}
+.hint{font-size:11px;color:#a1a1aa;line-height:1.5}
+.resourceDetail{font-size:11px;overflow-wrap:anywhere;color:#a1a1aa;margin-top:8px}
+.action{display:inline-flex;align-items:center;gap:5px}
 @media(min-width:720px){.panel{top:8px;bottom:8px;right:8px;height:calc(100dvh - 16px);border-radius:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
@@ -95,11 +100,22 @@ function DockView({ controller }: { controller: DockController }) {
   });
   const [scrolling, setScrolling] = useState(false);
   const [tab, setTab] = useState("scripts");
+  const [network, setNetwork] = useState<PerformanceResourceTiming[]>([]);
+  const refreshNetwork = () => setNetwork(performance.getEntriesByType("resource").filter((entry): entry is PerformanceResourceTiming => entry.entryType === "resource").slice(-100).reverse());
+  useEffect(() => {
+    if (!open || tab !== "network") return;
+    refreshNetwork();
+    if (typeof PerformanceObserver === "undefined") return;
+    const observer = new PerformanceObserver(() => refreshNetwork());
+    try { observer.observe({ type: "resource", buffered: true }); } catch { /* unsupported browser */ }
+    return () => observer.disconnect();
+  }, [open, tab]);
   const catalog = useMemo(() => [
     ...scripts.map((script) => ({ id: `script:${script.id}`, title: script.name ?? script.id, tab: "scripts" })),
     ...modules.flatMap((module) => module.actions.map((action) => ({ id: `action:${module.id}:${action.id}`, title: `${module.name} ${action.label}`, tab: "tools" }))),
     { id: "settings", title: "Configurações posição opacidade dock", tab: "settings" },
     { id: "diagnostics", title: "Diagnósticos exportar logs", tab: "diagnostics" },
+    { id: "network", title: "Rede recursos requisições performance", tab: "network" },
   ], [scripts, modules]);
   const suggestions = useMemo(() => search.trim() ? new Fuse(catalog, { keys: ["title"], threshold: 0.38 }).search(search).slice(0, 8).map((hit) => hit.item) : [], [catalog, search]);
   const suppressClick = useRef(false);
@@ -181,7 +197,7 @@ function DockView({ controller }: { controller: DockController }) {
             </Command>
             <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
               <Tabs.List className="tabs" aria-label="Ferramentas da Dock">
-                {["scripts", "tools", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
+                {["scripts", "tools", "network", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", network: "Rede", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
               </Tabs.List>
               <ScrollArea.Root className="scroll"><ScrollArea.Viewport className="viewport">
                 <Tabs.Content value="scripts">
@@ -193,6 +209,12 @@ function DockView({ controller }: { controller: DockController }) {
                 </Tabs.Content>
                 <Tabs.Content value="tools">
                   {visibleModules.filter((module) => `${module.name} ${module.actions.map((a) => a.label).join(" ")}`.toLowerCase().includes(search.toLowerCase())).map((module) => <details className="module" key={module.id} open={Boolean(search)}><summary>{module.name}</summary><div className="actions">{module.actions.filter((action) => !search || `${module.name} ${action.label}`.toLowerCase().includes(search.toLowerCase())).map((action) => <button className="action" key={action.id} onClick={() => action.run()}>{action.label}</button>)}</div></details>)}
+                </Tabs.Content>
+                <Tabs.Content value="network">
+                  <div className="networkHeader"><span><Activity size={14} /> Recursos carregados ({network.length})</span><button className="action" onClick={refreshNetwork}><RefreshCw size={13} /> Atualizar</button></div>
+                  <p className="hint">Resource Timing da página. Não inclui corpos, cabeçalhos ou todas as chamadas fetch/XHR.</p>
+                  {network.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())).map((entry, index) => <details className="module" key={`${entry.name}:${entry.startTime}:${index}`}><summary>{entry.initiatorType || "resource"} · {(() => { try { return new URL(entry.name).pathname || "/"; } catch { return entry.name; } })()}</summary><div className="resourceDetail">{entry.name}<p>Duração: {entry.duration.toFixed(1)} ms · Transferência: {entry.transferSize} bytes</p></div></details>)}
+                  {network.length === 0 && <p className="hint">Nenhum recurso disponível no buffer de performance.</p>}
                 </Tabs.Content>
                 <Tabs.Content value="diagnostics">
                   <button className="action" onClick={() => {
