@@ -139,6 +139,48 @@ jobs:
           CSS_FILES=()
           [ -s .changed_js_ts_files.txt ] && mapfile -t JS_TS_FILES < .changed_js_ts_files.txt
           [ -s .changed_css_files.txt ] && mapfile -t CSS_FILES < .changed_css_files.txt
+          mapfile -t PRETTIER_TARGETS < <(git diff --name-only --diff-filter=ACMRT "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)
+
+          TOOLS_USED=()
+
+          # ESLint --fix apenas em JS/JSX/TS/TSX
+          if [ "$HAS_ESLINT" = "true" ] && [ "${#JS_TS_FILES[@]}" -gt 0 ]; then
+            npx eslint --fix --quiet "${JS_TS_FILES[@]}" >/dev/null 2>&1 || true
+            TOOLS_USED+=("ESLint (\`--fix\`)")
+          fi
+
+          # Prettier --write em JS/JSX/TS/TSX + CSS
+          if [ "$HAS_PRETTIER" = "true" ] && [ "${#PRETTIER_TARGETS[@]}" -gt 0 ]; then
+            npx prettier --write --loglevel silent "${PRETTIER_TARGETS[@]}" >/dev/null 2>&1 || true
+            TOOLS_USED+=("Prettier (\`--write\`)")
+          fi
+
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git diff --numstat > .autofix_numstat.txt
+            git diff > .autofix_patch.diff
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "style: auto-fix formatting and lint on changed files"
+
+            # Sincroniza caso um novo commit tenha sido feito no PR durante a execução
+            git pull --rebase --autostash origin "${PR_BRANCH}"
+            git push origin "HEAD:${PR_BRANCH}"
+
+            COMMIT_SHA=$(git rev-parse HEAD)
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            TOOLS_STR=$(IFS=" + "; echo "${TOOLS_USED[*]}")
+
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+            echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+            echo "tools_used=$TOOLS_STR" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+ | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
 
           TOOLS_USED=()
 
