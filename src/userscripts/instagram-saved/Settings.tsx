@@ -81,12 +81,19 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
       <style>{css}</style>
       <label className={styles.toggle}>
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger type="button" className={styles.radixCheckbox} aria-label="Configurar sincronização automática">
+          <DropdownMenu.Trigger
+            type="button"
+            className={styles.radixCheckbox}
+            aria-label="Configurar sincronização automática"
+          >
             {form.enabled ? "✓" : "○"}
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className={styles.collectionMenu} sideOffset={6}>
-              <DropdownMenu.CheckboxItem checked={form.enabled} onCheckedChange={(checked) => update({ enabled: checked === true })}>
+              <DropdownMenu.CheckboxItem
+                checked={form.enabled}
+                onCheckedChange={(checked) => update({ enabled: checked === true })}
+              >
                 <DropdownMenu.ItemIndicator>✓ </DropdownMenu.ItemIndicator>
                 Sincronização automática
               </DropdownMenu.CheckboxItem>
@@ -111,7 +118,11 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
             {visibleCollectionIds.map((id) => (
               <label key={id} className={styles.toggle}>
                 <DropdownMenu.Root>
-                  <DropdownMenu.Trigger type="button" className={styles.radixCheckbox} aria-label={`Gerenciar coleção ${id}`}>
+                  <DropdownMenu.Trigger
+                    type="button"
+                    className={styles.radixCheckbox}
+                    aria-label={`Gerenciar coleção ${id}`}
+                  >
                     ✓
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Portal>
