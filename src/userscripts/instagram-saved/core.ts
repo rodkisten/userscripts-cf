@@ -319,9 +319,6 @@ export async function syncSaved({
                 }
                 continue;
               }
-              if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
-                throw Error("Entrega não confirmada; sincronização interrompida");
-              }
               const missing = ledger
                 ? job.channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
                 : job.channels;
