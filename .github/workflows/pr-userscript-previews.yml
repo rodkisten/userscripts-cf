@@ -1,0 +1,68 @@
+name: "▲ PR userscript preview artifacts"
+run-name: "▲ Preview #${{ github.event.pull_request.number || inputs.pr_number }}"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number for metadata and output path"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: userscript-preview-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Build userscripts
+        run: npm run build
+      - name: Generate numbered installers and catalog
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: node build/pr-preview.mjs
+      - name: Verify installer metadata
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const pr = process.env.PR_NUMBER;
+          const dir = 'dist/pr-preview/' + pr;
+          const catalog = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf8'));
+          if (!catalog.scripts.length) throw Error('No preview installers');
+          for (const script of catalog.scripts) {
+            const source = fs.readFileSync(dir + '/' + script.file, 'utf8');
+            for (const expected of ['// @name', '#' + pr, '/' + pr + '/' + script.file, '/' + pr + '/icons/pr.svg']) {
+              if (!source.includes(expected)) throw Error('Missing metadata: ' + expected);
+            }
+          }
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: userscripts-pr-${{ github.event.pull_request.number || inputs.pr_number }}
+          path: dist/pr-preview/
+          retention-days: 14
+      - name: Installation links
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          echo "### ▲ PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview artifact prepared; domain publication requires a separate hosting deployment." >> "$GITHUB_STEP_SUMMARY"
+          echo "Target: https://userscripts.preview.migos.club/$PR_NUMBER/" >> "$GITHUB_STEP_SUMMARY"
