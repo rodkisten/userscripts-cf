@@ -16,3 +16,7 @@ The preview joins Babel's TS/TSX static import graph with CSS ownership analysis
 - `npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs tests/temp-css-preview.test.mjs`
 
 Only the temporary workflow runs isolated utility tests. Permanent CI and production styles are unchanged. Explicit page modifications via `ctx.pageStyle` must not be migrated to ShadowRoot.
+
+## Token reachability gate
+
+`build/css-token-reachability.mjs` requires one host token owner and static import reachability from each identified consumer to every stylesheet in the proposed group. The preview blocks groups that fail this check. This is only a static prerequisite: CSS Modules imported as strings may not be registered at runtime, so the gate does not yet authorize writes or guarantee ShadowRoot inclusion. Manual verification of `ctx.ui.registerStyles(css)` remains mandatory.

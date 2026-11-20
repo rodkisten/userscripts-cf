@@ -9,8 +9,10 @@ on:
       - "build/css-import-graph.mjs"
       - "build/css-semantic-group.mjs"
       - "build/css-semantic-preview.mjs"
+      - "build/css-token-reachability.mjs"
       - "migration/css-semantic-groups.json"
       - "tests/temp-css-*.test.mjs"
+      - "tests/temp-css-reachability.test.mjs"
       - ".github/workflows/temp-css-semantic.yml"
 permissions:
   contents: read
@@ -36,8 +38,9 @@ jobs:
           node --check build/css-import-graph.mjs
           node --check build/css-semantic-group.mjs
           node --check build/css-semantic-preview.mjs
+          node --check build/css-token-reachability.mjs
       - name: "[TEMP] Isolated codemod tests"
-        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs tests/temp-css-preview.test.mjs
+        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs tests/temp-css-preview.test.mjs tests/temp-css-reachability.test.mjs
       - name: "[TEMP] Reports and preview"
         run: |
           node build/css-semantic-audit.mjs --write-report
