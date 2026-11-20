@@ -173,11 +173,7 @@ function validateAndAuditReactRoots(rootCallsites, chunkModules) {
     }
   }
 
-  if (
-    runtimeOwnerCalls.length !== 1 ||
-    unexpectedRootCalls.length > 0 ||
-    includedRootModules.length !== 1
-  ) {
+  if (runtimeOwnerCalls.length !== 1 || unexpectedRootCalls.length > 0 || includedRootModules.length !== 1) {
     throw new Error(
       `[React root ownership] Each built execution world must include exactly one root from ${EXPECTED_OWNER}. ` +
         JSON.stringify({ runtimeOwnerCalls, unexpectedRootCalls, includedRootModules }),

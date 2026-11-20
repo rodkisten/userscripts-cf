@@ -55,8 +55,9 @@ function activeBookmark(): { source: HTMLElement; identity: string } | null {
   if (!scope) return null;
   const source = nativeSave(scope);
   if (!source || !source.isConnected) return null;
-  const link = [...scope.querySelectorAll<HTMLAnchorElement>('a[href*="/reel/"], a[href*="/p/"]')]
-    .find((anchor) => /\/(?:reel|p)\/[^/]+/.test(anchor.pathname));
+  const link = [...scope.querySelectorAll<HTMLAnchorElement>('a[href*="/reel/"], a[href*="/p/"]')].find(
+    (anchor) => /\/(?:reel|p)\/[^/]+/.test(anchor.pathname),
+  );
   const scopedId = link?.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1];
   // Never borrow the current URL for a different visible slide.
   if (!scopedId && videos.length > 1) return null;
@@ -158,8 +159,7 @@ export function mountReelBookmark(
     setState("loading");
     try {
       await saveToCollections(await getCollectionIds(), signal, source);
-      if (token !== operation || signal.aborted || reel !== activeReel || source !== selectedSave)
-        return;
+      if (token !== operation || signal.aborted || reel !== activeReel || source !== selectedSave) return;
       setState("saved");
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
