@@ -1,3 +1,4 @@
+[![🚀 Release userscripts](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml/badge.svg)](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml)
 
 
 ### CI workflow integrity
@@ -252,3 +253,6 @@ Validação: `npm run ci:cloudflare` executa formatação, checagem de tipos do 
 ## Instagram Saved · confirmações por canal (PR #121)
 
 A sincronização de Reels salvos usa `ctx.http` para o Instagram e o Relay e mantém um ledger local por conta, coleção, mídia e canal. Ao adicionar destinos, somente os canais sem confirmação são enviados; confirmações parciais são preservadas para a próxima execução. O histórico antigo do conjunto exato de canais é importado sem declarar canais novos como entregues. A seleção de coleções e o bookmark nativo continuam sujeitos à validação no Safari iPhone. Veja [escopo e checklist](docs/runtime2-instagram-scope.md). Não instale a branch como release antes da validação.
+## 🎨 GitHub Color Studio (experimental)
+
+Independent React/Radix userscript `github-color-studio` for GitHub file views and textarea editors. Opens a mobile-friendly color inventory, color picker, CSS format conversion, variable reference counts and guarded single-file variable rename. Read-only views copy changes to the clipboard; the script does not automatically commit or modify other files. Uses the shared `ctx.ui.mountReact` portal and runtime disposal. Current limitations: viewer inline swatches, full CodeMirror/Monaco editing integration, semantic scope-aware cross-file rename, OKLCH conversion and full CSS syntax support remain pending. Validate typecheck/build and Safari before publishing.

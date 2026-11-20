@@ -73,43 +73,107 @@ jobs:
 
       - name: 🎨 Executar Prettier
         if: steps.parse.outputs.prettier == 'true'
+        shell: bash
         run: |
           npm install
-          npx prettier --write .
+          set +e
+          npx prettier --write . --ignore-unknown 2> prettier-errors.log
+          EXIT_CODE=$?
+          set -e
+          echo "Prettier finalizou com código: $EXIT_CODE"
 
-      - name: 📦 Atualizar Lockfile
-        if: steps.parse.outputs.lockfile == 'true'
-        run: |
-          npm install --package-lock-only
-          # Se usar yarn ou pnpm, troque por: yarn install ou pnpm install
-
-      - name: 💾 Commit & Push na Branch do PR
-        if: steps.parse.outputs.should_run == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          if [[ -n $(git status -s) ]]; then
-            git add .
-            git commit -m "chore: 🤖 automação executada via painel do PR"
-            git push
-          else
-            echo "Nenhuma alteração gerada para commitar."
-          fi
-
-      - name: 🔄 Resetar Checkboxes no Comentário
-        if: steps.parse.outputs.should_run == 'true'
+      - name: 📊 Gerar Resumo e Atualizar Comentário no PR
+        if: steps.parse.outputs.prettier == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
-            let body = context.payload.comment.body;
-            body = body.replace('- [x] 🎨 **Rodar Prettier**', '- [ ] 🎨 **Rodar Prettier**');
-            body = body.replace('- [x] 📦 **Atualizar Lockfile**', '- [ ] 📦 **Atualizar Lockfile**');
+            const fs = require('fs');
+            const path = require('path');
+
+            const rawLog = fs.existsSync('prettier-errors.log')
+              ? fs.readFileSync('prettier-errors.log', 'utf8')
+              : '';
+
+            // Remove códigos de cor ANSI
+            const cleanLog = rawLog.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+
+            // Separa os blocos de erro por arquivo
+            const errorBlocks = cleanLog
+              .split(/(?=\[error\] )/g)
+              .filter((block) => block.startsWith('[error] '));
+
+            // Mapeia a extensão do arquivo para Syntax Highlight no GitHub Markdown
+            const getLang = (file) => {
+              const ext = path.extname(file).replace('.', '').toLowerCase();
+              const map = {
+                js: 'javascript', mjs: 'javascript', cjs: 'javascript',
+                ts: 'typescript', mts: 'typescript', cts: 'typescript',
+                jsx: 'jsx', tsx: 'tsx',
+                json: 'json', jsonc: 'jsonc',
+                html: 'html', vue: 'html', svelte: 'html',
+                css: 'css', scss: 'scss', less: 'less',
+                md: 'markdown', mdx: 'markdown',
+                yml: 'yaml', yaml: 'yaml',
+                graphql: 'graphql', gql: 'graphql'
+              };
+              return map[ext] || 'text';
+            };
+
+            let reportMd = '';
+
+            if (errorBlocks.length === 0) {
+              reportMd += `### ✨ Prettier\n\n`;
+              reportMd += `> [!TIP]\n`;
+              reportMd += `> ✅ Todos os arquivos foram formatados sem nenhum erro de sintaxe!\n`;
+            } else {
+              reportMd += `### 🎨 Relatório de Formatação (Prettier)\n\n`;
+              reportMd += `> [!WARNING]\n`;
+              reportMd += `> **${errorBlocks.length} arquivo(s)** não puderam ser formatados devido a erros de sintaxe, mas todos os outros arquivos válidos foram formatados normalmente.\n\n`;
+
+              reportMd += `#### 📋 Resumo dos Arquivos Ignorados\n\n`;
+              reportMd += `| # | Arquivo | Motivo Principal |\n`;
+              reportMd += `| :- | :--- | :--- |\n`;
+
+              const detailsList = [];
+
+              errorBlocks.forEach((block, index) => {
+                const lines = block.trim().split('\n');
+                const firstLineMatch = lines[0].match(/^\[error\]\s+([^:]+):\s*(.*)$/);
+                const filePath = firstLineMatch ? firstLineMatch[1] : `Arquivo #${index + 1}`;
+                const shortError = firstLineMatch ? firstLineMatch[2].replace(/\|/g, '\\|') : 'Erro de sintaxe';
+                const lang = getLang(filePath);
+
+                reportMd += `| ${index + 1} | \`${filePath}\` | ${shortError} |\n`;
+
+                detailsList.push(
+                  `<details>\n<summary>🔴 <code>${filePath}</code> — Clique para ver o erro completo</summary>\n\n\`\`\`${lang}\n${block.trim()}\n\`\`\`\n</details>\n`
+                );
+              });
+
+              reportMd += `\n#### 🔍 Detalhes dos Erros\n\n` + detailsList.join('\n');
+            }
+
+            // 1. Escreve no GitHub Actions Job Summary
+            await core.summary.addRaw(reportMd).write();
+
+            // 2. Atualiza o comentário original do PR usando marcadores para não duplicar em futuras execuções
+            const startMarker = '<!-- prettier-report-start -->';
+            const endMarker = '<!-- prettier-report-end -->';
+            const wrappedReport = `\n\n${startMarker}\n---\n${reportMd}\n${endMarker}`;
+
+            let currentBody = context.payload.comment.body;
+            const markerRegex = new RegExp(`\\s*${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+
+            if (markerRegex.test(currentBody)) {
+              currentBody = currentBody.replace(markerRegex, wrappedReport);
+            } else {
+              currentBody += wrappedReport;
+            }
 
             await github.rest.issues.updateComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: context.payload.comment.id,
-              body,
+              body: currentBody,
             });
