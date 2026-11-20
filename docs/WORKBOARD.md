@@ -1,3 +1,11 @@
+## Runtime 2.0 / React portal lifecycle · 2026-11-20
+
+- The standalone runtime retains **one** React root. If SPA navigation replaces the document body, its existing host is reattached instead of mounting a second root.
+- `mountSharedReact().update()` accepts updates while the target is temporarily detached. The latest node is rendered when the target reconnects.
+- Updating an existing portal entry no longer forgets that its target was previously connected, so detached portals can still be pruned after updates.
+- Existing ScriptContext ownership, disposal, ShadowRoot mounting and React portals remain unchanged. No new component tests or workflow changes.
+- Release run [44789723248](https://github.com/rodkisten/userscripts-cf/actions/runs/44789723248) used SHA `91fdb48` and reported legacy Instagram Saved `transport` typing errors plus a rejected git push. This work starts from main `46e0007`; release publication is a separate concern.
+
 > **PR #120 · merge cleanup (2026-11-20):** The merge with main reintroduced duplicate `fmt` and `BuildReporter` declarations in `build/build.mjs`, causing the React 19 build to fail at parse time. Removed the duplicated implementations, retained imports from shared modules, and re-exported the public symbols for compatibility. Prettier and lint still require validation.
 
 > **PR #120 · HTTP interceptor typing (2026-11-20):** Validation job #136233221152 identified two TS2353 errors in Instagram Saved because the interceptor's `request` type discarded the shared `HttpRequestOptions` extensions (`transport`, `cacheMode`, `timeoutMs`). The interceptor now preserves the HTTP client's request options type, without changing request behavior. Prettier remains pending on five files.
