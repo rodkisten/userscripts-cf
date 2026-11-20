@@ -108,7 +108,9 @@ function collectionOption(id: string): HTMLElement | null {
 async function saveToCollections(ids: string[], signal: AbortSignal, source: HTMLElement): Promise<void> {
   if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
-  if (nativeState(source) === "saved") return;
+  if (nativeState(source) === "saved") {
+    throw Error("Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.");
+  }
   if (nativeState(source) !== "unsaved")
     throw Error("Não foi possível confirmar o estado do bookmark nativo");
   if (signal.aborted) throw Error("Operação cancelada");
@@ -145,13 +147,13 @@ export function mountReelBookmark(
     // The mounted React button reads the latest state through the shared portal.
     mount.dispose();
     mount.dispose = ctx.ui.mountReact(
-      <ReelBookmarkButton state={state} disabled={state === "error"} onActivate={() => void send()} />,
+      <ReelBookmarkButton state={state} disabled={false} onActivate={() => void send()} />,
       mount.host,
     );
   };
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (state === "loading" || state === "saved" || state === "error" || signal.aborted) return;
+    if (state === "loading" || state === "saved" || signal.aborted) return;
     const token = ++operation;
     const reel = activeReel;
     const source = selectedSave;
