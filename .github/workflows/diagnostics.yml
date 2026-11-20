@@ -139,7 +139,7 @@ jobs:
           CSS_FILES=()
           [ -s .changed_js_ts_files.txt ] && mapfile -t JS_TS_FILES < .changed_js_ts_files.txt
           [ -s .changed_css_files.txt ] && mapfile -t CSS_FILES < .changed_css_files.txt
-          mapfile -t PRETTIER_TARGETS < <(git diff --name-only --diff-filter=ACMRT "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)
+          mapfile -t PRETTIER_TARGETS < <(git diff --name-only --diff-filter=ACMRT "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$' | while IFS= read -r file; do [[ -f "$file" ]] && printf '%s\n' "$file"; done)
 
           TOOLS_USED=()
 
