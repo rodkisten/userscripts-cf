@@ -102,7 +102,7 @@ export function createNetworkInterceptors(
     return current;
   }
 
-  const request = async (url: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
+  const request = async (url: RequestInfo | URL, options: HttpRequestOptions = {}): Promise<Response> => {
     const initial = { url: String(url), ...options };
     const modified = await apply("requests", initial);
     const response = await registry!.original(modified.url, modified);

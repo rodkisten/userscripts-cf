@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
+import { execFileSync } from "node:child_process";
 import { parse } from "@babel/parser";
 import { BuildReporter, isCI } from "./reporter.mjs";
 import { fmt } from "./format.mjs";
@@ -190,6 +191,7 @@ async function processSourceFile(filename, { fix }) {
 
   if (fix && edits.length > 0) {
     const updated = applyEdits(content, edits);
+    parse(updated, { sourceType: "module", plugins: ["typescript", "jsx"] });
     await fs.writeFile(absolute, updated, "utf8");
   }
 
@@ -206,6 +208,10 @@ async function processSourceFile(filename, { fix }) {
 const fix = process.argv.includes("--fix");
 const scriptArg = process.argv.find((arg) => arg.startsWith("--script="));
 const script = scriptArg ? scriptArg.slice("--script=".length) : null;
+const changedOnly = process.argv.includes("--changed");
+const filesFromArg = process.argv.find((arg) => arg.startsWith("--files-from="));
+const baseArg = process.argv.find((arg) => arg.startsWith("--base="));
+const base = baseArg?.slice("--base=".length) || process.env.STYLE_BASE_REF || "HEAD^";
 
 if (script && !/^[a-z0-9-]+$/.test(script)) {
   throw new Error(`Invalid userscript id: ${script}`);
@@ -219,7 +225,14 @@ reporter.banner();
 
 // STEP 1: Descoberta paralela dos arquivos alvo
 const targets = await reporter.step("discover source files", async (log) => {
-  const files = await discoverSourceFiles(selectedDir);
+  let files = await discoverSourceFiles(selectedDir);
+  if (changedOnly) {
+    const changedPaths = filesFromArg
+      ? await fs.readFile(filesFromArg.slice("--files-from=".length), "utf8")
+      : execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMRT", base, "--"], { encoding: "utf8" });
+    const changed = new Set(changedPaths.trim().split("\n"));
+    files = files.filter((file) => changed.has(file));
+  }
   log.pass(path.relative(process.cwd(), selectedDir) || "src/userscripts", `${files.length} files matched`);
   return files;
 });
