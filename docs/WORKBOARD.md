@@ -700,3 +700,5 @@
 - [ ] 2026-11-20 CI AST style scope: `build/check-style.mjs --changed --files-from=changed-files.txt` validates modified userscript files only; full `npm run lint` remains available for repository-wide debt audit. Autofix now reparses output before writing. CI validation pending.
 
 - [ ] 2026-11-20 PR #126: restrict Prettier and ESLint diagnostics to changed PR files in `.github/workflows/diagnostics.yml`, preserving scoped autofix; validate the workflow run before merging.
+
+- [ ] PR #126 follow-up: `NetworkInterceptors` now preserves `HttpRequestOptions` (GM transport, cacheMode, timeoutMs) in its public and registry signatures; addresses TypeScript TS2353 errors in Instagram Saved without changing the transport behavior. Validate typecheck and runtime/AST synchronization gates before merge.
