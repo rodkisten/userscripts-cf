@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 
 // ============================================================================
-// GitHub Actions Environment, Outputs & Step Summary
+// GitHub Actions Environment, Inputs, Outputs & CLI Parsing
 // ============================================================================
 export function resolveInputs(fallbackMap) {
   const resolved = {};
@@ -42,6 +42,10 @@ export function appendStepSummary(markdown) {
 
 export function buildCliContext() {
   const [owner, repo] = (process.env.GITHUB_REPOSITORY || '').split('/');
+  if (!owner || !repo) {
+    throw new Error('Variável GITHUB_REPOSITORY (owner/repo) não definida.');
+  }
+
   const eventPath = process.env.GITHUB_EVENT_PATH;
   const payload =
     eventPath && fs.existsSync(eventPath) ? JSON.parse(fs.readFileSync(eventPath, 'utf8')) : {};
@@ -78,6 +82,106 @@ export function parseCliArgs(argv) {
     }
   }
   return args;
+}
+
+// ============================================================================
+// Rich Step Summary Builder (compatível com core.summary e CLI nativa)
+// ============================================================================
+export function createSummaryWriter(core) {
+  if (core?.summary) return core.summary;
+
+  const chunks = [];
+  const escapeHtml = (str) =>
+    String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+  const api = {
+    addHeading(text, level = 1) {
+      chunks.push(`<h${level}>${text}</h${level}>\n`);
+      return api;
+    },
+    addRaw(text, addEOL = false) {
+      chunks.push(`${text}${addEOL ? '\n' : ''}`);
+      return api;
+    },
+    addBreak() {
+      chunks.push('<br>\n');
+      return api;
+    },
+    addEOL() {
+      chunks.push('\n');
+      return api;
+    },
+    addQuote(text, cite) {
+      const citeAttr = cite ? ` cite="${escapeHtml(cite)}"` : '';
+      chunks.push(`<blockquote${citeAttr}>\n${text}\n</blockquote>\n`);
+      return api;
+    },
+    addSeparator() {
+      chunks.push('<hr>\n');
+      return api;
+    },
+    addLink(text, href) {
+      chunks.push(`<a href="${escapeHtml(href)}">${text}</a>\n`);
+      return api;
+    },
+    addImage(src, alt, opts = {}) {
+      const attrs = [
+        `src="${escapeHtml(src)}"`,
+        `alt="${escapeHtml(alt)}"`,
+        opts.width ? `width="${opts.width}"` : '',
+        opts.height ? `height="${opts.height}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      chunks.push(`<img ${attrs}>\n`);
+      return api;
+    },
+    addList(items, ordered = false) {
+      const tag = ordered ? 'ol' : 'ul';
+      const li = items.map((item) => `<li>${item}</li>`).join('\n');
+      chunks.push(`<${tag}>\n${li}\n</${tag}>\n`);
+      return api;
+    },
+    addCodeBlock(code, lang = '') {
+      const langAttr = lang ? ` lang="${escapeHtml(lang)}"` : '';
+      chunks.push(`<pre${langAttr}><code>${escapeHtml(code)}</code></pre>\n`);
+      return api;
+    },
+    addTable(rows) {
+      const htmlRows = rows
+        .map((row) => {
+          const cells = row
+            .map((cell) => {
+              if (typeof cell === 'object' && cell !== null) {
+                const tag = cell.header ? 'th' : 'td';
+                const colspan = cell.colspan ? ` colspan="${cell.colspan}"` : '';
+                const rowspan = cell.rowspan ? ` rowspan="${cell.rowspan}"` : '';
+                return `<${tag}${colspan}${rowspan}>${cell.data}</${tag}>`;
+              }
+              return `<td>${cell}</td>`;
+            })
+            .join('');
+          return `<tr>${cells}</tr>`;
+        })
+        .join('\n');
+      chunks.push(`<table>\n${htmlRows}\n</table>\n`);
+      return api;
+    },
+    addDetails(label, content) {
+      chunks.push(`<details>\n<summary>${label}</summary>\n\n${content}\n</details>\n`);
+      return api;
+    },
+    async write() {
+      const output = chunks.join('\n');
+      appendStepSummary(output);
+      chunks.length = 0;
+    },
+  };
+
+  return api;
 }
 
 // ============================================================================
@@ -189,7 +293,15 @@ export async function resolveBotLogin(github) {
   return 'github-actions[bot]';
 }
 
-export async function upsertMarkedComment({ github, owner, repo, issueNumber, marker, body, matchBotLogin = false }) {
+export async function upsertMarkedComment({
+  github,
+  owner,
+  repo,
+  issueNumber,
+  marker,
+  body,
+  matchBotLogin = false,
+}) {
   const botLogin = matchBotLogin ? await resolveBotLogin(github) : null;
   const { data: comments } = await github.rest.issues.listComments({
     owner,
@@ -211,7 +323,7 @@ export async function upsertMarkedComment({ github, owner, repo, issueNumber, ma
       comment_id: existing.id,
       body,
     });
-    return { action: 'updated', commentId: existing.id, botLogin };
+    return { action: 'updated', commentId: existing.id, existingBody: existing.body, botLogin };
   }
 
   const { data: created } = await github.rest.issues.createComment({
@@ -220,5 +332,5 @@ export async function upsertMarkedComment({ github, owner, repo, issueNumber, ma
     issue_number: issueNumber,
     body,
   });
-  return { action: 'created', commentId: created.id, botLogin };
+  return { action: 'created', commentId: created.id, existingBody: null, botLogin };
 }
