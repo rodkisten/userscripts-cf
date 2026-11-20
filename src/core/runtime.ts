@@ -793,10 +793,11 @@ export function createCoreRuntime(
             throw error;
           }
         };
-        target.addEventListener(event, wrapped, {
-          ...(typeof options === "object" ? options : {}),
-          signal: abort.signal,
-        });
+        // Explicit cleanup avoids AbortSignal listener quirks in embedded DOMs and
+        // preserves boolean capture options on Safari/Tampermonkey.
+        const listenerOptions = typeof options === "boolean" ? options : { ...options };
+        target.addEventListener(event, wrapped, listenerOptions);
+        onDispose(() => target.removeEventListener(event, wrapped, listenerOptions));
       },
       style(cssContent: string) {
         return addStyle(cssContent, ensureUIRoot());

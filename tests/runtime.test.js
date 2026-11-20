@@ -154,6 +154,36 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   console.log("[runtime test] SPA: happy-dom aborted");
 });
 
+test("context listeners preserve capture and are removed on SPA exit", async () => {
+  const host = new Window({ url: "https://example.com/on" });
+  let events = 0;
+  const app = createRuntime(
+    [{
+      id: "capture-listener",
+      matches: ["https://example.com/on"],
+      module: {
+        init(ctx) {
+          ctx.listen(host, "click", () => events++, true);
+        },
+      },
+    }],
+    { call() {} },
+    host,
+  );
+  try {
+    await app.ready;
+    host.dispatchEvent(new host.Event("click"));
+    assert.equal(events, 1);
+    host.history.pushState({}, "", "/off");
+    await app.navigate();
+    host.dispatchEvent(new host.Event("click"));
+    assert.equal(events, 1, "listener must be detached after route exit");
+  } finally {
+    await app.dispose();
+    await host.happyDOM.abort();
+  }
+});
+
 test("persistent storage is created only on first use and reused across SPA navigation", async () => {
   const host = new Window({ url: "https://example.com/on" });
   const created = [];

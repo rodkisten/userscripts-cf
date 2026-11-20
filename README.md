@@ -246,3 +246,8 @@ Importe ícones como componentes com `?component`; o SVG original continua em `s
 A criação explícita de elementos fica limitada à ponte de scripts entre contextos, ao decoder/canvas fora da tela e à integração com os custom elements do player. Consultas e ajustes de posicionamento do DOM nativo do X permanecem na camada de integração.
 
 Validação: `npm run ci:cloudflare` executa formatação, checagem de tipos do REPL e RodX, geração dos quatro instaláveis, testes de inicialização/interação/persistência e laboratório de atualização/fallback. Os testes de interação usam o bundle real com DOM simulado e mocks dos serviços externos; não comprovam autenticação do X/Relay nem layout no Safari físico. A validação visual local ficou bloqueada por permissão de socket do Chromium e ausência do executável WebKit. Nenhum deploy faz parte desta refatoração.
+
+
+### SPA event-listener lifecycle
+
+Runtime context listeners registered through `ctx.listen(target, event, handler, options)` are removed automatically when the owning script context exits or the runtime is disposed. Boolean capture options are preserved, and cleanup is independent of AbortSignal event-listener support for mobile Safari/Tampermonkey compatibility.
