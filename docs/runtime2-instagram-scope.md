@@ -73,3 +73,7 @@ The concurrent React migration PR #120 owns React-only cleanup. Avoid changing i
 ## Bookmark failure and retry safety
 
 The React bookmark action now remains actionable after an error, preserving the visible error state until a retry or a different Reel becomes active. A native bookmark already in the saved state is **not** interpreted as proof that the configured collections were selected; this path reports a clear error instead of claiming collection delivery. Errors after native saving likewise remain errors rather than being converted into success merely because the native bookmark is filled. Automatic discovery of collection names and a verified native collection-picker flow remain pending. No Instagram Saved tests were added or run.
+
+## Native Instagram collection picker guard
+
+The native collection lookup now requires a visible option with an exact `data-collection-id` inside a dialog/menu/listbox, with bounded waiting for asynchronous rendering. Matching arbitrary text labels is forbidden because names are not stable IDs. Until an authenticated Instagram response provides a verifiable membership confirmation, the script does not click collection options or claim successful collection association. The native save action may already have occurred; the user receives explicit manual-selection guidance. Radix remains the UI foundation for the userscript settings; no Instagram Saved tests were introduced.
