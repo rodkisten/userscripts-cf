@@ -1,0 +1,70 @@
+name: 💬 PR Interactive Menu
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Define um nome dinâmico e legível na aba Actions
+run-name: "💬 Menu Interativo • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  post-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔑 Gerar Token do GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: ✨ Postar ou Atualizar Comentário no PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const marker = '<!-- pr-interactive-actions -->';
+            const body = `${marker}
+            ## 🤖 Painel de Ações Rápidas do PR
+
+            Olá **@${{ github.event.pull_request.user.login }}**! 👋  
+            Marque uma das opções abaixo para executar tarefas automáticas diretamente na branch \`${{ github.head_ref }}\`:
+
+            - [ ] 🎨 **Rodar Prettier** — *Formata automaticamente todo o código e faz commit*
+            - [ ] 📦 **Atualizar Lockfile** — *Executa \`npm install\` / \`yarn\` e atualiza as dependências*
+
+            ---
+            > 💡 *Assim que você marcar uma caixa, o robô iniciará a execução, fará o commit na branch e desmarcará a opção.*
+            `;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // Busca comentários existentes para não gerar spam a cada push
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const botComment = comments.find(c => c.body.includes(marker));
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }

@@ -1,0 +1,182 @@
+name: 🥊 Package & Shell Operations
+
+run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || format('{0} {1}', inputs.operation, inputs.packages) }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      selected-branch:
+        description: 'Target branch'
+        type: string
+        default: 'main'
+        required: false
+      operation:
+        description: 'Operation to execute'
+        required: true
+        default: 'install'
+        type: choice
+        options:
+          - install
+          - add
+          - update
+          - uninstall
+          - custom
+      packages:
+        description: 'Package list (for add/uninstall, e.g. "zod axios -D")'
+        type: string
+        required: false
+        default: ''
+      custom-command:
+        description: 'Any shell command (ONLY used when operation is "custom")'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pkg-operations-${{ inputs.selected-branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: 🥊 ${{ inputs.operation }} (${{ inputs.selected-branch || github.ref_name }})
+    outputs:
+      changed: ${{ steps.generated_output.outputs.changed }}
+      branch: ${{ steps.generated_output.outputs.branch }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔑 Authenticate Rod GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ inputs.selected-branch || github.ref_name }}
+
+      # Step simulado para gerar os outputs que você declarou no job
+      - name: ⚙️ Simulate Output Step
+        id: generated_output
+        run: |
+          echo "changed=true" >> $GITHUB_OUTPUT
+          echo "branch=${{ inputs.selected-branch || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: 📊 Kitchen Sink - GitHub Summary Markdown
+        uses: actions/github-script@v7
+        env:
+          INPUT_BRANCH: ${{ inputs.selected-branch || github.ref_name }}
+          INPUT_OPERATION: ${{ inputs.operation }}
+          INPUT_PACKAGES: ${{ inputs.packages }}
+          INPUT_CUSTOM_CMD: ${{ inputs.custom-command }}
+          OUT_CHANGED: ${{ steps.generated_output.outputs.changed }}
+          OUT_BRANCH: ${{ steps.generated_output.outputs.branch }}
+        with:
+          script: |
+            const {
+              INPUT_BRANCH,
+              INPUT_OPERATION,
+              INPUT_PACKAGES,
+              INPUT_CUSTOM_CMD,
+              OUT_CHANGED,
+              OUT_BRANCH
+            } = process.env;
+
+            // O github-script já fornece o objeto `context` com dados do workflow/repositório
+            const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+            const runUrl = `${repoUrl}/actions/runs/${context.runId}`;
+            const comandoExecutado = INPUT_OPERATION === 'custom'
+              ? (INPUT_CUSTOM_CMD || 'nenhum comando customizado informado')
+              : `npm ${INPUT_OPERATION} ${INPUT_PACKAGES}`.trim();
+
+            await core.summary
+              // 1. Títulos dinâmicos
+              .addHeading(`🥊 Relatório: ${INPUT_OPERATION.toUpperCase()}`, 1)
+              .addHeading(`Branch alvo: ${INPUT_BRANCH}`, 2)
+
+              // 2. Textos e parágrafos
+              .addRaw(`Disparado por **@${context.actor}** no evento \`${context.eventName}\`. `)
+              .addRaw(`Status de alteração nos arquivos: **${OUT_CHANGED}**.`, true)
+              .addBreak()
+              .addEOL()
+
+              // 3. Citações (Blockquotes) e Separadores
+              .addQuote(
+                `Comando processado: ${comandoExecutado}`,
+                `Run #${context.runNumber}`
+              )
+              .addSeparator()
+
+              // 4. Links e Imagens
+              .addLink('🔗 Ver execução completa deste Workflow', runUrl)
+              .addBreak()
+              .addImage(
+                'https://githubassets.com',
+                'Logo do GitHub',
+                { width: '48', height: '48' }
+              )
+
+              // 5. Listas
+              .addHeading('Parâmetros Recebidos', 3)
+              .addList([
+                `Operação: ${INPUT_OPERATION}`,
+                `Branch selecionada: ${INPUT_BRANCH}`,
+                `Pacotes: ${INPUT_PACKAGES || 'N/A'}`,
+                `Comando Custom: ${INPUT_CUSTOM_CMD || 'N/A'}`
+              ], false)
+
+              .addHeading('Etapas do Pipeline', 3)
+              .addList([
+                'Autenticação via GitHub App',
+                `Checkout na branch ${OUT_BRANCH}`,
+                'Execução da operação e geração de resumo'
+              ], true)
+
+              // 6. Bloco de Código com JSON dinâmico
+              .addHeading('Contexto & Outputs (JSON)', 3)
+              .addCodeBlock(
+                JSON.stringify({
+                  actor: context.actor,
+                  sha: context.sha.substring(0, 7),
+                  inputs: {
+                    operation: INPUT_OPERATION,
+                    branch: INPUT_BRANCH,
+                    packages: INPUT_PACKAGES || null,
+                    customCommand: INPUT_CUSTOM_CMD || null
+                  },
+                  outputs: {
+                    changed: OUT_CHANGED,
+                    branch: OUT_BRANCH
+                  }
+                }, null, 2),
+                'json'
+              )
+
+              // 7. Tabela com variáveis
+              .addHeading('Resumo da Execução', 3)
+              .addTable([
+                [
+                  { data: 'Variável / Parâmetro', header: true },
+                  { data: 'Valor Resolvido', header: true },
+                  { data: 'Origem', header: true }
+                ],
+                ['Operation', `<code>${INPUT_OPERATION}</code>`, 'inputs.operation'],
+                ['Target Branch', `<code>${INPUT_BRANCH}</code>`, 'inputs / github.ref_name'],
+                ['Changed?', OUT_CHANGED === 'true' ? '✅ Sim' : '❌ Não', 'steps.generated_output'],
+                [{ data: `Repositório: ${context.repo.owner}/${context.repo.repo} (Commit ${context.sha.substring(0, 7)})`, colspan: '3' }]
+              ])
+
+              // 8. Acordeão (<details>)
+              .addDetails(
+                'Clique para ver o comando exato montado',
+                `Executado em ${new Date().toISOString()}:\n$ ${comandoExecutado}`
+              )
+
+              // 9. Grava no Summary
+              .write()

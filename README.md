@@ -1,7 +1,9 @@
-### PR #120 parser compatibility\n\nThe React-only AST guard parses `.ts` without JSX and `.tsx` with JSX to avoid misclassifying generic arrow functions. Runtime utility regression tests cover both cases.\n\n### CI workflow integrity
+[![🚀 Release userscripts](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml/badge.svg)](https://github.com/rodkisten/userscripts-cf/actions/workflows/release.yml)
+
+
+### CI workflow integrity
 
 GitHub Actions workflow YAML must be validated after edits. In particular, each step must have a valid action or `run`, and environment variable keys must be unique. The selective validation workflow is responsible for affected userscript builds; the React foundation and Rod AST checks remain independent.
-
 # Rod’s Userscripts System
 
 ## 🌻 Standalone: uma instalação para todos os userscripts
@@ -22,7 +24,7 @@ Monorepo JavaScript para Tampermonkey, com Vite, pacotes npm, userscripts separa
 
 A migração do runtime e das interfaces para React é a direção ativa do projeto. O objetivo arquitetural é manter **uma única React root por instalação standalone**, reutilizando portals para interfaces e destinos adicionais; roots independentes só são aceitáveis quando os userscripts forem instalados separadamente ou agrupados explicitamente por tags. Novas implementações de UI devem usar React com JSX/TSX e componentes Radix UI ou shadcn/ui, sem criar uma camada paralela de componentes proprietários.
 
-A migração é incremental e deve preservar o comportamento dos userscripts existentes. O PR #120 remove o diretório legado `src/runtime/solid-ui` após auditoria de referências, preservando os componentes React ativos. A política de testes vigente permite somente testes de runtime e utilitários; não criar ou migrar testes de componentes, UI ou userscripts. Typecheck e builds continuam obrigatórios. Alterações no contrato do runtime devem manter Rod AST, fixtures e testes de runtime/utilitários sincronizados.
+A migração é incremental e deve preservar o comportamento dos userscripts existentes. A política de testes vigente permite somente testes de runtime e utilitários; não criar ou migrar testes de componentes, UI ou userscripts. Typecheck e builds continuam obrigatórios. Alterações no contrato do runtime devem manter Rod AST, fixtures e testes de runtime/utilitários sincronizados.
 
 **Regra permanente de documentação:** toda alteração funcional ou arquitetural deve atualizar, no mesmo conjunto de mudanças, o README quando afetar arquitetura, comandos, setup, capacidades, estado ou decisões duráveis do projeto, e o [Workboard](docs/WORKBOARD.md) para registrar progresso, pendências, responsáveis e evidências de validação. Se uma mudança não afetar o README, registre essa avaliação no Workboard. Nunca deixe instruções antigas contradizerem a arquitetura atual.
 
@@ -247,7 +249,6 @@ A criação explícita de elementos fica limitada à ponte de scripts entre cont
 
 Validação: `npm run ci:cloudflare` executa formatação, checagem de tipos do REPL e RodX, geração dos quatro instaláveis, testes de inicialização/interação/persistência e laboratório de atualização/fallback. Os testes de interação usam o bundle real com DOM simulado e mocks dos serviços externos; não comprovam autenticação do X/Relay nem layout no Safari físico. A validação visual local ficou bloqueada por permissão de socket do Chromium e ausência do executável WebKit. Nenhum deploy faz parte desta refatoração.
 
+## 🎨 GitHub Color Studio (experimental)
 
-### SPA event-listener lifecycle
-
-Runtime context listeners registered through `ctx.listen(target, event, handler, options)` are removed automatically when the owning script context exits or the runtime is disposed. Boolean capture options are preserved, and cleanup is independent of AbortSignal event-listener support for mobile Safari/Tampermonkey compatibility.
+Independent React/Radix userscript `github-color-studio` for GitHub file views and textarea editors. Opens a mobile-friendly color inventory, color picker, CSS format conversion, variable reference counts and guarded single-file variable rename. Read-only views copy changes to the clipboard; the script does not automatically commit or modify other files. Uses the shared `ctx.ui.mountReact` portal and runtime disposal. Current limitations: viewer inline swatches, full CodeMirror/Monaco editing integration, semantic scope-aware cross-file rename, OKLCH conversion and full CSS syntax support remain pending. Validate typecheck/build and Safari before publishing.
