@@ -8,9 +8,9 @@ on:
       - "build/css-style-ownership.mjs"
       - "build/css-import-graph.mjs"
       - "build/css-semantic-group.mjs"
-      - "tests/temp-css-semantic.test.mjs"
-      - "tests/temp-css-ownership.test.mjs"
-      - "tests/temp-css-group.test.mjs"
+      - "build/css-semantic-preview.mjs"
+      - "migration/css-semantic-groups.json"
+      - "tests/temp-css-*.test.mjs"
       - ".github/workflows/temp-css-semantic.yml"
 permissions:
   contents: read
@@ -35,13 +35,15 @@ jobs:
           node --check build/css-style-ownership.mjs
           node --check build/css-import-graph.mjs
           node --check build/css-semantic-group.mjs
+          node --check build/css-semantic-preview.mjs
       - name: "[TEMP] Isolated codemod tests"
-        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs
-      - name: "[TEMP] CSS import and ownership reports"
+        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs tests/temp-css-preview.test.mjs
+      - name: "[TEMP] Reports and preview"
         run: |
           node build/css-semantic-audit.mjs --write-report
           node build/css-style-ownership.mjs
-      - name: "[TEMP] Upload audit"
+          node build/css-semantic-preview.mjs
+      - name: "[TEMP] Upload reports"
         uses: actions/upload-artifact@v4
         with:
           name: temp-css-semantic-audit

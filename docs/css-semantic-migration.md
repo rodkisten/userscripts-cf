@@ -1,20 +1,18 @@
 # [TEMP] CSS semantic migration
 
-## AST module graph
+## Preview integration
 
-`build/css-import-graph.mjs` parses TypeScript, TSX and JavaScript imports and reexports with Babel, resolving relative module paths and CSS Modules. It reports unresolved edges instead of guessing. Dynamic imports and arbitrary runtime CSS strings still require review.
+`node build/css-semantic-preview.mjs` reads `migration/css-semantic-groups.json` and writes `artifacts/css-semantic-preview.json`. Each group lists explicitly selected relative CSS paths. An empty list is intentional until style ownership is reviewed.
 
-## Multi-file semantic tokens
+The preview joins Babel's TS/TSX static import graph with CSS ownership analysis and the multi-file PostCSS/Lightning CSS token extractor. It blocks missing files, overlapping groups, unverified ShadowRoot ownership, failed CSS validation, and non-idempotent output. It does **not** write CSS source files or open PRs automatically.
 
-`rewriteShadowGroup(files)` in `build/css-semantic-group.mjs` accepts an **explicitly verified ShadowRoot-owned group**. It counts repeated eligible values across CSS and CSS Modules, reuses existing tokens, creates new tokens in an existing `:host` rule and validates output with Lightning CSS. Class selectors and CSS Module export contracts remain unchanged. Repeated execution is designed to be idempotent.
+**Important limitation:** ownership is a heuristic and cannot prove runtime registration through aliases or dynamic imports. CSS Modules are preserved as source files and class selectors remain unchanged. Before any automatic rewrite, ensure the new host tokens are actually bundled with every consumer of the group; otherwise a var() reference may become unresolved.
 
-This function does not autonomously classify or rewrite the repository. The ownership report is advisory: the next integration must join the AST module graph with runtime `ctx.ui.registerStyles` usage and explicit page-world exceptions, then approve groups before writes.
-
-## Commands
+### Commands
 
 - `node build/css-semantic-audit.mjs --write-report`
 - `node build/css-style-ownership.mjs`
-- `node build/css-semantic-rewrite.mjs path/to/verified.css` (preview; `--fix` writes only explicitly supplied files)
-- `npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs` (isolated [TEMP] utility tests)
+- `node build/css-semantic-preview.mjs`
+- `npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs tests/temp-css-preview.test.mjs`
 
-No permanent CI or production stylesheet was changed. Explicit `ctx.pageStyle` exceptions are never automatically migrated to Shadow DOM.
+Only the temporary workflow runs isolated utility tests. Permanent CI and production styles are unchanged. Explicit page modifications via `ctx.pageStyle` must not be migrated to ShadowRoot.
