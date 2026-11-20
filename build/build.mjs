@@ -181,7 +181,7 @@ export async function compileTarget(target, context) {
       const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
 
       const runtime = await bundleRuntime(root, selected, {
-        dock: target.id === "standalone" && world === "sandbox",
+        dock: (target.id === "standalone" || target.id === "rod-dock") && world === "sandbox",
         release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
         catalog,
         features,
