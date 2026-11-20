@@ -69,3 +69,7 @@ Source hardening, account-switch guards and per-channel ledger committed; **Inst
 ## Coordination
 
 The concurrent React migration PR #120 owns React-only cleanup. Avoid changing its files. Rebase after it lands, resolve conflicts by preserving both sets of changes, and rerun validation.
+
+## Bookmark failure and retry safety
+
+The React bookmark action now remains actionable after an error, preserving the visible error state until a retry or a different Reel becomes active. A native bookmark already in the saved state is **not** interpreted as proof that the configured collections were selected; this path reports a clear error instead of claiming collection delivery. Errors after native saving likewise remain errors rather than being converted into success merely because the native bookmark is filled. Automatic discovery of collection names and a verified native collection-picker flow remain pending. No Instagram Saved tests were added or run.
