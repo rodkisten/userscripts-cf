@@ -68,7 +68,7 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
   const ids = (raw: string) => [
     ...new Set(
       raw
-        .split(/[,;\\s]+/)
+        .split(/[,;\s]+/)
         .map((id) => id.trim())
         .filter(Boolean),
     ),
