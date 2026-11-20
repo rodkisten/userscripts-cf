@@ -250,8 +250,11 @@ export async function syncSaved({
               if (!result) throw Error("Confirmação Relay ausente ou duplicada");
               const channelResult = result.channels;
               if (
-                channelResult &&
-                ((channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
+                channelResult !== undefined &&
+                (channelResult === null ||
+                  typeof channelResult !== "object" ||
+                  Array.isArray(channelResult) ||
+                  (channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
                   (channelResult.covered !== undefined && !Array.isArray(channelResult.covered)) ||
                   (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent)) ||
                   (channelResult.inserted || []).some((id) => typeof id !== "string") ||
