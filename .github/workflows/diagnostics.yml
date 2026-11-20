@@ -1,5 +1,5 @@
 name: Validate changed userscripts
-run-name: "Validate changed · ${{ github.ref_name }}"
+run-name: "🧪 Validate changed · ${{ github.ref_name }}"
 
 on:
   push:
@@ -15,8 +15,9 @@ on:
         default: all
 
 permissions:
-  contents: read
+  contents: write
   actions: write
+  pull-requests: write
 
 concurrency:
   group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
@@ -25,20 +26,34 @@ concurrency:
 
 jobs:
   validate:
-    name: "Validate affected files"
+    name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     outputs:
       scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
     steps:
-      - uses: actions/checkout@v6
+      - name: 🤖 Generate GitHub App token
+        id: app_token
+        if: github.event_name == 'pull_request'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ steps.app_token.outputs.token || github.token }}
+
+      - name: 🟢 Setup Node.js 24
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Detect changes and plan validation
+
+      - name: 🧭 Detect changes and plan validation
         id: plan
         shell: bash
         env:
@@ -49,47 +64,223 @@ jobs:
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: bash build/validate-changed.sh plan
-      - name: Install dependencies
+
+      - name: 📦 Install dependencies
         id: install
         if: steps.plan.outputs.run == 'true'
         continue-on-error: true
         run: npm ci --legacy-peer-deps
-      - name: Dispatch lockfile repair when installation fails
+
+      - name: 🛠️ Dispatch lockfile repair when installation fails
         if: steps.install.outcome == 'failure'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           gh workflow run repair-lockfile.yml --ref "$BRANCH"
           echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
-      - name: Fail current validation on installation error
+
+      - name: ❌ Fail current validation on installation error
         if: steps.install.outcome == 'failure'
         run: exit 1
-      - name: Check formatting
+
+      - name: 🔎 Detect modified JS/TS/CSS files and linters
+        id: detect_lint
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          ALL_CHANGED=$(git diff --name-only --diff-filter=ACMR "$PR_BASE_SHA" "$PR_HEAD_SHA")
+
+          JS_TS_FILES=$(printf '%s\n' "$ALL_CHANGED" | grep -E '\.(js|jsx|ts|tsx)$' || true)
+          CSS_FILES=$(printf '%s\n' "$ALL_CHANGED" | grep -E '\.css$' || true)
+
+          HAS_PRETTIER="false"
+          HAS_ESLINT="false"
+          if [ -x "./node_modules/.bin/prettier" ] || jq -e '.devDependencies.prettier // .dependencies.prettier' package.json >/dev/null 2>&1; then
+            HAS_PRETTIER="true"
+          fi
+          if [ -x "./node_modules/.bin/eslint" ] || jq -e '.devDependencies.eslint // .dependencies.eslint' package.json >/dev/null 2>&1; then
+            HAS_ESLINT="true"
+          fi
+
+          printf '%s\n' "$JS_TS_FILES" | sed '/^$/d' > .changed_js_ts_files.txt
+          printf '%s\n' "$CSS_FILES" | sed '/^$/d' > .changed_css_files.txt
+
+          if [ -s .changed_js_ts_files.txt ]; then
+            echo "has_js_ts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_js_ts=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -s .changed_css_files.txt ]; then
+            echo "has_css=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_css=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "has_prettier=$HAS_PRETTIER" >> "$GITHUB_OUTPUT"
+          echo "has_eslint=$HAS_ESLINT" >> "$GITHUB_OUTPUT"
+
+      - name: 🪄 Silent auto-fix (ESLint & Prettier) and commit to PR branch
+        id: autofix
+        if: (steps.detect_lint.outputs.has_js_ts == 'true' && (steps.detect_lint.outputs.has_prettier == 'true' || steps.detect_lint.outputs.has_eslint == 'true')) || (steps.detect_lint.outputs.has_css == 'true' && steps.detect_lint.outputs.has_prettier == 'true')
+        shell: bash
+        env:
+          HAS_JS_TS: ${{ steps.detect_lint.outputs.has_js_ts }}
+          HAS_CSS: ${{ steps.detect_lint.outputs.has_css }}
+          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier }}
+          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint }}
+          PR_BRANCH: ${{ github.head_ref }}
+        run: |
+          JS_TS_FILES=()
+          CSS_FILES=()
+          [ -s .changed_js_ts_files.txt ] && mapfile -t JS_TS_FILES < .changed_js_ts_files.txt
+          [ -s .changed_css_files.txt ] && mapfile -t CSS_FILES < .changed_css_files.txt
+
+          TOOLS_USED=()
+
+          # ESLint --fix apenas em JS/JSX/TS/TSX
+          if [ "$HAS_ESLINT" = "true" ] && [ "${#JS_TS_FILES[@]}" -gt 0 ]; then
+            npx eslint --fix --quiet "${JS_TS_FILES[@]}" >/dev/null 2>&1 || true
+            TOOLS_USED+=("ESLint (\`--fix\`)")
+          fi
+
+          # Prettier --write em JS/JSX/TS/TSX + CSS
+          PRETTIER_TARGETS=("${JS_TS_FILES[@]}" "${CSS_FILES[@]}")
+          if [ "$HAS_PRETTIER" = "true" ] && [ "${#PRETTIER_TARGETS[@]}" -gt 0 ]; then
+            printf '%s\n' '.github/workflows/**' > .prettierignore
+            npx prettier --write --loglevel silent "${PRETTIER_TARGETS[@]}" >/dev/null 2>&1 || true
+            rm -f .prettierignore
+            TOOLS_USED+=("Prettier (\`--write\`)")
+          fi
+
+          rm -f .changed_js_ts_files.txt .changed_css_files.txt
+
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git diff --numstat > .autofix_numstat.txt
+            git diff > .autofix_patch.diff
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "style: auto-fix formatting and lint on changed files"
+            git push origin "HEAD:${PR_BRANCH}"
+
+            COMMIT_SHA=$(git rev-parse HEAD)
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            TOOLS_STR=$(IFS=" + "; echo "${TOOLS_USED[*]}")
+
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+            echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+            echo "tools_used=$TOOLS_STR" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 💬 Comment auto-fix details on PR
+        if: github.event_name == 'pull_request' && steps.autofix.outputs.committed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ steps.autofix.outputs.commit_sha }}
+          SHORT_SHA: ${{ steps.autofix.outputs.short_sha }}
+          TOOLS_USED: ${{ steps.autofix.outputs.tools_used }}
+        run: |
+          FILE_COUNT=$(wc -l < .autofix_numstat.txt | tr -d ' ')
+          TOTAL_ADDED=$(awk '{sum += $1} END {print sum+0}' .autofix_numstat.txt)
+          TOTAL_REMOVED=$(awk '{sum += $2} END {print sum+0}' .autofix_numstat.txt)
+
+          FILES_TABLE="| Arquivo | Adições | Remoções |"$'\n'"| :--- | :---: | :---: |"$'\n'
+          while IFS=$'\t' read -r added removed file; do
+            FILES_TABLE+="| \`${file}\` | \`+${added}\` | \`-${removed}\` |"$'\n'
+          done < .autofix_numstat.txt
+
+          DIFF_CONTENT=$(head -c 55000 .autofix_patch.diff)
+          DIFF_SIZE=$(wc -c < .autofix_patch.diff | tr -d ' ')
+          TRUNCATED_NOTE=""
+          if [ "$DIFF_SIZE" -gt 55000 ]; then
+            TRUNCATED_NOTE=$'\n\n> ⚠️ *Diff truncado devido ao tamanho. Veja todas as alterações diretamente no commit [`'"$SHORT_SHA"'`](https://github.com/'"$REPO"'/commit/'"$COMMIT_SHA"').*'
+          fi
+
+          cat <<EOF > .pr_autofix_comment.md
+          ## 🪄 Auto-fix aplicado automaticamente
+
+          Foram detectados ajustes de formatação/lint nos arquivos modificados deste Pull Request. Um commit automático foi enviado diretamente para a branch **\`${PR_BRANCH}\`**.
+
+          ### 📋 Resumo da execução
+          * **Commit:** [\`${SHORT_SHA}\`](https://github.com/${REPO}/commit/${COMMIT_SHA})
+          * **Ferramentas executadas:** ${TOOLS_USED}
+          * **Arquivos alterados:** **${FILE_COUNT}** (\`+${TOTAL_ADDED}\` / \`-${TOTAL_REMOVED}\` linhas)
+
+          ### 📂 Arquivos modificados
+          ${FILES_TABLE}
+          <details>
+          <summary>🔍 <b>Visualizar diff completo das alterações</b></summary>
+
+          \`\`\`diff
+          ${DIFF_CONTENT}
+          \`\`\`${TRUNCATED_NOTE}
+
+          </details>
+
+          ---
+          <sub>🤖 *Gerado automaticamente pelo workflow \`Validate changed userscripts\`.*</sub>
+          EOF
+
+          gh pr comment "$PR_NUMBER" --body-file .pr_autofix_comment.md
+          rm -f .autofix_numstat.txt .autofix_patch.diff .pr_autofix_comment.md
+
+      - name: 🎨 Run Prettier & ESLint diagnostics
         id: formatting
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         continue-on-error: true
         shell: bash
+        env:
+          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier || 'true' }}
+          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint || 'false' }}
         run: |
-          printf '%s\n' '.github/workflows/**' > .prettierignore
-          npx prettier --check .
-          rm -f .prettierignore
-      - name: Report formatting without blocking validation
+          rm -f .changed_js_ts_files.txt .changed_css_files.txt .autofix_numstat.txt .autofix_patch.diff .pr_autofix_comment.md
+          EXIT_CODE=0
+
+          if [ "$HAS_PRETTIER" = "true" ] || [ -x "./node_modules/.bin/prettier" ]; then
+            echo "### Prettier Check"
+            printf '%s\n' '.github/workflows/**' > .prettierignore
+            npx prettier --check . || EXIT_CODE=$?
+            rm -f .prettierignore
+          fi
+
+          if [ "$HAS_ESLINT" = "true" ] || [ -x "./node_modules/.bin/eslint" ]; then
+            echo "### ESLint Diagnostics"
+            npx eslint . || EXIT_CODE=$?
+          fi
+
+          exit $EXIT_CODE
+
+      - name: ⚠️ Report lint & formatting diagnostics (non-blocking)
         if: steps.formatting.outcome == 'failure'
         run: |
           {
-            echo "### ⚠️ Formatting differences detected (non-blocking)"
-            echo "Prettier found differences. No automatic commit or new workflow is triggered during validation."
-            echo "Tests and release validation continue independently of formatting."
+            echo "### ⚠️ Formatting or lint differences detected (non-blocking)"
+            echo "Prettier/ESLint diagnostics found remaining issues after auto-fix."
+            echo "Tests and release validation continue independently."
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Restore exact-source validation result
+
+      - name: ♻️ Restore exact-source validation result
         id: validation_cache
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && !contains(github.event.pull_request.title, '(test:') && !contains(github.event.pull_request.title, '(build:')
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
           key: userscripts-validation-v2-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml') }}
-      - name: Validate affected code
+
+      - name: ✅ Validate affected code
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
         shell: bash
         env:
@@ -99,30 +290,33 @@ jobs:
           RUNTIME_TEST_SKIP_DIST: 'true'
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: bash build/validate-changed.sh run
+
       # The playground is a visual preview, not a typecheck gate.
       # Always attempt its single build even when TypeScript validation fails.
-      - name: Build visual playground (independent of typecheck)
+      - name: 🎨 Build visual playground (independent of typecheck)
         if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         run: node build/design-system.mjs
-      - name: Record successful exact-source validation
+
+      - name: 📝 Record successful exact-source validation
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
         shell: bash
         run: |
           mkdir -p .validation-cache
           printf '%s\n' "Validation passed for exact source fingerprint" > .validation-cache/passed
-      - name: Save successful exact-source validation
+
+      - name: 💾 Save successful exact-source validation
         if: steps.validation_cache.outputs.cache-hit != 'true' && steps.plan.outputs.run == 'true' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && success()
         uses: actions/cache/save@v4
         with:
           path: .validation-cache/passed
           key: ${{ steps.validation_cache.outputs.cache-primary-key }}
-      - name: Report reused validation
+
+      - name: ⚡ Report reused validation
         if: steps.validation_cache.outputs.cache-hit == 'true'
         run: echo "Reused successful validation for identical source, tests and configuration fingerprint." >> "$GITHUB_STEP_SUMMARY"
 
-
   scoped-builds:
-    name: "Scoped build · ${{ matrix.target }}"
+    name: "🏗️ Scoped build · ${{ matrix.target }}"
     needs: validate
     if: ${{ always() && github.event_name == 'pull_request' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
     runs-on: ubuntu-latest
@@ -131,13 +325,19 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.validate.outputs.scoped_matrix) }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+
+      - name: 🟢 Setup Node.js 24
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --legacy-peer-deps
-      - name: Build selected userscript
+
+      - name: 📦 Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: 🚀 Build selected userscript
         env:
           TARGET: ${{ matrix.target }}
         run: node build/build.mjs "--targets=$TARGET"
