@@ -447,3 +447,37 @@ test("classify safely ignores malformed already-sent entries", () => {
   assert.deepEqual(classify({ channels: { notSent: [null, { reason: "already_sent", channelId: "alpha" }] } }, ["alpha"]),
     { complete: true, inserted: false });
 });
+
+test("partial 429 does not checkpoint complete delivery before the remaining channel acknowledges", async () => {
+  let ledger = { abc: { first: 123 } };
+  const checkpoints = [];
+  let attempts = 0;
+  const count = await syncSaved({
+    channels: ["first", "second", "third"],
+    load: async () => ({}),
+    save: async (value) => { checkpoints.push(structuredClone(value)); },
+    loadChannels: async () => ledger,
+    saveChannels: async (value) => { ledger = structuredClone(value); },
+    pause: async () => {},
+    fetchPage: async () => ({ items: [reel()] }),
+    sendBatch: async (items, channels) => {
+      attempts++;
+      if (attempts === 2) {
+        assert.deepEqual(channels, ["third"]);
+        assert.equal(checkpoints.length, 0);
+        assert.ok(ledger.abc.second);
+        assert.equal(Object.hasOwn(ledger.abc, "third"), false);
+      }
+      return { results: items.map((_, index) => ({
+        index,
+        status: attempts === 1 ? 429 : 200,
+        channels: { inserted: attempts === 1 ? ["second"] : ["third"] },
+      })) };
+    },
+  });
+  assert.equal(count, 1);
+  assert.equal(attempts, 2);
+  assert.equal(checkpoints.length, 1);
+  assert.ok(checkpoints[0].abc);
+  assert.deepEqual(Object.keys(ledger.abc).sort(), ["first", "second", "third"]);
+});
