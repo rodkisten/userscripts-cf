@@ -42,6 +42,10 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Radix collection controls
+
+The settings dialog uses Radix Checkbox for the automatic-sync toggle and the selected collection list. Users can add multiple collection IDs via comma/whitespace input and Enter or blur, and remove individual collections by unchecking them. The list is mobile-scrollable and retains the existing settings persistence. Automatic collection discovery is **not** implemented yet; no undocumented Instagram endpoint is assumed. A future discovery adapter must be verified against live account responses before exposing collection names or thumbnails.
+
 ## Configuration and concurrency feedback
 
 A manual run now explains missing collection IDs, Relay token, destination channels or Instagram login instead of silently returning. Manual synchronization is allowed even if the automatic schedule is disabled; the scheduled path still respects the automatic-sync toggle. If another tab owns the account's Web Lock, the panel displays a concurrency message rather than appearing to complete successfully. No Instagram Saved automated tests were introduced.
