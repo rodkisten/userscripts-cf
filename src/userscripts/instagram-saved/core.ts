@@ -60,7 +60,7 @@ export function reelPayload(raw: Reel): MediaPayload | null {
     typeof m !== "object" ||
     m.product_type !== "clips" ||
     typeof m.code !== "string" ||
-    !m.code.trim()
+    !/^[A-Za-z0-9_-]+$/.test(m.code)
   ) {
     return null;
   }
@@ -190,7 +190,7 @@ export async function syncSaved({
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
     signal?.throwIfAborted();
-    if (!Array.isArray(page.items) || page.status === "fail") {
+    if (!page || !Array.isArray(page.items) || page.status === "fail") {
       throw Error("Resposta de salvos inválida");
     }
     const items = page.items
@@ -228,7 +228,7 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!Array.isArray(response.results) || response.results.length !== job.items.length) {
+            if (!response || !Array.isArray(response.results) || response.results.length !== job.items.length) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
