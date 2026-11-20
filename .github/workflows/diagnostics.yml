@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: 🤖 Generate GitHub App token
         id: app_token
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: 🔎 Detect modified JS/TS/CSS files and linters
         id: detect_lint
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -167,6 +167,9 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -u
             git commit -m "style: auto-fix formatting and lint on changed files"
+
+            # Sincroniza caso um novo commit tenha sido feito no PR durante a execução
+            git pull --rebase --autostash origin "${PR_BRANCH}"
             git push origin "HEAD:${PR_BRANCH}"
 
             COMMIT_SHA=$(git rev-parse HEAD)
@@ -181,7 +184,7 @@ jobs:
             echo "committed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 💬 Comment auto-fix details on PR
+      - name: 💬 Comment or update auto-fix details on PR
         if: github.event_name == 'pull_request' && steps.autofix.outputs.committed == 'true'
         shell: bash
         env:
@@ -193,6 +196,7 @@ jobs:
           SHORT_SHA: ${{ steps.autofix.outputs.short_sha }}
           TOOLS_USED: ${{ steps.autofix.outputs.tools_used }}
         run: |
+          MARKER="<!-- autofix-bot-comment -->"
           FILE_COUNT=$(wc -l < .autofix_numstat.txt | tr -d ' ')
           TOTAL_ADDED=$(awk '{sum += $1} END {print sum+0}' .autofix_numstat.txt)
           TOTAL_REMOVED=$(awk '{sum += $2} END {print sum+0}' .autofix_numstat.txt)
@@ -210,14 +214,15 @@ jobs:
           fi
 
           cat <<EOF > .pr_autofix_comment.md
+          ${MARKER}
           ## 🪄 Auto-fix aplicado automaticamente
 
-          Foram detectados ajustes de formatação/lint nos arquivos modificados deste Pull Request. Um commit automático foi enviado diretamente para a branch **\`${PR_BRANCH}\`**.
+          Foram detectados ajustes de formatação/lint nos arquivos modificados deste Pull Request. O último commit automático foi enviado diretamente para a branch **\`${PR_BRANCH}\`**.
 
           ### 📋 Resumo da execução
-          * **Commit:** [\`${SHORT_SHA}\`](https://github.com/${REPO}/commit/${COMMIT_SHA})
+          * **Último commit:** [\`${SHORT_SHA}\`](https://github.com/${REPO}/commit/${COMMIT_SHA})
           * **Ferramentas executadas:** ${TOOLS_USED}
-          * **Arquivos alterados:** **${FILE_COUNT}** (\`+${TOTAL_ADDED}\` / \`-${TOTAL_REMOVED}\` linhas)
+          * **Arquivos alterados neste ciclo:** **${FILE_COUNT}** (\`+${TOTAL_ADDED}\` / \`-${TOTAL_REMOVED}\` linhas)
 
           ### 📂 Arquivos modificados
           ${FILES_TABLE}
@@ -231,10 +236,20 @@ jobs:
           </details>
 
           ---
-          <sub>🤖 *Gerado automaticamente pelo workflow \`Validate changed userscripts\`.*</sub>
+          <sub>🤖 *Gerado automaticamente pelo workflow \`Validate changed userscripts\` • Atualizado em $(date -u +'%d/%m/%Y %H:%M UTC').*</sub>
           EOF
 
-          gh pr comment "$PR_NUMBER" --body-file .pr_autofix_comment.md
+          # Procura se já existe um comentário anterior do bot com o marcador
+          EXISTING_COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" | head -n 1 || true)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api --method PATCH "repos/${REPO}/issues/comments/${EXISTING_COMMENT_ID}" \
+              -F "body=@.pr_autofix_comment.md" >/dev/null
+          else
+            gh pr comment "$PR_NUMBER" --body-file .pr_autofix_comment.md
+          fi
+
           rm -f .autofix_numstat.txt .autofix_patch.diff .pr_autofix_comment.md
 
       - name: 🎨 Run Prettier & ESLint diagnostics
