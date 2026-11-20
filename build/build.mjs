@@ -59,7 +59,7 @@ export const fmt = {
   red: (str) => `${C.red}${str}${C.reset}`,
 };
 
-class BuildReporter {
+export class BuildReporter {
   constructor(title, version) {
     this.title = title;
     this.version = version;
