@@ -256,3 +256,5 @@ Independent React/Radix userscript `github-color-studio` for GitHub file views a
 ### Build reporter module
 
 Build output formatting is shared by `build/build.mjs` and `build/bundle-runtime.mjs` through `build/format.mjs`, avoiding a circular import. The GitHub Actions YAML standalone highlighter selector list is also kept syntactically valid.
+
+The build reporter lives in `build/reporter.mjs`, with terminal formatting in `build/format.mjs`. Both `build/build.mjs` and diagnostics import the reporter without importing the build entrypoint, avoiding circular module initialization.
