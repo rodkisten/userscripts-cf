@@ -1,1 +1,57 @@
+name: 📸 PR Userscript Preview
 
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+run-name: "📸 Preview Deploy • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: 🔑 Gerar Token do GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: 🌐 Realizar Deploy do Preview (Cloudflare / Ambiente)
+        id: deploy
+        run: |
+          # ==============================================================================
+          # 🔧 SUBSTITUA ESTE BLOCO PELO SEU COMANDO REAL DE DEPLOY (ex: wrangler pages deploy)
+          # ==============================================================================
+          PREVIEW_URL="https://pr-${{ github.event.pull_request.number }}.userscripts-cf.pages.dev"
+          echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: 🔍 Coletar Diff e Metadados do Commit
+        id: diff-info
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/github-actions.mjs collect
+
+      - name: 💬 Publicar ou Atualizar Comentário de Preview
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
+          COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
+          DIFF_ENTRY: ${{ steps.diff-info.outputs.diff_entry }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: node scripts/github-actions.mjs publish
