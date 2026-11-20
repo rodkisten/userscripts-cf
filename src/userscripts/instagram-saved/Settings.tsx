@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import styles, { css } from "./Settings.module.css";
@@ -58,6 +58,8 @@ export function SavedPanel({
 }
 export function SavedSettings({ settings, onChange }: { settings: Form; onChange: (next: Form) => void }) {
   const [form, setForm] = useState<Form>(() => ({ ...settings }));
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const visibleCollectionIds = useMemo(() => form.collectionIds.filter((id) => id.toLowerCase().includes(collectionSearch.trim().toLowerCase())), [form.collectionIds, collectionSearch]);
   const update = (patch: Partial<Form>) => {
     const next = { ...form, ...patch };
     setForm(next);
@@ -87,9 +89,13 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
       </label>
       <fieldset className={styles.collectionPicker}>
         <legend>Coleções selecionadas</legend>
+        <label>
+          Buscar nas coleções selecionadas
+          <input type="search" value={collectionSearch} onChange={(event) => setCollectionSearch(event.currentTarget.value)} placeholder="Filtrar IDs selecionados" />
+        </label>
         {form.collectionIds.length ? (
           <div className={styles.collectionList}>
-            {form.collectionIds.map((id) => (
+            {visibleCollectionIds.map((id) => (
               <label key={id} className={styles.toggle}>
                 <Checkbox.Root
                   className={styles.radixCheckbox}
@@ -106,6 +112,7 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
                 <span>{id}</span>
               </label>
             ))}
+            {!visibleCollectionIds.length && <p>Nenhuma coleção corresponde à busca.</p>}
           </div>
         ) : (
           <p>Nenhuma coleção selecionada.</p>
@@ -130,7 +137,7 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
             }}
           />
         </label>
-        <p>Pressione Enter para adicionar. Desmarque uma coleção para removê-la.</p>
+        <p>{form.collectionIds.length} coleção(ões) selecionada(s). Pressione Enter para adicionar; desmarque para remover.</p>
       </fieldset>
       <label>
         Token do Relay
