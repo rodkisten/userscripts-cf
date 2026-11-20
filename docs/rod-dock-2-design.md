@@ -55,3 +55,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [ ] Atualizar README, Workboard e este documento com evidências por bloco completo.
 
 **PRs:** incluir a URL real da conversa de origem na descrição; nunca inventar. Não declarar funcionalidades ou CI aprovados sem verificar.
+
+## Implementação inicial (branch docs/rod-dock-2-spec)
+
+- [x] Primeira versão de Vaul Drawer com tabs, pesquisa compartilhada, ScrollArea e configurações de posição/opacidade persistidas.
+- [ ] Integração completa de DevTools/Network/DOM e remoção dos launchers externos.
+- [ ] Migrar todos os formulários para Radix, adicionar cmdk e verificar compatibilidade com Safari.
+- [ ] Regenerar lockfile com npm install, executar typecheck/build e corrigir eventuais falhas antes de merge.

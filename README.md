@@ -252,3 +252,7 @@ Validação: `npm run ci:cloudflare` executa formatação, checagem de tipos do 
 ## 🎨 GitHub Color Studio (experimental)
 
 Independent React/Radix userscript `github-color-studio` for GitHub file views and textarea editors. Opens a mobile-friendly color inventory, color picker, CSS format conversion, variable reference counts and guarded single-file variable rename. Read-only views copy changes to the clipboard; the script does not automatically commit or modify other files. Uses the shared `ctx.ui.mountReact` portal and runtime disposal. Current limitations: viewer inline swatches, full CodeMirror/Monaco editing integration, semantic scope-aware cross-file rename, OKLCH conversion and full CSS syntax support remain pending. Validate typecheck/build and Safari before publishing.
+
+### Rod Dock 2.0 (em desenvolvimento)
+
+A especificação de UX, pacotes e checklist está em [docs/rod-dock-2-design.md](docs/rod-dock-2-design.md). A nova Dock usa Vaul/Radix, pesquisa no topo, posição persistente e controles compactos. Integração completa de DevTools e validação ainda pendentes.

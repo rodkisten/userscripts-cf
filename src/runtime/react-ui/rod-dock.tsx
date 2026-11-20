@@ -1,8 +1,11 @@
 /** @jsxImportSource react */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { RodMenu, RodMenuHost } from "./index.js";
+import { Drawer } from "vaul";
+import * as Tabs from "@radix-ui/react-tabs";
+import * as ScrollArea from "@radix-ui/react-scroll-area";
+import * as Switch from "@radix-ui/react-switch";
+import { RodMenuHost } from "./index.js";
 import {
   matches,
   readScriptRules,
@@ -32,26 +35,64 @@ type DockController = {
 const css = `
 :host{all:initial;color-scheme:dark;font-family:ui-sans-serif,system-ui,sans-serif}
 *{box-sizing:border-box}
-.launcher{pointer-events:auto;position:fixed;right:0;top:46%;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:white;box-shadow:0 4px 22px #0006;cursor:pointer}
+button,input{font:inherit}
+.launcher{pointer-events:auto;position:fixed;border:1px solid #a78bfa55;border-radius:11px;width:32px;height:36px;padding:0;background:#6d28d9;color:white;box-shadow:0 3px 12px #0006;cursor:pointer;transition:opacity .18s ease;touch-action:none}
 .overlay{position:fixed;inset:0;background:#0009;z-index:2147483646;pointer-events:auto}
-.panel{pointer-events:auto;position:fixed;top:0;right:0;bottom:0;width:min(420px,94vw);background:#09090b;color:#fafafa;border-left:1px solid #3f3f46;padding:18px;overflow:auto;z-index:2147483647;box-shadow:-12px 0 48px #0007}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-button{font:inherit;cursor:pointer}
-.close,.action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;padding:8px 10px}
-.module{margin:10px 0;padding:12px;border:1px solid #27272a;border-radius:12px;background:#18181b}
-.module summary{cursor:pointer;font-weight:600}
-.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.action{font-size:13px}
-.script{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #27272a}
+.panel{pointer-events:auto;position:fixed;right:0;bottom:0;top:auto;width:min(440px,100vw);height:min(86dvh,780px);max-height:calc(100dvh - env(safe-area-inset-top));display:flex;flex-direction:column;overflow:hidden;background:#09090b;color:#fafafa;border:1px solid #3f3f46;border-radius:18px 18px 0 0;z-index:2147483647;box-shadow:0 0 48px #0008}
+.handle{width:34px;height:4px;background:#71717a;border-radius:4px;margin:9px auto}
+header{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px;gap:8px}
+.search{width:calc(100% - 28px);margin:0 14px 10px;padding:10px 12px;border:1px solid #3f3f46;border-radius:9px;background:#18181b;color:#fafafa;font-size:16px}
+.tabs{display:flex;gap:3px;padding:0 10px 8px;overflow-x:auto;flex-shrink:0}
+.tab{border:0;border-radius:8px;background:transparent;color:#a1a1aa;padding:8px 10px;font-size:12px;white-space:nowrap}
+.tab[data-state=active]{background:#3b0764;color:white}
+.scroll{flex:1;min-height:0;overflow:hidden}
+.viewport{height:100%;width:100%;padding:8px 14px max(20px,env(safe-area-inset-bottom))}
+.close,.action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;padding:7px 9px;font-size:12px}
+.module{margin:7px 0;padding:9px;border:1px solid #27272a;border-radius:10px;background:#18181b}
+.module summary{cursor:pointer;font-weight:600;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.script{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #27272a;font-size:13px}
 .script small{display:block;color:#a1a1aa;margin-top:3px}
-input[type=checkbox]{accent-color:#a78bfa;width:18px;height:18px}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;font-size:13px}
+.setting input[type=range]{width:130px}
+@media(min-width:720px){.panel{top:8px;bottom:8px;right:8px;height:calc(100dvh - 16px);border-radius:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
   const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState(46);
+  type DockSide = "left" | "right";
+  type DockSettings = { side: DockSide; position: number; scrollOpacity: number; fadeOnScroll: boolean };
+  const storageKey = "rod:dock:settings:v2";
+  const defaults: DockSettings = { side: "right", position: 46, scrollOpacity: 0.35, fadeOnScroll: true };
+  const [settings, setSettings] = useState<DockSettings>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(storageKey) ?? "{}") as Partial<DockSettings>;
+      return {
+        side: stored.side === "left" ? "left" : "right",
+        position: Math.max(10, Math.min(90, Number(stored.position ?? defaults.position))),
+        scrollOpacity: Math.max(0.15, Math.min(1, Number(stored.scrollOpacity ?? defaults.scrollOpacity))),
+        fadeOnScroll: stored.fadeOnScroll !== false,
+      };
+    } catch { return defaults; }
+  });
+  const [scrolling, setScrolling] = useState(false);
+  const [tab, setTab] = useState("scripts");
+  const suppressClick = useRef(false);
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* storage may be unavailable */ }
+  }, [settings]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const onScroll = () => {
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 240);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); clearTimeout(timer); };
+  }, []);
   useEffect(() => {
     const refresh = () => setDiagnostics([...(getDiagnostics()?.history ?? [])]);
     document.addEventListener("rod-diagnostics:change", refresh);
@@ -84,151 +125,70 @@ function DockView({ controller }: { controller: DockController }) {
       <style>{css}</style>
       <RodMenuHost />
       {!open && (
-        <button
-          className="launcher"
-          style={{ top: `${position}%`, touchAction: "none" }}
-          aria-label="Abrir Rod Dock"
+        <button className="launcher" style={{ top: `${settings.position}%`, [settings.side]: 0, opacity: scrolling && settings.fadeOnScroll ? settings.scrollOpacity : 1 }} aria-label="Abrir Rod Dock"
           onPointerDown={(event) => {
             const startY = event.clientY;
-            const start = position;
-            const onMove = (next: PointerEvent) =>
-              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / innerHeight)));
+            const start = settings.position;
+            let moved = false;
+            const onMove = (next: PointerEvent) => {
+              if (Math.abs(next.clientY - startY) > 6) moved = true;
+              setSettings((prev) => ({ ...prev, position: Math.max(10, Math.min(90, start + ((next.clientY - startY) * 100) / innerHeight)) }));
+            };
             const onEnd = () => {
               window.removeEventListener("pointermove", onMove);
               window.removeEventListener("pointerup", onEnd);
+              if (moved) suppressClick.current = true;
             };
             window.addEventListener("pointermove", onMove);
             window.addEventListener("pointerup", onEnd, { once: true });
           }}
-          onClick={() => setOpen(true)}
-        >
-          ☰
-        </button>
+          onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } setOpen(true); }}
+        >☰</button>
       )}
-      <Dialog.Root open={open} onOpenChange={setOpen}>
-        <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="overlay" />
-          <Dialog.Content className="panel">
-            <header>
-              <Dialog.Title>Rod Dock</Dialog.Title>
-              <Dialog.Close className="close" aria-label="Fechar">
-                ✕
-              </Dialog.Close>
-            </header>
-            <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
-            <button
-              className="action"
-              onClick={() => {
-                setOpen(false);
-                RodMenu.open({
-                  id: "rod-dock-settings",
-                  title: "Preferências do Rod Dock",
-                  surface: "modal",
-                  fields: [{ id: "filter", type: "search", label: "Filtrar scripts", defaultValue: search }],
-                  actions: [
-                    {
-                      id: "apply",
-                      label: "Aplicar",
-                      onClick: ({ values, close }) => {
-                        setSearch(String(values.filter ?? ""));
-                        close();
-                      },
-                    },
-                    { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
-                  ],
-                });
-              }}
-            >
-              Preferências
-            </button>
-            <details className="module" open>
-              <summary>Scripts ({scripts.length})</summary>
-              <input
-                aria-label="Filtrar scripts"
-                placeholder="Buscar script..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  marginTop: 10,
-                  borderRadius: 8,
-                  background: "#27272a",
-                  color: "white",
-                  border: "1px solid #3f3f46",
-                }}
-              />
-              {scripts
-                .filter((script) =>
-                  `${script.name ?? ""} ${script.id}`
-                    .toLocaleLowerCase()
-                    .includes(search.toLocaleLowerCase()),
-                )
-                .map((script) => {
-                  const enabled = preferences[script.id]?.enabled !== false;
-                  const permitted = matches(
-                    { ...script, name: script.name ?? script.id },
-                    location.href,
-                    preferences[script.id],
-                  );
-                  return (
-                    <label className="script" key={script.id}>
-                      <span>
-                        {script.name ?? script.id}
-                        <small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small>
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={(event) => toggleScript(script.id, event.target.checked)}
-                      />
-                    </label>
-                  );
-                })}
-            </details>
-            {visibleModules.map((module) => (
-              <details className="module" key={module.id}>
-                <summary>{module.name}</summary>
-                <div className="actions">
-                  {module.actions.map((action) => (
-                    <button className="action" key={action.id} onClick={() => action.run()}>
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
-              </details>
-            ))}
-            <details className="module">
-              <summary>Diagnósticos ({diagnostics.length})</summary>
-              <button
-                className="action"
-                onClick={() => {
-                  const blob = new Blob(
-                    [getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)],
-                    { type: "application/json" },
-                  );
-                  const url = URL.createObjectURL(blob);
-                  const anchor = document.createElement("a");
-                  anchor.href = url;
-                  anchor.download = "rod-script-diagnostics.json";
-                  anchor.click();
-                  queueMicrotask(() => URL.revokeObjectURL(url));
-                }}
-              >
-                Exportar JSON
-              </button>
-              {diagnostics.slice(0, 30).map((item, index) => (
-                <details className="module" key={index}>
-                  <summary>{item.message}</summary>
-                  <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                    {item.stack ?? item.message}
-                  </pre>
-                </details>
-              ))}
-            </details>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <Drawer.Root open={open} onOpenChange={setOpen} direction={typeof window !== "undefined" && window.innerWidth >= 720 ? "right" : "bottom"}>
+        <Drawer.Portal container={portal}>
+          <Drawer.Overlay className="overlay" />
+          <Drawer.Content className="panel" aria-describedby={undefined}>
+            <div className="handle" aria-hidden="true" />
+            <header><Drawer.Title>Rod Dock</Drawer.Title><button className="close" onClick={() => setOpen(false)} aria-label="Fechar Dock">✕</button></header>
+            <Drawer.Description style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>Ferramentas e configurações</Drawer.Description>
+            <input className="search" type="search" aria-label="Buscar na Dock" placeholder="Buscar scripts, ações e ferramentas..." value={search} onChange={(event) => setSearch(event.target.value)} />
+            <Tabs.Root value={tab} onValueChange={setTab} style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
+              <Tabs.List className="tabs" aria-label="Ferramentas da Dock">
+                {["scripts", "tools", "diagnostics", "settings"].map((key) => <Tabs.Trigger className="tab" key={key} value={key}>{({ scripts: "Scripts", tools: "Ferramentas", diagnostics: "Diagnósticos", settings: "Configurações" } as Record<string, string>)[key]}</Tabs.Trigger>)}
+              </Tabs.List>
+              <ScrollArea.Root className="scroll"><ScrollArea.Viewport className="viewport">
+                <Tabs.Content value="scripts">
+                  {scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLowerCase().includes(search.toLowerCase())).map((script) => {
+                    const enabled = preferences[script.id]?.enabled !== false;
+                    const permitted = matches({ ...script, name: script.name ?? script.id }, location.href, preferences[script.id]);
+                    return <label className="script" key={script.id}><span>{script.name ?? script.id}<small>{!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}</small></span><input type="checkbox" checked={enabled} onChange={(event) => toggleScript(script.id, event.target.checked)} /></label>;
+                  })}
+                </Tabs.Content>
+                <Tabs.Content value="tools">
+                  {visibleModules.filter((module) => `${module.name} ${module.actions.map((a) => a.label).join(" ")}`.toLowerCase().includes(search.toLowerCase())).map((module) => <details className="module" key={module.id} open={Boolean(search)}><summary>{module.name}</summary><div className="actions">{module.actions.filter((action) => !search || `${module.name} ${action.label}`.toLowerCase().includes(search.toLowerCase())).map((action) => <button className="action" key={action.id} onClick={() => action.run()}>{action.label}</button>)}</div></details>)}
+                </Tabs.Content>
+                <Tabs.Content value="diagnostics">
+                  <button className="action" onClick={() => {
+                    const blob = new Blob([getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "rod-script-diagnostics.json"; anchor.click();
+                    queueMicrotask(() => URL.revokeObjectURL(url));
+                  }}>Exportar JSON</button>
+                  {diagnostics.filter((item) => item.message.toLowerCase().includes(search.toLowerCase())).slice(0, 30).map((item, index) => <details className="module" key={index}><summary>{item.message}</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{item.stack ?? item.message}</pre></details>)}
+                </Tabs.Content>
+                <Tabs.Content value="settings">
+                  <label className="setting">Lado<select value={settings.side} onChange={(event) => setSettings((prev) => ({ ...prev, side: event.target.value as DockSide }))}><option value="left">Esquerda</option><option value="right">Direita</option></select></label>
+                  <label className="setting">Altura ({Math.round(settings.position)}%)<input type="range" min="10" max="90" value={settings.position} onChange={(event) => setSettings((prev) => ({ ...prev, position: Number(event.target.value) }))} /></label>
+                  <label className="setting">Opacidade ao rolar ({Math.round(settings.scrollOpacity * 100)}%)<input type="range" min="15" max="100" value={Math.round(settings.scrollOpacity * 100)} onChange={(event) => setSettings((prev) => ({ ...prev, scrollOpacity: Number(event.target.value) / 100 }))} /></label>
+                  <label className="setting">Diminuir opacidade ao rolar<Switch.Root checked={settings.fadeOnScroll} onCheckedChange={(value) => setSettings((prev) => ({ ...prev, fadeOnScroll: value }))} className="action">{settings.fadeOnScroll ? "Ativado" : "Desativado"}</Switch.Root></label>
+                  <button className="action" onClick={() => setSettings(defaults)}>Restaurar posição padrão</button>
+                </Tabs.Content>
+              </ScrollArea.Viewport></ScrollArea.Root>
+            </Tabs.Root>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </>
   );
 }
