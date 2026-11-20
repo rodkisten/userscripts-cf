@@ -135,7 +135,10 @@ test("SPA enters once, retains matching module, disposes events and styles on ex
   await Promise.race([
     app.navigate(),
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("SPA settings navigation did not settle after cleanup (5000ms)")), 5000),
+      setTimeout(
+        () => reject(new Error("SPA settings navigation did not settle after cleanup (5000ms)")),
+        5000,
+      ),
     ),
   ]);
   console.log("[runtime test] SPA: settings navigation complete");
@@ -159,15 +162,17 @@ test("context listeners preserve capture and are removed on SPA exit", async () 
   const host = new Window({ url: "https://example.com/on" });
   let events = 0;
   const app = createRuntime(
-    [{
-      id: "capture-listener",
-      matches: ["https://example.com/on"],
-      module: {
-        init(ctx) {
-          ctx.listen(host, "click", () => events++, true);
+    [
+      {
+        id: "capture-listener",
+        matches: ["https://example.com/on"],
+        module: {
+          init(ctx) {
+            ctx.listen(host, "click", () => events++, true);
+          },
         },
       },
-    }],
+    ],
     { call() {} },
     host,
   );

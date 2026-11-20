@@ -6,11 +6,11 @@ import { analyzeImportGraph } from "./css-import-graph.mjs";
  */
 export function validateTokenReachability(sources, group, ownership) {
   const graph = analyzeImportGraph(sources);
-  const tokenOwners = group.filter(name => {
+  const tokenOwners = group.filter((name) => {
     const css = sources[name] || "";
     return /(^|[,\s]):host\s*\{/m.test(css);
   });
-  const diagnostics = [...graph.diagnostics.filter(item => group.includes(item.file))];
+  const diagnostics = [...graph.diagnostics.filter((item) => group.includes(item.file))];
   if (tokenOwners.length !== 1) {
     diagnostics.push({ code: "token-owner-count", expected: 1, actual: tokenOwners.length });
     return { safe: false, diagnostics };
@@ -29,7 +29,7 @@ export function validateTokenReachability(sources, group, ownership) {
     }
     return false;
   };
-  const owners = new Set(group.flatMap(file => ownership[file]?.owners || []));
+  const owners = new Set(group.flatMap((file) => ownership[file]?.owners || []));
   if (!owners.size) diagnostics.push({ code: "no-static-consumers" });
   for (const owner of owners) {
     if (!reachable(owner, host)) diagnostics.push({ code: "host-not-reachable", owner, host });

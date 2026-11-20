@@ -44,8 +44,9 @@ export type NewPortalEntry<TNode = unknown, TContext = unknown> = Omit<
   "wasConnected"
 >;
 
-export interface PortalRegistry<TNode = unknown, TContext = unknown>
-  extends SubscribableStore<ReadonlyArray<PortalEntry<TNode, TContext>>> {
+export interface PortalRegistry<TNode = unknown, TContext = unknown> extends SubscribableStore<
+  ReadonlyArray<PortalEntry<TNode, TContext>>
+> {
   add(entry: NewPortalEntry<TNode, TContext>): void;
   remove(id: PortalId): boolean;
   removeContext(context: TContext): number;
@@ -55,10 +56,7 @@ export interface PortalRegistry<TNode = unknown, TContext = unknown>
 
 const EMPTY_TARGETS: ReadonlySet<PortalTarget> = new Set();
 
-export function createPortalRegistry<
-  TNode = unknown,
-  TContext = unknown,
->(): PortalRegistry<TNode, TContext> {
+export function createPortalRegistry<TNode = unknown, TContext = unknown>(): PortalRegistry<TNode, TContext> {
   const entries = new Map<PortalId, PortalEntry<TNode, TContext>>();
   const listeners = new Set<StoreListener>();
   let snapshot: ReadonlyArray<PortalEntry<TNode, TContext>> = Object.freeze([]);
