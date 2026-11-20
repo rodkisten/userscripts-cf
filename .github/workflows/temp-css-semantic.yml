@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "build/css-semantic-audit.mjs"
+      - "build/css-semantic-rewrite.mjs"
+      - "tests/temp-css-semantic.test.mjs"
       - ".github/workflows/temp-css-semantic.yml"
 permissions:
   contents: read
@@ -12,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   isolated:
-    name: "[TEMP] CSS graph and parser"
+    name: "[TEMP] CSS utility validation"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +24,11 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps --no-audit --no-fund
       - name: "[TEMP] Syntax"
-        run: node --check build/css-semantic-audit.mjs
+        run: |
+          node --check build/css-semantic-audit.mjs
+          node --check build/css-semantic-rewrite.mjs
+      - name: "[TEMP] Isolated codemod tests"
+        run: npx vitest run tests/temp-css-semantic.test.mjs
       - name: "[TEMP] CSS import graph"
         run: node build/css-semantic-audit.mjs --write-report
       - name: "[TEMP] Upload audit"

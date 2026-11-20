@@ -1,9 +1,15 @@
 # [TEMP] CSS semantic migration
 
-This first stage is **read-only**. It inventories CSS files, custom properties and relative CSS import edges under src/ and uploads a JSON report.
+## Current stage: guarded rewrite utility
 
-Run `node build/css-semantic-audit.mjs --write-report` or dispatch `[TEMP] CSS Semantic Migration`.
+- `node build/css-semantic-audit.mjs --write-report` inventories CSS and relative imports.
+- `node build/css-semantic-rewrite.mjs src/path/file.css` previews a transformation.
+- Append `--fix` to write changes **only to explicitly supplied files**.
+- Only a top-level `:host` permits rewriting. Existing tokens are reused; duplicate simple values receive tokens.
+- CSS imports, conditional declarations, and unverified page-world ownership are intentionally excluded.
+- Lightning CSS validates generated output without minifying it.
+- The `[TEMP]` workflow runs isolated utility tests only. No permanent pipeline was changed.
 
-Next stage: resolve CSS ownership by entrypoint, distinguish `ctx.pageStyle` from `ctx.ui.registerStyles`, implement scope-aware semantic token rewrites, verify idempotency, then enable PR generation via the repository GitHub App. Do not rewrite page-world CSS into Shadow DOM.
+## Still required before automated repository-wide migration
 
-Temporary CI contains no UI, component or userscript tests. No permanent CI was modified.
+Resolve transitive CSS imports and ownership of CSS modules per runtime entrypoint. Distinguish explicit `ctx.pageStyle` website modifications from ShadowRoot UI. Handle themes, shorthand values and token collisions across imported files. Validate all affected TypeScript and build targets before enabling automated PR generation. Do not assume every CSS file belongs to a ShadowRoot.
