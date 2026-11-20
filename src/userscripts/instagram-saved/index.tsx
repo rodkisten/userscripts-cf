@@ -177,11 +177,31 @@ export default {
       }
       const config = await get<Config | null>("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
-      if (!settings.enabled || !settings.collectionIds?.length) {
+      const account = currentAccount();
+      const reason = !settings.enabled && !manual
+        ? ""
+        : !settings.collectionIds?.length
+          ? "Selecione pelo menos uma coleção nas configurações."
+          : !config?.token?.trim()
+            ? "Configure o token do Relay antes de sincronizar."
+            : !config.channels?.length
+              ? "Configure pelo menos um canal de destino."
+              : !account
+                ? "Não foi possível identificar a conta do Instagram. Entre na sua conta e tente novamente."
+                : "";
+      if (reason) {
+        setRuntime((draft) => {
+          draft.lastError = reason;
+        });
+        if (manual) {
+          ctx.toaster?.({ title: reason });
+        }
         return;
       }
-      const account = document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
-      if (!config?.token || !account) {
+      if (!settings.enabled && !manual) {
+        return;
+      }
+      if (!account || !config) {
         return;
       }
       setRuntime((draft) => {
@@ -195,7 +215,7 @@ export default {
         }
         await navigator.locks.request(`instagram-saved:${account}`, { ifAvailable: true }, async (lock) => {
           if (!lock) {
-            return;
+            throw Error("Outra aba já está sincronizando os salvos desta conta.");
           }
           abort.throwIfAborted();
           let count = 0;
