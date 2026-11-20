@@ -42,6 +42,10 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Session limits and safe resume
+
+`maxItemsPerSession` now caps the number of eligible Reels actually processed, even when an Instagram page contains more items than the configured limit. If the cap cuts a page short, the current collection cursor is retained rather than advancing to the next page; on the next run, the per-channel delivery ledger skips confirmed Reels and resumes the remaining items. This behavior has not been verified on Safari. Instagram Saved automated tests remain intentionally disabled.
+
 ## Current verification
 
 Source hardening, account-switch guards and per-channel ledger committed; **Instagram Saved feature tests are intentionally absent. Typecheck and the general build completed in Actions run `44720958871`; the scoped build job was skipped because the broader validation failed on unrelated formatting/style issues. Safari verification is still pending**. Git clone in the execution container failed because github.com DNS resolution is unavailable. No deployment requested. Do not merge until validated.
