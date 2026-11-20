@@ -256,3 +256,5 @@ A sincronização de Reels salvos usa `ctx.http` para o Instagram e o Relay e ma
 ## 🎨 GitHub Color Studio (experimental)
 
 Independent React/Radix userscript `github-color-studio` for GitHub file views and textarea editors. Opens a mobile-friendly color inventory, color picker, CSS format conversion, variable reference counts and guarded single-file variable rename. Read-only views copy changes to the clipboard; the script does not automatically commit or modify other files. Uses the shared `ctx.ui.mountReact` portal and runtime disposal. Current limitations: viewer inline swatches, full CodeMirror/Monaco editing integration, semantic scope-aware cross-file rename, OKLCH conversion and full CSS syntax support remain pending. Validate typecheck/build and Safari before publishing.
+
+O desenvolvimento da Dock 2.0 segue na branch `feat/rod-dock-2-main-sync`; a integração dos DevTools legados e a validação de dependências continuam em andamento.

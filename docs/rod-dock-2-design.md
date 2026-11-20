@@ -94,3 +94,10 @@ npm install vaul cmdk motion lucide-react @floating-ui/react @radix-ui/react-scr
 - [x] Corrigida regex da inspeção de propriedades globais; direção do drawer reage a resize e orientação do dispositivo.
 - [ ] Console global ainda requer mecanismo central compartilhado para múltiplas instâncias; o wrapper atual deve ser revisado antes do merge.
 - [ ] npm lockfile, typecheck/build, integração completa dos DevTools e limpeza de launchers pendentes. Sem testes conforme solicitado.
+
+## Bloco 7: consolidação sobre a main
+
+- [x] Código de Dock 2.0 transportado para branch nova baseada na main atual.
+- [x] Inspeção de propriedades globais: corrigido escape de regex; seletor DOM volta à Dock quando cancelado com Escape.
+- [ ] Rodar build/typecheck e regenerar lockfile; não executar testes a pedido do mantenedor.
+- [ ] Migrar DevTools legados e desativar seus launchers após confirmar equivalência funcional.

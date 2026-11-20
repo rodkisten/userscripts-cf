@@ -222,7 +222,7 @@ function DockView({ controller }: { controller: DockController }) {
       setTab("dom");
       setOpen(true);
     };
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setDomPicking(false); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { setDomPicking(false); setOpen(true); } };
     document.addEventListener("pointerdown", onPointer, true);
     document.addEventListener("keydown", onKey, true);
     return () => { document.removeEventListener("pointerdown", onPointer, true); document.removeEventListener("keydown", onKey, true); };
