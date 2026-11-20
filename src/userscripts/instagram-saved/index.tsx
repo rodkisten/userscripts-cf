@@ -227,7 +227,11 @@ export default {
           }
           abort.throwIfAborted();
           let count = 0;
+          let processedTotal = 0;
+          const sessionLimit = Math.max(1, Math.floor(Number(settings.maxItemsPerSession) || 1));
           for (const [index, collectionId] of settings.collectionIds.entries()) {
+            if (processedTotal >= sessionLimit) break;
+            let collectionProcessed = 0;
             setRuntime((draft) => {
               draft.progress = {
                 current: index + 1,
@@ -247,6 +251,7 @@ export default {
               channels: config.channels,
               signal: abort,
               onProgress: ({ processed, sent, pageEligible }) => {
+                collectionProcessed = processed;
                 setRuntime((draft) => {
                   if (draft.progress?.collection === collectionId) {
                     draft.progress.processed = processed;
@@ -256,7 +261,7 @@ export default {
                 });
               },
               pause,
-              settings: { ...settings, cursor: await get(cursorKey, "") },
+              settings: { ...settings, maxItemsPerSession: sessionLimit - processedTotal, cursor: await get(cursorKey, "") },
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
@@ -303,6 +308,7 @@ export default {
                   return page;
                 }, 50),
             });
+            processedTotal += collectionProcessed;
             setRuntime((draft) => {
               if (draft.progress) draft.progress.sent = count;
             });
