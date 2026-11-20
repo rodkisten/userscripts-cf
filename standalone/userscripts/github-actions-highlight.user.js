@@ -30,7 +30,8 @@
   const SELECTORS = [
     '.react-code-line-contents',
     '[data-testid="code-line"] .react-code-text',
-    '.blob-code-inner',\n    '[data-testid="code-view"] [data-line-number] .react-code-text',
+    '.blob-code-inner',
+    '[data-testid="code-view"] [data-line-number] .react-code-text',
   ];
   const RUN = /^(\s*)(?:-\s+)?run\s*:\s*([|>])([+-]?)(?:\s*#.*)?$/;
   const SHELL = /^\s*shell\s*:\s*([^\s#]+)/;
