@@ -46,6 +46,7 @@ export type SyncOptions = {
     jitterMs?: number;
   };
   onCursor?: (cursor: string) => Promise<unknown>;
+  onProgress?: (progress: { processed: number; sent: number; pageEligible: number }) => void;
   loadChannels?: () => Promise<Record<string, Record<string, number>>>;
   saveChannels?: (ledger: Record<string, Record<string, number>>) => Promise<unknown>;
 };
@@ -142,6 +143,7 @@ export async function syncSaved({
   onCursor,
   loadChannels,
   saveChannels,
+  onProgress,
 }: SyncOptions) {
   if (
     !channels.length ||
@@ -210,6 +212,7 @@ export async function syncSaved({
       return count;
     }
     const limitedItems = items.slice(0, remaining);
+    onProgress?.({ processed, sent: count, pageEligible: limitedItems.length });
     for (let offset = 0; offset < limitedItems.length; offset += limit) {
       const batch = limitedItems.slice(offset, offset + limit);
       const groups = new Map<string, { channels: string[]; items: MediaPayload[] }>();
@@ -347,6 +350,7 @@ export async function syncSaved({
         if (work.length) throw Error("Limite de tentativas do Relay");
       }
       processed += batch.length;
+      onProgress?.({ processed, sent: count, pageEligible: limitedItems.length });
       await pause(
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
