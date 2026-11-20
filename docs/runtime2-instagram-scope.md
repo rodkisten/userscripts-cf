@@ -44,7 +44,7 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 
 ## Collection progress
 
-The React Saved panel now reports the current collection position, total selected collections, active collection ID and cumulative number of newly sent media items. Progress is cleared after completion or failure; persistent error messaging remains available. This is collection-level progress, not an estimated per-Reel completion percentage. Safari verification remains pending.
+The React Saved panel now reports the current collection position, total selected collections, active collection ID, per-collection processed media count and cumulative number of newly sent media items. The core emits progress after each completed batch, without assuming the number of remaining Instagram pages. Progress is cleared after completion or failure; persistent error messaging remains available. This is collection-level progress, not an estimated per-Reel completion percentage. Safari verification remains pending.
 
 ## Session limits and safe resume
 
