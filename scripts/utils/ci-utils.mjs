@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { defaultLogger } from './ci-logger.mjs';
 
 // ============================================================================
 // GitHub Actions Environment, Inputs, Outputs & CLI Parsing
@@ -188,11 +189,17 @@ export function createSummaryWriter(core) {
 // Execução de Comandos & Git Helpers
 // ============================================================================
 export function runCmd(cmd, args = [], options = {}) {
+  const { silent = false, logger = defaultLogger, ...execOptions } = options;
+
+  if (!silent && logger) {
+    logger.cmdBlock(cmd, args);
+  }
+
   try {
     const stdout = execFileSync(cmd, args, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      ...options,
+      ...execOptions,
     });
     return { ok: true, status: 0, stdout: stdout.trim(), stderr: '' };
   } catch (err) {
@@ -204,6 +211,21 @@ export function runCmd(cmd, args = [], options = {}) {
     };
   }
 }
+
+export function runInteractive(cmd, args = [], options = {}) {
+  const { silent = false, logger = defaultLogger, ...spawnOptions } = options;
+
+  if (!silent && logger) {
+    logger.cmdBlock(cmd, args);
+  }
+
+  const res = spawnSync(cmd, args, {
+    stdio: 'inherit',
+    ...spawnOptions,
+  });
+  return res.status ?? 1;
+}
+
 
 export function runInteractive(cmd, args = [], options = {}) {
   const res = spawnSync(cmd, args, {
