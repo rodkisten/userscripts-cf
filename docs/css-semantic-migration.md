@@ -1,17 +1,20 @@
 # [TEMP] CSS semantic migration
 
-## Tools
+## AST module graph
 
-- `node build/css-semantic-audit.mjs --write-report`: inventories CSS and relative import edges.
-- `node build/css-style-ownership.mjs`: follows transitive CSS imports and reports shadow candidates vs files requiring manual ownership review in `artifacts/css-ownership.json`.
-- `node build/css-semantic-rewrite.mjs path/to/file.css`: previews conservative token extraction; add `--fix` only for explicitly approved files.
+`build/css-import-graph.mjs` parses TypeScript, TSX and JavaScript imports and reexports with Babel, resolving relative module paths and CSS Modules. It reports unresolved edges instead of guessing. Dynamic imports and arbitrary runtime CSS strings still require review.
 
-The ownership report is **heuristic**, not proof that a stylesheet is safe to migrate. It recognizes relative CSS imports, `ctx.style`, `ctx.ui.registerStyles` and `ctx.pageStyle`, but dynamic CSS, aliased exports, CSS imported via build plugins and TS reexports need deeper graph resolution. Any ambiguous, orphaned or document-scoped file remains review-only. No automatic repository-wide rewrite is enabled.
+## Multi-file semantic tokens
 
-## Shadow DOM contract
+`rewriteShadowGroup(files)` in `build/css-semantic-group.mjs` accepts an **explicitly verified ShadowRoot-owned group**. It counts repeated eligible values across CSS and CSS Modules, reuses existing tokens, creates new tokens in an existing `:host` rule and validates output with Lightning CSS. Class selectors and CSS Module export contracts remain unchanged. Repeated execution is designed to be idempotent.
 
-UI styles belong in `ctx.ui.registerStyles` or `ctx.style`, mounted in the script-owned ShadowRoot. Website modifications must remain explicit `ctx.pageStyle` exceptions. Existing CSS Modules and React portals remain unchanged. Shared `src/styles/core.css` mixes host and document selectors and must not be blindly migrated.
+This function does not autonomously classify or rewrite the repository. The ownership report is advisory: the next integration must join the AST module graph with runtime `ctx.ui.registerStyles` usage and explicit page-world exceptions, then approve groups before writes.
 
-## Verification
+## Commands
 
-The only added test suites are isolated utility tests in `[TEMP] CSS Semantic Migration`. No permanent CI modifications or component/userscript tests.
+- `node build/css-semantic-audit.mjs --write-report`
+- `node build/css-style-ownership.mjs`
+- `node build/css-semantic-rewrite.mjs path/to/verified.css` (preview; `--fix` writes only explicitly supplied files)
+- `npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs` (isolated [TEMP] utility tests)
+
+No permanent CI or production stylesheet was changed. Explicit `ctx.pageStyle` exceptions are never automatically migrated to Shadow DOM.

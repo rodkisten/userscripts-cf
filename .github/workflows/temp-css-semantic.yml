@@ -6,8 +6,11 @@ on:
       - "build/css-semantic-audit.mjs"
       - "build/css-semantic-rewrite.mjs"
       - "build/css-style-ownership.mjs"
+      - "build/css-import-graph.mjs"
+      - "build/css-semantic-group.mjs"
       - "tests/temp-css-semantic.test.mjs"
       - "tests/temp-css-ownership.test.mjs"
+      - "tests/temp-css-group.test.mjs"
       - ".github/workflows/temp-css-semantic.yml"
 permissions:
   contents: read
@@ -30,13 +33,15 @@ jobs:
           node --check build/css-semantic-audit.mjs
           node --check build/css-semantic-rewrite.mjs
           node --check build/css-style-ownership.mjs
-      - name: "[TEMP] Isolated codemod and ownership tests"
-        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs
-      - name: "[TEMP] CSS import graph"
-        run: node build/css-semantic-audit.mjs --write-report
-      - name: "[TEMP] CSS ownership report"
-        run: node build/css-style-ownership.mjs
-      - name: "[TEMP] Upload audits"
+          node --check build/css-import-graph.mjs
+          node --check build/css-semantic-group.mjs
+      - name: "[TEMP] Isolated codemod tests"
+        run: npx vitest run tests/temp-css-semantic.test.mjs tests/temp-css-ownership.test.mjs tests/temp-css-group.test.mjs
+      - name: "[TEMP] CSS import and ownership reports"
+        run: |
+          node build/css-semantic-audit.mjs --write-report
+          node build/css-style-ownership.mjs
+      - name: "[TEMP] Upload audit"
         uses: actions/upload-artifact@v4
         with:
           name: temp-css-semantic-audit
