@@ -79,6 +79,10 @@ jobs:
         continue-on-error: true
         run: npm ci --legacy-peer-deps
 
+      - name: 🧩 Smoke-check build orchestrator imports and initialization
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        run: node build/build.mjs --list-targets
+
       - name: 🛠️ Dispatch lockfile repair when installation fails
         if: steps.install.outcome == 'failure'
         env:
