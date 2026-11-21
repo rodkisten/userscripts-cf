@@ -1,11 +1,3 @@
-## PR #129 · Runtime 2.0 / React portal lifecycle
-
-- Synced with main at `7518a3e`, retaining main's changes on overlapping files.
-- Keep a single React root: reconnect the existing root host when SPA navigation replaces `body`, both when mounting and during DOM mutations.
-- Keep the latest portal component while its target is temporarily detached; no additional React roots are created.
-- Preserve a portal's previous connected state when its content updates, allowing disconnected portals to be cleaned up reliably.
-- Scope: React portal lifecycle and runtime ownership; no workflow edits or UI component tests. Typecheck/build pending.
-
 > **PR #120 · merge cleanup (2026-11-20):** The merge with main reintroduced duplicate `fmt` and `BuildReporter` declarations in `build/build.mjs`, causing the React 19 build to fail at parse time. Removed the duplicated implementations, retained imports from shared modules, and re-exported the public symbols for compatibility. Prettier and lint still require validation.
 
 > **PR #120 · HTTP interceptor typing (2026-11-20):** Validation job #136233221152 identified two TS2353 errors in Instagram Saved because the interceptor's `request` type discarded the shared `HttpRequestOptions` extensions (`transport`, `cacheMode`, `timeoutMs`). The interceptor now preserves the HTTP client's request options type, without changing request behavior. Prettier remains pending on five files.

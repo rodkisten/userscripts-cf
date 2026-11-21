@@ -1,68 +1,57 @@
-name: "▲ PR userscript preview artifacts"
-run-name: "▲ Preview #${{ github.event.pull_request.number || inputs.pr_number }}"
+name: 📸 PR Userscript Preview
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: "PR number for metadata and output path"
-        required: true
-        type: number
+
+run-name: "📸 Preview Deploy • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
 
 permissions:
   contents: read
-  pull-requests: read
-
-concurrency:
-  group: userscript-preview-${{ github.event.pull_request.number || inputs.pr_number }}
-  cancel-in-progress: true
+  pull-requests: write
 
 jobs:
-  preview:
+  deploy-preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
+          fetch-depth: 2
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci --legacy-peer-deps --no-audit --no-fund
-      - name: Build userscripts
-        run: npm run build
-      - name: Generate numbered installers and catalog
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
-          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
-        run: node build/pr-preview.mjs
-      - name: Verify installer metadata
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const pr = process.env.PR_NUMBER;
-          const dir = 'dist/pr-preview/' + pr;
-          const catalog = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf8'));
-          if (!catalog.scripts.length) throw Error('No preview installers');
-          for (const script of catalog.scripts) {
-            const source = fs.readFileSync(dir + '/' + script.file, 'utf8');
-            for (const expected of ['// @name', '#' + pr, '/' + pr + '/' + script.file, '/' + pr + '/icons/pr.svg']) {
-              if (!source.includes(expected)) throw Error('Missing metadata: ' + expected);
-            }
-          }
-          NODE
-      - uses: actions/upload-artifact@v4
+
+      - name: 🔑 Gerar Token do GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
         with:
-          name: userscripts-pr-${{ github.event.pull_request.number || inputs.pr_number }}
-          path: dist/pr-preview/
-          retention-days: 14
-      - name: Installation links
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: 🌐 Realizar Deploy do Preview (Cloudflare / Ambiente)
+        id: deploy
         run: |
-          echo "### ▲ PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
-          echo "Preview artifact prepared; domain publication requires a separate hosting deployment." >> "$GITHUB_STEP_SUMMARY"
-          echo "Target: https://userscripts.preview.migos.club/$PR_NUMBER/" >> "$GITHUB_STEP_SUMMARY"
+          # ==============================================================================
+          # 🔧 SUBSTITUA ESTE BLOCO PELO SEU COMANDO REAL DE DEPLOY (ex: wrangler pages deploy)
+          # ==============================================================================
+          PREVIEW_URL="https://pr-${{ github.event.pull_request.number }}.userscripts-cf.pages.dev"
+          echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: 🔍 Coletar Diff e Metadados do Commit
+        id: diff-info
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/github-actions.mjs collect
+
+      - name: 💬 Publicar ou Atualizar Comentário de Preview
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
+          COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
+          DIFF_ENTRY: ${{ steps.diff-info.outputs.diff_entry }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: node scripts/github-actions.mjs publish
