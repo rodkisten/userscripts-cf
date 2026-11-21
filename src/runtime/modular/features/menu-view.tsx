@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import type * as React from "react";
 import type { ReactElement } from "react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
@@ -96,31 +96,54 @@ function DropdownView({
   );
 }
 
+function CustomField({ field }: { field: MenuField }) {
+  const node = useRef<HTMLElement | null>(null);
+  const attach = (container: HTMLDivElement | null) => {
+    if (!container) return;
+    const rendered = field.render?.();
+    if (rendered instanceof HTMLElement) {
+      container.replaceChildren(rendered);
+      node.current = rendered;
+    }
+  };
+  return <div ref={attach} />;
+}
+
 function DialogField({ field, values }: { field: MenuField; values: Record<string, unknown> }) {
+  const name = field.name;
+  const value = values[name];
+  if (field.type === "custom") return <CustomField field={field} />;
   return (
     <label style={{ display: "grid", gap: 6, marginTop: 12 }}>
-      {field.label ?? field.name}
+      {field.label ?? name}
       {field.type === "select" ? (
         <select
-          defaultValue={String(values[field.name] ?? "")}
-          onChange={(event) => {
-            values[field.name] = event.target.value;
-          }}
+          defaultValue={String(value ?? "")}
+          onChange={(event) => { values[name] = event.target.value; }}
         >
-          <option value="">Selecionar</option>
           {(field.options ?? []).map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
+            <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
+      ) : ["switch", "checkbox", "toggle"].includes(field.type ?? "") ? (
+        <input
+          type="checkbox"
+          defaultChecked={Boolean(value)}
+          onChange={(event) => { values[name] = event.target.checked; }}
+        />
+      ) : field.type === "textarea" ? (
+        <textarea
+          defaultValue={String(value ?? "")}
+          onChange={(event) => { values[name] = event.target.value; }}
+        />
       ) : (
         <input
-          type={field.type === "search" ? "search" : "text"}
+          type={["search", "number", "email", "password", "url"].includes(field.type ?? "") ? field.type : "text"}
           placeholder={field.placeholder}
-          defaultValue={String(values[field.name] ?? "")}
+          defaultValue={String(value ?? "")}
           onChange={(event) => {
-            values[field.name] = event.target.value;
+            values[name] = field.type === "number" && event.target.value !== ""
+              ? Number(event.target.value) : event.target.value;
           }}
         />
       )}
@@ -137,69 +160,77 @@ function DialogView({
   close: () => void;
   portal: HTMLElement;
 }) {
-  const values = useRef<Record<string, unknown>>({ ...schema.initialValues });
+  const values = useRef<Record<string, unknown>>({
+    ...Object.fromEntries(
+      [...(schema.fields ?? []), ...(schema.tabs ?? []).flatMap((tab) => tab.fields)]
+        .filter((field) => field.type !== "custom")
+        .map((field) => [field.name, field.value]),
+    ),
+    ...schema.initialValues,
+  });
+  const [activeTab, setActiveTab] = useState(schema.tabs?.[0]?.id ?? "");
+  const descriptionId = useId();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const fields = schema.tabs
+    ? schema.tabs.find((tab) => tab.id === activeTab)?.fields ?? []
+    : schema.fields ?? [];
   return (
-    <Dialog.Root
-      defaultOpen
-      onOpenChange={(open) => {
-        if (!open) queueMicrotask(close);
-      }}
-    >
+    <Dialog.Root defaultOpen onOpenChange={(open) => { if (!open) queueMicrotask(close); }}>
       <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483646, background: "#0009" }} />
         <Dialog.Content
-          aria-describedby={schema.description ? undefined : undefined}
+          aria-describedby={schema.description ? descriptionId : undefined}
           style={{
-            position: "fixed",
-            zIndex: 2147483647,
-            left: "50%",
-            bottom: 16,
-            transform: "translateX(-50%)",
-            width: "min(95vw, 540px)",
-            maxHeight: "85dvh",
-            overflow: "auto",
-            borderRadius: 16,
-            padding: 20,
-            background: "#18181b",
-            color: "#fafafa",
+            position: "fixed", zIndex: 2147483647, left: "50%", bottom: 16,
+            transform: "translateX(-50%)", width: "min(95vw, 540px)",
+            maxHeight: "85dvh", overflow: "auto", borderRadius: 16,
+            padding: 20, background: "#18181b", color: "#fafafa",
           }}
         >
           <Dialog.Title>{schema.title ?? "Menu"}</Dialog.Title>
-          {schema.description && <Dialog.Description>{schema.description}</Dialog.Description>}
-          {(schema.fields ?? []).map((field) => (
-            <DialogField key={field.name} field={field} values={values.current} />
-          ))}
+          {schema.description && <Dialog.Description id={descriptionId}>{schema.description}</Dialog.Description>}
+          {schema.tabs && (
+            <nav aria-label="Seções das preferências" style={{ display: "flex", gap: 6, overflowX: "auto", marginTop: 16 }}>
+              {schema.tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{ flexShrink: 0, padding: "8px 12px", borderRadius: 8,
+                    background: activeTab === tab.id ? "#6d28d9" : "#27272a", color: "#fff" }}
+                >{tab.label}</button>
+              ))}
+            </nav>
+          )}
+          <div key={activeTab}>
+            {fields.map((field) => <DialogField key={field.name} field={field} values={values.current} />)}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
             {(schema.actions ?? []).map((action) => (
               <button
                 key={action.id}
                 type="button"
-                disabled={pending}
+                disabled={pending || action.disabled}
                 onClick={() => {
                   if (pending) return;
+                  if (action.role === "cancel") { close(); return; }
                   setError(null);
                   setPending(true);
                   void Promise.resolve()
                     .then(() => action.handler?.({ values: values.current, close }))
-                    .then((result) => {
-                      if (result !== false) close();
-                    })
+                    .then((result) => { if (action.close === true || (action.close !== false && result !== false)) close(); })
                     .catch((reason: unknown) => {
                       setError(reason instanceof Error ? reason.message : String(reason));
                     })
                     .finally(() => setPending(false));
                 }}
-              >
-                {action.label}
-              </button>
+              >{action.label}</button>
             ))}
           </div>
           {error && <p role="alert">{error}</p>}
-          <Dialog.Close asChild>
-            <button type="button">Fechar</button>
-          </Dialog.Close>
+          <Dialog.Close asChild><button type="button">Fechar</button></Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -220,9 +251,12 @@ function mount(
   target.append(host, portal);
   let shared: { dispose: () => void } | undefined;
   let disposed = false;
+  let resolveResult!: (value: void) => void;
+  const result = new Promise<void>((resolve) => { resolveResult = resolve; });
   const close = () => {
     if (disposed) return;
     disposed = true;
+    resolveResult();
     // A Radix event can close its own React tree; defer unmount until the event finishes.
     queueMicrotask(() => {
       shared?.dispose();
@@ -238,7 +272,7 @@ function mount(
     portal.remove();
     throw error;
   }
-  return { close, dispose: close };
+  return { close, dispose: close, result };
 }
 
 /** Resolve the caller's tree without relying on a global ShadowRoot constructor. */

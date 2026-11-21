@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { RodMenu, RodMenuHost } from "./index.js";
 import {
   matches,
   readScriptRules,
@@ -52,6 +51,8 @@ function DockView({ controller }: { controller: DockController }) {
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
   const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
   const [search, setSearch] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSearch, setSettingsSearch] = useState("");
   const [position, setPosition] = useState(() => {
     const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
     return Number.isFinite(saved) && saved >= 12 && saved <= 88 ? saved : 46;
@@ -87,7 +88,6 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
-      <RodMenuHost />
       {!open && (
         <button
           className="launcher"
@@ -121,29 +121,7 @@ function DockView({ controller }: { controller: DockController }) {
               </Dialog.Close>
             </header>
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
-            <button
-              className="action"
-              onClick={() => {
-                setOpen(false);
-                RodMenu.open({
-                  id: "rod-dock-settings",
-                  title: "Preferências do Rod Dock",
-                  surface: "modal",
-                  fields: [{ id: "filter", type: "search", label: "Filtrar scripts", defaultValue: search }],
-                  actions: [
-                    {
-                      id: "apply",
-                      label: "Aplicar",
-                      onClick: ({ values, close }) => {
-                        setSearch(String(values.filter ?? ""));
-                        close();
-                      },
-                    },
-                    { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
-                  ],
-                });
-              }}
-            >
+            <button className="action" onClick={() => { setSettingsSearch(search); setSettingsOpen(true); }}>
               Preferências
             </button>
             <details className="module" open>
@@ -231,6 +209,30 @@ function DockView({ controller }: { controller: DockController }) {
                 </details>
               ))}
             </details>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      <Dialog.Root open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <Dialog.Portal container={portal}>
+          <Dialog.Overlay className="overlay" />
+          <Dialog.Content className="panel" aria-describedby={undefined}>
+            <header>
+              <Dialog.Title>Preferências do Rod Dock</Dialog.Title>
+              <Dialog.Close className="close" aria-label="Fechar preferências">✕</Dialog.Close>
+            </header>
+            <label htmlFor="rod-dock-filter">Filtrar scripts</label>
+            <input
+              id="rod-dock-filter"
+              type="search"
+              value={settingsSearch}
+              onChange={(event) => setSettingsSearch(event.target.value)}
+              placeholder="Buscar script..."
+              style={{ width: "100%", padding: 10, marginBlock: 12, borderRadius: 8, background: "#27272a", color: "white", border: "1px solid #3f3f46" }}
+            />
+            <div className="actions">
+              <button className="action" onClick={() => { setSearch(settingsSearch); setSettingsOpen(false); }}>Aplicar</button>
+              <Dialog.Close className="close">Cancelar</Dialog.Close>
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -334,7 +336,6 @@ export function installRodDock({
       disposed = true;
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
-      RodMenu.close();
       sharedMount?.dispose();
       host.remove();
       if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")

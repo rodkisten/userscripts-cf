@@ -24,11 +24,16 @@ export interface MenuField {
   placeholder?: string;
   options?: { value: string; label: string }[];
   searchable?: boolean;
+  value?: unknown;
+  render?: () => unknown;
 }
 export interface MenuAction {
   id: string;
   label: string;
   variant?: string;
+  role?: "cancel" | "submit" | string;
+  close?: boolean;
+  disabled?: boolean;
   handler?: (context: { values: Record<string, unknown>; close: () => void }) => unknown;
 }
 export interface MenuSchema {
@@ -40,6 +45,7 @@ export interface MenuSchema {
   size?: string;
   description?: string;
   fields?: MenuField[];
+  tabs?: { id: string; label: string; fields: MenuField[] }[];
   actions?: MenuAction[];
   initialValues?: Record<string, unknown>;
 }
