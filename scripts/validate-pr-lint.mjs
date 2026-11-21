@@ -126,7 +126,7 @@ export async function lintFixAndGate() {
       step.status(`Running ESLint --fix on ${jsTsFiles.length} changed file(s)...`);
       const eslintRes = runCmd('npx', ['eslint', '--fix', ...jsTsFiles], { logger: log });
       if (!eslintRes.ok) {
-        diagnostics.push(`### ESLint\\n\\`\\`\\`text\\n${(eslintRes.stderr || eslintRes.stdout || 'ESLint failed').slice(0, 8000)}\\n\\`\\`\\``);
+        diagnostics.push('### ESLint\n' + (eslintRes.stderr || eslintRes.stdout || 'ESLint failed').slice(0, 8000));
       }
       toolsUsed.push('ESLint (`--fix`)');
     }
@@ -138,7 +138,7 @@ export async function lintFixAndGate() {
         logger: log,
       });
       if (!prettierRes.ok) {
-        diagnostics.push(`### Prettier\\n\\`\\`\\`text\\n${(prettierRes.stderr || prettierRes.stdout || 'Prettier failed').slice(0, 8000)}\\n\\`\\`\\``);
+        diagnostics.push('### Prettier\n' + (prettierRes.stderr || prettierRes.stdout || 'Prettier failed').slice(0, 8000));
       }
       toolsUsed.push('Prettier (`--write`)');
     }
