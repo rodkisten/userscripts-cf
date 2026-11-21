@@ -381,8 +381,7 @@ export async function checkFormat() {
 // ============================================================================
 const COMMANDS = {
   'detect-lint': detectLint,
-  'autofix': runAutofix,
-  'comment-autofix': commentAutofix,
+  'fix-and-gate': lintFixAndGate,
   'check-format': checkFormat,
 };
 
