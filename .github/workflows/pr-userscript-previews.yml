@@ -31,14 +31,58 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
 
-      - name: 🌐 Realizar Deploy do Preview (Cloudflare / Ambiente)
-        id: deploy
+      - name: 📦 Build numbered PR installers
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
-          # ==============================================================================
-          # 🔧 SUBSTITUA ESTE BLOCO PELO SEU COMANDO REAL DE DEPLOY (ex: wrangler pages deploy)
-          # ==============================================================================
-          PREVIEW_URL="https://pr-${{ github.event.pull_request.number }}.userscripts-cf.pages.dev"
-          echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ -z "$PAGES_PROJECT" ]]; then
+            echo "::error::Configure USERSCRIPTS_PREVIEW_PAGES_PROJECT"
+            exit 1
+          fi
+          export USERSCRIPTS_PREVIEW_URL="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
+          npm ci --legacy-peer-deps --no-audit --no-fund
+          npm run build
+          node build/pr-preview.mjs
+
+      - name: ☁️ Deploy isolated Cloudflare Pages preview
+        id: deploy
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" || -z "$PAGES_PROJECT" ]]; then
+            echo "::error::Configure Cloudflare secrets and USERSCRIPTS_PREVIEW_PAGES_PROJECT."
+            exit 1
+          fi
+          npm exec --yes --package=wrangler@4 -- wrangler pages deploy "dist/pr-preview/$PR_NUMBER" --project-name "$PAGES_PROJECT" --branch "pr-$PR_NUMBER" 2>&1 | tee /tmp/preview-deploy.log
+          preview_url="$(grep -Eo 'https://[a-zA-Z0-9.-]+\\.pages\\.dev' /tmp/preview-deploy.log | tail -1)"
+          if [[ -z "$preview_url" ]]; then
+            echo "::error::Cloudflare did not return a deployment URL"
+            exit 1
+          fi
+          alias_url="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
+          echo "url=$alias_url" >> "$GITHUB_OUTPUT"
+          echo "Published: $preview_url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🔍 Verify published URL before commenting
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --location --max-time 15 "$PREVIEW_URL/" -o /tmp/preview-index.html && grep -q 'Userscripts Preview' /tmp/preview-index.html; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Preview deployment is not reachable"
+          exit 1
 
       - name: 🔍 Coletar Diff e Metadados do Commit
         id: diff-info
