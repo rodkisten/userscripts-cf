@@ -96,10 +96,23 @@ function DropdownView({
   );
 }
 
+function CustomField({ field }: { field: MenuField }) {
+  const node = useRef<HTMLElement | null>(null);
+  const attach = (container: HTMLDivElement | null) => {
+    if (!container) return;
+    const rendered = field.render?.();
+    if (rendered instanceof HTMLElement) {
+      container.replaceChildren(rendered);
+      node.current = rendered;
+    }
+  };
+  return <div ref={attach} />;
+}
+
 function DialogField({ field, values }: { field: MenuField; values: Record<string, unknown> }) {
   const name = field.name;
   const value = values[name];
-  if (field.type === "custom") return null;
+  if (field.type === "custom") return <CustomField field={field} />;
   return (
     <label style={{ display: "grid", gap: 6, marginTop: 12 }}>
       {field.label ?? name}
@@ -207,7 +220,7 @@ function DialogView({
                   setPending(true);
                   void Promise.resolve()
                     .then(() => action.handler?.({ values: values.current, close }))
-                    .then((result) => { if (result !== false || action.close === true) close(); })
+                    .then((result) => { if (action.close === true || (action.close !== false && result !== false)) close(); })
                     .catch((reason: unknown) => {
                       setError(reason instanceof Error ? reason.message : String(reason));
                     })
@@ -238,9 +251,12 @@ function mount(
   target.append(host, portal);
   let shared: { dispose: () => void } | undefined;
   let disposed = false;
+  let resolveResult!: (value: void) => void;
+  const result = new Promise<void>((resolve) => { resolveResult = resolve; });
   const close = () => {
     if (disposed) return;
     disposed = true;
+    resolveResult();
     // A Radix event can close its own React tree; defer unmount until the event finishes.
     queueMicrotask(() => {
       shared?.dispose();
@@ -256,7 +272,7 @@ function mount(
     portal.remove();
     throw error;
   }
-  return { close, dispose: close };
+  return { close, dispose: close, result };
 }
 
 /** Resolve the caller's tree without relying on a global ShadowRoot constructor. */
