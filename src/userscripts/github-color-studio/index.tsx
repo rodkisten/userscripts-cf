@@ -4,7 +4,8 @@ import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
-import { EditorView } from "@codemirror/view";
+import { Decoration, EditorView, ViewPlugin, WidgetType } from "@codemirror/view";
+import { StateEffect } from "@codemirror/state";
 
 const CODE_LINE_SELECTOR =
   '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
@@ -41,6 +42,73 @@ function findCodeMirror(): CMView | null {
     }
   }
   return null;
+}
+const installedViews = new WeakSet<CMView>();
+
+class ColorWidget extends WidgetType {
+  constructor(readonly value: string, readonly from: number) { super(); }
+  eq(other: ColorWidget) { return this.value === other.value && this.from === other.from; }
+  toDOM(view: EditorView): HTMLElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "rcs-cm-swatch";
+    button.title = `Edit ${this.value}`;
+    button.setAttribute("aria-label", `Edit color ${this.value}`);
+    button.style.backgroundColor = this.value;
+    button.addEventListener("mousedown", event => event.preventDefault());
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = normalizeColor(this.value).startsWith("#")
+        ? normalizeColor(this.value).slice(0, 7) : "#000000";
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      input.style.pointerEvents = "none";
+      document.body.append(input);
+      input.addEventListener("input", () => {
+        const current = view.state.doc.sliceString(this.from, this.from + this.value.length);
+        if (current !== this.value) return;
+        view.dispatch({ changes: { from: this.from, to: this.from + this.value.length, insert: input.value } });
+      });
+      input.addEventListener("change", () => input.remove(), { once: true });
+      input.addEventListener("blur", () => input.remove(), { once: true });
+      input.click();
+    });
+    return button;
+  }
+}
+const colorPlugin = ViewPlugin.fromClass(class {
+  decorations;
+  constructor(view: EditorView) { this.decorations = this.build(view); }
+  update(update: import("@codemirror/view").ViewUpdate) {
+    if (update.docChanged || update.viewportChanged) this.decorations = this.build(update.view);
+  }
+  build(view: EditorView) {
+    const ranges: { from: number; decoration: ReturnType<typeof Decoration.widget> }[] = [];
+    for (const { from, to } of view.visibleRanges) {
+      const source = view.state.doc.sliceString(from, to);
+      for (const match of scanColors(source)) {
+        const offset = from + match.from;
+        ranges.push({ from: offset, decoration: Decoration.widget({
+          widget: new ColorWidget(match.value, offset), side: -1,
+        }) });
+      }
+    }
+    return Decoration.set(ranges.sort((a,b) => a.from - b.from).map(item => item.decoration.range(item.from)));
+  }
+}, { decorations: plugin => plugin.decorations });
+
+function installColorPlugin(view: CMView): boolean {
+  if (installedViews.has(view)) return true;
+  try {
+    view.dispatch({ effects: StateEffect.appendConfig.of(colorPlugin) });
+    installedViews.add(view);
+    return true;
+  } catch (error) {
+    console.warn("[Color Studio] CodeMirror extension incompatible with host state modules", error);
+    return false;
+  }
 }
 function replaceCodeMirrorDocument(view: CMView, next: string): void {
   view.dispatch({
@@ -238,6 +306,7 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
   const applySource = (next: string): boolean => {
     const cmView = getCMView();
     if (cmView) {
+      installColorPlugin(cmView);
       replaceCodeMirrorDocument(cmView, next);
       setSourceVersion((version) => version + 1);
       return true;
@@ -258,7 +327,9 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     let scheduled = false;
     const refresh = () => {
       const next = [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)];
-      setAvailable(Boolean(getCMView() || getEditor() || getViewer() || document.querySelector(".cm-editor")));
+      const view = getCMView();
+      if (view) installColorPlugin(view);
+      setAvailable(Boolean(view || getEditor() || getViewer() || document.querySelector(".cm-editor")));
       setLines((previous) =>
         previous.length === next.length && previous.every((line, index) => line === next[index])
           ? previous
