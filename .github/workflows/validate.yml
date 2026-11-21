@@ -56,8 +56,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -d '' scripts < <(find build scripts -type f \\( -name '*.mjs' -o -name '*.js' -o -name '*.cjs' \\) -print0)
-          printf 'Checking %s build and automation scripts\\n' "${#scripts[@]}"
+          mapfile -d '' scripts < <(find build scripts -type f \( -name '*.mjs' -o -name '*.js' -o -name '*.cjs' \) -print0)
+          printf 'Checking %s build and automation scripts\n' "${#scripts[@]}"
           for script in "${scripts[@]}"; do
             node --check "$script"
           done
