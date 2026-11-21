@@ -1,3 +1,454 @@
+// build/index.mjs
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { performance } from "node:perf_hooks";
+import { format } from "prettier";
+
+import { stripBuildComments } from "./strip-comments.mjs";
+import definitions from "../userscripts.config.js";
+import distribution from "../distribution.config.js";
+import { matchURL } from "../src/core/match.ts";
+import { pageBridge, install } from "./bridge.js";
+import { installSandbox } from "./contexts.js";
+import { bundleRuntime } from "./bundle-runtime.mjs";
+import { C, fmt } from "./format.mjs";
+import { BuildReporter } from "./reporter.mjs";
+import { diagnosticPrelude } from "./diagnostics.mjs";
+import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
+import { packageIcon } from "./package-icons.mjs";
+import { analyzeClassReferences } from "./class-references.mjs";
+import { auditReactRootOwnership } from "./react-root-audit.mjs";
+
+const execFileAsync = promisify(execFile);
+
+export { fmt } from "./format.mjs";
+export { BuildReporter, isCI } from "./reporter.mjs";
+
+// ============================================================================
+// // @TODO: Mover para build/validate-config.mjs
+// ============================================================================
+export async function validateConfiguration(root, defs, dist, pkgVersion) {
+  if (!/^\d+\.\d+\.\d+$/.test(pkgVersion)) {
+    throw new Error("Use a stable x.y.z release version");
+  }
+
+  const cleanBaseURL = dist.baseURL.replace(/\/+$/, "");
+  const parsedURL = new URL(cleanBaseURL);
+  if (
+    parsedURL.protocol !== "https:" ||
+    parsedURL.username ||
+    parsedURL.password ||
+    parsedURL.search ||
+    parsedURL.hash
+  ) {
+    throw new Error("Distribution URL must use HTTPS without credentials, query or hash");
+  }
+
+  const ids = new Set();
+  const rootPrefix = root + path.sep;
+
+  await Promise.all(
+    defs.map(async (definition) => {
+      if (!/^[a-z][a-z0-9-]*$/.test(definition.id) || ids.has(definition.id)) {
+        throw new Error(`Invalid or duplicate userscript id: ${definition.id}`);
+      }
+      ids.add(definition.id);
+
+      if (!definition.matches?.length) {
+        throw new Error(`Missing URL patterns: ${definition.id}`);
+      }
+
+      const patterns = [...definition.matches, ...(definition.exclude || [])];
+      for (let i = 0; i < patterns.length; i++) {
+        matchURL(patterns[i], "https://example.com/");
+      }
+
+      const entry = path.resolve(root, definition.entry);
+      if (!entry.startsWith(rootPrefix)) {
+        throw new Error(`Entry outside project: ${definition.entry}`);
+      }
+
+      const candidates = [entry];
+      if (/\.jsx?$/.test(entry)) {
+        const stem = entry.replace(/\.jsx?$/, "");
+        candidates.push(`${stem}.ts`, `${stem}.tsx`, `${stem}.jsx`);
+      }
+
+      const checks = await Promise.all(
+        candidates.map(async (candidate) => {
+          try {
+            return (await fs.stat(candidate)).isFile();
+          } catch (error) {
+            if (error.code === "ENOENT" || error.code === "ENOTDIR") return false;
+            throw error;
+          }
+        }),
+      );
+
+      if (!checks.some(Boolean)) {
+        throw new Error(`Userscript entry not found: ${definition.entry}`);
+      }
+    }),
+  );
+
+  return cleanBaseURL;
+}
+
+// ============================================================================
+// // @TODO: Mover para build/metadata-generator.mjs
+// ============================================================================
+export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
+  const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue"]);
+  const requires = new Set();
+  const connects = new Set();
+
+  for (const item of target.definitions) {
+    if (item.grants) for (const g of item.grants) grants.add(g);
+    if (item.requires) for (const r of item.requires) requires.add(r);
+    if (item.connect) for (const c of item.connect) connects.add(c);
+  }
+
+  const description =
+    target.id === "standalone"
+      ? "Instalador único: todos os módulos com roteamento e configuração por site."
+      : "Vite IIFE; roteamento SPA e storage GM isolado por módulo.";
+
+  const lines = [
+    "// ==UserScript==",
+    `// @name         ${target.name}`,
+    `// @namespace    ${target.namespace || "https://rod.migos.club/userscripts-cf"}`,
+    `// @version      ${target.version}`,
+    `// @icon         ${baseURL}/icons/${target.id}.svg`,
+    `// @updateURL    ${baseURL}/${target.id}.meta.js`,
+    `// @downloadURL  ${baseURL}/${target.id}.user.js`,
+    `// @description  ${description}`,
+  ];
+
+  for (const p of patterns) lines.push(`// @match        ${p}`);
+  for (const e of exclusions) lines.push(`// @exclude      ${e}`);
+
+  lines.push("// @run-at       document-start", "// @noframes");
+
+  for (const g of grants) lines.push(`// @grant        ${g}`);
+  for (const r of requires) lines.push(`// @require      ${r}`);
+  for (const c of connects) lines.push(`// @connect      ${c}`);
+
+  lines.push("// ==/UserScript==");
+  return lines.join("\n");
+}
+
+// ============================================================================
+// // @TODO: Mover para build/icon-resolver.mjs
+// ============================================================================
+export async function resolveTargetIcon(root, iconSourceDir, target, log) {
+  const iconFile = path.join(iconSourceDir, `${target.id}.svg`);
+  try {
+    const svg = await fs.readFile(iconFile, "utf8");
+    return { svg };
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    const iconSpec = target.definitions.length === 1 ? target.definitions[0].icon : undefined;
+    const icon = await packageIcon({
+      name: target.name,
+      category: target.definitions[0]?.tags?.[0] || target.id,
+      spec: iconSpec,
+    });
+    await fs.mkdir(iconSourceDir, { recursive: true });
+    await fs.writeFile(iconFile, icon.svg);
+    log.info("Created icon source", path.relative(root, iconFile));
+    return icon;
+  }
+}
+
+// ============================================================================
+// // @TODO: Mover para build/target-bundler.mjs
+// ============================================================================
+export async function compileTarget(target, context) {
+  const { root, out, iconSource, baseURL, version, catalog, runtimeFeatureAudit, log } = context;
+  const targetStart = performance.now();
+
+  const worldInstallers = await Promise.all(
+    ["sandbox", "page"].map(async (world) => {
+      const selected = target.definitions.filter((item) => (item.world || "page") === world);
+      if (!selected.length) return null;
+
+      const features = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))];
+      const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
+
+      const runtime = await bundleRuntime(root, selected, {
+        dock: (target.id === "standalone" || target.id === "rod-dock") && world === "sandbox",
+        release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
+        catalog,
+        features,
+        dynamic,
+        onBundleStats: (stats) => {
+          runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats;
+        },
+      });
+
+      if (world === "sandbox") {
+        return `(${installSandbox.toString()})(function sandboxRuntime() { ${runtime}; return UserscriptsCF; }, ${JSON.stringify(target.id)});`;
+      }
+      return `(${install.toString()})(function pageRuntime() { ${runtime}; return UserscriptsCF; }, ${pageBridge.toString()}, ${JSON.stringify(selected.map((item) => item.id))}, ${JSON.stringify(target.id)});`;
+    }),
+  );
+
+  const installers = worldInstallers.filter(Boolean);
+  const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
+  const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
+
+  const [icon, formattedBody] = await Promise.all([
+    resolveTargetIcon(root, iconSource, target, log),
+    (async () => {
+      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
+      const rawCode = stripBuildComments([diagnosticSource, ...installers].join("\n\n"));
+      return format(rawCode, { parser: "babel", printWidth: 110 });
+    })(),
+  ]);
+
+  const metadata = buildUserscriptMetadata(target, baseURL, patterns, exclusions);
+  const debugFile = `${target.id}.js`;
+  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
+
+  // Each world bundle is already emitted as a self-contained IIFE by
+  // bundleRuntime and formattedBody contains no imports/exports, so a manual
+  // function wrapper replaces the previous second full Vite/Rolldown pass.
+  // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
+  const finalSource = `${metadata}\n\n(function() {\n${normalizedBody}})();\n`;
+  const metaSource = `${metadata}\n`;
+
+  const bodyBuffer = Buffer.from(formattedBody, "utf8");
+  const sourceBuffer = Buffer.from(finalSource, "utf8");
+  const metaBuffer = Buffer.from(metaSource, "utf8");
+
+  const references = analyzeClassReferences(finalSource.slice(metadata.length));
+  const auditEntry = {
+    debugBytes: bodyBuffer.byteLength,
+    debugGzipBytes: gzipSync(bodyBuffer, { level: 9 }).byteLength,
+    staticClasses: references.classes.length,
+    dynamicReferences: references.dynamic.length,
+    dynamicMethods: [...new Set(references.dynamic)].sort(),
+    bytes: sourceBuffer.byteLength,
+    gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
+  };
+
+  const file = `${target.id}.user.js`;
+  const metaFile = `${target.id}.meta.js`;
+
+  await Promise.all([
+    fs.writeFile(path.join(out, debugFile), normalizedBody),
+    fs.writeFile(path.join(out, file), sourceBuffer),
+    fs.writeFile(path.join(out, "icons", `${target.id}.svg`), icon.svg),
+    fs.writeFile(path.join(out, metaFile), metaBuffer),
+  ]);
+
+  const sha256 = createHash("sha256").update(sourceBuffer).digest("hex");
+  const metaSha256 = createHash("sha256").update(metaBuffer).digest("hex");
+  const elapsed = performance.now() - targetStart;
+
+  log.pass(
+    file,
+    `${fmt.bytes(sourceBuffer.byteLength)} · gzip ${fmt.bytes(auditEntry.gzipBytes)} · ${fmt.duration(elapsed)}`,
+  );
+
+  return {
+    targetId: target.id,
+    auditEntry,
+    manifestEntry: {
+      id: target.id,
+      name: target.name,
+      description:
+        target.id === "standalone"
+          ? "Todos os módulos em uma instalação"
+          : "Userscript independente com atualizações automáticas",
+      file,
+      debugFile,
+      metaFile,
+      metaSha256,
+      matches: patterns,
+      sha256,
+    },
+  };
+}
+
+// ============================================================================
+// // @TODO: Mover para build/audit-reporters.mjs
+// ============================================================================
+export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
+  const moduleConsumers = new Map();
+
+  for (const [scriptId, analysis] of Object.entries(runtimeFeatureAudit.scripts)) {
+    for (const module of analysis.modules) {
+      let item = moduleConsumers.get(module.file);
+      if (!item) {
+        item = { file: module.file, sourceBytes: module.sourceBytes, scripts: [] };
+        moduleConsumers.set(module.file, item);
+      }
+      item.scripts.push(scriptId);
+    }
+  }
+
+  runtimeFeatureAudit.sharedModules = [...moduleConsumers.values()]
+    .filter((m) => m.scripts.length > 1)
+    .map((m) => ({
+      ...m,
+      scripts: m.scripts.sort(),
+      aggregateSourceBytes: m.sourceBytes * m.scripts.length,
+    }))
+    .sort((a, b) => b.aggregateSourceBytes - a.aggregateSourceBytes || a.file.localeCompare(b.file));
+
+  runtimeFeatureAudit.summary = {
+    uniqueModules: moduleConsumers.size,
+    sharedModules: runtimeFeatureAudit.sharedModules.length,
+    sharedSourceBytesAcrossScripts: runtimeFeatureAudit.sharedModules.reduce(
+      (sum, m) => sum + m.aggregateSourceBytes,
+      0,
+    ),
+  };
+
+  for (const target of targets) {
+    const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
+    const features = [...new Set(scripts.flatMap((s) => s.features))].sort();
+    runtimeFeatureAudit.targets[target.id] = {
+      scripts: target.definitions.map(({ id }) => id),
+      features,
+      dynamic: scripts.some((s) => s.dynamic),
+      dynamicFiles: [...new Set(scripts.flatMap((s) => s.dynamicFiles))].sort(),
+      treeShaken: !scripts.some((s) => s.dynamic) && target.id !== "standalone",
+    };
+  }
+}
+
+export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
+  for (const [target, measurements] of Object.entries(classAudit)) {
+    const prefix = `${target}:`;
+    const runtime = Object.entries(runtimeFeatureAudit.bundles)
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([world, stats]) => ({ world: world.slice(prefix.length), ...stats }));
+
+    runtimeFeatureAudit.targets[target].output = {
+      bytes: measurements.bytes,
+      gzipBytes: measurements.gzipBytes,
+      debugBytes: measurements.debugBytes,
+      debugGzipBytes: measurements.debugGzipBytes,
+      runtimes: runtime.map(
+        ({ world, bytes, includedModuleCount, topModules, featureDefines, reactRootAudit }) => ({
+          world,
+          bytes,
+          includedModuleCount,
+          reactRootAudit,
+          topModules,
+          featureDefines,
+        }),
+      ),
+    };
+  }
+
+  const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
+  const invalidRoot = bundleEntries.some(
+    ([, stats]) =>
+      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
+  );
+  if (invalidRoot) {
+    throw new Error("[React root ownership] Missing or invalid per-world root audit report");
+  }
+
+  const retainedConsumers = new Map();
+  for (const [bundle, stats] of bundleEntries) {
+    for (const module of stats.modules) {
+      if (module.renderedBytes <= 0) continue;
+      let current = retainedConsumers.get(module.id);
+      if (!current) {
+        current = {
+          module: module.id,
+          bundles: [],
+          aggregateRenderedBytes: 0,
+          maxRenderedBytes: 0,
+        };
+        retainedConsumers.set(module.id, current);
+      }
+      current.bundles.push({ bundle, renderedBytes: module.renderedBytes });
+      current.aggregateRenderedBytes += module.renderedBytes;
+      if (module.renderedBytes > current.maxRenderedBytes) {
+        current.maxRenderedBytes = module.renderedBytes;
+      }
+    }
+  }
+
+  runtimeFeatureAudit.repeatedRenderedModules = [...retainedConsumers.values()]
+    .filter((entry) => entry.bundles.length > 1)
+    .sort((a, b) => b.aggregateRenderedBytes - a.aggregateRenderedBytes || a.module.localeCompare(b.module));
+
+  runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
+
+  const editorFamilies = [
+    ["codemirror", (id) => id.includes("/node_modules/@codemirror/")],
+    ["lezer", (id) => id.includes("/node_modules/@lezer/")],
+    ["acorn", (id) => id.includes("/node_modules/acorn/")],
+  ];
+
+  return {
+    schema: 1,
+    note: "renderedBytes are pre-minification Rolldown contributions, not gzip or estimated download savings",
+    bundles: Object.fromEntries(
+      bundleEntries.map(([target, stats]) => {
+        const families = Object.fromEntries(
+          editorFamilies.map(([family, pattern]) => {
+            const modules = stats.modules.filter((item) => item.renderedBytes > 0 && pattern(item.id));
+            return [
+              family,
+              {
+                renderedBytes: modules.reduce((total, item) => total + item.renderedBytes, 0),
+                modules: modules.map(({ id, renderedBytes }) => ({ id, renderedBytes })),
+              },
+            ];
+          }),
+        );
+        return [
+          target,
+          {
+            families,
+            totalEditorRenderedBytes: Object.values(families).reduce(
+              (total, item) => total + item.renderedBytes,
+              0,
+            ),
+          },
+        ];
+      }),
+    ),
+  };
+}
+
+// ============================================================================
+// // @TODO: Mover para build/checksums.mjs
+// ============================================================================
+export async function generateDirectoryChecksums(directory) {
+  async function collectFiles(dir, prefix = "") {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const tasks = entries.map(async (entry) => {
+      const relative = path.posix.join(prefix, entry.name);
+      const absolute = path.join(dir, entry.name);
+      if (entry.isDirectory()) return collectFiles(absolute, relative);
+      if (entry.isFile()) {
+        const content = await fs.readFile(absolute);
+        const hash = createHash("sha256").update(content).digest("hex");
+        return [{ relative, line: `${hash}  ${relative}` }];
+      }
+      return [];
+    });
+    return (await Promise.all(tasks)).flat();
+  }
+
+  const results = await collectFiles(directory);
+  results.sort((a, b) => a.relative.localeCompare(b.relative));
+  return results.map((r) => r.line).join("\n") + "\n";
+}
+
 // ============================================================================
 // ORQUESTRADOR PRINCIPAL (build/index.mjs)
 // ============================================================================
