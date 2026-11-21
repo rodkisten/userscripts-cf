@@ -25,3 +25,13 @@ In GitHub, configure the repository secret `PREVIEW_UPLOAD_TOKEN` with the same 
 ## Safety and limitations
 
 Do not enable a public R2 bucket; all downloads go through the Worker. Publication and deletion require a secret, while installer downloads are public. PR source is untrusted, so the secret-bearing publication workflow never checks out or executes the PR code. A workflow-run event may lack an associated PR number; that case is intentionally skipped. Do not claim the domain is live before its Worker binding, DNS and secrets have been configured and a real preview upload succeeds. The trusted workflow checks the PR state and head SHA before publication; a close-versus-upload race is still possible and should be addressed with a final post-upload check or a serialized publish/delete queue.
+
+## Provisioned Cloudflare resources (2026-11-21)
+
+- Worker `userscripts-pr-previews` deployed through the Cloudflare API.
+- Private bucket `userscripts-pr-previews` bound as `PREVIEWS` (binding verified).
+- Custom domain `userscripts.preview.migos.club` attached to the Worker (verified in Cloudflare API).
+- **Not yet configured:** `PREVIEW_UPLOAD_TOKEN` secret on Worker and GitHub; publication remains disabled (401) without it.
+- **Not yet verified:** external DNS/TLS reachability and end-to-end installer publication. The domain did not resolve from the available isolated validation environment; do not claim the site is live.
+
+The worker was deployed directly from this PR's `cloudflare/pr-preview-worker.js` source. Future changes to that source require another Worker deployment; merging alone does not redeploy the Worker.
