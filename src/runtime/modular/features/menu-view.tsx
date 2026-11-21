@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import type * as React from "react";
 import type { ReactElement } from "react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
@@ -156,7 +156,7 @@ function DialogView({
     ...schema.initialValues,
   });
   const [activeTab, setActiveTab] = useState(schema.tabs?.[0]?.id ?? "");
-  const [revision, setRevision] = useState(0);
+  const descriptionId = useId();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const fields = schema.tabs
@@ -167,7 +167,7 @@ function DialogView({
       <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483646, background: "#0009" }} />
         <Dialog.Content
-          aria-describedby={schema.description ? "rod-menu-description" : undefined}
+          aria-describedby={schema.description ? descriptionId : undefined}
           style={{
             position: "fixed", zIndex: 2147483647, left: "50%", bottom: 16,
             transform: "translateX(-50%)", width: "min(95vw, 540px)",
@@ -176,7 +176,7 @@ function DialogView({
           }}
         >
           <Dialog.Title>{schema.title ?? "Menu"}</Dialog.Title>
-          {schema.description && <Dialog.Description id="rod-menu-description">{schema.description}</Dialog.Description>}
+          {schema.description && <Dialog.Description id={descriptionId}>{schema.description}</Dialog.Description>}
           {schema.tabs && (
             <nav aria-label="Seções das preferências" style={{ display: "flex", gap: 6, overflowX: "auto", marginTop: 16 }}>
               {schema.tabs.map((tab) => (
@@ -184,14 +184,14 @@ function DialogView({
                   key={tab.id}
                   type="button"
                   aria-current={activeTab === tab.id ? "page" : undefined}
-                  onClick={() => { setActiveTab(tab.id); setRevision((value) => value + 1); }}
+                  onClick={() => setActiveTab(tab.id)}
                   style={{ flexShrink: 0, padding: "8px 12px", borderRadius: 8,
                     background: activeTab === tab.id ? "#6d28d9" : "#27272a", color: "#fff" }}
                 >{tab.label}</button>
               ))}
             </nav>
           )}
-          <div key={`${activeTab}-${revision}`}>
+          <div key={activeTab}>
             {fields.map((field) => <DialogField key={field.name} field={field} values={values.current} />)}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
