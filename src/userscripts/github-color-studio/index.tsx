@@ -4,10 +4,50 @@ import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
+import { EditorView } from "@codemirror/view";
 
 const CODE_LINE_SELECTOR =
   '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
 const VIEW_SELECTOR = '[data-testid="code-viewer"], .react-code-lines, table.highlight';
+
+// CodeMirror keeps its document in EditorState, not in an underlying textarea.
+// Some hosts expose their view through cmView; never modify the editor's DOM text.
+type CMView = Pick<EditorView, "state" | "dispatch"> & { dom: HTMLElement };
+type ViewCarrier = HTMLElement & {
+  cmView?: { view?: CMView } | CMView;
+  view?: CMView;
+};
+function isCMView(value: unknown): value is CMView {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<CMView>;
+  return !!candidate.state?.doc && typeof candidate.dispatch === "function";
+}
+function findCodeMirror(): CMView | null {
+  for (const element of document.querySelectorAll<HTMLElement>(".cm-editor")) {
+    const node = element as ViewCarrier;
+    const attached = node.cmView;
+    const view = attached && "view" in attached ? attached.view : attached;
+    if (isCMView(view)) return view;
+    if (isCMView(node.view)) return node.view;
+    // Only supported if the host exposes a compatible CodeMirror view.
+    const finder = EditorView as typeof EditorView & {
+      findFromDOM?: (element: HTMLElement) => EditorView | null;
+    };
+    try {
+      const discovered = finder.findFromDOM?.(element);
+      if (isCMView(discovered)) return discovered;
+    } catch {
+      // Different CodeMirror module copies may not share internal view metadata.
+    }
+  }
+  return null;
+}
+function replaceCodeMirrorDocument(view: CMView, next: string): void {
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: next },
+  });
+}
+
 function ColorStudio({
   getSource,
   applySource,
@@ -186,7 +226,9 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
       'textarea[aria-label*="code" i], textarea[aria-label*="file" i], textarea.js-code-editor, textarea[data-testid*="editor"]',
     );
   const getViewer = () => document.querySelector(VIEW_SELECTOR);
+  const getCMView = () => findCodeMirror();
   const getSource = () =>
+    getCMView()?.state.doc.toString() ??
     getEditor()?.value ??
     ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)]
       .map((line) => line.textContent ?? "")
@@ -194,6 +236,12 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
       getViewer()?.textContent ||
       "");
   const applySource = (next: string): boolean => {
+    const cmView = getCMView();
+    if (cmView) {
+      replaceCodeMirrorDocument(cmView, next);
+      setSourceVersion((version) => version + 1);
+      return true;
+    }
     const editor = getEditor();
     if (!editor) {
       void navigator.clipboard.writeText(next);
@@ -210,7 +258,7 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     let scheduled = false;
     const refresh = () => {
       const next = [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)];
-      setAvailable(Boolean(getEditor() || getViewer()));
+      setAvailable(Boolean(getCMView() || getEditor() || getViewer() || document.querySelector(".cm-editor")));
       setLines((previous) =>
         previous.length === next.length && previous.every((line, index) => line === next[index])
           ? previous
