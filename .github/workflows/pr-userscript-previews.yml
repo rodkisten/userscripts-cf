@@ -42,6 +42,7 @@ jobs:
             exit 1
           fi
           export USERSCRIPTS_PREVIEW_URL="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
+          export USERSCRIPTS_PREVIEW_ROOT=true
           npm ci --legacy-peer-deps --no-audit --no-fund
           npm run build
           node build/pr-preview.mjs
@@ -61,7 +62,7 @@ jobs:
             exit 1
           fi
           npm exec --yes --package=wrangler@4 -- wrangler pages deploy "dist/pr-preview/$PR_NUMBER" --project-name "$PAGES_PROJECT" --branch "pr-$PR_NUMBER" 2>&1 | tee /tmp/preview-deploy.log
-          preview_url="$(grep -Eo 'https://[a-zA-Z0-9.-]+\\.pages\\.dev' /tmp/preview-deploy.log | tail -1)"
+          preview_url="$(grep -Eo 'https://[a-zA-Z0-9.-]+[.]pages[.]dev' /tmp/preview-deploy.log | tail -1)"
           if [[ -z "$preview_url" ]]; then
             echo "::error::Cloudflare did not return a deployment URL"
             exit 1
