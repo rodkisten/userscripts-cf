@@ -25,15 +25,16 @@ function isCMView(value: unknown): value is CMView {
 }
 function findCodeMirror(): CMView | null {
   for (const element of document.querySelectorAll<HTMLElement>(".cm-editor")) {
-    const node = element as ViewCarrier;
+    const node = (element.querySelector(".cm-content") ?? element) as ViewCarrier;
     const attached = node.cmView;
-    const view = attached && "view" in attached ? attached.view : attached;
+    const root = attached && "rootView" in attached ? (attached as { rootView?: { view?: CMView } }).rootView?.view : undefined;
+    const view = root ?? (attached && "view" in attached ? attached.view : attached);
     if (isCMView(view)) return view;
     if (isCMView(node.view)) return node.view;
+    const wrapper = element as ViewCarrier;
+    if (isCMView(wrapper.view)) return wrapper.view;
     // Only supported if the host exposes a compatible CodeMirror view.
-    const finder = EditorView as typeof EditorView & {
-      findFromDOM?: (element: HTMLElement) => EditorView | null;
-    };
+    const finder = EditorView;
     try {
       const discovered = finder.findFromDOM?.(element);
       if (isCMView(discovered)) return discovered;
@@ -66,13 +67,15 @@ class ColorWidget extends WidgetType {
       input.style.opacity = "0";
       input.style.pointerEvents = "none";
       document.body.append(input);
+      let currentValue = this.value;
       input.addEventListener("input", () => {
-        const current = view.state.doc.sliceString(this.from, this.from + this.value.length);
-        if (current !== this.value) return;
-        view.dispatch({ changes: { from: this.from, to: this.from + this.value.length, insert: input.value } });
+        const current = view.state.doc.sliceString(this.from, this.from + currentValue.length);
+        if (current !== currentValue) return;
+        view.dispatch({ changes: { from: this.from, to: this.from + currentValue.length, insert: input.value } });
+        currentValue = input.value;
       });
       input.addEventListener("change", () => input.remove(), { once: true });
-      input.addEventListener("blur", () => input.remove(), { once: true });
+      input.addEventListener("blur", () => queueMicrotask(() => input.remove()), { once: true });
       input.click();
     });
     return button;
