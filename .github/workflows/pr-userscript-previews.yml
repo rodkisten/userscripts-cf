@@ -34,8 +34,14 @@ jobs:
       - name: 📦 Build numbered PR installers
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+          PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
+          set -euo pipefail
+          if [[ -z "$PAGES_PROJECT" ]]; then
+            echo "::error::Configure USERSCRIPTS_PREVIEW_PAGES_PROJECT"
+            exit 1
+          fi
+          export USERSCRIPTS_PREVIEW_URL="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
           npm ci --legacy-peer-deps --no-audit --no-fund
           npm run build
           node build/pr-preview.mjs
@@ -60,7 +66,8 @@ jobs:
             echo "::error::Cloudflare did not return a deployment URL"
             exit 1
           fi
-          echo "url=$preview_url" >> "$GITHUB_OUTPUT"
+          alias_url="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
+          echo "url=$alias_url" >> "$GITHUB_OUTPUT"
           echo "Published: $preview_url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🔍 Verify published URL before commenting
