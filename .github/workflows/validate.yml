@@ -52,8 +52,14 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: 📦 Install dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci --legacy-peer-deps
+
       - name: 🧭 Detect changes and plan validation
         id: plan
+        if: steps.install.outcome == 'success'
         env:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
@@ -62,12 +68,6 @@ jobs:
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs plan
-
-      - name: 📦 Install dependencies
-        id: install
-        if: steps.plan.outputs.run == 'true'
-        continue-on-error: true
-        run: npm ci --legacy-peer-deps
 
       - name: 🛠️ Dispatch lockfile repair when installation fails
         if: steps.install.outcome == 'failure'
