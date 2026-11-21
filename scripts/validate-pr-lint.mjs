@@ -142,7 +142,7 @@ export async function lintFixAndGate() {
       if (!checkRes.ok && checkRes.stdout) {
         diagnostics.push(`### Prettier (arquivos fora do padrão)\n\`\`\`text\n${checkRes.stdout}\n\`\`\``);
       }
-      runCmd('npx', ['prettier', '--write', '--loglevel', 'silent', ...prettierTargets], {
+      runCmd('npx', ['prettier', '--write', '--log-level', 'silent', ...prettierTargets], {
         logger: log,
       });
       toolsUsed.push('Prettier (`--write`)');
