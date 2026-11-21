@@ -9,7 +9,7 @@
 
 ## Deployment setup
 
-Use the Cloudflare dashboard or the Cloudflare `cf` CLI to create the R2 bucket and Worker, bind the bucket, configure the custom domain and secret, and deploy the Worker source. The repository intentionally does not introduce Wrangler into a project that has no Wrangler configuration.
+The private R2 bucket `userscripts-pr-previews` has been created in the connected Cloudflare account (2026-11-20). Use the Cloudflare dashboard or the Cloudflare `cf` CLI to create the Worker, bind this existing bucket, configure the custom domain and secret, and deploy the Worker source. The repository intentionally does not introduce Wrangler into a project that has no Wrangler configuration.
 
 In GitHub, configure the repository secret `PREVIEW_UPLOAD_TOKEN` with the same value as the Worker secret. The PR build workflow generates and uploads an Actions artifact **without secrets**. A separate trusted `workflow_run` workflow downloads the artifact and sends only allowlisted installer files to the Worker's authenticated `PUT /_publish/<PR>/<file>` endpoint. When the PR closes, a `pull_request_target` workflow calls `DELETE /_publish/<PR>` to remove its R2 objects.
 
@@ -24,4 +24,4 @@ In GitHub, configure the repository secret `PREVIEW_UPLOAD_TOKEN` with the same 
 
 ## Safety and limitations
 
-Do not enable a public R2 bucket; all downloads go through the Worker. Publication and deletion require a secret, while installer downloads are public. PR source is untrusted, so the secret-bearing publication workflow never checks out or executes the PR code. A workflow-run event may lack an associated PR number; that case is intentionally skipped. Do not claim the domain is live before its Worker binding, DNS and secrets have been configured and a real preview upload succeeds. A later workflow should guard against stale publication racing with PR closure.
+Do not enable a public R2 bucket; all downloads go through the Worker. Publication and deletion require a secret, while installer downloads are public. PR source is untrusted, so the secret-bearing publication workflow never checks out or executes the PR code. A workflow-run event may lack an associated PR number; that case is intentionally skipped. Do not claim the domain is live before its Worker binding, DNS and secrets have been configured and a real preview upload succeeds. The trusted workflow checks the PR state and head SHA before publication; a close-versus-upload race is still possible and should be addressed with a final post-upload check or a serialized publish/delete queue.
