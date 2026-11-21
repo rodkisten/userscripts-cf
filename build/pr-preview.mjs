@@ -10,7 +10,7 @@ if (!Number.isSafeInteger(number) || number < 1) throw Error("PR_NUMBER must be 
 const origin = (process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts.preview.migos.club").replace(/\/$/, "");
 const base = new URL(origin);
 if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash) throw Error("Invalid preview origin");
-const prefix = `/${number}`;
+const prefix = process.env.USERSCRIPTS_PREVIEW_ROOT === "true" ? "" : `/${number}`;
 const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 const escapeXML = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[char]);
