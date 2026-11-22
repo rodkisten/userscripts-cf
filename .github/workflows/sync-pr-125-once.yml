@@ -1,0 +1,44 @@
+name: "🔀 One-time PR 125 main synchronization"
+on:
+  push:
+    branches:
+      - fix/instagram-relay-ack-integrity
+    paths:
+      - .github/workflows/sync-pr-125-once.yml
+permissions:
+  contents: write
+jobs:
+  sync:
+    if: startsWith(github.event.head_commit.message, 'ci(sync): prepare one-time PR 125 synchronization')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: fix/instagram-relay-ack-integrity
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+      - name: Merge latest main preferring current branch on conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git fetch origin main fix/instagram-relay-ack-integrity
+          git merge --no-commit --no-ff -X ours origin/main || {
+            echo "Unresolved non-text conflicts:"
+            git diff --name-only --diff-filter=U
+            exit 1
+          }
+          git rm -f .github/workflows/sync-pr-125-once.yml
+          git add -A
+          git commit -m "chore(sync): merge main into PR 125 preserving current conflict changes [deploy]"
+          git push origin HEAD:fix/instagram-relay-ack-integrity
