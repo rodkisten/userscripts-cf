@@ -56,6 +56,15 @@ jobs:
         id: install
         continue-on-error: true
         run: npm ci --legacy-peer-deps
+      - name: 🛡️ Check build and release JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' scripts < <(find build scripts -type f \( -name '*.mjs' -o -name '*.js' -o -name '*.cjs' \) -print0)
+          printf 'Checking %s build and automation scripts\n' "${#scripts[@]}"
+          for script in "${scripts[@]}"; do
+            node --check "$script"
+          done
 
       - name: 🧭 Detect changes and plan validation
         id: plan
@@ -68,6 +77,10 @@ jobs:
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs plan
+
+      - name: 🧩 Smoke-check build orchestrator imports and initialization
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        run: node build/build.mjs --list-targets
 
       - name: 🛠️ Dispatch lockfile repair when installation fails
         if: steps.install.outcome == 'failure'

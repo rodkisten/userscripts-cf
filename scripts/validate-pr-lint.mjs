@@ -121,30 +121,25 @@ export async function lintFixAndGate() {
     const toolsUsed = [];
     const diagnostics = [];
 
-    // 1. Captura diagnóstico inicial + aplica ESLint --fix
+    // 1. Apply ESLint fixes only to changed JS/TS files.
     if (hasEslint === 'true' && jsTsFiles.length > 0) {
-      step.status(`Analisando e corrigindo ESLint em ${jsTsFiles.length} arquivo(s)...`);
-      const eslintRes = runCmd('npx', ['eslint', '--fix', '--format', 'compact', ...jsTsFiles], {
-        logger: log,
-      });
-      if (!eslintRes.ok && eslintRes.stdout) {
-        diagnostics.push(`### ESLint\n\`\`\`text\n${eslintRes.stdout.slice(0, 8000)}\n\`\`\``);
+      step.status(`Running ESLint --fix on ${jsTsFiles.length} changed file(s)...`);
+      const eslintRes = runCmd('npx', ['eslint', '--fix', ...jsTsFiles], { logger: log });
+      if (!eslintRes.ok) {
+        diagnostics.push('### ESLint\n' + (eslintRes.stderr || eslintRes.stdout || 'ESLint failed').slice(0, 8000));
       }
       toolsUsed.push('ESLint (`--fix`)');
     }
 
-    // 2. Captura diagnóstico inicial + aplica Prettier --write
+    // 2. Apply Prettier fixes only to changed supported files.
     if (hasPrettier === 'true' && prettierTargets.length > 0) {
-      step.status(`Formatando com Prettier ${prettierTargets.length} arquivo(s)...`);
-      const checkRes = runCmd('npx', ['prettier', '--list-different', ...prettierTargets], {
-        silent: true,
-      });
-      if (!checkRes.ok && checkRes.stdout) {
-        diagnostics.push(`### Prettier (arquivos fora do padrão)\n\`\`\`text\n${checkRes.stdout}\n\`\`\``);
-      }
-      runCmd('npx', ['prettier', '--write', '--loglevel', 'silent', ...prettierTargets], {
+      step.status(`Running Prettier --write on ${prettierTargets.length} changed file(s)...`);
+      const prettierRes = runCmd('npx', ['prettier', '--write', '--log-level', 'silent', ...prettierTargets], {
         logger: log,
       });
+      if (!prettierRes.ok) {
+        diagnostics.push('### Prettier\n' + (prettierRes.stderr || prettierRes.stdout || 'Prettier failed').slice(0, 8000));
+      }
       toolsUsed.push('Prettier (`--write`)');
     }
 
@@ -381,8 +376,7 @@ export async function checkFormat() {
 // ============================================================================
 const COMMANDS = {
   'detect-lint': detectLint,
-  'autofix': runAutofix,
-  'comment-autofix': commentAutofix,
+  'fix-and-gate': lintFixAndGate,
   'check-format': checkFormat,
 };
 
