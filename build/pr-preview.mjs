@@ -7,13 +7,21 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const number = Number(process.env.PR_NUMBER || process.env.GITHUB_PR_NUMBER);
 if (!Number.isSafeInteger(number) || number < 1) throw Error("PR_NUMBER must be a positive integer");
-const origin = (process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts.preview.migos.club").replace(/\/$/, "");
+const origin = (process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts.preview.migos.club").replace(
+  /\/$/,
+  "",
+);
 const base = new URL(origin);
-if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash) throw Error("Invalid preview origin");
+if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash)
+  throw Error("Invalid preview origin");
 const prefix = process.env.USERSCRIPTS_PREVIEW_ROOT === "true" ? "" : `/${number}`;
 const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
-const escapeXML = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[char]);
+const escapeXML = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[char],
+  );
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><path d="M64 8 122 112H6Z" fill="#f59e0b" stroke="#18181b" stroke-width="5" stroke-linejoin="round"/><text x="64" y="88" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="${String(number).length > 4 ? 23 : 34}" fill="#18181b">${escapeXML(number)}</text></svg>`;
 await fs.mkdir(path.join(output, "icons"), { recursive: true });
 await fs.writeFile(path.join(output, "icons", "pr.svg"), icon);
@@ -39,7 +47,13 @@ for (const item of manifest.scripts) {
   const source = metadata + original.slice(end + marker.length);
   await fs.writeFile(path.join(output, file), source);
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
-  catalog.scripts.push({ id: item.id, name: `#${number} ${item.name}`, file, metaFile, sha256: createHash("sha256").update(source).digest("hex") });
+  catalog.scripts.push({
+    id: item.id,
+    name: `#${number} ${item.name}`,
+    file,
+    metaFile,
+    sha256: createHash("sha256").update(source).digest("hex"),
+  });
 }
 await fs.writeFile(path.join(output, "manifest.json"), JSON.stringify(catalog, null, 2) + "\n");
 const data = JSON.stringify(catalog).replace(/</g, "\\u003c");

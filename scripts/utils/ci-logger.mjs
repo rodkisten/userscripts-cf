@@ -1,11 +1,10 @@
-import { performance } from 'node:perf_hooks';
+import { performance } from "node:perf_hooks";
 
 export const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
-export const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+export const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
 const supportsColor =
-  !process.env.NO_COLOR &&
-  (Boolean(process.env.FORCE_COLOR) || process.stdout.isTTY || isGitHubActions);
+  !process.env.NO_COLOR && (Boolean(process.env.FORCE_COLOR) || process.stdout.isTTY || isGitHubActions);
 
 const code = (open, close) => (str) => (supportsColor ? `\x1b[${open}m${str}\x1b[${close}m` : String(str));
 
@@ -33,12 +32,12 @@ export const ansi = {
 };
 
 export const badge = {
-  run: (label = 'RUN') => ansi.bold(ansi.bgCyan(ansi.black(` ${label} `))),
-  pass: (label = 'PASS') => ansi.bold(ansi.bgGreen(ansi.black(` ${label} `))),
-  warn: (label = 'WARN') => ansi.bold(ansi.bgYellow(ansi.black(` ${label} `))),
-  fail: (label = 'FAIL') => ansi.bold(ansi.bgRed(ansi.white(` ${label} `))),
-  info: (label = 'INFO') => ansi.bold(ansi.bgBlue(ansi.white(` ${label} `))),
-  skip: (label = 'SKIP') => ansi.bold(ansi.bgMagenta(ansi.white(` ${label} `))),
+  run: (label = "RUN") => ansi.bold(ansi.bgCyan(ansi.black(` ${label} `))),
+  pass: (label = "PASS") => ansi.bold(ansi.bgGreen(ansi.black(` ${label} `))),
+  warn: (label = "WARN") => ansi.bold(ansi.bgYellow(ansi.black(` ${label} `))),
+  fail: (label = "FAIL") => ansi.bold(ansi.bgRed(ansi.white(` ${label} `))),
+  info: (label = "INFO") => ansi.bold(ansi.bgBlue(ansi.white(` ${label} `))),
+  skip: (label = "SKIP") => ansi.bold(ansi.bgMagenta(ansi.white(` ${label} `))),
   step: (label) => ansi.bold(ansi.bgWhite(ansi.black(` ${label} `))),
 };
 
@@ -46,7 +45,7 @@ function formatDuration(ms) {
   return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`;
 }
 
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 class LocalSpinner {
   constructor(text) {
@@ -80,7 +79,7 @@ class LocalSpinner {
   }
 
   clearLine() {
-    if (this.active) process.stdout.write('\r\x1b[2K');
+    if (this.active) process.stdout.write("\r\x1b[2K");
   }
 
   stop(finalLine) {
@@ -94,7 +93,7 @@ class LocalSpinner {
 }
 
 export class AgentReporter {
-  constructor(title = 'AGENT', subtitle = '') {
+  constructor(title = "AGENT", subtitle = "") {
     this.title = title;
     this.subtitle = subtitle;
     this.startTime = performance.now();
@@ -103,12 +102,12 @@ export class AgentReporter {
 
   banner() {
     const tag = badge.run(this.title);
-    const sub = this.subtitle ? ` ${ansi.dim('·')} ${ansi.cyan(this.subtitle)}` : '';
+    const sub = this.subtitle ? ` ${ansi.dim("·")} ${ansi.cyan(this.subtitle)}` : "";
     const mode = isGitHubActions
-      ? ansi.dim('[GitHub Actions CI]')
+      ? ansi.dim("[GitHub Actions CI]")
       : isCI
-        ? ansi.dim('[CI]')
-        : ansi.dim('[Interactive TTY]');
+        ? ansi.dim("[CI]")
+        : ansi.dim("[Interactive TTY]");
     process.stdout.write(`\n${tag}${sub} ${mode}\n\n`);
   }
 
@@ -118,34 +117,34 @@ export class AgentReporter {
     if (this.activeSpinner) this.activeSpinner.render();
   }
 
-  pass(title, detail = '') {
-    const suffix = detail ? ` ${ansi.dim('→')} ${ansi.dim(detail)}` : '';
+  pass(title, detail = "") {
+    const suffix = detail ? ` ${ansi.dim("→")} ${ansi.dim(detail)}` : "";
     this._writeLine(`  ${badge.pass()} ${ansi.bold(title)}${suffix}`);
   }
 
-  info(title, detail = '') {
-    const suffix = detail ? ` ${ansi.dim('·')} ${ansi.gray(detail)}` : '';
+  info(title, detail = "") {
+    const suffix = detail ? ` ${ansi.dim("·")} ${ansi.gray(detail)}` : "";
     this._writeLine(`  ${badge.info()} ${title}${suffix}`);
   }
 
-  skip(title, reason = '') {
-    const suffix = reason ? ` ${ansi.dim(`(${reason})`)}` : '';
+  skip(title, reason = "") {
+    const suffix = reason ? ` ${ansi.dim(`(${reason})`)}` : "";
     this._writeLine(`  ${badge.skip()} ${ansi.dim(title)}${suffix}`);
   }
 
-  warn(title, detail = '') {
-    const suffix = detail ? ` ${ansi.dim('→')} ${ansi.yellow(detail)}` : '';
+  warn(title, detail = "") {
+    const suffix = detail ? ` ${ansi.dim("→")} ${ansi.yellow(detail)}` : "";
     this._writeLine(`  ${badge.warn()} ${ansi.yellow(title)}${suffix}`);
     if (isGitHubActions) {
-      process.stdout.write(`::warning::${title}${detail ? ` - ${detail}` : ''}\n`);
+      process.stdout.write(`::warning::${title}${detail ? ` - ${detail}` : ""}\n`);
     }
   }
 
-  fail(title, detail = '') {
-    const suffix = detail ? ` ${ansi.dim('→')} ${ansi.red(detail)}` : '';
+  fail(title, detail = "") {
+    const suffix = detail ? ` ${ansi.dim("→")} ${ansi.red(detail)}` : "";
     this._writeLine(`  ${badge.fail()} ${ansi.red(ansi.bold(title))}${suffix}`);
     if (isGitHubActions) {
-      process.stdout.write(`::error::${title}${detail ? ` - ${detail}` : ''}\n`);
+      process.stdout.write(`::error::${title}${detail ? ` - ${detail}` : ""}\n`);
     }
   }
 
@@ -166,13 +165,13 @@ export class AgentReporter {
     } else if (!isCI && process.stdout.isTTY) {
       this.activeSpinner = new LocalSpinner(ansi.bold(label)).start();
     } else {
-      process.stdout.write(`${badge.run('STEP')} ${ansi.bold(label)}\n`);
+      process.stdout.write(`${badge.run("STEP")} ${ansi.bold(label)}\n`);
     }
 
     const ctx = {
       status: (msg) => {
         if (this.activeSpinner) {
-          this.activeSpinner.update(`${ansi.bold(label)} ${ansi.dim('·')} ${ansi.cyan(msg)}`);
+          this.activeSpinner.update(`${ansi.bold(label)} ${ansi.dim("·")} ${ansi.cyan(msg)}`);
         } else {
           this.info(msg);
         }
@@ -189,22 +188,22 @@ export class AgentReporter {
       const duration = ansi.dim(formatDuration(performance.now() - stepStart));
 
       if (this.activeSpinner) {
-        this.activeSpinner.stop(`${badge.pass('DONE')} ${ansi.bold(label)} ${duration}`);
+        this.activeSpinner.stop(`${badge.pass("DONE")} ${ansi.bold(label)} ${duration}`);
         this.activeSpinner = null;
       } else {
-        process.stdout.write(`  ${badge.pass('DONE')} ${ansi.bold(label)} ${duration}\n`);
+        process.stdout.write(`  ${badge.pass("DONE")} ${ansi.bold(label)} ${duration}\n`);
       }
 
-      if (isGitHubActions) process.stdout.write('::endgroup::\n');
+      if (isGitHubActions) process.stdout.write("::endgroup::\n");
       return result;
     } catch (err) {
       const duration = ansi.dim(formatDuration(performance.now() - stepStart));
 
       if (this.activeSpinner) {
-        this.activeSpinner.stop(`${badge.fail('FAIL')} ${ansi.bold(label)} ${duration}`);
+        this.activeSpinner.stop(`${badge.fail("FAIL")} ${ansi.bold(label)} ${duration}`);
         this.activeSpinner = null;
       } else {
-        process.stdout.write(`  ${badge.fail('FAIL')} ${ansi.bold(label)} ${duration}\n`);
+        process.stdout.write(`  ${badge.fail("FAIL")} ${ansi.bold(label)} ${duration}\n`);
       }
 
       if (isGitHubActions) {
@@ -214,39 +213,39 @@ export class AgentReporter {
     }
   }
 
-  summary(statusOrMetrics = 'success', maybeMetrics = {}) {
-    const isStatusStr = typeof statusOrMetrics === 'string';
-    const status = isStatusStr ? statusOrMetrics : 'success';
+  summary(statusOrMetrics = "success", maybeMetrics = {}) {
+    const isStatusStr = typeof statusOrMetrics === "string";
+    const status = isStatusStr ? statusOrMetrics : "success";
     const metrics = isStatusStr ? maybeMetrics : statusOrMetrics;
 
     const total = formatDuration(performance.now() - this.startTime);
     const header =
-      status === 'success'
-        ? badge.pass('SUCCESS')
-        : status === 'warn'
-          ? badge.warn('COMPLETED WITH WARNINGS')
-          : badge.fail('FAILED');
+      status === "success"
+        ? badge.pass("SUCCESS")
+        : status === "warn"
+          ? badge.warn("COMPLETED WITH WARNINGS")
+          : badge.fail("FAILED");
 
-    process.stdout.write(`\n\n${header} ${ansi.dim('in')} ${ansi.bold(total)}\n`);
+    process.stdout.write(`\n\n${header} ${ansi.dim("in")} ${ansi.bold(total)}\n`);
     this.kvTable(metrics);
-    process.stdout.write('\n');
+    process.stdout.write("\n");
   }
-  
+
   cmdBlock(cmd, args = [], { maxLines = 3, width = 64 } = {}) {
     const lineWidth = Math.max(40, Math.min(process.stdout.columns || width, 88) - 4);
-    const divider = `  ${ansi.dim(ansi.gray('·'.repeat(lineWidth)))}`;
-    const tag = badge.run('RUN');
-    const padIndent = '       '; // Alinha as linhas seguintes logo abaixo do comando
+    const divider = `  ${ansi.dim(ansi.gray("·".repeat(lineWidth)))}`;
+    const tag = badge.run("RUN");
+    const padIndent = "       "; // Alinha as linhas seguintes logo abaixo do comando
 
     const formatArg = (arg) => (/[\s"'$`\\]/.test(arg) ? JSON.stringify(arg) : arg);
     const tokens = [cmd, ...args.map(formatArg)];
 
     const lines = [];
-    let currentLine = '';
+    let currentLine = "";
 
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-      const prefix = lines.length === 0 ? '' : padIndent;
+      const prefix = lines.length === 0 ? "" : padIndent;
       const available = lineWidth - (lines.length === 0 ? 6 : padIndent.length);
 
       const candidate = currentLine ? `${currentLine} ${token}` : token;
@@ -257,11 +256,11 @@ export class AgentReporter {
         // Se for a última linha permitida, trunca e encerra com contagem de args restantes
         if (lines.length === maxLines - 1) {
           const remaining = tokens.length - i;
-          const suffix = ` … (+${remaining} arg${remaining > 1 ? 's' : ''})`;
+          const suffix = ` … (+${remaining} arg${remaining > 1 ? "s" : ""})`;
           const base = currentLine || token;
           const trimmed = base.slice(0, Math.max(10, available - suffix.length));
           lines.push(`${prefix}${ansi.cyan(trimmed)}${ansi.dim(suffix)}`);
-          currentLine = '';
+          currentLine = "";
           break;
         }
 
@@ -270,13 +269,13 @@ export class AgentReporter {
           currentLine = token.length > available ? `${token.slice(0, available - 1)}…` : token;
         } else {
           lines.push(`${prefix}${ansi.cyan(`${token.slice(0, available - 1)}…`)}`);
-          currentLine = '';
+          currentLine = "";
         }
       }
     }
 
     if (currentLine && lines.length < maxLines) {
-      const prefix = lines.length === 0 ? '' : padIndent;
+      const prefix = lines.length === 0 ? "" : padIndent;
       lines.push(`${prefix}${ansi.cyan(currentLine)}`);
     }
 
@@ -289,7 +288,4 @@ export class AgentReporter {
   }
 }
 
-
-export const defaultLogger = new AgentReporter('EXEC');
-
-
+export const defaultLogger = new AgentReporter("EXEC");

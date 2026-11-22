@@ -131,7 +131,7 @@ jobs:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
           SCOPED_BUILDS_MATRIX: true
-          RUNTIME_TEST_SKIP_DIST: 'true'
+          RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs run
 
