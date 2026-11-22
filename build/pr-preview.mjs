@@ -65,7 +65,8 @@ if (missingIds.length) {
   const response = await fetch(remote + "/manifest.json", { signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw Error("Cannot preserve unchanged installers: previous preview manifest returned " + response.status);
   const previous = await response.json();
-  if (previous.pr !== number || !Array.isArray(previous.scripts)) throw Error("Invalid previous PR preview manifest");
+  if (previous.pr !== number || previous.baseURL !== remote || !Array.isArray(previous.scripts))
+    throw Error("Invalid previous PR preview manifest");
   for (const id of missingIds) {
     const item = previous.scripts.find((script) => script.id === id);
     if (!item || item.file !== id + ".user.js" || item.metaFile !== id + ".meta.js" || !/^[a-f0-9]{64}$/.test(item.sha256))
