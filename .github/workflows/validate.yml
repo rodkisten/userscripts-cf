@@ -21,7 +21,7 @@ permissions:
 
 concurrency:
   group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -134,6 +134,7 @@ jobs:
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs run
+        timeout-minutes: 5
 
       - name: 🎨 Build visual playground (independent of typecheck)
         if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
