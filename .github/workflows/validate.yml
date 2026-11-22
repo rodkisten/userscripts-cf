@@ -134,7 +134,7 @@ jobs:
           SCOPED_BUILDS_MATRIX: true
           RUNTIME_TEST_SKIP_DIST: 'true'
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node build/validate-changed.mjs run
+        run: node scripts/validate-changed.mjs run
 
       - name: 🎨 Build visual playground (independent of typecheck)
         if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
