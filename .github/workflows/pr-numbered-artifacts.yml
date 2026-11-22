@@ -1,0 +1,39 @@
+name: "▲ PR userscript preview artifacts"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: pr-preview-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build
+      - name: Generate isolated PR installers
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node build/pr-preview.mjs
+      - name: Record exact PR source SHA
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: printf '%s\n' "$PR_HEAD_SHA" > "dist/pr-preview/$PR_NUMBER/source-sha.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: userscripts-pr-${{ github.event.pull_request.number }}
+          path: dist/pr-preview/
+          if-no-files-found: error
+          retention-days: 7

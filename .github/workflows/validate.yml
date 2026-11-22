@@ -1,0 +1,185 @@
+name: Validate changed userscripts
+run-name: "🧪 Validate changed · ${{ github.ref_name }}"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Validation scope"
+        type: choice
+        options: [changed, all]
+        default: all
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+concurrency:
+  group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: "🔍 Validate affected files"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
+    steps:
+      - name: 🤖 Generate GitHub App token
+        id: app_token
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ steps.app_token.outputs.token || github.token }}
+
+      - name: 🟢 Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 📦 Install dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci --legacy-peer-deps
+      - name: 🛡️ Check build and release JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' scripts < <(find build scripts -type f \( -name '*.mjs' -o -name '*.js' -o -name '*.cjs' \) -print0)
+          printf 'Checking %s build and automation scripts\n' "${#scripts[@]}"
+          for script in "${scripts[@]}"; do
+            node --check "$script"
+          done
+
+      - name: 🧭 Detect changes and plan validation
+        id: plan
+        if: steps.install.outcome == 'success'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SCOPE: ${{ inputs.scope || 'changed' }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/validate-changed.mjs plan
+
+      - name: 🧩 Smoke-check build orchestrator imports and initialization
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
+        run: node build/build.mjs --list-targets
+
+      - name: 🛠️ Dispatch lockfile repair when installation fails
+        if: steps.install.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          gh workflow run repair-lockfile.yml --ref "$BRANCH"
+          echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: ❌ Fail current validation on installation error
+        if: steps.install.outcome == 'failure'
+        run: exit 1
+
+      - name: 🔎 Detect modified JS/TS/CSS files and linters
+        id: detect_lint
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/validate-pr-lint.mjs detect-lint
+
+      - name: 🪄 Lint & Format Gate (Auto-fix, Commit & Report)
+        id: lint_gate
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
+          HAS_PRETTIER: ${{ steps.detect_lint.outputs.has_prettier }}
+          HAS_ESLINT: ${{ steps.detect_lint.outputs.has_eslint }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/validate-pr-lint.mjs fix-and-gate
+
+      - name: ♻️ Restore exact-source validation result
+        id: validation_cache
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && !contains(github.event.pull_request.title, '(test:') && !contains(github.event.pull_request.title, '(build:')
+        uses: actions/cache/restore@v4
+        with:
+          path: .validation-cache/passed
+          key: userscripts-validation-v2-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml') }}
+
+      - name: ✅ Validate affected code
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
+        env:
+          FULL: ${{ steps.plan.outputs.full }}
+          SCRIPT_TESTS_SEPARATE: false
+          SCOPED_BUILDS_MATRIX: true
+          RUNTIME_TEST_SKIP_DIST: "true"
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/validate-changed.mjs run
+        timeout-minutes: 5
+
+      - name: 🎨 Build visual playground (independent of typecheck)
+        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
+        run: node build/design-system.mjs
+
+      - name: 📝 Record successful exact-source validation
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true' && success()
+        run: |
+          mkdir -p .validation-cache
+          printf '%s\n' "Validation passed for exact source fingerprint" > .validation-cache/passed
+
+      - name: 💾 Save successful exact-source validation
+        if: steps.validation_cache.outputs.cache-hit != 'true' && steps.plan.outputs.run == 'true' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: .validation-cache/passed
+          key: ${{ steps.validation_cache.outputs.cache-primary-key }}
+
+      - name: ⚡ Report reused validation
+        if: steps.validation_cache.outputs.cache-hit == 'true'
+        run: echo "Reused successful validation for identical source, tests and configuration fingerprint." >> "$GITHUB_STEP_SUMMARY"
+
+  scoped-builds:
+    name: "🏗️ Scoped build · ${{ matrix.target }}"
+    needs: validate
+    if: ${{ github.event_name == 'pull_request' && needs.validate.result == 'success' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.validate.outputs.scoped_matrix) }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+
+      - name: 🟢 Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: 🚀 Build selected userscript
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node build/build.mjs "--targets=$TARGET"

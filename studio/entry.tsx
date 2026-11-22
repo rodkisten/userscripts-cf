@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
@@ -10,20 +10,35 @@ import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
 import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
 import studioCss from "./studio.css?inline";
-const studioStyle = document.createElement("style");
-studioStyle.textContent = studioCss;
-document.head.append(studioStyle);
 
-type Demo = { id: string; title: string; group: string; description: string; fields: FieldDefinition[] };
+const STYLE_ATTR = "data-rod-studio-style";
+let studioStyle = document.querySelector<HTMLStyleElement>(`style[${STYLE_ATTR}]`);
+if (!studioStyle) {
+  studioStyle = document.createElement("style");
+  studioStyle.setAttribute(STYLE_ATTR, "");
+  document.head.append(studioStyle);
+}
+studioStyle.textContent = studioCss;
+
+type Demo = {
+  id: string;
+  title: string;
+  group: "Formulários" | "Controles" | "Receitas";
+  description: string;
+  fields: FieldDefinition[];
+};
+
+const GROUPS: Demo["group"][] = ["Formulários", "Controles", "Receitas"];
+
 const demos: Demo[] = [
   {
     id: "text",
     title: "Inputs",
     group: "Formulários",
     description: "Texto, email, senha, busca, URL e telefone",
-    fields: ["text", "email", "password", "search", "url", "tel"].map((type) => ({
+    fields: (["text", "email", "password", "search", "url", "tel"] as const).map((type) => ({
       id: type,
-      type: type as FieldDefinition["type"],
+      type,
       label: type,
       placeholder: "Digite aqui",
     })),
@@ -79,16 +94,21 @@ const demos: Demo[] = [
     ],
   },
 ];
+
 const surfaces: SurfaceType[] = ["bottom-sheet", "modal", "drawer", "popover"];
-function serialize(value: unknown) {
+
+function serialize(value: unknown): string {
   const seen = new WeakSet<object>();
   return (
     JSON.stringify(
       value,
       (_key, item: unknown) => {
-        if (typeof item === "bigint" || typeof item === "symbol" || typeof item === "function")
+        if (typeof item === "bigint" || typeof item === "symbol" || typeof item === "function") {
           return String(item);
-        if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack };
+        }
+        if (item instanceof Error) {
+          return { name: item.name, message: item.message, stack: item.stack };
+        }
         if (item instanceof Map) return { type: "Map", entries: [...item] };
         if (item instanceof Set) return { type: "Set", values: [...item] };
         if (typeof item === "object" && item !== null) {
@@ -101,12 +121,16 @@ function serialize(value: unknown) {
     ) ?? "undefined"
   );
 }
+
 function CodeMirrorSource({ code }: { code: string }) {
-  const host = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+
+  // Cria a instância do CodeMirror apenas uma vez
   useEffect(() => {
-    if (!host.current) return;
+    if (!hostRef.current) return;
     const view = new EditorView({
-      parent: host.current,
+      parent: hostRef.current,
       state: EditorState.create({
         doc: code,
         extensions: [
@@ -119,10 +143,31 @@ function CodeMirrorSource({ code }: { code: string }) {
         ],
       }),
     });
-    return () => view.destroy();
+    viewRef.current = view;
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Atualiza apenas o documento quando `code` muda, preservando scroll e instância
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const currentDoc = view.state.doc.toString();
+    if (currentDoc !== code) {
+      view.dispatch({
+        changes: { from: 0, to: currentDoc.length, insert: code },
+      });
+    }
   }, [code]);
-  return <div className="studio-code" ref={host} aria-label="Código de exemplo no CodeMirror 6" />;
+
+  return <div className="studio-code" ref={hostRef} aria-label="Código de exemplo no CodeMirror 6" />;
 }
+
+const MemoizedRodMenuHost = memo(RodMenuHost);
+
 function Studio() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("account");
@@ -134,7 +179,10 @@ function Studio() {
   const [depth, setDepth] = useState(2);
   const [lastAction, setLastAction] = useState<Record<string, unknown>>({ status: "Pronto para testar" });
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<number | undefined>(undefined);
+
   const demo = demos.find((item) => item.id === selected) ?? demos[0]!;
+
   const schema: MenuSchema = useMemo(
     () => ({
       id: "studio-" + demo.id,
@@ -159,6 +207,7 @@ function Studio() {
     }),
     [demo, title, surface, persist],
   );
+
   const code = useMemo(
     () =>
       'import { RodMenu } from "@rod/runtime/react-ui";\n\nRodMenu.open(' +
@@ -166,16 +215,43 @@ function Studio() {
       ");",
     [schema],
   );
-  const filtered = demos.filter((item) =>
-    (item.title + " " + item.group + " " + item.description).toLowerCase().includes(query.toLowerCase()),
+
+  // Reseta o indicador "Copiado" sempre que o código gerado mudar
+  useEffect(() => {
+    setCopied(false);
+  }, [code]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      normalizedQuery
+        ? demos.filter((item) =>
+            `${item.title} ${item.group} ${item.description}`.toLowerCase().includes(normalizedQuery),
+          )
+        : demos,
+    [normalizedQuery],
   );
+
   const open = () => RodMenu.open(schema);
+
   const copy = () => {
+    if (!navigator.clipboard) return;
     void navigator.clipboard
-      ?.writeText(code)
-      .then(() => setCopied(true))
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
+      })
       .catch(() => setCopied(false));
   };
+
   return (
     <div className="studio-shell">
       <aside className="studio-side">
@@ -187,18 +263,22 @@ function Studio() {
         </label>
         <input
           id="studio-search"
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar…"
         />
-        {["Formulários", "Controles", "Receitas"].map((group) => (
-          <section key={group}>
-            <h3>{group}</h3>
-            {filtered
-              .filter((item) => item.group === group)
-              .map((item) => (
+        {GROUPS.map((group) => {
+          const items = filtered.filter((item) => item.group === group);
+          if (items.length === 0) return null;
+          return (
+            <section key={group}>
+              <h3>{group}</h3>
+              {items.map((item) => (
                 <button
                   key={item.id}
+                  type="button"
+                  aria-current={selected === item.id ? "true" : undefined}
                   className={selected === item.id ? "studio-active" : ""}
                   onClick={() => setSelected(item.id)}
                 >
@@ -206,10 +286,13 @@ function Studio() {
                   <small>{item.description}</small>
                 </button>
               ))}
-          </section>
-        ))}
+            </section>
+          );
+        })}
+        {filtered.length === 0 && <p className="studio-hint">Nenhum componente encontrado.</p>}
         <div className="studio-side-note">React 19 · Radix · CodeMirror 6</div>
       </aside>
+
       <main className="studio-main">
         <header className="studio-top">
           <div>
@@ -217,22 +300,25 @@ function Studio() {
             <h1>{demo.title}</h1>
             <p>{demo.description}</p>
           </div>
-          <button className="studio-primary" onClick={open}>
+          <button type="button" className="studio-primary" onClick={open}>
             Abrir componente ↗
           </button>
         </header>
+
         <div className="studio-grid">
           <section className="studio-panel">
             <h2>Propriedades</h2>
             <label>
               Título
-              <input value={title} onChange={(event) => setTitle(event.target.value)} />
+              <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} />
             </label>
             <label>
               Apresentação
               <select value={surface} onChange={(event) => setSurface(event.target.value as SurfaceType)}>
                 {surfaces.map((item) => (
-                  <option key={item}>{item}</option>
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
                 ))}
               </select>
             </label>
@@ -244,12 +330,13 @@ function Studio() {
               />{" "}
               Persistir valores
             </label>
+
             <h2>Viewport</h2>
             <div className="studio-segments">
-              <button aria-pressed={device === "phone"} onClick={() => setDevice("phone")}>
+              <button type="button" aria-pressed={device === "phone"} onClick={() => setDevice("phone")}>
                 📱 Mobile
               </button>
-              <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
+              <button type="button" aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
                 ▣ Desktop
               </button>
             </div>
@@ -258,6 +345,7 @@ function Studio() {
               simulado.
             </p>
           </section>
+
           <section className="studio-panel studio-preview">
             <div className="studio-panel-head">
               <h2>Preview</h2>
@@ -272,35 +360,42 @@ function Studio() {
                 <span className="studio-eyebrow">LIVE COMPONENT</span>
                 <h3>{title}</h3>
                 <p>{demo.description}</p>
-                <button className="studio-primary" onClick={open}>
+                <button type="button" className="studio-primary" onClick={open}>
                   Testar {surface}
                 </button>
                 <small>
-                  {demo.fields.length} campos · {schema.actions?.length} ações
+                  {demo.fields.length} campos · {schema.actions?.length ?? 0} ações
                 </small>
               </div>
             </div>
           </section>
         </div>
+
         <section className="studio-panel studio-output">
           <div className="studio-panel-head">
             <div className="studio-segments">
-              <button aria-pressed={tab === "code"} onClick={() => setTab("code")}>
+              <button type="button" aria-pressed={tab === "code"} onClick={() => setTab("code")}>
                 Código
               </button>
-              <button aria-pressed={tab === "inspector"} onClick={() => setTab("inspector")}>
+              <button type="button" aria-pressed={tab === "inspector"} onClick={() => setTab("inspector")}>
                 Inspector
               </button>
             </div>
-            <button onClick={copy}>{copied ? "✓ Copiado" : "Copiar código"}</button>
+            <button type="button" onClick={copy}>
+              {copied ? "✓ Copiado" : "Copiar código"}
+            </button>
           </div>
           {tab === "code" ? (
             <CodeMirrorSource code={code} />
           ) : (
             <>
               <div className="studio-segments">
-                <button onClick={() => setDepth(20)}>Expandir</button>
-                <button onClick={() => setDepth(0)}>Recolher</button>
+                <button type="button" onClick={() => setDepth(20)}>
+                  Expandir
+                </button>
+                <button type="button" onClick={() => setDepth(0)}>
+                  Recolher
+                </button>
               </div>
               <ObjectInspector
                 key={depth}
@@ -310,12 +405,14 @@ function Studio() {
             </>
           )}
         </section>
+
         <footer>Rod UI Studio · React-only · Componentes reais, sem legado Solid</footer>
       </main>
-      <RodMenuHost />
+      <MemoizedRodMenuHost />
     </div>
   );
 }
+
 const mount = document.getElementById("studio-root");
 if (!mount) throw new Error("[Rod UI Studio] Missing #studio-root");
 createRoot(mount).render(<Studio />);

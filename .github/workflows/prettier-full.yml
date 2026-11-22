@@ -14,7 +14,7 @@ on:
       create_pr:
         description: 🔀 Open a pull request instead of pushing to the target branch
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
