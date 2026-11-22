@@ -13,6 +13,11 @@ export function registerShadowStyles(root: ShadowRoot, styles: readonly ShadowSt
     const css = typeof style === "string" ? style : style.css;
     if (!css) continue;
     let entry = entries.get(css);
+    if (entry && !entry.node.isConnected) {
+      // A host may replace its ShadowRoot contents without disposing style owners.
+      // Reattach the existing node instead of creating a duplicate registration.
+      root.prepend(entry.node);
+    }
     if (!entry) {
       const node = root.ownerDocument.createElement("style");
       node.textContent = css;
