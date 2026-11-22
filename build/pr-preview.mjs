@@ -18,6 +18,9 @@ if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.h
 const prefix = process.env.USERSCRIPTS_PREVIEW_ROOT === "true" ? "" : `/${number}`;
 const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
+const shortSha = (process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "").slice(0, 8);
+if (!/^[0-9a-f]{8}$/i.test(shortSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a commit SHA");
+const previewVersion = `${manifest.version}-preview.${number}.${shortSha}`;
 const escapeXML = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -26,7 +29,7 @@ const escapeXML = (value) =>
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><path d="M64 8 122 112H6Z" fill="#f59e0b" stroke="#18181b" stroke-width="5" stroke-linejoin="round"/><text x="64" y="88" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="${String(number).length > 4 ? 23 : 34}" fill="#18181b">${escapeXML(number)}</text></svg>`;
 await fs.mkdir(path.join(output, "icons"), { recursive: true });
 await fs.writeFile(path.join(output, "icons", "pr.svg"), icon);
-const catalog = { channel: "pr-preview", pr: number, baseURL: origin + prefix, scripts: [] };
+const catalog = { channel: "pr-preview", pr: number, version: previewVersion, baseURL: origin + prefix, scripts: [] };
 for (const item of manifest.scripts) {
   const file = `${item.id}.user.js`;
   const metaFile = `${item.id}.meta.js`;
@@ -41,6 +44,7 @@ for (const item of manifest.scripts) {
     else metadata = metadata.replace(marker, `// @${key.padEnd(12)} ${value}\n${marker}`);
   };
   replace("name", `#${number} ${item.name}`);
+  replace("version", previewVersion);
   replace("namespace", `${origin}/pr/${number}/${item.id}`);
   replace("icon", `${origin}${prefix}/icons/pr.svg`);
   replace("updateURL", `${origin}${prefix}/${metaFile}`);
@@ -53,6 +57,7 @@ for (const item of manifest.scripts) {
     name: `#${number} ${item.name}`,
     file,
     metaFile,
+    version: previewVersion,
     sha256: createHash("sha256").update(source).digest("hex"),
   });
 }
