@@ -29,7 +29,13 @@ const escapeXML = (value) =>
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><path d="M64 8 122 112H6Z" fill="#f59e0b" stroke="#18181b" stroke-width="5" stroke-linejoin="round"/><text x="64" y="88" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="${String(number).length > 4 ? 23 : 34}" fill="#18181b">${escapeXML(number)}</text></svg>`;
 await fs.mkdir(path.join(output, "icons"), { recursive: true });
 await fs.writeFile(path.join(output, "icons", "pr.svg"), icon);
-const catalog = { channel: "pr-preview", pr: number, version: previewVersion, baseURL: origin + prefix, scripts: [] };
+const catalog = {
+  channel: "pr-preview",
+  pr: number,
+  version: previewVersion,
+  baseURL: origin + prefix,
+  scripts: [],
+};
 for (const item of manifest.scripts) {
   const file = `${item.id}.user.js`;
   const metaFile = `${item.id}.meta.js`;
@@ -68,13 +74,21 @@ const missingIds = [...expectedIds].filter((id) => !catalog.scripts.some((item) 
 if (missingIds.length) {
   const remote = origin + prefix;
   const response = await fetch(remote + "/manifest.json", { signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw Error("Cannot preserve unchanged installers: previous preview manifest returned " + response.status);
+  if (!response.ok)
+    throw Error(
+      "Cannot preserve unchanged installers: previous preview manifest returned " + response.status,
+    );
   const previous = await response.json();
   if (previous.pr !== number || previous.baseURL !== remote || !Array.isArray(previous.scripts))
     throw Error("Invalid previous PR preview manifest");
   for (const id of missingIds) {
     const item = previous.scripts.find((script) => script.id === id);
-    if (!item || item.file !== id + ".user.js" || item.metaFile !== id + ".meta.js" || !/^[a-f0-9]{64}$/.test(item.sha256))
+    if (
+      !item ||
+      item.file !== id + ".user.js" ||
+      item.metaFile !== id + ".meta.js" ||
+      !/^[a-f0-9]{64}$/.test(item.sha256)
+    )
       throw Error("Missing valid previous preview installer: " + id);
     const [installer, metadata] = await Promise.all(
       [item.file, item.metaFile].map(async (file) => {
