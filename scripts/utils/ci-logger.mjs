@@ -230,7 +230,7 @@ export class AgentReporter {
     process.stdout.write(`\n\n${header} ${ansi.dim('in')} ${ansi.bold(total)}\n`);
     this.kvTable(metrics);
     process.stdout.write('\n');
-  },
+  }
   
   cmdBlock(cmd, args = [], { maxLines = 3, width = 64 } = {}) {
     const lineWidth = Math.max(40, Math.min(process.stdout.columns || width, 88) - 4);
