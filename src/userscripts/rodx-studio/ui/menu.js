@@ -21,53 +21,53 @@ export function createStudioMenus(Studio) {
     handle?.close();
   }
 
-  // The RodX workspace owns its ShadowRoot, delegated event handlers and CSS.
-  // Never transplant it into the runtime menu's second ShadowRoot.
+  // Use the shared Radix dialog instead of the legacy hand-built overlay.
+  // The workspace keeps its existing ShadowRoot and event handlers.
   function panel(id, title, node, onClose) {
     const existing = panels.get(id);
     if (existing) return existing;
-    const backdrop = document.createElement("div");
-    backdrop.setAttribute("data-rodx-panel-backdrop", id);
-    Object.assign(backdrop.style, {
-      position: "fixed",
-      inset: "0",
-      zIndex: "2147483498",
-      background: "rgba(0, 0, 0, .58)",
-    });
-    const previousStyle = node.getAttribute("style");
     const previousParent = node.parentNode;
     const nextSibling = node.nextSibling;
-    node.style.setProperty("position", "fixed", "important");
-    node.style.setProperty("inset", "0", "important");
-    node.style.setProperty("width", "100%", "important");
-    node.style.setProperty("max-width", "100vw", "important");
-    node.style.setProperty("height", "100dvh", "important");
-    node.style.setProperty("max-height", "100dvh", "important");
-    node.style.setProperty("overflow", "hidden", "important");
-    node.style.setProperty("z-index", "2147483499", "important");
-    document.body.append(backdrop, node);
-    let resolve;
-    const result = new Promise((done) => {
-      resolve = done;
+    const previousStyle = node.getAttribute("style");
+    const restore = () => {
+      if (previousStyle === null) node.removeAttribute("style");
+      else node.setAttribute("style", previousStyle);
+      if (previousParent?.isConnected) {
+        if (nextSibling?.parentNode === previousParent) previousParent.insertBefore(node, nextSibling);
+        else previousParent.appendChild(node);
+      }
+    };
+    let closed = false;
+    const dialog = library().open({
+      id: "rodx-" + id,
+      title,
+      presentation: "dialog",
+      size: "xl",
+      fields: [{
+        name: "workspace",
+        type: "custom",
+        render: () => {
+          node.style.setProperty("width", "100%", "important");
+          node.style.setProperty("height", "min(80dvh, 900px)", "important");
+          node.style.setProperty("position", "relative", "important");
+          node.style.setProperty("inset", "auto", "important");
+          return node;
+        },
+      }],
+      actions: [{ id: "close", label: "Fechar", role: "cancel" }],
     });
     const handle = {
-      result,
-      close() {
-        if (panels.get(id) !== handle) return;
-        panels.delete(id);
-        backdrop.remove();
-        if (previousStyle === null) node.removeAttribute("style");
-        else node.setAttribute("style", previousStyle);
-        if (previousParent?.isConnected) {
-          if (nextSibling?.parentNode === previousParent) previousParent.insertBefore(node, nextSibling);
-          else previousParent.appendChild(node);
-        } else document.body.append(node);
-        resolve({ reason: "close" });
-        onClose?.();
-      },
+      result: dialog.result,
+      close: () => dialog.close(),
     };
     panels.set(id, handle);
-    backdrop.addEventListener("click", () => handle.close());
+    void dialog.result.finally(() => {
+      if (closed) return;
+      closed = true;
+      panels.delete(id);
+      restore();
+      onClose?.();
+    });
     return handle;
   }
   return {
