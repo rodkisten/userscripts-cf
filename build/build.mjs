@@ -8,6 +8,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
 import { format } from "prettier";
+import { build as viteBuild } from "vite";
 
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
