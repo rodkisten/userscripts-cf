@@ -71,7 +71,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node build/validate-changed.mjs plan
+        run: node scripts/validate-changed.mjs plan
 
       - name: 📦 Install dependencies
         id: install
