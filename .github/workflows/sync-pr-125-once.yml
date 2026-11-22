@@ -1,4 +1,4 @@
-name: "🔀 One-time PR 125 main synchronization"
+name: "🔀 One-time PR #125 main synchronization"
 on:
   push:
     branches:
