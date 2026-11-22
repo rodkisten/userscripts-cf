@@ -17,7 +17,7 @@ jobs:
       - name: 📥 Checkout do Código
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
@@ -34,6 +34,8 @@ jobs:
       - name: 📦 Build numbered PR installers
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
           set -euo pipefail
@@ -44,8 +46,19 @@ jobs:
           export USERSCRIPTS_PREVIEW_URL="https://pr-$PR_NUMBER.$PAGES_PROJECT.pages.dev"
           export USERSCRIPTS_PREVIEW_ROOT=true
           npm ci --legacy-peer-deps --no-audit --no-fund
-          npm run build
+          node build/pr-preview-scope.mjs | tee /tmp/preview-scope.json
+          TARGETS="$(node -e 'const s=require("/tmp/preview-scope.json"); process.stdout.write(s.targets.join(","))')"
+          if [[ -z "$TARGETS" ]]; then
+            echo "No affected userscript installers; skipping deploy is not yet supported. Building complete catalog."
+            npm run build
+          else
+            node build/build.mjs "--targets=$TARGETS"
+          fi
           node build/pr-preview.mjs
+          echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
+          echo '\`\`\`json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"
+          echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
 
       - name: ☁️ Deploy isolated Cloudflare Pages preview
         id: deploy
