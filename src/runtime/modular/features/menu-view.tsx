@@ -1,31 +1,59 @@
 /** @jsxImportSource react */
 import type * as React from "react";
 import type { ReactElement } from "react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Label from "@radix-ui/react-label";
+import * as Select from "@radix-ui/react-select";
+import * as Switch from "@radix-ui/react-switch";
+import * as Checkbox from "@radix-ui/react-checkbox";
+import * as Tabs from "@radix-ui/react-tabs";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
+
+const EMPTY_SELECT_VALUE = "__rod_empty_option__";
+
+const controlBaseStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 10px",
+  borderRadius: 8,
+  border: "1px solid #3f3f46",
+  background: "#27272a",
+  color: "#fafafa",
+  fontSize: 14,
+  outline: "none",
+  boxSizing: "border-box",
+};
 
 function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLElement }) {
   return (
     <>
       {items.map((item, index) => {
-        if (item.type === "separator") return <DropdownMenu.Separator key={index} />;
-        if (item.children?.length)
+        const key = item.id ?? `${item.type ?? "item"}-${item.label ?? index}`;
+        if (item.type === "separator") {
           return (
-            <DropdownMenu.Sub key={index}>
+            <DropdownMenu.Separator
+              key={key}
+              style={{ height: 1, margin: "4px 0", background: "#3f3f46" }}
+            />
+          );
+        }
+        if (item.children?.length) {
+          return (
+            <DropdownMenu.Sub key={key}>
               <DropdownMenu.SubTrigger disabled={item.disabled}>{item.label}</DropdownMenu.SubTrigger>
               <DropdownMenu.Portal container={portal}>
-                <DropdownMenu.SubContent sideOffset={4}>
+                <DropdownMenu.SubContent sideOffset={4} style={{ zIndex: 2147483647 }}>
                   <DropdownItems items={item.children} portal={portal} />
                 </DropdownMenu.SubContent>
               </DropdownMenu.Portal>
             </DropdownMenu.Sub>
           );
-        if (item.type === "checkbox")
+        }
+        if (item.type === "checkbox") {
           return (
             <DropdownMenu.CheckboxItem
-              key={index}
+              key={key}
               disabled={item.disabled}
               checked={Boolean(item.checked)}
               onCheckedChange={(checked) => item.onCheckedChange?.(checked === true)}
@@ -33,8 +61,9 @@ function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLE
               {item.label}
             </DropdownMenu.CheckboxItem>
           );
+        }
         return (
-          <DropdownMenu.Item key={index} disabled={item.disabled} onSelect={() => item.onSelect?.()}>
+          <DropdownMenu.Item key={key} disabled={item.disabled} onSelect={() => item.onSelect?.()}>
             {item.label}
           </DropdownMenu.Item>
         );
@@ -52,7 +81,8 @@ function DropdownView({
   close: () => void;
   portal: HTMLElement;
 }) {
-  const rect = options.trigger.getBoundingClientRect();
+  const rect = useMemo(() => options.trigger.getBoundingClientRect(), [options.trigger]);
+
   return (
     <DropdownMenu.Root
       defaultOpen
@@ -97,57 +127,301 @@ function DropdownView({
 }
 
 function CustomField({ field }: { field: MenuField }) {
-  const node = useRef<HTMLElement | null>(null);
-  const attach = (container: HTMLDivElement | null) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
     if (!container) return;
     const rendered = field.render?.();
     if (rendered instanceof HTMLElement) {
       container.replaceChildren(rendered);
-      node.current = rendered;
     }
-  };
-  return <div ref={attach} />;
+    return () => {
+      container.replaceChildren();
+    };
+  }, [field]);
+
+  return <div ref={containerRef} />;
 }
 
-function DialogField({ field, values }: { field: MenuField; values: Record<string, unknown> }) {
+function RadixSelectField({
+  id,
+  field,
+  initialValue,
+  onChange,
+  portal,
+}: {
+  id: string;
+  field: MenuField;
+  initialValue: string;
+  onChange: (value: string) => void;
+  portal: HTMLElement;
+}) {
+  const encode = (val: string) => (val === "" ? EMPTY_SELECT_VALUE : val);
+  const decode = (val: string) => (val === EMPTY_SELECT_VALUE ? "" : val);
+  const [selected, setSelected] = useState(() => encode(initialValue));
+
+  return (
+    <Select.Root
+      value={selected}
+      disabled={field.disabled}
+      onValueChange={(next) => {
+        setSelected(next);
+        onChange(decode(next));
+      }}
+    >
+      <Select.Trigger
+        id={id}
+        aria-label={field.label ?? field.name}
+        style={{
+          ...controlBaseStyle,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          cursor: field.disabled ? "not-allowed" : "pointer",
+        }}
+      >
+        <Select.Value placeholder={field.placeholder ?? "Selecione..."} />
+        <Select.Icon aria-hidden="true">▾</Select.Icon>
+      </Select.Trigger>
+      <Select.Portal container={portal}>
+        <Select.Content
+          position="popper"
+          sideOffset={4}
+          style={{
+            zIndex: 2147483647,
+            minWidth: "var(--radix-select-trigger-width)",
+            maxHeight: 260,
+            overflow: "hidden",
+            borderRadius: 8,
+            border: "1px solid #3f3f46",
+            background: "#18181b",
+            color: "#fafafa",
+            boxShadow: "0 8px 24px #0008",
+          }}
+        >
+          <Select.Viewport style={{ padding: 4 }}>
+            {(field.options ?? []).map((option) => {
+              const optionValue = encode(String(option.value));
+              return (
+                <Select.Item
+                  key={optionValue}
+                  value={optionValue}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    padding: "6px 10px",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  <Select.ItemIndicator>✓</Select.ItemIndicator>
+                </Select.Item>
+              );
+            })}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
+
+function RadixSwitchField({
+  id,
+  field,
+  initialChecked,
+  onChange,
+}: {
+  id: string;
+  field: MenuField;
+  initialChecked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const [checked, setChecked] = useState(initialChecked);
+
+  return (
+    <Switch.Root
+      id={id}
+      checked={checked}
+      disabled={field.disabled}
+      onCheckedChange={(next) => {
+        setChecked(next);
+        onChange(next);
+      }}
+      style={{
+        width: 40,
+        height: 22,
+        borderRadius: 999,
+        border: "none",
+        padding: 2,
+        background: checked ? "#6d28d9" : "#3f3f46",
+        cursor: field.disabled ? "not-allowed" : "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        transition: "background 150ms ease",
+      }}
+    >
+      <Switch.Thumb
+        style={{
+          display: "block",
+          width: 18,
+          height: 18,
+          borderRadius: "50%",
+          background: "#fafafa",
+          transform: checked ? "translateX(18px)" : "translateX(0px)",
+          transition: "transform 150ms ease",
+        }}
+      />
+    </Switch.Root>
+  );
+}
+
+function RadixCheckboxField({
+  id,
+  field,
+  initialChecked,
+  onChange,
+}: {
+  id: string;
+  field: MenuField;
+  initialChecked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const [checked, setChecked] = useState(initialChecked);
+
+  return (
+    <Checkbox.Root
+      id={id}
+      checked={checked}
+      disabled={field.disabled}
+      onCheckedChange={(next) => {
+        const isChecked = next === true;
+        setChecked(isChecked);
+        onChange(isChecked);
+      }}
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        border: "1px solid #52525b",
+        background: checked ? "#6d28d9" : "#27272a",
+        color: "#fafafa",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: field.disabled ? "not-allowed" : "pointer",
+        padding: 0,
+      }}
+    >
+      <Checkbox.Indicator style={{ fontSize: 13, lineHeight: 1 }}>✓</Checkbox.Indicator>
+    </Checkbox.Root>
+  );
+}
+
+function DialogField({
+  field,
+  values,
+  portal,
+}: {
+  field: MenuField;
+  values: Record<string, unknown>;
+  portal: HTMLElement;
+}) {
+  const fieldId = useId();
   const name = field.name;
   const value = values[name];
+
   if (field.type === "custom") return <CustomField field={field} />;
+
+  const isSwitch = field.type === "switch" || field.type === "toggle";
+  const isCheckbox = field.type === "checkbox";
+
+  if (isSwitch || isCheckbox) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginTop: 12,
+        }}
+      >
+        <Label.Root htmlFor={fieldId} style={{ cursor: "pointer", fontSize: 14 }}>
+          {field.label ?? name}
+        </Label.Root>
+        {isSwitch ? (
+          <RadixSwitchField
+            id={fieldId}
+            field={field}
+            initialChecked={Boolean(value)}
+            onChange={(next) => {
+              values[name] = next;
+            }}
+          />
+        ) : (
+          <RadixCheckboxField
+            id={fieldId}
+            field={field}
+            initialChecked={Boolean(value)}
+            onChange={(next) => {
+              values[name] = next;
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <label style={{ display: "grid", gap: 6, marginTop: 12 }}>
-      {field.label ?? name}
+    <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+      <Label.Root htmlFor={fieldId} style={{ fontSize: 14 }}>
+        {field.label ?? name}
+      </Label.Root>
       {field.type === "select" ? (
-        <select
-          defaultValue={String(value ?? "")}
-          onChange={(event) => { values[name] = event.target.value; }}
-        >
-          {(field.options ?? []).map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-      ) : ["switch", "checkbox", "toggle"].includes(field.type ?? "") ? (
-        <input
-          type="checkbox"
-          defaultChecked={Boolean(value)}
-          onChange={(event) => { values[name] = event.target.checked; }}
+        <RadixSelectField
+          id={fieldId}
+          field={field}
+          initialValue={String(value ?? "")}
+          portal={portal}
+          onChange={(next) => {
+            values[name] = next;
+          }}
         />
       ) : field.type === "textarea" ? (
         <textarea
+          id={fieldId}
+          disabled={field.disabled}
+          placeholder={field.placeholder}
           defaultValue={String(value ?? "")}
-          onChange={(event) => { values[name] = event.target.value; }}
+          style={{ ...controlBaseStyle, minHeight: 84, resize: "vertical" }}
+          onChange={(event) => {
+            values[name] = event.target.value;
+          }}
         />
       ) : (
         <input
+          id={fieldId}
+          disabled={field.disabled}
           type={["search", "number", "email", "password", "url"].includes(field.type ?? "") ? field.type : "text"}
           placeholder={field.placeholder}
           defaultValue={String(value ?? "")}
+          style={controlBaseStyle}
           onChange={(event) => {
-            values[name] = field.type === "number" && event.target.value !== ""
-              ? Number(event.target.value) : event.target.value;
+            values[name] =
+              field.type === "number" && event.target.value !== ""
+                ? Number(event.target.value)
+                : event.target.value;
           }}
         />
       )}
-    </label>
+    </div>
   );
 }
 
@@ -168,69 +442,144 @@ function DialogView({
     ),
     ...schema.initialValues,
   });
+
   const [activeTab, setActiveTab] = useState(schema.tabs?.[0]?.id ?? "");
   const descriptionId = useId();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const fields = schema.tabs
-    ? schema.tabs.find((tab) => tab.id === activeTab)?.fields ?? []
-    : schema.fields ?? [];
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const runAction = (action: NonNullable<MenuSchema["actions"]>[number]) => {
+    if (pending) return;
+    if (action.role === "cancel") {
+      close();
+      return;
+    }
+    setError(null);
+    setPending(true);
+    void Promise.resolve()
+      .then(() => action.handler?.({ values: values.current, close }))
+      .then((result) => {
+        if (action.close === true || (action.close !== false && result !== false)) {
+          close();
+        }
+      })
+      .catch((reason: unknown) => {
+        if (mountedRef.current) {
+          setError(reason instanceof Error ? reason.message : String(reason));
+        }
+      })
+      .finally(() => {
+        if (mountedRef.current) {
+          setPending(false);
+        }
+      });
+  };
+
+  const primaryAction =
+    schema.actions?.find((action) => action.role !== "cancel" && !action.disabled) ?? null;
+
   return (
-    <Dialog.Root defaultOpen onOpenChange={(open) => { if (!open) queueMicrotask(close); }}>
+    <Dialog.Root
+      defaultOpen
+      onOpenChange={(open) => {
+        if (!open) queueMicrotask(close);
+      }}
+    >
       <Dialog.Portal container={portal}>
         <Dialog.Overlay style={{ position: "fixed", inset: 0, zIndex: 2147483646, background: "#0009" }} />
         <Dialog.Content
           aria-describedby={schema.description ? descriptionId : undefined}
           style={{
-            position: "fixed", zIndex: 2147483647, left: "50%", bottom: 16,
-            transform: "translateX(-50%)", width: "min(95vw, 540px)",
-            maxHeight: "85dvh", overflow: "auto", borderRadius: 16,
-            padding: 20, background: "#18181b", color: "#fafafa",
+            position: "fixed",
+            zIndex: 2147483647,
+            left: "50%",
+            bottom: 16,
+            transform: "translateX(-50%)",
+            width: "min(95vw, 540px)",
+            maxHeight: "85dvh",
+            overflow: "auto",
+            borderRadius: 16,
+            padding: 20,
+            background: "#18181b",
+            color: "#fafafa",
           }}
         >
           <Dialog.Title>{schema.title ?? "Menu"}</Dialog.Title>
           {schema.description && <Dialog.Description id={descriptionId}>{schema.description}</Dialog.Description>}
-          {schema.tabs && (
-            <nav aria-label="Seções das preferências" style={{ display: "flex", gap: 6, overflowX: "auto", marginTop: 16 }}>
-              {schema.tabs.map((tab) => (
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (primaryAction) runAction(primaryAction);
+            }}
+          >
+            {schema.tabs ? (
+              <Tabs.Root value={activeTab} onValueChange={setActiveTab} style={{ marginTop: 16 }}>
+                <Tabs.List
+                  aria-label="Seções das preferências"
+                  style={{ display: "flex", gap: 6, overflowX: "auto" }}
+                >
+                  {schema.tabs.map((tab) => (
+                    <Tabs.Trigger
+                      key={tab.id}
+                      value={tab.id}
+                      style={{
+                        flexShrink: 0,
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        border: "none",
+                        cursor: "pointer",
+                        background: activeTab === tab.id ? "#6d28d9" : "#27272a",
+                        color: "#fff",
+                      }}
+                    >
+                      {tab.label}
+                    </Tabs.Trigger>
+                  ))}
+                </Tabs.List>
+                {schema.tabs.map((tab) => (
+                  <Tabs.Content key={tab.id} value={tab.id}>
+                    {tab.fields.map((field) => (
+                      <DialogField key={field.name} field={field} values={values.current} portal={portal} />
+                    ))}
+                  </Tabs.Content>
+                ))}
+              </Tabs.Root>
+            ) : (
+              <div>
+                {(schema.fields ?? []).map((field) => (
+                  <DialogField key={field.name} field={field} values={values.current} portal={portal} />
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+              {(schema.actions ?? []).map((action) => (
                 <button
-                  key={tab.id}
-                  type="button"
-                  aria-current={activeTab === tab.id ? "page" : undefined}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{ flexShrink: 0, padding: "8px 12px", borderRadius: 8,
-                    background: activeTab === tab.id ? "#6d28d9" : "#27272a", color: "#fff" }}
-                >{tab.label}</button>
+                  key={action.id}
+                  type={action === primaryAction ? "submit" : "button"}
+                  disabled={pending || action.disabled}
+                  onClick={() => {
+                    if (action !== primaryAction) runAction(action);
+                  }}
+                >
+                  {action.label}
+                </button>
               ))}
-            </nav>
-          )}
-          <div key={activeTab}>
-            {fields.map((field) => <DialogField key={field.name} field={field} values={values.current} />)}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
-            {(schema.actions ?? []).map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                disabled={pending || action.disabled}
-                onClick={() => {
-                  if (pending) return;
-                  if (action.role === "cancel") { close(); return; }
-                  setError(null);
-                  setPending(true);
-                  void Promise.resolve()
-                    .then(() => action.handler?.({ values: values.current, close }))
-                    .then((result) => { if (action.close === true || (action.close !== false && result !== false)) close(); })
-                    .catch((reason: unknown) => {
-                      setError(reason instanceof Error ? reason.message : String(reason));
-                    })
-                    .finally(() => setPending(false));
-                }}
-              >{action.label}</button>
-            ))}
-          </div>
+              <Dialog.Close asChild>
+                <button type="button">Fechar</button>
+              </Dialog.Close>
+            </div>
+          </form>
+
           {error && <p role="alert">{error}</p>}
-          <Dialog.Close asChild><button type="button">Fechar</button></Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -252,7 +601,9 @@ function mount(
   let shared: { dispose: () => void } | undefined;
   let disposed = false;
   let resolveResult!: (value: void) => void;
-  const result = new Promise<void>((resolve) => { resolveResult = resolve; });
+  const result = new Promise<void>((resolve) => {
+    resolveResult = resolve;
+  });
   const close = () => {
     if (disposed) return;
     disposed = true;
@@ -293,6 +644,7 @@ export function openRadixDropdown(
     mountSharedReact,
   );
 }
+
 export function openRadixDialog(
   schema: MenuSchema,
   mountSharedReact: (component: ReactElement, container: HTMLElement) => { dispose: () => void },
