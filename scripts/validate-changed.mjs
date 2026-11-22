@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import definitions from '../userscripts.config.js';
 import { analyzeRuntimeGraph } from '../build/runtime-graph.mjs';
-import { AgentReporter, ansi } from './logger.mjs';
+import { AgentReporter, ansi } from './utils/ci-logger.mjs';
 import {
   appendStepSummary,
   parseCliArgs,
