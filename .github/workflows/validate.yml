@@ -52,6 +52,10 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: 📦 Install dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci --legacy-peer-deps
       - name: 🛡️ Check build and release JavaScript syntax
         shell: bash
         run: |
@@ -64,6 +68,7 @@ jobs:
 
       - name: 🧭 Detect changes and plan validation
         id: plan
+        if: steps.install.outcome == 'success'
         env:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
@@ -71,13 +76,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SCOPE: ${{ inputs.scope || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node build/validate-changed.mjs plan
-
-      - name: 📦 Install dependencies
-        id: install
-        if: steps.plan.outputs.run == 'true'
-        continue-on-error: true
-        run: npm ci --legacy-peer-deps
+        run: node scripts/validate-changed.mjs plan
 
       - name: 🧩 Smoke-check build orchestrator imports and initialization
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
@@ -132,7 +131,7 @@ jobs:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
           SCOPED_BUILDS_MATRIX: true
-          RUNTIME_TEST_SKIP_DIST: 'true'
+          RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs run
 
