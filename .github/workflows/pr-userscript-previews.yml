@@ -49,18 +49,19 @@ jobs:
           node build/pr-preview-scope.mjs | tee /tmp/preview-scope.json
           TARGETS="$(node -e 'const s=require("/tmp/preview-scope.json"); process.stdout.write(s.targets.join(","))')"
           if [[ -z "$TARGETS" ]]; then
-            echo "No affected userscript installers; skipping deploy is not yet supported. Building complete catalog."
-            npm run build
-          else
-            node build/build.mjs "--targets=$TARGETS"
+            echo "No executable changes; preview catalog is unchanged."
+            echo "SKIP_PREVIEW=true" >> "$GITHUB_ENV"
+            exit 0
           fi
+          node build/build.mjs "--targets=$TARGETS"
           node build/pr-preview.mjs
           echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
-          echo '\`\`\`json' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"
-          echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: ☁️ Deploy isolated Cloudflare Pages preview
+        if: env.SKIP_PREVIEW != 'true'
         id: deploy
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -85,6 +86,7 @@ jobs:
           echo "Published: $preview_url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🔍 Verify published URL before commenting
+        if: env.SKIP_PREVIEW != 'true'
         env:
           PREVIEW_URL: ${{ steps.deploy.outputs.url }}
         run: |
@@ -99,12 +101,14 @@ jobs:
           exit 1
 
       - name: 🔍 Coletar Diff e Metadados do Commit
+        if: env.SKIP_PREVIEW != 'true'
         id: diff-info
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: node scripts/github-actions.mjs collect
 
       - name: 💬 Publicar ou Atualizar Comentário de Preview
+        if: env.SKIP_PREVIEW != 'true'
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PREVIEW_URL: ${{ steps.deploy.outputs.url }}
