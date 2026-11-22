@@ -246,10 +246,10 @@ jobs:
           test -s dist/pages/index.html
           test -s dist/pages/manifest.json
           test -s dist/pages/playground/instagram-bookmark.html
-          test -s dist/pages/playground/instagram-bookmark.js
           test -s dist/pages/playground/form-controls.html
-          test -s dist/pages/playground/form-controls.js
-          test -s dist/pages/playground/form-controls.js.map
+          test -s dist/pages/playground/ast-errors.html
+          test -s dist/pages/playground/diagnostics.html
+          test -s dist/pages/playground/inspector.html
           test -s dist/pages/icons/preview.svg
           node --input-type=module <<'NODE'
           import fs from "node:fs";
