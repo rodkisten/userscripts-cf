@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import definitions from "../userscripts.config.js";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -55,6 +56,38 @@ for (const item of manifest.scripts) {
     sha256: createHash("sha256").update(source).digest("hex"),
   });
 }
+// Preserve unchanged installers from the previous successful deployment.
+// Pages uploads replace the deployment; absent files must be carried forward explicitly.
+const expectedIds = new Set(["standalone", ...definitions.map(({ id }) => id), "unified"]);
+const missingIds = [...expectedIds].filter((id) => !catalog.scripts.some((item) => item.id === id));
+if (missingIds.length) {
+  const remote = origin + prefix;
+  const response = await fetch(remote + "/manifest.json", { signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw Error("Cannot preserve unchanged installers: previous preview manifest returned " + response.status);
+  const previous = await response.json();
+  if (previous.pr !== number || !Array.isArray(previous.scripts)) throw Error("Invalid previous PR preview manifest");
+  for (const id of missingIds) {
+    const item = previous.scripts.find((script) => script.id === id);
+    if (!item || item.file !== id + ".user.js" || item.metaFile !== id + ".meta.js" || !/^[a-f0-9]{64}$/.test(item.sha256))
+      throw Error("Missing valid previous preview installer: " + id);
+    const [installer, metadata] = await Promise.all(
+      [item.file, item.metaFile].map(async (file) => {
+        const res = await fetch(remote + "/" + file, { signal: AbortSignal.timeout(15000) });
+        if (!res.ok) throw Error("Cannot retrieve previous preview file: " + file);
+        return res.text();
+      }),
+    );
+    if (createHash("sha256").update(installer).digest("hex") !== item.sha256)
+      throw Error("Previous preview checksum mismatch: " + id);
+    await Promise.all([
+      fs.writeFile(path.join(output, item.file), installer),
+      fs.writeFile(path.join(output, item.metaFile), metadata),
+    ]);
+    catalog.scripts.push(item);
+  }
+  console.log("Preserved " + missingIds.length + " unchanged installers from previous preview");
+}
+catalog.scripts.sort((a, b) => [...expectedIds].indexOf(a.id) - [...expectedIds].indexOf(b.id));
 await fs.writeFile(path.join(output, "manifest.json"), JSON.stringify(catalog, null, 2) + "\n");
 const data = JSON.stringify(catalog).replace(/</g, "\\u003c");
 const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>#${number} · Userscripts Preview</title><style>body{font:15px system-ui;background:#09090b;color:#fafafa;max-width:780px;margin:48px auto;padding:0 20px}h1{font-size:28px}p{color:#a1a1aa}article{border:1px solid #27272a;border-radius:12px;padding:16px;margin:12px 0;display:flex;justify-content:space-between;gap:16px;align-items:center}a{color:#d4d4d8}article a{background:#fafafa;color:#09090b;padding:10px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}@media(max-width:480px){article{align-items:flex-start;flex-direction:column}}</style><h1>▲ Preview #${number}</h1><p>Instaladores isolados deste pull request. Não substituem a versão estável.</p><main id="scripts"></main><script>const catalog=${data};document.getElementById("scripts").replaceChildren(...catalog.scripts.map(s=>{const row=document.createElement("article");const title=document.createElement("strong");title.textContent=s.name;const link=document.createElement("a");link.textContent="Instalar ↗";link.href="./"+encodeURIComponent(s.file);row.append(title,link);return row;}));</script></html>`;
