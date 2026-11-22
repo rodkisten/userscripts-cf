@@ -16,8 +16,6 @@ import { matchURL } from "../src/core/match.ts";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
-import { C, fmt } from "./format.mjs";
-import { BuildReporter } from "./reporter.mjs";
 import { diagnosticPrelude } from "./diagnostics.mjs";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
