@@ -3,6 +3,34 @@ import { basename, dirname, extname, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
 const toPosix = (p) => p.split('\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
+
+const style = { bold: ansi.bold };
+
+function setOutputs(outputs) {
+  for (const [name, value] of Object.entries(outputs)) {
+    setActionOutput(name, value);
+  }
+}
+
+const summary = {
+  chunks: [],
+  heading(text, level = 1) {
+    this.chunks.push(`${'#'.repeat(level)} ${text}`);
+    return this;
+  },
+  text(text) {
+    this.chunks.push(String(text));
+    return this;
+  },
+  code(code, language = '') {
+    this.chunks.push('```' + language + '\n' + code + '\n```');
+    return this;
+  },
+  async write() {
+    appendStepSummary(this.chunks.join('\n\n'));
+    this.chunks.length = 0;
+  },
+};
 const logger = {
  banner: (...args) => console.log(...args),
  step: async (label, callback) => { console.log(label); return callback(); },
@@ -38,30 +66,39 @@ function walkTests(dir, acc = []) {
   logger.banner('Impact & Test Map', `Base: ${baseRef}`);
 
   const { diffTarget, rawChanged } = await logger.step('Resolve Git diff in src/', async () => {
-    await cmd('git', ['fetch', 'origin', baseRef, '--depth=1']).nothrow();
+    runCmd('git', ['fetch', 'origin', baseRef, '--depth=1'], { logger, silent: true });
 
-    const originVerify = await cmd('git', ['rev-parse', '--verify', `origin/${baseRef}`]).nothrow();
-    const target =
-      originVerify.exitCode === 0
-        ? originVerify.stdout.trim()
-        : (await cmd('git', ['rev-parse', '--verify', baseRef])).stdout.trim();
+    const originVerify = runCmd('git', ['rev-parse', '--verify', `origin/${baseRef}`], {
+      logger,
+      silent: true,
+    });
+    const localVerify = originVerify.ok
+      ? originVerify
+      : runCmd('git', ['rev-parse', '--verify', baseRef], { logger, silent: true });
 
-    const diffRes = await cmd('git', [
-      'diff',
-      '--name-only',
-      '--diff-filter=ACMR',
-      `${target}...HEAD`,
-      '--',
-      'src',
-    ]);
+    if (!localVerify.ok) {
+      throw new Error(
+        `Unable to resolve base ref ${baseRef}: ${localVerify.stderr || localVerify.stdout || 'unknown Git error'}`,
+      );
+    }
 
+    const target = localVerify.stdout.trim();
+    const diffRes = runCmd(
+      'git',
+      ['diff', '--name-only', '--diff-filter=ACMR', `${target}...HEAD`, '--', 'src'],
+      { logger, silent: true },
+    );
+
+    if (!diffRes.ok) {
+      throw new Error(`git diff failed: ${diffRes.stderr || diffRes.stdout || `exit ${diffRes.status}`}`);
+    }
     const changed = diffRes.stdout
       .split(/\r?\n/)
       .map(toPosix)
       .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
 
-    logger.item('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
-    logger.item('Changed files in src/', changed.length, true);
+    logger.info('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
+    logger.info('Changed files in src/', String(changed.length));
 
     return { diffTarget: target, rawChanged: changed };
   });
@@ -108,8 +145,8 @@ function walkTests(dir, acc = []) {
       }
     }
 
-    logger.item('Affected scopes', grouped.size);
-    logger.item('Related test files', tests.size, true);
+    logger.info('Affected scopes', String(grouped.size));
+    logger.info('Related test files', String(tests.size));
 
     return { folders: grouped, matchedNodeTests: tests };
   });
@@ -155,7 +192,7 @@ function walkTests(dir, acc = []) {
     }
   }
 
-  logger.divider('Outputs & Job Summary');
+  logger.info('Outputs & Job Summary');
 
   setOutputs({
     has_files: rawChanged.length > 0,
@@ -171,8 +208,8 @@ function walkTests(dir, acc = []) {
     .code(mermaid.join('\n'), 'mermaid')
     .write();
 
-  logger.success(
+  logger.pass(
     `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
   );
-  logger.divider('', '═');
+  logger.summary('success', { Files: rawChanged.length, Scopes: folders.size, Tests: matchedNodeTests.size });
 })().catch((error) => { console.error(error); process.exitCode = 1; });
