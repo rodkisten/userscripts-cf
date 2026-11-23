@@ -108,6 +108,7 @@ function DockView({ controller }: { controller: DockController }) {
             }
             launcherWasDragged.current = false;
             const launcher = event.currentTarget;
+            launcher.dataset.dragged = "false";
             const pointerId = event.pointerId;
             const startX = event.clientX;
             const startY = event.clientY;
@@ -131,6 +132,7 @@ function DockView({ controller }: { controller: DockController }) {
               }
               dragged = true;
               launcherWasDragged.current = true;
+              launcher.dataset.dragged = "true";
               setPosition(
                 Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)),
               );
@@ -464,6 +466,19 @@ export function installRodDock({
       actions.push({ id: String(detail.id), label: detail.label, run: detail.callback });
     setModules([...currentModules.filter((item) => item.id !== module.id), { ...module, actions }]);
   };
+  // Native ShadowRoot capture is a fallback for iOS Safari userscript sandboxes
+  // where React delegated click handlers may not reach the launcher.
+  const onLauncherActivation = (event: Event) => {
+    const launcher = event.composedPath().find(
+      (node) => node instanceof HTMLElement && node.matches("button.launcher"),
+    );
+    if (!(launcher instanceof HTMLElement) || launcher.dataset.dragged === "true") {
+      return;
+    }
+    setOpen(true);
+  };
+  shadow.addEventListener("pointerup", onLauncherActivation, true);
+  shadow.addEventListener("click", onLauncherActivation, true);
   document.addEventListener("rod-dock:registry", onRegistration);
   document.addEventListener("rod-dock:menu", onMenu);
   (document.body ?? document.documentElement).append(host);
@@ -479,6 +494,8 @@ export function installRodDock({
     dispose() {
       if (disposed) return;
       disposed = true;
+      shadow.removeEventListener("pointerup", onLauncherActivation, true);
+      shadow.removeEventListener("click", onLauncherActivation, true);
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
       sharedMount?.dispose();
