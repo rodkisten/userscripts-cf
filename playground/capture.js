@@ -16,29 +16,49 @@
     if (typeof value === "string") return value;
     if (typeof value === "bigint") return value.toString() + "n";
     if (value instanceof Error || (typeof value === "object" && "message" in value && "name" in value)) {
-      return [value.name, value.message, value.stack, value.cause && stringify(value.cause)].filter(Boolean).join("\\n");
+      return [value.name, value.message, value.stack, value.cause && stringify(value.cause)]
+        .filter(Boolean)
+        .join("\\n");
     }
     if (typeof Event !== "undefined" && value instanceof Event) {
-      return [value.type, value.message, value.filename, value.lineno, value.colno, value.target?.src, value.target?.href].filter(Boolean).join(" · ");
+      return [
+        value.type,
+        value.message,
+        value.filename,
+        value.lineno,
+        value.colno,
+        value.target?.src,
+        value.target?.href,
+      ]
+        .filter(Boolean)
+        .join(" · ");
     }
     try {
       const seen = new WeakSet();
-      return JSON.stringify(value, (_key, item) => {
-        if (typeof item === "bigint") return item.toString();
-        if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack, cause: item.cause };
-        if (typeof item === "object" && item !== null) {
-          if (seen.has(item)) return "[Circular]";
-          seen.add(item);
-        }
-        return item;
-      }) ?? String(value);
+      return (
+        JSON.stringify(value, (_key, item) => {
+          if (typeof item === "bigint") return item.toString();
+          if (item instanceof Error)
+            return { name: item.name, message: item.message, stack: item.stack, cause: item.cause };
+          if (typeof item === "object" && item !== null) {
+            if (seen.has(item)) return "[Circular]";
+            seen.add(item);
+          }
+          return item;
+        }) ?? String(value)
+      );
     } catch {
-      try { return String(value); } catch { return "[Unserializable]"; }
+      try {
+        return String(value);
+      } catch {
+        return "[Unserializable]";
+      }
     }
   };
-  const redact = (value) => String(value)
-    .replace(/(Bearer\\s+)[\\w.~-]+/gi, "$1[REDACTED]")
-    .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\\s]+/gi, "$1[REDACTED]");
+  const redact = (value) =>
+    String(value)
+      .replace(/(Bearer\\s+)[\\w.~-]+/gi, "$1[REDACTED]")
+      .replace(/([?&](?:token|key|secret|password|authorization)=)[^&#\\s]+/gi, "$1[REDACTED]");
   function capture(level, args, source) {
     if (rendering) return;
     const message = redact(args.map(stringify).join(" "));
@@ -62,19 +82,28 @@
         const row = document.createElement("div");
         row.className = "entry " + entry.level;
         const meta = document.createElement("small");
-        meta.textContent = entry.time + " · " + entry.level + " · " + entry.source + (entry.count > 1 ? " · ×" + entry.count : "");
+        meta.textContent =
+          entry.time +
+          " · " +
+          entry.level +
+          " · " +
+          entry.source +
+          (entry.count > 1 ? " · ×" + entry.count : "");
         const body = document.createElement("pre");
         body.textContent = entry.message;
         row.append(meta, body);
         list.append(row);
       }
-    } finally { rendering = false; }
+    } finally {
+      rendering = false;
+    }
   }
   function mount() {
     if (root || !document.body) return;
     const host = document.createElement("div");
     host.id = "rod-playground-diagnostics";
-    host.style.cssText = "position:fixed;z-index:2147483647;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));font:12px system-ui;pointer-events:none";
+    host.style.cssText =
+      "position:fixed;z-index:2147483647;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));font:12px system-ui;pointer-events:none";
     document.body.append(host);
     root = host.attachShadow({ mode: "open" });
     const style = document.createElement("style");
@@ -88,19 +117,42 @@
       pre{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.5 ui-monospace,monospace;margin:5px 0 0}
       .hidden{display:none} @media(max-width:600px){.panel{max-height:40dvh}.shell{gap:5px}}
     `;
-    const shell = document.createElement("div"); shell.className = "shell";
-    const toggle = document.createElement("button"); toggle.type = "button"; toggle.setAttribute("aria-expanded", "false");
+    const shell = document.createElement("div");
+    shell.className = "shell";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", "false");
     toggle.textContent = "🩺 Logs ";
-    counter = document.createElement("span"); counter.textContent = "0"; toggle.append(counter);
-    const panel = document.createElement("section"); panel.className = "panel hidden"; panel.setAttribute("aria-label", "Playground logs and errors");
-    const toolbar = document.createElement("div"); toolbar.className = "toolbar";
-    const heading = document.createElement("strong"); heading.textContent = "Logs e erros";
-    const copy = document.createElement("button"); copy.textContent = "Copiar"; copy.onclick = () => navigator.clipboard?.writeText(JSON.stringify(entries, null, 2));
-    const clear = document.createElement("button"); clear.textContent = "Limpar"; clear.onclick = () => { entries.length = 0; render(); };
+    counter = document.createElement("span");
+    counter.textContent = "0";
+    toggle.append(counter);
+    const panel = document.createElement("section");
+    panel.className = "panel hidden";
+    panel.setAttribute("aria-label", "Playground logs and errors");
+    const toolbar = document.createElement("div");
+    toolbar.className = "toolbar";
+    const heading = document.createElement("strong");
+    heading.textContent = "Logs e erros";
+    const copy = document.createElement("button");
+    copy.textContent = "Copiar";
+    copy.onclick = () => navigator.clipboard?.writeText(JSON.stringify(entries, null, 2));
+    const clear = document.createElement("button");
+    clear.textContent = "Limpar";
+    clear.onclick = () => {
+      entries.length = 0;
+      render();
+    };
     toolbar.append(heading, copy, clear);
-    list = document.createElement("div"); list.setAttribute("role", "log");
-    panel.append(toolbar, list); shell.append(toggle, panel); root.append(style, shell);
-    toggle.onclick = () => { expanded = !expanded; panel.classList.toggle("hidden", !expanded); toggle.setAttribute("aria-expanded", String(expanded)); };
+    list = document.createElement("div");
+    list.setAttribute("role", "log");
+    panel.append(toolbar, list);
+    shell.append(toggle, panel);
+    root.append(style, shell);
+    toggle.onclick = () => {
+      expanded = !expanded;
+      panel.classList.toggle("hidden", !expanded);
+      toggle.setAttribute("aria-expanded", String(expanded));
+    };
     render();
   }
   for (const level of ["log", "info", "warn", "error", "debug"]) {
@@ -112,35 +164,67 @@
   }
   // Resource load errors are captured separately from opaque cross-origin execution errors.
   // Do not guess a stack trace when Safari intentionally withholds it.
-  document.addEventListener("error", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLScriptElement) || !target.src) return;
-    const url = target.src;
-    scriptFailures.set(url, (scriptFailures.get(url) || 0) + 1);
-    capture("error", ["Script resource failed to load", url, "crossOrigin=" + (target.crossOrigin || "unset")], "script.resource");
-  }, true);
-  window.addEventListener("error", (event) => {
-    const target = event.target;
-    const resource = target && target !== window ? target.src || target.href || target.currentSrc : "";
-    const details = [
-      event.error,
-      event.message,
-      event.filename && (event.filename + ":" + event.lineno + ":" + event.colno),
-      resource && ("Resource: " + resource),
-    ].filter(Boolean);
-    if (event.message === "Script error." || (!event.error && !event.filename && !resource)) {
-      details.push("Safari concealed the original error. A stack trace is not available from this event.");
-      details.push("Check the Safari Web Inspector and scripts loaded from other origins.");
-      details.push("Page: " + location.href);
-      details.push("Scripts: " + [...document.scripts].map((script) => script.src || "[inline]").join(", "));
-      if (scriptFailures.size) details.push("Resource failures: " + [...scriptFailures].map(([url, count]) => url + " ×" + count).join(", "));
-    }
-    capture("error", details.length ? details : ["Resource loading error", target?.tagName], "window.error");
-  }, true);
-  window.addEventListener("unhandledrejection", (event) => {
-    capture("error", [event.reason ?? "Unhandled rejection", event.reason?.stack], "promise");
-  }, true);
-  window[key] = Object.freeze({ entries, capture, open: () => { mount(); if (!expanded) root.querySelector("button").click(); } });
+  document.addEventListener(
+    "error",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLScriptElement) || !target.src) return;
+      const url = target.src;
+      scriptFailures.set(url, (scriptFailures.get(url) || 0) + 1);
+      capture(
+        "error",
+        ["Script resource failed to load", url, "crossOrigin=" + (target.crossOrigin || "unset")],
+        "script.resource",
+      );
+    },
+    true,
+  );
+  window.addEventListener(
+    "error",
+    (event) => {
+      const target = event.target;
+      const resource = target && target !== window ? target.src || target.href || target.currentSrc : "";
+      const details = [
+        event.error,
+        event.message,
+        event.filename && event.filename + ":" + event.lineno + ":" + event.colno,
+        resource && "Resource: " + resource,
+      ].filter(Boolean);
+      if (event.message === "Script error." || (!event.error && !event.filename && !resource)) {
+        details.push("Safari concealed the original error. A stack trace is not available from this event.");
+        details.push("Check the Safari Web Inspector and scripts loaded from other origins.");
+        details.push("Page: " + location.href);
+        details.push(
+          "Scripts: " + [...document.scripts].map((script) => script.src || "[inline]").join(", "),
+        );
+        if (scriptFailures.size)
+          details.push(
+            "Resource failures: " + [...scriptFailures].map(([url, count]) => url + " ×" + count).join(", "),
+          );
+      }
+      capture(
+        "error",
+        details.length ? details : ["Resource loading error", target?.tagName],
+        "window.error",
+      );
+    },
+    true,
+  );
+  window.addEventListener(
+    "unhandledrejection",
+    (event) => {
+      capture("error", [event.reason ?? "Unhandled rejection", event.reason?.stack], "promise");
+    },
+    true,
+  );
+  window[key] = Object.freeze({
+    entries,
+    capture,
+    open: () => {
+      mount();
+      if (!expanded) root.querySelector("button").click();
+    },
+  });
   if (document.body) mount();
   else document.addEventListener("DOMContentLoaded", mount, { once: true });
 })();
