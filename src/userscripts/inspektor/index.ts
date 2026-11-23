@@ -140,6 +140,10 @@ export default {
         status?: number;
         durationMs: number;
         body?: string | null;
+        requestBody?: string | null;
+        requestContentType?: string | null;
+        responseContentType?: string | null;
+        requestTruncated?: boolean;
         error?: string;
         responseUrl?: string;
         truncated?: boolean;
@@ -165,13 +169,17 @@ export default {
         status: event.status ?? 0,
         ms: event.durationMs,
         time: new Date().toISOString(),
-        responseBody: "[Not captured: response may contain sensitive data]",
+        requestBody: type === "fetch" ? redact(event.requestBody) : undefined,
+        responseBody: type === "fetch" ? redact(event.body) : "[XHR body not captured]",
+        requestContentType: event.requestContentType,
+        responseContentType: event.responseContentType,
+        requestTruncated: event.requestTruncated ?? false,
         error: event.error ? String(redact(event.error)) : undefined,
         truncated: event.truncated ?? false,
       });
     };
     const stopFetch = observePageFetch((event) => recordNetwork("fetch", event), {
-      maxBodyCharacters: 0,
+      maxBodyCharacters: 120000,
       signal: ctx.signal,
     });
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
