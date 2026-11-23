@@ -352,7 +352,7 @@ function Studio() {
 
             <h2>Experimentos</h2>
             <div className="studio-segments">
-              <button type="button" onClick={() => { setSurface("bottom-sheet"); open(); }}>Abrir sheet</button>
+              <button type="button" onClick={() => { setSurface("bottom-sheet"); RodMenu.open({ ...schema, presentation: "bottom-sheet" }); record("open", "Bottom-sheet"); setOpenCount((count) => count + 1); }}>Abrir sheet</button>
               <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "modal" }); record("open", "Modal"); setOpenCount((count) => count + 1); }}>Modal</button>
               <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "drawer" }); record("open", "Drawer"); setOpenCount((count) => count + 1); }}>Drawer</button>
               <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "popover" }); record("open", "Popover"); setOpenCount((count) => count + 1); }}>Popover</button>
