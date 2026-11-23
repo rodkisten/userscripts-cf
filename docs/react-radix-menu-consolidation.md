@@ -45,7 +45,8 @@
 - [x] Inspect shared Dock: `runtime/react-ui/rod-dock.tsx` uses React, Radix Dialog, its own ShadowRoot, script registry and persistent launcher position.
 - [x] Add a compatibility bridge registering RodX Home, Create timeline, Organize searches and Lists in the shared Dock registry while retaining the inline search controls.
 - [x] Publish pinned timelines and quick lists as dynamic shared Dock actions with stable IDs.
-- [ ] Replace the inline timeline UI with shared Dock components after preserving drag ordering.
+- [x] Remove DOM-click proxies for shared Dock core actions and pinned searches by calling RodX `performAction` directly.
+- [ ] Remove remaining quick-list DOM proxy and replace the inline timeline UI after preserving drag ordering.
 - [ ] Preserve RodX drag-and-drop ordering and account-specific state, including touch support.
 - [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
 - [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
@@ -72,3 +73,5 @@
 - **Incremental Dock bridge:** `ui/dock.tsx` now publishes a `rodx-studio` module via `rod-dock:registry` and unregisters it when leaving supported X routes. Its actions delegate to existing inline controls, preserving existing handlers. This is a transition bridge, **not** final Dock unification. It requires the shared Dock installer to be active; no UI/browser validation has been performed.
 
 - **Dynamic RodX actions:** pinned searches and quick lists are now registered under stable `search:` and `list:` action IDs. A signature prevents redundant registry dispatches on unchanged route/account/list state. Action callbacks reuse existing inline controls. The global Dock installer must be present, and runtime/CI validation is still pending.
+
+- **Action dispatcher:** shared Dock Home/New/Organize/Lists and pinned search actions now call RodX's exported `performAction` directly, rather than looking up hidden inline buttons. Quick lists still rely on DOM buttons and need direct navigation migration. No build/test has been run for this commit.
