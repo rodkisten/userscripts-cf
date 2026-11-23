@@ -4,7 +4,7 @@ import { observePageFetch, observePageXHR } from "../../runtime/network-intercep
 import type { ReactElement } from "react";
 
 // Inspektor uses the shared runtime Dock instead of mounting a second floating UI.
-type InspectorEvent = { kind: string; [key: string]: unknown };
+type InspectorEvent = { kind?: string; [key: string]: unknown };
 type InspectorContext = {
   dock?: { register(actions: { id: string; label: string; run: () => void }[]): void };
   listen(target: EventTarget, type: string, callback: EventListener, options?: AddEventListenerOptions): void;
@@ -155,6 +155,7 @@ export default {
         /* Invalid URL */
       }
       push("network", {
+        kind: "request",
         type,
         method: event.method,
         url: safeUrl,
@@ -174,6 +175,7 @@ export default {
     });
     const stopConsole = observePageConsole((event) => {
       push("console", {
+        kind: "console",
         level: event.level,
         time: event.time,
         args: event.args.map((arg) => {
