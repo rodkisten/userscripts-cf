@@ -366,8 +366,7 @@ export function createCoreRuntime(
       return {
         ...options,
         queryKey: [...queryKey, query],
-        queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) =>
-          createLoader()(query, { signal }),
+        queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) => createLoader()(query, { signal }),
       };
     },
   });
@@ -681,7 +680,12 @@ export function createCoreRuntime(
       const local = createEventBus({
         namespace: definition.id,
         onDiagnostic: () =>
-          captureDiagnostic(new Error("Duplicate runtime event listener"), LOG_TAG_EVENTS, definition.id, host),
+          captureDiagnostic(
+            new Error("Duplicate runtime event listener"),
+            LOG_TAG_EVENTS,
+            definition.id,
+            host,
+          ),
       });
       const shared = createSharedEvents({ host });
       const dom = createDomEventsEngine(definition.id, host);

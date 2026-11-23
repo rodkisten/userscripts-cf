@@ -209,10 +209,7 @@ export async function planValidation() {
     setActionOutput("full", String(isFull));
     setActionOutput("matrix", JSON.stringify(isFull ? ALL_BUILD_TARGETS : []));
 
-    step.pass(
-      "Plano gerado",
-      `run=true · full=${isFull} · builds=${isFull ? ALL_BUILD_TARGETS.length : 0}`,
-    );
+    step.pass("Plano gerado", `run=true · full=${isFull} · builds=${isFull ? ALL_BUILD_TARGETS.length : 0}`);
     log.summary({
       Run: "true",
       Full: String(isFull),
@@ -310,9 +307,7 @@ export async function runValidation() {
       const labChanged = changedFiles.some((file) => file.startsWith("labs/"));
       const hostingChanged = changedFiles.some(
         (file) =>
-          file.startsWith("playground/") ||
-          file.startsWith("public/") ||
-          file === "build/hosting.mjs",
+          file.startsWith("playground/") || file.startsWith("public/") || file === "build/hosting.mjs",
       );
 
       if (scopedBuildsMatrix && !hostingChanged) {
