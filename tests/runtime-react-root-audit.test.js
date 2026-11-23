@@ -59,6 +59,37 @@ test("rejects additional roots outside the two explicit owners", async () => {
   }
 });
 
+test("ignores React roots declared only inside test files", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "react-root-audit-tests-"));
+  try {
+    await fs.mkdir(path.join(root, "src/core"), { recursive: true });
+    await fs.mkdir(path.join(root, "src/feature/__tests__"), { recursive: true });
+    await fs.mkdir(path.join(root, "studio"), { recursive: true });
+
+    await fs.writeFile(
+      path.join(root, "src/core/runtime-react.tsx"),
+      'import { createRoot } from "react-dom/client"; createRoot(host);',
+    );
+    await fs.writeFile(
+      path.join(root, "studio/entry.tsx"),
+      'import { createRoot } from "react-dom/client"; createRoot(host);',
+    );
+    await fs.writeFile(
+      path.join(root, "src/core/runtime-context-react.test.tsx"),
+      'import { createRoot } from "react-dom/client"; createRoot(host);',
+    );
+    await fs.writeFile(
+      path.join(root, "src/feature/__tests__/fixture.tsx"),
+      'import { createRoot } from "react-dom/client"; createRoot(host);',
+    );
+
+    const result = await auditReactRootOwnership(root);
+    assert.equal(result.total, 2);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test("repository keeps one runtime root and one standalone Studio root", async () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const result = await auditReactRootOwnership(root);
