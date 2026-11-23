@@ -5,6 +5,7 @@ import { parse } from "@babel/parser";
 const ROOT_OWNER = "src/core/runtime-react.tsx";
 const STANDALONE_OWNER = "studio/entry.tsx";
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
+const TEST_FILE_RE = /\.(?:test|spec)\.[cm]?[jt]sx?$/i;
 
 function propertyName(node) {
   if (!node) return undefined;
@@ -143,11 +144,25 @@ async function listSourceFiles(directory, root) {
   }
   const files = [];
   for (const entry of entries) {
-    if (entry.name === "node_modules" || entry.name === "dist" || entry.name === ".git") continue;
+    if (
+      entry.name === "node_modules" ||
+      entry.name === "dist" ||
+      entry.name === ".git" ||
+      entry.name === "__tests__"
+    ) {
+      continue;
+    }
+
     const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...(await listSourceFiles(absolute, root)));
-    else if (entry.isFile() && SOURCE_EXTENSIONS.has(path.extname(entry.name)))
+    if (entry.isDirectory()) {
+      files.push(...(await listSourceFiles(absolute, root)));
+    } else if (
+      entry.isFile() &&
+      SOURCE_EXTENSIONS.has(path.extname(entry.name)) &&
+      !TEST_FILE_RE.test(entry.name)
+    ) {
       files.push({ absolute, relative: path.relative(root, absolute).split(path.sep).join("/") });
+    }
   }
   return files;
 }
