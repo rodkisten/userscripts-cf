@@ -7,9 +7,8 @@ export function installSandbox(factory, key) {
     return;
   }
 
-  const version = typeof GM_info !== "undefined" && GM_info?.script?.version
-    ? String(GM_info.script.version)
-    : "0";
+  const version =
+    typeof GM_info !== "undefined" && GM_info?.script?.version ? String(GM_info.script.version) : "0";
   const scope = key + ":sandbox";
   const attribute = "data-userscripts-cf-" + key.replace(/[^a-z0-9-]/gi, "-");
   const channel = "userscripts-cf:lease:" + scope;
