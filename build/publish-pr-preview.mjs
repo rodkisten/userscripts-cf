@@ -19,7 +19,7 @@ const names = [
   "manifest.json",
 ];
 for (const name of names) {
-  if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html|icons\/pr\.svg)$/.test(name))
+  if (!/^(?:[a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html|design-system\.(?:html|js|css)|icons\/pr\.svg)$/.test(name))
     throw Error("Unsafe path " + name);
   const body = await fs.readFile(path.join(dir, name));
   const response = await fetch(origin + "/_publish/" + pr + "/" + name, {
