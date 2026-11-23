@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, extname, join, relative } from 'node:path';
-import { runAction } from './utils/action.js';
-import { cmd, setOutputs } from './utils/inputs.js';
-import { logger, style, summary } from './utils/summary.js';
+import { runAction } from './utils/action.mjs';
+import { cmd, setOutputs } from './utils/inputs.mjs';
+import { logger, style, summary } from './utils/summary.mjs';
 
 const toPosix = (p) => p.split('\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
