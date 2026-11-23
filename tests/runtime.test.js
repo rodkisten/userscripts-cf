@@ -18,6 +18,11 @@ function createTestHost(url = "https://example.com/") {
       suppressInsecureJavaScriptEnvironmentWarning: true,
     },
   });
+  // Each isolated Happy DOM window needs the storage bridge installed by the browser bundle.
+  Object.defineProperty(host, "RodStorage", {
+    configurable: true,
+    value: { create: () => ({}) },
+  });
   activeHosts.push(host);
   return host;
 }
