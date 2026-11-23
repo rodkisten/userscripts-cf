@@ -131,13 +131,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     if (usage.dynamic) dynamicFiles.add(relPath);
 
     const specifiers = new Set();
-    const ast = ts.createSourceFile(
-      filename,
-      source,
-      ts.ScriptTarget.Latest,
-      true,
-      getScriptKind(filename),
-    );
+    const ast = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, getScriptKind(filename));
 
     // Collect every local module edge from the AST instead of relying on
     // preProcessFile, whose import discovery behavior changed in TypeScript 6.
@@ -166,10 +160,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
           (ts.isIdentifier(node.expression) && node.expression.text === "require"))
       ) {
         const argument = node.arguments[0];
-        if (
-          argument &&
-          (ts.isStringLiteralLike(argument) || ts.isNoSubstitutionTemplateLiteral(argument))
-        ) {
+        if (argument && (ts.isStringLiteralLike(argument) || ts.isNoSubstitutionTemplateLiteral(argument))) {
           specifiers.add(argument.text);
         } else if (argument) {
           dynamicFiles.add(relPath);
@@ -193,9 +184,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     features: [...features].sort(),
     dynamic: dynamicFiles.size > 0,
     dynamicFiles: [...dynamicFiles].sort(),
-    files: [...visited]
-      .map((file) => path.relative(rootPath, file).split(path.sep).join("/"))
-      .sort(),
+    files: [...visited].map((file) => path.relative(rootPath, file).split(path.sep).join("/")).sort(),
     // Source bytes are diagnostic only; not bundled/minified byte attribution.
     sourceBytes: modules.reduce((sum, item) => sum + item.sourceBytes, 0),
     modules: modules.sort((a, b) => b.sourceBytes - a.sourceBytes || a.file.localeCompare(b.file)),
