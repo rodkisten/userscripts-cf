@@ -10,7 +10,7 @@ import {
 } from "../../core/script-manager.js";
 import { getDiagnostics } from "../diagnostics.js";
 
-export type DockAction = { id: string; label: string; run: () => void };
+export type DockAction = { id: string; label: string; run: () => void; reorder?: (targetId: string) => void };
 export type DockModule = { id: string; name: string; actions: DockAction[] };
 export type DockScript = {
   id: string;
@@ -42,6 +42,9 @@ button{font:inherit;cursor:pointer}
 .module summary{cursor:pointer;font-weight:600}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .action{font-size:13px}
+.action[draggable="true"]{touch-action:none;user-select:none;cursor:grab}
+.action[draggable="true"]:active{cursor:grabbing}
+.action.drop-target{outline:2px solid #a78bfa;outline-offset:2px}
 .script{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #27272a}
 .script small{display:block;color:#a1a1aa;margin-top:3px}
 input[type=checkbox]{accent-color:#a78bfa;width:18px;height:18px}
@@ -53,6 +56,8 @@ function DockView({ controller }: { controller: DockController }) {
   const [search, setSearch] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSearch, setSettingsSearch] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [position, setPosition] = useState(() => {
     const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
     return Number.isFinite(saved) && saved >= 12 && saved <= 88 ? saved : 46;
@@ -174,7 +179,45 @@ function DockView({ controller }: { controller: DockController }) {
                 <summary>{module.name}</summary>
                 <div className="actions">
                   {module.actions.map((action) => (
-                    <button className="action" key={action.id} onClick={() => action.run()}>
+                    <button
+                      className={`action${dropTarget === action.id ? " drop-target" : ""}`}
+                      key={action.id}
+                      onClick={() => action.run()}
+                      onPointerDown={(event) => {
+                        if (!action.reorder || event.pointerType === "mouse") return;
+                        const source = event.currentTarget;
+                        const startX = event.clientX;
+                        const startY = event.clientY;
+                        let moved = false;
+                        source.setPointerCapture(event.pointerId);
+                        const move = (next: PointerEvent) => {
+                          if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) return;
+                          moved = true;
+                          setDragging(action.id);
+                          const target = source.getRootNode() instanceof ShadowRoot
+                            ? (source.getRootNode() as ShadowRoot).elementFromPoint(next.clientX, next.clientY)
+                            : document.elementFromPoint(next.clientX, next.clientY);
+                          setDropTarget(target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null);
+                        };
+                        const finish = (next: PointerEvent) => {
+                          source.removeEventListener("pointermove", move);
+                          source.removeEventListener("pointerup", finish);
+                          source.removeEventListener("pointercancel", cancel);
+                          const target = (source.getRootNode() as ShadowRoot).elementFromPoint(next.clientX, next.clientY);
+                          const targetId = target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id");
+                          setDragging(null);
+                          setDropTarget(null);
+                          if (moved && targetId && targetId !== action.id) action.reorder?.(targetId);
+                        };
+                        const cancel = () => { setDragging(null); setDropTarget(null); source.removeEventListener("pointermove", move); source.removeEventListener("pointerup", finish); };
+                        source.addEventListener("pointermove", move);
+                        source.addEventListener("pointerup", finish);
+                        source.addEventListener("pointercancel", cancel, { once: true });
+                      }}
+                      data-reorder-id={action.reorder ? action.id : undefined}
+                      aria-grabbed={action.reorder ? dragging === action.id : undefined}
+                      style={action.reorder ? { touchAction: "none" } : undefined}
+                    >
                       {action.label}
                     </button>
                   ))}
