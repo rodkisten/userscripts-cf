@@ -181,7 +181,10 @@ async function readBody(
         break;
       }
       text += decoded;
-      if (text.length >= limit) { truncated = true; break; }
+      if (text.length >= limit) {
+        truncated = true;
+        break;
+      }
     }
     if (!truncated) text += decoder.decode();
   } finally {
@@ -214,37 +217,56 @@ export function observePageFetch(
       let requestClone: Request | null = null;
       try {
         if (limit > 0) requestClone = new Request(input, init).clone();
-      } catch { /* Uncloneable or consumed request bodies remain metadata-only. */ }
+      } catch {
+        /* Uncloneable or consumed request bodies remain metadata-only. */
+      }
       const requestContentType = requestClone?.headers.get("content-type") ?? null;
       const requestBody = requestClone
-        ? readBody(requestClone.body, limit, requestContentType).catch(() => ({ text: null, truncated: false }))
+        ? readBody(requestClone.body, limit, requestContentType).catch(() => ({
+            text: null,
+            truncated: false,
+          }))
         : Promise.resolve({ text: null, truncated: false });
       const response = Reflect.apply(original, this, args);
       Promise.resolve(response).then(
         async (result) => {
           const responseContentType = result.headers?.get("content-type") ?? null;
-          let bodyPromise: Promise<{ text: string | null; truncated: boolean }> =
-            Promise.resolve({ text: null, truncated: false });
+          let bodyPromise: Promise<{ text: string | null; truncated: boolean }> = Promise.resolve({
+            text: null,
+            truncated: false,
+          });
           try {
-            if (limit > 0) bodyPromise = readBody(result.clone().body, limit, responseContentType)
-              .catch(() => ({ text: null, truncated: false }));
-          } catch { /* Locked or opaque response: metadata only. */ }
+            if (limit > 0)
+              bodyPromise = readBody(result.clone().body, limit, responseContentType).catch(() => ({
+                text: null,
+                truncated: false,
+              }));
+          } catch {
+            /* Locked or opaque response: metadata only. */
+          }
           const [requestData, responseData] = await Promise.all([requestBody, bodyPromise]);
           const base: FetchObserverEvent = {
-            url, method, status: result.status, durationMs: Date.now() - start,
-            responseUrl: result.url, requestContentType, responseContentType,
+            url,
+            method,
+            status: result.status,
+            durationMs: Date.now() - start,
+            responseUrl: result.url,
+            requestContentType,
+            responseContentType,
           };
           for (const listener of [...listeners]) {
             try {
               const max = listener.limit;
               listener.callback({
                 ...base,
-                requestBody: max > 0 ? requestData.text?.slice(0, max) ?? null : null,
-                body: max > 0 ? responseData.text?.slice(0, max) ?? null : null,
+                requestBody: max > 0 ? (requestData.text?.slice(0, max) ?? null) : null,
+                body: max > 0 ? (responseData.text?.slice(0, max) ?? null) : null,
                 requestTruncated: requestData.truncated || (requestData.text?.length ?? 0) > max,
                 truncated: responseData.truncated || (responseData.text?.length ?? 0) > max,
               });
-            } catch { /* Observers must never break page requests. */ }
+            } catch {
+              /* Observers must never break page requests. */
+            }
           }
         },
         async (error) => {
@@ -252,8 +274,12 @@ export function observePageFetch(
           for (const listener of [...listeners]) {
             try {
               listener.callback({
-                url, method, error: String(error), durationMs: Date.now() - start,
-                requestContentType, requestBody: listener.limit > 0 ? requestData.text?.slice(0, listener.limit) ?? null : null,
+                url,
+                method,
+                error: String(error),
+                durationMs: Date.now() - start,
+                requestContentType,
+                requestBody: listener.limit > 0 ? (requestData.text?.slice(0, listener.limit) ?? null) : null,
               });
             } catch {}
           }
