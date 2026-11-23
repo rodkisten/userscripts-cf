@@ -236,13 +236,13 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!Array.isArray(response.results)) {
+            if (!Array.isArray(response.results) || response.results.length > job.items.length) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
             for (const result of response.results) {
               if (!Number.isInteger(result?.index) || result.index < 0 || result.index >= job.items.length) {
-                throw Error("Relay sem confirmação por item");
+                throw Error("Confirmação Relay ausente ou duplicada");
               }
               if (byIndex.has(result.index)) {
                 throw Error("Confirmação Relay ausente ou duplicada");
