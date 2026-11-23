@@ -61,7 +61,19 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
       {tab === "dom" ? (
         <div className="inspektor-content">
           <p>Inspect a page element without exporting the full DOM.</p>
-          {selection ? <div><strong>{selection.tag}</strong><pre className="inspektor-detail">{selection.selector}</pre><ul>{selection.attributes.map((attribute) => <li key={attribute}>{attribute}</li>)}</ul></div> : <p>No element selected.</p>}
+          {selection ? (
+            <div>
+              <strong>{selection.tag}</strong>
+              <pre className="inspektor-detail">{selection.selector}</pre>
+              <ul>
+                {selection.attributes.map((attribute) => (
+                  <li key={attribute}>{attribute}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p>No element selected.</p>
+          )}
           <button type="button" onClick={store.pick}>
             Select element
           </button>
