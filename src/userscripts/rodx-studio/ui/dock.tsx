@@ -36,6 +36,27 @@ async function movePinnedSearch(id: string, direction: -1 | 1) {
   }
 }
 
+/** Persist pointer reordering without disturbing unpinned searches. */
+async function reorderPinnedSearch(sourceId: string, targetId: string) {
+  const from = state.searches.findIndex((search) => String(search.id) === sourceId && search.pinned);
+  const to = state.searches.findIndex((search) => String(search.id) === targetId && search.pinned);
+  if (from < 0 || to < 0 || from === to) return;
+  const previous = state.searches.slice();
+  const [search] = state.searches.splice(from, 1);
+  const target = state.searches.findIndex((item) => String(item.id) === targetId);
+  state.searches.splice(target, 0, search);
+  renderDock();
+  syncSharedDock();
+  try {
+    await saveState();
+  } catch (error) {
+    state.searches = previous;
+    renderDock();
+    syncSharedDock();
+    showRodxToast(error instanceof Error ? error.message : String(error), "error");
+  }
+}
+
 /** Keep the shared Dock registry in sync without emitting on every SPA repaint. */
 let sharedDockSignature = "";
 
@@ -66,6 +87,7 @@ function syncSharedDock() {
       id: `search:${search.id}`,
       label: `${search.icon ?? ""} ${search.name}`.trim(),
       run: () => { void performAction("open-search", String(search.id)); },
+      reorder: (targetId: string) => { void reorderPinnedSearch(String(search.id), targetId.replace(/^search:/, "")); },
     });
     // Keyboard-accessible ordering while pointer/touch drag remains in the inline Dock.
     if (index > 0) actions.push({
