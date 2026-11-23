@@ -18,6 +18,7 @@ process.chdir(ROOT_DIR);
 
 const CHANGED_FILES_PATH = "changed-files.txt";
 const AFFECTED_REPORT_PATH = "affected-userscripts.json";
+const ALL_BUILD_TARGETS = [...definitions.map((definition) => definition.id), "standalone", "unified"];
 
 // Regexes de classificação de arquivos
 const RELEVANT_CHANGE_RE =
@@ -206,8 +207,12 @@ export async function planValidation() {
     const isFull = changedFiles.some((f) => SHARED_INFRA_RE.test(f));
     setActionOutput("run", "true");
     setActionOutput("full", String(isFull));
+    setActionOutput("matrix", JSON.stringify(isFull ? ALL_BUILD_TARGETS : []));
 
-    step.pass("Plano gerado", `run=true · full=${isFull}`);
+    step.pass(
+      "Plano gerado",
+      `run=true · full=${isFull} · builds=${isFull ? ALL_BUILD_TARGETS.length : 0}`,
+    );
     log.summary({
       Run: "true",
       Full: String(isFull),
@@ -302,8 +307,20 @@ export async function runValidation() {
       childEnv.RUNTIME_TEST_SKIP_DIST = "true";
 
       const bundlerChanged = !hasChangedManifest || changedFiles.some((f) => BUNDLER_OR_CONFIG_RE.test(f));
+      const labChanged = changedFiles.some((file) => file.startsWith("labs/"));
+      const hostingChanged = changedFiles.some(
+        (file) =>
+          file.startsWith("playground/") ||
+          file.startsWith("public/") ||
+          file === "build/hosting.mjs",
+      );
 
-      if (!bundlerChanged) {
+      if (scopedBuildsMatrix && !hostingChanged) {
+        step.info(
+          "Builds delegados para matrix",
+          `${ALL_BUILD_TARGETS.length} targets serão compilados em jobs paralelos`,
+        );
+      } else if (!bundlerChanged) {
         step.status("Resolvendo userscripts afetados pelo grafo de runtime...");
         const report = await resolveAffectedTargets(changedFiles);
         step.info("Builds afetados", report.targets.join(", ") || "(nenhum)");
@@ -315,14 +332,27 @@ export async function runValidation() {
           });
         }
       } else {
-        step.info("Bundler ou configuração alterada", "Compilando todos os userscripts");
+        step.info(
+          "Build completo necessário no job principal",
+          hostingChanged ? "Hosting depende da distribuição completa" : "Matrix de builds indisponível",
+        );
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
 
       execOrFail("npm", ["run", "test:unit"], { logger: log, env: childEnv });
-      execOrFail("npm", ["run", "test:lab"], { logger: log, env: childEnv });
-      execOrFail(process.execPath, ["build/hosting.mjs"], { logger: log, env: childEnv });
+
+      if (labChanged) {
+        execOrFail("npm", ["run", "test:lab"], { logger: log, env: childEnv });
+      } else {
+        step.info("Lab", "Sem alterações em labs/; testes de laboratório ignorados");
+      }
+
+      if (hostingChanged) {
+        execOrFail(process.execPath, ["build/hosting.mjs"], { logger: log, env: childEnv });
+      } else {
+        step.info("Hosting", "Sem alterações em playground/public/hosting; geração ignorada");
+      }
 
       step.pass("Validação completa finalizada");
     });
