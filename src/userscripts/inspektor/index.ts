@@ -21,19 +21,29 @@ const TARGET = `${ORIGIN}/userscripts/inspector.html`;
 const LIMIT = 400;
 const SECRET = /authorization|cookie|token|secret|password|session|api.?key|csrf/i;
 
-function redact(value: unknown, key = "", seen = new WeakSet<object>()): unknown {
+function redact(value: unknown, key = "", seen = new WeakSet<object>(), depth = 0): unknown {
   if (SECRET.test(key)) return "[REDACTED]";
-  if (typeof value === "string")
+  if (typeof value === "string") {
     return value.slice(0, 120000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
+  }
   if (!value || typeof value !== "object") return value;
   if (seen.has(value)) return "[Circular]";
+  if (depth > 8) return "[MaxDepth]";
   seen.add(value);
-  if (Array.isArray(value)) return value.slice(0, 100).map((item) => redact(item, "", seen));
-  return Object.fromEntries(
-    Object.entries(value)
-      .slice(0, 100)
-      .map(([k, v]) => [k, redact(v, k, seen)]),
-  );
+
+  if (Array.isArray(value)) {
+    return value.slice(0, 100).map((item) => redact(item, "", seen, depth + 1));
+  }
+
+  try {
+    return Object.fromEntries(
+      Object.entries(value)
+        .slice(0, 100)
+        .map(([k, v]) => [k, redact(v, k, seen, depth + 1)]),
+    );
+  } catch {
+    return "[Unserializable]";
+  }
 }
 
 function selectorFor(node: Element): string {
@@ -58,14 +68,22 @@ function selectorFor(node: Element): string {
 export default {
   init(ctx: InspectorContext) {
     if (location.origin === ORIGIN && location.pathname.startsWith("/userscripts/inspector")) return;
+
     const session = crypto.randomUUID();
     const logs: InspectorEvent[] = [];
     const network: InspectorEvent[] = [];
+
     let popup: Window | null = null;
     let picking = false;
     let selection: { selector: string; tag: string; attributes: readonly string[] } | null = null;
     let visible = false;
     let revision = 0;
+    let notifyScheduled = false;
+
+    // Cache de snapshots imutáveis para useSyncExternalStore / React.memo
+    let cachedConsole: { rev: number; items: readonly InspectorEvent[] } = { rev: -1, items: [] };
+    let cachedNetwork: { rev: number; items: readonly InspectorEvent[] } = { rev: -1, items: [] };
+
     const subscribers = new Set<() => void>();
     const subscribe = (listener: () => void) => {
       subscribers.add(listener);
@@ -73,26 +91,64 @@ export default {
         subscribers.delete(listener);
       };
     };
-    const notify = () => {
+
+    const flushNotify = () => {
+      notifyScheduled = false;
       revision++;
       subscribers.forEach((listener) => listener());
     };
+
+    const scheduleNotify = () => {
+      if (notifyScheduled || !visible) return;
+      notifyScheduled = true;
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(flushNotify);
+      } else {
+        queueMicrotask(flushNotify);
+      }
+    };
+
+    const getRecords = (channel: "console" | "network"): readonly InspectorEvent[] => {
+      if (channel === "console") {
+        if (cachedConsole.rev !== revision) {
+          cachedConsole = { rev: revision, items: [...logs] };
+        }
+        return cachedConsole.items;
+      }
+      if (cachedNetwork.rev !== revision) {
+        cachedNetwork = { rev: revision, items: [...network] };
+      }
+      return cachedNetwork.items;
+    };
+
+    const cancelPick = () => {
+      if (!picking) return;
+      picking = false;
+      document.removeEventListener("click", select, true);
+      document.removeEventListener("keydown", onPickKeydown, true);
+    };
+
     const stylesOff = ctx.ui.registerStyles(inspektorStyles);
     let unmount: (() => void) | undefined;
+
     const hide = () => {
+      cancelPick();
       if (!visible) return;
       visible = false;
       unmount?.();
       unmount = undefined;
     };
+
     const show = () => {
+      cancelPick();
       if (visible) return;
       visible = true;
+      revision++;
       unmount = ctx.ui.mountReact(
         renderInspektor({
           subscribe,
           getSnapshot: () => revision,
-          records: (channel) => (channel === "console" ? logs : network),
+          records: getRecords,
           selection: () => selection,
           pick: () => {
             hide();
@@ -103,16 +159,21 @@ export default {
         }),
       );
     };
+
     const send = (payload: InspectorEvent) => {
-      if (popup && !popup.closed) popup.postMessage({ rodInspector: 1, payload }, ORIGIN);
+      if (popup && !popup.closed) {
+        popup.postMessage({ rodInspector: 1, payload }, ORIGIN);
+      }
     };
+
     const push = (channel: "console" | "network", entry: InspectorEvent) => {
       const records = channel === "console" ? logs : network;
       records.push(entry);
       if (records.length > LIMIT) records.shift();
-      notify();
+      scheduleNotify();
       send({ kind: "event", session, channel, data: entry });
     };
+
     const snapshot = () =>
       send({
         kind: "snapshot",
@@ -125,13 +186,12 @@ export default {
         network: [...network],
         console: [...logs],
       });
+
     const open = () => {
+      // Depende exclusivamente do evento "ready" enviado pelo popup ao montar
       popup = window.open(TARGET, "_blank");
-      if (popup) window.setTimeout(snapshot, 750);
     };
 
-    // Subscribe to the shared, reference-counted passive observers.
-    // Keep network collection independent of the external popup lifecycle.
     const recordNetwork = (
       type: "fetch" | "xhr",
       event: {
@@ -152,8 +212,8 @@ export default {
       let safeUrl = "[unavailable]";
       try {
         const url = new URL(event.url, location.href);
-        for (const key of [...url.searchParams.keys()]) {
-          if (SECRET.test(key)) url.searchParams.set(key, "[REDACTED]");
+        for (const paramKey of [...url.searchParams.keys()]) {
+          if (SECRET.test(paramKey)) url.searchParams.set(paramKey, "[REDACTED]");
         }
         url.username = "";
         url.password = "";
@@ -161,6 +221,7 @@ export default {
       } catch {
         /* Invalid URL */
       }
+
       push("network", {
         kind: "request",
         type,
@@ -178,84 +239,122 @@ export default {
         truncated: event.truncated ?? false,
       });
     };
+
     const stopFetch = observePageFetch((event) => recordNetwork("fetch", event), {
       maxBodyCharacters: 120000,
       signal: ctx.signal,
     });
+
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
       maxBodyCharacters: 0,
       signal: ctx.signal,
     });
-    const stopConsole = observePageConsole((event) => {
+
+    const stopConsole = observePageConsole(
+      (event) => {
+        push("console", {
+          kind: "console",
+          level: event.level,
+          time: event.time,
+          args: event.args.map((arg) => {
+            try {
+              return redact(arg);
+            } catch {
+              return "[Unserializable]";
+            }
+          }),
+        });
+      },
+      { signal: ctx.signal } as { signal: AbortSignal },
+    );
+
+    ctx.listen(window, "error", ((event: ErrorEvent) => {
+      const message = event.error instanceof Error
+        ? [event.error.name, event.error.message, event.error.stack].filter(Boolean).join("\n")
+        : event.message;
       push("console", {
         kind: "console",
-        level: event.level,
-        time: event.time,
-        args: event.args.map((arg) => {
-          try {
-            return redact(arg);
-          } catch {
-            return "[Unserializable]";
-          }
-        }),
-      });
-    });
-    ctx.listen(window, "error", ((event: ErrorEvent) => {
-      push("console", { level: "error", time: new Date().toISOString(), args: [redact(event.message)] });
-    }) as EventListener);
-    ctx.listen(window, "unhandledrejection", ((event: PromiseRejectionEvent) => {
-      push("console", {
         level: "error",
         time: new Date().toISOString(),
-        args: [redact(String(event.reason))],
+        args: [redact(message || "Script error.")],
       });
     }) as EventListener);
 
-    const select = (event: Event) => {
+    ctx.listen(window, "unhandledrejection", ((event: PromiseRejectionEvent) => {
+      const reason = event.reason instanceof Error
+        ? [event.reason.name, event.reason.message, event.reason.stack].filter(Boolean).join("\n")
+        : String(event.reason ?? "Unhandled rejection");
+      push("console", {
+        kind: "console",
+        level: "error",
+        time: new Date().toISOString(),
+        args: [redact(reason)],
+      });
+    }) as EventListener);
+
+    function onPickKeydown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        cancelPick();
+        show();
+      }
+    }
+
+    function select(event: Event) {
       if (!picking || !(event.target instanceof Element)) return;
       if (event.target.closest("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]")) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      picking = false;
-      document.removeEventListener("click", select, true);
+      cancelPick();
+
       const node = event.target;
+      const selector = selectorFor(node);
       selection = {
-        selector: selectorFor(node),
+        selector,
         tag: node.localName,
         attributes: [...node.attributes]
           .filter((attribute) => !SECRET.test(attribute.name) && !/^on/i.test(attribute.name))
           .slice(0, 30)
           .map((attribute) => attribute.name),
       };
-      notify();
+
       show();
       send({
         kind: "selection",
         session,
-        selector: selectorFor(node),
+        selector,
         outerHTML: "", // Do not export raw selected element HTML.
       });
-    };
+    }
+
     const pick = () => {
+      cancelPick();
       picking = true;
       document.addEventListener("click", select, true);
+      document.addEventListener("keydown", onPickKeydown, true);
     };
+
     ctx.listen(window, "message", ((event: MessageEvent) => {
-      if (event.origin !== ORIGIN || event.source !== popup || event.data?.rodInspector !== 1) return;
+      if (event.origin !== ORIGIN || event.data?.rodInspector !== 1) return;
+      if (event.source && "closed" in event.source && !(event.source as Window).closed) {
+        popup = event.source as Window;
+      }
       if (event.data.kind === "ready") snapshot();
       if (event.data.kind === "pick") pick();
       if (event.data.kind === "highlight" && typeof event.data.selector === "string") {
         try {
-          document.querySelector(event.data.selector)?.scrollIntoView({ block: "center" });
+          document.querySelector(event.data.selector)?.scrollIntoView({ block: "center", behavior: "smooth" });
         } catch {
           /* Invalid selector */
         }
       }
     }) as EventListener);
+
     ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: show }]);
+
     ctx.onDispose(() => {
-      document.removeEventListener("click", select, true);
-      picking = false;
+      cancelPick();
       stopFetch();
       stopXHR();
       stopConsole();
