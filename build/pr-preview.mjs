@@ -72,8 +72,13 @@ for (const item of manifest.scripts) {
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
   catalog.scripts.push({
     id: item.id,
-    tags: definitionById.get(item.id)?.tags ?? (item.id === "standalone" || item.id === "unified" ? ["bundle"] : ["other"]),
-    group: item.id === "standalone" || item.id === "unified" ? "Bundles" : definitionById.get(item.id)?.tags?.[0] ?? "Other",
+    tags:
+      definitionById.get(item.id)?.tags ??
+      (item.id === "standalone" || item.id === "unified" ? ["bundle"] : ["other"]),
+    group:
+      item.id === "standalone" || item.id === "unified"
+        ? "Bundles"
+        : (definitionById.get(item.id)?.tags?.[0] ?? "Other"),
     name: `#${number} ${item.name} · ${releaseLabel}`,
     commit: shortSha,
     publishedAt: publishedAt.toISOString(),
@@ -120,7 +125,11 @@ if (missingIds.length) {
       fs.writeFile(path.join(output, item.metaFile), metadata),
     ]);
     const definition = definitionById.get(id);
-    catalog.scripts.push({ ...item, tags: definition?.tags ?? (id === "standalone" || id === "unified" ? ["bundle"] : ["other"]), group: id === "standalone" || id === "unified" ? "Bundles" : definition?.tags?.[0] ?? "Other" });
+    catalog.scripts.push({
+      ...item,
+      tags: definition?.tags ?? (id === "standalone" || id === "unified" ? ["bundle"] : ["other"]),
+      group: id === "standalone" || id === "unified" ? "Bundles" : (definition?.tags?.[0] ?? "Other"),
+    });
   }
   console.log("Preserved " + missingIds.length + " unchanged installers from previous preview");
 }
