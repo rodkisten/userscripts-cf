@@ -6,7 +6,7 @@ import { applyPostLimit } from "../feeds/local-limits.js";
 import { state } from "../state/deck.js";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
 import { DragDock } from "./draggable-dock.tsx";
-import { onClick } from "./events.tsx";
+import { onClick, performAction } from "./events.tsx";
 import { renderDock, renderRoot } from "./search-workbench.tsx";
 
 
@@ -26,23 +26,20 @@ function syncSharedDock() {
   sharedDockSignature = signature;
 
   const actions = [
-    { id: "home", label: "Início", selector: '[data-act="home"]' },
-    { id: "new", label: "Criar timeline", selector: '[data-act="new"]' },
-    { id: "organize", label: "Organizar pesquisas", selector: '[data-act="open"]' },
-    { id: "lists", label: "Listas", selector: '[data-act="lists-studio"]' },
-  ].map(({ id, label, selector }) => ({
+    { id: "home", label: "Início", action: "home" },
+    { id: "new", label: "Criar timeline", action: "new" },
+    { id: "organize", label: "Organizar pesquisas", action: "open" },
+    { id: "lists", label: "Listas", action: "lists-studio" },
+  ].map(({ id, label, action }) => ({
     id,
     label,
-    run: () => state.dockShadow?.querySelector<HTMLElement>(selector)?.click(),
+    run: () => { void performAction(action); },
   }));
   for (const search of pinned) {
     actions.push({
       id: `search:${search.id}`,
       label: `${search.icon ?? ""} ${search.name}`.trim(),
-      run: () => {
-        const buttons = state.dockShadow?.querySelectorAll<HTMLElement>('[data-act="open-search"]');
-        [...(buttons ?? [])].find((button) => button.dataset.id === String(search.id))?.click();
-      },
+      run: () => { void performAction("open-search", String(search.id)); },
     });
   }
   for (const list of quickLists) {
