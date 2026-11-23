@@ -18,6 +18,7 @@ import {
 const JS_TS_REGEX = /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$/;
 const CSS_REGEX = /\.css$/;
 const PRETTIER_REGEX = /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$/;
+const SKIP_CI_REGEX = /\[(skip[\s-]ci\vert{}ci[\s-]skip)\]/i;
 
 const STATE_FILES = {
   jsTs: ".changed_js_ts_files.txt",
@@ -38,6 +39,12 @@ function readLines(filePath) {
 
 function writeLines(filePath, items) {
   fs.writeFileSync(filePath, items.length ? `${items.join("\n")}\n` : "", "utf8");
+}
+
+function hasSkipCiMarker(ref = 'HEAD') {
+  const res = runCmd('git', ['log', '-1', '--format=%B', ref || 'HEAD'], { silent: true });
+  const message = res.ok ? res.stdout : '';
+  return SKIP_CI_REGEX.test(message);
 }
 
 // ============================================================================
@@ -90,10 +97,8 @@ export async function detectLint() {
 }
 
 // ============================================================================
-// 2. Aplicar auto-fix silencioso (ESLint + Prettier) e commitar na branch do PR
+// 2. Aplicar auto-fix silencioso (ESLint + Prettier), commitar e comentar no PR
 // ============================================================================
-// Substitua runAutofix e commentAutofix por esta função unificada em scripts/validate-pr-lint.mjs:
-
 export async function lintFixAndGate() {
   const log = new AgentReporter("AUTO-FIX & GATE", "ESLint & Prettier");
   log.banner();
@@ -153,7 +158,6 @@ export async function lintFixAndGate() {
     const status = runCmd("git", ["status", "--porcelain", "--untracked-files=no"], { silent: true });
 
     if (!status.stdout) {
-      // Nenhum arquivo foi auto-corrigido, mas podem existir erros de ESLint não auto-corrigíveis
       if (diagnostics.length > 0) {
         step.warn("Erros de lint não auto-corrigíveis detectados");
         setActionOutput("committed", "false");
@@ -176,7 +180,7 @@ export async function lintFixAndGate() {
       .filter(Boolean);
     const rawPatch = runCmd("git", ["diff"], { silent: true }).stdout;
 
-    // 5. Commita e faz push na branch do PR
+    // 6. Commita com [skip-ci] e faz push na branch do PR
     step.status(`Enviando commit de auto-fix para ${prBranch}...`);
     runCmd("git", ["config", "user.name", "github-actions[bot]"], { silent: true });
     runCmd("git", ["config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], {
@@ -207,7 +211,7 @@ export async function lintFixAndGate() {
     const shortSha = runCmd("git", ["rev-parse", "--short", "HEAD"], { silent: true }).stdout;
     const toolsStr = toolsUsed.join(" + ");
 
-    // 6. Publica/atualiza o comentário no PR explicando o ciclo
+    // 7. Publica/atualiza o comentário sticky no padrão GitHub
     if (token && prNumber && repoFull) {
       const [owner, repo] = repoFull.split("/");
       const marker = "<!-- autofix-bot-comment -->";
@@ -308,11 +312,7 @@ export async function lintFixAndGate() {
 }
 
 // ============================================================================
-// 3. Publicar ou atualizar comentário com o diff do auto-fix no PR
-// ============================================================================
-
-// ============================================================================
-// 4. Diagnóstico não-bloqueante de Prettier & ESLint
+// 3. Diagnóstico não-bloqueante de Prettier & ESLint
 // ============================================================================
 export async function checkFormat() {
   const log = new AgentReporter("LINT DIAGNOSTICS", "PR Changed Files");
