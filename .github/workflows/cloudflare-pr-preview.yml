@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: actions/setup-node@v4
@@ -37,7 +39,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
-        run: node scripts/cloudflare-pr-preview.mjs --mode=publish
+        run: |
+          export PR_HEAD_SHA="$(git rev-parse HEAD)"
+          node scripts/cloudflare-pr-preview.mjs --mode=publish
 
   cleanup:
     name: "🧹 Cleanup PR #${{ github.event.pull_request.number }} preview"
@@ -48,6 +52,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: actions/setup-node@v7
