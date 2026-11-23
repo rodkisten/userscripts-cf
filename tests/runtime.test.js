@@ -21,6 +21,7 @@ function createTestHost(url = "https://example.com/") {
   // Each isolated Happy DOM window needs the storage bridge installed by the browser bundle.
   Object.defineProperty(host, "RodStorage", {
     configurable: true,
+    writable: true,
     value: { create: () => ({}) },
   });
   activeHosts.push(host);
