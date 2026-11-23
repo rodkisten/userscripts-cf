@@ -135,8 +135,12 @@ export interface FetchObserverEvent {
   status?: number;
   durationMs: number;
   responseUrl?: string;
+  requestBody?: string | null;
   body?: string | null;
+  requestContentType?: string | null;
+  responseContentType?: string | null;
   truncated?: boolean;
+  requestTruncated?: boolean;
   error?: string;
 }
 
@@ -146,13 +150,49 @@ export interface FetchObserverOptions {
   maxBodyCharacters?: number;
 }
 
+type FetchListener = { callback: (event: FetchObserverEvent) => void; limit: number };
 interface FetchRegistryEntry {
   original: typeof window.fetch;
   wrapped: typeof window.fetch;
-  listeners: Set<(event: FetchObserverEvent) => void>;
+  listeners: Set<FetchListener>;
 }
-
 const nativeFetchObservers = new WeakMap<Window & typeof globalThis, FetchRegistryEntry>();
+
+// Clone streams before consumption. Reading the clone must never consume the page's body.
+async function readBody(
+  stream: ReadableStream<Uint8Array> | null,
+  limit: number,
+  contentType: string | null,
+): Promise<{ text: string | null; truncated: boolean }> {
+  if (!stream || limit <= 0) return { text: null, truncated: false };
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  let truncated = false;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      const decoded = decoder.decode(chunk.value, { stream: true });
+      const remaining = limit - text.length;
+      if (decoded.length > remaining) {
+        text += decoded.slice(0, Math.max(0, remaining));
+        truncated = true;
+        break;
+      }
+      text += decoded;
+      if (text.length >= limit) { truncated = true; break; }
+    }
+    if (!truncated) text += decoder.decode();
+  } finally {
+    if (truncated) void reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+  if (contentType && !/json|text|xml|javascript|graphql|html|form|yaml|csv|svg/i.test(contentType)) {
+    return { text: "[Binary body: preview unavailable]", truncated };
+  }
+  return { text, truncated };
+}
 
 export function observePageFetch(
   callback: (event: FetchObserverEvent) => void,
@@ -160,80 +200,83 @@ export function observePageFetch(
 ): () => void {
   if (typeof callback !== "function") throw new TypeError("Expected network observer");
   if (typeof host.fetch !== "function") return () => {};
-
   let entry = nativeFetchObservers.get(host);
   if (!entry) {
     const original = host.fetch;
-    const listeners = new Set<(event: FetchObserverEvent) => void>();
-
-    const wrapped: typeof window.fetch = function (this: any, ...args: Parameters<typeof window.fetch>) {
+    const listeners = new Set<FetchListener>();
+    const wrapped: typeof window.fetch = function (this: Window, ...args: Parameters<typeof window.fetch>) {
       const start = Date.now();
-      const request = args[0];
-      const url = typeof request === "string" ? request : (request as Request)?.url || String(request);
-      const method = (args[1] as RequestInit)?.method || (request as Request)?.method || "GET";
-      const response = original.apply(this, args);
-
+      const input = args[0];
+      const init = args[1];
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+      const limit = Math.max(0, ...[...listeners].map((listener) => listener.limit));
+      let requestClone: Request | null = null;
+      try {
+        if (limit > 0) requestClone = new Request(input, init).clone();
+      } catch { /* Uncloneable or consumed request bodies remain metadata-only. */ }
+      const requestContentType = requestClone?.headers.get("content-type") ?? null;
+      const requestBody = requestClone
+        ? readBody(requestClone.body, limit, requestContentType).catch(() => ({ text: null, truncated: false }))
+        : Promise.resolve({ text: null, truncated: false });
+      const response = Reflect.apply(original, this, args);
       Promise.resolve(response).then(
         async (result) => {
-          const event: FetchObserverEvent = {
-            url,
-            method,
-            status: result.status,
-            durationMs: Date.now() - start,
-            responseUrl: result.url,
-            body: null,
-            truncated: false,
+          const responseContentType = result.headers?.get("content-type") ?? null;
+          const bodyPromise = limit > 0
+            ? readBody(result.clone().body, limit, responseContentType).catch(() => ({ text: null, truncated: false }))
+            : Promise.resolve({ text: null, truncated: false });
+          const [requestData, responseData] = await Promise.all([requestBody, bodyPromise]);
+          const base: FetchObserverEvent = {
+            url, method, status: result.status, durationMs: Date.now() - start,
+            responseUrl: result.url, requestContentType, responseContentType,
           };
-          try {
-            const type = result.headers?.get("content-type") || "";
-            if (maxBodyCharacters > 0 && /json|text|xml|javascript|graphql|html/i.test(type)) {
-              const body = await result.clone().text();
-              event.body = body.slice(0, maxBodyCharacters);
-              event.truncated = body.length > maxBodyCharacters;
-            }
-          } catch {
-            /* Opaque, streaming and unreadable responses remain metadata-only. */
-          }
-
           for (const listener of [...listeners]) {
             try {
-              listener(event);
-            } catch {
-              /* Observer errors must not affect fetch. */
-            }
+              const max = listener.limit;
+              listener.callback({
+                ...base,
+                requestBody: max > 0 ? requestData.text?.slice(0, max) ?? null : null,
+                body: max > 0 ? responseData.text?.slice(0, max) ?? null : null,
+                requestTruncated: requestData.truncated || (requestData.text?.length ?? 0) > max,
+                truncated: responseData.truncated || (responseData.text?.length ?? 0) > max,
+              });
+            } catch { /* Observers must never break page requests. */ }
           }
         },
-        (error) => {
+        async (error) => {
+          const requestData = await requestBody;
           for (const listener of [...listeners]) {
             try {
-              listener({ url, method, error: String(error), durationMs: Date.now() - start });
+              listener.callback({
+                url, method, error: String(error), durationMs: Date.now() - start,
+                requestContentType, requestBody: listener.limit > 0 ? requestData.text?.slice(0, listener.limit) ?? null : null,
+              });
             } catch {}
           }
         },
       );
-
       return response;
     };
-
     host.fetch = wrapped;
     entry = { original, wrapped, listeners };
     nativeFetchObservers.set(host, entry);
   }
-
-  entry.listeners.add(callback);
-
+  const subscriber: FetchListener = { callback, limit: Math.max(0, maxBodyCharacters) };
+  entry.listeners.add(subscriber);
+  let active = true;
   const off = () => {
-    entry!.listeners.delete(callback);
+    if (!active) return;
+    active = false;
+    entry!.listeners.delete(subscriber);
     if (!entry!.listeners.size) {
       if (host.fetch === entry!.wrapped) host.fetch = entry!.original;
       nativeFetchObservers.delete(host);
     }
     signal?.removeEventListener("abort", off);
   };
-
   if (signal?.aborted) off();
   else signal?.addEventListener("abort", off, { once: true });
-
   return off;
 }
 
