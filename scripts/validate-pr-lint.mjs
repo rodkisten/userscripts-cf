@@ -18,6 +18,7 @@ import {
 const JS_TS_REGEX = /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$/;
 const CSS_REGEX = /\.css$/;
 const PRETTIER_REGEX = /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|css|scss|json|jsonc|md|mdx|ya?ml|html)$/;
+const SKIP_CI_REGEX = /\[(skip[\s-]ci\vert{}ci[\s-]skip)\]/i;
 
 const STATE_FILES = {
   jsTs: '.changed_js_ts_files.txt',
@@ -38,6 +39,12 @@ function readLines(filePath) {
 
 function writeLines(filePath, items) {
   fs.writeFileSync(filePath, items.length ? `${items.join('\n')}\n` : '', 'utf8');
+}
+
+function hasSkipCiMarker(ref = 'HEAD') {
+  const res = runCmd('git', ['log', '-1', '--format=%B', ref || 'HEAD'], { silent: true });
+  const message = res.ok ? res.stdout : '';
+  return SKIP_CI_REGEX.test(message);
 }
 
 // ============================================================================
@@ -72,22 +79,26 @@ export async function detectLint() {
     setActionOutput('has_prettier', hasPrettier);
     setActionOutput('has_eslint', hasEslint);
 
-    step.pass('Arquivos mapeados', `JS/TS: ${jsTsFiles.length} · CSS: ${cssFiles.length} · Prettier: ${prettierFiles.length}`);
-    step.info('Ferramentas', `ESLint: ${hasEslint ? 'ativo' : 'ausente'} · Prettier: ${hasPrettier ? 'ativo' : 'ausente'}`);
+    step.pass(
+      'Arquivos mapeados',
+      `JS/TS: ${jsTsFiles.length} · CSS: ${cssFiles.length} · Prettier: ${prettierFiles.length}`,
+    );
+    step.info(
+      'Ferramentas',
+      `ESLint: ${hasEslint ? 'ativo' : 'ausente'} · Prettier: ${hasPrettier ? 'ativo' : 'ausente'}`,
+    );
 
     log.summary({
       'JS/TS': String(jsTsFiles.length),
-      'CSS': String(cssFiles.length),
+      CSS: String(cssFiles.length),
       'Prettier Targets': String(prettierFiles.length),
     });
   });
 }
 
 // ============================================================================
-// 2. Aplicar auto-fix silencioso (ESLint + Prettier) e commitar na branch do PR
+// 2. Aplicar auto-fix silencioso (ESLint + Prettier), commitar e comentar no PR
 // ============================================================================
-// Substitua runAutofix e commentAutofix por esta função unificada em scripts/validate-pr-lint.mjs:
-
 export async function lintFixAndGate() {
   const log = new AgentReporter('AUTO-FIX & GATE', 'ESLint & Prettier');
   log.banner();
@@ -121,24 +132,34 @@ export async function lintFixAndGate() {
     const toolsUsed = [];
     const diagnostics = [];
 
-    // 1. Apply ESLint fixes only to changed JS/TS files.
+    // 1. Executa ESLint --fix nos arquivos JS/TS alterados
     if (hasEslint === 'true' && jsTsFiles.length > 0) {
       step.status(`Running ESLint --fix on ${jsTsFiles.length} changed file(s)...`);
       const eslintRes = runCmd('npx', ['eslint', '--fix', ...jsTsFiles], { logger: log });
       if (!eslintRes.ok) {
-        diagnostics.push('### ESLint\n' + (eslintRes.stderr || eslintRes.stdout || 'ESLint failed').slice(0, 8000));
+        diagnostics.push(
+          '### ESLint\n\n```text\n' +
+            (eslintRes.stderr || eslintRes.stdout || 'ESLint failed').trim().slice(0, 8000) +
+            '\n```',
+        );
       }
       toolsUsed.push('ESLint (`--fix`)');
     }
 
-    // 2. Apply Prettier fixes only to changed supported files.
+    // 2. Executa Prettier --write nos arquivos suportados alterados
     if (hasPrettier === 'true' && prettierTargets.length > 0) {
       step.status(`Running Prettier --write on ${prettierTargets.length} changed file(s)...`);
-      const prettierRes = runCmd('npx', ['prettier', '--write', '--log-level', 'silent', ...prettierTargets], {
-        logger: log,
-      });
+      const prettierRes = runCmd(
+        'npx',
+        ['prettier', '--write', '--log-level', 'silent', ...prettierTargets],
+        { logger: log },
+      );
       if (!prettierRes.ok) {
-        diagnostics.push('### Prettier\n' + (prettierRes.stderr || prettierRes.stdout || 'Prettier failed').slice(0, 8000));
+        diagnostics.push(
+          '### Prettier\n\n```text\n' +
+            (prettierRes.stderr || prettierRes.stdout || 'Prettier failed').trim().slice(0, 8000) +
+            '\n```',
+        );
       }
       toolsUsed.push('Prettier (`--write`)');
     }
@@ -147,7 +168,6 @@ export async function lintFixAndGate() {
     const status = runCmd('git', ['status', '--porcelain', '--untracked-files=no'], { silent: true });
 
     if (!status.stdout) {
-      // Nenhum arquivo foi auto-corrigido, mas podem existir erros de ESLint não auto-corrigíveis
       if (diagnostics.length > 0) {
         step.warn('Erros de lint não auto-corrigíveis detectados');
         setActionOutput('committed', 'false');
@@ -164,13 +184,30 @@ export async function lintFixAndGate() {
       return;
     }
 
-    // 4. Coleta estatísticas e diff antes de commitar
+    // 4. Bloqueia o commit automático se o commit disparador contiver [skip-ci] ou [skip ci]
+    if (hasSkipCiMarker(headSha)) {
+      runCmd('git', ['checkout', '--', '.'], { silent: true });
+      step.warn(
+        'Commit automático ignorado',
+        'O commit disparador contém [skip-ci]; alterações locais descartadas.',
+      );
+      setActionOutput('committed', 'false');
+      setActionOutput('has_unfixed_errors', 'true');
+      log.summary('warn', {
+        Committed: 'false',
+        Reason: 'Trigger commit contains [skip-ci]',
+      });
+      process.exitCode = 1;
+      return;
+    }
+
+    // 5. Coleta estatísticas e diff antes de commitar
     const numstatLines = runCmd('git', ['diff', '--numstat'], { silent: true })
       .stdout.split('\n')
       .filter(Boolean);
     const rawPatch = runCmd('git', ['diff'], { silent: true }).stdout;
 
-    // 5. Commita e faz push na branch do PR
+    // 6. Commita com [skip-ci] e faz push na branch do PR
     step.status(`Enviando commit de auto-fix para ${prBranch}...`);
     runCmd('git', ['config', 'user.name', 'github-actions[bot]'], { silent: true });
     runCmd('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], {
@@ -180,14 +217,16 @@ export async function lintFixAndGate() {
 
     const commitRes = runCmd(
       'git',
-      ['commit', '-m', 'style: auto-fix formatting and lint on changed files'],
+      ['commit', '-m', 'style: auto-fix formatting and lint on changed files [skip-ci]'],
       { logger: log },
     );
     if (!commitRes.ok) {
       throw new Error(`Falha ao criar commit de auto-fix: ${commitRes.stderr}`);
     }
 
-    const pullRes = runCmd('git', ['pull', '--rebase', '--autostash', 'origin', prBranch], { logger: log });
+    const pullRes = runCmd('git', ['pull', '--rebase', '--autostash', 'origin', prBranch], {
+      logger: log,
+    });
     if (!pullRes.ok) {
       throw new Error(`Falha no git pull --rebase origin ${prBranch}: ${pullRes.stderr}`);
     }
@@ -201,7 +240,7 @@ export async function lintFixAndGate() {
     const shortSha = runCmd('git', ['rev-parse', '--short', 'HEAD'], { silent: true }).stdout;
     const toolsStr = toolsUsed.join(' + ');
 
-    // 6. Publica/atualiza o comentário no PR explicando o ciclo
+    // 7. Publica/atualiza o comentário sticky no padrão GitHub
     if (token && prNumber && repoFull) {
       const [owner, repo] = repoFull.split('/');
       const marker = '<!-- autofix-bot-comment -->';
@@ -219,19 +258,20 @@ export async function lintFixAndGate() {
 
       const maxBytes = 45_000;
       const patchBuf = Buffer.from(rawPatch, 'utf8');
-      const diffContent = patchBuf.byteLength > maxBytes
-        ? patchBuf.subarray(0, maxBytes).toString('utf8')
-        : rawPatch;
+      const diffContent =
+        patchBuf.byteLength > maxBytes
+          ? patchBuf.subarray(0, maxBytes).toString('utf8')
+          : rawPatch;
 
       const truncatedNote =
         patchBuf.byteLength > maxBytes
-          ? `\n\n> ⚠️ *Diff truncado. Veja todas as alterações no commit [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha}).*`
+          ? `\n\n> [!WARNING]\n> Diff truncado por limite de tamanho. Veja todas as alterações no commit [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha}).`
           : '';
 
       const diagnosticsSection = diagnostics.length
         ? [
             '<details>',
-            '<summary>🚨 <b>Problemas de lint/formatação detectados antes da correção</b></summary>',
+            '<summary>🚨 <b>Diagnósticos detectados antes da correção</b></summary>',
             '',
             ...diagnostics,
             '</details>',
@@ -244,15 +284,20 @@ export async function lintFixAndGate() {
         '## 🪄 Auto-fix de Lint & Formatação Aplicado',
         '',
         '> [!NOTE]',
-        `> Foram encontrados problemas de lint/formatação nos arquivos alterados. O auto-fix foi executado, commitado na branch **\`${prBranch}\`** e **este workflow será executado novamente automaticamente** no novo commit.`,
+        `> Foram encontrados problemas de lint/formatação nos arquivos alterados. O auto-fix foi executado e commitado na branch **\`${prBranch}\`** com \`[skip-ci]\`.`,
         '',
         '### 📋 Resumo da Ação',
-        `* **Commit criado:** [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha})`,
-        `* **Ferramentas executadas:** ${toolsStr}`,
-        `* **Arquivos corrigidos:** **${numstatLines.length}** (\`+${totalAdded}\` / \`-${totalRemoved}\` linhas)`,
+        '',
+        '| Propriedade | Detalhe |',
+        '| :--- | :--- |',
+        `| **Commit** | [\`${shortSha}\`](https://github.com/${repoFull}/commit/${commitSha}) |`,
+        `| **Branch** | \`${prBranch}\` |`,
+        `| **Ferramentas** | ${toolsStr} |`,
+        `| **Arquivos corrigidos** | **${numstatLines.length}** (\`+${totalAdded}\` / \`-${totalRemoved}\` linhas) |`,
         '',
         diagnosticsSection,
         '### 📂 Arquivos Modificados',
+        '',
         ...tableRows,
         '',
         '<details>',
@@ -265,7 +310,7 @@ export async function lintFixAndGate() {
         '</details>',
         '',
         '---',
-        `<sub>🤖 *Atualizado em ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC • Aguardando nova execução do CI no commit \`${shortSha}\`.*</sub>`,
+        `<sub>🤖 *Atualizado em ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC • Commit automático marcado com \`[skip-ci]\`.*</sub>`,
       ]
         .filter(Boolean)
         .join('\n');
@@ -293,20 +338,15 @@ export async function lintFixAndGate() {
     log.summary('warn', {
       Commit: shortSha,
       Branch: prBranch,
-      Status: 'Aguardando re-execução do workflow',
+      Status: 'Auto-fix aplicado ([skip-ci])',
     });
 
-    // Encerra o step atual com falha controlada para abortar steps seguintes deste run
     process.exitCode = 1;
   });
 }
 
 // ============================================================================
-// 3. Publicar ou atualizar comentário com o diff do auto-fix no PR
-// ============================================================================
-
-// ============================================================================
-// 4. Diagnóstico não-bloqueante de Prettier & ESLint
+// 3. Diagnóstico não-bloqueante de Prettier & ESLint
 // ============================================================================
 export async function checkFormat() {
   const log = new AgentReporter('LINT DIAGNOSTICS', 'PR Changed Files');
