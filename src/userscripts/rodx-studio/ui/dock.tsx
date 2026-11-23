@@ -5,6 +5,7 @@ import { Studio } from "../core/studio.js";
 import { applyPostLimit } from "../feeds/local-limits.js";
 import { state } from "../state/deck.js";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
+import { studioListIndex } from "../lists/routes.js";
 import { DragDock } from "./draggable-dock.tsx";
 import { onClick, performAction } from "./events.tsx";
 import { renderDock, renderRoot } from "./search-workbench.tsx";
@@ -46,10 +47,7 @@ function syncSharedDock() {
     actions.push({
       id: `list:${list.id}`,
       label: Studio.services.lists.displayName(list),
-      run: () => {
-        const buttons = state.dockShadow?.querySelectorAll<HTMLElement>("[data-studio-list]");
-        [...(buttons ?? [])].find((button) => button.dataset.studioList === String(list.id))?.click();
-      },
+      run: () => Studio.navigate(`${studioListIndex(Studio)}/${list.id}`),
     });
   }
   document.dispatchEvent(new CustomEvent("rod-dock:registry", {
