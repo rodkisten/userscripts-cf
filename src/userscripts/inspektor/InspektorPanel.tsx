@@ -219,7 +219,8 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
         <strong>🔎 Inspektor</strong>
         {tab !== "dom" && (
           <span className="inspektor-count">
-            {filtered.length !== entries.length ? `${filtered.length}/${entries.length}` : entries.length} events
+            {filtered.length !== entries.length ? `${filtered.length}/${entries.length}` : entries.length}{" "}
+            events
           </span>
         )}
         <button type="button" className="ins-btn" onClick={store.openExternal}>

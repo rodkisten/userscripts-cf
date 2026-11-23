@@ -371,12 +371,20 @@ export function observePageFetch(
           for (const listener of [...listeners]) {
             try {
               if (listener.maxBodyCharacters <= 0) {
-                listener.callback({ ...event, body: null, requestBody: undefined, truncated: false, requestTruncated: false });
+                listener.callback({
+                  ...event,
+                  body: null,
+                  requestBody: undefined,
+                  truncated: false,
+                  requestTruncated: false,
+                });
               } else {
                 listener.callback({
                   ...event,
                   body: event.body ? event.body.slice(0, listener.maxBodyCharacters) : event.body,
-                  requestBody: event.requestBody ? event.requestBody.slice(0, listener.maxBodyCharacters) : event.requestBody,
+                  requestBody: event.requestBody
+                    ? event.requestBody.slice(0, listener.maxBodyCharacters)
+                    : event.requestBody,
                 });
               }
             } catch {
