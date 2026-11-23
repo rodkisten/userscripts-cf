@@ -344,7 +344,8 @@ export function installRodDock({
   launcher.type = "button";
   launcher.textContent = "☰";
   launcher.setAttribute("aria-label", "Abrir Rod Dock");
-  launcher.style.cssText = "position:fixed;right:0;top:46%;z-index:2147483647;pointer-events:auto;touch-action:none;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:#fff;font-size:18px";
+  launcher.style.cssText =
+    "position:fixed;right:0;top:46%;z-index:2147483647;pointer-events:auto;touch-action:none;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:#fff;font-size:18px";
   shadow.append(launcher);
   const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
   if (Number.isFinite(saved) && saved >= 12 && saved <= 88) launcher.style.top = saved + "%";
@@ -358,7 +359,9 @@ export function installRodDock({
     if (!dragStart) return;
     if (!dragStart.moved && Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) < 10) return;
     dragStart.moved = true;
-    launcher.style.top = Math.max(12, Math.min(88, dragStart.top + (event.clientY - dragStart.y) * 100 / window.innerHeight)) + "%";
+    launcher.style.top =
+      Math.max(12, Math.min(88, dragStart.top + ((event.clientY - dragStart.y) * 100) / window.innerHeight)) +
+      "%";
   });
   launcher.addEventListener("pointerup", () => {
     if (!dragStart) return;
@@ -367,8 +370,12 @@ export function installRodDock({
     if (moved) localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
     else setOpen(true);
   });
-  launcher.addEventListener("pointercancel", () => { dragStart = null; });
-  launcher.addEventListener("click", (event) => { if (event.detail === 0) setOpen(true); });
+  launcher.addEventListener("pointercancel", () => {
+    dragStart = null;
+  });
+  launcher.addEventListener("click", (event) => {
+    if (event.detail === 0) setOpen(true);
+  });
   let sharedMount: ReturnType<NonNullable<typeof mountSharedReact>> | undefined;
   let disposed = false;
   let currentModules = modules;
