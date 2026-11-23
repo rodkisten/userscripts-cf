@@ -296,8 +296,9 @@ export async function lintFixAndGate() {
       Status: 'Aguardando re-execução do workflow',
     });
 
-    // Encerra o step atual com falha controlada para abortar steps seguintes deste run
-    process.exitCode = 1;
+    // A successful auto-fix is not a validation failure. Downstream jobs must
+    // use the committed output to skip stale-SHA validation and check the new head.
+    return;
   });
 }
 
