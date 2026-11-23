@@ -42,6 +42,19 @@ const redirectToStudio =
   '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=/design-system.html"><title>Rod UI Studio</title><p><a href="/design-system.html">Abrir Rod UI Studio React</a></p></html>';
 assets["playground/form-controls.html"] = redirectToStudio;
 assets["playground/instagram-bookmark.html"] = redirectToStudio;
+// Inject a single early collector into every HTML entrypoint, including redirects.
+// Inline before application scripts so startup errors are captured without a second UI mount.
+const captureSource = (await fs.readFile(path.join(root, "playground/capture.js"), "utf8"))
+  .replaceAll("</script", "<\\/script");
+for (const [name, content] of Object.entries(assets)) {
+  if (!name.endsWith(".html")) continue;
+  if (!content.includes("<head>") && !content.includes("<html")) continue;
+  const script = "<script>" + captureSource + "</script>";
+  assets[name] = content.includes("<head>")
+    ? content.replace("<head>", "<head>\\n" + script)
+    : content.replace(/(<meta[^>]*charset[^>]*>)/i, "$1" + script);
+}
+
 // Use a normal ESM build so TypeScript is split into an on-demand chunk.
 // Library mode would otherwise force a single ~5 MB initial download.
 const astDir = path.join(dist, "ast-errors-playground");
