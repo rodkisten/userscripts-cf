@@ -258,7 +258,7 @@ export function createRuntime(
 
             // BUG FIX: Track `onDispose` cleanup even when reusing an existing `<style>` element by `id`, or avoid leaking orphaned styles if owned by this context.
             // Why: Previously, if script A created a `pageStyle` with `id: "foo"` and script B updated it, script A disposing would remove script B's active stylesheet; conversely, if an external style existed, script B had no cleanup.
-            if (existing instanceof HTMLStyleElement) {
+            if (existing instanceof host.HTMLStyleElement) {
               existing.textContent = String(css);
               return existing;
             }
