@@ -1,8 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 export interface InspektorRecord {
   kind?: string;
@@ -132,9 +130,9 @@ function JsonNode({
     : ` ${count} ${count === 1 ? "key" : "keys"} `;
 
   return (
-    <Collapsible.Root open={open} onOpenChange={setOpen} className="ins-json-node">
-      <Collapsible.Trigger asChild>
-        <button type="button" className="ins-json-trigger">
+    <div className="ins-json-node">
+      
+        <button type="button" className="ins-json-trigger" aria-expanded={open} onClick={() => setOpen(!open)}>
           <span className="ins-json-arrow" aria-hidden="true" />
           {name !== undefined && (
             <>
@@ -151,9 +149,9 @@ function JsonNode({
             </span>
           )}
         </button>
-      </Collapsible.Trigger>
+      
 
-      <Collapsible.Content className="ins-json-content">
+      {open && <div className="ins-json-content">
         <div className="ins-json-children">
           {isArray
             ? (value as unknown[]).map((item, idx) => (
@@ -167,8 +165,8 @@ function JsonNode({
           {closeBracket}
           {comma}
         </div>
-      </Collapsible.Content>
-    </Collapsible.Root>
+      </div>}
+    </div>
   );
 }
 
@@ -285,8 +283,8 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
               onChange={(event) => setQuery(event.target.value)}
             />
 
-            <ScrollArea.Root className="ins-scroll-root">
-              <ScrollArea.Viewport className="ins-scroll-viewport">
+            <div className="ins-scroll-root">
+              <div className="ins-scroll-viewport">
                 <div className="inspektor-events">
                   {filtered.length === 0 ? (
                     <p className="inspektor-muted">No events captured yet.</p>
@@ -333,11 +331,8 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
                     })
                   )}
                 </div>
-              </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar orientation="vertical" className="ins-scrollbar">
-                <ScrollArea.Thumb className="ins-scroll-thumb" />
-              </ScrollArea.Scrollbar>
-            </ScrollArea.Root>
+              </div>
+            </div>
 
             {selectedEntry && (
               <div className="inspektor-inspector">
@@ -347,19 +342,13 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
                     {copied ? "Copied ✓" : "Copy JSON"}
                   </button>
                 </div>
-                <ScrollArea.Root className="ins-detail-scroll">
-                  <ScrollArea.Viewport className="ins-detail-viewport">
+                <div className="ins-detail-scroll">
+                  <div className="ins-detail-viewport">
                     <div className="inspektor-detail ins-json-root">
                       <JsonNode value={selectedEntry} />
                     </div>
-                  </ScrollArea.Viewport>
-                  <ScrollArea.Scrollbar orientation="vertical" className="ins-scrollbar">
-                    <ScrollArea.Thumb className="ins-scroll-thumb" />
-                  </ScrollArea.Scrollbar>
-                  <ScrollArea.Scrollbar orientation="horizontal" className="ins-scrollbar">
-                    <ScrollArea.Thumb className="ins-scroll-thumb" />
-                  </ScrollArea.Scrollbar>
-                </ScrollArea.Root>
+                  </div>
+                </div>
               </div>
             )}
           </Tabs.Content>
