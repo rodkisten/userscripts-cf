@@ -10,8 +10,21 @@ import { onClick } from "./events.tsx";
 import { renderDock, renderRoot } from "./search-workbench.tsx";
 
 
-/** Expose RodX actions through the shared React Dock without replacing the inline search bar yet. */
+/** Keep the shared Dock registry in sync without emitting on every SPA repaint. */
+let sharedDockSignature = "";
+
 function syncSharedDock() {
+  const pinned = state.searches.filter((search) => search.pinned);
+  const quickLists = Studio.services.lists?.quickLists() ?? [];
+  const signature = JSON.stringify({
+    account: state.account,
+    route: state.dockRoute,
+    pinned: pinned.map((search) => [search.id, search.name, search.icon, search.query, search.sort]),
+    lists: quickLists.map((list) => [list.id, Studio.services.lists.displayName(list)]),
+  });
+  if (signature === sharedDockSignature) return;
+  sharedDockSignature = signature;
+
   const actions = [
     { id: "home", label: "Início", selector: '[data-act="home"]' },
     { id: "new", label: "Criar timeline", selector: '[data-act="new"]' },
@@ -22,12 +35,34 @@ function syncSharedDock() {
     label,
     run: () => state.dockShadow?.querySelector<HTMLElement>(selector)?.click(),
   }));
+  for (const search of pinned) {
+    actions.push({
+      id: `search:${search.id}`,
+      label: `${search.icon ?? ""} ${search.name}`.trim(),
+      run: () => {
+        const buttons = state.dockShadow?.querySelectorAll<HTMLElement>('[data-act="open-search"]');
+        [...(buttons ?? [])].find((button) => button.dataset.id === String(search.id))?.click();
+      },
+    });
+  }
+  for (const list of quickLists) {
+    actions.push({
+      id: `list:${list.id}`,
+      label: Studio.services.lists.displayName(list),
+      run: () => {
+        const buttons = state.dockShadow?.querySelectorAll<HTMLElement>("[data-studio-list]");
+        [...(buttons ?? [])].find((button) => button.dataset.studioList === String(list.id))?.click();
+      },
+    });
+  }
   document.dispatchEvent(new CustomEvent("rod-dock:registry", {
     detail: { type: "register", module: { id: "rodx-studio", name: "RodX Studio", actions } },
   }));
 }
 
 function unregisterSharedDock() {
+  if (!sharedDockSignature) return;
+  sharedDockSignature = "";
   document.dispatchEvent(new CustomEvent("rod-dock:registry", {
     detail: { type: "unregister", id: "rodx-studio" },
   }));
@@ -81,12 +116,12 @@ export function ensureDock() {
   applyComponentStyle(host, "rx-dock-host", false);
   // Mount once per primary column; virtualized cells must never move the dock.
   if (host.parentNode !== primary) primary.insertBefore(host, target);
-  syncSharedDock();
   const routeName = onSearch ? "search" : "home";
   if (state.dockRoute !== routeName) {
     state.dockRoute = routeName;
     renderDock();
   }
+  syncSharedDock();
 }
 
 export function repaint() {
