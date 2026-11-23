@@ -9,6 +9,30 @@ import { DragDock } from "./draggable-dock.tsx";
 import { onClick } from "./events.tsx";
 import { renderDock, renderRoot } from "./search-workbench.tsx";
 
+
+/** Expose RodX actions through the shared React Dock without replacing the inline search bar yet. */
+function syncSharedDock() {
+  const actions = [
+    { id: "home", label: "Início", selector: '[data-act="home"]' },
+    { id: "new", label: "Criar timeline", selector: '[data-act="new"]' },
+    { id: "organize", label: "Organizar pesquisas", selector: '[data-act="open"]' },
+    { id: "lists", label: "Listas", selector: '[data-act="lists-studio"]' },
+  ].map(({ id, label, selector }) => ({
+    id,
+    label,
+    run: () => state.dockShadow?.querySelector<HTMLElement>(selector)?.click(),
+  }));
+  document.dispatchEvent(new CustomEvent("rod-dock:registry", {
+    detail: { type: "register", module: { id: "rodx-studio", name: "RodX Studio", actions } },
+  }));
+}
+
+function unregisterSharedDock() {
+  document.dispatchEvent(new CustomEvent("rod-dock:registry", {
+    detail: { type: "unregister", id: "rodx-studio" },
+  }));
+}
+
 export function ensureDock() {
   // The native search header is sticky and has its own flex layout. Never
   // insert a dock between its input and tabs (which broke mobile layouts).
@@ -18,6 +42,7 @@ export function ensureDock() {
   const primary =
     onHome || onSearch ? document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) : null;
   if (!primary) {
+    unregisterSharedDock();
     state.dockHost?.remove();
     state.dockHost = null;
     state.dockShadow = null;
@@ -56,6 +81,7 @@ export function ensureDock() {
   applyComponentStyle(host, "rx-dock-host", false);
   // Mount once per primary column; virtualized cells must never move the dock.
   if (host.parentNode !== primary) primary.insertBefore(host, target);
+  syncSharedDock();
   const routeName = onSearch ? "search" : "home";
   if (state.dockRoute !== routeName) {
     state.dockRoute = routeName;
