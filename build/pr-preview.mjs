@@ -67,7 +67,18 @@ for (const item of manifest.scripts) {
   replace("icon", `${origin}${prefix}/icons/pr.svg`);
   replace("updateURL", `${origin}${prefix}/${metaFile}`);
   replace("downloadURL", `${origin}${prefix}/${file}`);
-  const source = metadata + original.slice(end + marker.length);
+  // Preview installers announce their presence without booting the module on this site.
+  metadata = metadata.replace(marker, "// @match        https://userscripts.preview.migos.club/*\n" + marker);
+  const probe = [
+    `if (location.hostname === "userscripts.preview.migos.club" && location.pathname.startsWith("/${number}")) {`,
+    `const report = () => document.dispatchEvent(new CustomEvent("userscripts-cf:installed", { detail: ${JSON.stringify({ id: item.id, version: previewVersion, commit: shortSha })} }));`,
+    `document.addEventListener("userscripts-cf:probe", report);`,
+    `report();`,
+    `} else {`,
+    original.slice(end + marker.length),
+    `}`,
+  ].join("\n");
+  const source = metadata + "\n" + probe;
   await fs.writeFile(path.join(output, file), source);
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
   catalog.scripts.push({
