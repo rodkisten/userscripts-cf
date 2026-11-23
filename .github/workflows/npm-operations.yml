@@ -22,18 +22,19 @@ on:
           - uninstall
           - custom
       packages:
-        description: 'Package list (for add/uninstall, e.g. "zod axios -D")'
+        description: 'Package list or command (e.g. "zod axios -D" or "zod -D && npm run build")'
         type: string
         required: false
         default: ''
       custom-command:
-        description: 'Any shell command (ONLY used when operation is "custom")'
+        description: 'Optional shell command (runs standalone if "custom", or chained after packages)'
         type: string
         required: false
         default: ''
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: pkg-operations-${{ inputs.selected-branch || github.ref_name }}
@@ -45,6 +46,8 @@ jobs:
     outputs:
       changed: ${{ steps.run_op.outputs.changed }}
       branch: ${{ steps.run_op.outputs.branch }}
+      commit_sha: ${{ steps.run_op.outputs.commit_sha }}
+      pr_number: ${{ steps.run_op.outputs.pr_number }}
     runs-on: ubuntu-latest
     steps:
       - name: 🔑 Authenticate Rod GitHub App
@@ -54,6 +57,7 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
+          permission-pull-requests: write
 
       - name: 📥 Checkout repository
         uses: actions/checkout@v6
@@ -65,14 +69,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
 
-      - name: 🥊 Run command
-        if: always()
+      - name: 🥊 Run operation
+        id: run_op
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           INPUT_BRANCH: ${{ inputs.selected-branch || github.ref_name }}
           INPUT_OPERATION: ${{ inputs.operation }}
           INPUT_PACKAGES: ${{ inputs.packages }}
           INPUT_CUSTOM_CMD: ${{ inputs.custom-command }}
-        run: node scripts/github-actions.mjs
+        run: node scripts/operation.mjs
