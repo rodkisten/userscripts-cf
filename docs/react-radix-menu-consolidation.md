@@ -85,4 +85,6 @@
 
 - **Pinned-only ordering fix:** shared Dock up/down actions now swap neighboring pinned searches directly, not arbitrary neighbors in `state.searches`. Changes are persisted with `saveState()`, rollback on failure, and re-registration of shared Dock actions. Touch/pointer drag remains pending.
 
-- **Pointer reorder (unvalidated):** shared Dock action buttons support pointer capture, drag-target highlighting, and a registered `reorder(targetId)` callback. RodX persists the new pinned search order and restores it on failed save. Browser/CI verification and mouse drag support remain outstanding.
+- **Pointer reorder (unvalidated):** shared Dock action buttons support pointer capture, drag-target highlighting, and a registered `reorder(targetId)` callback. RodX persists the new pinned search order and restores it on failed save. Browser/CI verification remains outstanding; mouse drag support and click suppression were added in the follow-up.
+
+- **Pointer follow-up:** enable primary-button mouse drag in addition to touch/pen, suppress accidental action clicks following drag, and clean up pointer listeners on cancel. Still needs actual mouse/iOS verification.
