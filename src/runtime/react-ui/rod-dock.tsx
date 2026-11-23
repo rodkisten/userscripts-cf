@@ -469,9 +469,9 @@ export function installRodDock({
   // Native ShadowRoot capture is a fallback for iOS Safari userscript sandboxes
   // where React delegated click handlers may not reach the launcher.
   const onLauncherActivation = (event: Event) => {
-    const launcher = event.composedPath().find(
-      (node) => node instanceof HTMLElement && node.matches("button.launcher"),
-    );
+    const launcher = event
+      .composedPath()
+      .find((node) => node instanceof HTMLElement && node.matches("button.launcher"));
     if (!(launcher instanceof HTMLElement) || launcher.dataset.dragged === "true") {
       return;
     }

@@ -23,7 +23,10 @@ if (!/^[0-9a-f]{8}$/i.test(shortSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA mus
 // Timestamp is numeric so a newer preview never sorts below an older commit hash.
 const publishedAt = new Date(process.env.PREVIEW_BUILD_TIMESTAMP || Date.now());
 if (Number.isNaN(publishedAt.getTime())) throw Error("Invalid PREVIEW_BUILD_TIMESTAMP");
-const timestamp = publishedAt.toISOString().replace(/[-:T.Z]/g, "").slice(0, 14);
+const timestamp = publishedAt
+  .toISOString()
+  .replace(/[-:T.Z]/g, "")
+  .slice(0, 14);
 const previewVersion = `${manifest.version}.${timestamp}`;
 const releaseLabel = `v${previewVersion} · ${shortSha} · ${publishedAt.toISOString()}`;
 const escapeXML = (value) =>
