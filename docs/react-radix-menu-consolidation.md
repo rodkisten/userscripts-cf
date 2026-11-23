@@ -35,7 +35,8 @@
 - [ ] Verify runtime root count and portal ownership in generated standalone bundles.
 - [ ] Confirm portal rendering works within ShadowRoot and does not leak styles into document body.
 - [x] Reattach registered styles if a host clears ShadowRoot children without disposing owners.
-- [ ] Verify style reference counting, cleanup and remount after SPA navigation.
+- [x] Harden style ownership for reparented nodes and repeated CSS within one registration.
+- [ ] Verify style reference counting, cleanup and remount after SPA navigation in a browser.
 - [ ] Verify Dock-only bundle and regular userscript coexistence.
 
 ### D. Verification and delivery
@@ -51,3 +52,5 @@
 - **Initial PR:** isolated branch created from `main`; audited the modular Radix menu, React root owner, Dock installer and ShadowRoot style registry. Added a defensive style reattachment fix. No CI outcome is claimed yet.
 
 - **Root ownership gate:** `npm run typecheck` now runs `check:react-roots` before TypeScript compilation. Reviewed `src/core/runtime.ts`: each script's `ctx.menu` is constructed with `createMenuFeature` and `mountSharedReact`. Reviewed RodX and Instagram entrypoints: both consume `ctx.menu`. `src/runtime/react-ui/index.tsx` still exposes the older `RodMenuHost`; no removal until consumers are exhaustively verified.
+
+- **Radix menu compatibility:** `DropdownItems` uses `item.id` as a stable key, but `DropdownItem` omitted the property. Added the optional typed identifier to the shared contract. **Shadow DOM:** reattach a style when its parent is not the owning ShadowRoot (not just when disconnected), and avoid overcounting repeated CSS within one registration. Browser and CI verification remain outstanding.
