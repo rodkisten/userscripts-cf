@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -59,14 +59,6 @@ function DockView({ controller }: { controller: DockController }) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [suppressClick, setSuppressClick] = useState<string | null>(null);
-  const launcherWasDragged = useRef(false);
-  const [position, setPosition] = useState(() => {
-    const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
-    return Number.isFinite(saved) && saved >= 12 && saved <= 88 ? saved : 46;
-  });
-  useEffect(() => {
-    localStorage.setItem(DOCK_POSITION_KEY, String(position));
-  }, [position]);
   useEffect(() => {
     const refresh = () => setDiagnostics([...(getDiagnostics()?.history ?? [])]);
     document.addEventListener("rod-diagnostics:change", refresh);
@@ -97,75 +89,6 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
-      {!open && (
-        <button
-          className="launcher"
-          style={{ top: `${position}%`, touchAction: "none" }}
-          aria-label="Abrir Rod Dock"
-          onPointerDown={(event) => {
-            if (event.pointerType === "mouse" && event.button !== 0) {
-              return;
-            }
-            launcherWasDragged.current = false;
-            const launcher = event.currentTarget;
-            launcher.dataset.dragged = "false";
-            const pointerId = event.pointerId;
-            const startX = event.clientX;
-            const startY = event.clientY;
-            const start = position;
-            let dragged = false;
-            launcher.setPointerCapture(pointerId);
-            const cleanup = () => {
-              launcher.removeEventListener("pointermove", onMove);
-              launcher.removeEventListener("pointerup", onEnd);
-              launcher.removeEventListener("pointercancel", onCancel);
-              if (launcher.hasPointerCapture(pointerId)) {
-                launcher.releasePointerCapture(pointerId);
-              }
-            };
-            const onMove = (next: PointerEvent) => {
-              if (next.pointerId !== pointerId) {
-                return;
-              }
-              if (!dragged && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
-                return;
-              }
-              dragged = true;
-              launcherWasDragged.current = true;
-              launcher.dataset.dragged = "true";
-              setPosition(
-                Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)),
-              );
-            };
-            const onEnd = (next: PointerEvent) => {
-              if (next.pointerId !== pointerId) {
-                return;
-              }
-              cleanup();
-              if (!dragged) {
-                setOpen(true);
-              }
-            };
-            const onCancel = (next: PointerEvent) => {
-              if (next.pointerId === pointerId) {
-                cleanup();
-              }
-            };
-            launcher.addEventListener("pointermove", onMove);
-            launcher.addEventListener("pointerup", onEnd);
-            launcher.addEventListener("pointercancel", onCancel);
-          }}
-          onClick={(event) => {
-            // Safari may deliver a click without a reliable pointerup after capture.
-            // Never open after a drag, but support mouse, touch, keyboard and assistive activation.
-            if (!launcherWasDragged.current) {
-              setOpen(true);
-            }
-          }}
-        >
-          ☰
-        </button>
-      )}
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal container={portal}>
           <Dialog.Overlay className="overlay" />
@@ -416,6 +339,36 @@ export function installRodDock({
   mountPoint.className = "rod-dock-root";
   portalPoint.className = "rod-dock-root";
   shadow.append(mountPoint, portalPoint);
+  const launcher = document.createElement("button");
+  launcher.className = "launcher";
+  launcher.type = "button";
+  launcher.textContent = "☰";
+  launcher.setAttribute("aria-label", "Abrir Rod Dock");
+  launcher.style.cssText = "position:fixed;right:0;top:46%;z-index:2147483647;pointer-events:auto;touch-action:none;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:#fff;font-size:18px";
+  shadow.append(launcher);
+  const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  if (Number.isFinite(saved) && saved >= 12 && saved <= 88) launcher.style.top = saved + "%";
+  let dragStart: { x: number; y: number; top: number; moved: boolean } | null = null;
+  launcher.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    dragStart = { x: event.clientX, y: event.clientY, top: parseFloat(launcher.style.top), moved: false };
+    launcher.setPointerCapture(event.pointerId);
+  });
+  launcher.addEventListener("pointermove", (event) => {
+    if (!dragStart) return;
+    if (!dragStart.moved && Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) < 10) return;
+    dragStart.moved = true;
+    launcher.style.top = Math.max(12, Math.min(88, dragStart.top + (event.clientY - dragStart.y) * 100 / window.innerHeight)) + "%";
+  });
+  launcher.addEventListener("pointerup", () => {
+    if (!dragStart) return;
+    const moved = dragStart.moved;
+    dragStart = null;
+    if (moved) localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+    else setOpen(true);
+  });
+  launcher.addEventListener("pointercancel", () => { dragStart = null; });
+  launcher.addEventListener("click", (event) => { if (event.detail === 0) setOpen(true); });
   let sharedMount: ReturnType<NonNullable<typeof mountSharedReact>> | undefined;
   let disposed = false;
   let currentModules = modules;
@@ -432,6 +385,7 @@ export function installRodDock({
   };
   const setOpen = (next: boolean) => {
     isOpen = next;
+    launcher.hidden = next;
     render();
   };
   const setModules = (next: DockModule[]) => {
@@ -466,19 +420,6 @@ export function installRodDock({
       actions.push({ id: String(detail.id), label: detail.label, run: detail.callback });
     setModules([...currentModules.filter((item) => item.id !== module.id), { ...module, actions }]);
   };
-  // Native ShadowRoot capture is a fallback for iOS Safari userscript sandboxes
-  // where React delegated click handlers may not reach the launcher.
-  const onLauncherActivation = (event: Event) => {
-    const launcher = event
-      .composedPath()
-      .find((node) => node instanceof HTMLElement && node.matches("button.launcher"));
-    if (!(launcher instanceof HTMLElement) || launcher.dataset.dragged === "true") {
-      return;
-    }
-    setOpen(true);
-  };
-  shadow.addEventListener("pointerup", onLauncherActivation, true);
-  shadow.addEventListener("click", onLauncherActivation, true);
   document.addEventListener("rod-dock:registry", onRegistration);
   document.addEventListener("rod-dock:menu", onMenu);
   (document.body ?? document.documentElement).append(host);
@@ -494,8 +435,6 @@ export function installRodDock({
     dispose() {
       if (disposed) return;
       disposed = true;
-      shadow.removeEventListener("pointerup", onLauncherActivation, true);
-      shadow.removeEventListener("click", onLauncherActivation, true);
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
       sharedMount?.dispose();
