@@ -247,10 +247,39 @@ function Studio() {
     [normalizedQuery],
   );
 
+  const traceMenu = (phase: string, details: Record<string, unknown>) => {
+    const diagnostics = (window as Window & {
+      __rodPlaygroundCaptureV1?: {
+        capture: (level: string, args: unknown[], source: string) => void;
+      };
+    }).__rodPlaygroundCaptureV1;
+    diagnostics?.capture("info", [phase, details], "studio.menu");
+  };
+  const openMenu = (nextSchema: MenuSchema) => {
+    traceMenu("open requested", { id: nextSchema.id, surface: nextSchema.presentation, fields: nextSchema.fields?.length });
+    try {
+      RodMenu.open(nextSchema);
+      traceMenu("store updated", { active: Boolean(RodMenu.active) });
+      window.requestAnimationFrame(() => {
+        const dialogs = [...document.querySelectorAll('[role="dialog"]')];
+        traceMenu("portal inspection", {
+          count: dialogs.length,
+          dialogs: dialogs.map((element) => {
+            const rect = element.getBoundingClientRect();
+            const css = getComputedStyle(element);
+            return { width: rect.width, height: rect.height, display: css.display, visibility: css.visibility, opacity: css.opacity, zIndex: css.zIndex };
+          }),
+        });
+      });
+    } catch (error) {
+      traceMenu("open failed", { error: serialize(error) });
+      throw error;
+    }
+  };
   const open = () => {
     record("open", `${demo.title} · ${surface}`);
     setOpenCount((count) => count + 1);
-    RodMenu.open(schema);
+    openMenu(schema);
   };
   const close = () => { RodMenu.close(); record("close", "Fechamento programático"); };
   const selectDemo = (id: string) => {
@@ -352,10 +381,10 @@ function Studio() {
 
             <h2>Experimentos</h2>
             <div className="studio-segments">
-              <button type="button" onClick={() => { setSurface("bottom-sheet"); RodMenu.open({ ...schema, presentation: "bottom-sheet" }); record("open", "Bottom-sheet"); setOpenCount((count) => count + 1); }}>Abrir sheet</button>
-              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "modal" }); record("open", "Modal"); setOpenCount((count) => count + 1); }}>Modal</button>
-              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "drawer" }); record("open", "Drawer"); setOpenCount((count) => count + 1); }}>Drawer</button>
-              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "popover" }); record("open", "Popover"); setOpenCount((count) => count + 1); }}>Popover</button>
+              <button type="button" onClick={() => { setSurface("bottom-sheet"); openMenu({ ...schema, presentation: "bottom-sheet" }); record("open", "Bottom-sheet"); setOpenCount((count) => count + 1); }}>Abrir sheet</button>
+              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "modal" }); record("open", "Modal"); setOpenCount((count) => count + 1); }}>Modal</button>
+              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "drawer" }); record("open", "Drawer"); setOpenCount((count) => count + 1); }}>Drawer</button>
+              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "popover" }); record("open", "Popover"); setOpenCount((count) => count + 1); }}>Popover</button>
             </div>
             <h2>Viewport</h2>
             <div className="studio-segments">
