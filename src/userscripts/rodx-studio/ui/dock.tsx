@@ -72,7 +72,7 @@ function syncSharedDock() {
   if (signature === sharedDockSignature) return;
   sharedDockSignature = signature;
 
-  const actions = [
+  const actions: { id: string; label: string; run: () => void; reorder?: (targetId: string) => void }[] = [
     { id: "home", label: "Início", action: "home" },
     { id: "new", label: "Criar timeline", action: "new" },
     { id: "organize", label: "Organizar pesquisas", action: "open" },
