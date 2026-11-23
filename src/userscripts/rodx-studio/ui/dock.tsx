@@ -36,11 +36,22 @@ function syncSharedDock() {
     label,
     run: () => { void performAction(action); },
   }));
-  for (const search of pinned) {
+  for (const [index, search] of pinned.entries()) {
     actions.push({
       id: `search:${search.id}`,
       label: `${search.icon ?? ""} ${search.name}`.trim(),
       run: () => { void performAction("open-search", String(search.id)); },
+    });
+    // Keyboard-accessible ordering while pointer/touch drag remains in the inline Dock.
+    if (index > 0) actions.push({
+      id: `search-up:${search.id}`,
+      label: `↑ ${search.name}`,
+      run: () => { void performAction("up", String(search.id)); },
+    });
+    if (index < pinned.length - 1) actions.push({
+      id: `search-down:${search.id}`,
+      label: `↓ ${search.name}`,
+      run: () => { void performAction("down", String(search.id)); },
     });
   }
   for (const list of quickLists) {
