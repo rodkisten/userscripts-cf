@@ -269,9 +269,10 @@ export default {
     );
 
     ctx.listen(window, "error", ((event: ErrorEvent) => {
-      const message = event.error instanceof Error
-        ? [event.error.name, event.error.message, event.error.stack].filter(Boolean).join("\n")
-        : event.message;
+      const message =
+        event.error instanceof Error
+          ? [event.error.name, event.error.message, event.error.stack].filter(Boolean).join("\n")
+          : event.message;
       push("console", {
         kind: "console",
         level: "error",
@@ -281,9 +282,10 @@ export default {
     }) as EventListener);
 
     ctx.listen(window, "unhandledrejection", ((event: PromiseRejectionEvent) => {
-      const reason = event.reason instanceof Error
-        ? [event.reason.name, event.reason.message, event.reason.stack].filter(Boolean).join("\n")
-        : String(event.reason ?? "Unhandled rejection");
+      const reason =
+        event.reason instanceof Error
+          ? [event.reason.name, event.reason.message, event.reason.stack].filter(Boolean).join("\n")
+          : String(event.reason ?? "Unhandled rejection");
       push("console", {
         kind: "console",
         level: "error",
@@ -344,7 +346,9 @@ export default {
       if (event.data.kind === "pick") pick();
       if (event.data.kind === "highlight" && typeof event.data.selector === "string") {
         try {
-          document.querySelector(event.data.selector)?.scrollIntoView({ block: "center", behavior: "smooth" });
+          document
+            .querySelector(event.data.selector)
+            ?.scrollIntoView({ block: "center", behavior: "smooth" });
         } catch {
           /* Invalid selector */
         }
