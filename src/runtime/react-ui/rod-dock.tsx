@@ -131,7 +131,9 @@ function DockView({ controller }: { controller: DockController }) {
               }
               dragged = true;
               launcherWasDragged.current = true;
-              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)));
+              setPosition(
+                Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)),
+              );
             };
             const onEnd = (next: PointerEvent) => {
               if (next.pointerId !== pointerId) {
