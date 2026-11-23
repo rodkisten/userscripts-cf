@@ -6,10 +6,10 @@ import { setOutputs } from '../utils/inputs.js';
 import { logger, style } from '../utils/logger.js';
 import { summary } from '../utils/summary.js';
 
-const toPosix = (p: string): string => p.split('\\').join('/');
-const escapeMermaidLabel = (text: string): string => text.replaceAll('"', '&quot;');
+const toPosix = (p) => p.split('\\').join('/');
+const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
 
-function walkTests(dir: string, acc: string[] = []): string[] {
+function walkTests(dir, acc = []) {
   if (!existsSync(dir)) return acc;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -30,9 +30,10 @@ runAction('Impact & Test Map', async () => {
     await cmd('git', ['fetch', 'origin', baseRef, '--depth=1']).nothrow();
 
     const originVerify = await cmd('git', ['rev-parse', '--verify', `origin/${baseRef}`]).nothrow();
-    const target = originVerify.exitCode === 0
-      ? originVerify.stdout.trim()
-      : (await cmd('git', ['rev-parse', '--verify', baseRef])).stdout.trim();
+    const target =
+      originVerify.exitCode === 0
+        ? originVerify.stdout.trim()
+        : (await cmd('git', ['rev-parse', '--verify', baseRef])).stdout.trim();
 
     const diffRes = await cmd('git', [
       'diff',
@@ -56,8 +57,8 @@ runAction('Impact & Test Map', async () => {
 
   const { folders, matchedNodeTests } = await logger.step('Map affected scopes & tests', () => {
     const allTestFiles = [...new Set([...walkTests('src'), ...walkTests('tests')])];
-    const grouped = new Map<string, { sourceFiles: string[]; testFiles: string[] }>();
-    const tests = new Set<string>();
+    const grouped = new Map();
+    const tests = new Set();
 
     for (const file of rawChanged) {
       const rel = toPosix(relative('src', file));
@@ -68,7 +69,7 @@ runAction('Impact & Test Map', async () => {
         grouped.set(folder, { sourceFiles: [], testFiles: [] });
       }
 
-      const bucket = grouped.get(folder)!;
+      const bucket = grouped.get(folder);
       const isTest = /\.(test|spec)\./.test(file);
 
       if (isTest) {
@@ -154,13 +155,13 @@ runAction('Impact & Test Map', async () => {
   await summary
     .heading('📊 Mapa de Impacto & Testes Relacionados', 2)
     .text(
-      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``
+      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``,
     )
     .code(mermaid.join('\n'), 'mermaid')
     .write();
 
   logger.success(
-    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
+    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`,
   );
   logger.divider('', '═');
 });
