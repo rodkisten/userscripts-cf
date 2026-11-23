@@ -176,6 +176,11 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Build the live PR branch, not a stale historical merge ref when a
+          # failed workflow attempt is re-run after additional fixes.
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
 
       - name: 🟢 Setup Node.js 24
         uses: actions/setup-node@v4
