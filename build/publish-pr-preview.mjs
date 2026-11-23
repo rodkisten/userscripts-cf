@@ -12,6 +12,9 @@ if (manifest.pr !== pr || !Array.isArray(manifest.scripts) || !manifest.scripts.
 const names = [
   "icons/pr.svg",
   "index.html",
+  "design-system.html",
+  "design-system.js",
+  "design-system.css",
   ...manifest.scripts.flatMap((s) => [s.file, s.metaFile]),
   "manifest.json",
 ];
