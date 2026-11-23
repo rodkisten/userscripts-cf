@@ -58,6 +58,20 @@ jobs:
           fi
           node build/build.mjs "--targets=$TARGETS"
           node build/pr-preview.mjs
+          # Fail explicitly if a declared userscript is absent from this PR build.
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const dir = `dist/pr-preview/${process.env.PR_NUMBER}`;
+          const manifest = JSON.parse(fs.readFileSync(`${dir}/manifest.json`, "utf8"));
+          if (fs.existsSync("src/userscripts/inspektor/index.ts")) {
+            const entry = manifest.scripts.find((script) => script.id === "inspektor");
+            if (!entry) throw Error("Inspektor missing from PR preview manifest");
+            for (const file of [entry.file, entry.metaFile]) {
+              if (!fs.existsSync(`${dir}/${file}`)) throw Error("Inspektor preview missing: " + file);
+            }
+            console.log("Verified Inspektor installer in PR #" + process.env.PR_NUMBER);
+          }
+          NODE
           echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"
