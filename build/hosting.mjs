@@ -45,13 +45,13 @@ assets["playground/instagram-bookmark.html"] = redirectToStudio;
 // Inject a single early collector into every HTML entrypoint, including redirects.
 // Inline before application scripts so startup errors are captured without a second UI mount.
 const captureSource = (await fs.readFile(path.join(root, "playground/capture.js"), "utf8"))
-  .replaceAll("</script", "<\\/script");
+  .replaceAll("</script", "<" + String.fromCharCode(92) + "/script");
 for (const [name, content] of Object.entries(assets)) {
   if (!name.endsWith(".html")) continue;
   if (!content.includes("<head>") && !content.includes("<html")) continue;
   const script = "<script>" + captureSource + "</script>";
   assets[name] = content.includes("<head>")
-    ? content.replace("<head>", "<head>\\n" + script)
+    ? content.replace("<head>", "<head>\n" + script)
     : content.replace(/(<meta[^>]*charset[^>]*>)/i, "$1" + script);
 }
 
