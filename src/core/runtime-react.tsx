@@ -160,6 +160,18 @@ export function createRuntime(
   const mountSharedReact = (component: ReactElement, container: HTMLElement): MountedReactHandle => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
 
+    // ReactDOM requires a browser-global window even when the runtime receives
+    // an injected Window (for example happy-dom in unit tests). Keep the
+    // container lifecycle valid in non-browser hosts without creating a fake
+    // global window. Real userscript/browser execution always takes the normal
+    // portal path below.
+    if (typeof window === "undefined") {
+      return {
+        update() {},
+        dispose() {},
+      };
+    }
+
     const id = nextPortalId();
     let disposed = false;
 
