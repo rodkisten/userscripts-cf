@@ -51,7 +51,7 @@ export default {
         return reply("Unauthorized", "html", 401);
       const path = new URL(request.url).pathname;
       const upload =
-        /^\/_publish\/(\d+)\/([a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html|icons\/pr\.svg)$/.exec(
+        /^\/_publish\/(\d+)\/([a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html|design-system\.(?:html|js|css)|icons\/pr\.svg)$/.exec(
           path,
         );
       const remove = /^\/_publish\/(\d+)$/.exec(path);
@@ -87,7 +87,7 @@ export default {
       return reply(request.method === "HEAD" ? null : html);
     }
     const m =
-      /^\/(\d+)\/(?:([a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html)|(icons\/pr\.svg))$/.exec(
+      /^\/(\d+)\/(?:([a-z][a-z0-9-]*\.(?:user|meta)\.js|manifest\.json|index\.html|design-system\.(?:html|js|css))|(icons\/pr\.svg))$/.exec(
         url.pathname,
       ) || /^\/(\d+)\/?$/.exec(url.pathname);
     if (!m || !Number.isSafeInteger(Number(m[1])) || Number(m[1]) < 1) return reply("Not found", "html", 404);
