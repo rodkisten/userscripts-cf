@@ -162,13 +162,13 @@ export default {
         status: event.status ?? 0,
         ms: event.durationMs,
         time: new Date().toISOString(),
-        responseBody: redact(event.body),
+        responseBody: "[Not captured: response may contain sensitive data]",
         error: event.error ? String(redact(event.error)) : undefined,
         truncated: event.truncated ?? false,
       });
     };
     const stopFetch = observePageFetch((event) => recordNetwork("fetch", event), {
-      maxBodyCharacters: 15000,
+      maxBodyCharacters: 0,
     });
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
       maxBodyCharacters: 15000,
