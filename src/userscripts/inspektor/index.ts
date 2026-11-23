@@ -1,3 +1,4 @@
+import { observePageConsole } from "../../runtime/console-observer.js";
 import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
 import type { ReactElement } from "react";
 
@@ -70,11 +71,11 @@ export default {
       send({
         kind: "snapshot",
         session,
-        url: location.href,
+        url: location.origin + location.pathname,
         title: document.title,
         time: new Date().toISOString(),
         userAgent: navigator.userAgent,
-        html: document.documentElement?.outerHTML.slice(0, 500000) ?? "",
+        html: "", // Raw DOM may contain passwords, tokens and personal information.
         network: [...network],
         console: [...logs],
       });
@@ -128,6 +129,16 @@ export default {
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
       maxBodyCharacters: 15000,
     });
+    const stopConsole = observePageConsole((event) => {
+      push("console", {
+        level: event.level,
+        time: event.time,
+        args: event.args.map((arg) => {
+          try { return redact(arg); }
+          catch { return "[Unserializable]"; }
+        }),
+      });
+    });
     ctx.listen(window, "error", ((event: ErrorEvent) => {
       push("console", { level: "error", time: new Date().toISOString(), args: [redact(event.message)] });
     }) as EventListener);
@@ -176,6 +187,7 @@ export default {
       picking = false;
       stopFetch();
       stopXHR();
+      stopConsole();
     });
   },
 };
