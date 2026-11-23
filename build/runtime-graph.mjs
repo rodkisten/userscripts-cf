@@ -130,21 +130,36 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     for (const feature of usage.features) features.add(feature);
     if (usage.dynamic) dynamicFiles.add(relPath);
 
-    // Coleta imports estáticos (import ... from / export ... from)
-    const info = ts.preProcessFile(source, true, true);
-    const specifiers = new Set(info.importedFiles.map((item) => item.fileName));
-
-    // Coleta imports dinâmicos: import(...) e require(...)
+    const specifiers = new Set();
     const ast = ts.createSourceFile(
       filename,
       source,
       ts.ScriptTarget.Latest,
       true,
-      getScriptKind(filename)
+      getScriptKind(filename),
     );
 
+    // Collect every local module edge from the AST instead of relying on
+    // preProcessFile, whose import discovery behavior changed in TypeScript 6.
     /** @param {ts.Node} node */
     const inspectImports = (node) => {
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteralLike(node.moduleSpecifier)
+      ) {
+        specifiers.add(node.moduleSpecifier.text);
+      }
+
+      if (
+        ts.isImportEqualsDeclaration(node) &&
+        ts.isExternalModuleReference(node.moduleReference) &&
+        node.moduleReference.expression &&
+        ts.isStringLiteralLike(node.moduleReference.expression)
+      ) {
+        specifiers.add(node.moduleReference.expression.text);
+      }
+
       if (
         ts.isCallExpression(node) &&
         (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
@@ -160,6 +175,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
           dynamicFiles.add(relPath);
         }
       }
+
       ts.forEachChild(node, inspectImports);
     };
 
