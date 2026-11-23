@@ -102,18 +102,58 @@ function DockView({ controller }: { controller: DockController }) {
           style={{ top: `${position}%`, touchAction: "none" }}
           aria-label="Abrir Rod Dock"
           onPointerDown={(event) => {
+            if (event.pointerType === "mouse" && event.button !== 0) {
+              return;
+            }
+            const launcher = event.currentTarget;
+            const pointerId = event.pointerId;
+            const startX = event.clientX;
             const startY = event.clientY;
             const start = position;
-            const onMove = (next: PointerEvent) =>
-              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / innerHeight)));
-            const onEnd = () => {
-              window.removeEventListener("pointermove", onMove);
-              window.removeEventListener("pointerup", onEnd);
+            let dragged = false;
+            launcher.setPointerCapture(pointerId);
+            const cleanup = () => {
+              launcher.removeEventListener("pointermove", onMove);
+              launcher.removeEventListener("pointerup", onEnd);
+              launcher.removeEventListener("pointercancel", onCancel);
+              if (launcher.hasPointerCapture(pointerId)) {
+                launcher.releasePointerCapture(pointerId);
+              }
             };
-            window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onEnd, { once: true });
+            const onMove = (next: PointerEvent) => {
+              if (next.pointerId !== pointerId) {
+                return;
+              }
+              if (!dragged && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
+                return;
+              }
+              dragged = true;
+              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)));
+            };
+            const onEnd = (next: PointerEvent) => {
+              if (next.pointerId !== pointerId) {
+                return;
+              }
+              cleanup();
+              if (!dragged) {
+                setOpen(true);
+              }
+            };
+            const onCancel = (next: PointerEvent) => {
+              if (next.pointerId === pointerId) {
+                cleanup();
+              }
+            };
+            launcher.addEventListener("pointermove", onMove);
+            launcher.addEventListener("pointerup", onEnd);
+            launcher.addEventListener("pointercancel", onCancel);
           }}
-          onClick={() => setOpen(true)}
+          onClick={(event) => {
+            // Keyboard and assistive-technology activation does not emit pointerdown.
+            if (event.detail === 0) {
+              setOpen(true);
+            }
+          }}
         >
           ☰
         </button>
