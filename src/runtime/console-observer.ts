@@ -8,6 +8,7 @@ export interface ConsoleObservation {
 type Listener = (event: ConsoleObservation) => void;
 type Registry = {
   listeners: Set<Listener>;
+  notifying: boolean;
   originals: Map<ConsoleLevel, (...args: unknown[]) => void>;
   wrappers: Map<ConsoleLevel, (...args: unknown[]) => void>;
 };
@@ -17,12 +18,15 @@ const levels: readonly ConsoleLevel[] = ["log", "info", "warn", "error", "debug"
 export function observePageConsole(listener: Listener, host: Console = console): () => void {
   let registry = registries.get(host);
   if (!registry) {
-    registry = { listeners: new Set(), originals: new Map(), wrappers: new Map() };
+    registry = { listeners: new Set(), notifying: false, originals: new Map(), wrappers: new Map() };
     registries.set(host, registry);
     for (const level of levels) {
       const original = host[level];
       const wrapped = function (this: Console, ...args: unknown[]): void {
         try {
+          if (!registry!.notifying) {
+            registry!.notifying = true;
+            try {
           const observation: ConsoleObservation = {
             level,
             time: new Date().toISOString(),
@@ -34,6 +38,8 @@ export function observePageConsole(listener: Listener, host: Console = console):
             } catch {
               /* Diagnostics must not break the page. */
             }
+          }
+            } finally { registry!.notifying = false; }
           }
         } finally {
           Reflect.apply(original, this, args);
