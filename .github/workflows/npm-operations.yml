@@ -1,6 +1,6 @@
 name: 🥊 Package & Shell Operations
 
-run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || format('{0} @ {1}', inputs.operation, inputs.packages) }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
+run-name: "🥊 ${{ inputs.operation == 'custom' && inputs.custom-command || format('{0} ⬩ {1}', inputs.operation, inputs.packages) }} on 🌿 ${{ inputs.selected-branch || github.ref_name }}"
 
 on:
   workflow_dispatch:
