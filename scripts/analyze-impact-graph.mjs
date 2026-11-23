@@ -1,28 +1,39 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, extname, join, relative } from 'node:path';
-import { runAction } from '../utils/action.js';
-import { cmd } from '../utils/cmd.js';
-import { setOutputs } from '../utils/inputs.js';
-import { logger, style } from '../utils/logger.js';
-import { summary } from '../utils/summary.js';
-
-const toPosix = (p) => p.split('\\').join('/');
+import { existsSync, readdirSync, statSync, appendFileSync } from 'node:fs';
+import { basename, dirname, extname, relative } from 'node:path';
+import { execFileSync } from 'node:child_process';
+const toPosix = (p) => p.split('\\\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
-
+const logger = {
+ banner: (...args) => console.log(...args),
+ step: async (label, callback) => { console.log(label); return callback(); },
+ item: (...args) => console.log(...args),
+ divider: () => {},
+ success: (...args) => console.log(...args),
+};
+const style = { bold: (value) => value };
+const cmd = async (command, args) => {
+ try { return { exitCode: 0, stdout: execFileSync(command, args, { encoding: 'utf8' }) }; }
+ catch (error) { return { exitCode: error.status || 1, stdout: error.stdout?.toString() || '' }; }
+};
+const setOutputs = (values) => {
+ if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key,value]) => key + '=' + String(value) + '\\n').join(''));
+};
+const summary = {
+ heading(text) { this.lines = [text]; return this; },
+ text(text) { this.lines.push(text); return this; },
+ code(text, lang) { this.lines.push('\\`\\`\\`' + lang + '\\n' + text + '\\n\\`\\`\\`'); return this; },
+ write() { if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, this.lines.join('\\n') + '\\n'); },
+};
 function walkTests(dir, acc = []) {
-  if (!existsSync(dir)) return acc;
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      walkTests(full, acc);
-    } else if (/\.(test|spec)\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) {
-      acc.push(toPosix(full));
-    }
-  }
-  return acc;
+ if (!existsSync(dir)) return acc;
+ for (const entry of readdirSync(dir)) {
+  const full = dir + '/' + entry;
+  if (statSync(full).isDirectory()) walkTests(full, acc);
+  else if (/\\.(test|spec)\\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) acc.push(toPosix(full));
+ }
+ return acc;
 }
-
-runAction('Impact & Test Map', async () => {
+(async () => {
   const baseRef = (process.env.BASE_REF || 'main').trim();
   logger.banner('Impact & Test Map', `Base: ${baseRef}`);
 
@@ -164,4 +175,4 @@ runAction('Impact & Test Map', async () => {
     `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
   );
   logger.divider('', '═');
-});
+})().catch((error) => { console.error(error); process.exitCode = 1; });
