@@ -3,13 +3,17 @@ import { performance } from "node:perf_hooks";
 export const isCI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 export const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
+const hasNoColor = process.env.NO_COLOR !== undefined && process.env.NO_COLOR !== "";
 const supportsColor =
-  !process.env.NO_COLOR && (Boolean(process.env.FORCE_COLOR) || process.stdout.isTTY || isGitHubActions);
+  !hasNoColor &&
+  process.env.FORCE_COLOR !== "0" &&
+  (Boolean(process.env.FORCE_COLOR) || Boolean(process.stdout.isTTY) || isGitHubActions);
 
-const code = (open, close) => (str) => (supportsColor ? `\x1b[${open}m${str}\x1b[${close}m` : String(str));
+const code = (open, close) => (str) =>
+  supportsColor ? `\x1b[${open}m${String(str)}\x1b[${close}m` : String(str);
 
 export const ansi = {
-  reset: code(0, 0),
+  reset: (str = "") => (supportsColor ? `\x1b[0m${String(str)}` : String(str)),
   bold: code(1, 22),
   dim: code(2, 22),
   italic: code(3, 23),
@@ -45,6 +49,26 @@ function formatDuration(ms) {
   return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`;
 }
 
+function stripAnsi(str) {
+  return String(str).replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+function escapeGitHubCommandValue(value) {
+  return String(value)
+    .replace(/%/g, "%25")
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A");
+}
+
+function fitToTerminal(text, reserve = 6) {
+  const cols = process.stdout.columns || 100;
+  const maxWidth = Math.max(24, cols - reserve);
+  if (stripAnsi(text).length <= maxWidth) return text;
+
+  const plain = stripAnsi(text);
+  return `${plain.slice(0, maxWidth - 1)}…`;
+}
+
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 class LocalSpinner {
@@ -73,9 +97,11 @@ class LocalSpinner {
   }
 
   render() {
+    if (!this.active) return;
     const icon = ansi.cyan(SPINNER_FRAMES[this.frame]);
-    const elapsed = ansi.dim(`(${formatDuration(performance.now() - this.startTime)})`);
-    process.stdout.write(`\r\x1b[2K  ${icon} ${this.text} ${elapsed}`);
+    const elapsed = `(${formatDuration(performance.now() - this.startTime)})`;
+    const body = fitToTerminal(this.text, elapsed.length + 6);
+    process.stdout.write(`\r\x1b[2K  ${icon} ${body} ${ansi.dim(elapsed)}`);
   }
 
   clearLine() {
@@ -117,7 +143,7 @@ export class AgentReporter {
       : isCI
         ? ansi.dim("[CI]")
         : ansi.dim("[Interactive TTY]");
-    process.stdout.write(`\n${tag}${sub} ${mode}\n\n`);
+    this._writeLine(`\n${tag}${sub} ${mode}\n`);
   }
 
   _writeLine(line) {
@@ -145,7 +171,8 @@ export class AgentReporter {
     const suffix = detail ? ` ${ansi.dim("→")} ${ansi.yellow(detail)}` : "";
     this._writeLine(`  ${badge.warn()} ${ansi.yellow(title)}${suffix}${this._elapsedTag()}`);
     if (isGitHubActions) {
-      process.stdout.write(`::warning::${title}${detail ? ` - ${detail}` : ""}\n`);
+      const msg = escapeGitHubCommandValue(`${title}${detail ? ` - ${detail}` : ""}`);
+      process.stdout.write(`::warning::${msg}\n`);
     }
   }
 
@@ -153,29 +180,33 @@ export class AgentReporter {
     const suffix = detail ? ` ${ansi.dim("→")} ${ansi.red(detail)}` : "";
     this._writeLine(`  ${badge.fail()} ${ansi.red(ansi.bold(title))}${suffix}${this._elapsedTag()}`);
     if (isGitHubActions) {
-      process.stdout.write(`::error::${title}${detail ? ` - ${detail}` : ""}\n`);
+      const msg = escapeGitHubCommandValue(`${title}${detail ? ` - ${detail}` : ""}`);
+      process.stdout.write(`::error::${msg}\n`);
     }
   }
 
   kvTable(rows) {
+    if (!rows || typeof rows !== "object") return;
     const entries = Array.isArray(rows) ? rows : Object.entries(rows);
     if (!entries.length) return;
-    const maxKeyLen = Math.max(...entries.map(([k]) => k.length));
+    const maxKeyLen = Math.max(...entries.map(([k]) => String(k).length));
     for (const [key, value] of entries) {
-      this._writeLine(`    ${ansi.dim(key.padEnd(maxKeyLen))}  ${ansi.cyan(value)}`);
+      this._writeLine(`    ${ansi.dim(String(key).padEnd(maxKeyLen))}  ${ansi.cyan(String(value ?? ""))}`);
     }
   }
 
   async step(label, fn) {
     const stepStart = performance.now();
+    const isRootStep = this.stepStartStack.length === 0;
+    const useGitHubGroup = isGitHubActions && isRootStep;
     this.stepStartStack.push(stepStart);
 
-    if (isGitHubActions) {
-      process.stdout.write(`::group::${badge.step(label)}\n`);
-    } else if (!isCI && process.stdout.isTTY) {
+    if (useGitHubGroup) {
+      process.stdout.write(`::group::${escapeGitHubCommandValue(stripAnsi(label))}\n`);
+    } else if (!isCI && process.stdout.isTTY && isRootStep) {
       this.activeSpinner = new LocalSpinner(ansi.bold(label), stepStart).start();
     } else {
-      process.stdout.write(`${badge.run("STEP")} ${ansi.bold(label)}\n`);
+      this._writeLine(`${badge.step("STEP")} ${ansi.bold(label)}`);
     }
 
     const ctx = {
@@ -198,31 +229,34 @@ export class AgentReporter {
       const result = await fn(ctx);
       const duration = ansi.dim(`(${formatDuration(performance.now() - stepStart)})`);
 
-      if (this.activeSpinner) {
+      if (this.activeSpinner && isRootStep) {
         this.activeSpinner.stop(`${badge.pass("DONE")} ${ansi.bold(label)} ${duration}`);
         this.activeSpinner = null;
       } else {
-        process.stdout.write(`  ${badge.pass("DONE")} ${ansi.bold(label)} ${duration}\n`);
+        this._writeLine(`  ${badge.pass("DONE")} ${ansi.bold(label)} ${duration}`);
       }
 
-      if (isGitHubActions) process.stdout.write("::endgroup::\n");
       return result;
     } catch (err) {
       const duration = ansi.dim(`(${formatDuration(performance.now() - stepStart)})`);
+      const errMsg = err instanceof Error ? err.message : String(err);
 
-      if (this.activeSpinner) {
+      if (this.activeSpinner && isRootStep) {
         this.activeSpinner.stop(`${badge.fail("FAIL")} ${ansi.bold(label)} ${duration}`);
         this.activeSpinner = null;
       } else {
-        process.stdout.write(`  ${badge.fail("FAIL")} ${ansi.bold(label)} ${duration}\n`);
+        this._writeLine(`  ${badge.fail("FAIL")} ${ansi.bold(label)} ${duration}`);
       }
 
       if (isGitHubActions) {
-        process.stdout.write(`::error::${err.message}\n::endgroup::\n`);
+        process.stdout.write(`::error::${escapeGitHubCommandValue(errMsg)}\n`);
       }
       throw err;
     } finally {
       this.stepStartStack.pop();
+      if (useGitHubGroup) {
+        process.stdout.write("::endgroup::\n");
+      }
     }
   }
 
@@ -239,7 +273,7 @@ export class AgentReporter {
           ? badge.warn("COMPLETED WITH WARNINGS")
           : badge.fail("FAILED");
 
-    process.stdout.write(`\n\n${header} ${ansi.dim("in")} ${ansi.bold(total)}\n`);
+    this._writeLine(`\n\n${header} ${ansi.dim("in")} ${ansi.bold(total)}`);
     this.kvTable(metrics);
     process.stdout.write("\n");
   }
@@ -250,8 +284,11 @@ export class AgentReporter {
     const tag = badge.run("RUN");
     const padIndent = "       ";
 
-    const formatArg = (arg) => (/[\s"'$`\\]/.test(arg) ? JSON.stringify(arg) : arg);
-    const tokens = [cmd, ...args.map(formatArg)];
+    const formatArg = (arg) => {
+      const str = String(arg ?? "");
+      return /[\s"'$`\\]/.test(str) ? JSON.stringify(str) : str;
+    };
+    const tokens = [String(cmd), ...args.map(formatArg)];
 
     const lines = [];
     let currentLine = "";
@@ -292,7 +329,7 @@ export class AgentReporter {
     }
 
     this._writeLine(divider);
-    this._writeLine(`  ${tag} ${lines[0] || ansi.cyan(cmd)}`);
+    this._writeLine(`  ${tag} ${lines[0] || ansi.cyan(String(cmd))}`);
     for (let i = 1; i < lines.length; i++) {
       this._writeLine(`  ${lines[i]}`);
     }
