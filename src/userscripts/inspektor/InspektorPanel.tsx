@@ -10,6 +10,7 @@ export interface InspektorStore {
   getSnapshot(): number;
   records(channel: "console" | "network"): readonly InspektorRecord[];
   pick(): void;
+  selection(): { selector: string; tag: string; attributes: readonly string[] } | null;
   close(): void;
   openExternal(): void;
 }
@@ -28,6 +29,7 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string>("");
   const entries = tab === "dom" ? [] : store.records(tab);
+  const selection = store.selection();
   const filtered = entries.filter((entry) => format(entry).toLowerCase().includes(query.toLowerCase()));
   return (
     <section aria-label="Inspektor" role="dialog" aria-modal="false" className="inspektor-panel">
@@ -59,6 +61,7 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
       {tab === "dom" ? (
         <div className="inspektor-content">
           <p>Inspect a page element without exporting the full DOM.</p>
+          {selection ? <div><strong>{selection.tag}</strong><pre className="inspektor-detail">{selection.selector}</pre><ul>{selection.attributes.map((attribute) => <li key={attribute}>{attribute}</li>)}</ul></div> : <p>No element selected.</p>}
           <button type="button" onClick={store.pick}>
             Select element
           </button>
