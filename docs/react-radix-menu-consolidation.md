@@ -31,7 +31,8 @@
 
 ### C. Root and Shadow DOM ownership
 
-- [ ] Audit root creation across all build targets; require one runtime-owned React root per bundle.
+- [x] Audit static React root ownership: existing Babel AST check enforces one runtime root in `src/core/runtime-react.tsx` and one separate Studio root in `studio/entry.tsx`; now required during `typecheck`.
+- [ ] Verify runtime root count and portal ownership in generated standalone bundles.
 - [ ] Confirm portal rendering works within ShadowRoot and does not leak styles into document body.
 - [x] Reattach registered styles if a host clears ShadowRoot children without disposing owners.
 - [ ] Verify style reference counting, cleanup and remount after SPA navigation.
@@ -48,3 +49,5 @@
 ## Progress log
 
 - **Initial PR:** isolated branch created from `main`; audited the modular Radix menu, React root owner, Dock installer and ShadowRoot style registry. Added a defensive style reattachment fix. No CI outcome is claimed yet.
+
+- **Root ownership gate:** `npm run typecheck` now runs `check:react-roots` before TypeScript compilation. Reviewed `src/core/runtime.ts`: each script's `ctx.menu` is constructed with `createMenuFeature` and `mountSharedReact`. Reviewed RodX and Instagram entrypoints: both consume `ctx.menu`. `src/runtime/react-ui/index.tsx` still exposes the older `RodMenuHost`; no removal until consumers are exhaustively verified.
