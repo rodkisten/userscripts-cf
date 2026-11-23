@@ -1,6 +1,7 @@
 import { openRadixDialog, openRadixDropdown } from "./menu-view.js";
 import type { ReactElement } from "react";
 export interface DropdownItem {
+  id?: string;
   label?: string;
   type?: "item" | "separator" | "checkbox";
   disabled?: boolean;
@@ -19,6 +20,7 @@ export interface DropdownOptions {
 
 export interface MenuField {
   name: string;
+  disabled?: boolean;
   label?: string;
   type?: string;
   placeholder?: string;
