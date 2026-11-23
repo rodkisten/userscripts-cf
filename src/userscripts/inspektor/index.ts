@@ -22,13 +22,13 @@ const LIMIT = 400;
 const SECRET = /authorization|cookie|token|secret|password|session|api.?key|csrf/i;
 
 function redact(value: unknown, key = "", seen = new WeakSet<object>(), depth = 0): unknown {
-  if (SECRET.test(key)) return "[REDACTED]";
+  if (SECRET.test(key)) {\n    return "[REDACTED]";\n  }
   if (typeof value === "string") {
     return value.slice(0, 120000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
   }
-  if (!value || typeof value !== "object") return value;
-  if (seen.has(value)) return "[Circular]";
-  if (depth > 8) return "[MaxDepth]";
+  if (!value || typeof value !== "object") {\n    return value;\n  }
+  if (seen.has(value)) {\n    return "[Circular]";\n  }
+  if (depth > 8) {\n    return "[MaxDepth]";\n  }
   seen.add(value);
 
   if (Array.isArray(value)) {
@@ -47,7 +47,7 @@ function redact(value: unknown, key = "", seen = new WeakSet<object>(), depth = 
 }
 
 function selectorFor(node: Element): string {
-  if (node.id) return `#${CSS.escape(node.id)}`;
+  if (node.id) {\n    return `#${CSS.escape(node.id)}`;\n  }
   const parts: string[] = [];
   for (let current: Element | null = node; current && parts.length < 20; current = current.parentElement) {
     let part = current.localName;
@@ -58,7 +58,7 @@ function selectorFor(node: Element): string {
     const siblings = current.parentElement?.children;
     if (siblings) {
       const matching = Array.from(siblings).filter((item) => item.localName === current!.localName);
-      if (matching.length > 1) part += `:nth-of-type(${matching.indexOf(current) + 1})`;
+      if (matching.length > 1) {\n        part += `:nth-of-type(${matching.indexOf(current) + 1})`;\n      }
     }
     parts.unshift(part);
   }
@@ -67,7 +67,7 @@ function selectorFor(node: Element): string {
 
 export default {
   init(ctx: InspectorContext) {
-    if (location.origin === ORIGIN && location.pathname.startsWith("/userscripts/inspector")) return;
+    if (location.origin === ORIGIN && location.pathname.startsWith("/userscripts/inspector")) {\n      return;\n    }
 
     const session = crypto.randomUUID();
     const logs: InspectorEvent[] = [];
@@ -99,7 +99,7 @@ export default {
     };
 
     const scheduleNotify = () => {
-      if (notifyScheduled || !visible) return;
+      if (notifyScheduled || !visible) {\n        return;\n      }
       notifyScheduled = true;
       if (typeof requestAnimationFrame === "function") {
         requestAnimationFrame(flushNotify);
@@ -122,7 +122,7 @@ export default {
     };
 
     const cancelPick = () => {
-      if (!picking) return;
+      if (!picking) {\n        return;\n      }
       picking = false;
       document.removeEventListener("click", select, true);
       document.removeEventListener("keydown", onPickKeydown, true);
@@ -133,7 +133,7 @@ export default {
 
     const hide = () => {
       cancelPick();
-      if (!visible) return;
+      if (!visible) {\n        return;\n      }
       visible = false;
       unmount?.();
       unmount = undefined;
@@ -141,7 +141,7 @@ export default {
 
     const show = () => {
       cancelPick();
-      if (visible) return;
+      if (visible) {\n        return;\n      }
       visible = true;
       revision++;
       unmount = ctx.ui.mountReact(
@@ -169,7 +169,7 @@ export default {
     const push = (channel: "console" | "network", entry: InspectorEvent) => {
       const records = channel === "console" ? logs : network;
       records.push(entry);
-      if (records.length > LIMIT) records.shift();
+      if (records.length > LIMIT) {\n        records.shift();\n      }
       scheduleNotify();
       send({ kind: "event", session, channel, data: entry });
     };
@@ -213,7 +213,7 @@ export default {
       try {
         const url = new URL(event.url, location.href);
         for (const paramKey of [...url.searchParams.keys()]) {
-          if (SECRET.test(paramKey)) url.searchParams.set(paramKey, "[REDACTED]");
+          if (SECRET.test(paramKey)) {\n            url.searchParams.set(paramKey, "[REDACTED]");\n          }
         }
         url.username = "";
         url.password = "";
@@ -301,8 +301,8 @@ export default {
     }
 
     function select(event: Event) {
-      if (!picking || !(event.target instanceof Element)) return;
-      if (event.target.closest("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]")) return;
+      if (!picking || !(event.target instanceof Element)) {\n        return;\n      }
+      if (event.target.closest("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]")) {\n        return;\n      }
       event.preventDefault();
       event.stopImmediatePropagation();
       cancelPick();
@@ -335,12 +335,12 @@ export default {
     };
 
     ctx.listen(window, "message", ((event: MessageEvent) => {
-      if (event.origin !== ORIGIN || event.data?.rodInspector !== 1) return;
+      if (event.origin !== ORIGIN || event.data?.rodInspector !== 1) {\n        return;\n      }
       if (event.source && "closed" in event.source && !(event.source as Window).closed) {
         popup = event.source as Window;
       }
-      if (event.data.kind === "ready") snapshot();
-      if (event.data.kind === "pick") pick();
+      if (event.data.kind === "ready") {\n        snapshot();\n      }
+      if (event.data.kind === "pick") {\n        pick();\n      }
       if (event.data.kind === "highlight" && typeof event.data.selector === "string") {
         try {
           document
