@@ -17,12 +17,17 @@ const SECRET = /authorization|cookie|token|secret|password|session|api.?key|csrf
 
 function redact(value: unknown, key = "", seen = new WeakSet<object>()): unknown {
   if (SECRET.test(key)) return "[REDACTED]";
-  if (typeof value === "string") return value.slice(0, 15000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
+  if (typeof value === "string")
+    return value.slice(0, 15000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
   if (!value || typeof value !== "object") return value;
   if (seen.has(value)) return "[Circular]";
   seen.add(value);
   if (Array.isArray(value)) return value.slice(0, 100).map((item) => redact(item, "", seen));
-  return Object.fromEntries(Object.entries(value).slice(0, 100).map(([k, v]) => [k, redact(v, k, seen)]));
+  return Object.fromEntries(
+    Object.entries(value)
+      .slice(0, 100)
+      .map(([k, v]) => [k, redact(v, k, seen)]),
+  );
 }
 
 function selectorFor(node: Element): string {
@@ -30,7 +35,10 @@ function selectorFor(node: Element): string {
   const parts: string[] = [];
   for (let current: Element | null = node; current && parts.length < 20; current = current.parentElement) {
     let part = current.localName;
-    if (current.id) { parts.unshift(`${part}#${CSS.escape(current.id)}`); break; }
+    if (current.id) {
+      parts.unshift(`${part}#${CSS.escape(current.id)}`);
+      break;
+    }
     const siblings = current.parentElement?.children;
     if (siblings) {
       const matching = Array.from(siblings).filter((item) => item.localName === current!.localName);
@@ -58,12 +66,18 @@ export default {
       if (records.length > LIMIT) records.shift();
       send({ kind: "event", session, channel, data: entry });
     };
-    const snapshot = () => send({
-      kind: "snapshot", session, url: location.href, title: document.title,
-      time: new Date().toISOString(), userAgent: navigator.userAgent,
-      html: document.documentElement?.outerHTML.slice(0, 500000) ?? "",
-      network: [...network], console: [...logs],
-    });
+    const snapshot = () =>
+      send({
+        kind: "snapshot",
+        session,
+        url: location.href,
+        title: document.title,
+        time: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        html: document.documentElement?.outerHTML.slice(0, 500000) ?? "",
+        network: [...network],
+        console: [...logs],
+      });
     const open = () => {
       popup = window.open(TARGET, "_blank");
       if (popup) window.setTimeout(snapshot, 750);
@@ -71,10 +85,19 @@ export default {
 
     // Subscribe to the shared, reference-counted passive observers.
     // Keep network collection independent of the external popup lifecycle.
-    const recordNetwork = (type: "fetch" | "xhr", event: {
-      url: string; method: string; status?: number; durationMs: number;
-      body?: string | null; error?: string; responseUrl?: string; truncated?: boolean;
-    }) => {
+    const recordNetwork = (
+      type: "fetch" | "xhr",
+      event: {
+        url: string;
+        method: string;
+        status?: number;
+        durationMs: number;
+        body?: string | null;
+        error?: string;
+        responseUrl?: string;
+        truncated?: boolean;
+      },
+    ) => {
       let safeUrl = "[unavailable]";
       try {
         const url = new URL(event.url, location.href);
@@ -84,11 +107,18 @@ export default {
         url.username = "";
         url.password = "";
         safeUrl = url.toString();
-      } catch { /* Invalid URL */ }
+      } catch {
+        /* Invalid URL */
+      }
       push("network", {
-        type, method: event.method, url: safeUrl, status: event.status ?? 0,
-        ms: event.durationMs, time: new Date().toISOString(),
-        responseBody: redact(event.body), error: event.error ? String(redact(event.error)) : undefined,
+        type,
+        method: event.method,
+        url: safeUrl,
+        status: event.status ?? 0,
+        ms: event.durationMs,
+        time: new Date().toISOString(),
+        responseBody: redact(event.body),
+        error: event.error ? String(redact(event.error)) : undefined,
         truncated: event.truncated ?? false,
       });
     };
@@ -102,7 +132,11 @@ export default {
       push("console", { level: "error", time: new Date().toISOString(), args: [redact(event.message)] });
     }) as EventListener);
     ctx.listen(window, "unhandledrejection", ((event: PromiseRejectionEvent) => {
-      push("console", { level: "error", time: new Date().toISOString(), args: [redact(String(event.reason))] });
+      push("console", {
+        level: "error",
+        time: new Date().toISOString(),
+        args: [redact(String(event.reason))],
+      });
     }) as EventListener);
 
     const select = (event: Event) => {
@@ -113,7 +147,12 @@ export default {
       picking = false;
       document.removeEventListener("click", select, true);
       const node = event.target;
-      send({ kind: "selection", session, selector: selectorFor(node), outerHTML: redact(node.outerHTML.slice(0, 30000)) });
+      send({
+        kind: "selection",
+        session,
+        selector: selectorFor(node),
+        outerHTML: redact(node.outerHTML.slice(0, 30000)),
+      });
     };
     const pick = () => {
       picking = true;
@@ -124,7 +163,11 @@ export default {
       if (event.data.kind === "ready") snapshot();
       if (event.data.kind === "pick") pick();
       if (event.data.kind === "highlight" && typeof event.data.selector === "string") {
-        try { document.querySelector(event.data.selector)?.scrollIntoView({ block: "center" }); } catch { /* Invalid selector */ }
+        try {
+          document.querySelector(event.data.selector)?.scrollIntoView({ block: "center" });
+        } catch {
+          /* Invalid selector */
+        }
       }
     }) as EventListener);
     ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: open }]);
