@@ -4,6 +4,7 @@ const types = {
   json: "application/json; charset=utf-8",
   svg: "image/svg+xml",
   html: "text/html; charset=utf-8",
+  css: "text/css; charset=utf-8",
 };
 const escape = (s) =>
   String(s).replace(
@@ -93,7 +94,7 @@ export default {
     const file = m[2] || m[3] || "index.html";
     const object = await env.PREVIEWS.get(`prs/${Number(m[1])}/${file}`);
     if (!object) return reply("Not found", "html", 404);
-    const type = file.endsWith(".js")
+    const type = file.endsWith(".css") ? "css" : file.endsWith(".js")
       ? "js"
       : file.endsWith(".json")
         ? "json"
