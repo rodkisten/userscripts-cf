@@ -20,7 +20,12 @@ const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
 const shortSha = (process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "").slice(0, 8);
 if (!/^[0-9a-f]{8}$/i.test(shortSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a commit SHA");
-const previewVersion = `${manifest.version}-preview.${number}.${shortSha}`;
+// Timestamp is numeric so a newer preview never sorts below an older commit hash.
+const publishedAt = new Date(process.env.PREVIEW_BUILD_TIMESTAMP || Date.now());
+if (Number.isNaN(publishedAt.getTime())) throw Error("Invalid PREVIEW_BUILD_TIMESTAMP");
+const timestamp = publishedAt.toISOString().replace(/[-:T.Z]/g, "").slice(0, 14);
+const previewVersion = `${manifest.version}.${timestamp}`;
+const releaseLabel = `v${previewVersion} · ${shortSha} · ${publishedAt.toISOString()}`;
 const escapeXML = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -33,6 +38,9 @@ const catalog = {
   channel: "pr-preview",
   pr: number,
   version: previewVersion,
+  commit: shortSha,
+  publishedAt: publishedAt.toISOString(),
+  releaseLabel,
   baseURL: origin + prefix,
   scripts: [],
 };
@@ -49,7 +57,7 @@ for (const item of manifest.scripts) {
     if (line.test(metadata)) metadata = metadata.replace(line, `// @${key.padEnd(12)} ${value}`);
     else metadata = metadata.replace(marker, `// @${key.padEnd(12)} ${value}\n${marker}`);
   };
-  replace("name", `#${number} ${item.name}`);
+  replace("name", `#${number} ${item.name} · ${releaseLabel}`);
   replace("version", previewVersion);
   replace("namespace", `${origin}/pr/${number}/${item.id}`);
   replace("icon", `${origin}${prefix}/icons/pr.svg`);
@@ -60,7 +68,9 @@ for (const item of manifest.scripts) {
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
   catalog.scripts.push({
     id: item.id,
-    name: `#${number} ${item.name}`,
+    name: `#${number} ${item.name} · ${releaseLabel}`,
+    commit: shortSha,
+    publishedAt: publishedAt.toISOString(),
     file,
     metaFile,
     version: previewVersion,
@@ -110,6 +120,6 @@ if (missingIds.length) {
 catalog.scripts.sort((a, b) => [...expectedIds].indexOf(a.id) - [...expectedIds].indexOf(b.id));
 await fs.writeFile(path.join(output, "manifest.json"), JSON.stringify(catalog, null, 2) + "\n");
 const data = JSON.stringify(catalog).replace(/</g, "\\u003c");
-const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>#${number} · Userscripts Preview</title><style>body{font:15px system-ui;background:#09090b;color:#fafafa;max-width:780px;margin:48px auto;padding:0 20px}h1{font-size:28px}p{color:#a1a1aa}article{border:1px solid #27272a;border-radius:12px;padding:16px;margin:12px 0;display:flex;justify-content:space-between;gap:16px;align-items:center}a{color:#d4d4d8}article a{background:#fafafa;color:#09090b;padding:10px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}@media(max-width:480px){article{align-items:flex-start;flex-direction:column}}</style><h1>▲ Preview #${number}</h1><p>Instaladores isolados deste pull request. Não substituem a versão estável.</p><main id="scripts"></main><script>const catalog=${data};document.getElementById("scripts").replaceChildren(...catalog.scripts.map(s=>{const row=document.createElement("article");const title=document.createElement("strong");title.textContent=s.name;const link=document.createElement("a");link.textContent="Instalar ↗";link.href="./"+encodeURIComponent(s.file);row.append(title,link);return row;}));</script></html>`;
+const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>#${number} · Userscripts Preview</title><style>body{font:15px system-ui;background:#09090b;color:#fafafa;max-width:780px;margin:48px auto;padding:0 20px}h1{font-size:28px}p{color:#a1a1aa}article{border:1px solid #27272a;border-radius:12px;padding:16px;margin:12px 0;display:flex;justify-content:space-between;gap:16px;align-items:center}a{color:#d4d4d8}article a{background:#fafafa;color:#09090b;padding:10px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}@media(max-width:480px){article{align-items:flex-start;flex-direction:column}}</style><h1>▲ Preview #${number}</h1><p>${releaseLabel}</p><p>Instaladores isolados deste pull request. Não substituem a versão estável.</p><main id="scripts"></main><script>const catalog=${data};document.getElementById("scripts").replaceChildren(...catalog.scripts.map(s=>{const row=document.createElement("article");const title=document.createElement("strong");title.textContent=s.name;const link=document.createElement("a");link.textContent="Instalar ↗";link.href="./"+encodeURIComponent(s.file);row.append(title,link);return row;}));</script></html>`;
 await fs.writeFile(path.join(output, "index.html"), html);
 console.log(`Generated ${catalog.scripts.length} installers for PR #${number} in ${output}`);
