@@ -680,12 +680,17 @@ export function createCoreRuntime(
 
       const local = createEventBus({
         namespace: definition.id,
-        signal: abort.signal,
         onDiagnostic: () =>
           captureDiagnostic(new Error("Duplicate runtime event listener"), LOG_TAG_EVENTS, definition.id, host),
       });
       const shared = createSharedEvents({ host });
       const dom = createDomEventsEngine(definition.id, host);
+      const disposeEvents = () => {
+        local.dispose();
+        shared.dispose();
+        dom.dispose();
+      };
+      abort.signal.addEventListener("abort", disposeEvents, { once: true });
 
       events = Object.freeze(
         Object.defineProperties(
@@ -712,9 +717,8 @@ export function createCoreRuntime(
       };
 
       onDispose(() => {
-        dom.dispose();
-        shared.dispose();
-        local.dispose();
+        abort.signal.removeEventListener("abort", disposeEvents);
+        disposeEvents();
         events = undefined;
       });
 
