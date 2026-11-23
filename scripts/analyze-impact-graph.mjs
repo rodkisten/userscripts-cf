@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, join, relative } from 'node:path';
-import { runAction } from './utils/actions.mjs';
+import { runAction } from './utils/action.mjs';
 import { AgentReporter, ansi } from './utils/ci-logger.mjs';
 import { appendStepSummary, runCmd, setActionOutput } from './utils/ci-utils.mjs';
 
