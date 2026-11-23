@@ -24,7 +24,7 @@ const SECRET = /authorization|cookie|token|secret|password|session|api.?key|csrf
 function redact(value: unknown, key = "", seen = new WeakSet<object>()): unknown {
   if (SECRET.test(key)) return "[REDACTED]";
   if (typeof value === "string")
-    return value.slice(0, 15000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
+    return value.slice(0, 120000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
   if (!value || typeof value !== "object") return value;
   if (seen.has(value)) return "[Circular]";
   seen.add(value);
