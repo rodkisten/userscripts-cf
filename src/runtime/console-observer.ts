@@ -24,10 +24,16 @@ export function observePageConsole(listener: Listener, host: Console = console):
       const wrapped = function (this: Console, ...args: unknown[]): void {
         try {
           const observation: ConsoleObservation = {
-            level, time: new Date().toISOString(), args,
+            level,
+            time: new Date().toISOString(),
+            args,
           };
           for (const subscriber of [...registry!.listeners]) {
-            try { subscriber(observation); } catch { /* Diagnostics must not break the page. */ }
+            try {
+              subscriber(observation);
+            } catch {
+              /* Diagnostics must not break the page. */
+            }
           }
         } finally {
           Reflect.apply(original, this, args);
@@ -35,7 +41,11 @@ export function observePageConsole(listener: Listener, host: Console = console):
       };
       registry.originals.set(level, original);
       registry.wrappers.set(level, wrapped);
-      try { host[level] = wrapped; } catch { /* Read-only console implementations. */ }
+      try {
+        host[level] = wrapped;
+      } catch {
+        /* Read-only console implementations. */
+      }
     }
   }
   registry.listeners.add(listener);
@@ -48,7 +58,12 @@ export function observePageConsole(listener: Listener, host: Console = console):
     for (const level of levels) {
       if (host[level] === registry!.wrappers.get(level)) {
         const original = registry!.originals.get(level);
-        if (original) try { host[level] = original; } catch { /* Read-only console. */ }
+        if (original)
+          try {
+            host[level] = original;
+          } catch {
+            /* Read-only console. */
+          }
       }
     }
     registries.delete(host);

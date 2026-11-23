@@ -134,8 +134,11 @@ export default {
         level: event.level,
         time: event.time,
         args: event.args.map((arg) => {
-          try { return redact(arg); }
-          catch { return "[Unserializable]"; }
+          try {
+            return redact(arg);
+          } catch {
+            return "[Unserializable]";
+          }
         }),
       });
     });
