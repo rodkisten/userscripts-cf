@@ -223,9 +223,12 @@ export function observePageFetch(
       Promise.resolve(response).then(
         async (result) => {
           const responseContentType = result.headers?.get("content-type") ?? null;
-          const bodyPromise = limit > 0
-            ? readBody(result.clone().body, limit, responseContentType).catch(() => ({ text: null, truncated: false }))
-            : Promise.resolve({ text: null, truncated: false });
+          let bodyPromise: Promise<{ text: string | null; truncated: boolean }> =
+            Promise.resolve({ text: null, truncated: false });
+          try {
+            if (limit > 0) bodyPromise = readBody(result.clone().body, limit, responseContentType)
+              .catch(() => ({ text: null, truncated: false }));
+          } catch { /* Locked or opaque response: metadata only. */ }
           const [requestData, responseData] = await Promise.all([requestBody, bodyPromise]);
           const base: FetchObserverEvent = {
             url, method, status: result.status, durationMs: Date.now() - start,
