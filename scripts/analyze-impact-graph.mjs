@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, statSync, appendFileSync } from 'node:fs';
 import { basename, dirname, extname, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
-const toPosix = (p) => p.split('\\\\').join('/');
+const toPosix = (p) => p.split('\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
 const logger = {
  banner: (...args) => console.log(...args),
@@ -16,20 +16,20 @@ const cmd = async (command, args) => {
  catch (error) { return { exitCode: error.status || 1, stdout: error.stdout?.toString() || '' }; }
 };
 const setOutputs = (values) => {
- if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key,value]) => key + '=' + String(value) + '\\n').join(''));
+ if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key,value]) => key + '=' + String(value) + '\n').join(''));
 };
 const summary = {
  heading(text) { this.lines = [text]; return this; },
  text(text) { this.lines.push(text); return this; },
- code(text, lang) { this.lines.push('\\`\\`\\`' + lang + '\\n' + text + '\\n\\`\\`\\`'); return this; },
- write() { if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, this.lines.join('\\n') + '\\n'); },
+ code(text, lang) { this.lines.push('\\`\\`\\`' + lang + '\n' + text + '\n\\`\\`\\`'); return this; },
+ write() { if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, this.lines.join('\n') + '\n'); },
 };
 function walkTests(dir, acc = []) {
  if (!existsSync(dir)) return acc;
  for (const entry of readdirSync(dir)) {
   const full = dir + '/' + entry;
   if (statSync(full).isDirectory()) walkTests(full, acc);
-  else if (/\\.(test|spec)\\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) acc.push(toPosix(full));
+  else if (/\.(test|spec)\\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) acc.push(toPosix(full));
  }
  return acc;
 }
