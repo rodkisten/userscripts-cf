@@ -63,7 +63,9 @@ function DockView({ controller }: { controller: DockController }) {
     const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
     return Number.isFinite(saved) && saved >= 12 && saved <= 88 ? saved : 46;
   });
-  useEffect(() => { localStorage.setItem(DOCK_POSITION_KEY, String(position)); }, [position]);
+  useEffect(() => {
+    localStorage.setItem(DOCK_POSITION_KEY, String(position));
+  }, [position]);
   useEffect(() => {
     const refresh = () => setDiagnostics([...(getDiagnostics()?.history ?? [])]);
     document.addEventListener("rod-diagnostics:change", refresh);
@@ -127,7 +129,13 @@ function DockView({ controller }: { controller: DockController }) {
               </Dialog.Close>
             </header>
             <Dialog.Description>Gerencie scripts, ações e diagnósticos desta página.</Dialog.Description>
-            <button className="action" onClick={() => { setSettingsSearch(search); setSettingsOpen(true); }}>
+            <button
+              className="action"
+              onClick={() => {
+                setSettingsSearch(search);
+                setSettingsOpen(true);
+              }}
+            >
               Preferências
             </button>
             <details className="module" open>
@@ -202,17 +210,28 @@ function DockView({ controller }: { controller: DockController }) {
                           if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) return;
                           moved = true;
                           setDragging(action.id);
-                          const target = source.getRootNode() instanceof ShadowRoot
-                            ? (source.getRootNode() as ShadowRoot).elementFromPoint(next.clientX, next.clientY)
-                            : document.elementFromPoint(next.clientX, next.clientY);
-                          setDropTarget(target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null);
+                          const target =
+                            source.getRootNode() instanceof ShadowRoot
+                              ? (source.getRootNode() as ShadowRoot).elementFromPoint(
+                                  next.clientX,
+                                  next.clientY,
+                                )
+                              : document.elementFromPoint(next.clientX, next.clientY);
+                          setDropTarget(
+                            target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
+                          );
                         };
                         const finish = (next: PointerEvent) => {
                           source.removeEventListener("pointermove", move);
                           source.removeEventListener("pointerup", finish);
                           source.removeEventListener("pointercancel", cancel);
-                          const target = (source.getRootNode() as ShadowRoot).elementFromPoint(next.clientX, next.clientY);
-                          const targetId = target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id");
+                          const target = (source.getRootNode() as ShadowRoot).elementFromPoint(
+                            next.clientX,
+                            next.clientY,
+                          );
+                          const targetId = target
+                            ?.closest?.("[data-reorder-id]")
+                            ?.getAttribute("data-reorder-id");
                           setDragging(null);
                           setDropTarget(null);
                           if (moved) {
@@ -220,7 +239,13 @@ function DockView({ controller }: { controller: DockController }) {
                             if (targetId && targetId !== action.id) action.reorder?.(targetId);
                           }
                         };
-                        const cancel = () => { setDragging(null); setDropTarget(null); source.removeEventListener("pointermove", move); source.removeEventListener("pointerup", finish); source.removeEventListener("pointercancel", cancel); };
+                        const cancel = () => {
+                          setDragging(null);
+                          setDropTarget(null);
+                          source.removeEventListener("pointermove", move);
+                          source.removeEventListener("pointerup", finish);
+                          source.removeEventListener("pointercancel", cancel);
+                        };
                         source.addEventListener("pointermove", move);
                         source.addEventListener("pointerup", finish);
                         source.addEventListener("pointercancel", cancel, { once: true });
@@ -272,7 +297,9 @@ function DockView({ controller }: { controller: DockController }) {
           <Dialog.Content className="panel" aria-describedby={undefined}>
             <header>
               <Dialog.Title>Preferências do Rod Dock</Dialog.Title>
-              <Dialog.Close className="close" aria-label="Fechar preferências">✕</Dialog.Close>
+              <Dialog.Close className="close" aria-label="Fechar preferências">
+                ✕
+              </Dialog.Close>
             </header>
             <label htmlFor="rod-dock-filter">Filtrar scripts</label>
             <input
@@ -281,10 +308,26 @@ function DockView({ controller }: { controller: DockController }) {
               value={settingsSearch}
               onChange={(event) => setSettingsSearch(event.target.value)}
               placeholder="Buscar script..."
-              style={{ width: "100%", padding: 10, marginBlock: 12, borderRadius: 8, background: "#27272a", color: "white", border: "1px solid #3f3f46" }}
+              style={{
+                width: "100%",
+                padding: 10,
+                marginBlock: 12,
+                borderRadius: 8,
+                background: "#27272a",
+                color: "white",
+                border: "1px solid #3f3f46",
+              }}
             />
             <div className="actions">
-              <button className="action" onClick={() => { setSearch(settingsSearch); setSettingsOpen(false); }}>Aplicar</button>
+              <button
+                className="action"
+                onClick={() => {
+                  setSearch(settingsSearch);
+                  setSettingsOpen(false);
+                }}
+              >
+                Aplicar
+              </button>
               <Dialog.Close className="close">Cancelar</Dialog.Close>
             </div>
           </Dialog.Content>

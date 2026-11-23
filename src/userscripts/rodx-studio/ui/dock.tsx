@@ -12,7 +12,6 @@ import { onClick, performAction } from "./events.tsx";
 import { renderDock, renderRoot } from "./search-workbench.tsx";
 import { showRodxToast } from "./toast.tsx";
 
-
 /** Move among pinned searches only; unpinned searches must retain their positions. */
 async function movePinnedSearch(id: string, direction: -1 | 1) {
   const pinned = state.searches.filter((search) => search.pinned);
@@ -80,26 +79,38 @@ function syncSharedDock() {
   ].map(({ id, label, action }) => ({
     id,
     label,
-    run: () => { void performAction(action); },
+    run: () => {
+      void performAction(action);
+    },
   }));
   for (const [index, search] of pinned.entries()) {
     actions.push({
       id: `search:${search.id}`,
       label: `${search.icon ?? ""} ${search.name}`.trim(),
-      run: () => { void performAction("open-search", String(search.id)); },
-      reorder: (targetId: string) => { void reorderPinnedSearch(String(search.id), targetId.replace(/^search:/, "")); },
+      run: () => {
+        void performAction("open-search", String(search.id));
+      },
+      reorder: (targetId: string) => {
+        void reorderPinnedSearch(String(search.id), targetId.replace(/^search:/, ""));
+      },
     });
     // Keyboard-accessible ordering while pointer/touch drag remains in the inline Dock.
-    if (index > 0) actions.push({
-      id: `search-up:${search.id}`,
-      label: `↑ ${search.name}`,
-      run: () => { void movePinnedSearch(String(search.id), -1); },
-    });
-    if (index < pinned.length - 1) actions.push({
-      id: `search-down:${search.id}`,
-      label: `↓ ${search.name}`,
-      run: () => { void movePinnedSearch(String(search.id), 1); },
-    });
+    if (index > 0)
+      actions.push({
+        id: `search-up:${search.id}`,
+        label: `↑ ${search.name}`,
+        run: () => {
+          void movePinnedSearch(String(search.id), -1);
+        },
+      });
+    if (index < pinned.length - 1)
+      actions.push({
+        id: `search-down:${search.id}`,
+        label: `↓ ${search.name}`,
+        run: () => {
+          void movePinnedSearch(String(search.id), 1);
+        },
+      });
   }
   for (const list of quickLists) {
     actions.push({
@@ -108,17 +119,21 @@ function syncSharedDock() {
       run: () => Studio.navigate(`${studioListIndex(Studio)}/${list.id}`),
     });
   }
-  document.dispatchEvent(new CustomEvent("rod-dock:registry", {
-    detail: { type: "register", module: { id: "rodx-studio", name: "RodX Studio", actions } },
-  }));
+  document.dispatchEvent(
+    new CustomEvent("rod-dock:registry", {
+      detail: { type: "register", module: { id: "rodx-studio", name: "RodX Studio", actions } },
+    }),
+  );
 }
 
 function unregisterSharedDock() {
   if (!sharedDockSignature) return;
   sharedDockSignature = "";
-  document.dispatchEvent(new CustomEvent("rod-dock:registry", {
-    detail: { type: "unregister", id: "rodx-studio" },
-  }));
+  document.dispatchEvent(
+    new CustomEvent("rod-dock:registry", {
+      detail: { type: "unregister", id: "rodx-studio" },
+    }),
+  );
 }
 
 export function ensureDock() {
