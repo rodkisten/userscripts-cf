@@ -52,3 +52,9 @@ Before merge, smoke-test on iPhone Safari: menu focus, Escape with hardware keyb
 - No multi-select, radio groups, file/media controls, tabs, or custom renderers in the React menu schema.
 - No real iframe device emulation.
 - Build and browser validation are required before production release.
+
+## Shared playground diagnostics
+
+`playground/capture.js` is injected inline by `build/hosting.mjs` into every emitted HTML page, before application scripts. It installs exactly one page-wide capture registry (`window.__rodPlaygroundCaptureV1`) and one Shadow DOM panel per document. The collapsible 🩺 Logs control collects `console.log/info/warn/error/debug`, `window.error`, resource errors, and unhandled promise rejections; repeated identical messages are counted, the log is capped, and messages are redacted for common credentials. The collector forwards console calls to their original implementations and never mounts a second React root. The dedicated Diagnostics Playground remains independent and is not replaced by this panel.
+
+The capture panel is local to the page and does not transmit logs to a server. It intentionally does not capture network bodies or intercept fetch/XHR. Use the panel to inspect failures on iOS Safari when the Studio menu does not appear.
