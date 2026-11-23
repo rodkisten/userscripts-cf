@@ -233,11 +233,7 @@ export async function syncSaved({
             }
             const byIndex = new Map<number, DeliveryResult>();
             for (const result of response.results) {
-              if (
-                !Number.isInteger(result?.index) ||
-                result.index < 0 ||
-                result.index >= job.items.length
-              ) {
+              if (!Number.isInteger(result?.index) || result.index < 0 || result.index >= job.items.length) {
                 throw Error("Relay sem confirmação por item");
               }
               if (byIndex.has(result.index)) {
