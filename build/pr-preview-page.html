@@ -402,6 +402,16 @@
         empty = document.getElementById("empty"),
         counter = document.getElementById("result-count");
       let selected = "all";
+      const installed = new Map();
+      document.addEventListener("userscripts-cf:installed", (event) => {
+        const detail = event.detail;
+        if (!detail || !catalog.scripts.some((script) => script.id === detail.id)) return;
+        installed.set(detail.id, detail);
+        render();
+      });
+      const probe = () => document.dispatchEvent(new CustomEvent("userscripts-cf:probe"));
+      window.addEventListener("pageshow", probe);
+      queueMicrotask(probe);
       const definitions = [...new Set(catalog.scripts.flatMap((s) => s.tags || []))].sort((a, b) =>
         a.localeCompare(b),
       );
@@ -477,7 +487,12 @@
             const pills = add(footer, "div", "pills");
             for (const tag of (script.tags || []).slice(0, 4)) add(pills, "span", "pill", tag);
             const link = add(footer, "a", "install", "Instalar ↗");
-            link.href = "./" + encodeURIComponent(script.file);
+            const installedVersion = installed.get(script.id);
+            if (installedVersion) {
+              add(pills, "span", "pill", installedVersion.version === script.version ? "✓ Instalado" : "↻ Atualização disponível");
+              link.textContent = "Reinstalar ↗";
+            }
+            link.href = catalog.baseURL.replace(/\\/$/, "") + "/" + encodeURIComponent(script.file);
             link.setAttribute("aria-label", "Instalar " + script.id);
           }
         }
