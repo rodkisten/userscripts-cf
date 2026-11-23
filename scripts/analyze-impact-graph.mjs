@@ -46,7 +46,7 @@ await runAction('Impact & Test Map', async ({ log }) => {
   logger.banner();
 
   const { diffTarget, rawChanged } = await logger.step('Resolve Git diff in src/', async () => {
-    runCmd('git', ['fetch', 'origin', baseRef, '--depth=1'], { logger, silent: true });
+    runCmd('git', ['fetch', '--no-tags', 'origin', baseRef], { logger, silent: true });
 
     const originVerify = runCmd('git', ['rev-parse', '--verify', `origin/${baseRef}`], {
       logger,
