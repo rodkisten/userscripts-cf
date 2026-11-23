@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { useSyncExternalStore, useState } from "react";
 
 export interface InspektorRecord {
@@ -83,3 +84,7 @@ export const inspektorStyles = `
 .inspektor-detail{white-space:pre-wrap;overflow:auto;max-height:180px;background:#171820;border-radius:8px;padding:8px}
 .inspektor-content{padding:12px 0}
 `;
+
+export function renderInspektor(store: InspektorStore): ReactElement {
+  return <InspektorPanel store={store} />;
+}
