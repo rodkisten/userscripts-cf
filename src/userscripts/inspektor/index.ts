@@ -250,23 +250,20 @@ export default {
       signal: ctx.signal,
     });
 
-    const stopConsole = observePageConsole(
-      (event) => {
-        push("console", {
-          kind: "console",
-          level: event.level,
-          time: event.time,
-          args: event.args.map((arg) => {
-            try {
-              return redact(arg);
-            } catch {
-              return "[Unserializable]";
-            }
-          }),
-        });
-      },
-      { signal: ctx.signal } as { signal: AbortSignal },
-    );
+    const stopConsole = observePageConsole((event) => {
+      push("console", {
+        kind: "console",
+        level: event.level,
+        time: event.time,
+        args: event.args.map((arg) => {
+          try {
+            return redact(arg);
+          } catch {
+            return "[Unserializable]";
+          }
+        }),
+      });
+    });
 
     ctx.listen(window, "error", ((event: ErrorEvent) => {
       const message =
