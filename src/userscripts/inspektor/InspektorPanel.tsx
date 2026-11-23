@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useSyncExternalStore, useState } from "react";
 
 export interface InspektorRecord {
-  kind: string;
+  kind?: string;
   [key: string]: unknown;
 }
 export interface InspektorStore {
@@ -22,7 +22,8 @@ const format = (value: unknown): string => {
 };
 
 export function InspektorPanel({ store }: { store: InspektorStore }) {
-  useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const revision = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  void revision;
   const [tab, setTab] = useState<"dom" | "network" | "console">("network");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string>("");
