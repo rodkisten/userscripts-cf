@@ -1,6 +1,8 @@
 import { openRadixDialog, openRadixDropdown } from "./menu-view.js";
 import type { ReactElement } from "react";
 export interface DropdownItem {
+  /** Stable item identity for React reconciliation across menu updates. */
+  id?: string;
   label?: string;
   type?: "item" | "separator" | "checkbox";
   disabled?: boolean;

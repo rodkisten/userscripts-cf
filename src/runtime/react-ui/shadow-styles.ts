@@ -13,7 +13,7 @@ export function registerShadowStyles(root: ShadowRoot, styles: readonly ShadowSt
     const css = typeof style === "string" ? style : style.css;
     if (!css) continue;
     let entry = entries.get(css);
-    if (entry && !entry.node.isConnected) {
+    if (entry && entry.node.parentNode !== root) {
       // A host may replace its ShadowRoot contents without disposing style owners.
       // Reattach the existing node instead of creating a duplicate registration.
       root.prepend(entry.node);
@@ -25,6 +25,8 @@ export function registerShadowStyles(root: ShadowRoot, styles: readonly ShadowSt
       entry = { node, refs: 0 };
       entries.set(css, entry);
     }
+    // One registration owns each unique CSS payload once, even if repeated in the input.
+    if (keys.includes(css)) continue;
     entry.refs++;
     keys.push(css);
   }
