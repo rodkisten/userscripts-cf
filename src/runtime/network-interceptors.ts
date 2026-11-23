@@ -244,12 +244,10 @@ export interface FetchObserverEvent {
   responseUrl?: string;
   requestBody?: string | null;
   body?: string | null;
-  requestBody?: string | null;
   requestContentType?: string | null;
   responseContentType?: string | null;
   requestTruncated?: boolean;
   truncated?: boolean;
-  requestTruncated?: boolean;
   error?: string;
 }
 
