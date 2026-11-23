@@ -11,9 +11,29 @@
   let rendering = false;
   const original = {};
   const stringify = (value) => {
-    if (value instanceof Error) return value.stack || value.message;
+    if (value === null || value === undefined) return String(value);
     if (typeof value === "string") return value;
-    try { return JSON.stringify(value); } catch { return String(value); }
+    if (typeof value === "bigint") return value.toString() + "n";
+    if (value instanceof Error || (typeof value === "object" && "message" in value && "name" in value)) {
+      return [value.name, value.message, value.stack, value.cause && stringify(value.cause)].filter(Boolean).join("\\n");
+    }
+    if (typeof Event !== "undefined" && value instanceof Event) {
+      return [value.type, value.message, value.filename, value.lineno, value.colno, value.target?.src, value.target?.href].filter(Boolean).join(" · ");
+    }
+    try {
+      const seen = new WeakSet();
+      return JSON.stringify(value, (_key, item) => {
+        if (typeof item === "bigint") return item.toString();
+        if (item instanceof Error) return { name: item.name, message: item.message, stack: item.stack, cause: item.cause };
+        if (typeof item === "object" && item !== null) {
+          if (seen.has(item)) return "[Circular]";
+          seen.add(item);
+        }
+        return item;
+      }) ?? String(value);
+    } catch {
+      try { return String(value); } catch { return "[Unserializable]"; }
+    }
   };
   const redact = (value) => String(value)
     .replace(/(Bearer\\s+)[\\w.~-]+/gi, "$1[REDACTED]")
@@ -90,9 +110,24 @@
     };
   }
   window.addEventListener("error", (event) => {
-    capture("error", [event.error || event.message || "Resource loading error", event.filename ? event.filename + ":" + event.lineno : event.target?.src || ""], "window.error");
+    const target = event.target;
+    const resource = target && target !== window ? target.src || target.href || target.currentSrc : "";
+    const details = [
+      event.error,
+      event.message,
+      event.filename && (event.filename + ":" + event.lineno + ":" + event.colno),
+      resource && ("Resource: " + resource),
+    ].filter(Boolean);
+    if (event.message === "Script error." || (!event.error && !event.filename && !resource)) {
+      details.push("Opaque browser error: check cross-origin scripts, CORS and Safari Web Inspector");
+      details.push("Page: " + location.href);
+      details.push("Scripts: " + [...document.scripts].map((script) => script.src || "[inline]").join(", "));
+    }
+    capture("error", details.length ? details : ["Resource loading error", target?.tagName], "window.error");
   }, true);
-  window.addEventListener("unhandledrejection", (event) => capture("error", [event.reason || "Unhandled rejection"], "promise"), true);
+  window.addEventListener("unhandledrejection", (event) => {
+    capture("error", [event.reason ?? "Unhandled rejection", event.reason?.stack], "promise");
+  }, true);
   window[key] = Object.freeze({ entries, capture, open: () => { mount(); if (!expanded) root.querySelector("button").click(); } });
   if (document.body) mount();
   else document.addEventListener("DOMContentLoaded", mount, { once: true });
