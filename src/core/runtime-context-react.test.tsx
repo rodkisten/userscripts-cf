@@ -9,8 +9,8 @@ import {
   useContext,
   useRuntime,
   useRuntimeWorld,
-} from "../src/core/runtime-context-react.js";
-import type { ReactScriptContext } from "../src/core/react-context-contract.js";
+} from "./runtime-context-react.js";
+import type { ReactScriptContext } from "./react-context-contract.js";
 
 function createFakeScriptContext(
   id: string,
