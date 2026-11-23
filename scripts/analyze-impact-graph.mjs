@@ -475,6 +475,35 @@ export async function analyzeImpactGraph() {
       step.info('Grafo salvo em disco', cliArgs.out);
     }
 
+    // Monta base URL do GitHub para tornar todos os arquivos clicáveis
+    const serverUrl = (context?.serverUrl || process.env.GITHUB_SERVER_URL || 'https://github.com').replace(/\/+$/, '');
+    const repoFull =
+      context?.repo?.owner && context?.repo?.repo
+        ? `${context.repo.owner}/${context.repo.repo}`
+        : process.env.GITHUB_REPOSITORY || '';
+
+    const blobRef =
+      context?.payload?.pull_request?.head?.sha ||
+      process.env.PR_HEAD_SHA ||
+      (headRef && headRef !== 'HEAD' ? headRef : runCmd('git', ['rev-parse', 'HEAD'], { silent: true }).stdout);
+
+    const fileLink = (filePath) => {
+      if (!repoFull || !blobRef) return `<code>${filePath}</code>`;
+      const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+      return `<a href="${serverUrl}/${repoFull}/blob/${encodeURIComponent(blobRef)}/${encodedPath}"><code>${filePath}</code></a>`;
+    };
+
+    const escapeHtml = (str) =>
+      String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const nodeBadge = (node) => {
+      if (node.changedDirectly && node.type === 'test') return '✏️🧪 <b>Alterado · Teste</b>';
+      if (node.changedDirectly) return '✏️ <b>Alterado</b>';
+      if (node.type === 'test' && node.runner === 'vitest') return '⚡ <b>Vitest</b>';
+      if (node.type === 'test') return '🧪 <b>Node Test</b>';
+      return '🔗 <b>Impactado</b>';
+    };
+
     const summary = createSummaryWriter();
     summary
       .addHeading('🕸️ Grafo de Impacto & Seleção de Testes', 2)
@@ -493,25 +522,69 @@ export async function analyzeImpactGraph() {
     if (graphData.nodeTests.length > 0) {
       summary
         .addHeading('🧪 Testes Node.js selecionados', 3)
-        .addList(graphData.nodeTests.map((t) => `<code>${t}</code>`));
+        .addList(graphData.nodeTests.map((t) => fileLink(t)));
     }
 
     if (graphData.vitestTests.length > 0) {
       summary
         .addHeading('⚡ Testes Vitest selecionados', 3)
-        .addList(graphData.vitestTests.map((t) => `<code>${t}</code>`));
+        .addList(graphData.vitestTests.map((t) => fileLink(t)));
     }
 
     if (graphData.affectedFiles.length > 0) {
+      summary.addHeading('📂 Mapa Detalhado por Arquivo Afetado', 3);
+
+      const fileCards = graphData.affectedFiles.map((file) => {
+        const node = graphData.graph[file];
+        const chainHtml = (node.impactChain || [file]).map((stepFile) => fileLink(stepFile)).join(' ➔ ');
+
+        const importedByHtml =
+          node.importedBy.length > 0
+            ? node.importedBy.map((dep) => `<li>${fileLink(dep)}</li>`).join('')
+            : '<li><i>Nenhum dependente interno</i></li>';
+
+        const importsHtml =
+          node.imports.length > 0
+            ? node.imports.map((imp) => `<li>${fileLink(imp)}</li>`).join('')
+            : '<li><i>Nenhuma importação interna</i></li>';
+
+        const externalHtml =
+          node.externalPackages.length > 0
+            ? node.externalPackages.map((pkg) => `<code>${escapeHtml(pkg)}</code>`).join(' · ')
+            : '<i>Nenhum</i>';
+
+        const titleHtml = `${nodeBadge(node)} — <code>${escapeHtml(file)}</code> <sub>(${node.imports.length} imports · ${node.importedBy.length} dependentes)</sub>`;
+
+        const innerHtml = [
+          `<p>📄 <b>Abrir arquivo:</b> ${fileLink(file)}${node.runner ? ` &nbsp;|&nbsp; 🏃 <b>Runner:</b> <code>${node.runner}</code>` : ''}</p>`,
+          `<p>🧭 <b>Cadeia de impacto:</b><br>${chainHtml}</p>`,
+          `<table>`,
+          `<thead><tr><th>📥 Importa (${node.imports.length})</th><th>📤 Importado por (${node.importedBy.length})</th></tr></thead>`,
+          `<tbody><tr><td valign="top"><ul>${importsHtml}</ul></td><td valign="top"><ul>${importedByHtml}</ul></td></tr></tbody>`,
+          `</table>`,
+          `<p>📦 <b>Pacotes externos:</b> ${externalHtml}</p>`,
+        ].join('\n');
+
+        return `<details>\n<summary>${titleHtml}</summary>\n\n${innerHtml}\n</details>`;
+      });
+
       summary.addDetails(
-        '🔍 Ver objeto JSON do grafo de impacto',
+        `🗂️ <b>Inspecionar todos os ${graphData.affectedFiles.length} arquivo(s) e suas relações</b>`,
+        fileCards.join('\n\n'),
+      );
+
+      summary.addDetails(
+        '🧬 <b>Ver JSON bruto do grafo de impacto</b>',
         `\`\`\`json\n${JSON.stringify(graphData.graph, null, 2)}\n\`\`\``,
       );
     }
 
     await summary.write();
 
-    step.pass('Outputs gravados', `node_tests=${graphData.nodeTests.length} · vitest_tests=${graphData.vitestTests.length}`);
+    step.pass(
+      'Outputs gravados',
+      `node_tests=${graphData.nodeTests.length} · vitest_tests=${graphData.vitestTests.length}`,
+    );
   });
 
   log.summary('success', {
@@ -521,6 +594,17 @@ export async function analyzeImpactGraph() {
     'Vitest Tests': ansi.cyan(graphData.vitestTests.length),
   });
 }
+
+// ============================================================================
+// CLI Entrypoint
+// ============================================================================
+if (process.argv[1] && fileURLToPath(import.meta.url) === fs.realpathSync(process.argv[1])) {
+  analyzeImpactGraph().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
 
 // ============================================================================
 // CLI Entrypoint
