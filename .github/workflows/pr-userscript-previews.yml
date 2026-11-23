@@ -70,6 +70,7 @@ jobs:
           const dir = `dist/pr-preview/${pr}`;
           let html = fs.readFileSync("hosting/design-system.html", "utf8");
           html = html.replace('src="/design-system.js"', 'src="./design-system.js"');
+          if (fs.existsSync(`${dir}/design-system.css`)) html = html.replace("</head>", '<link rel="stylesheet" href="./design-system.css"></head>');
           html = html.replace("</head>", `<meta name="preview-pr" content="${pr}"><meta name="preview-sha" content="${process.env.PR_HEAD_SHA}"></head>`);
           fs.writeFileSync(`${dir}/design-system.html`, html);
           NODE
