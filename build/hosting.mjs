@@ -29,7 +29,8 @@ assets["design-system.html"] = await fs.readFile(path.join(root, "hosting/design
 assets["design-system.js"] = await fs.readFile(path.join(dist, "design-system.js"), "utf8");
 // Vite library mode extracts CSS modules into a separate stylesheet.
 // Without this asset, Radix Dialog.Content is mounted but has no positioning or visible surface.
-assets["design-system.css"] = await fs.readFile(path.join(dist, "design-system.css"), "utf8");
+const designCss = await fs.readFile(path.join(dist, "design-system.css"), "utf8").catch(() => null);
+if (designCss) assets["design-system.css"] = designCss;
 assets["playground/ast-errors.html"] = await fs.readFile(
   path.join(root, "playground/ast-errors.html"),
   "utf8",
