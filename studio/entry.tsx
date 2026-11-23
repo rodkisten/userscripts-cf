@@ -184,7 +184,9 @@ function Studio() {
   const [lastValues, setLastValues] = useState<Record<string, unknown> | null>(null);
   const [showValues, setShowValues] = useState(true);
   const record = (event: string, details?: string) => {
-    setEvents((previous) => [{ time: new Date().toLocaleTimeString("pt-BR"), event, details }, ...previous].slice(0, 30));
+    setEvents((previous) =>
+      [{ time: new Date().toLocaleTimeString("pt-BR"), event, details }, ...previous].slice(0, 30),
+    );
   };
   const copyTimerRef = useRef<number | undefined>(undefined);
 
@@ -200,7 +202,15 @@ function Studio() {
       fields: demo.fields,
       actions: [
         { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
-        { id: "reset", label: "Limpar", variant: "secondary", onClick: ({ reset }) => { reset(); record("reset", demo.title); } },
+        {
+          id: "reset",
+          label: "Limpar",
+          variant: "secondary",
+          onClick: ({ reset }) => {
+            reset();
+            record("reset", demo.title);
+          },
+        },
         {
           id: "save",
           label: "Salvar",
@@ -248,15 +258,21 @@ function Studio() {
   );
 
   const traceMenu = (phase: string, details: Record<string, unknown>) => {
-    const diagnostics = (window as Window & {
-      __rodPlaygroundCaptureV1?: {
-        capture: (level: string, args: unknown[], source: string) => void;
-      };
-    }).__rodPlaygroundCaptureV1;
+    const diagnostics = (
+      window as Window & {
+        __rodPlaygroundCaptureV1?: {
+          capture: (level: string, args: unknown[], source: string) => void;
+        };
+      }
+    ).__rodPlaygroundCaptureV1;
     diagnostics?.capture("info", [phase, details], "studio.menu");
   };
   const openMenu = (nextSchema: MenuSchema) => {
-    traceMenu("open requested", { id: nextSchema.id, surface: nextSchema.presentation, fields: nextSchema.fields?.length });
+    traceMenu("open requested", {
+      id: nextSchema.id,
+      surface: nextSchema.presentation,
+      fields: nextSchema.fields?.length,
+    });
     try {
       RodMenu.open(nextSchema);
       traceMenu("store updated", { active: Boolean(RodMenu.active) });
@@ -267,7 +283,19 @@ function Studio() {
           dialogs: dialogs.map((element) => {
             const rect = element.getBoundingClientRect();
             const css = getComputedStyle(element);
-            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, position: css.position, display: css.display, visibility: css.visibility, opacity: css.opacity, zIndex: css.zIndex, className: element.className, scopedStyles: Boolean(document.getElementById('rod-react-menu-styles')) };
+            return {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+              position: css.position,
+              display: css.display,
+              visibility: css.visibility,
+              opacity: css.opacity,
+              zIndex: css.zIndex,
+              className: element.className,
+              scopedStyles: Boolean(document.getElementById("rod-react-menu-styles")),
+            };
           }),
         });
       });
@@ -281,7 +309,10 @@ function Studio() {
     setOpenCount((count) => count + 1);
     openMenu(schema);
   };
-  const close = () => { RodMenu.close(); record("close", "Fechamento programático"); };
+  const close = () => {
+    RodMenu.close();
+    record("close", "Fechamento programático");
+  };
   const selectDemo = (id: string) => {
     setSelected(id);
     record("select", id);
@@ -348,8 +379,12 @@ function Studio() {
             <p>{demo.description}</p>
           </div>
           <div className="studio-toolbar">
-            <button type="button" className="studio-primary" onClick={open}>Abrir componente ↗</button>
-            <button type="button" onClick={close}>Fechar menu</button>
+            <button type="button" className="studio-primary" onClick={open}>
+              Abrir componente ↗
+            </button>
+            <button type="button" onClick={close}>
+              Fechar menu
+            </button>
           </div>
         </header>
 
@@ -381,10 +416,47 @@ function Studio() {
 
             <h2>Experimentos</h2>
             <div className="studio-segments">
-              <button type="button" onClick={() => { setSurface("bottom-sheet"); openMenu({ ...schema, presentation: "bottom-sheet" }); record("open", "Bottom-sheet"); setOpenCount((count) => count + 1); }}>Abrir sheet</button>
-              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "modal" }); record("open", "Modal"); setOpenCount((count) => count + 1); }}>Modal</button>
-              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "drawer" }); record("open", "Drawer"); setOpenCount((count) => count + 1); }}>Drawer</button>
-              <button type="button" onClick={() => { openMenu({ ...schema, presentation: "popover" }); record("open", "Popover"); setOpenCount((count) => count + 1); }}>Popover</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSurface("bottom-sheet");
+                  openMenu({ ...schema, presentation: "bottom-sheet" });
+                  record("open", "Bottom-sheet");
+                  setOpenCount((count) => count + 1);
+                }}
+              >
+                Abrir sheet
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  openMenu({ ...schema, presentation: "modal" });
+                  record("open", "Modal");
+                  setOpenCount((count) => count + 1);
+                }}
+              >
+                Modal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  openMenu({ ...schema, presentation: "drawer" });
+                  record("open", "Drawer");
+                  setOpenCount((count) => count + 1);
+                }}
+              >
+                Drawer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  openMenu({ ...schema, presentation: "popover" });
+                  record("open", "Popover");
+                  setOpenCount((count) => count + 1);
+                }}
+              >
+                Popover
+              </button>
             </div>
             <h2>Viewport</h2>
             <div className="studio-segments">
@@ -427,16 +499,51 @@ function Studio() {
         </div>
 
         <section className="studio-panel studio-output studio-diagnostics">
-          <div className="studio-panel-head"><h2>Laboratório de eventos</h2><button type="button" onClick={() => setEvents([])}>Limpar histórico</button></div>
-          <div className="studio-metrics">
-            <div><strong>{openCount}</strong><span>Aberturas</span></div>
-            <div><strong>{events.length}</strong><span>Eventos recentes</span></div>
-            <div><strong>{RodMenu.active ? "Aberto" : "Fechado"}</strong><span>Estado do menu</span></div>
+          <div className="studio-panel-head">
+            <h2>Laboratório de eventos</h2>
+            <button type="button" onClick={() => setEvents([])}>
+              Limpar histórico
+            </button>
           </div>
-          <label className="studio-check"><input type="checkbox" checked={showValues} onChange={(event) => setShowValues(event.target.checked)} /> Mostrar valores enviados</label>
-          {showValues && <pre className="studio-json">{lastValues ? serialize(lastValues) : "Nenhum formulário enviado ainda."}</pre>}
+          <div className="studio-metrics">
+            <div>
+              <strong>{openCount}</strong>
+              <span>Aberturas</span>
+            </div>
+            <div>
+              <strong>{events.length}</strong>
+              <span>Eventos recentes</span>
+            </div>
+            <div>
+              <strong>{RodMenu.active ? "Aberto" : "Fechado"}</strong>
+              <span>Estado do menu</span>
+            </div>
+          </div>
+          <label className="studio-check">
+            <input
+              type="checkbox"
+              checked={showValues}
+              onChange={(event) => setShowValues(event.target.checked)}
+            />{" "}
+            Mostrar valores enviados
+          </label>
+          {showValues && (
+            <pre className="studio-json">
+              {lastValues ? serialize(lastValues) : "Nenhum formulário enviado ainda."}
+            </pre>
+          )}
           <div className="studio-event-log" role="log" aria-live="polite">
-            {events.length ? events.map((event, index) => <div key={`${event.time}-${index}`}><time>{event.time}</time><strong>{event.event}</strong><span>{event.details}</span></div>) : <p className="studio-hint">Abra um componente para acompanhar as interações.</p>}
+            {events.length ? (
+              events.map((event, index) => (
+                <div key={`${event.time}-${index}`}>
+                  <time>{event.time}</time>
+                  <strong>{event.event}</strong>
+                  <span>{event.details}</span>
+                </div>
+              ))
+            ) : (
+              <p className="studio-hint">Abra um componente para acompanhar as interações.</p>
+            )}
           </div>
         </section>
 

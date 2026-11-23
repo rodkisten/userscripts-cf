@@ -369,7 +369,8 @@
             href="https://github.com/rodkisten/userscripts-cf/pull/__PR_NUMBER__"
             rel="noopener noreferrer"
             >Ver pull request ↗</a
-          ><a class="button" href="./design-system.html">Rod UI Studio ↗</a><a class="button primary" href="./manifest.json">Manifest JSON ↗</a>
+          ><a class="button" href="./design-system.html">Rod UI Studio ↗</a
+          ><a class="button primary" href="./manifest.json">Manifest JSON ↗</a>
         </div>
       </header>
       <div class="release" id="release"></div>
@@ -489,7 +490,12 @@
             const link = add(footer, "a", "install", "Instalar ↗");
             const installedVersion = installed.get(script.id);
             if (installedVersion) {
-              add(pills, "span", "pill", installedVersion.version === script.version ? "✓ Instalado" : "↻ Atualização disponível");
+              add(
+                pills,
+                "span",
+                "pill",
+                installedVersion.version === script.version ? "✓ Instalado" : "↻ Atualização disponível",
+              );
               link.textContent = "Reinstalar ↗";
             }
             link.href = new URL(encodeURIComponent(script.file), catalog.baseURL + "/").href;

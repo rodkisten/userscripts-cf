@@ -94,13 +94,15 @@ export default {
     const file = m[2] || m[3] || "index.html";
     const object = await env.PREVIEWS.get(`prs/${Number(m[1])}/${file}`);
     if (!object) return reply("Not found", "html", 404);
-    const type = file.endsWith(".css") ? "css" : file.endsWith(".js")
-      ? "js"
-      : file.endsWith(".json")
-        ? "json"
-        : file.endsWith(".svg")
-          ? "svg"
-          : "html";
+    const type = file.endsWith(".css")
+      ? "css"
+      : file.endsWith(".js")
+        ? "js"
+        : file.endsWith(".json")
+          ? "json"
+          : file.endsWith(".svg")
+            ? "svg"
+            : "html";
     return reply(request.method === "HEAD" ? null : object.body, type);
   },
 };

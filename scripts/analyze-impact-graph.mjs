@@ -1,16 +1,26 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, extname, join, relative } from 'node:path';
-import { runAction } from './utils/action.mjs';
-import { runCmd, setActionOutput, appendStepSummary } from './utils/ci-utils.mjs';
-import { ansi as style } from './utils/ci-logger.mjs';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { basename, dirname, extname, join, relative } from "node:path";
+import { runAction } from "./utils/action.mjs";
+import { runCmd, setActionOutput, appendStepSummary } from "./utils/ci-utils.mjs";
+import { ansi as style } from "./utils/ci-logger.mjs";
+import { writeFileSync } from "node:fs";
 const cmd = (name, args) => {
-  const execute = (allowFailure) => { const result = runCmd(name, args); if (!result.ok && !allowFailure) throw new Error(result.stderr); return { ...result, exitCode: result.status }; };
-  return { then: (resolve, reject) => Promise.resolve().then(() => execute(false)).then(resolve, reject), nothrow: () => execute(true) };
+  const execute = (allowFailure) => {
+    const result = runCmd(name, args);
+    if (!result.ok && !allowFailure) throw new Error(result.stderr);
+    return { ...result, exitCode: result.status };
+  };
+  return {
+    then: (resolve, reject) =>
+      Promise.resolve()
+        .then(() => execute(false))
+        .then(resolve, reject),
+    nothrow: () => execute(true),
+  };
 };
 
-const toPosix = (p) => p.split('\\').join('/');
-const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
+const toPosix = (p) => p.split("\\").join("/");
+const escapeMermaidLabel = (text) => text.replaceAll('"', "&quot;");
 
 function walkTests(dir, acc = []) {
   if (!existsSync(dir)) return acc;
@@ -25,26 +35,26 @@ function walkTests(dir, acc = []) {
   return acc;
 }
 
-runAction('Impact & Test Map', async ({ log: logger }) => {
-  const baseRef = (process.env.BASE_REF || 'main').trim();
-  logger.banner('Impact & Test Map', `Base: ${baseRef}`);
+runAction("Impact & Test Map", async ({ log: logger }) => {
+  const baseRef = (process.env.BASE_REF || "main").trim();
+  logger.banner("Impact & Test Map", `Base: ${baseRef}`);
 
-  const { diffTarget, rawChanged } = await logger.step('Resolve Git diff in src/', async () => {
-    await cmd('git', ['fetch', 'origin', baseRef, '--depth=1']).nothrow();
+  const { diffTarget, rawChanged } = await logger.step("Resolve Git diff in src/", async () => {
+    await cmd("git", ["fetch", "origin", baseRef, "--depth=1"]).nothrow();
 
-    const originVerify = await cmd('git', ['rev-parse', '--verify', `origin/${baseRef}`]).nothrow();
+    const originVerify = await cmd("git", ["rev-parse", "--verify", `origin/${baseRef}`]).nothrow();
     const target =
       originVerify.exitCode === 0
         ? originVerify.stdout.trim()
-        : (await cmd('git', ['rev-parse', '--verify', baseRef])).stdout.trim();
+        : (await cmd("git", ["rev-parse", "--verify", baseRef])).stdout.trim();
 
-    const diffRes = await cmd('git', [
-      'diff',
-      '--name-only',
-      '--diff-filter=ACMR',
+    const diffRes = await cmd("git", [
+      "diff",
+      "--name-only",
+      "--diff-filter=ACMR",
       `${target}...HEAD`,
-      '--',
-      'src',
+      "--",
+      "src",
     ]);
 
     const changed = diffRes.stdout
@@ -52,21 +62,21 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
       .map(toPosix)
       .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
 
-    logger.info('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
-    logger.info('Changed files in src/', changed.length, true);
+    logger.info("Base SHA", `${target.slice(0, 7)} (${baseRef})`);
+    logger.info("Changed files in src/", changed.length, true);
 
     return { diffTarget: target, rawChanged: changed };
   });
 
-  const { folders, matchedNodeTests } = await logger.step('Map affected scopes & tests', () => {
-    const allTestFiles = [...new Set([...walkTests('src'), ...walkTests('tests')])];
+  const { folders, matchedNodeTests } = await logger.step("Map affected scopes & tests", () => {
+    const allTestFiles = [...new Set([...walkTests("src"), ...walkTests("tests")])];
     const grouped = new Map();
     const tests = new Set();
 
     for (const file of rawChanged) {
-      const rel = toPosix(relative('src', file));
-      const parts = rel.split('/');
-      const folder = parts.length > 1 ? `src/${parts[0]}` : 'src (raiz)';
+      const rel = toPosix(relative("src", file));
+      const parts = rel.split("/");
+      const folder = parts.length > 1 ? `src/${parts[0]}` : "src (raiz)";
 
       if (!grouped.has(folder)) {
         grouped.set(folder, { sourceFiles: [], testFiles: [] });
@@ -82,15 +92,11 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
         bucket.sourceFiles.push(file);
         const stem = basename(file, extname(file));
         const fileDir = toPosix(dirname(file));
-        const mirroredDir = fileDir.replace(/^src(?=\/|$)/, 'tests');
+        const mirroredDir = fileDir.replace(/^src(?=\/|$)/, "tests");
 
         const related = allTestFiles.filter((t) => {
           const testDir = toPosix(dirname(t));
-          return (
-            basename(t).startsWith(`${stem}.`) ||
-            testDir === fileDir ||
-            testDir === mirroredDir
-          );
+          return basename(t).startsWith(`${stem}.`) || testDir === fileDir || testDir === mirroredDir;
         });
 
         for (const testFile of related) {
@@ -100,17 +106,17 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
       }
     }
 
-    logger.info('Affected scopes', grouped.size);
-    logger.info('Related test files', tests.size, true);
+    logger.info("Affected scopes", grouped.size);
+    logger.info("Related test files", tests.size, true);
 
     return { folders: grouped, matchedNodeTests: tests };
   });
 
   const mermaid = [
-    'flowchart LR',
-    '  classDef folder fill:#1e293b,stroke:#38bdf8,color:#f8fafc,stroke-width:2px;',
-    '  classDef src fill:#0f172a,stroke:#94a3b8,color:#e2e8f0;',
-    '  classDef test fill:#064e3b,stroke:#34d399,color:#ecfdf5;',
+    "flowchart LR",
+    "  classDef folder fill:#1e293b,stroke:#38bdf8,color:#f8fafc,stroke-width:2px;",
+    "  classDef src fill:#0f172a,stroke:#94a3b8,color:#e2e8f0;",
+    "  classDef test fill:#064e3b,stroke:#34d399,color:#ecfdf5;",
   ];
   let nodeIdx = 0;
 
@@ -120,7 +126,7 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
     for (const [folder, { sourceFiles, testFiles }] of folders.entries()) {
       const fId = `folder_${nodeIdx++}`;
       mermaid.push(`  subgraph ${fId}["📁 ${escapeMermaidLabel(folder)}"]`);
-      mermaid.push('    direction TB');
+      mermaid.push("    direction TB");
 
       const srcIds = [...new Set(sourceFiles)].map((s) => {
         const id = `src_${nodeIdx++}`;
@@ -134,7 +140,7 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
         return id;
       });
 
-      mermaid.push('  end');
+      mermaid.push("  end");
       mermaid.push(`  class ${fId} folder`);
 
       if (srcIds.length > 0 && testIds.length > 0) {
@@ -147,21 +153,25 @@ runAction('Impact & Test Map', async ({ log: logger }) => {
     }
   }
 
-  logger.info('Outputs & Job Summary');
+  logger.info("Outputs & Job Summary");
 
   const outputs = {
     has_files: rawChanged.length > 0,
-    changed_files: rawChanged.join(' '),
-    node_tests: [...matchedNodeTests].join(' '),
+    changed_files: rawChanged.join(" "),
+    node_tests: [...matchedNodeTests].join(" "),
   };
   for (const [key, value] of Object.entries(outputs)) setActionOutput(key, value);
-  const out = process.argv.find(arg => arg.startsWith('--out='))?.slice(6);
-  if (out) writeFileSync(out, JSON.stringify({ ...outputs, changedFiles: rawChanged, relatedTests: [...matchedNodeTests] }, null, 2));
+  const out = process.argv.find((arg) => arg.startsWith("--out="))?.slice(6);
+  if (out)
+    writeFileSync(
+      out,
+      JSON.stringify({ ...outputs, changedFiles: rawChanged, relatedTests: [...matchedNodeTests] }, null, 2),
+    );
 
-  appendStepSummary('## Impact & Test Map\n\n```mermaid\n' + mermaid.join('\n') + '\n```');
+  appendStepSummary("## Impact & Test Map\n\n```mermaid\n" + mermaid.join("\n") + "\n```");
 
   logger.pass(
-    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
+    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`,
   );
-  logger.info('', '═');
+  logger.info("", "═");
 });
