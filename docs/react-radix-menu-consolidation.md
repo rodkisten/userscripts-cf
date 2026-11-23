@@ -88,3 +88,5 @@
 - **Pointer reorder (unvalidated):** shared Dock action buttons support pointer capture, drag-target highlighting, and a registered `reorder(targetId)` callback. RodX persists the new pinned search order and restores it on failed save. Browser/CI verification remains outstanding; mouse drag support and click suppression were added in the follow-up.
 
 - **Pointer follow-up:** enable primary-button mouse drag in addition to touch/pen, suppress accidental action clicks following drag, and clean up pointer listeners on cancel. Still needs actual mouse/iOS verification.
+
+- **Late-mount registry handshake:** shared Dock emits `rod-dock:ready` after mounting; RodX replays its current registry on that event, preventing missing actions when the host loads after the feature. Browser validation remains pending.
