@@ -17,10 +17,10 @@ async function movePinnedSearch(id: string, direction: -1 | 1) {
   const pinned = state.searches.filter((search) => search.pinned);
   const position = pinned.findIndex((search) => String(search.id) === id);
   const neighbor = pinned[position + direction];
-  if (position < 0 || !neighbor) return;
+  if (position < 0 || !neighbor) { return; }
   const from = state.searches.findIndex((search) => String(search.id) === id);
   const to = state.searches.findIndex((search) => String(search.id) === String(neighbor.id));
-  if (from < 0 || to < 0) return;
+  if (from < 0 || to < 0) { return; }
   const previous = state.searches.slice();
   [state.searches[from], state.searches[to]] = [state.searches[to], state.searches[from]];
   renderDock();
@@ -39,7 +39,7 @@ async function movePinnedSearch(id: string, direction: -1 | 1) {
 async function reorderPinnedSearch(sourceId: string, targetId: string) {
   const from = state.searches.findIndex((search) => String(search.id) === sourceId && search.pinned);
   const to = state.searches.findIndex((search) => String(search.id) === targetId && search.pinned);
-  if (from < 0 || to < 0 || from === to) return;
+  if (from < 0 || to < 0 || from === to) { return; }
   const previous = state.searches.slice();
   const [search] = state.searches.splice(from, 1);
   const target = state.searches.findIndex((item) => String(item.id) === targetId);
@@ -68,7 +68,7 @@ function syncSharedDock() {
     pinned: pinned.map((search) => [search.id, search.name, search.icon, search.query, search.sort]),
     lists: quickLists.map((list) => [list.id, Studio.services.lists.displayName(list)]),
   });
-  if (signature === sharedDockSignature) return;
+  if (signature === sharedDockSignature) { return; }
   sharedDockSignature = signature;
 
   const actions: { id: string; label: string; run: () => void; reorder?: (targetId: string) => void }[] = [
@@ -95,7 +95,7 @@ function syncSharedDock() {
       },
     });
     // Keyboard-accessible ordering while pointer/touch drag remains in the inline Dock.
-    if (index > 0)
+    if (index > 0) {
       actions.push({
         id: `search-up:${search.id}`,
         label: `↑ ${search.name}`,
@@ -103,7 +103,8 @@ function syncSharedDock() {
           void movePinnedSearch(String(search.id), -1);
         },
       });
-    if (index < pinned.length - 1)
+    }
+    if (index < pinned.length - 1) {
       actions.push({
         id: `search-down:${search.id}`,
         label: `↓ ${search.name}`,
@@ -111,6 +112,7 @@ function syncSharedDock() {
           void movePinnedSearch(String(search.id), 1);
         },
       });
+    }
   }
   for (const list of quickLists) {
     actions.push({
@@ -127,7 +129,7 @@ function syncSharedDock() {
 }
 
 function unregisterSharedDock() {
-  if (!sharedDockSignature) return;
+  if (!sharedDockSignature) { return; }
   sharedDockSignature = "";
   document.dispatchEvent(
     new CustomEvent("rod-dock:registry", {
@@ -174,16 +176,16 @@ export function ensureDock() {
   const cells = [...primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.timelineCells)];
   const firstCell = cells.find((el) => el.closest(NATIVE_X_SELECTORS.primaryColumn) === primary);
   let target: ChildNode = firstCell;
-  while (target && target.parentElement !== primary) target = target.parentElement;
+  while (target && target.parentElement !== primary) { target = target.parentElement; }
   if (onSearch && header) {
     let block = header;
-    while (block.parentElement && block.parentElement !== primary) block = block.parentElement;
-    if (block.parentElement === primary) target = block.nextSibling;
+    while (block.parentElement && block.parentElement !== primary) { block = block.parentElement; }
+    if (block.parentElement === primary) { target = block.nextSibling; }
   }
   const host = state.dockHost;
   applyComponentStyle(host, "rx-dock-host", false);
   // Mount once per primary column; virtualized cells must never move the dock.
-  if (host.parentNode !== primary) primary.insertBefore(host, target);
+  if (host.parentNode !== primary) { primary.insertBefore(host, target); }
   const routeName = onSearch ? "search" : "home";
   if (state.dockRoute !== routeName) {
     state.dockRoute = routeName;
