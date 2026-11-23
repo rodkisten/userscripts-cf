@@ -47,6 +47,7 @@ const catalog = {
   baseURL: origin + prefix,
   scripts: [],
 };
+const definitionById = new Map(definitions.map((item) => [item.id, item]));
 for (const item of manifest.scripts) {
   const file = `${item.id}.user.js`;
   const metaFile = `${item.id}.meta.js`;
@@ -71,6 +72,8 @@ for (const item of manifest.scripts) {
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
   catalog.scripts.push({
     id: item.id,
+    tags: definitionById.get(item.id)?.tags ?? (item.id === "standalone" || item.id === "unified" ? ["bundle"] : ["other"]),
+    group: item.id === "standalone" || item.id === "unified" ? "Bundles" : definitionById.get(item.id)?.tags?.[0] ?? "Other",
     name: `#${number} ${item.name} · ${releaseLabel}`,
     commit: shortSha,
     publishedAt: publishedAt.toISOString(),
@@ -116,13 +119,15 @@ if (missingIds.length) {
       fs.writeFile(path.join(output, item.file), installer),
       fs.writeFile(path.join(output, item.metaFile), metadata),
     ]);
-    catalog.scripts.push(item);
+    const definition = definitionById.get(id);
+    catalog.scripts.push({ ...item, tags: definition?.tags ?? (id === "standalone" || id === "unified" ? ["bundle"] : ["other"]), group: id === "standalone" || id === "unified" ? "Bundles" : definition?.tags?.[0] ?? "Other" });
   }
   console.log("Preserved " + missingIds.length + " unchanged installers from previous preview");
 }
 catalog.scripts.sort((a, b) => [...expectedIds].indexOf(a.id) - [...expectedIds].indexOf(b.id));
 await fs.writeFile(path.join(output, "manifest.json"), JSON.stringify(catalog, null, 2) + "\n");
 const data = JSON.stringify(catalog).replace(/</g, "\\u003c");
-const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>#${number} · Userscripts Preview</title><style>body{font:15px system-ui;background:#09090b;color:#fafafa;max-width:780px;margin:48px auto;padding:0 20px}h1{font-size:28px}p{color:#a1a1aa}article{border:1px solid #27272a;border-radius:12px;padding:16px;margin:12px 0;display:flex;justify-content:space-between;gap:16px;align-items:center}a{color:#d4d4d8}article a{background:#fafafa;color:#09090b;padding:10px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}@media(max-width:480px){article{align-items:flex-start;flex-direction:column}}</style><h1>▲ Preview #${number}</h1><p>${releaseLabel}</p><p>Instaladores isolados deste pull request. Não substituem a versão estável.</p><main id="scripts"></main><script>const catalog=${data};document.getElementById("scripts").replaceChildren(...catalog.scripts.map(s=>{const row=document.createElement("article");const title=document.createElement("strong");title.textContent=s.name;const link=document.createElement("a");link.textContent="Instalar ↗";link.href="./"+encodeURIComponent(s.file);row.append(title,link);return row;}));</script></html>`;
+const template = await fs.readFile(path.join(root, "build", "pr-preview-page.html"), "utf8");
+const html = template.replaceAll("__PREVIEW_DATA__", data).replaceAll("__PR_NUMBER__", String(number));
 await fs.writeFile(path.join(output, "index.html"), html);
 console.log(`Generated ${catalog.scripts.length} installers for PR #${number} in ${output}`);

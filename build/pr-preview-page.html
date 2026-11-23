@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b10">
+<title>PR #__PR_NUMBER__ · Userscripts Preview</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0b10;color:#f4f4f6;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 80% 32% at 50% -12%,#34244c66,transparent),#0b0b10}button,input,select{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}
+.shell{max-width:1020px;margin:auto;padding:clamp(20px,5vw,48px) clamp(16px,4vw,36px) 90px}
+.eyebrow{display:flex;align-items:center;gap:9px;color:#b9a0f4;font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:750}.dot{width:8px;height:8px;border-radius:50%;background:#b79af6;box-shadow:0 0 18px #9d78f6}
+header{display:flex;justify-content:space-between;gap:16px;align-items:start;margin:30px 0 26px;flex-wrap:wrap}h1{font-size:clamp(30px,6vw,52px);letter-spacing:-.055em;line-height:1.06;margin:0 0 14px}h1 span{color:#b8a0fa}.subtitle{color:#a6a5b4;line-height:1.6;margin:0;max-width:580px;font-size:14px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #353440;background:#1a1922;color:#f5f3ff;border-radius:10px;padding:10px 13px;font-size:13px;font-weight:650;min-height:42px}.button:hover{border-color:#a58bf5}.button.primary{background:#c6b3ff;color:#181124;border-color:#c6b3ff}
+.release{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 15px;border:1px solid #292733;background:#17151f;border-radius:12px;margin:0 0 25px;font-size:12px;color:#bcb7c9}.release strong{color:#f5f1ff}.release code{color:#c8b5ff;font-size:12px}.sep{color:#585464}
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:10px;margin-bottom:14px}.search,.sort{width:100%;min-height:46px;background:#191820;border:1px solid #34323e;border-radius:11px;color:#f4f4f6;padding:0 14px;outline:none}.search:focus,.sort:focus{border-color:#a88af8;box-shadow:0 0 0 3px #9b78ee24}.search::placeholder{color:#807d8e}
+.tags{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:thin}.tag{border:1px solid #35323e;background:#191720;color:#bcb9c9;border-radius:999px;padding:7px 12px;font-size:12px;white-space:nowrap}.tag[aria-pressed=true]{background:#bca5fa;color:#191122;border-color:#bca5fa;font-weight:700}
+.summary{display:flex;justify-content:space-between;align-items:center;color:#9996a6;font-size:12px;margin:8px 0 18px}.summary strong{color:#ece8f5}
+section{margin:0 0 28px}.group-heading{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#a8a3b6;font-weight:750}.group-heading:after{content:"";height:1px;flex:1;background:#292731}.count{background:#292530;color:#c8b7ed;border-radius:6px;padding:2px 7px;font-size:11px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{border:1px solid #2c2935;background:#16151d;border-radius:14px;padding:17px;display:flex;flex-direction:column;gap:15px;min-width:0;transition:border-color .15s,background .15s}.card:hover{border-color:#6b558e;background:#1c1926}
+.card-top{display:flex;gap:12px;align-items:start}.glyph{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:11px;background:#2b233c;color:#cbb8ff;font-weight:800;font-size:16px}.card h3{font-size:15px;letter-spacing:-.02em;margin:1px 0 6px;line-height:1.35;overflow-wrap:anywhere}.card p{color:#908c9d;font-size:12px;line-height:1.45;margin:0}.card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.pills{display:flex;gap:5px;flex-wrap:wrap}.pill{background:#25222e;color:#b9b1ca;padding:4px 7px;border-radius:5px;font-size:10px}.install{border-radius:8px;padding:9px 12px;background:#e5dcff;color:#20162f;font-size:12px;font-weight:800;white-space:nowrap}.install:hover{background:#c7b0ff}
+.empty{padding:48px 16px;text-align:center;border:1px dashed #393342;border-radius:14px;color:#a8a1b5}.hidden{display:none!important}
+@media(max-width:650px){.cards{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.shell{padding-top:28px}header{margin-top:24px}.card{padding:15px}.header-actions{width:100%}.header-actions .button{flex:1}.release{font-size:11px}.release code{overflow-wrap:anywhere}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="shell">
+<div class="eyebrow"><span class="dot"></span> Userscripts CF <span class="sep">/</span> Pull request preview</div>
+<header><div><h1>Preview <span>#__PR_NUMBER__</span></h1><p class="subtitle">Instale e teste os userscripts desta branch sem substituir a versão estável. Organizados por categoria, com busca e filtros.</p></div><div class="header-actions"><a class="button" href="https://github.com/rodkisten/userscripts-cf/pull/__PR_NUMBER__" rel="noopener noreferrer">Ver pull request ↗</a><a class="button primary" href="./manifest.json">Manifest JSON ↗</a></div></header>
+<div class="release" id="release"></div>
+<div class="toolbar"><input class="search" id="search" type="search" placeholder="Buscar scripts, tags, categorias..." aria-label="Buscar scripts"><select class="sort" id="sort" aria-label="Ordenar"><option value="group">Grupos e tags</option><option value="name">Nome A → Z</option><option value="name-desc">Nome Z → A</option></select></div>
+<div class="tags" id="tags" aria-label="Filtrar por tag"></div>
+<div class="summary"><span id="result-count"></span><span>PR #__PR_NUMBER__ · instalação isolada</span></div>
+<div id="results"></div><div class="empty hidden" id="empty">Nenhum script encontrado. Experimente outra busca ou tag.</div>
+</main>
+<script>
+const catalog=__PREVIEW_DATA__;
+const search=document.getElementById("search"),sort=document.getElementById("sort"),tags=document.getElementById("tags"),results=document.getElementById("results"),empty=document.getElementById("empty"),counter=document.getElementById("result-count");
+let selected="all";
+const definitions=[...new Set(catalog.scripts.flatMap(s=>s.tags||[]))].sort((a,b)=>a.localeCompare(b));
+const release=document.getElementById("release");
+const add=(parent,tag,cls,value)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(value!==undefined)node.textContent=value;parent.append(node);return node};
+add(release,"strong",null,"Release");add(release,"code",null,catalog.version);add(release,"span","sep","•");add(release,"span",null,catalog.commit||"");add(release,"span","sep","•");add(release,"time",null,catalog.publishedAt?new Date(catalog.publishedAt).toLocaleString("pt-BR"):"");
+function renderTags(){tags.replaceChildren();for(const tag of ["all",...definitions]){const button=add(tags,"button","tag",tag==="all"?"Todas":tag);button.type="button";button.setAttribute("aria-pressed",String(selected===tag));button.onclick=()=>{selected=tag;renderTags();render()}}}
+function render(){const query=search.value.trim().toLocaleLowerCase("pt-BR");const items=catalog.scripts.filter(s=>(selected==="all"||(s.tags||[]).includes(selected))&&[s.name,s.id,s.group,...(s.tags||[])].join(" ").toLocaleLowerCase("pt-BR").includes(query)).sort((a,b)=>sort.value==="name"?a.name.localeCompare(b.name):sort.value==="name-desc"?b.name.localeCompare(a.name):a.group.localeCompare(b.group)||a.name.localeCompare(b.name));
+results.replaceChildren();counter.textContent=items.length+" de "+catalog.scripts.length+" scripts";empty.classList.toggle("hidden",items.length>0);
+const groups=new Map();for(const item of items){const group=sort.value==="group"?(item.group||"Other"):"Resultados";if(!groups.has(group))groups.set(group,[]);groups.get(group).push(item)}
+for(const [name,scripts] of groups){const section=add(results,"section");const heading=add(section,"h2","group-heading",name+" ");add(heading,"span","count",String(scripts.length));const cards=add(section,"div","cards");for(const script of scripts){const card=add(cards,"article","card");const top=add(card,"div","card-top");add(top,"div","glyph",(script.id||"?").slice(0,2).toUpperCase());const info=add(top,"div");add(info,"h3",null,script.name.replace(/^#\d+\s+/,"").split(" · v")[0]);add(info,"p",null,script.id+" · "+(script.version||catalog.version));const footer=add(card,"div","card-footer");const pills=add(footer,"div","pills");for(const tag of (script.tags||[]).slice(0,4))add(pills,"span","pill",tag);const link=add(footer,"a","install","Instalar ↗");link.href="./"+encodeURIComponent(script.file);link.setAttribute("aria-label","Instalar "+script.id)}}}
+search.addEventListener("input",render);sort.addEventListener("change",render);renderTags();render();
+</script>
+</body>
+</html>
