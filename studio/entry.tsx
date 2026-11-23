@@ -179,6 +179,13 @@ function Studio() {
   const [depth, setDepth] = useState(2);
   const [lastAction, setLastAction] = useState<Record<string, unknown>>({ status: "Pronto para testar" });
   const [copied, setCopied] = useState(false);
+  const [events, setEvents] = useState<{ time: string; event: string; details?: string }[]>([]);
+  const [openCount, setOpenCount] = useState(0);
+  const [lastValues, setLastValues] = useState<Record<string, unknown> | null>(null);
+  const [showValues, setShowValues] = useState(true);
+  const record = (event: string, details?: string) => {
+    setEvents((previous) => [{ time: new Date().toLocaleTimeString("pt-BR"), event, details }, ...previous].slice(0, 30));
+  };
   const copyTimerRef = useRef<number | undefined>(undefined);
 
   const demo = demos.find((item) => item.id === selected) ?? demos[0]!;
@@ -193,13 +200,15 @@ function Studio() {
       fields: demo.fields,
       actions: [
         { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
-        { id: "reset", label: "Limpar", variant: "secondary", onClick: ({ reset }) => reset() },
+        { id: "reset", label: "Limpar", variant: "secondary", onClick: ({ reset }) => { reset(); record("reset", demo.title); } },
         {
           id: "save",
           label: "Salvar",
           role: "submit",
           onClick: ({ values, close }) => {
             setLastAction({ action: "save", demo: demo.id, values });
+            setLastValues({ ...values });
+            record("submit", demo.title);
             close();
           },
         },
@@ -238,7 +247,16 @@ function Studio() {
     [normalizedQuery],
   );
 
-  const open = () => RodMenu.open(schema);
+  const open = () => {
+    record("open", `${demo.title} · ${surface}`);
+    setOpenCount((count) => count + 1);
+    RodMenu.open(schema);
+  };
+  const close = () => { RodMenu.close(); record("close", "Fechamento programático"); };
+  const selectDemo = (id: string) => {
+    setSelected(id);
+    record("select", id);
+  };
 
   const copy = () => {
     if (!navigator.clipboard) return;
@@ -280,7 +298,7 @@ function Studio() {
                   type="button"
                   aria-current={selected === item.id ? "true" : undefined}
                   className={selected === item.id ? "studio-active" : ""}
-                  onClick={() => setSelected(item.id)}
+                  onClick={() => selectDemo(item.id)}
                 >
                   {item.title}
                   <small>{item.description}</small>
@@ -300,9 +318,10 @@ function Studio() {
             <h1>{demo.title}</h1>
             <p>{demo.description}</p>
           </div>
-          <button type="button" className="studio-primary" onClick={open}>
-            Abrir componente ↗
-          </button>
+          <div className="studio-toolbar">
+            <button type="button" className="studio-primary" onClick={open}>Abrir componente ↗</button>
+            <button type="button" onClick={close}>Fechar menu</button>
+          </div>
         </header>
 
         <div className="studio-grid">
@@ -331,6 +350,13 @@ function Studio() {
               Persistir valores
             </label>
 
+            <h2>Experimentos</h2>
+            <div className="studio-segments">
+              <button type="button" onClick={() => { setSurface("bottom-sheet"); RodMenu.open({ ...schema, presentation: "bottom-sheet" }); record("open", "Bottom-sheet"); setOpenCount((count) => count + 1); }}>Abrir sheet</button>
+              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "modal" }); record("open", "Modal"); setOpenCount((count) => count + 1); }}>Modal</button>
+              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "drawer" }); record("open", "Drawer"); setOpenCount((count) => count + 1); }}>Drawer</button>
+              <button type="button" onClick={() => { RodMenu.open({ ...schema, presentation: "popover" }); record("open", "Popover"); setOpenCount((count) => count + 1); }}>Popover</button>
+            </div>
             <h2>Viewport</h2>
             <div className="studio-segments">
               <button type="button" aria-pressed={device === "phone"} onClick={() => setDevice("phone")}>
@@ -371,6 +397,20 @@ function Studio() {
           </section>
         </div>
 
+        <section className="studio-panel studio-output studio-diagnostics">
+          <div className="studio-panel-head"><h2>Laboratório de eventos</h2><button type="button" onClick={() => setEvents([])}>Limpar histórico</button></div>
+          <div className="studio-metrics">
+            <div><strong>{openCount}</strong><span>Aberturas</span></div>
+            <div><strong>{events.length}</strong><span>Eventos recentes</span></div>
+            <div><strong>{RodMenu.active ? "Aberto" : "Fechado"}</strong><span>Estado do menu</span></div>
+          </div>
+          <label className="studio-check"><input type="checkbox" checked={showValues} onChange={(event) => setShowValues(event.target.checked)} /> Mostrar valores enviados</label>
+          {showValues && <pre className="studio-json">{lastValues ? serialize(lastValues) : "Nenhum formulário enviado ainda."}</pre>}
+          <div className="studio-event-log" role="log" aria-live="polite">
+            {events.length ? events.map((event, index) => <div key={`${event.time}-${index}`}><time>{event.time}</time><strong>{event.event}</strong><span>{event.details}</span></div>) : <p className="studio-hint">Abra um componente para acompanhar as interações.</p>}
+          </div>
+        </section>
+
         <section className="studio-panel studio-output">
           <div className="studio-panel-head">
             <div className="studio-segments">
@@ -399,7 +439,7 @@ function Studio() {
               </div>
               <ObjectInspector
                 key={depth}
-                data={{ schema, lastAction }}
+                data={{ schema, lastAction, lastValues, events, openCount }}
                 options={{ expandDepth: depth, inspectDepth: 12, inspectItems: 1000, theme: "dark" }}
               />
             </>

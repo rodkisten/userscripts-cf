@@ -21,6 +21,7 @@ export interface DropdownOptions {
 
 export interface MenuField {
   name: string;
+  disabled?: boolean;
   label?: string;
   type?: string;
   placeholder?: string;

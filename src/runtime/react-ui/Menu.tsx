@@ -38,13 +38,15 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
 
   return (
     <Dialog.Root
+      modal={false}
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <Dialog.Overlay className={styles.overlay} />
-      <Dialog.Content
+      <Dialog.Portal>
+        {/* Non-modal prevents Radix from locking iOS Safari when content fails to paint. */}
+        <Dialog.Content
         aria-label={schema.title || "Rod Menu"}
         aria-describedby={undefined}
         className={`${styles.surface} ${surfaceClass} ${className || ""}`}
@@ -161,7 +163,8 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
             })}
           </div>
         )}
-      </Dialog.Content>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   );
 };

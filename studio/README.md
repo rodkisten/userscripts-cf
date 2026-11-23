@@ -20,7 +20,7 @@ The catalog has input types (text, email, password, search, URL, telephone), num
 
 RodMenu presentations: bottom-sheet, centered modal, right drawer and compact centered popover. The popover is **not yet anchored** to a trigger. Dialog focus management, Escape and outside-click dismissal are handled by Radix.
 
-The Inspector tab shows the current menu schema and last submitted values. The Code tab shows a copyable API example in read-only CodeMirror 6. The displayed example omits executable callback bodies, which must be supplied by the consumer.
+The interactive laboratory provides quick actions for bottom-sheet, modal, drawer and popover, a programmatic close button, a bounded timestamped event log, open counters and submitted-value JSON. It also records demo selection, reset and submit actions. The open/closed indicator reflects the menu state at the latest Studio render, not a subscription to all dismissals. The Inspector tab shows the current menu schema, recent events and last submitted values. The Code tab shows a copyable API example in read-only CodeMirror 6. The displayed example omits executable callback bodies, which must be supplied by the consumer.
 
 ## Mandatory feature documentation policy
 
