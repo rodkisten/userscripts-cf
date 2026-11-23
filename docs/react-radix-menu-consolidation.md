@@ -46,7 +46,8 @@
 - [x] Add a compatibility bridge registering RodX Home, Create timeline, Organize searches and Lists in the shared Dock registry while retaining the inline search controls.
 - [x] Publish pinned timelines and quick lists as dynamic shared Dock actions with stable IDs.
 - [x] Remove DOM-click proxies for shared Dock core actions and pinned searches by calling RodX `performAction` directly.
-- [ ] Remove remaining quick-list DOM proxy and replace the inline timeline UI after preserving drag ordering.
+- [x] Remove the remaining quick-list DOM proxy by navigating through `Studio.navigate(studioListIndex(Studio) + '/' + list.id)`.
+- [ ] Replace the inline timeline UI after preserving drag ordering.
 - [ ] Preserve RodX drag-and-drop ordering and account-specific state, including touch support.
 - [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
 - [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
@@ -75,3 +76,5 @@
 - **Dynamic RodX actions:** pinned searches and quick lists are now registered under stable `search:` and `list:` action IDs. A signature prevents redundant registry dispatches on unchanged route/account/list state. Action callbacks reuse existing inline controls. The global Dock installer must be present, and runtime/CI validation is still pending.
 
 - **Action dispatcher:** shared Dock Home/New/Organize/Lists and pinned search actions now call RodX's exported `performAction` directly, rather than looking up hidden inline buttons. Quick lists still rely on DOM buttons and need direct navigation migration. No build/test has been run for this commit.
+
+- **Quick-list navigation:** shared Dock list actions now call `Studio.navigate` using the same `studioListIndex` route builder as the existing inline controls. All registered shared Dock actions are independent of DOM-click proxies; the inline bar is still retained for drag reordering and route placement. Browser/CI validation pending.
