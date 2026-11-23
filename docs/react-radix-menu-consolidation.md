@@ -48,7 +48,7 @@
 - [x] Remove DOM-click proxies for shared Dock core actions and pinned searches by calling RodX `performAction` directly.
 - [x] Remove the remaining quick-list DOM proxy by navigating through `Studio.navigate(studioListIndex(Studio) + '/' + list.id)`.
 - [ ] Replace the inline timeline UI after preserving drag ordering.
-- [x] Add keyboard/click-friendly ↑/↓ reorder actions for pinned timelines using the existing RodX dispatcher.
+- [x] Add keyboard/click-friendly ↑/↓ reorder actions for pinned timelines, swapping only pinned entries and persisting with rollback.
 - [ ] Preserve RodX pointer/touch drag-and-drop ordering and account-specific state in the shared Dock.
 - [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
 - [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
@@ -81,3 +81,5 @@
 - **Quick-list navigation:** shared Dock list actions now call `Studio.navigate` using the same `studioListIndex` route builder as the existing inline controls. All registered shared Dock actions are independent of DOM-click proxies; the inline bar is still retained for drag reordering and route placement. Browser/CI validation pending.
 
 - **Accessible reorder bridge:** shared Dock now publishes `search-up:` and `search-down:` actions for pinned searches, delegating to existing `performAction('up'/'down')`. These are additional controls, not a replacement for touch drag. Account persistence relies on existing search-action logic and needs browser verification.
+
+- **Pinned-only ordering fix:** shared Dock up/down actions now swap neighboring pinned searches directly, not arbitrary neighbors in `state.searches`. Changes are persisted with `saveState()`, rollback on failure, and re-registration of shared Dock actions. Touch/pointer drag remains pending.
