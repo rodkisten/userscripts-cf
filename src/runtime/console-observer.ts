@@ -27,19 +27,21 @@ export function observePageConsole(listener: Listener, host: Console = console):
           if (!registry!.notifying) {
             registry!.notifying = true;
             try {
-          const observation: ConsoleObservation = {
-            level,
-            time: new Date().toISOString(),
-            args,
-          };
-          for (const subscriber of [...registry!.listeners]) {
-            try {
-              subscriber(observation);
-            } catch {
-              /* Diagnostics must not break the page. */
+              const observation: ConsoleObservation = {
+                level,
+                time: new Date().toISOString(),
+                args,
+              };
+              for (const subscriber of [...registry!.listeners]) {
+                try {
+                  subscriber(observation);
+                } catch {
+                  /* Diagnostics must not break the page. */
+                }
+              }
+            } finally {
+              registry!.notifying = false;
             }
-          }
-            } finally { registry!.notifying = false; }
           }
         } finally {
           Reflect.apply(original, this, args);
