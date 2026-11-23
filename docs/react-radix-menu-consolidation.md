@@ -39,7 +39,17 @@
 - [ ] Verify style reference counting, cleanup and remount after SPA navigation in a browser.
 - [ ] Verify Dock-only bundle and regular userscript coexistence.
 
-### D. Verification and delivery
+### D. RodX Dock consolidation
+
+- [x] Inspect RodX Dock ownership: `ui/dock.tsx` creates an inline ShadowRoot and attaches `DragDock`; `ui/search-workbench.tsx` renders its content through the shared React mount adapter.
+- [x] Inspect shared Dock: `runtime/react-ui/rod-dock.tsx` uses React, Radix Dialog, its own ShadowRoot, script registry and persistent launcher position.
+- [ ] Move RodX search/timeline actions into shared Dock modules without losing search controls.
+- [ ] Preserve RodX drag-and-drop ordering and account-specific state, including touch support.
+- [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
+- [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
+- [ ] Remove RodX `DragDock` and old inline host only after functional parity is verified.
+
+### E. Verification and delivery
 
 - [ ] Run `npm ci` and `npm run typecheck`.
 - [ ] Run `npm run check:react-roots` and `npm run build`.
@@ -54,3 +64,5 @@
 - **Root ownership gate:** `npm run typecheck` now runs `check:react-roots` before TypeScript compilation. Reviewed `src/core/runtime.ts`: each script's `ctx.menu` is constructed with `createMenuFeature` and `mountSharedReact`. Reviewed RodX and Instagram entrypoints: both consume `ctx.menu`. `src/runtime/react-ui/index.tsx` still exposes the older `RodMenuHost`; no removal until consumers are exhaustively verified.
 
 - **Radix menu compatibility:** `DropdownItems` uses `item.id` as a stable key, but `DropdownItem` omitted the property. Added the optional typed identifier to the shared contract. **Shadow DOM:** reattach a style when its parent is not the owning ShadowRoot (not just when disconnected), and avoid overcounting repeated CSS within one registration. Browser and CI verification remain outstanding.
+
+- **Dock decision:** RodX's `ensureDock()` currently inserts an inline Dock after the X search header, and its `DragDock` owns custom pointer/touch reorder logic. The shared Dock is a floating global launcher with script-management features. These are **not yet feature-equivalent**. Consolidation must migrate search/timeline controls and drag reorder rather than simply deleting the RodX host. No Dock implementation has been replaced yet.
