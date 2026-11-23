@@ -422,6 +422,8 @@ export function installRodDock({
   document.addEventListener("rod-dock:menu", onMenu);
   (document.body ?? document.documentElement).append(host);
   render();
+  // Notify late-loading feature modules that the shared Dock is ready to accept registrations.
+  document.dispatchEvent(new CustomEvent("rod-dock:ready"));
   const command =
     typeof registerMenu === "function" ? registerMenu("Abrir Rod Dock", () => setOpen(true)) : null;
   return {
