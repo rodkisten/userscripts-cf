@@ -65,7 +65,7 @@ async function reorderPinnedSearch(sourceId: string, targetId: string) {
 /** Keep the shared Dock registry in sync without emitting on every SPA repaint. */
 let sharedDockSignature = "";
 
-function syncSharedDock() {
+function syncSharedDock(force = false) {
   const pinned = state.searches.filter((search) => search.pinned);
   const quickLists = Studio.services.lists?.quickLists() ?? [];
   const signature = JSON.stringify({
@@ -74,7 +74,7 @@ function syncSharedDock() {
     pinned: pinned.map((search) => [search.id, search.name, search.icon, search.query, search.sort]),
     lists: quickLists.map((list) => [list.id, Studio.services.lists.displayName(list)]),
   });
-  if (signature === sharedDockSignature) {
+  if (!force && signature === sharedDockSignature) {
     return;
   }
   sharedDockSignature = signature;
@@ -147,6 +147,13 @@ function unregisterSharedDock() {
     }),
   );
 }
+
+// Re-register after the shared Dock mounts, even if the RodX state did not change.
+document.addEventListener("rod-dock:ready", () => {
+  if (sharedDockSignature) {
+    syncSharedDock(true);
+  }
+});
 
 export function ensureDock() {
   // The native search header is sticky and has its own flex layout. Never
