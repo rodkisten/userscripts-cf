@@ -14,8 +14,11 @@ export interface InspektorStore {
   openExternal(): void;
 }
 const format = (value: unknown): string => {
-  try { return typeof value === "string" ? value : JSON.stringify(value, null, 2) ?? String(value); }
-  catch { return "[Unserializable]"; }
+  try {
+    return typeof value === "string" ? value : (JSON.stringify(value, null, 2) ?? String(value));
+  } catch {
+    return "[Unserializable]";
+  }
 };
 
 export function InspektorPanel({ store }: { store: InspektorStore }) {
@@ -30,13 +33,24 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
       <header className="inspektor-header">
         <strong>🔎 Inspektor</strong>
         <span>{entries.length} events</span>
-        <button type="button" onClick={store.openExternal}>Pop out</button>
-        <button type="button" aria-label="Close Inspektor" onClick={store.close}>×</button>
+        <button type="button" onClick={store.openExternal}>
+          Pop out
+        </button>
+        <button type="button" aria-label="Close Inspektor" onClick={store.close}>
+          ×
+        </button>
       </header>
       <nav aria-label="Inspector tabs" className="inspektor-tabs">
         {(["dom", "network", "console"] as const).map((item) => (
-          <button key={item} type="button" aria-current={tab === item ? "page" : undefined}
-            onClick={() => { setTab(item); setSelected(""); }}>
+          <button
+            key={item}
+            type="button"
+            aria-current={tab === item ? "page" : undefined}
+            onClick={() => {
+              setTab(item);
+              setSelected("");
+            }}
+          >
             {item.toUpperCase()}
           </button>
         ))}
@@ -44,25 +58,41 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
       {tab === "dom" ? (
         <div className="inspektor-content">
           <p>Inspect a page element without exporting the full DOM.</p>
-          <button type="button" onClick={store.pick}>Select element</button>
+          <button type="button" onClick={store.pick}>
+            Select element
+          </button>
         </div>
       ) : (
         <>
-          <input aria-label="Filter events" placeholder="Filter events" value={query}
-            onChange={(event) => setQuery(event.target.value)} />
+          <input
+            aria-label="Filter events"
+            placeholder="Filter events"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
           <div className="inspektor-events">
-            {filtered.length === 0 ? <p>No events captured yet.</p> : filtered.map((entry, index) => {
-              const detail = format(entry);
-              const label = tab === "network"
-                ? `${entry.method ?? ""} ${entry.status ?? ""} ${entry.url ?? ""}`
-                : `${entry.level ?? "log"} · ${format(entry.args ?? [])}`;
-              return (
-                <button key={index} type="button" className="inspektor-event"
-                  aria-expanded={selected === detail} onClick={() => setSelected(selected === detail ? "" : detail)}>
-                  <span>{label.slice(0, 240)}</span>
-                </button>
-              );
-            })}
+            {filtered.length === 0 ? (
+              <p>No events captured yet.</p>
+            ) : (
+              filtered.map((entry, index) => {
+                const detail = format(entry);
+                const label =
+                  tab === "network"
+                    ? `${entry.method ?? ""} ${entry.status ?? ""} ${entry.url ?? ""}`
+                    : `${entry.level ?? "log"} · ${format(entry.args ?? [])}`;
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    className="inspektor-event"
+                    aria-expanded={selected === detail}
+                    onClick={() => setSelected(selected === detail ? "" : detail)}
+                  >
+                    <span>{label.slice(0, 240)}</span>
+                  </button>
+                );
+              })
+            )}
           </div>
           {selected && <pre className="inspektor-detail">{selected}</pre>}
         </>
