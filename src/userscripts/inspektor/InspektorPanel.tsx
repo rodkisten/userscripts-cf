@@ -171,18 +171,18 @@ function JsonNode({
 }
 
 function getStatusTone(entry: InspektorRecord): "ok" | "warn" | "err" | "neutral" {
-  if (entry.error) return "err";
+  if (entry.error) {\n    return "err";\n  }
   const status = typeof entry.status === "number" ? entry.status : 0;
-  if (status >= 500) return "err";
-  if (status >= 400) return "warn";
-  if (status >= 200 && status < 300) return "ok";
+  if (status >= 500) {\n    return "err";\n  }
+  if (status >= 400) {\n    return "warn";\n  }
+  if (status >= 200 && status < 300) {\n    return "ok";\n  }
   return "neutral";
 }
 
 function getLevelTone(level: unknown): "ok" | "warn" | "err" | "neutral" {
-  if (level === "error") return "err";
-  if (level === "warn") return "warn";
-  if (level === "info") return "ok";
+  if (level === "error") {\n    return "err";\n  }
+  if (level === "warn") {\n    return "warn";\n  }
+  if (level === "info") {\n    return "ok";\n  }
   return "neutral";
 }
 
@@ -200,12 +200,12 @@ export function InspektorPanel({ store }: { store: InspektorStore }) {
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return entries;
+    if (!normalized) {\n      return entries;\n    }
     return entries.filter((entry) => getSearchableText(entry).includes(normalized));
   }, [entries, query]);
 
   const handleCopy = () => {
-    if (!selectedEntry) return;
+    if (!selectedEntry) {\n      return;\n    }
     navigator.clipboard?.writeText(formatPlain(selectedEntry));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
