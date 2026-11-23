@@ -43,7 +43,8 @@
 
 - [x] Inspect RodX Dock ownership: `ui/dock.tsx` creates an inline ShadowRoot and attaches `DragDock`; `ui/search-workbench.tsx` renders its content through the shared React mount adapter.
 - [x] Inspect shared Dock: `runtime/react-ui/rod-dock.tsx` uses React, Radix Dialog, its own ShadowRoot, script registry and persistent launcher position.
-- [ ] Move RodX search/timeline actions into shared Dock modules without losing search controls.
+- [x] Add a compatibility bridge registering RodX Home, Create timeline, Organize searches and Lists in the shared Dock registry while retaining the inline search controls.
+- [ ] Migrate the full pinned-timeline and quick-list UI to shared Dock components.
 - [ ] Preserve RodX drag-and-drop ordering and account-specific state, including touch support.
 - [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
 - [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
@@ -66,3 +67,5 @@
 - **Radix menu compatibility:** `DropdownItems` uses `item.id` as a stable key, but `DropdownItem` omitted the property. Added the optional typed identifier to the shared contract. **Shadow DOM:** reattach a style when its parent is not the owning ShadowRoot (not just when disconnected), and avoid overcounting repeated CSS within one registration. Browser and CI verification remain outstanding.
 
 - **Dock decision:** RodX's `ensureDock()` currently inserts an inline Dock after the X search header, and its `DragDock` owns custom pointer/touch reorder logic. The shared Dock is a floating global launcher with script-management features. These are **not yet feature-equivalent**. Consolidation must migrate search/timeline controls and drag reorder rather than simply deleting the RodX host. No Dock implementation has been replaced yet.
+
+- **Incremental Dock bridge:** `ui/dock.tsx` now publishes a `rodx-studio` module via `rod-dock:registry` and unregisters it when leaving supported X routes. Its actions delegate to existing inline controls, preserving existing handlers. This is a transition bridge, **not** final Dock unification. It requires the shared Dock installer to be active; no UI/browser validation has been performed.
