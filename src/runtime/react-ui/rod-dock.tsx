@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -59,6 +59,7 @@ function DockView({ controller }: { controller: DockController }) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [suppressClick, setSuppressClick] = useState<string | null>(null);
+  const launcherWasDragged = useRef(false);
   const [position, setPosition] = useState(() => {
     const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
     return Number.isFinite(saved) && saved >= 12 && saved <= 88 ? saved : 46;
@@ -105,6 +106,7 @@ function DockView({ controller }: { controller: DockController }) {
             if (event.pointerType === "mouse" && event.button !== 0) {
               return;
             }
+            launcherWasDragged.current = false;
             const launcher = event.currentTarget;
             const pointerId = event.pointerId;
             const startX = event.clientX;
@@ -128,6 +130,7 @@ function DockView({ controller }: { controller: DockController }) {
                 return;
               }
               dragged = true;
+              launcherWasDragged.current = true;
               setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / window.innerHeight)));
             };
             const onEnd = (next: PointerEvent) => {
@@ -149,8 +152,9 @@ function DockView({ controller }: { controller: DockController }) {
             launcher.addEventListener("pointercancel", onCancel);
           }}
           onClick={(event) => {
-            // Keyboard and assistive-technology activation does not emit pointerdown.
-            if (event.detail === 0) {
+            // Safari may deliver a click without a reliable pointerup after capture.
+            // Never open after a drag, but support mouse, touch, keyboard and assistive activation.
+            if (!launcherWasDragged.current) {
               setOpen(true);
             }
           }}
