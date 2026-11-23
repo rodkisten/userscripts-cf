@@ -14,27 +14,6 @@ import {
 
 const PREVIEW_BASE_URL = 'https://userscripts.preview.migos.club';
 
-async function fetchGitHubPullRequest({ token, owner, repo, prNumber }) {
-  const apiBase = (process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/+$/, '');
-  const url = `${apiBase}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${encodeURIComponent(prNumber)}`;
-
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'rod-cf-pr-preview',
-    },
-  });
-
-  if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`GitHub API GET /repos/${owner}/${repo}/pulls/${prNumber} falhou (${res.status}): ${errBody}`);
-  }
-
-  return res.json();
-}
-
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -42,123 +21,146 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-// ============================================================================
-// Modo 1: Baixar artifact não confiável e validar SHA contra a API do GitHub
-// ============================================================================
-async function runValidateArtifact({ log, args, context }) {
-  const { runId, prNumber, outDir } = resolveInputs({
-    runId: [args['run-id'], process.env.RUN_ID, context?.payload?.workflow_run?.id],
-    prNumber: [
-      args['pr-number'],
-      process.env.PR_NUMBER,
-      context?.payload?.workflow_run?.pull_requests?.[0]?.number,
-      context?.issue?.number,
-    ],
-    outDir: [args['out-dir'], process.env.PREVIEW_OUT_DIR, 'dist/pr-preview'],
-  });
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
-  const owner = context?.repo?.owner || (process.env.GITHUB_REPOSITORY || '').split('/')[0];
-  const repo = context?.repo?.repo || (process.env.GITHUB_REPOSITORY || '').split('/')[1];
-
-  if (!runId || !prNumber) {
-    throw new Error('RUN_ID e PR_NUMBER são obrigatórios para validar o artifact de preview.');
+function collectPublishedArtifacts(dir, baseDir = dir, acc = []) {
+  if (!fs.existsSync(dir)) return acc;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectPublishedArtifacts(full, baseDir, acc);
+    } else if (entry.isFile()) {
+      const rel = path.relative(baseDir, full).split('\\').join('/');
+      const stat = fs.statSync(full);
+      acc.push({
+        file: rel,
+        size: stat.size,
+        isUserscript: rel.endsWith('.user.js'),
+      });
+    }
   }
-  if (!token || !owner || !repo) {
-    throw new Error('GH_TOKEN e GITHUB_REPOSITORY (owner/repo) são obrigatórios para consultar a API do GitHub.');
+  return acc.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+function runOrThrow(cmd, args, { log, label, env }) {
+  const res = runCmd(cmd, args, {
+    logger: log,
+    env: { ...process.env, ...env },
+  });
+
+  if (res.stdout) {
+    process.stdout.write(`${res.stdout}\n`);
+  }
+  if (res.stderr) {
+    process.stderr.write(`${res.stderr}\n`);
   }
 
-  const artifactName = `userscripts-pr-${prNumber}`;
-  const targetDir = path.join(outDir, String(prNumber));
+  if (!res.ok) {
+    throw new Error(`${label} falhou (exit ${res.status}): ${res.stderr || res.stdout}`);
+  }
 
-  // Step 1: Download do artifact do workflow_run (sem executar nenhum arquivo dele)
-  await log.step(`Baixar artifact "${artifactName}"`, async (step) => {
-    fs.mkdirSync(outDir, { recursive: true });
-    const dl = runCmd(
-      'gh',
-      ['run', 'download', String(runId), '--name', artifactName, '--dir', outDir],
-      {
-        logger: log,
-        env: { ...process.env, GH_TOKEN: token },
-      },
-    );
-
-    if (!dl.ok) {
-      throw new Error(`Falha ao baixar artifact "${artifactName}" do run ${runId}: ${dl.stderr || dl.stdout}`);
-    }
-
-    step.pass('Artifact baixado', targetDir);
-  });
-
-  // Step 2: Validar estado do PR e SHA via GitHub REST API nativa
-  const validation = await log.step(`Validar PR #${prNumber} via GitHub API`, async (step) => {
-    const shaFile = path.join(targetDir, 'source-sha.txt');
-    if (!fs.existsSync(shaFile)) {
-      throw new Error(`Arquivo de verificação ausente no artifact: ${shaFile}`);
-    }
-
-    const artifactSha = fs.readFileSync(shaFile, 'utf8').trim();
-    if (!artifactSha) {
-      throw new Error(`Arquivo ${shaFile} está vazio.`);
-    }
-
-    const pr = await fetchGitHubPullRequest({ token, owner, repo, prNumber });
-    const prState = pr.state;
-    const headSha = pr.head?.sha || '';
-
-    step.info('Estado do PR', prState);
-    step.info('Artifact SHA', artifactSha.slice(0, 12));
-    step.info('PR Head SHA', headSha.slice(0, 12));
-
-    if (prState !== 'open' || headSha !== artifactSha) {
-      throw new Error(
-        `PR fechado ou existe um head mais recente (state=${prState}, expected=${headSha}, got=${artifactSha}); publicação cancelada.`,
-      );
-    }
-
-    step.pass('SHA e estado do PR validados', `${headSha.slice(0, 7)} (open)`);
-    return { pr, artifactSha, headSha };
-  });
-
-  const previewUrl = `${PREVIEW_BASE_URL}/${prNumber}/`;
-
-  setActionOutput('pr_number', prNumber);
-  setActionOutput('artifact_dir', targetDir);
-  setActionOutput('head_sha', validation.headSha);
-  setActionOutput('preview_url', previewUrl);
-
-  log.summary('success', {
-    Mode: 'validate',
-    PR: `#${prNumber}`,
-    'Head SHA': ansi.cyan(validation.headSha.slice(0, 7)),
-    'Artifact Dir': targetDir,
-  });
+  return res;
 }
 
 // ============================================================================
-// Modo 2: Publicar Job Summary após upload para Cloudflare R2
+// Modo 1: Build, gerar installers isolados, publicar no R2 e gerar Summary
 // ============================================================================
-async function runPublishSummary({ log, args, context }) {
-  const { prNumber, headSha } = resolveInputs({
+async function runPublishPreview({ log, args, context }) {
+  const { prNumber, headSha, outRoot, skipBuild } = resolveInputs({
     prNumber: [
       args['pr-number'],
       process.env.PR_NUMBER,
-      context?.payload?.workflow_run?.pull_requests?.[0]?.number,
+      context?.payload?.pull_request?.number,
       context?.issue?.number,
     ],
-    headSha: [args['head-sha'], process.env.HEAD_SHA, ''],
+    headSha: [
+      args['head-sha'],
+      process.env.PR_HEAD_SHA,
+      process.env.HEAD_SHA,
+      context?.payload?.pull_request?.head?.sha,
+      context?.sha,
+      '',
+    ],
+    outRoot: [args['out-dir'], process.env.PREVIEW_OUT_DIR, 'dist/pr-preview'],
+    skipBuild: [args['skip-build'], process.env.SKIP_BUILD, 'false'],
   });
 
+  const uploadToken = args.token || process.env.PREVIEW_UPLOAD_TOKEN || '';
+
   if (!prNumber) {
-    throw new Error('PR_NUMBER é obrigatório para gerar o resumo de preview.');
+    throw new Error('PR_NUMBER é obrigatório para publicar o preview.');
+  }
+  if (!uploadToken) {
+    throw new Error('PREVIEW_UPLOAD_TOKEN é obrigatório para publicar no Cloudflare R2.');
   }
 
-  const previewUrl = `${PREVIEW_BASE_URL}/${prNumber}/`;
+  const previewDir = path.join(outRoot, String(prNumber));
+  const previewUrl = `${PREVIEW_BASE_URL}/${encodeURIComponent(prNumber)}/`;
+
+  // Step 1: Build dos userscripts (se não foi executado antes)
+  if (String(skipBuild).toLowerCase() !== 'true') {
+    await log.step('Compilar userscripts (npm run build)', async (step) => {
+      runOrThrow('npm', ['run', 'build'], {
+        log,
+        label: 'npm run build',
+      });
+      step.pass('Build concluído com sucesso');
+    });
+  }
+
+  // Step 2: Gerar installers isolados do PR e gravar source-sha.txt
+  await log.step(`Gerar installers isolados do PR #${prNumber}`, async (step) => {
+    runOrThrow('node', ['build/pr-preview.mjs'], {
+      log,
+      label: 'build/pr-preview.mjs',
+      env: { PR_NUMBER: String(prNumber) },
+    });
+
+    fs.mkdirSync(previewDir, { recursive: true });
+    if (headSha) {
+      fs.writeFileSync(path.join(previewDir, 'source-sha.txt'), `${headSha}\n`, 'utf8');
+    }
+
+    if (!fs.existsSync(previewDir)) {
+      throw new Error(`Diretório esperado não foi gerado: ${previewDir}`);
+    }
+
+    step.pass('Installers gerados', previewDir);
+  });
+
+  // Step 3: Publicar arquivos no Cloudflare R2 via build/publish-pr-preview.mjs
+  await log.step(`Publicar preview #${prNumber} no Cloudflare R2`, async (step) => {
+    runOrThrow('node', ['build/publish-pr-preview.mjs', previewDir], {
+      log,
+      label: 'build/publish-pr-preview.mjs',
+      env: {
+        PR_NUMBER: String(prNumber),
+        PREVIEW_UPLOAD_TOKEN: uploadToken,
+      },
+    });
+
+    step.pass('Arquivos enviados para Cloudflare R2', previewUrl);
+  });
+
+  // Step 4: Coletar artefatos publicados, exportar outputs e gerar Job Summary
+  const artifacts = collectPublishedArtifacts(previewDir);
+  const userscripts = artifacts.filter((a) => a.isUserscript);
+  const totalBytes = artifacts.reduce((sum, item) => sum + item.size, 0);
+
+  setActionOutput('pr_number', prNumber);
   setActionOutput('preview_url', previewUrl);
+  setActionOutput('artifact_dir', previewDir);
+  setActionOutput('artifact_count', artifacts.length);
+  setActionOutput('userscript_count', userscripts.length);
 
   const summary = createSummaryWriter();
   summary
-    .addHeading('▲ Cloudflare PR Preview Publicado', 2)
+    .addHeading(`▲ Cloudflare PR Preview — #${escapeHtml(prNumber)}`, 2)
     .addTable([
       [
         { data: 'Propriedade', header: true },
@@ -166,20 +168,54 @@ async function runPublishSummary({ log, args, context }) {
       ],
       ['Pull Request', `<code>#${escapeHtml(prNumber)}</code>`],
       ...(headSha ? [['Commit SHA', `<code>${escapeHtml(headSha.slice(0, 7))}</code>`]] : []),
-      ['URL de Preview', `<a href="${previewUrl}">${previewUrl}</a>`],
+      ['URL Base do Preview', `<a href="${previewUrl}">${previewUrl}</a>`],
+      [
+        'Arquivos Publicados',
+        `<code>${artifacts.length}</code> arquivo(s) · <code>${userscripts.length}</code> userscript(s) · <code>${formatBytes(totalBytes)}</code>`,
+      ],
     ]);
+
+  if (userscripts.length > 0) {
+    summary
+      .addHeading('🧩 Userscripts Disponíveis para Instalação', 3)
+      .addTable([
+        [
+          { data: 'Userscript', header: true },
+          { data: 'Tamanho', header: true },
+          { data: 'Link Direto', header: true },
+        ],
+        ...userscripts.map((u) => {
+          const itemUrl = `${previewUrl}${u.file.split('/').map(encodeURIComponent).join('/')}`;
+          return [
+            `<code>${escapeHtml(u.file)}</code>`,
+            `<code>${formatBytes(u.size)}</code>`,
+            `<a href="${itemUrl}">Instalar / Abrir</a>`,
+          ];
+        }),
+      ]);
+  }
+
+  if (artifacts.length > 0) {
+    summary.addDetails(
+      `📦 Ver todos os ${artifacts.length} arquivo(s) publicados`,
+      artifacts
+        .map((a) => `- <code>${escapeHtml(a.file)}</code> (${formatBytes(a.size)})`)
+        .join('\n'),
+    );
+  }
 
   await summary.write();
 
   log.summary('success', {
-    Mode: 'summary',
+    Mode: 'publish',
     PR: `#${prNumber}`,
-    'Preview URL': ansi.cyan(previewUrl),
+    Userscripts: ansi.cyan(userscripts.length),
+    'Preview URL': ansi.green(previewUrl),
   });
 }
 
 // ============================================================================
-// Modo 3: Remover preview do Cloudflare quando o PR for fechado
+// Modo 2: Remover preview do Cloudflare quando o PR for fechado
 // ============================================================================
 async function runCleanupPreview({ log, args, context }) {
   const { prNumber, uploadToken } = resolveInputs({
@@ -226,7 +262,9 @@ async function runCleanupPreview({ log, args, context }) {
   const summary = createSummaryWriter();
   summary
     .addHeading('🧹 Cloudflare PR Preview Removido', 2)
-    .addQuote(`Preview do PR <code>#${escapeHtml(prNumber)}</code> removido de <code>${PREVIEW_BASE_URL}/${escapeHtml(prNumber)}/</code>.`);
+    .addQuote(
+      `Preview do PR <code>#${escapeHtml(prNumber)}</code> removido de <code>${PREVIEW_BASE_URL}/${escapeHtml(prNumber)}/</code>.`,
+    );
 
   await summary.write();
 
@@ -242,7 +280,7 @@ async function runCleanupPreview({ log, args, context }) {
 // ============================================================================
 export async function main() {
   const args = parseCliArgs(process.argv.slice(2));
-  const mode = String(args.mode || process.env.PREVIEW_MODE || 'validate').trim().toLowerCase();
+  const mode = String(args.mode || process.env.PREVIEW_MODE || 'publish').trim().toLowerCase();
 
   const log = new AgentReporter('CF PR PREVIEW', `Mode: ${mode}`);
   log.banner();
@@ -254,14 +292,12 @@ export async function main() {
     // Execução local fora do GitHub Actions
   }
 
-  if (mode === 'validate') {
-    await runValidateArtifact({ log, args, context });
-  } else if (mode === 'summary') {
-    await runPublishSummary({ log, args, context });
+  if (mode === 'publish') {
+    await runPublishPreview({ log, args, context });
   } else if (mode === 'cleanup') {
     await runCleanupPreview({ log, args, context });
   } else {
-    throw new Error(`Modo inválido "${mode}". Use --mode=validate, --mode=summary ou --mode=cleanup.`);
+    throw new Error(`Modo inválido "${mode}". Use --mode=publish ou --mode=cleanup.`);
   }
 }
 
