@@ -9,6 +9,7 @@
   let counter;
   let expanded = false;
   let rendering = false;
+  const scriptFailures = new Map();
   const original = {};
   const stringify = (value) => {
     if (value === null || value === undefined) return String(value);
@@ -80,12 +81,12 @@
     style.textContent = `
       :host{color-scheme:dark}button{font:inherit;cursor:pointer;color:#eee;background:#292437;border:1px solid #605371;border-radius:9px;padding:8px 11px}
       .shell{pointer-events:auto;display:grid;justify-items:end;gap:7px}
-      .panel{width:min(390px,calc(100vw - 24px));max-height:min(55dvh,450px);overflow:auto;background:#15131d;color:#f5f3ff;border:1px solid #5b5277;border-radius:14px;box-shadow:0 10px 40px #0009;padding:12px}
+      .panel{width:min(390px,calc(100vw - 24px));max-height:min(48dvh,340px);overflow:auto;overscroll-behavior:contain;background:#15131d;color:#f5f3ff;border:1px solid #5b5277;border-radius:14px;box-shadow:0 10px 40px #0009;padding:12px}
       .toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
       .toolbar strong{font-size:13px}.entry{border-top:1px solid #393344;padding:8px 0}.entry small{color:#aaa1ba}
       .entry.error,.entry.warn{color:#ffb4b4}.entry.log,.entry.info,.entry.debug{color:#d2c6e5}
       pre{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.5 ui-monospace,monospace;margin:5px 0 0}
-      .hidden{display:none}
+      .hidden{display:none} @media(max-width:600px){.panel{max-height:40dvh}.shell{gap:5px}}
     `;
     const shell = document.createElement("div"); shell.className = "shell";
     const toggle = document.createElement("button"); toggle.type = "button"; toggle.setAttribute("aria-expanded", "false");
@@ -109,6 +110,15 @@
       return original[level].apply(this, args);
     };
   }
+  // Resource load errors are captured separately from opaque cross-origin execution errors.
+  // Do not guess a stack trace when Safari intentionally withholds it.
+  document.addEventListener("error", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLScriptElement) || !target.src) return;
+    const url = target.src;
+    scriptFailures.set(url, (scriptFailures.get(url) || 0) + 1);
+    capture("error", ["Script resource failed to load", url, "crossOrigin=" + (target.crossOrigin || "unset")], "script.resource");
+  }, true);
   window.addEventListener("error", (event) => {
     const target = event.target;
     const resource = target && target !== window ? target.src || target.href || target.currentSrc : "";
@@ -119,9 +129,11 @@
       resource && ("Resource: " + resource),
     ].filter(Boolean);
     if (event.message === "Script error." || (!event.error && !event.filename && !resource)) {
-      details.push("Opaque browser error: check cross-origin scripts, CORS and Safari Web Inspector");
+      details.push("Safari concealed the original error. A stack trace is not available from this event.");
+      details.push("Check the Safari Web Inspector and scripts loaded from other origins.");
       details.push("Page: " + location.href);
       details.push("Scripts: " + [...document.scripts].map((script) => script.src || "[inline]").join(", "));
+      if (scriptFailures.size) details.push("Resource failures: " + [...scriptFailures].map(([url, count]) => url + " ×" + count).join(", "));
     }
     capture("error", details.length ? details : ["Resource loading error", target?.tagName], "window.error");
   }, true);
