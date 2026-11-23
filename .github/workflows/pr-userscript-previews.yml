@@ -4,9 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - '**/*.yml'
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yml"
 run-name: "📸 Preview Deploy • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
 
 permissions:

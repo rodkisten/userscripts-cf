@@ -41,9 +41,9 @@ function writeLines(filePath, items) {
   fs.writeFileSync(filePath, items.length ? `${items.join("\n")}\n` : "", "utf8");
 }
 
-function hasSkipCiMarker(ref = 'HEAD') {
-  const res = runCmd('git', ['log', '-1', '--format=%B', ref || 'HEAD'], { silent: true });
-  const message = res.ok ? res.stdout : '';
+function hasSkipCiMarker(ref = "HEAD") {
+  const res = runCmd("git", ["log", "-1", "--format=%B", ref || "HEAD"], { silent: true });
+  const message = res.ok ? res.stdout : "";
   return SKIP_CI_REGEX.test(message);
 }
 

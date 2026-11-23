@@ -131,41 +131,41 @@ function JsonNode({
 
   return (
     <div className="ins-json-node">
-      
-        <button type="button" className="ins-json-trigger" aria-expanded={open} onClick={() => setOpen(!open)}>
-          <span className="ins-json-arrow" aria-hidden="true" />
-          {name !== undefined && (
-            <>
-              <span className="ins-json-key">{JSON.stringify(name)}</span>
-              <span>: </span>
-            </>
-          )}
-          <span>{openBracket}</span>
-          {!open && (
-            <span className="ins-json-preview">
-              {preview}
-              {closeBracket}
-              {comma}
-            </span>
-          )}
-        </button>
-      
+      <button type="button" className="ins-json-trigger" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="ins-json-arrow" aria-hidden="true" />
+        {name !== undefined && (
+          <>
+            <span className="ins-json-key">{JSON.stringify(name)}</span>
+            <span>: </span>
+          </>
+        )}
+        <span>{openBracket}</span>
+        {!open && (
+          <span className="ins-json-preview">
+            {preview}
+            {closeBracket}
+            {comma}
+          </span>
+        )}
+      </button>
 
-      {open && <div className="ins-json-content">
-        <div className="ins-json-children">
-          {isArray
-            ? (value as unknown[]).map((item, idx) => (
-                <JsonNode key={idx} value={item} depth={depth + 1} isLast={idx === count - 1} />
-              ))
-            : (entries as [string, unknown][]).map(([k, v], idx) => (
-                <JsonNode key={k} name={k} value={v} depth={depth + 1} isLast={idx === count - 1} />
-              ))}
+      {open && (
+        <div className="ins-json-content">
+          <div className="ins-json-children">
+            {isArray
+              ? (value as unknown[]).map((item, idx) => (
+                  <JsonNode key={idx} value={item} depth={depth + 1} isLast={idx === count - 1} />
+                ))
+              : (entries as [string, unknown][]).map(([k, v], idx) => (
+                  <JsonNode key={k} name={k} value={v} depth={depth + 1} isLast={idx === count - 1} />
+                ))}
+          </div>
+          <div className="ins-json-line">
+            {closeBracket}
+            {comma}
+          </div>
         </div>
-        <div className="ins-json-line">
-          {closeBracket}
-          {comma}
-        </div>
-      </div>}
+      )}
     </div>
   );
 }
