@@ -49,7 +49,8 @@
 - [x] Remove the remaining quick-list DOM proxy by navigating through `Studio.navigate(studioListIndex(Studio) + '/' + list.id)`.
 - [ ] Replace the inline timeline UI after preserving drag ordering.
 - [x] Add keyboard/click-friendly ↑/↓ reorder actions for pinned timelines, swapping only pinned entries and persisting with rollback.
-- [ ] Preserve RodX pointer/touch drag-and-drop ordering and account-specific state in the shared Dock.
+- [x] Implement first-pass pointer/touch reordering for pinned timeline actions in shared Dock, persisting and rolling back state.
+- [ ] Validate Safari iOS touch reordering and parity before removing the inline DragDock.
 - [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
 - [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
 - [ ] Remove RodX `DragDock` and old inline host only after functional parity is verified.
@@ -83,3 +84,5 @@
 - **Accessible reorder bridge:** shared Dock now publishes `search-up:` and `search-down:` actions for pinned searches, delegating to existing `performAction('up'/'down')`. These are additional controls, not a replacement for touch drag. Account persistence relies on existing search-action logic and needs browser verification.
 
 - **Pinned-only ordering fix:** shared Dock up/down actions now swap neighboring pinned searches directly, not arbitrary neighbors in `state.searches`. Changes are persisted with `saveState()`, rollback on failure, and re-registration of shared Dock actions. Touch/pointer drag remains pending.
+
+- **Pointer reorder (unvalidated):** shared Dock action buttons support pointer capture, drag-target highlighting, and a registered `reorder(targetId)` callback. RodX persists the new pinned search order and restores it on failed save. Browser/CI verification and mouse drag support remain outstanding.
