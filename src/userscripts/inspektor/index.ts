@@ -62,6 +62,7 @@ export default {
     const network: InspectorEvent[] = [];
     let popup: Window | null = null;
     let picking = false;
+    let selection: { selector: string; tag: string; attributes: readonly string[] } | null = null;
     let visible = false;
     let revision = 0;
     const subscribers = new Set<() => void>();
@@ -206,11 +207,21 @@ export default {
       picking = false;
       document.removeEventListener("click", select, true);
       const node = event.target;
+      selection = {
+        selector: selectorFor(node),
+        tag: node.localName,
+        attributes: [...node.attributes]
+          .filter((attribute) => !SECRET.test(attribute.name) && !/^on/i.test(attribute.name))
+          .slice(0, 30)
+          .map((attribute) => attribute.name),
+      };
+      notify();
+      show();
       send({
         kind: "selection",
         session,
         selector: selectorFor(node),
-        outerHTML: redact(node.outerHTML.slice(0, 30000)),
+        outerHTML: "", // Do not export raw selected element HTML.
       });
     };
     const pick = () => {
