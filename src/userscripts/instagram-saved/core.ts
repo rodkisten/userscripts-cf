@@ -228,7 +228,7 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!Array.isArray(response.results) || response.results.length !== job.items.length) {
+            if (!Array.isArray(response.results)) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
@@ -236,12 +236,17 @@ export async function syncSaved({
               if (
                 !Number.isInteger(result?.index) ||
                 result.index < 0 ||
-                result.index >= job.items.length ||
-                byIndex.has(result.index)
+                result.index >= job.items.length
               ) {
+                throw Error("Relay sem confirmação por item");
+              }
+              if (byIndex.has(result.index)) {
                 throw Error("Confirmação Relay ausente ou duplicada");
               }
               byIndex.set(result.index, result);
+            }
+            if (byIndex.size !== job.items.length) {
+              throw Error("Confirmação Relay ausente ou duplicada");
             }
             // Validate the entire response before persisting any item: a malformed
             // later acknowledgement must not partially checkpoint an invalid batch.
