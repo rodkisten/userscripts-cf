@@ -43,8 +43,9 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         if (!open) onClose();
       }}
     >
-      <Dialog.Overlay className={styles.overlay} />
-      <Dialog.Content
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.overlay} />
+        <Dialog.Content
         aria-label={schema.title || "Rod Menu"}
         aria-describedby={undefined}
         className={`${styles.surface} ${surfaceClass} ${className || ""}`}
@@ -161,7 +162,8 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
             })}
           </div>
         )}
-      </Dialog.Content>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   );
 };
