@@ -9,6 +9,7 @@ type InspectorContext = {
   dock?: { register(actions: { id: string; label: string; run: () => void }[]): void };
   listen(target: EventTarget, type: string, callback: EventListener, options?: AddEventListenerOptions): void;
   onDispose(callback: () => void): void;
+  signal: AbortSignal;
   ui: {
     mountReact(component: ReactElement, container?: HTMLElement): () => void;
     registerStyles(...styles: string[]): () => void;
@@ -171,9 +172,11 @@ export default {
     };
     const stopFetch = observePageFetch((event) => recordNetwork("fetch", event), {
       maxBodyCharacters: 0,
+      signal: ctx.signal,
     });
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
       maxBodyCharacters: 0,
+      signal: ctx.signal,
     });
     const stopConsole = observePageConsole((event) => {
       push("console", {
