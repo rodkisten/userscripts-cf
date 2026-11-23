@@ -92,6 +92,7 @@ export default {
           subscribe,
           getSnapshot: () => revision,
           records: (channel) => (channel === "console" ? logs : network),
+          selection: () => selection,
           pick: () => {
             hide();
             pick();
@@ -172,7 +173,7 @@ export default {
       maxBodyCharacters: 0,
     });
     const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
-      maxBodyCharacters: 15000,
+      maxBodyCharacters: 0,
     });
     const stopConsole = observePageConsole((event) => {
       push("console", {
