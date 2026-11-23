@@ -46,11 +46,7 @@ function normalizeFlagsForPm(rawPackages, pm) {
   const tokens = rawPackages.trim().split(/\s+/).filter(Boolean);
   return tokens
     .map((tok) => {
-      if (pm === 'yarn') {
-        if (tok === '--save-dev') return '-D';
-        if (tok === '--save-exact') return '-E';
-      }
-      if (pm === 'pnpm') {
+      if (pm === 'yarn' || pm === 'pnpm') {
         if (tok === '--save-dev') return '-D';
         if (tok === '--save-exact') return '-E';
       }
@@ -88,36 +84,36 @@ function buildPackageCommand(pm, operation, rawPackages) {
 
 /**
  * Resolve o comando final suportando:
- * 1) operation === 'custom' usando customCommand (ou packages como fallback)
+ * 1) operation === 'custom' OU somente customCommandInput preenchido (packages vazio) -> roda apenas o comando custom
  * 2) comando direto digitado no campo packages (ex: "pnpm add zod" ou "npx vitest -u")
- * 3) pacotes + comando bash encadeado (ex: "zod -D && npm run build")
+ * 3) pacotes + comando bash encadeado (ex: "zod -D && npm run build" ou packages + custom-command)
  */
 function resolveExecutionPlan({ pm, operation, packagesInput, customCommandInput }) {
   const rawPkg = packagesInput.trim();
   const rawCustom = customCommandInput.trim();
 
-  if (operation === 'custom') {
+  if (operation === 'custom' || (rawCustom && !rawPkg)) {
     const cmd = rawCustom || rawPkg;
     if (!cmd) {
-      throw new Error('Para operation="custom", informe o comando em "custom-command" (ou em "packages").');
+      throw new Error('Informe o comando em "custom-command" (ou em "packages").');
     }
     return {
       command: cmd,
       modeLabel: 'Custom Shell Command',
+      isCustomOnly: true,
     };
   }
 
-  // Detecta se o usuário digitou um comando shell completo dentro de `packages`
   const looksLikeFullCommand = /^(npm|pnpm|yarn|bun|npx|pnpx|bunx|node|git|sh|bash|\.\/)\b/.test(rawPkg);
   if (looksLikeFullCommand) {
     const combined = rawCustom ? `${rawPkg} && ${rawCustom}` : rawPkg;
     return {
       command: combined,
       modeLabel: 'Inline Command',
+      isCustomOnly: false,
     };
   }
 
-  // Suporta "zod axios -D && npm run typecheck" dentro de `packages`
   const chainMatch = rawPkg.match(/^([^&;|]+?)\s*(&&|\|\||;)\s*(.+)$/);
   if (chainMatch) {
     const [, pkgPart, operator, trailingShell] = chainMatch;
@@ -129,6 +125,7 @@ function resolveExecutionPlan({ pm, operation, packagesInput, customCommandInput
     return {
       command: fullCmd,
       modeLabel: `${pm.toUpperCase()} ${operation} + Shell`,
+      isCustomOnly: false,
     };
   }
 
@@ -137,7 +134,8 @@ function resolveExecutionPlan({ pm, operation, packagesInput, customCommandInput
 
   return {
     command: fullCmd,
-    modeLabel: `${pm.toUpperCase()} ${operation}`,
+    modeLabel: rawCustom ? `${pm.toUpperCase()} ${operation} + Shell` : `${pm.toUpperCase()} ${operation}`,
+    isCustomOnly: false,
   };
 }
 
@@ -242,7 +240,10 @@ export async function runOperation() {
   const execResult = await log.step(`Executar ${plan.modeLabel}`, async (step) => {
     step.info('Branch alvo', branch);
     step.info('Package Manager', pm);
-    step.info('Operação', `${operation}${packages ? ` (${packages})` : ''}`);
+    step.info(
+      'Operação',
+      plan.isCustomOnly ? 'Custom Command' : `${operation}${packages ? ` (${packages})` : ''}`,
+    );
     log.cmdBlock('bash', ['-c', plan.command]);
 
     const res = runShellCommand(plan.command, rootDir);
@@ -292,10 +293,9 @@ export async function runOperation() {
         return { added: added || '0', removed: removed || '0', file };
       });
 
-    const summarySubject =
-      operation === 'custom'
-        ? `chore(ops): run custom command [skip-ci]`
-        : `chore(deps): ${operation}${packages ? ` ${packages}` : ''} [skip-ci]`;
+    const summarySubject = plan.isCustomOnly
+      ? `chore(ops): ${plan.command.slice(0, 60)} [skip-ci]`
+      : `chore(deps): ${operation}${packages ? ` ${packages}` : ''} [skip-ci]`;
 
     step.status(`Criando commit como ${identity.name}...`);
     const commitRes = runCmd('git', ['commit', '-m', summarySubject], { logger: log });
