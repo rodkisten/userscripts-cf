@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { RodMenuProps } from "./types";
 import { createInitialValues, loadPersistence, savePersistence } from "./core";
-import styles from "./Menu.module.css";
-import menuCss from "./Menu.module.css?inline";
+import styles, { css as menuCss } from "./Menu.module.css";
 
 // Vite library/IIFE builds may not emit a standalone CSS asset. Install the
 // same scoped CSS once in the document so Radix portals stay styled on Safari.
