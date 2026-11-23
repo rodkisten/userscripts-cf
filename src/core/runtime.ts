@@ -681,9 +681,10 @@ export function createCoreRuntime(
       const local = createEventBus({
         namespace: definition.id,
         signal: abort.signal,
-        onDiagnostic: (entry: unknown) => captureDiagnostic(entry, LOG_TAG_EVENTS, definition.id, host),
+        onDiagnostic: () =>
+          captureDiagnostic(new Error("Duplicate runtime event listener"), LOG_TAG_EVENTS, definition.id, host),
       });
-      const shared = createSharedEvents({ host, signal: abort.signal });
+      const shared = createSharedEvents({ host });
       const dom = createDomEventsEngine(definition.id, host);
 
       events = Object.freeze(
