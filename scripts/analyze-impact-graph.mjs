@@ -1,8 +1,13 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, extname, join, relative } from 'node:path';
 import { runAction } from './utils/action.mjs';
-import { cmd, setOutputs } from './utils/inputs.mjs';
-import { logger, style, summary } from './utils/summary.mjs';
+import { runCmd, setActionOutput, appendStepSummary } from './utils/ci-utils.mjs';
+import { ansi as style } from './utils/ci-logger.mjs';
+import { writeFileSync } from 'node:fs';
+const cmd = (name, args) => {
+  const execute = (allowFailure) => { const result = runCmd(name, args); if (!result.ok && !allowFailure) throw new Error(result.stderr); return { ...result, exitCode: result.status }; };
+  return { then: (resolve, reject) => Promise.resolve().then(() => execute(false)).then(resolve, reject), nothrow: () => execute(true) };
+};
 
 const toPosix = (p) => p.split('\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
@@ -20,7 +25,7 @@ function walkTests(dir, acc = []) {
   return acc;
 }
 
-runAction('Impact & Test Map', async () => {
+runAction('Impact & Test Map', async ({ log: logger }) => {
   const baseRef = (process.env.BASE_REF || 'main').trim();
   logger.banner('Impact & Test Map', `Base: ${baseRef}`);
 
@@ -47,8 +52,8 @@ runAction('Impact & Test Map', async () => {
       .map(toPosix)
       .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
 
-    logger.item('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
-    logger.item('Changed files in src/', changed.length, true);
+    logger.info('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
+    logger.info('Changed files in src/', changed.length, true);
 
     return { diffTarget: target, rawChanged: changed };
   });
@@ -95,8 +100,8 @@ runAction('Impact & Test Map', async () => {
       }
     }
 
-    logger.item('Affected scopes', grouped.size);
-    logger.item('Related test files', tests.size, true);
+    logger.info('Affected scopes', grouped.size);
+    logger.info('Related test files', tests.size, true);
 
     return { folders: grouped, matchedNodeTests: tests };
   });
@@ -142,24 +147,21 @@ runAction('Impact & Test Map', async () => {
     }
   }
 
-  logger.divider('Outputs & Job Summary');
+  logger.info('Outputs & Job Summary');
 
-  setOutputs({
+  const outputs = {
     has_files: rawChanged.length > 0,
     changed_files: rawChanged.join(' '),
     node_tests: [...matchedNodeTests].join(' '),
-  });
+  };
+  for (const [key, value] of Object.entries(outputs)) setActionOutput(key, value);
+  const out = process.argv.find(arg => arg.startsWith('--out='))?.slice(6);
+  if (out) writeFileSync(out, JSON.stringify({ ...outputs, changedFiles: rawChanged, relatedTests: [...matchedNodeTests] }, null, 2));
 
-  await summary
-    .heading('📊 Mapa de Impacto & Testes Relacionados', 2)
-    .text(
-      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``
-    )
-    .code(mermaid.join('\n'), 'mermaid')
-    .write();
+  appendStepSummary('## Impact & Test Map\n\n```mermaid\n' + mermaid.join('\n') + '\n```');
 
-  logger.success(
+  logger.pass(
     `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
   );
-  logger.divider('', '═');
+  logger.info('', '═');
 });

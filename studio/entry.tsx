@@ -267,7 +267,7 @@ function Studio() {
           dialogs: dialogs.map((element) => {
             const rect = element.getBoundingClientRect();
             const css = getComputedStyle(element);
-            return { width: rect.width, height: rect.height, display: css.display, visibility: css.visibility, opacity: css.opacity, zIndex: css.zIndex };
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, position: css.position, display: css.display, visibility: css.visibility, opacity: css.opacity, zIndex: css.zIndex, className: element.className, scopedStyles: Boolean(document.getElementById('rod-react-menu-styles')) };
           }),
         });
       });

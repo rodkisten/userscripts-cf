@@ -58,3 +58,7 @@ Before merge, smoke-test on iPhone Safari: menu focus, Escape with hardware keyb
 `playground/capture.js` is injected inline by `build/hosting.mjs` into every emitted HTML page, before application scripts. It installs exactly one page-wide capture registry (`window.__rodPlaygroundCaptureV1`) and one Shadow DOM panel per document. The collapsible 🩺 Logs control collects `console.log/info/warn/error/debug`, `window.error`, resource errors, and unhandled promise rejections; repeated identical messages are counted, the log is capped, and messages are redacted for common credentials. The collector forwards console calls to their original implementations and never mounts a second React root. The dedicated Diagnostics Playground remains independent and is not replaced by this panel.
 
 The capture panel is local to the page and does not transmit logs to a server. It intentionally does not capture network bodies or intercept fetch/XHR. Use the panel to inspect failures on iOS Safari when the Studio menu does not appear.
+
+## Portal styling diagnostics
+
+The menu injects the compiled CSS exported by the custom CSS Modules plugin, matching the generated class names. Portal inspection records viewport coordinates, computed positioning, stacking order, class names and the presence of the injected stylesheet. A bottom sheet should have fixed positioning and a non-auto stacking order.
