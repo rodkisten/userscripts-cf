@@ -58,6 +58,21 @@ jobs:
           fi
           node build/build.mjs "--targets=$TARGETS"
           node build/pr-preview.mjs
+          # Build the playground from the same PR checkout, not main.
+          node build/design-system.mjs
+          cp dist/design-system.js "dist/pr-preview/$PR_NUMBER/design-system.js"
+          if [[ -f dist/design-system.css ]]; then
+            cp dist/design-system.css "dist/pr-preview/$PR_NUMBER/design-system.css"
+          fi
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const pr = process.env.PR_NUMBER;
+          const dir = `dist/pr-preview/${pr}`;
+          let html = fs.readFileSync("hosting/design-system.html", "utf8");
+          html = html.replace('src="/design-system.js"', 'src="./design-system.js"');
+          html = html.replace("</head>", `<meta name="preview-pr" content="${pr}"><meta name="preview-sha" content="${process.env.PR_HEAD_SHA}"></head>`);
+          fs.writeFileSync(`${dir}/design-system.html`, html);
+          NODE
           echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"
