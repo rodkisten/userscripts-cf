@@ -1,0 +1,111 @@
+import type { ReactElement } from "react";
+
+// Inspektor uses the shared runtime Dock instead of mounting a second floating UI.
+type InspectorEvent = { kind: string; [key: string]: unknown };
+type InspectorContext = {
+  dock?: { register(actions: { id: string; label: string; run: () => void }[]): void };
+  listen(target: EventTarget, type: string, callback: EventListener, options?: AddEventListenerOptions): void;
+  onDispose(callback: () => void): void;
+  ui: { mountReact(component: ReactElement, container?: HTMLElement): () => void };
+};
+
+const ORIGIN = "https://rod.migos.club";
+const TARGET = `${ORIGIN}/userscripts/inspector.html`;
+const LIMIT = 400;
+const SECRET = /authorization|cookie|token|secret|password|session|api.?key|csrf/i;
+
+function redact(value: unknown, key = "", seen = new WeakSet<object>()): unknown {
+  if (SECRET.test(key)) return "[REDACTED]";
+  if (typeof value === "string") return value.slice(0, 15000).replace(/Bearer\s+[^\s"']+/gi, "Bearer [REDACTED]");
+  if (!value || typeof value !== "object") return value;
+  if (seen.has(value)) return "[Circular]";
+  seen.add(value);
+  if (Array.isArray(value)) return value.slice(0, 100).map((item) => redact(item, "", seen));
+  return Object.fromEntries(Object.entries(value).slice(0, 100).map(([k, v]) => [k, redact(v, k, seen)]));
+}
+
+function selectorFor(node: Element): string {
+  if (node.id) return `#${CSS.escape(node.id)}`;
+  const parts: string[] = [];
+  for (let current: Element | null = node; current && parts.length < 20; current = current.parentElement) {
+    let part = current.localName;
+    if (current.id) { parts.unshift(`${part}#${CSS.escape(current.id)}`); break; }
+    const siblings = current.parentElement?.children;
+    if (siblings) {
+      const matching = Array.from(siblings).filter((item) => item.localName === current!.localName);
+      if (matching.length > 1) part += `:nth-of-type(${matching.indexOf(current) + 1})`;
+    }
+    parts.unshift(part);
+  }
+  return parts.join(" > ");
+}
+
+export default {
+  init(ctx: InspectorContext) {
+    if (location.origin === ORIGIN && location.pathname.startsWith("/userscripts/inspector")) return;
+    const session = crypto.randomUUID();
+    const logs: InspectorEvent[] = [];
+    const network: InspectorEvent[] = [];
+    let popup: Window | null = null;
+    let picking = false;
+    const send = (payload: InspectorEvent) => {
+      if (popup && !popup.closed) popup.postMessage({ rodInspector: 1, payload }, ORIGIN);
+    };
+    const push = (channel: "console" | "network", entry: InspectorEvent) => {
+      const records = channel === "console" ? logs : network;
+      records.push(entry);
+      if (records.length > LIMIT) records.shift();
+      send({ kind: "event", session, channel, data: entry });
+    };
+    const snapshot = () => send({
+      kind: "snapshot", session, url: location.href, title: document.title,
+      time: new Date().toISOString(), userAgent: navigator.userAgent,
+      html: document.documentElement?.outerHTML.slice(0, 500000) ?? "",
+      network: [...network], console: [...logs],
+    });
+    const open = () => {
+      popup = window.open(TARGET, "_blank");
+      if (popup) window.setTimeout(snapshot, 750);
+    };
+
+    // Console and global errors are captured without replacing native console methods.
+    for (const level of ["log", "info", "warn", "error", "debug"] as const) {
+      // Console interception is intentionally deferred to the shared diagnostics service.
+      void level;
+    }
+    ctx.listen(window, "error", ((event: ErrorEvent) => {
+      push("console", { level: "error", time: new Date().toISOString(), args: [redact(event.message)] });
+    }) as EventListener);
+    ctx.listen(window, "unhandledrejection", ((event: PromiseRejectionEvent) => {
+      push("console", { level: "error", time: new Date().toISOString(), args: [redact(String(event.reason))] });
+    }) as EventListener);
+
+    const select = (event: Event) => {
+      if (!picking || !(event.target instanceof Element)) return;
+      if (event.target.closest("[data-userscripts-cf-ui], [data-userscripts-cf-shadow]")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      picking = false;
+      document.removeEventListener("click", select, true);
+      const node = event.target;
+      send({ kind: "selection", session, selector: selectorFor(node), outerHTML: redact(node.outerHTML.slice(0, 30000)) });
+    };
+    const pick = () => {
+      picking = true;
+      document.addEventListener("click", select, true);
+    };
+    ctx.listen(window, "message", ((event: MessageEvent) => {
+      if (event.origin !== ORIGIN || event.source !== popup || event.data?.rodInspector !== 1) return;
+      if (event.data.kind === "ready") snapshot();
+      if (event.data.kind === "pick") pick();
+      if (event.data.kind === "highlight" && typeof event.data.selector === "string") {
+        try { document.querySelector(event.data.selector)?.scrollIntoView({ block: "center" }); } catch { /* Invalid selector */ }
+      }
+    }) as EventListener);
+    ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: open }]);
+    ctx.onDispose(() => {
+      document.removeEventListener("click", select, true);
+      picking = false;
+    });
+  },
+};
