@@ -1,3 +1,4 @@
+import { renderInspektor, inspektorStyles } from "./InspektorPanel.js";
 import { observePageConsole } from "../../runtime/console-observer.js";
 import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
 import type { ReactElement } from "react";
@@ -8,7 +9,7 @@ type InspectorContext = {
   dock?: { register(actions: { id: string; label: string; run: () => void }[]): void };
   listen(target: EventTarget, type: string, callback: EventListener, options?: AddEventListenerOptions): void;
   onDispose(callback: () => void): void;
-  ui: { mountReact(component: ReactElement, container?: HTMLElement): () => void };
+  ui: { mountReact(component: ReactElement, container?: HTMLElement): () => void; registerStyles(...styles: string[]): () => void };
 };
 
 const ORIGIN = "https://rod.migos.club";
@@ -58,6 +59,34 @@ export default {
     const network: InspectorEvent[] = [];
     let popup: Window | null = null;
     let picking = false;
+    let visible = false;
+    let revision = 0;
+    const subscribers = new Set<() => void>();
+    const subscribe = (listener: () => void) => {
+      subscribers.add(listener);
+      return () => { subscribers.delete(listener); };
+    };
+    const notify = () => { revision++; subscribers.forEach((listener) => listener()); };
+    const stylesOff = ctx.ui.registerStyles(inspektorStyles);
+    let unmount: (() => void) | undefined;
+    const hide = () => {
+      if (!visible) return;
+      visible = false;
+      unmount?.();
+      unmount = undefined;
+    };
+    const show = () => {
+      if (visible) return;
+      visible = true;
+      unmount = ctx.ui.mountReact(renderInspektor({
+        subscribe,
+        getSnapshot: () => revision,
+        records: (channel) => channel === "console" ? logs : network,
+        pick: () => { hide(); pick(); },
+        close: hide,
+        openExternal: () => open(),
+      }));
+    };
     const send = (payload: InspectorEvent) => {
       if (popup && !popup.closed) popup.postMessage({ rodInspector: 1, payload }, ORIGIN);
     };
@@ -65,6 +94,7 @@ export default {
       const records = channel === "console" ? logs : network;
       records.push(entry);
       if (records.length > LIMIT) records.shift();
+      notify();
       send({ kind: "event", session, channel, data: entry });
     };
     const snapshot = () =>
@@ -184,13 +214,16 @@ export default {
         }
       }
     }) as EventListener);
-    ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: open }]);
+    ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: show }]);
     ctx.onDispose(() => {
       document.removeEventListener("click", select, true);
       picking = false;
       stopFetch();
       stopXHR();
       stopConsole();
+      hide();
+      stylesOff();
+      subscribers.clear();
     });
   },
 };
