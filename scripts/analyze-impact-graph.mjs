@@ -1,69 +1,49 @@
-import { existsSync, readdirSync, statSync, appendFileSync } from 'node:fs';
-import { basename, dirname, extname, relative } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, extname, join, relative } from 'node:path';
+import { runAction } from './utils/actions.mjs';
+import { AgentReporter, ansi } from './utils/ci-logger.mjs';
+import { appendStepSummary, runCmd, setActionOutput } from './utils/ci-utils.mjs';
+
 const toPosix = (p) => p.split('\\').join('/');
 const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
 
-const style = { bold: ansi.bold };
-
-function setOutputs(outputs) {
-  for (const [name, value] of Object.entries(outputs)) {
-    setActionOutput(name, value);
-  }
-}
-
-const summary = {
-  chunks: [],
-  heading(text, level = 1) {
-    this.chunks.push(`${'#'.repeat(level)} ${text}`);
-    return this;
-  },
-  text(text) {
-    this.chunks.push(String(text));
-    return this;
-  },
-  code(code, language = '') {
-    this.chunks.push('```' + language + '\n' + code + '\n```');
-    return this;
-  },
-  async write() {
-    appendStepSummary(this.chunks.join('\n\n'));
-    this.chunks.length = 0;
-  },
-};
-const logger = {
- banner: (...args) => console.log(...args),
- step: async (label, callback) => { console.log(label); return callback(); },
- item: (...args) => console.log(...args),
- divider: () => {},
- success: (...args) => console.log(...args),
-};
-const style = { bold: (value) => value };
-const cmd = async (command, args) => {
- try { return { exitCode: 0, stdout: execFileSync(command, args, { encoding: 'utf8' }) }; }
- catch (error) { return { exitCode: error.status || 1, stdout: error.stdout?.toString() || '' }; }
-};
-const setOutputs = (values) => {
- if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key,value]) => key + '=' + String(value) + '\n').join(''));
-};
-const summary = {
- heading(text) { this.lines = [text]; return this; },
- text(text) { this.lines.push(text); return this; },
- code(text, lang) { this.lines.push('\\`\\`\\`' + lang + '\n' + text + '\n\\`\\`\\`'); return this; },
- write() { if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, this.lines.join('\n') + '\n'); },
-};
 function walkTests(dir, acc = []) {
- if (!existsSync(dir)) return acc;
- for (const entry of readdirSync(dir)) {
-  const full = dir + '/' + entry;
-  if (statSync(full).isDirectory()) walkTests(full, acc);
-  else if (/\.(test|spec)\\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) acc.push(toPosix(full));
- }
- return acc;
+  if (!existsSync(dir)) return acc;
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walkTests(full, acc);
+    } else if (/\.(test|spec)\.(js|ts|mjs|mts|jsx|tsx)$/.test(entry)) {
+      acc.push(toPosix(full));
+    }
+  }
+  return acc;
 }
-(async () => {
+
+function outputPathFromArgs(argv) {
+  const inline = argv.find((arg) => arg.startsWith('--out='));
+  if (inline) return inline.slice('--out='.length).trim();
+
+  const index = argv.indexOf('--out');
+  return index >= 0 ? String(argv[index + 1] || '').trim() : '';
+}
+
+function requireCommand(command, args, log) {
+  const result = runCmd(command, args, { logger: log, silent: true });
+  if (!result.ok) {
+    const detail = result.stderr || result.stdout || `exit ${result.status}`;
+    throw new Error(`${command} ${args.join(' ')} failed: ${detail}`);
+  }
+  return result;
+}
+
+await runAction('Impact & Test Map', async ({ log }) => {
+  const logger = log instanceof AgentReporter ? log : new AgentReporter('Impact & Test Map');
   const baseRef = (process.env.BASE_REF || 'main').trim();
-  logger.banner('Impact & Test Map', `Base: ${baseRef}`);
+  const outFile = outputPathFromArgs(process.argv.slice(2));
+
+  logger.subtitle = `Base: ${baseRef}`;
+  logger.banner();
 
   const { diffTarget, rawChanged } = await logger.step('Resolve Git diff in src/', async () => {
     runCmd('git', ['fetch', 'origin', baseRef, '--depth=1'], { logger, silent: true });
@@ -83,22 +63,21 @@ function walkTests(dir, acc = []) {
     }
 
     const target = localVerify.stdout.trim();
-    const diffRes = runCmd(
+    const diffRes = requireCommand(
       'git',
       ['diff', '--name-only', '--diff-filter=ACMR', `${target}...HEAD`, '--', 'src'],
-      { logger, silent: true },
+      logger,
     );
 
-    if (!diffRes.ok) {
-      throw new Error(`git diff failed: ${diffRes.stderr || diffRes.stdout || `exit ${diffRes.status}`}`);
-    }
     const changed = diffRes.stdout
       .split(/\r?\n/)
       .map(toPosix)
-      .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
+      .filter((file) => file && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(file));
 
-    logger.info('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
-    logger.info('Changed files in src/', String(changed.length));
+    logger.kvTable({
+      'Base SHA': `${target.slice(0, 7)} (${baseRef})`,
+      'Changed files in src/': changed.length,
+    });
 
     return { diffTarget: target, rawChanged: changed };
   });
@@ -129,10 +108,10 @@ function walkTests(dir, acc = []) {
         const fileDir = toPosix(dirname(file));
         const mirroredDir = fileDir.replace(/^src(?=\/|$)/, 'tests');
 
-        const related = allTestFiles.filter((t) => {
-          const testDir = toPosix(dirname(t));
+        const related = allTestFiles.filter((testFile) => {
+          const testDir = toPosix(dirname(testFile));
           return (
-            basename(t).startsWith(`${stem}.`) ||
+            basename(testFile).startsWith(`${stem}.`) ||
             testDir === fileDir ||
             testDir === mirroredDir
           );
@@ -145,8 +124,10 @@ function walkTests(dir, acc = []) {
       }
     }
 
-    logger.info('Affected scopes', String(grouped.size));
-    logger.info('Related test files', String(tests.size));
+    logger.kvTable({
+      'Affected scopes': grouped.size,
+      'Related test files': tests.size,
+    });
 
     return { folders: grouped, matchedNodeTests: tests };
   });
@@ -163,53 +144,83 @@ function walkTests(dir, acc = []) {
     mermaid.push('  empty["✅ Nenhuma modificação encontrada em src/"]');
   } else {
     for (const [folder, { sourceFiles, testFiles }] of folders.entries()) {
-      const fId = `folder_${nodeIdx++}`;
-      mermaid.push(`  subgraph ${fId}["📁 ${escapeMermaidLabel(folder)}"]`);
+      const folderId = `folder_${nodeIdx++}`;
+      mermaid.push(`  subgraph ${folderId}["📁 ${escapeMermaidLabel(folder)}"]`);
       mermaid.push('    direction TB');
 
-      const srcIds = [...new Set(sourceFiles)].map((s) => {
+      const sourceIds = [...new Set(sourceFiles)].map((sourceFile) => {
         const id = `src_${nodeIdx++}`;
-        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(s))}"]:::src`);
+        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(sourceFile))}"]:::src`);
         return id;
       });
 
-      const testIds = [...new Set(testFiles)].map((t) => {
+      const testIds = [...new Set(testFiles)].map((testFile) => {
         const id = `tst_${nodeIdx++}`;
-        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(t))}"]):::test`);
+        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(testFile))}"]):::test`);
         return id;
       });
 
       mermaid.push('  end');
-      mermaid.push(`  class ${fId} folder`);
+      mermaid.push(`  class ${folderId} folder`);
 
-      if (srcIds.length > 0 && testIds.length > 0) {
-        for (const sId of srcIds) {
-          for (const tId of testIds) {
-            mermaid.push(`  ${sId} -.-> ${tId}`);
+      if (sourceIds.length > 0 && testIds.length > 0) {
+        for (const sourceId of sourceIds) {
+          for (const testId of testIds) {
+            mermaid.push(`  ${sourceId} -.-> ${testId}`);
           }
         }
       }
     }
   }
 
-  logger.info('Outputs & Job Summary');
+  setActionOutput('has_files', rawChanged.length > 0);
+  setActionOutput('changed_files', rawChanged.join(' '));
+  setActionOutput('node_tests', [...matchedNodeTests].join(' '));
 
-  setOutputs({
-    has_files: rawChanged.length > 0,
-    changed_files: rawChanged.join(' '),
-    node_tests: [...matchedNodeTests].join(' '),
-  });
+  const scopeData = [...folders.entries()].map(([folder, value]) => ({
+    folder,
+    sourceFiles: [...new Set(value.sourceFiles)],
+    testFiles: [...new Set(value.testFiles)],
+  }));
 
-  await summary
-    .heading('📊 Mapa de Impacto & Testes Relacionados', 2)
-    .text(
-      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``
-    )
-    .code(mermaid.join('\n'), 'mermaid')
-    .write();
+  if (outFile) {
+    writeFileSync(
+      outFile,
+      `${JSON.stringify(
+        {
+          baseRef,
+          baseSha: diffTarget,
+          changedFiles: rawChanged,
+          relatedTests: [...matchedNodeTests],
+          scopes: scopeData,
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+    logger.info('Impact graph JSON', outFile);
+  }
+
+  appendStepSummary(
+    [
+      '## 📊 Mapa de Impacto & Testes Relacionados',
+      '',
+      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``,
+      '',
+      '```mermaid',
+      ...mermaid,
+      '```',
+    ].join('\n'),
+  );
 
   logger.pass(
-    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
+    'Impact map generated',
+    `${ansi.bold(`${rawChanged.length} file(s)`)} across ${ansi.bold(`${folders.size} scope(s)`)}`,
   );
-  logger.summary('success', { Files: rawChanged.length, Scopes: folders.size, Tests: matchedNodeTests.size });
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+  logger.summary('success', {
+    Files: rawChanged.length,
+    Scopes: folders.size,
+    'Related tests': matchedNodeTests.size,
+  });
+});
