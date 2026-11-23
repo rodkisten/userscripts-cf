@@ -1,3 +1,4 @@
+import { observePageFetch, observePageXHR } from "../../runtime/network-interceptors.js";
 import type { ReactElement } from "react";
 
 // Inspektor uses the shared runtime Dock instead of mounting a second floating UI.
@@ -68,11 +69,35 @@ export default {
       if (popup) window.setTimeout(snapshot, 750);
     };
 
-    // Console and global errors are captured without replacing native console methods.
-    for (const level of ["log", "info", "warn", "error", "debug"] as const) {
-      // Console interception is intentionally deferred to the shared diagnostics service.
-      void level;
-    }
+    // Subscribe to the shared, reference-counted passive observers.
+    // Keep network collection independent of the external popup lifecycle.
+    const recordNetwork = (type: "fetch" | "xhr", event: {
+      url: string; method: string; status?: number; durationMs: number;
+      body?: string | null; error?: string; responseUrl?: string; truncated?: boolean;
+    }) => {
+      let safeUrl = "[unavailable]";
+      try {
+        const url = new URL(event.url, location.href);
+        for (const key of [...url.searchParams.keys()]) {
+          if (SECRET.test(key)) url.searchParams.set(key, "[REDACTED]");
+        }
+        url.username = "";
+        url.password = "";
+        safeUrl = url.toString();
+      } catch { /* Invalid URL */ }
+      push("network", {
+        type, method: event.method, url: safeUrl, status: event.status ?? 0,
+        ms: event.durationMs, time: new Date().toISOString(),
+        responseBody: redact(event.body), error: event.error ? String(redact(event.error)) : undefined,
+        truncated: event.truncated ?? false,
+      });
+    };
+    const stopFetch = observePageFetch((event) => recordNetwork("fetch", event), {
+      maxBodyCharacters: 15000,
+    });
+    const stopXHR = observePageXHR((event) => recordNetwork("xhr", event), {
+      maxBodyCharacters: 15000,
+    });
     ctx.listen(window, "error", ((event: ErrorEvent) => {
       push("console", { level: "error", time: new Date().toISOString(), args: [redact(event.message)] });
     }) as EventListener);
@@ -106,6 +131,8 @@ export default {
     ctx.onDispose(() => {
       document.removeEventListener("click", select, true);
       picking = false;
+      stopFetch();
+      stopXHR();
     });
   },
 };
