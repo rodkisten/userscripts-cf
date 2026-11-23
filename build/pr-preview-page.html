@@ -492,7 +492,7 @@
               add(pills, "span", "pill", installedVersion.version === script.version ? "✓ Instalado" : "↻ Atualização disponível");
               link.textContent = "Reinstalar ↗";
             }
-            link.href = catalog.baseURL.replace(/\\/$/, "") + "/" + encodeURIComponent(script.file);
+            link.href = new URL(encodeURIComponent(script.file), catalog.baseURL + "/").href;
             link.setAttribute("aria-label", "Instalar " + script.id);
           }
         }
