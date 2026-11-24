@@ -169,22 +169,7 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
     node_tests: [...matchedNodeTests].join(" "),
   };
   for (const [key, value] of Object.entries(outputs)) setActionOutput(key, value);
-  const out = process.argv.find((arg) => arg.startsWith("--out="))?.slice(6);
-  if (out)
-    writeFileSync(
-      out,
-      JSON.stringify({ ...outputs, changedFiles: rawChanged, relatedTests: [...matchedNodeTests] }, null, 2),
-    );
-
-  appendStepSummary("## Impact & Test Map\n\n```mermaid\n" + mermaid.join("\n") + "\n```");
-
-  logger.pass(
-    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`,
-  );
-  logger.info("", "═");
-  setActionOutput("has_files", rawChanged.length > 0);
-  setActionOutput("changed_files", rawChanged.join(" "));
-  setActionOutput("node_tests", [...matchedNodeTests].join(" "));
+  const outFile = process.argv.find((arg) => arg.startsWith("--out="))?.slice(6);
 
   const scopeData = [...folders.entries()].map(([folder, value]) => ({
     folder,
@@ -197,6 +182,7 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
       outFile,
       `${JSON.stringify(
         {
+          ...outputs,
           baseRef,
           baseSha: diffTarget,
           changedFiles: rawChanged,
@@ -225,7 +211,7 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
 
   logger.pass(
     "Impact map generated",
-    `${ansi.bold(`${rawChanged.length} file(s)`)} across ${ansi.bold(`${folders.size} scope(s)`)}`,
+    `${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`,
   );
   logger.summary("success", {
     Files: rawChanged.length,
