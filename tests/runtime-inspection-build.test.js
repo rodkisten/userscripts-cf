@@ -105,6 +105,21 @@ describe("inspectable build artifacts", () => {
       }
 
       for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_STORAGE__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedStorage = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.endsWith("src/runtime/modular/features/storage.ts") ||
+              item.id.endsWith("src/runtime/vendor/storage.ts")),
+        );
+        expect(
+          retainedStorage,
+          `Disabled __ROD_FEATURE_STORAGE__ retained RodStorage in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
         const report = audit.bundles[script.id + ":" + runtime.world];
         const expectsReact = runtime.featureDefines.__ROD_FEATURE_REACT__ !== false;
         expect(runtime.reactRootAudit?.roots).toBe(expectsReact ? 1 : 0);
