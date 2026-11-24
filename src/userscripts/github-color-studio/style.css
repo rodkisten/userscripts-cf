@@ -140,18 +140,3 @@
   }
 }
 
-/* CodeMirror inline color controls are installed through a view plugin. */
-.cm-editor .rcs-cm-swatch {
-  display: inline-block;
-  vertical-align: middle;
-  inline-size: 14px;
-  block-size: 14px;
-  margin-inline: 3px;
-  padding: 0;
-  border: 1px solid var(--fgColor-muted, #8b949e);
-  border-radius: 4px;
-  cursor: pointer;
-}
-@media (pointer: coarse) {
-  .cm-editor .rcs-cm-swatch { inline-size: 22px; block-size: 22px; }
-}
