@@ -58,29 +58,29 @@ export function parseCSV(text) {
         field += '"';
         i++;
       } else {
-quote = !quote;
-}
+        quote = !quote;
+      }
     } else if (ch === "," && !quote) {
       row.push(field);
       field = "";
     } else if ((ch === "\n" || ch === "\r") && !quote) {
       if (ch === "\r" && text[i + 1] === "\n") {
-i++;
-}
+        i++;
+      }
       row.push(field);
       if (row.some(Boolean)) {
-rows.push(row);
-}
+        rows.push(row);
+      }
       row = [];
       field = "";
     } else {
-field += ch;
-}
+      field += ch;
+    }
   }
   row.push(field);
   if (row.some(Boolean)) {
-rows.push(row);
-}
+    rows.push(row);
+  }
   return rows;
 }
 
@@ -95,8 +95,8 @@ export async function exportCSV() {
 
 export async function importFile(file) {
   if (!file || file.size > 20 * 1024 * 1024) {
-throw new Error("Selecione JSON/CSV de até 20 MB.");
-}
+    throw new Error("Selecione JSON/CSV de até 20 MB.");
+  }
   const text = await file.text();
   let lists = [],
     members = [],
@@ -110,8 +110,8 @@ throw new Error("Selecione JSON/CSV de até 20 MB.");
       handleCol = headings.indexOf("username"),
       nameCol = headings.indexOf("name");
     if (idCol < 0 || handleCol < 0) {
-throw new Error("CSV requer as colunas list_id e username.");
-}
+      throw new Error("CSV requer as colunas list_id e username.");
+    }
     members = rows.map((r) => ({
       listId: String(r[idCol] || ""),
       username: r[handleCol],
@@ -120,8 +120,8 @@ throw new Error("CSV requer as colunas list_id e username.");
   } else {
     const json = JSON.parse(text.replace(/^\uFEFF/, ""));
     if (!json || !Array.isArray(json.lists)) {
-throw new Error("JSON precisa conter lists: [].");
-}
+      throw new Error("JSON precisa conter lists: [].");
+    }
     lists = json.lists;
     importedSettings =
       json.settings && typeof json.settings === "object" && !Array.isArray(json.settings)
@@ -150,8 +150,8 @@ throw new Error("JSON precisa conter lists: [].");
   for (const l of lists) {
     const id = String(l.id || l.listId || "");
     if (!validListId(id)) {
-continue;
-}
+      continue;
+    }
     cleanLists.push({
       id,
       name: cleanListName(l.name) || "",
@@ -171,8 +171,8 @@ continue;
     const id = String(m.listId || m.list_id || "");
     const username = cleanHandle(m.username || m.handle || "");
     if (!validListId(id) || !validHandle(username)) {
-continue;
-}
+      continue;
+    }
     cleanMembers.push({
       key: `${id}:${username.toLowerCase()}`,
       listId: id,
@@ -218,13 +218,12 @@ continue;
   await putMany("lists", [...byId.values()]);
   const previousMembers = await getAll("members");
   const byKey = new Map(previousMembers.map((m) => [m.key, m]));
-  for (const m of cleanMembers)
-    {
-byKey.set(m.key, {
+  for (const m of cleanMembers) {
+    byKey.set(m.key, {
       ...m,
       ...byKey.get(m.key),
     });
-}
+  }
   await putMany("members", [...byKey.values()]);
   if (
     importedSettings &&
@@ -232,15 +231,13 @@ byKey.set(m.key, {
   ) {
     for (const key of Object.keys(DEFAULTS)) {
       if (key in importedSettings) {
-        if (key === "homeIds")
-          {
-settings.homeIds = (Array.isArray(importedSettings.homeIds) ? importedSettings.homeIds : [])
+        if (key === "homeIds") {
+          settings.homeIds = (Array.isArray(importedSettings.homeIds) ? importedSettings.homeIds : [])
             .map(String)
             .filter(validListId);
-}
-        else if (typeof importedSettings[key] === typeof DEFAULTS[key]) {
-settings[key] = importedSettings[key];
-}
+        } else if (typeof importedSettings[key] === typeof DEFAULTS[key]) {
+          settings[key] = importedSettings[key];
+        }
       }
     }
     saveSettings();
@@ -248,18 +245,17 @@ settings[key] = importedSettings[key];
   if (importedPresets && window.confirm("Importar também os filtros e modos de timeline por lista?")) {
     for (const [id, preset] of Object.entries(importedPresets)) {
       if (!validListId(id) || !preset || typeof preset !== "object" || Array.isArray(preset)) {
-continue;
-}
+        continue;
+      }
       const safe = {};
-      for (const key of PER_LIST_FIELDS)
-        {
-if (key in preset && typeof preset[key] === typeof DEFAULTS[key]) {
-safe[key] = preset[key];
-}
-}
+      for (const key of PER_LIST_FIELDS) {
+        if (key in preset && typeof preset[key] === typeof DEFAULTS[key]) {
+          safe[key] = preset[key];
+        }
+      }
       if (typeof preset.customTimeline === "boolean") {
-safe.customTimeline = preset.customTimeline;
-}
+        safe.customTimeline = preset.customTimeline;
+      }
       listPresets[id] = {
         ...listPresets[id],
         ...safe,
@@ -271,8 +267,8 @@ safe.customTimeline = preset.customTimeline;
     const stats = importedUsage.stats && typeof importedUsage.stats === "object" ? importedUsage.stats : {};
     for (const [id, stat] of Object.entries(stats)) {
       if (!validListId(id) || !stat || typeof stat !== "object") {
-continue;
-}
+        continue;
+      }
       const local = listUsage.stats[id] || {
         count: 0,
         lastUsed: 0,
@@ -283,8 +279,8 @@ continue;
       };
     }
     if (validListId(importedUsage.lastId)) {
-listUsage.lastId = importedUsage.lastId;
-}
+      listUsage.lastId = importedUsage.lastId;
+    }
     localStorage.setItem(LIST_USAGE_KEY, JSON.stringify(listUsage));
   }
   await refresh();
@@ -305,8 +301,8 @@ export function initializeRodX_lists_227() {
     }
     const button = event.target.closest(RODX_SELECTORS.dataActions);
     if (!button) {
-return;
-}
+      return;
+    }
     const action = button.dataset.action,
       id = button.dataset.id;
     try {
@@ -318,16 +314,15 @@ return;
         const user = state.members.find(
           (m) => m.username.toLowerCase() === String(button.dataset.user || "").toLowerCase(),
         );
-        if (user)
-          {
-await openQuickPicker(
+        if (user) {
+          await openQuickPicker(
             {
               ...user,
               sourceId: state.listId,
             },
             button,
           );
-}
+        }
         return;
       }
       if (action === "open-lists-page") {
@@ -361,12 +356,12 @@ await openQuickPicker(
       if (action === "add-list") {
         const input = window.prompt("Cole a URL ou o ID numérico de uma lista do X:");
         if (!input) {
-return;
-}
+          return;
+        }
         const parsed = input.match(LIST_URL_RE)?.[1] || (/^\d{1,30}$/.test(input.trim()) ? input.trim() : "");
         if (!parsed) {
-throw new Error("URL/ID de lista inválido.");
-}
+          throw new Error("URL/ID de lista inválido.");
+        }
         const name =
           window.prompt("Nome local desta lista (opcional):", `Lista ${parsed}`) || `Lista ${parsed}`;
         await upsertList(parsed, {
@@ -395,11 +390,10 @@ throw new Error("URL/ID de lista inválido.");
         const index = pins.indexOf(id);
         if (action === "toggle-home-pin") {
           if (index >= 0) {
-pins.splice(index, 1);
-}
-          else {
-pins.push(id);
-}
+            pins.splice(index, 1);
+          } else {
+            pins.push(id);
+          }
         } else {
           const target = index + (action === "pin-left" ? -1 : 1);
           if (index >= 0 && target >= 0 && target < pins.length) {
@@ -453,8 +447,8 @@ pins.push(id);
       }
       if (action === "load-timeline") {
         if (!validListId(state.listId)) {
-throw new Error("Escolha uma lista.");
-}
+          throw new Error("Escolha uma lista.");
+        }
         await loadTimeline({
           listId: state.listId,
           force: true,
@@ -477,8 +471,8 @@ throw new Error("Escolha uma lista.");
       }
       if (action === "open-search") {
         if (!validListId(state.listId)) {
-throw new Error("Escolha uma lista antes de buscar.");
-}
+          throw new Error("Escolha uma lista antes de buscar.");
+        }
         const query = buildQuery();
         location.assign(
           `https://x.com/search?q=${encodeURIComponent(query)}&src=typed_query&f=${settings.sort}`,
@@ -508,16 +502,15 @@ throw new Error("Escolha uma lista antes de buscar.");
       if (action === "retry-current") {
         const q = readQueue();
         if (!q?.tasks[q.index]?.uncertain) {
-return;
-}
+          return;
+        }
         if (
           !window.confirm(
             "Você verificou o resultado no X? Repetir uma operação incerta pode resultar em uma solicitação duplicada.",
           )
-        )
-          {
-return;
-}
+        ) {
+          return;
+        }
         q.tasks[q.index].uncertain = false;
         q.tasks[q.index].status = "pending";
         saveQueue(q);
@@ -527,11 +520,11 @@ return;
       if (action === "skip-current") {
         const q = readQueue();
         if (!q?.tasks[q.index]?.uncertain) {
-return;
-}
+          return;
+        }
         if (!window.confirm("Pular este perfil? O X pode tê-lo adicionado anteriormente.")) {
-return;
-}
+          return;
+        }
         q.tasks[q.index].status = "skipped";
         q.tasks[q.index].uncertain = false;
         q.index++;
@@ -541,20 +534,18 @@ return;
       if (action === "resume-queue") {
         const q = readQueue();
         if (q) {
-          if (q.version < 2)
-            {
-throw new Error("Fila antiga usa navegação. Cancele e crie uma fila nova via API.");
-}
+          if (q.version < 2) {
+            throw new Error("Fila antiga usa navegação. Cancele e crie uma fila nova via API.");
+          }
           if (q.tasks[q.index]?.uncertain) {
-throw new Error("Verifique o resultado incerto antes de retomar.");
-}
-          if (q.nextAt > Date.now())
-            {
-throw new Error(`Retome somente após ${timeText(new Date(q.nextAt).toISOString())}.`);
-}
+            throw new Error("Verifique o resultado incerto antes de retomar.");
+          }
+          if (q.nextAt > Date.now()) {
+            throw new Error(`Retome somente após ${timeText(new Date(q.nextAt).toISOString())}.`);
+          }
           if (q.tasks[q.index]?.status === "error") {
-q.tasks[q.index].status = "pending";
-}
+            q.tasks[q.index].status = "pending";
+          }
           q.status = "running";
           saveQueue(q);
           runQueue();
@@ -563,8 +554,8 @@ q.tasks[q.index].status = "pending";
       }
       if (action === "cancel-queue") {
         if (!window.confirm("Cancelar a fila? Operações já realizadas no X não serão revertidas.")) {
-return;
-}
+          return;
+        }
         const q = readQueue();
         if (q) {
           q.status = "cancelled";
@@ -590,11 +581,10 @@ export function initializeRodX_lists_228() {
       if (element.classList.contains("member-check")) {
         const key = cleanHandle(element.value).toLowerCase();
         if (element.checked) {
-state.selected.add(key);
-}
-        else {
-state.selected.delete(key);
-}
+          state.selected.add(key);
+        } else {
+          state.selected.delete(key);
+        }
         render();
         return;
       }
@@ -609,13 +599,12 @@ state.selected.delete(key);
         saveSettings();
         if (PER_LIST_FIELDS.includes(key)) {
           saveListPreset();
-          if (listPresets[routeListId()]?.customTimeline && routeListId())
-            {
-loadTimeline({
+          if (listPresets[routeListId()]?.customTimeline && routeListId()) {
+            loadTimeline({
               listId: routeListId(),
               force: true,
             }).catch(reportTimelineError);
-}
+          }
         }
         applyRepostFilter();
         drawHomeBar();
@@ -632,8 +621,8 @@ loadTimeline({
           state.selected.clear();
           await refresh();
         } else {
-render();
-}
+          render();
+        }
         return;
       }
     } catch (error) {
@@ -657,12 +646,12 @@ export function initializeRodX_lists_229() {
           : event.target.value;
       saveSettings();
       if (PER_LIST_FIELDS.includes(key)) {
-saveListPreset();
-}
+        saveListPreset();
+      }
       const preview = qs(RODX_SELECTORS.listsQueryInput, shadow);
       if (preview) {
-preview.textContent = buildQuery();
-}
+        preview.textContent = buildQuery();
+      }
     }
   });
 }
