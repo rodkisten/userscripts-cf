@@ -46,9 +46,9 @@ describe("inspectable build artifacts", () => {
       }
     }
     expect(editors.bundles["dom-inspector:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
-    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(
-      0,
-    );
+    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBe(0);
+    expect(editors.bundles["github-color-studio:sandbox"].families.lezer.renderedBytes).toBe(0);
+    expect(editors.bundles["github-color-studio:sandbox"].families.acorn.renderedBytes).toBe(0);
     expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
     expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBeGreaterThan(0);
     for (const script of manifest.scripts) {
@@ -181,6 +181,21 @@ describe("inspectable build artifacts", () => {
           retainedReactRuntime,
           `Vanilla runtime retained React DOM in ${script.id}:${runtime.world}`,
         ).toEqual([]);
+      }
+
+      if (script.id === "dom-inspector") {
+        for (const runtime of target.output.runtimes) {
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const retainedJavaScriptLanguage = report.modules.filter(
+            (item) =>
+              item.renderedBytes > 0 &&
+              item.id.includes("node_modules/@codemirror/lang-javascript/"),
+          );
+          expect(
+            retainedJavaScriptLanguage,
+            `DOM Inspector retained JavaScript language package in ${runtime.world}`,
+          ).toEqual([]);
+        }
       }
 
       for (const runtime of target.output.runtimes) {
