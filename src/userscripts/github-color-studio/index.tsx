@@ -28,7 +28,9 @@ type ViewCarrier = HTMLElement & {
 };
 
 function isHostCodeMirrorView(value: unknown): value is HostCodeMirrorView {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   const candidate = value as Partial<HostCodeMirrorView>;
   return !!candidate.state?.doc && typeof candidate.dispatch === "function";
 }
@@ -36,11 +38,15 @@ function isHostCodeMirrorView(value: unknown): value is HostCodeMirrorView {
 function viewFromCarrier(element: HTMLElement): HostCodeMirrorView | null {
   const carrier = element as ViewCarrier;
   const attached = carrier.cmView;
-  if (isHostCodeMirrorView(attached)) return attached;
+  if (isHostCodeMirrorView(attached)) {
+    return attached;
+  }
   if (attached && "rootView" in attached && isHostCodeMirrorView(attached.rootView?.view)) {
     return attached.rootView!.view!;
   }
-  if (attached && "view" in attached && isHostCodeMirrorView(attached.view)) return attached.view;
+  if (attached && "view" in attached && isHostCodeMirrorView(attached.view)) {
+    return attached.view;
+  }
   return isHostCodeMirrorView(carrier.view) ? carrier.view : null;
 }
 
@@ -50,7 +56,9 @@ function findCodeMirror(): HostCodeMirrorView | null {
     const candidates = content ? [content, editor] : [editor];
     for (const candidate of candidates) {
       const view = viewFromCarrier(candidate);
-      if (view) return view;
+      if (view) {
+        return view;
+      }
     }
   }
   return null;
