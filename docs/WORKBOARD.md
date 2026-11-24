@@ -648,6 +648,14 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] CI do PR #144 também revelou 21 violações de estilo AST nas mudanças mobile anteriores; adicionei as chaves exigidas e o gate de estilo agora passa nos cinco arquivos alterados.
 - [ ] Validar a execução de release após merge: o estado observado antes desta correção era `package.json`/release `v8.0.0`, apesar de commits `[deploy]` posteriores à tag.
 
+### Registro de versões individuais (2026-11-24 · primeiro bloco implementado)
+
+- [x] Adicionado `userscripts.versions.json` com uma versão semver por userscript, preservando `8.0.0` durante a migração para evitar downgrade dos instaladores existentes.
+- [x] O build agora usa o registro para preencher `manifest.scripts[].version` e os cabeçalhos individuais, além de gerar `dist/versions.json` com arquivo, SHA-256 e componentes do bundle.
+- [x] O `standalone.user.js` e seu `.meta.js` recebem o bloco `RodBundle` imediatamente abaixo de `// ==/UserScript==`, com commit e versões de todos os módulos incluídos.
+- [x] O preview também reescreve o inventário do standalone para refletir a versão de preview, evitando comentários de produção stale.
+- [ ] Próximo bloco: gerar plano de bump a partir do grafo AST existente e separar o workflow de publicação por userscript.
+
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
