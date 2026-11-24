@@ -1,6 +1,6 @@
 import { parse } from "acorn";
-import { analyze } from "eslint-scope";
-import { generate } from "astring";\nimport { analyzePersistentBindings } from "./compiler-scope.js";
+import { generate } from "astring";
+import { analyzePersistentBindings } from "./compiler-scope.js";
 
 const reserved = new Set(["ctx", "console", "$", "$$", "$0", "_"]);
 const member = (name) => ({
