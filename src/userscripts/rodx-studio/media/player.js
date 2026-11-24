@@ -7,7 +7,7 @@ import {
 } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { VideoExperience } from "./experience.js";
-import { SeekPreviews } from "./previews.js";
+import { SeekPreviews } from "./seek-preview.tsx";
 import { state } from "../state/deck.js";
 
 export let PlayerPreference;
