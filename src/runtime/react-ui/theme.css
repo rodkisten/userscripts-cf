@@ -15,6 +15,7 @@
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 }
 .rod-theme {
   --background: #fff;
@@ -29,6 +30,8 @@
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
   --destructive: #dc2626;
+  --destructive-foreground: #fff;
+  --overlay-shadow: #0008;
   color: var(--foreground);
   font-family: Geist, system-ui, sans-serif;
 }
@@ -45,5 +48,7 @@
   --secondary: #27272a;
   --secondary-foreground: #fafafa;
   --destructive: #b91c1c;
+  --destructive-foreground: #fff;
+  --overlay-shadow: #0008;
   color-scheme: dark;
 }
