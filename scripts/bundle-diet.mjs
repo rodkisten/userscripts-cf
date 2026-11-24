@@ -243,7 +243,7 @@ ${moduleSection("Largest regressions", regressions, "⚠️")}
 - [Visual playground](${previewOrigin}/${pr}/)
 ${previewLines}
 
-> Baseline comparison uses the versioned `.github/bundle-baseline.json`. Raw, gzip and Brotli are measured from the actual generated `.user.js` files. Module deltas are pre-minification rendered contributions and are diagnostic, not estimated download savings.
+> Baseline comparison uses the versioned .github/bundle-baseline.json. Raw, gzip and Brotli are measured from the actual generated .user.js files. Module deltas are pre-minification rendered contributions and are diagnostic, not estimated download savings.
 `;
 }
 
