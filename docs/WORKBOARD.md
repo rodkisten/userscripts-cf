@@ -681,6 +681,14 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] A publicação global existente permanece intacta nesta etapa; tags individuais ficam isoladas no próximo bloco.
 - [ ] Próximo bloco: publicar tags/releases individuais sem depender do `package.json` global.
 
+### Tags e releases individuais (2026-11-24 · quinto bloco implementado)
+
+- [x] Cada userscript afetado publica uma release própria, por exemplo `rodx-studio-v8.0.1`.
+- [x] O release individual usa o commit atual e envia apenas o bundle e metadata daquele userscript.
+- [x] O workflow só executa essa etapa quando o plano AST possui userscripts afetados.
+- [x] `tests/release-individual.test.js` cobre tags e seleção de assets.
+- [ ] Próximo bloco: separar completamente o bump/tag do standalone global e adicionar URLs de update pinadas no catálogo.
+
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.

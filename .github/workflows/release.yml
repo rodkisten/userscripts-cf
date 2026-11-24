@@ -265,6 +265,12 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: npm run release
 
+      - name: 🧩 Publish Independent Userscript Releases
+        if: steps.version-plan.outputs.affected != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node build/release-individual.mjs
+
       - name: 📊 Generate Rich Release Summary
         if: always()
         uses: actions/github-script@v7
