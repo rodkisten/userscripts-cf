@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import DownloadSVGIcon from "../../../assets/icons/download.svg?component";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";

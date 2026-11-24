@@ -1,7 +1,7 @@
 import { componentClasses } from "./view.tsx";
 import { classNames } from "../ui/class-names.ts";
 const cx = (value: string) => classNames(componentClasses, value);
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";

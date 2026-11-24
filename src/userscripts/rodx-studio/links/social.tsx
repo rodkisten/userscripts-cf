@@ -1,7 +1,7 @@
 import TelegramIcon from "../../../assets/icons/social-telegram.svg?component";
 import WhatsappIcon from "../../../assets/icons/social-whatsapp.svg?component";
 import InstagramIcon from "../../../assets/icons/social-instagram.svg?component";
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RODX_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-links-social-1.css?inline";
 export let SocialAppLinks;

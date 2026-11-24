@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import BookmarkSVGIcon from "../../../assets/icons/bookmark.svg?component";
 import {
@@ -16,7 +16,7 @@ import { NativeQueryTags } from "../search/native-tags.js";
 import { state } from "../state/deck.js";
 import { ForeignTags } from "../translation/foreign-tags.tsx";
 import { Seen } from "./seen.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens

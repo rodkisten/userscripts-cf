@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import VolumeMutedIcon from "../../../assets/icons/volume-muted.svg?component";
 import VolumeOnIcon from "../../../assets/icons/volume-on.svg?component";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";

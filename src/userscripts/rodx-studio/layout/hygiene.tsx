@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import GrokReplacementSVGIcon from "../../../assets/icons/grok-replacement.svg?component";
 import {
@@ -10,7 +10,7 @@ import {
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens
