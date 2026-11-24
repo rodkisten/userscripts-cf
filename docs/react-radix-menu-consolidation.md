@@ -1,0 +1,92 @@
+# React/Radix menu consolidation workboard
+
+> Source of truth: the pull request checklist. Keep this document and PR body in sync as implementation progresses.
+
+## Contract and architecture
+
+- Keep `ctx.menu.open(schema)`, `ctx.menu.dropdown(options)` and `ctx.menu.configure(options)` as the public compatibility surface.
+- Route dialogs and dropdowns through `src/runtime/modular/features/menu.ts` and `menu-view.tsx`, using Radix primitives and the runtime's `mountSharedReact` portal mechanism.
+- Avoid introducing a new `createRoot` in feature code. The bundle runtime owns the root in `src/core/runtime-react.tsx`.
+- Keep portals inside the caller's ShadowRoot where provided; use the triggering element's root for dropdowns.
+- Preserve disposal, `result` promise completion, DOM-node restoration and GM command lifecycle.
+- Remove `src/runtime/vendor/menu.ts` only after a repository-wide consumer audit establishes that no build target, standalone bundle or runtime path imports it.
+- No new `any` context types or `React.createElement` in userscript UI.
+
+## Delivery stages
+
+### A. Discovery and compatibility
+
+- [x] Inventory installable scripts and menu implementations on `main`.
+- [x] Confirm `ctx.menu` already delegates to React/Radix in modular runtime.
+- [ ] Search imports, dynamic references and bundler entrypoints for the vendor RodMenu.
+- [ ] Inventory RodX Studio, Instagram, GitHub Tools, GoneWild, Page REPL and standalone Dock menu consumers.
+- [ ] Confirm `configure` options that callers rely on; document or implement supported semantics.
+
+### B. Runtime consolidation
+
+- [ ] Ensure every menu action, field, dropdown and tab flows through the shared Radix implementation.
+- [ ] Make cleanup idempotent for repeated open/close, React unmount and navigation.
+- [ ] Migrate or remove remaining vendor menu references without changing public `ctx.menu` signatures.
+- [ ] Remove obsolete menu implementation only after the usage audit is clean.
+
+### C. Root and Shadow DOM ownership
+
+- [x] Audit static React root ownership: existing Babel AST check enforces one runtime root in `src/core/runtime-react.tsx` and one separate Studio root in `studio/entry.tsx`; now required during `typecheck`.
+- [ ] Verify runtime root count and portal ownership in generated standalone bundles.
+- [ ] Confirm portal rendering works within ShadowRoot and does not leak styles into document body.
+- [x] Reattach registered styles if a host clears ShadowRoot children without disposing owners.
+- [x] Harden style ownership for reparented nodes and repeated CSS within one registration.
+- [ ] Verify style reference counting, cleanup and remount after SPA navigation in a browser.
+- [ ] Verify Dock-only bundle and regular userscript coexistence.
+
+### D. RodX Dock consolidation
+
+- [x] Inspect RodX Dock ownership: `ui/dock.tsx` creates an inline ShadowRoot and attaches `DragDock`; `ui/search-workbench.tsx` renders its content through the shared React mount adapter.
+- [x] Inspect shared Dock: `runtime/react-ui/rod-dock.tsx` uses React, Radix Dialog, its own ShadowRoot, script registry and persistent launcher position.
+- [x] Add a compatibility bridge registering RodX Home, Create timeline, Organize searches and Lists in the shared Dock registry while retaining the inline search controls.
+- [x] Publish pinned timelines and quick lists as dynamic shared Dock actions with stable IDs.
+- [x] Remove DOM-click proxies for shared Dock core actions and pinned searches by calling RodX `performAction` directly.
+- [x] Remove the remaining quick-list DOM proxy by navigating through `Studio.navigate(studioListIndex(Studio) + '/' + list.id)`.
+- [ ] Replace the inline timeline UI after preserving drag ordering.
+- [x] Add keyboard/click-friendly ↑/↓ reorder actions for pinned timelines, swapping only pinned entries and persisting with rollback.
+- [x] Implement first-pass pointer/touch reordering for pinned timeline actions in shared Dock, persisting and rolling back state.
+- [ ] Validate Safari iOS touch reordering and parity before removing the inline DragDock.
+- [ ] Migrate route-specific placement and teardown; avoid two visible Dock launchers.
+- [ ] Confirm the shared Dock is initialized only once per page and uses the runtime root.
+- [ ] Remove RodX `DragDock` and old inline host only after functional parity is verified.
+
+### E. Verification and delivery
+
+- [ ] Run `npm ci` and `npm run typecheck`.
+- [ ] Run `npm run check:react-roots` and `npm run build`.
+- [ ] Inspect generated standalone artifacts for old menu code and duplicate roots.
+- [ ] Validate Safari iOS Shadow DOM focus, touch interactions, dialog and dropdown positioning.
+- [ ] Update this workboard and PR checklist with verified outcomes and links to CI.
+
+## Progress log
+
+- **Initial PR:** isolated branch created from `main`; audited the modular Radix menu, React root owner, Dock installer and ShadowRoot style registry. Added a defensive style reattachment fix. No CI outcome is claimed yet.
+
+- **Root ownership gate:** `npm run typecheck` now runs `check:react-roots` before TypeScript compilation. Reviewed `src/core/runtime.ts`: each script's `ctx.menu` is constructed with `createMenuFeature` and `mountSharedReact`. Reviewed RodX and Instagram entrypoints: both consume `ctx.menu`. `src/runtime/react-ui/index.tsx` still exposes the older `RodMenuHost`; no removal until consumers are exhaustively verified.
+
+- **Radix menu compatibility:** `DropdownItems` uses `item.id` as a stable key, but `DropdownItem` omitted the property. Added the optional typed identifier to the shared contract. **Shadow DOM:** reattach a style when its parent is not the owning ShadowRoot (not just when disconnected), and avoid overcounting repeated CSS within one registration. Browser and CI verification remain outstanding.
+
+- **Dock decision:** RodX's `ensureDock()` currently inserts an inline Dock after the X search header, and its `DragDock` owns custom pointer/touch reorder logic. The shared Dock is a floating global launcher with script-management features. These are **not yet feature-equivalent**. Consolidation must migrate search/timeline controls and drag reorder rather than simply deleting the RodX host. No Dock implementation has been replaced yet.
+
+- **Incremental Dock bridge:** `ui/dock.tsx` now publishes a `rodx-studio` module via `rod-dock:registry` and unregisters it when leaving supported X routes. Its actions delegate to existing inline controls, preserving existing handlers. This is a transition bridge, **not** final Dock unification. It requires the shared Dock installer to be active; no UI/browser validation has been performed.
+
+- **Dynamic RodX actions:** pinned searches and quick lists are now registered under stable `search:` and `list:` action IDs. A signature prevents redundant registry dispatches on unchanged route/account/list state. Action callbacks reuse existing inline controls. The global Dock installer must be present, and runtime/CI validation is still pending.
+
+- **Action dispatcher:** shared Dock Home/New/Organize/Lists and pinned search actions now call RodX's exported `performAction` directly, rather than looking up hidden inline buttons. Quick lists still rely on DOM buttons and need direct navigation migration. No build/test has been run for this commit.
+
+- **Quick-list navigation:** shared Dock list actions now call `Studio.navigate` using the same `studioListIndex` route builder as the existing inline controls. All registered shared Dock actions are independent of DOM-click proxies; the inline bar is still retained for drag reordering and route placement. Browser/CI validation pending.
+
+- **Accessible reorder bridge:** shared Dock now publishes `search-up:` and `search-down:` actions for pinned searches, delegating to existing `performAction('up'/'down')`. These are additional controls, not a replacement for touch drag. Account persistence relies on existing search-action logic and needs browser verification.
+
+- **Pinned-only ordering fix:** shared Dock up/down actions now swap neighboring pinned searches directly, not arbitrary neighbors in `state.searches`. Changes are persisted with `saveState()`, rollback on failure, and re-registration of shared Dock actions. Touch/pointer drag remains pending.
+
+- **Pointer reorder (unvalidated):** shared Dock action buttons support pointer capture, drag-target highlighting, and a registered `reorder(targetId)` callback. RodX persists the new pinned search order and restores it on failed save. Browser/CI verification remains outstanding; mouse drag support and click suppression were added in the follow-up.
+
+- **Pointer follow-up:** enable primary-button mouse drag in addition to touch/pen, suppress accidental action clicks following drag, and clean up pointer listeners on cancel. Still needs actual mouse/iOS verification.
+
+- **Late-mount registry handshake:** shared Dock emits `rod-dock:ready` after mounting; RodX replays its current registry on that event, preventing missing actions when the host loads after the feature. Browser validation remains pending.
