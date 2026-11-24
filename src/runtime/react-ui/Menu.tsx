@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Switch from "@radix-ui/react-switch";
+import * as Checkbox from "@radix-ui/react-checkbox";
 import type { RodMenuProps } from "./types";
 import { createInitialValues, loadPersistence, savePersistence } from "./core";
 import styles, { css as menuCss } from "./Menu.module.css";
@@ -60,39 +62,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
           aria-label={schema.title || "Rod Menu"}
           aria-describedby={undefined}
           className={`${styles.surface} ${surfaceClass} ${className || ""}`}
-          style={{
-            position: "fixed",
-            zIndex: 2147483646,
-            background: "var(--rod-menu-bg, #fff)",
-            color: "var(--rod-menu-fg, #111827)",
-            display: "flex",
-            flexDirection: "column",
-            left: surface === "drawer" ? "auto" : "50%",
-            right: surface === "drawer" ? 0 : "auto",
-            top: surface === "drawer" ? 0 : surface === "modal" || surface === "popover" ? "50%" : "auto",
-            bottom:
-              surface === "drawer"
-                ? 0
-                : surface === "modal" || surface === "popover"
-                  ? "auto"
-                  : "env(safe-area-inset-bottom, 0px)",
-            transform:
-              surface === "drawer"
-                ? "none"
-                : surface === "modal" || surface === "popover"
-                  ? "translate(-50%, -50%)"
-                  : "translateX(-50%)",
-            width:
-              surface === "drawer"
-                ? "min(420px, 100%)"
-                : surface === "popover"
-                  ? "min(360px, calc(100% - 24px))"
-                  : "min(100%, 480px)",
-            maxHeight: "90dvh",
-            overflow: "auto",
-            borderRadius: "16px",
-            boxShadow: "0 16px 50px #0005",
-          }}
+
         >
           <Dialog.Title className={styles.accessibleTitle}>{schema.title || "Rod Menu"}</Dialog.Title>
           {(schema.title || schema.subtitle || schema.description) && (
@@ -141,23 +111,26 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                       min={field.min}
                       max={field.max}
                       step={field.step}
-                      value={values[fieldId] ?? field.min ?? 0}
-                      onChange={(e) => handleChange(fieldId, Number(e.target.value))}
+                      value={values[valueKey] ?? field.min ?? 0}
+                      onChange={(e) => handleChange(valueKey, Number(e.target.value))}
                     />
                   ) : field.type === "textarea" ? (
                     <textarea
                       id={fieldId}
                       placeholder={field.placeholder}
-                      value={String(values[fieldId] ?? "")}
-                      onChange={(e) => handleChange(fieldId, e.target.value)}
+                      value={String(values[valueKey] ?? "")}
+                      onChange={(e) => handleChange(valueKey, e.target.value)}
                     />
                   ) : isCheckbox ? (
-                    <input
-                      id={fieldId}
-                      type="checkbox"
-                      checked={!!values[fieldId]}
-                      onChange={(e) => handleChange(fieldId, e.target.checked)}
-                    />
+                    field.type === "checkbox" ? (
+                    <Checkbox.Root id={fieldId} className={styles.checkbox} checked={!!values[valueKey]} onCheckedChange={(checked) => handleChange(valueKey, checked === true)}>
+                      <Checkbox.Indicator>✓</Checkbox.Indicator>
+                    </Checkbox.Root>
+                  ) : (
+                    <Switch.Root id={fieldId} className={styles.switch} checked={!!values[valueKey]} onCheckedChange={(checked) => handleChange(valueKey, checked)}>
+                      <Switch.Thumb className={styles.switchThumb} />
+                    </Switch.Root>
+                  )
                   ) : (
                     <input
                       id={fieldId}
@@ -167,10 +140,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
                           : "text"
                       }
                       placeholder={field.placeholder}
-                      value={values[fieldId] ?? ""}
+                      value={values[valueKey] ?? ""}
                       onChange={(e) =>
                         handleChange(
-                          fieldId,
+                          valueKey,
                           field.type === "number" && e.target.value !== ""
                             ? Number(e.target.value)
                             : e.target.value,
