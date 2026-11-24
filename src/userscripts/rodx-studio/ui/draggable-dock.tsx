@@ -3,7 +3,7 @@ import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { renderDock } from "./search-workbench.tsx";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export let DragDock;
 

@@ -57,7 +57,7 @@ import { initializeDeckViewportPlayback } from "../media/viewport.js";
 import { initializeDeckImmersiveSwipe } from "../media/immersive.js";
 import { initializeDeckNativeQueryTags } from "../search/native-tags.js";
 import { initializeDeckResultEnhancer } from "../tweets/enhancer.tsx";
-import { initializeDeckRodxToastTimer } from "../ui/toast.tsx";
+import { initializeDeckRodxToastTimer } from "../ui/runtime.tsx";
 import { initializeDeckDragDock } from "../ui/draggable-dock.tsx";
 import {
   initializeRodX_deck_164,

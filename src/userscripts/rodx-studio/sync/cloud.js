@@ -9,7 +9,7 @@ import { normalizedPreset, normalizedSearch } from "../storage/normalize.js";
 import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
 import { repaint } from "../ui/dock.tsx";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let CloudSync;
 

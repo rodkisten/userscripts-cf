@@ -39,7 +39,7 @@ import {
   renderRoot,
   validateRawWorkbench,
 } from "./search-workbench.tsx";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export async function performAction(action, id = "") {
   switch (action) {

@@ -7,7 +7,7 @@ import { Studio } from "../core/studio.js";
 import { XClientLists } from "./client.js";
 import { studioListIndex } from "./routes.js";
 import { state } from "../state/deck.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let ProfileLists;
 

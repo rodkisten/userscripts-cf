@@ -6,7 +6,7 @@ import { saveState } from "../storage/account.js";
 import { XRepost } from "../tweets/publisher.tsx";
 import { buildStudioPreferences } from "./preferences-schema.tsx";
 import { blankDraft, renderRoot } from "./search-workbench.tsx";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export let Preferences;
 

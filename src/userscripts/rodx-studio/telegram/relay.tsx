@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS, HTTP_STATUS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import TelegramSendSVGIcon from "../../../assets/icons/telegram-send.svg?component";

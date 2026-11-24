@@ -2,7 +2,7 @@ import { NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { nativeSearch } from "../feeds/local-limits.js";
 import { QueryEngine } from "./query-compiler.js";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let NativeQueryTags;
 

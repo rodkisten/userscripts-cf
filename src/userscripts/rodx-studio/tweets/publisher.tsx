@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
@@ -12,7 +12,7 @@ import { state } from "../state/deck.js";
 import { gmAvailable, storage } from "../storage/gm.js";
 import { Relay } from "../telegram/relay.tsx";
 import { renderRoot } from "../ui/search-workbench.tsx";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let XRepost;
 
