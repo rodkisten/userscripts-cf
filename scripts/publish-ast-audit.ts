@@ -201,6 +201,37 @@ function formatAuditMarkdown(report: AuditReport): { markdown: string; hasFindin
   return { markdown: lines.join('\n'), hasFindings: true };
 }
 
+
+function buildCommentMarkdown(markdown: string, report: AuditReport): string {
+  const maxCommentLength = 60_000;
+  if (markdown.length <= maxCommentLength) return markdown;
+
+  const audit = report.gitAudit;
+  const errorCount = (report.annotations ?? []).filter((item) => item.level === 'error').length;
+  const duplicateCount = audit?.duplicateFunctionsCount ?? audit?.duplicateFunctions?.length ?? 0;
+  const introducedCount = audit?.introducedCommentsCount ?? audit?.introducedComments?.length ?? 0;
+  const repo = process.env.GITHUB_REPOSITORY || `${process.env.REPO_OWNER}/${process.env.REPO_NAME}`;
+  const runUrl = process.env.GITHUB_RUN_ID
+    ? `${process.env.SERVER_URL || 'https://github.com'}/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
+    : null;
+
+  return [
+    COMMENT_MARKER,
+    '## 🔍 AST Function & Tech Debt Audit',
+    '',
+    '> O relatório detalhado excedeu o limite de tamanho dos comentários do GitHub. O relatório completo continua disponível no Summary desta execução.',
+    '',
+    '| Métrica | Quantidade |',
+    '| :--- | :---: |',
+    `| ❌ Diretivas TODO/FIXME inválidas | **${errorCount}** |`,
+    `| 👯 Funções repetidas / semelhantes | **${duplicateCount}** |`,
+    `| 📝 Comentários técnicos introduzidos | **${introducedCount}** |`,
+    '',
+    runUrl ? `[Abrir execução e relatório completo](${runUrl})` : 'Consulte o Summary da execução do workflow para ver o relatório completo.',
+    '',
+    `<sub>Commit <code>${(process.env.HEAD_SHA || '').slice(0, 7)}</code>.</sub>`,
+  ].join('\n');
+}
 async function main() {
   const reportPath = process.env.REPORT_PATH || 'ast-audit-report.json';
   const prNumber = Number(process.env.PR_NUMBER);
@@ -241,7 +272,7 @@ async function main() {
     repo,
     issueNumber: prNumber,
     marker: COMMENT_MARKER,
-    body: markdown,
+    body: buildCommentMarkdown(markdown, report),
     skipCreateIfEmpty: !hasFindings
   });
 
