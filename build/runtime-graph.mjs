@@ -220,7 +220,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     const usage = analyzeRuntimeUsage(source, filename, { includePaths: true });
     for (const feature of usage.features) features.add(feature);
     for (const capabilityPath of usage.paths || []) paths.add(capabilityPath);
-    if (usage.dynamic) dynamicImportFiles.add(relPath);
+    if (usage.dynamic) dynamicContextFiles.add(relPath);
 
     const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles);
 
