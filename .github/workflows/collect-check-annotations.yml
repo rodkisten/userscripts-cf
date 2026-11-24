@@ -1,4 +1,4 @@
-name: "📝 Review · collect check annotations"
+name: "🧩 US · 📝 Review · collect check annotations"
 run-name: "📝 Review annotations · ${{ github.event_name }}"
 
 on:

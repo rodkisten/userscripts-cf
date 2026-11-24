@@ -1,4 +1,4 @@
-name: TypeScript diagnostics
+name: 🧩 US · TypeScript diagnostics
 run-name: "🔍 TypeScript diagnostics · ${{ github.ref_name }}"
 on:
   workflow_dispatch:

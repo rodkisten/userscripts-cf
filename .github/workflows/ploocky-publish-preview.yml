@@ -1,4 +1,4 @@
-name: "🤖 Ploocky · Publish preview changes"
+name: "🧩 US · 🤖 Ploocky · Publish preview changes"
 run-name: "🤖 Ploocky · ${{ inputs.source_branch }} → main"
 
 on:

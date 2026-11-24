@@ -1,4 +1,4 @@
-name: "🧬 Rod AST · Fixture, diff & typecheck"
+name: "🧩 US · 🧬 Rod AST · Fixture, diff & typecheck"
 on:
   pull_request:
     paths:

@@ -1,4 +1,4 @@
-name: 👷‍♀️Validate Workflow Script Paths
+name: 🧩 US · 👷‍♀️Validate Workflow Script Paths
 
 on:
   pull_request:

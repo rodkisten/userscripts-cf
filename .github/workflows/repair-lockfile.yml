@@ -1,4 +1,4 @@
-name: 🔒 Repair npm lockfile
+name: 🧩 US · 🔒 Repair npm lockfile
 
 on:
   workflow_dispatch:

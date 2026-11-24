@@ -1,4 +1,4 @@
-name: 🚀 Release Userscripts
+name: 🧩 US · 🚀 Release Userscripts
 
 run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 

@@ -1,4 +1,4 @@
-name: "📦 Import ZIPs → PR"
+name: "🧩 US · 📦 Import ZIPs → PR"
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Validate changed userscripts
+name: 🧩 US · Validate changed userscripts
 run-name: "🧪 Validate changed · ${{ github.ref_name }}"
 
 on:

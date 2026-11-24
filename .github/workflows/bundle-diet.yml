@@ -1,4 +1,4 @@
-name: 📦 Bundle Diet
+name: 🧩 US · 📦 Bundle Diet
 
 run-name: "📦 Bundle Diet · ${{ github.event.pull_request && format('PR #{0}', github.event.pull_request.number) || inputs.mode || github.ref_name }}"
 

@@ -1,4 +1,4 @@
-name: ✨ Prettier · Format All Files
+name: 🧩 US · ✨ Prettier · Format All Files
 
 run-name: >-
   ✨ Prettier · ${{ inputs.target_branch || github.ref_name }} ·
