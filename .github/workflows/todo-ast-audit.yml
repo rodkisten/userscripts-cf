@@ -1,0 +1,54 @@
+name: AST Function & Debt Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.js'
+      - '**.mjs'
+      - '**.cjs'
+      - '**.ts'
+      - '**.tsx'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    name: AST Audit & PR Comment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AST Function & Diff Audit
+        id: ast_audit
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          node scripts/find-fn.mjs --json --base "origin/${{ github.base_ref }}" > ast-audit-report.json
+
+      - name: Publish Step Summary, Annotations & Upsert PR Comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: ast-audit-report.json
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          node --experimental-strip-types scripts/publish-ast-audit.ts
