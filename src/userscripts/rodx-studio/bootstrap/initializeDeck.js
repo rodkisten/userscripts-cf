@@ -97,9 +97,7 @@ import { initializeDeckXInterfaceHygiene } from "../layout/hygiene.tsx";
 import { initializeDeckSearchHistory } from "../search/history.tsx";
 import { initializeDeckQuickUI } from "../ui/quick-actions.tsx";
 
-type DeckInitializer = () => void;
-
-function runInitializers(...initializers: DeckInitializer[]): void {
+function runInitializers(...initializers) {
   for (const initialize of initializers) {
     initialize();
   }
