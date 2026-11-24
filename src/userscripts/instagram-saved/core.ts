@@ -53,7 +53,9 @@ export const SAVED_PATH = "/api/v1/feed/saved/posts/";
 export const COLLECTION_PATH = (id: string) => `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`;
 
 export function reelPayload(raw: Reel): MediaPayload | null {
-  if (!raw || typeof raw !== "object") return null;
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
   const m = raw.media || raw;
   if (
     !m ||
@@ -163,7 +165,9 @@ export async function syncSaved({
   if (ledger) {
     let migrated = false;
     for (const [id, timestamp] of Object.entries(done)) {
-      if (!Number.isFinite(timestamp) || timestamp <= 0) continue;
+      if (!Number.isFinite(timestamp) || timestamp <= 0) {
+        continue;
+      }
       const row = Object.assign(Object.create(null) as Record<string, number>, ledger[id] || {});
       for (const channel of channels) {
         if (!Object.hasOwn(row, channel)) {
@@ -173,7 +177,9 @@ export async function syncSaved({
       }
       ledger[id] = row;
     }
-    if (migrated) await saveChannels!(ledger);
+    if (migrated) {
+      await saveChannels!(ledger);
+    }
   }
   const confirmed = (id: string) =>
     ledger ? channels.every((channel) => Object.hasOwn(ledger[id] || {}, channel)) : Object.hasOwn(done, id);
@@ -212,7 +218,9 @@ export async function syncSaved({
         const missing = ledger
           ? channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
           : channels;
-        if (!missing.length) continue;
+        if (!missing.length) {
+          continue;
+        }
         const key = JSON.stringify(missing);
         const group = groups.get(key) || { channels: missing, items: [] };
         group.items.push(item);
@@ -228,26 +236,33 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!Array.isArray(response.results) || response.results.length !== job.items.length) {
+            if (!Array.isArray(response.results)) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
             for (const result of response.results) {
-              if (
-                !Number.isInteger(result?.index) ||
-                result.index < 0 ||
-                result.index >= job.items.length ||
-                byIndex.has(result.index)
-              ) {
+              if (Number.isInteger(result?.index) && byIndex.has(result.index)) {
                 throw Error("Confirmação Relay ausente ou duplicada");
               }
+              if (!Number.isInteger(result?.index) || result.index < 0 || result.index >= job.items.length) {
+                throw Error(
+                  response.results.length > job.items.length
+                    ? "Relay sem confirmação por item"
+                    : "Confirmação Relay ausente ou duplicada",
+                );
+              }
               byIndex.set(result.index, result);
+            }
+            if (byIndex.size !== job.items.length) {
+              throw Error("Confirmação Relay ausente ou duplicada");
             }
             // Validate the entire response before persisting any item: a malformed
             // later acknowledgement must not partially checkpoint an invalid batch.
             for (let i = 0; i < job.items.length; i++) {
               const result = byIndex.get(i);
-              if (!result) throw Error("Confirmação Relay ausente ou duplicada");
+              if (!result) {
+                throw Error("Confirmação Relay ausente ou duplicada");
+              }
               const channelResult = result.channels;
               if (
                 channelResult &&
@@ -260,8 +275,9 @@ export async function syncSaved({
                     (entry) =>
                       !entry || typeof entry.reason !== "string" || typeof entry.channelId !== "string",
                   ))
-              )
+              ) {
                 throw Error("Relay retornou confirmação de canais inválida");
+              }
             }
             for (let i = 0; i < job.items.length; i++) {
               const result = byIndex.get(i)!;
@@ -311,7 +327,9 @@ export async function syncSaved({
               const missing = ledger
                 ? job.channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
                 : job.channels;
-              if (!missing.length) continue;
+              if (!missing.length) {
+                continue;
+              }
               const key = JSON.stringify(missing);
               const retry = next.get(key) || { items: [], channels: missing };
               retry.items.push(item);
@@ -328,7 +346,9 @@ export async function syncSaved({
             );
           }
         }
-        if (work.length) throw Error("Limite de tentativas do Relay");
+        if (work.length) {
+          throw Error("Limite de tentativas do Relay");
+        }
       }
       processed += batch.length;
       await pause(

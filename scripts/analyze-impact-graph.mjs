@@ -60,10 +60,14 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
     const changed = diffRes.stdout
       .split(/\r?\n/)
       .map(toPosix)
-      .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
+      .filter((file) => file && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(file));
 
     logger.info("Base SHA", `${target.slice(0, 7)} (${baseRef})`);
     logger.info("Changed files in src/", changed.length, true);
+    logger.kvTable({
+      "Base SHA": `${target.slice(0, 7)} (${baseRef})`,
+      "Changed files in src/": changed.length,
+    });
 
     return { diffTarget: target, rawChanged: changed };
   });
@@ -108,6 +112,10 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
 
     logger.info("Affected scopes", grouped.size);
     logger.info("Related test files", tests.size, true);
+    logger.kvTable({
+      "Affected scopes": grouped.size,
+      "Related test files": tests.size,
+    });
 
     return { folders: grouped, matchedNodeTests: tests };
   });
@@ -128,25 +136,25 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
       mermaid.push(`  subgraph ${fId}["📁 ${escapeMermaidLabel(folder)}"]`);
       mermaid.push("    direction TB");
 
-      const srcIds = [...new Set(sourceFiles)].map((s) => {
+      const sourceIds = [...new Set(sourceFiles)].map((sourceFile) => {
         const id = `src_${nodeIdx++}`;
-        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(s))}"]:::src`);
+        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(sourceFile))}"]:::src`);
         return id;
       });
 
-      const testIds = [...new Set(testFiles)].map((t) => {
+      const testIds = [...new Set(testFiles)].map((testFile) => {
         const id = `tst_${nodeIdx++}`;
-        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(t))}"]):::test`);
+        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(testFile))}"]):::test`);
         return id;
       });
 
       mermaid.push("  end");
       mermaid.push(`  class ${fId} folder`);
 
-      if (srcIds.length > 0 && testIds.length > 0) {
-        for (const sId of srcIds) {
-          for (const tId of testIds) {
-            mermaid.push(`  ${sId} -.-> ${tId}`);
+      if (sourceIds.length > 0 && testIds.length > 0) {
+        for (const sourceId of sourceIds) {
+          for (const testId of testIds) {
+            mermaid.push(`  ${sourceId} -.-> ${testId}`);
           }
         }
       }
@@ -174,4 +182,54 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
     `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`,
   );
   logger.info("", "═");
+  setActionOutput("has_files", rawChanged.length > 0);
+  setActionOutput("changed_files", rawChanged.join(" "));
+  setActionOutput("node_tests", [...matchedNodeTests].join(" "));
+
+  const scopeData = [...folders.entries()].map(([folder, value]) => ({
+    folder,
+    sourceFiles: [...new Set(value.sourceFiles)],
+    testFiles: [...new Set(value.testFiles)],
+  }));
+
+  if (outFile) {
+    writeFileSync(
+      outFile,
+      `${JSON.stringify(
+        {
+          baseRef,
+          baseSha: diffTarget,
+          changedFiles: rawChanged,
+          relatedTests: [...matchedNodeTests],
+          scopes: scopeData,
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    logger.info("Impact graph JSON", outFile);
+  }
+
+  appendStepSummary(
+    [
+      "## 📊 Mapa de Impacto & Testes Relacionados",
+      "",
+      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``,
+      "",
+      "```mermaid",
+      ...mermaid,
+      "```",
+    ].join("\n"),
+  );
+
+  logger.pass(
+    "Impact map generated",
+    `${ansi.bold(`${rawChanged.length} file(s)`)} across ${ansi.bold(`${folders.size} scope(s)`)}`,
+  );
+  logger.summary("success", {
+    Files: rawChanged.length,
+    Scopes: folders.size,
+    "Related tests": matchedNodeTests.size,
+  });
 });

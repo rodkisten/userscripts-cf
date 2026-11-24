@@ -1,3 +1,6 @@
+// @TODO: extract unicode
+// @TODO: implement package.json parsing
+
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';

@@ -20,6 +20,7 @@ jobs:
       - name: 📥 Checkout do Código
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
@@ -42,6 +43,7 @@ jobs:
           PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
           set -euo pipefail
+          export PR_HEAD_SHA="$(git rev-parse HEAD)"
           if [[ -z "$PAGES_PROJECT" ]]; then
             echo "::error::Configure USERSCRIPTS_PREVIEW_PAGES_PROJECT"
             exit 1
