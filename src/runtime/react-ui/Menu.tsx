@@ -8,6 +8,7 @@ import styles, { css as menuCss } from "./Menu.module.css";
 
 import themeCss from "./theme.css?inline";
 import { registerShadowStyles } from "./shadow-styles";
+import { applyMenuTheme } from "./theme";
 
 export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initialValues, className }) => {
   const [portal, setPortal] = useState<HTMLDivElement | null>(null);
@@ -18,7 +19,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
     const root = host.attachShadow({ mode: "open" });
     const release = registerShadowStyles(root, [themeCss, menuCss]);
     const container = document.createElement("div");
-    container.className = "rod-theme dark";
+    container.className = "rod-theme";
     root.append(container);
     document.body.append(host);
     setPortal(container);
@@ -28,6 +29,10 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
       setPortal(null);
     };
   }, [isOpen]);
+  useEffect(() => {
+    if (!portal) return;
+    return applyMenuTheme(portal, schema.theme);
+  }, [portal, schema.theme]);
   const [values, setValues] = useState<Record<string, any>>(() => {
     const persisted = loadPersistence(schema.persistKey);
     return { ...createInitialValues(schema, initialValues), ...persisted };
