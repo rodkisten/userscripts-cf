@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "sha": "e96aef1e3d1bdacbaab12e96338453421ac62ebb",
-  "generatedAt": "2026-11-24T03:31:09.772Z",
+  "sha": "8182dfd4befc4d24a858e027bd9870f5ff9b5f1b",
+  "generatedAt": "2026-11-24T08:14:33.782Z",
   "bundles": {
     "standalone": {
       "rawBytes": 5363076,
-      "gzipBytes": 1103998,
-      "brotliBytes": 672818,
+      "gzipBytes": 1103991,
+      "brotliBytes": 672829,
       "debugBytes": 6230090,
       "modules": [
         {
@@ -1245,8 +1245,8 @@
     },
     "dom-inspector": {
       "rawBytes": 1814674,
-      "gzipBytes": 395906,
-      "brotliBytes": 318847,
+      "gzipBytes": 395913,
+      "brotliBytes": 318757,
       "debugBytes": 2113196,
       "modules": [
         {
@@ -1493,8 +1493,8 @@
     },
     "mobile-editor-fab": {
       "rawBytes": 1120900,
-      "gzipBytes": 214581,
-      "brotliBytes": 172284,
+      "gzipBytes": 214576,
+      "brotliBytes": 172203,
       "debugBytes": 1328093,
       "modules": [
         {
@@ -1742,7 +1742,7 @@
     "github-tools": {
       "rawBytes": 1219900,
       "gzipBytes": 237114,
-      "brotliBytes": 190485,
+      "brotliBytes": 190535,
       "debugBytes": 1440449,
       "modules": [
         {
@@ -1989,8 +1989,8 @@
     },
     "instagram-saved": {
       "rawBytes": 1227680,
-      "gzipBytes": 236575,
-      "brotliBytes": 186943,
+      "gzipBytes": 236583,
+      "brotliBytes": 186993,
       "debugBytes": 1451150,
       "modules": [
         {
@@ -2237,8 +2237,8 @@
     },
     "rodx-studio": {
       "rawBytes": 2449176,
-      "gzipBytes": 471238,
-      "brotliBytes": 336787,
+      "gzipBytes": 471234,
+      "brotliBytes": 336823,
       "debugBytes": 2809492,
       "modules": [
         {
@@ -2485,8 +2485,8 @@
     },
     "example-site": {
       "rawBytes": 1108344,
-      "gzipBytes": 210909,
-      "brotliBytes": 169598,
+      "gzipBytes": 210914,
+      "brotliBytes": 169590,
       "debugBytes": 1377651,
       "modules": [
         {
@@ -2981,8 +2981,8 @@
     },
     "gonewild": {
       "rawBytes": 1319761,
-      "gzipBytes": 255981,
-      "brotliBytes": 200369,
+      "gzipBytes": 255990,
+      "brotliBytes": 200431,
       "debugBytes": 1549906,
       "modules": [
         {
@@ -3229,8 +3229,8 @@
     },
     "unified": {
       "rawBytes": 3533919,
-      "gzipBytes": 676684,
-      "brotliBytes": 339185,
+      "gzipBytes": 676689,
+      "brotliBytes": 339267,
       "debugBytes": 4163566,
       "modules": [
         {
@@ -3478,8 +3478,8 @@
   },
   "totals": {
     "rawBytes": 26317065,
-    "gzipBytes": 5248998,
-    "brotliBytes": 3753720
+    "gzipBytes": 5249016,
+    "brotliBytes": 3753832
   },
   "baseline": true,
   "baselineReason": "Initial baseline before bundle optimization"
