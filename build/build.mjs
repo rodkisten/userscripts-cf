@@ -548,9 +548,9 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
 
   const editorFamilies = [
-    ["codemirror", (id) => id.includes("/node_modules/@codemirror/")],
-    ["lezer", (id) => id.includes("/node_modules/@lezer/")],
-    ["acorn", (id) => id.includes("/node_modules/acorn/")],
+    ["codemirror", (id) => id.includes("node_modules/@codemirror/")],
+    ["lezer", (id) => id.includes("node_modules/@lezer/")],
+    ["acorn", (id) => id.includes("node_modules/acorn/")],
   ];
 
   return {
