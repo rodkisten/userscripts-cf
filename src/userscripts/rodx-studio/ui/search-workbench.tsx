@@ -55,7 +55,9 @@ const rootShadow = (): ShadowRoot | null => state.rootShadow as ShadowRoot | nul
 const shadowStyleCache = new WeakMap<ShadowRoot, Map<string, HTMLStyleElement>>();
 
 export function applyXTheme(host: HTMLElement | null | undefined): void {
-  if (!host) return;
+  if (!host) {
+    return;
+  }
 
   const element =
     document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
@@ -96,9 +98,13 @@ function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [st
   }
 
   for (const [key, css] of styles) {
-    if (!css) continue;
+    if (!css) {
+      continue;
+    }
     const existing = registered.get(key);
-    if (existing?.isConnected && existing.textContent === css) continue;
+    if (existing?.isConnected && existing.textContent === css) {
+      continue;
+    }
 
     existing?.remove();
     const sheet = root.ownerDocument.createElement("style");
@@ -162,10 +168,14 @@ export function inspectNativeQuery(query: unknown) {
 
 export function displayPreview(): void {
   const root = rootShadow();
-  if (!root || !state.draft) return;
+  if (!root || !state.draft) {
+    return;
+  }
 
   const el = root.querySelector<HTMLElement>(RODX_SELECTORS.queryPreview);
-  if (!el) return;
+  if (!el) {
+    return;
+  }
 
   const issues = analyzeDraft(state.draft);
   const PLACEHOLDER = "Adicione hashtags, palavras, mídia ou filtros…";
@@ -331,7 +341,9 @@ export function addChips(value: string, focus = true): void {
           .map((x) => x.trim())
           .filter(Boolean);
 
-  if (!parts.length) return;
+  if (!parts.length) {
+    return;
+  }
 
   const t = tray();
   if (pasted.length > 1) {
@@ -365,7 +377,9 @@ export function addChips(value: string, focus = true): void {
 }
 
 export function modifyBlocks(action: string, id = ""): void {
-  if (!state.draft) return;
+  if (!state.draft) {
+    return;
+  }
 
   // Snapshot para restauração atômica caso o limite de nós seja ultrapassado
   const snapshot = structuredClone(state.draft.blocks);
@@ -386,9 +400,13 @@ export function modifyBlocks(action: string, id = ""): void {
         newBlockGroup("OR", [newBlock("media", "images"), newBlock("media", "videos")]),
     };
     const group = templates[action]?.();
-    if (group) root.children.push(group);
+    if (group) {
+      root.children.push(group);
+    }
   } else if (action.startsWith("block-add-")) {
-    if (!match || match.node.kind !== "group") return;
+    if (!match || match.node.kind !== "group") {
+      return;
+    }
 
     const type = action.slice("block-add-".length);
     const depth = depthOfNode(root, id);
@@ -1625,7 +1643,9 @@ const boundDockShadows = new WeakSet<ShadowRoot>();
 
 export function renderRoot(): void {
   const root = rootShadow();
-  if (!root) return;
+  if (!root) {
+    return;
+  }
 
   applyXTheme(state.rootHost);
 
@@ -1646,7 +1666,9 @@ export function renderRoot(): void {
 
   if (restoreScroll) {
     const body = root.querySelector<HTMLElement>(RODX_SELECTORS.workspaceScrollArea);
-    if (body) body.scrollTop = scrollTop;
+    if (body) {
+      body.scrollTop = scrollTop;
+    }
   }
 
   if (state.open && state.view === "editor") {
@@ -1657,7 +1679,9 @@ export function renderRoot(): void {
 
 export function renderDock(): void {
   const dock = state.dockShadow as ShadowRoot | null;
-  if (!dock) return;
+  if (!dock) {
+    return;
+  }
 
   // Delegação única para listas do Studio (evita reatribuir onclick a cada render)
   if (!boundDockShadows.has(dock)) {
@@ -1728,7 +1752,9 @@ export function renderDock(): void {
   ensureWorkbenchStyles(dock, "dock");
 
   const nav = dock.querySelector<HTMLElement>(RODX_SELECTORS.searchDock);
-  if (nav) nav.scrollLeft = horizontalScroll;
+  if (nav) {
+    nav.scrollLeft = horizontalScroll;
+  }
 }
 
 export function initializeRoot(): void {
@@ -1751,7 +1777,9 @@ export function initializeRoot(): void {
     const input = (event.target as HTMLElement).closest?.(
       RODX_SELECTORS.chipInput,
     ) as HTMLInputElement | null;
-    if (!input) return;
+    if (!input) {
+      return;
+    }
 
     const key = (event as KeyboardEvent).key;
     if ((key === "Enter" || key === "Tab") && input.value.trim()) {
@@ -1801,7 +1829,9 @@ export function initializeRoot(): void {
   shadow.addEventListener(
     "touchend",
     (event) => {
-      if (yStart == null || !state.open) return;
+      if (yStart == null || !state.open) {
+        return;
+      }
       const delta = ((event as TouchEvent).changedTouches[0]?.clientY ?? yStart) - yStart;
       yStart = null;
       if (delta > 110) {

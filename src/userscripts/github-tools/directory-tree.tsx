@@ -111,7 +111,9 @@ export function restoreGitHubTreeScroll(path = location.pathname): boolean {
   try {
     const key = `ghft:scroll:${path}`;
     const stored = sessionStorage.getItem(key);
-    if (stored === null || !Number.isFinite(Number(stored))) return false;
+    if (stored === null || !Number.isFinite(Number(stored))) {
+      return false;
+    }
     const top = Number(stored);
     sessionStorage.removeItem(key);
     requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, top)));
@@ -272,7 +274,9 @@ export function mountDirectoryTree(
   const base = "/" + repo.owner + "/" + repo.repo;
   const path = location.pathname;
   const restorePageScroll = () => {
-    if (restoreScroll) restoreGitHubTreeScroll(path);
+    if (restoreScroll) {
+      restoreGitHubTreeScroll(path);
+    }
   };
   const isTree = path.startsWith(base + "/tree/");
   const encoded = isTree

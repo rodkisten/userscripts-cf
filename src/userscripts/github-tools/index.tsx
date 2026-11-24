@@ -594,15 +594,20 @@ function startGitHub(ctx: any): void {
     (event: Event) => {
       const path = event.composedPath();
       const inTree = path.some((node) => node instanceof Element && node.matches("[data-ghft-tree-host]"));
-      if (!inTree) return;
+      if (!inTree) {
+        return;
+      }
       const anchor = path.find(
         (node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement && node.matches("a[href]"),
       );
-      if (!anchor) return;
+      if (!anchor) {
+        return;
+      }
       try {
         const target = new URL(anchor.href, location.href);
-        if (target.origin !== location.origin || !/^\/(?:[^/]+\/){2}(?:tree|blob)\//.test(target.pathname))
+        if (target.origin !== location.origin || !/^\/(?:[^/]+\/){2}(?:tree|blob)\//.test(target.pathname)) {
           return;
+        }
         sessionStorage.setItem(
           `ghft:scroll:${location.pathname}`,
           String(window.scrollY || document.documentElement.scrollTop || 0),
@@ -661,7 +666,9 @@ function startGitHub(ctx: any): void {
   function attachGroupToolbar(group: DirectoryGroup, repo: RepositoryInfo, restoreScroll = false) {
     const previous = panels.get(group.parent);
     if (previous?.host.isConnected) {
-      if (restoreScroll) restoreGitHubTreeScroll();
+      if (restoreScroll) {
+        restoreGitHubTreeScroll();
+      }
       return previous;
     }
     let listContainer = group.parent;
