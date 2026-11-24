@@ -3,7 +3,6 @@ import { observePageFetch, observePageXHR } from "../../runtime/network-intercep
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { htmlLanguage } from "@codemirror/lang-html";
-import { javascriptLanguage } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import styles, { css } from "./Inspector.module.css";
 
@@ -204,7 +203,7 @@ return;
               : "Select an element first"
             : JSON.stringify(records(), null, 2);
       const content = source.slice(0, INSPECTOR_CONFIG.maxSourceCharacters);
-      const language = mode === "dom" ? htmlLanguage : javascriptLanguage;
+      const language = mode === "dom" ? htmlLanguage : [];
       if (editor && editor.dom.parentElement === editorRoot) {
         const effects = editorMode === mode ? [] : [syntax.reconfigure(language)];
         if (editor.state.doc.toString() !== content || effects.length)
