@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: 🔐 Authenticate GitHub App
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -46,18 +46,17 @@ jobs:
           persist-credentials: true
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 📦 Setup and install dependencies
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: "22"
-          cache: npm
-
-      - name: 📦 Install Dependencies
-        run: npm ci --legacy-peer-deps
+          node-version: '22'
+          package-manager: npm
+          install-args: --legacy-peer-deps
+          script: ':'
 
       - name: 🎨 Format and lint with Rod Actions
         id: format
-        uses: rodkisten/github/actions/format@main
+        uses: rodkisten/github/format@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           mode: fix
           scope: all
@@ -75,13 +74,13 @@ jobs:
         id: changes
         shell: bash
         run: |
-          git status --porcelain > changed_files.txt
-          CHANGED_COUNT=$(wc -l < changed_files.txt | tr -d ' ')
+          git status --porcelain > "$RUNNER_TEMP/changed_files.txt"
+          CHANGED_COUNT=$(wc -l < "$RUNNER_TEMP/changed_files.txt" | tr -d ' ')
           echo "count=$CHANGED_COUNT" >> "$GITHUB_OUTPUT"
 
           if [[ "$CHANGED_COUNT" -gt 0 ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            cat changed_files.txt
+            cat "$RUNNER_TEMP/changed_files.txt"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✅ No formatting changes detected."
@@ -168,7 +167,7 @@ jobs:
                 .filter(Boolean);
             };
 
-            const modifiedFiles = readLines('changed_files.txt').map(line => {
+            const modifiedFiles = readLines(require('path').join(process.env.RUNNER_TEMP, 'changed_files.txt')).map(line => {
               const status = line.slice(0, 2).trim();
               const path = line.slice(3).trim();
               return { status, path };
