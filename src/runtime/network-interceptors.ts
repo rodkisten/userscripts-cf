@@ -435,6 +435,9 @@ export function observePageFetch(
 export interface XHRObserverEvent {
   url: string;
   method: string;
+  requestBody?: string | null;
+  requestContentType?: string | null;
+  requestTruncated?: boolean;
   status?: number;
   durationMs: number;
   responseContentType?: string | null;
@@ -494,6 +497,26 @@ export function observePageXHR(
     const patchedSend = function (this: XMLHttpRequest, ...args: any[]) {
       const info = metadata.get(this) || { method: "GET", url: "" };
       const start = performance.now();
+      const bodyLimit = getEffectiveLimit();
+      let requestBody: string | null = null;
+      let requestTruncated = false;
+      try {
+        const body = args[0];
+        if (typeof body === "string") {
+          requestBody = body.slice(0, bodyLimit);
+          requestTruncated = body.length > bodyLimit;
+        } else if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) {
+          const serialized = body.toString();
+          requestBody = serialized.slice(0, bodyLimit);
+          requestTruncated = serialized.length > bodyLimit;
+        } else if (typeof FormData !== "undefined" && body instanceof FormData) {
+          const serialized = [...body.entries()]
+            .map(([key, value]) => `${key}=${typeof value === "string" ? value : `[File:${value.name}]`}`)
+            .join("&");
+          requestBody = serialized.slice(0, bodyLimit);
+          requestTruncated = serialized.length > bodyLimit;
+        } else if (body != null && bodyLimit > 0) requestBody = "[Binary or Stream Body]";
+      } catch {}
 
       this.addEventListener(
         "loadend",
@@ -501,6 +524,8 @@ export function observePageXHR(
           const responseContentType = this.getResponseHeader("content-type") || null;
           const event: XHRObserverEvent = {
             ...info,
+            requestBody,
+            requestTruncated,
             status: this.status,
             durationMs: Math.round(performance.now() - start),
             responseContentType,
