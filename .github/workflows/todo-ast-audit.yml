@@ -4,12 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.ts'
-      - '**.tsx'
-  workflow_dispatch: 
+      - "**.js"
+      - "**.mjs"
+      - "**.cjs"
+      - "**.ts"
+      - "**.tsx"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,8 +30,8 @@ jobs:
         uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           package-manager: npm
-          install: 'true'
-          script: ':'
+          install: "true"
+          script: ":"
 
       - name: Run AST Function & Diff Audit
         id: ast_audit

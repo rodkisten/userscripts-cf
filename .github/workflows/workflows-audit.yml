@@ -6,12 +6,12 @@ on:
   push:
     branches: [main, master]
     paths:
-      - '.github/workflows/**'
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.ts'
-      - '**.tsx'
+      - ".github/workflows/**"
+      - "**.js"
+      - "**.mjs"
+      - "**.cjs"
+      - "**.ts"
+      - "**.tsx"
   workflow_dispatch:
 
 permissions:
@@ -31,9 +31,9 @@ jobs:
       - name: Setup Node.js
         uses: rodkisten/github/setup-node@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: '24'
-          install: 'false'
-          cache: 'false'
+          node-version: "24"
+          install: "false"
+          cache: "false"
 
       - name: Scan Workflows for Invalid Script Paths
         env:
