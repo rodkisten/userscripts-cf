@@ -14,6 +14,7 @@ await build(
       lib: {
         entry: path.join(root, "studio/entry.tsx"),
         name: "RodUIDesignStudio",
+        cssFileName: "design-system",
         formats: ["iife"],
         fileName: () => "design-system.js",
       },

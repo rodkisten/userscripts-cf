@@ -64,10 +64,7 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
       if (ts.isIdentifier(key) || ts.isStringLiteralLike(key)) {
         features.add(key.text);
       } else if (ts.isComputedPropertyName(key)) {
-        if (
-          ts.isStringLiteralLike(key.expression) ||
-          ts.isNoSubstitutionTemplateLiteral(key.expression)
-        ) {
+        if (ts.isStringLiteralLike(key.expression) || ts.isNoSubstitutionTemplateLiteral(key.expression)) {
           features.add(key.expression.text);
         } else {
           dynamic = true;
@@ -84,7 +81,15 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
     if (ts.isFunctionLike(node)) {
       pushScope();
       for (const param of node.parameters) {
-        registerShadowing(param.name);
+        if (ts.isIdentifier(param.name) && param.name.text === rootName) {
+          // Runtime modules conventionally receive ScriptContext as `ctx`.
+          // A parameter with the configured context name establishes a fresh
+          // context binding for this function; it must not be treated as
+          // ordinary lexical shadowing.
+          currentScope().add(rootName);
+        } else {
+          registerShadowing(param.name);
+        }
       }
 
       // Retorno implícito em Arrow Function: `() => ctx`
@@ -127,10 +132,7 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
     // 4. Acesso por índice/chave: `ctx["auth"]` ou `ctx[key]`
     if (ts.isElementAccessExpression(node) && isContext(node.expression)) {
       const arg = node.argumentExpression;
-      if (
-        arg &&
-        (ts.isStringLiteralLike(arg) || ts.isNoSubstitutionTemplateLiteral(arg))
-      ) {
+      if (arg && (ts.isStringLiteralLike(arg) || ts.isNoSubstitutionTemplateLiteral(arg))) {
         features.add(arg.text);
       } else {
         dynamic = true;
@@ -146,7 +148,8 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
       // Chamada de função/método: `fn(ctx)` ou `ctx()`
       (ts.isCallExpression(node) && (isContext(node.expression) || node.arguments.some(isContext))) ||
       // Instanciação: `new Class(ctx)`
-      (ts.isNewExpression(node) && (isContext(node.expression) || Boolean(node.arguments?.some(isContext)))) ||
+      (ts.isNewExpression(node) &&
+        (isContext(node.expression) || Boolean(node.arguments?.some(isContext)))) ||
       // Retorno explícito: `return ctx`
       (ts.isReturnStatement(node) && isContext(node.expression)) ||
       // Shorthand em objeto: `{ ctx }`

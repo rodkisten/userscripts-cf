@@ -89,7 +89,10 @@ export interface ScriptDefinition {
 export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
-  readonly events?: ReturnType<typeof createEventBus>;
+  readonly events?: ReturnType<typeof createEventBus> & {
+    readonly shared: ReturnType<typeof createSharedEvents>;
+    readonly dom: DomEventsEngine;
+  };
   readonly http: ReturnType<typeof createHttpFeature>["http"];
   readonly gm: ReturnType<typeof createGMFeature> | undefined;
   readonly dispose: () => Promise<void>;
@@ -172,9 +175,11 @@ export function initializeRodFeatures(
         : undefined,
     toaster:
       (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) && mountSharedReact
-        ? createToasterFeature(mountSharedReact)
+        ? createToasterFeature(mountSharedReact, { ownerDocument: host.document })
         : undefined,
-    storage: createStorageFeature(host),
+    get storage() {
+      return createStorageFeature(host);
+    },
   };
 }
 
@@ -348,6 +353,21 @@ export function createCoreRuntime(
   const queryService = Object.freeze({
     get client() {
       return getQueryClient();
+    },
+    createAsyncOptions(
+      createLoader: () => (
+        query: string,
+        context: { readonly signal?: AbortSignal },
+      ) => Promise<unknown> | unknown,
+      query: string,
+      options: Record<string, unknown> = {},
+    ) {
+      const queryKey = Array.isArray(options.queryKey) ? options.queryKey : [options.queryKey ?? "async"];
+      return {
+        ...options,
+        queryKey: [...queryKey, query],
+        queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) => createLoader()(query, { signal }),
+      };
     },
   });
 
@@ -647,6 +667,68 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
+    let events:
+      | (ReturnType<typeof createEventBus> & {
+          readonly shared: ReturnType<typeof createSharedEvents>;
+          readonly dom: DomEventsEngine;
+        })
+      | undefined;
+
+    function getEvents() {
+      if (events) return events;
+
+      const local = createEventBus({
+        namespace: definition.id,
+        onDiagnostic: () =>
+          captureDiagnostic(
+            new Error("Duplicate runtime event listener"),
+            LOG_TAG_EVENTS,
+            definition.id,
+            host,
+          ),
+      });
+      const shared = createSharedEvents({ host });
+      const dom = createDomEventsEngine(definition.id, host);
+      const disposeEvents = () => {
+        local.dispose();
+        shared.dispose();
+        dom.dispose();
+      };
+      abort.signal.addEventListener("abort", disposeEvents, { once: true });
+
+      events = Object.freeze(
+        Object.defineProperties(
+          {
+            on: local.on,
+            once: local.once,
+            off: local.off,
+            emit: local.emit,
+            waitFor: local.waitFor,
+            dispose: local.dispose,
+            shared,
+            dom,
+          },
+          {
+            size: {
+              enumerable: true,
+              get: () => local.size,
+            },
+          },
+        ),
+      ) as ReturnType<typeof createEventBus> & {
+        readonly shared: ReturnType<typeof createSharedEvents>;
+        readonly dom: DomEventsEngine;
+      };
+
+      onDispose(() => {
+        abort.signal.removeEventListener("abort", disposeEvents);
+        disposeEvents();
+        events = undefined;
+      });
+
+      return events;
+    }
+
     let resolvedContext: ScriptContext;
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
@@ -693,9 +775,7 @@ export function createCoreRuntime(
           return stop;
         },
       }),
-      query: {
-        ...queryService,
-      },
+      query: queryService,
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),
@@ -707,6 +787,9 @@ export function createCoreRuntime(
       dom,
       db,
       signal: abort.signal,
+      get events() {
+        return getEvents();
+      },
       storage,
       menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? instanceMenu : undefined,
       dock: Object.freeze({
@@ -805,7 +888,7 @@ export function createCoreRuntime(
       pageStyle(cssContent: string, options?: { id?: string }) {
         const id = options?.id;
         const existing = id ? host.document.getElementById(id) : null;
-        if (existing instanceof HTMLStyleElement) {
+        if (existing instanceof host.HTMLStyleElement) {
           existing.textContent = String(cssContent);
           return existing;
         }

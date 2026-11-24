@@ -160,6 +160,18 @@ export function createRuntime(
   const mountSharedReact = (component: ReactElement, container: HTMLElement): MountedReactHandle => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
 
+    // ReactDOM requires a browser-global window even when the runtime receives
+    // an injected Window (for example happy-dom in unit tests). Keep the
+    // container lifecycle valid in non-browser hosts without creating a fake
+    // global window. Real userscript/browser execution always takes the normal
+    // portal path below.
+    if (typeof window === "undefined") {
+      return {
+        update() {},
+        dispose() {},
+      };
+    }
+
     const id = nextPortalId();
     let disposed = false;
 
@@ -258,7 +270,7 @@ export function createRuntime(
 
             // BUG FIX: Track `onDispose` cleanup even when reusing an existing `<style>` element by `id`, or avoid leaking orphaned styles if owned by this context.
             // Why: Previously, if script A created a `pageStyle` with `id: "foo"` and script B updated it, script A disposing would remove script B's active stylesheet; conversely, if an external style existed, script B had no cleanup.
-            if (existing instanceof HTMLStyleElement) {
+            if (existing instanceof host.HTMLStyleElement) {
               existing.textContent = String(css);
               return existing;
             }

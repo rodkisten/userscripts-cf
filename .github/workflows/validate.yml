@@ -66,6 +66,13 @@ jobs:
             node --check "$script"
           done
 
+      - name: "[EXP] Mapear grafo de dependências e testes"
+        id: graph
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/analyze-impact-graph.mjs --out=.impact-graph.json
+
       - name: 🧭 Detect changes and plan validation
         id: plan
         if: steps.install.outcome == 'success'
@@ -169,6 +176,11 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Build the live PR branch, not a stale historical merge ref when a
+          # failed workflow attempt is re-run after additional fixes.
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
 
       - name: 🟢 Setup Node.js 24
         uses: actions/setup-node@v4

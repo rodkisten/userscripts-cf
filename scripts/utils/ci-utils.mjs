@@ -1,3 +1,6 @@
+// @TODO: extract unicode
+// @TODO: implement package.json parsing
+
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -10,8 +13,9 @@ import { defaultLogger } from './ci-logger.mjs';
 export function resolveInputs(fallbackMap) {
   const resolved = {};
   for (const [key, candidates] of Object.entries(fallbackMap)) {
-    const found = candidates.find((val) => val !== undefined && val !== null && val !== '');
-    resolved[key] = found ?? '';
+    const list = Array.isArray(candidates) ? candidates : [candidates];
+    const found = list.find((val) => val !== undefined && val !== null && String(val).trim() !== '');
+    resolved[key] = found !== undefined ? String(found).trim() : '';
   }
   return resolved;
 }
@@ -47,9 +51,15 @@ export function buildCliContext() {
     throw new Error('GITHUB_REPOSITORY (owner/repo) environment variable is not set.');
   }
 
+  let payload = {};
   const eventPath = process.env.GITHUB_EVENT_PATH;
-  const payload =
-    eventPath && fs.existsSync(eventPath) ? JSON.parse(fs.readFileSync(eventPath, 'utf8')) : {};
+  if (eventPath && fs.existsSync(eventPath)) {
+    try {
+      payload = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
+    } catch {
+      payload = {};
+    }
+  }
 
   return {
     repo: { owner, repo },
@@ -228,16 +238,20 @@ export function runInteractive(cmd, args = [], options = {}) {
 
 export function getChangedFiles(baseSha, headSha, diffFilter = 'ACMR') {
   if (!baseSha || !headSha) return [];
-  const res = runCmd('git', ['diff', '--name-only', `--diff-filter=${diffFilter}`, baseSha, headSha]);
+  const res = runCmd(
+    'git',
+    ['diff', '--name-only', `--diff-filter=${diffFilter}`, '-z', baseSha, headSha],
+    { silent: true },
+  );
   if (!res.ok || !res.stdout) return [];
-  return res.stdout
-    .split('\n')
-    .map((f) => f.trim())
-    .filter((f) => f && fs.existsSync(f));
+  return [...new Set(res.stdout.split('\0').filter(Boolean))]
+    .filter((f) => fs.existsSync(f))
+    .sort();
 }
 
 export function hasPackageTool(rootDir, binName) {
-  const localBin = path.join(rootDir, 'node_modules', '.bin', binName);
+  const resolvedBin = process.platform === 'win32' ? `${binName}.cmd` : binName;
+  const localBin = path.join(rootDir, 'node_modules', '.bin', resolvedBin);
   if (fs.existsSync(localBin)) return true;
 
   const pkgPath = path.join(rootDir, 'package.json');
@@ -255,13 +269,16 @@ export function hasPackageTool(rootDir, binName) {
 // Native GitHub API Client, Bot Identity & Idempotent Comments
 // ============================================================================
 export function createNativeGithubClient(token) {
+  const baseUrl = process.env.GITHUB_API_URL || 'https://api.github.com';
+
   const request = async (method, urlPath, body) => {
-    const res = await fetch(`https://api.github.com${urlPath}`, {
+    const res = await fetch(`${baseUrl}${urlPath}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'rod-ci-utils',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -285,8 +302,11 @@ export function createNativeGithubClient(token) {
           request('GET', `/repos/${owner}/${repo}/compare/${base}...${head}`),
       },
       issues: {
-        listComments: ({ owner, repo, issue_number, per_page = 100 }) =>
-          request('GET', `/repos/${owner}/${repo}/issues/${issue_number}/comments?per_page=${per_page}`),
+        listComments: ({ owner, repo, issue_number, per_page = 100, page = 1 }) =>
+          request(
+            'GET',
+            `/repos/${owner}/${repo}/issues/${issue_number}/comments?per_page=${per_page}&page=${page}`,
+          ),
         createComment: ({ owner, repo, issue_number, body }) =>
           request('POST', `/repos/${owner}/${repo}/issues/${issue_number}/comments`, { body }),
         updateComment: ({ owner, repo, comment_id, body }) =>
@@ -348,18 +368,29 @@ export async function upsertMarkedComment({
   matchBotLogin = false,
 }) {
   const botLogin = matchBotLogin ? await resolveBotLogin(github) : null;
-  const { data: comments } = await github.rest.issues.listComments({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    per_page: 100,
-  });
+  let existing = null;
+  let page = 1;
 
-  const existing = comments.find((c) => {
-    const hasMarker = c.body?.includes(marker);
-    if (!hasMarker) return false;
-    return botLogin ? c.user?.login === botLogin : true;
-  });
+  while (true) {
+    const { data: comments } = await github.rest.issues.listComments({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      per_page: 100,
+      page,
+    });
+
+    if (!Array.isArray(comments) || comments.length === 0) break;
+
+    existing = comments.find((c) => {
+      const hasMarker = c.body?.includes(marker);
+      if (!hasMarker) return false;
+      return botLogin ? c.user?.login === botLogin : true;
+    });
+
+    if (existing || comments.length < 100) break;
+    page += 1;
+  }
 
   if (existing) {
     await github.rest.issues.updateComment({

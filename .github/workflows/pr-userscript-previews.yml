@@ -4,9 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - '**/*.yml'
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yml"
 run-name: "📸 Preview Deploy • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
 
 permissions:
@@ -20,6 +20,7 @@ jobs:
       - name: 📥 Checkout do Código
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
@@ -42,6 +43,7 @@ jobs:
           PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
           set -euo pipefail
+          export PR_HEAD_SHA="$(git rev-parse HEAD)"
           if [[ -z "$PAGES_PROJECT" ]]; then
             echo "::error::Configure USERSCRIPTS_PREVIEW_PAGES_PROJECT"
             exit 1
@@ -58,6 +60,22 @@ jobs:
           fi
           node build/build.mjs "--targets=$TARGETS"
           node build/pr-preview.mjs
+          # Build the playground from the same PR checkout, not main.
+          node build/design-system.mjs
+          cp dist/design-system.js "dist/pr-preview/$PR_NUMBER/design-system.js"
+          if [[ -f dist/design-system.css ]]; then
+            cp dist/design-system.css "dist/pr-preview/$PR_NUMBER/design-system.css"
+          fi
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const pr = process.env.PR_NUMBER;
+          const dir = `dist/pr-preview/${pr}`;
+          let html = fs.readFileSync("hosting/design-system.html", "utf8");
+          html = html.replace('src="/design-system.js"', 'src="./design-system.js"');
+          if (fs.existsSync(`${dir}/design-system.css`)) html = html.replace("</head>", '<link rel="stylesheet" href="./design-system.css"></head>');
+          html = html.replace("</head>", `<meta name="preview-pr" content="${pr}"><meta name="preview-sha" content="${process.env.PR_HEAD_SHA}"></head>`);
+          fs.writeFileSync(`${dir}/design-system.html`, html);
+          NODE
           echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"
