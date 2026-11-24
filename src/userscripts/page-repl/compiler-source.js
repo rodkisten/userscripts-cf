@@ -69,7 +69,9 @@ export function emitPersistentProgram(source, ast, analysis, { persist = true } 
     }
     const key = source.slice(node.key.start, node.key.end);
     const value = render(node.value, "value");
-    return value === source.slice(node.value.start, node.value.end) ? renderOriginal(node) : `${key}: ${value}`;
+    return value === source.slice(node.value.start, node.value.end)
+      ? renderOriginal(node)
+      : `${key}: ${value}`;
   }
 
   function renderVariableDeclaration(node, parentKey) {
@@ -105,11 +107,7 @@ export function emitPersistentProgram(source, ast, analysis, { persist = true } 
       return member(references.get(node));
     }
 
-    if (
-      persist &&
-      node.type === "VariableDeclaration" &&
-      declarations.has(node)
-    ) {
+    if (persist && node.type === "VariableDeclaration" && declarations.has(node)) {
       return renderVariableDeclaration(node, parentKey);
     }
 
