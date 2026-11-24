@@ -3,7 +3,7 @@ import { RODX_SELECTORS } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { renderDock } from "./search-workbench.tsx";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export let DragDock;
 
@@ -14,8 +14,8 @@ export function initializeDeckDragDock() {
     const point = (event) => event.touches?.[0] || event.changedTouches?.[0] || event;
     const reset = () => {
       if (!active) {
-return;
-}
+        return;
+      }
       clearTimeout(active.timer);
       const shadow = active.shadow;
       shadow
@@ -26,14 +26,14 @@ return;
     };
     function move(fromId, beforeId, after = false) {
       if (!fromId || !beforeId || fromId === beforeId) {
-return;
-}
+        return;
+      }
       const previous = state.searches.slice();
       const from = state.searches.findIndex((s) => s.id === fromId);
       const dest = state.searches.findIndex((s) => s.id === beforeId);
       if (from < 0 || dest < 0) {
-return;
-}
+        return;
+      }
       const [item] = state.searches.splice(from, 1);
       const at = state.searches.findIndex((s) => s.id === beforeId);
       state.searches.splice(at + (after ? 1 : 0), 0, item);
@@ -46,15 +46,15 @@ return;
     }
     function closestTarget(x, y) {
       if (!active) {
-return null;
-}
+        return null;
+      }
       const elements = [...active.shadow.querySelectorAll(RODX_SELECTORS.draggableItems)].filter(
         (el) => el.dataset.dragId !== active.id,
       );
       const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.(RODX_SELECTORS.draggableItems);
       if (direct && direct.dataset.dragId !== active.id) {
-return direct;
-}
+        return direct;
+      }
       // A touch can land between tabs or outside the dock; use nearest center.
       return (
         elements.reduce((best, node) => {
@@ -71,18 +71,17 @@ return direct;
     }
     function setDrop(x, y) {
       if (!active?.started) {
-return;
-}
+        return;
+      }
       const shadow = active.shadow;
       const nav = shadow.querySelector(RODX_SELECTORS.searchDock);
       if (nav) {
         const r = nav.getBoundingClientRect();
         if (x > r.right - 34) {
-nav.scrollLeft += 15;
-}
-        else if (x < r.left + 34) {
-nav.scrollLeft -= 15;
-}
+          nav.scrollLeft += 15;
+        } else if (x < r.left + 34) {
+          nav.scrollLeft -= 15;
+        }
       }
       const item = closestTarget(x, y);
       shadow
@@ -103,8 +102,8 @@ nav.scrollLeft -= 15;
     }
     function start(x, y) {
       if (!active || active.started) {
-return;
-}
+        return;
+      }
       active.started = true;
       active.handle.closest(RODX_SELECTORS.draggableItems)?.classList.add("dragging");
       const ghost = document.createElement("div");
@@ -119,8 +118,8 @@ return;
         "dragstart",
         (e) => {
           if (e.target.closest(RODX_SELECTORS.draggableItems)) {
-e.preventDefault();
-}
+            e.preventDefault();
+          }
         },
         true,
       );
@@ -128,8 +127,8 @@ e.preventDefault();
         "selectstart",
         (e) => {
           if (e.target.closest(RODX_SELECTORS.dragHandles)) {
-e.preventDefault();
-}
+            e.preventDefault();
+          }
         },
         true,
       );
@@ -137,8 +136,8 @@ e.preventDefault();
         "contextmenu",
         (e) => {
           if (e.target.closest(RODX_SELECTORS.dragHandles)) {
-e.preventDefault();
-}
+            e.preventDefault();
+          }
         },
         true,
       );
@@ -155,11 +154,11 @@ e.preventDefault();
       const down = (e) => {
         const h = e.target.closest?.(RODX_SELECTORS.dragHandles);
         if (!h) {
-return;
-}
+          return;
+        }
         if (active) {
-reset();
-}
+          reset();
+        }
         const p = point(e),
           id = h.dataset.dragHandle;
         active = {
@@ -176,25 +175,25 @@ reset();
         };
         // Touch-handle never scrolls or selects; the timeline itself remains scrollable.
         if (e.type === "touchstart" && e.cancelable) {
-e.preventDefault();
-}
+          e.preventDefault();
+        }
         active.timer = setTimeout(() => {
           if (active && active.id === id) {
-start(active.startX, active.startY);
-}
+            start(active.startX, active.startY);
+          }
         }, RUNTIME_LIMITS.uiDraggableDock.attachDelayMs);
       };
       const track = (e) => {
         if (!active) {
-return;
-}
+          return;
+        }
         const p = point(e);
         if (!p) {
-return;
-}
+          return;
+        }
         if (e.cancelable) {
-e.preventDefault();
-}
+          e.preventDefault();
+        }
         if (!active.started) {
           if (Math.hypot(p.clientX - active.startX, p.clientY - active.startY) > 5) {
             clearTimeout(active.timer);
@@ -202,30 +201,30 @@ e.preventDefault();
           }
         }
         if (active.started) {
-setDrop(p.clientX, p.clientY);
-}
+          setDrop(p.clientX, p.clientY);
+        }
       };
       const up = (e) => {
         if (!active) {
-return;
-}
+          return;
+        }
         const p = point(e);
         if (active.started) {
           if (p) {
-setDrop(p.clientX, p.clientY);
-}
+            setDrop(p.clientX, p.clientY);
+          }
           const { id, target, after } = active;
           swallowUntil = Date.now() + 650;
           reset();
           if (target) {
-move(id, target, after);
-}
+            move(id, target, after);
+          }
         } else {
-reset();
-}
+          reset();
+        }
         if (e.type === "touchend" && e.cancelable) {
-e.preventDefault();
-}
+          e.preventDefault();
+        }
       };
       shadow.addEventListener("touchstart", down, {
         capture: true,
@@ -244,8 +243,8 @@ e.preventDefault();
         "pointerdown",
         (e) => {
           if (e.pointerType !== "touch") {
-down(e);
-}
+            down(e);
+          }
         },
         true,
       );
@@ -253,8 +252,8 @@ down(e);
         "pointermove",
         (e) => {
           if (e.pointerType !== "touch") {
-track(e);
-}
+            track(e);
+          }
         },
         true,
       );
@@ -262,8 +261,8 @@ track(e);
         "pointerup",
         (e) => {
           if (e.pointerType !== "touch") {
-up(e);
-}
+            up(e);
+          }
         },
         true,
       );
@@ -271,8 +270,8 @@ up(e);
         "pointercancel",
         (e) => {
           if (e.pointerType !== "touch") {
-reset();
-}
+            reset();
+          }
         },
         true,
       );

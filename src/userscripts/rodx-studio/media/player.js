@@ -7,7 +7,7 @@ import {
 } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
 import { VideoExperience } from "./experience.js";
-import { SeekPreviews } from "./previews.js";
+import { SeekPreviews } from "./seek-preview.tsx";
 import { state } from "../state/deck.js";
 
 export let PlayerPreference;
@@ -19,8 +19,8 @@ export function initializeDeckPlayerPreference() {
       failed = false;
     function load() {
       if (loading || customElements.get("video-skin")) {
-return;
-}
+        return;
+      }
       loading = true;
       try {
         // The userscript manager evaluates the external @require before this script.
@@ -30,8 +30,8 @@ return;
         console.error("[RodX] Falha ao inicializar Video.js 10.3.0:", error);
       }
       if (failed) {
-console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
-}
+        console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
+      }
     }
     function configureGestures(entry) {
       const container =
@@ -39,8 +39,8 @@ console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
         entry.skin.querySelector(MEDIA_COMPONENT_SELECTORS.mediaContainer);
       SeekPreviews.attach(entry.video, entry);
       if (!container || entry.gestureContainer === container) {
-return;
-}
+        return;
+      }
       const specs = [
         {
           type: "tap",
@@ -77,16 +77,15 @@ return;
         matches.forEach((el) => el.remove());
         for (const key of ["type", "action", "value", "pointer", "region"]) {
           if (spec[key] === undefined) {
-gesture.removeAttribute(key);
-}
-          else {
-gesture.setAttribute(key, spec[key]);
-}
+            gesture.removeAttribute(key);
+          } else {
+            gesture.setAttribute(key, spec[key]);
+          }
         }
         gesture.removeAttribute("disabled");
         if (!gesture.isConnected) {
-container.append(gesture);
-}
+          container.append(gesture);
+        }
       }
       entry.gestureContainer = container;
     }
@@ -103,33 +102,31 @@ container.append(gesture);
           down.id !== event.pointerId ||
           performance.now() - down.at > 250 ||
           Math.hypot(event.clientX - down.x, event.clientY - down.y) > 12
-        )
-          {
-return;
-}
+        ) {
+          return;
+        }
         const path = event.composedPath();
         const play = path.some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaPlayButton));
         const interactive = path.some((el) => el?.matches?.(DOM_SELECTORS.playerInteractiveControls));
         if (!play) {
           if (interactive || event.pointerType !== "mouse") {
-return;
-}
+            return;
+          }
           const rect = video.getBoundingClientRect();
           if (
             !rect.width ||
             !rect.height ||
             event.clientX < rect.left + rect.width / 3 ||
             event.clientX > rect.right - rect.width / 3
-          )
-            {
-return;
-}
+          ) {
+            return;
+          }
         }
         intent = video.paused ? "play" : "pause";
         armedUntil = performance.now() + 650;
         if (intent === "play") {
-delete video.dataset.rodxGesturePaused;
-}
+          delete video.dataset.rodxGesturePaused;
+        }
       };
       root.addEventListener(
         "pointerdown",
@@ -164,8 +161,8 @@ delete video.dataset.rodxGesturePaused;
         "pause",
         () => {
           if (performance.now() <= armedUntil && intent === "pause") {
-video.dataset.rodxGesturePaused = "1";
-}
+            video.dataset.rodxGesturePaused = "1";
+          }
         },
         {
           signal: lifecycle.signal,
@@ -179,11 +176,10 @@ video.dataset.rodxGesturePaused = "1";
         () => {
           if (video.dataset.rodxGesturePaused) {
             if (performance.now() <= armedUntil && intent === "play") {
-delete video.dataset.rodxGesturePaused;
-}
-            else {
-video.pause();
-}
+              delete video.dataset.rodxGesturePaused;
+            } else {
+              video.pause();
+            }
           }
         },
         {
@@ -196,8 +192,8 @@ video.pause();
       SeekPreviews.cleanup(video);
       entry.cleanupGestures?.();
       if (entry.skin.contains(video)) {
-entry.root.before(video);
-}
+        entry.root.before(video);
+      }
       entry.root.remove();
       video.controls = entry.controls;
       clearComponentStyle(video);
@@ -208,27 +204,26 @@ entry.root.before(video);
     function scan() {
       const mode = state.visual.playerMode;
       if (mode === "videojs" && Studio.dom.nodes("video").length) {
-load();
-}
+        load();
+      }
       for (const [video, entry] of mounted) {
         if (!video.isConnected || mode !== "videojs") {
-restore(video, entry);
-}
-        else {
-configureGestures(entry);
-}
+          restore(video, entry);
+        } else {
+          configureGestures(entry);
+        }
       }
       for (const video of document.querySelectorAll(NATIVE_X_SELECTORS.visiblePageVideos)) {
         const wrapper = video.closest(NATIVE_X_SELECTORS.videoComponentWrappers) || video.parentElement;
         if (!wrapper) {
-continue;
-}
+          continue;
+        }
         wrapper.querySelectorAll(RODX_SELECTORS.videoTransport).forEach((bar) => {
           bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
         });
         if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) {
-continue;
-}
+          continue;
+        }
         const root = document.createElement("video-player");
         const skin = document.createElement("video-skin");
         root.dataset.rodxPlayerControl = "1";
@@ -243,10 +238,9 @@ continue;
         applyComponentStyle(skin, "rx-player-skin", false);
         skin.style.setProperty("aspect-ratio", String(ratio), "important");
         video.addEventListener("loadedmetadata", () => {
-          if (video.videoWidth && video.videoHeight)
-            {
-skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeight), "important");
-}
+          if (video.videoWidth && video.videoHeight) {
+            skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeight), "important");
+          }
         });
         const entry = {
           video,
@@ -264,8 +258,8 @@ skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeig
         configureGestures(entry);
         void Promise.resolve(skin.updateComplete).then(() => {
           if (root.isConnected) {
-configureGestures(entry);
-}
+            configureGestures(entry);
+          }
         });
         entry.cleanupGestures = respectGesturePause(video, root);
         let requestedAudio;
@@ -277,8 +271,8 @@ configureGestures(entry);
             ) {
               requestedAudio = video.muted || video.volume === 0;
               if (requestedAudio) {
-VideoExperience.enableAudio(video, true);
-}
+                VideoExperience.enableAudio(video, true);
+              }
             }
           },
           true,

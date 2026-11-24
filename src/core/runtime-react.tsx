@@ -7,7 +7,6 @@ import type { ReactScriptContext } from "./react-context-contract.js";
 import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
-import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
 import {
   createPortalRegistry,
   type PortalId,
@@ -230,7 +229,7 @@ export function createRuntime(
       }
     },
 
-    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
+    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext, ui }) => {
       onDispose(() => {
         const context = getContext();
         for (const entry of registry.getSnapshot()) {
@@ -240,54 +239,22 @@ export function createRuntime(
         }
       });
 
+      if (!ui) return {};
+
       return {
         ui: Object.freeze({
           get root() {
-            return ensureUIRoot();
+            return ui.root;
           },
 
           get host() {
-            return ensureUIRoot().host as unknown as HTMLDivElement;
+            return ui.host;
           },
 
-          mount(node: Node) {
-            ensureUIRoot().append(node);
-            return node;
-          },
-
-          style(css: string) {
-            const node = host.document.createElement("style");
-            node.textContent = String(css);
-            ensureUIRoot().append(node);
-            onDispose(() => node.remove());
-            return node;
-          },
-
-          pageStyle(css: string, options?: { id?: string }) {
-            const target = host.document.head || host.document.documentElement;
-            const id = options?.id;
-            const existing = id ? host.document.getElementById(id) : null;
-
-            // BUG FIX: Track `onDispose` cleanup even when reusing an existing `<style>` element by `id`, or avoid leaking orphaned styles if owned by this context.
-            // Why: Previously, if script A created a `pageStyle` with `id: "foo"` and script B updated it, script A disposing would remove script B's active stylesheet; conversely, if an external style existed, script B had no cleanup.
-            if (existing instanceof host.HTMLStyleElement) {
-              existing.textContent = String(css);
-              return existing;
-            }
-
-            const node = host.document.createElement("style");
-            if (id) node.id = id;
-            node.textContent = String(css);
-            target.append(node);
-            onDispose(() => node.remove());
-            return node;
-          },
-
-          registerStyles(...styles: ShadowStyle[]) {
-            const dispose = registerShadowStyles(ensureUIRoot(), styles);
-            onDispose(dispose);
-            return dispose;
-          },
+          mount: ui.mount,
+          style: ui.style,
+          pageStyle: ui.pageStyle,
+          registerStyles: ui.registerStyles,
 
           mountReact(component: ReactElement, container?: PortalTarget) {
             if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
@@ -304,8 +271,6 @@ export function createRuntime(
               disposed = true;
               portalDisposers.delete(id);
               registry.remove(id);
-              // IMPROVEMENT: Replaced unsafe `(mountPoint as Element).remove()` cast with `!isShadowRoot` narrowing.
-              // Why: `ShadowRoot` does not have a `.remove()` method; narrowing proves `mountPoint` is an `Element`.
               if (owned && !isShadowRoot(mountPoint)) {
                 mountPoint.remove();
               }

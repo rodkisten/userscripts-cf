@@ -3,7 +3,6 @@ import { observePageFetch, observePageXHR } from "../../runtime/network-intercep
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { htmlLanguage } from "@codemirror/lang-html";
-import { javascriptLanguage } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import styles, { css } from "./Inspector.module.css";
 
@@ -76,11 +75,11 @@ export default {
     };
     const cancelPicker = () => {
       if (pickerListener) {
-document.removeEventListener("pointerdown", pickerListener, true);
-}
+        document.removeEventListener("pointerdown", pickerListener, true);
+      }
       if (pickerCancelListener) {
-document.removeEventListener("keydown", pickerCancelListener, true);
-}
+        document.removeEventListener("keydown", pickerCancelListener, true);
+      }
       pickerListener = undefined;
       pickerCancelListener = undefined;
       setPicking(false);
@@ -123,8 +122,8 @@ document.removeEventListener("keydown", pickerCancelListener, true);
       highlightTarget = el;
       lastRect = "";
       if (!el) {
-return;
-}
+        return;
+      }
       overlay = document.createElement("div");
       overlay.setAttribute("aria-hidden", "true");
       overlay.style.cssText =
@@ -138,11 +137,11 @@ return;
       setSelectionName(el ? pickSelector(el) : "Nenhum elemento");
       setDepth(0);
       if (!el) {
-return;
-}
+        return;
+      }
       if (scroll()) {
-el.scrollIntoView({ behavior: "smooth", block: "center" });
-}
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     };
     const moveSelection = (direction) => {
       const next =
@@ -154,20 +153,20 @@ el.scrollIntoView({ behavior: "smooth", block: "center" });
               ? selected?.previousElementSibling
               : selected?.nextElementSibling;
       if (!next || own(next)) {
-return;
-}
+        return;
+      }
       highlight(next);
       setSelector(pickSelector(next));
       renderSource();
     };
     const traverse = (level) => {
       if (!selected) {
-return;
-}
+        return;
+      }
       let node = selected;
       for (let i = 0; i < level && node.parentElement; i++) {
-node = node.parentElement;
-}
+        node = node.parentElement;
+      }
       if (!own(node)) {
         markElement(node);
         setDepth(level);
@@ -176,22 +175,21 @@ node = node.parentElement;
     };
     const locateInSource = () => {
       if (!editor || !selected || tab() !== "dom") {
-return;
-}
+        return;
+      }
       const source = editor.state.doc.toString();
       const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
       const index = source.indexOf(marker);
       if (index >= 0) {
-editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
-}
-      else {
-setStatus("Elemento não localizado no snapshot");
-}
+        editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
+      } else {
+        setStatus("Elemento não localizado no snapshot");
+      }
     };
     const renderSource = () => {
       if (!editorRoot || !open()) {
-return;
-}
+        return;
+      }
       const mode = tab();
       const source =
         mode === "dom"
@@ -204,13 +202,12 @@ return;
               : "Select an element first"
             : JSON.stringify(records(), null, 2);
       const content = source.slice(0, INSPECTOR_CONFIG.maxSourceCharacters);
-      const language = mode === "dom" ? htmlLanguage : javascriptLanguage;
+      const language = mode === "dom" ? htmlLanguage : [];
       if (editor && editor.dom.parentElement === editorRoot) {
         const effects = editorMode === mode ? [] : [syntax.reconfigure(language)];
-        if (editor.state.doc.toString() !== content || effects.length)
-          {
-editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: content }, effects });
-}
+        if (editor.state.doc.toString() !== content || effects.length) {
+          editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: content }, effects });
+        }
         editorMode = mode;
       } else {
         editor?.destroy();
@@ -236,18 +233,17 @@ editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: conte
       domObserver = undefined;
       clearTimeout(refreshTimer);
       if (!live() || !open() || tab() !== "dom") {
-return;
-}
+        return;
+      }
       domObserver = new MutationObserver((mutations) => {
         if (
           mutations.some(
             (m) =>
               !own(m.target) && m.target !== overlay && ![...m.addedNodes].every((node) => node === overlay),
           )
-        )
-          {
-schedule();
-}
+        ) {
+          schedule();
+        }
       });
       domObserver.observe(document.documentElement, {
         subtree: true,
@@ -273,11 +269,10 @@ schedule();
     };
     const copy = (text) => {
       if (ctx.clipboard?.copy) {
-ctx.clipboard.copy(text);
-}
-      else {
-navigator.clipboard?.writeText(text);
-}
+        ctx.clipboard.copy(text);
+      } else {
+        navigator.clipboard?.writeText(text);
+      }
     };
     const pick = () => {
       cancelPicker();
@@ -286,8 +281,8 @@ navigator.clipboard?.writeText(text);
       pickerListener = (event) => {
         const target = event.composedPath?.().find((node) => node instanceof Element && !own(node));
         if (!target || own(event.target)) {
-return;
-}
+          return;
+        }
         event.preventDefault();
         event.stopImmediatePropagation();
         cancelPicker();
@@ -327,8 +322,8 @@ return;
       (event) => {
         setRecords((prev) => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests));
         if (open() && tab() === "network") {
-schedule();
-}
+          schedule();
+        }
       },
       { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters },
     );
@@ -338,8 +333,8 @@ schedule();
           [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests),
         );
         if (open() && tab() === "network") {
-schedule();
-}
+          schedule();
+        }
       },
       { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters },
     );
@@ -366,9 +361,8 @@ schedule();
         live();
         updateLiveObserver();
         if (isOpen) {
-queueMicrotask(renderSource);
-}
-        else {
+          queueMicrotask(renderSource);
+        } else {
           editor?.destroy();
           editor = undefined;
           editorRoot = undefined;
@@ -407,8 +401,8 @@ queueMicrotask(renderSource);
               aria-label="DOM Inspector"
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
-setOpen(false);
-}
+                  setOpen(false);
+                }
               }}
             >
               <header className={styles.header}>

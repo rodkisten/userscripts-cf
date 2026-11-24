@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-network-inspector-1.css?inline";
@@ -54,28 +54,26 @@ export function createNetworkInspector(Studio) {
   ];
   function redact(value, key = "") {
     if (state.reveal) {
-return value;
-}
+      return value;
+    }
     if (sensitive.test(key)) {
-return "[REDACTED]";
-}
+      return "[REDACTED]";
+    }
     if (Array.isArray(value)) {
-return value.map((x) => redact(x));
-}
-    if (value && typeof value === "object")
-      {
-return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, redact(v, k)]));
-}
-    if (typeof value === "string")
-      {
-return secretPatterns.reduce((raw, re) => raw.replace(re, "$1[REDACTED]"), value);
-}
+      return value.map((x) => redact(x));
+    }
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, redact(v, k)]));
+    }
+    if (typeof value === "string") {
+      return secretPatterns.reduce((raw, re) => raw.replace(re, "$1[REDACTED]"), value);
+    }
     return value;
   }
   function viewText(raw) {
     if (raw == null || raw === "") {
-return "";
-}
+      return "";
+    }
     try {
       return JSON.stringify(redact(JSON.parse(raw)), null, 2);
     } catch {
@@ -85,12 +83,11 @@ return "";
   function safeURL(value) {
     try {
       const url = new URL(value);
-      for (const key of url.searchParams.keys())
-        {
-if (sensitive.test(key)) {
-url.searchParams.set(key, "[REDACTED]");
-}
-}
+      for (const key of url.searchParams.keys()) {
+        if (sensitive.test(key)) {
+          url.searchParams.set(key, "[REDACTED]");
+        }
+      }
       return url.href;
     } catch {
       return String(value);
@@ -111,24 +108,23 @@ url.searchParams.set(key, "[REDACTED]");
         order.length <= settings.maxItems &&
         state.bytes <= settings.maxBytes &&
         now - first.at <= settings.ttlMs
-      )
-        {
-break;
-}
+      ) {
+        break;
+      }
       records.delete(order.shift());
       selected.delete(first.id);
       state.bytes -= first._size || 0;
       state.countDropped++;
       if (state.active === first.id) {
-state.active = "";
-}
+        state.active = "";
+      }
     }
   }
   let renderTimer = 0;
   function refreshSoon() {
     if (!state.open || renderTimer) {
-return;
-}
+      return;
+    }
     renderTimer = setTimeout(() => {
       renderTimer = 0;
       renderRows();
@@ -137,21 +133,21 @@ return;
   }
   Studio.on("network:inspect", (event) => {
     if (!state.capture) {
-return;
-}
+      return;
+    }
     const id = String(event.id);
     const old = records.get(id);
     if (event.phase === "request") {
       if (old) {
-return;
-}
+        return;
+      }
       const record = {
         ...event,
         id,
         operation: (() => {
           if (event.operationName) {
-return event.operationName;
-}
+            return event.operationName;
+          }
           try {
             const url = new URL(event.url);
             return url.searchParams.get("operationName") || url.pathname.split("/").pop() || "GraphQL";
@@ -168,8 +164,8 @@ return event.operationName;
       const phase = old.phase;
       Object.assign(old, event);
       if (event.phase === "request-body") {
-old.phase = phase;
-}
+        old.phase = phase;
+      }
       const newBytes = bytes(old);
       state.bytes += newBytes - old._size;
       old._size = newBytes;
@@ -283,14 +279,14 @@ old.phase = phase;
     const match = (item) => {
       const status = Number(item.status || 0);
       if (state.status === "error" && !(item.error || status >= 400)) {
-return false;
-}
+        return false;
+      }
       if (state.status === "pending" && item.phase === "response") {
-return false;
-}
+        return false;
+      }
       if (state.status === "success" && !(status >= 200 && status < 400)) {
-return false;
-}
+        return false;
+      }
       return (
         !term ||
         [item.operation, item.url, item.method, status, item.id].some((value) =>
@@ -364,14 +360,13 @@ return false;
     $(RODX_SELECTORS.inspectorLoadMore).hidden = rows.length <= state.visible;
   }
   function textValue(item) {
-    if (state.tab === "Headers")
-      {
-return JSON.stringify({
+    if (state.tab === "Headers") {
+      return JSON.stringify({
         request: item.headers || {},
         response: item.responseHeaders || {},
         unavailable: "Headers restritos pelo navegador não são recuperáveis",
       });
-}
+    }
     if (state.tab === "Payload") {
       const u = new URL(item.url || location.href, location.origin);
       return JSON.stringify({
@@ -405,8 +400,8 @@ return JSON.stringify({
     details.dataset.path = path;
     details.addEventListener("toggle", () => {
       if (!(details as HTMLDetailsElement).open || details.dataset.loaded) {
-return;
-}
+        return;
+      }
       details.dataset.loaded = "1";
       let offset = 0;
       const pushPage = () => {
@@ -554,16 +549,16 @@ return;
         delete copy._size;
         copy.url = safeURL(copy.url);
         for (const key of ["headers", "responseHeaders"]) {
-copy[key] = redact(copy[key] || {});
-}
+          copy[key] = redact(copy[key] || {});
+        }
         for (const key of ["requestBody", "originalBody", "filteredBody"]) {
-copy[key] = viewText(copy[key]);
-}
+          copy[key] = viewText(copy[key]);
+        }
         return copy;
       });
     if (!rows.length) {
-return;
-}
+      return;
+    }
     const blob = new Blob(
       [JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), rows }, null, 2)],
       {
@@ -622,13 +617,11 @@ return;
       renderRows();
     }
     if ((event.target as HTMLElement).matches(RODX_SELECTORS.inspectorSelection)) {
-      if ((event.target as HTMLInputElement).checked)
-        {
-selected.add((event.target as HTMLElement).dataset.rxSelect);
-}
-      else {
-selected.delete((event.target as HTMLElement).dataset.rxSelect);
-}
+      if ((event.target as HTMLInputElement).checked) {
+        selected.add((event.target as HTMLElement).dataset.rxSelect);
+      } else {
+        selected.delete((event.target as HTMLElement).dataset.rxSelect);
+      }
     }
   });
   root.addEventListener("click", async (event) => {
@@ -707,8 +700,8 @@ selected.delete((event.target as HTMLElement).dataset.rxSelect);
       case "path": {
         const path = window.prompt("Caminho JSON, por exemplo $.data.user.result", "$");
         if (!path) {
-break;
-}
+          break;
+        }
         const keys = path
           .replace(/^\$\.?/, "")
           .split(".")
@@ -716,14 +709,14 @@ break;
         let prefix = "$";
         for (const key of ["", ...keys]) {
           if (key) {
-prefix += "." + key;
-}
+            prefix += "." + key;
+          }
           const branch = [...root.querySelectorAll<HTMLElement>(RODX_SELECTORS.inspectorTreeDetails)].find(
             (el) => el.dataset.path === prefix,
           );
           if (branch) {
-(branch as HTMLDetailsElement).open = true;
-}
+            (branch as HTMLDetailsElement).open = true;
+          }
           await Promise.resolve(undefined);
         }
         root
@@ -745,8 +738,8 @@ prefix += "." + key;
       ).value = String(settings[field] / Number(scale));
     }
     if (state.open) {
-return;
-}
+      return;
+    }
     state.open = true;
     root.style.setProperty("display", "block", "important");
     const diagnostic = Studio.diagnostics().selectors;
@@ -775,7 +768,7 @@ return;
     }),
   };
   if (typeof GM_registerMenuCommand === "function") {
-GM_registerMenuCommand("RodX Studio · REDE", open);
-}
+    GM_registerMenuCommand("RodX Studio · REDE", open);
+  }
   return Studio.services.networkInspector;
 }

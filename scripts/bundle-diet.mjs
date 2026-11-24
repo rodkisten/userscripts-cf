@@ -8,7 +8,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const baselinePath = path.join(root, ".github", "bundle-baseline.json");
 const marker = "<!-- userscripts-bundle-diet -->";
-const previewOrigin = (process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts.preview.migos.club").replace(/\/$/, "");
+const previewOrigin = (
+  process.env.USERSCRIPTS_PREVIEW_URL || "https://userscripts.preview.migos.club"
+).replace(/\/$/, "");
 
 const arg = (name, fallback) => {
   const prefix = "--" + name + "=";
@@ -25,7 +27,10 @@ const bytes = (value) => {
   if (value < 1024 ** 2) return (value / 1024).toFixed(1) + " KB";
   return (value / 1024 ** 2).toFixed(2) + " MB";
 };
-const escapeCell = (value) => String(value ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
+const escapeCell = (value) =>
+  String(value ?? "")
+    .replaceAll("|", "\\|")
+    .replaceAll("\n", " ");
 const delta = (current, baseline) => {
   if (!Number.isFinite(baseline) || baseline === 0) return "new";
   const diff = current - baseline;
@@ -58,9 +63,11 @@ export async function createSnapshot() {
   for (const [id, audit] of Object.entries(classAudit)) {
     const file = path.join(dist, id + ".user.js");
     const source = await fs.readFile(file);
-    const brotliBytes = audit.brotliBytes ?? brotliCompressSync(source, {
-      params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
-    }).byteLength;
+    const brotliBytes =
+      audit.brotliBytes ??
+      brotliCompressSync(source, {
+        params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+      }).byteLength;
     bundles[id] = {
       rawBytes: audit.bytes ?? source.byteLength,
       gzipBytes: audit.gzipBytes,
@@ -137,10 +144,12 @@ function moduleChanges(current, baseline) {
   const currentMap = new Map();
   const baselineMap = new Map();
   for (const bundle of Object.values(current.bundles || {})) {
-    for (const item of bundle.modules || []) currentMap.set(item.id, (currentMap.get(item.id) || 0) + item.renderedBytes);
+    for (const item of bundle.modules || [])
+      currentMap.set(item.id, (currentMap.get(item.id) || 0) + item.renderedBytes);
   }
   for (const bundle of Object.values(baseline.bundles || {})) {
-    for (const item of bundle.modules || []) baselineMap.set(item.id, (baselineMap.get(item.id) || 0) + item.renderedBytes);
+    for (const item of bundle.modules || [])
+      baselineMap.set(item.id, (baselineMap.get(item.id) || 0) + item.renderedBytes);
   }
   return [...new Set([...currentMap.keys(), ...baselineMap.keys()])]
     .map((id) => ({ id, delta: (currentMap.get(id) || 0) - (baselineMap.get(id) || 0) }))
@@ -152,7 +161,8 @@ async function upsertComment(body) {
   const token = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPOSITORY;
   const pr = Number(process.env.PR_NUMBER);
-  if (!token || !repository || !Number.isSafeInteger(pr)) throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY and PR_NUMBER are required");
+  if (!token || !repository || !Number.isSafeInteger(pr))
+    throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY and PR_NUMBER are required");
   const [owner, repo] = repository.split("/");
   const headers = {
     Accept: "application/vnd.github+json",
@@ -162,7 +172,7 @@ async function upsertComment(body) {
   };
   const api = process.env.GITHUB_API_URL || "https://api.github.com";
   const list = await fetch(`${api}/repos/${owner}/${repo}/issues/${pr}/comments?per_page=100`, { headers });
-  if (!list.ok) throw new Error("Unable to list PR comments: " + list.status + " " + await list.text());
+  if (!list.ok) throw new Error("Unable to list PR comments: " + list.status + " " + (await list.text()));
   const comments = await list.json();
   const existing = comments.find((comment) => comment.body?.includes(marker));
   const endpoint = existing
@@ -173,7 +183,10 @@ async function upsertComment(body) {
     headers,
     body: JSON.stringify({ body }),
   });
-  if (!response.ok) throw new Error("Unable to upsert Bundle Diet comment: " + response.status + " " + await response.text());
+  if (!response.ok)
+    throw new Error(
+      "Unable to upsert Bundle Diet comment: " + response.status + " " + (await response.text()),
+    );
   return existing ? "updated" : "created";
 }
 
@@ -196,9 +209,16 @@ function makeReport(current, baseline) {
     const before = baseline?.bundles?.[id];
     return `| \`${escapeCell(id)}\` | ${bytes(now.rawBytes)} | ${bytes(now.gzipBytes)} | ${bytes(now.brotliBytes)} | ${hasBaseline && before ? delta(now.brotliBytes, before.brotliBytes) : "baseline pending"} |`;
   });
-  const totalDelta = hasBaseline ? delta(current.totals.brotliBytes, baseline.totals.brotliBytes) : "baseline pending";
+  const totalDelta = hasBaseline
+    ? delta(current.totals.brotliBytes, baseline.totals.brotliBytes)
+    : "baseline pending";
   const commitLines = commits.length
-    ? commits.map((item) => `- [\`${item.sha.slice(0, 8)}\`](${repoUrl}/commit/${item.sha}) ${escapeCell(item.message)}`).join("\n")
+    ? commits
+        .map(
+          (item) =>
+            `- [\`${item.sha.slice(0, 8)}\`](${repoUrl}/commit/${item.sha}) ${escapeCell(item.message)}`,
+        )
+        .join("\n")
     : "- No commits detected between base and HEAD.";
   const fileRows = files.slice(0, 40).map((file) => {
     const bundle = bundleForFile(file.path, bundleIds);
@@ -211,12 +231,19 @@ function makeReport(current, baseline) {
   const moduleSection = (title, list, icon) =>
     `### ${icon} ${title}\n` +
     (list.length
-      ? list.map((item) => `- \`${escapeCell(item.id)}\` ${item.delta > 0 ? "+" : ""}${bytes(item.delta)} rendered`).join("\n")
+      ? list
+          .map(
+            (item) =>
+              `- \`${escapeCell(item.id)}\` ${item.delta > 0 ? "+" : ""}${bytes(item.delta)} rendered`,
+          )
+          .join("\n")
       : "- None.");
   const baselineLabel = hasBaseline
     ? `[\`${baseline.sha.slice(0, 8)}\`](${repoUrl}/commit/${baseline.sha})`
     : "not captured yet";
-  const previewLines = bundleIds.map((id) => `- [${id}.user.js](${previewOrigin}/${pr}/${id}.user.js)`).join("\n");
+  const previewLines = bundleIds
+    .map((id) => `- [${id}.user.js](${previewOrigin}/${pr}/${id}.user.js)`)
+    .join("\n");
   return `${marker}
 ## 📦 Bundle Diet · PR #${pr}
 
@@ -243,7 +270,7 @@ ${moduleSection("Largest regressions", regressions, "⚠️")}
 - [Visual playground](${previewOrigin}/${pr}/)
 ${previewLines}
 
-> Baseline comparison uses the versioned `.github/bundle-baseline.json`. Raw, gzip and Brotli are measured from the actual generated `.user.js` files. Module deltas are pre-minification rendered contributions and are diagnostic, not estimated download savings.
+> Baseline comparison uses the versioned .github/bundle-baseline.json. Raw, gzip and Brotli are measured from the actual generated .user.js files. Module deltas are pre-minification rendered contributions and are diagnostic, not estimated download savings.
 `;
 }
 

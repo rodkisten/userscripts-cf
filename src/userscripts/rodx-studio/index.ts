@@ -1,10 +1,10 @@
 import { Studio } from "./core/studio.js";
 import { ScriptContext } from "../../core/runtime";
-import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
+import { initializeNetwork } from "./bootstrap/network.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
-import { configureSharedMount, disposeAllViews } from "./ui/react-mount.tsx";
-import { disposeRodxToast } from "./ui/toast.tsx";
+import { configureSharedMount, disposeAllViews } from "./ui/runtime.tsx";
+import { disposeRodxToast } from "./ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas
@@ -78,8 +78,8 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 // ============================================================================
 export function startRodX(ctx: ScriptContext): void {
   if (hasRodXAlreadyStarted(window)) {
-return;
-}
+    return;
+  }
   markRodXAsStarted(window);
   configureSharedMount((component, target) => ctx.ui.mountReact(component, target));
 

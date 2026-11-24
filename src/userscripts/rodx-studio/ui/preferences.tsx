@@ -1,4 +1,13 @@
 import { createDefaults } from "../../../config/defaults.js";
+import { Studio } from "../core/studio.js";
+import { FeedFilters } from "../feeds/filters.tsx";
+import { state } from "../state/deck.js";
+import { normalizeVisual } from "../state/visual.js";
+import { saveState } from "../storage/account.js";
+import { XRepost } from "../tweets/publisher.tsx";
+import { blankDraft, renderRoot } from "./search-workbench.tsx";
+import { showRodxToast } from "./runtime.tsx";
+
 export function buildStudioPreferences(Studio, deck) {
   const { state } = deck;
   const labels = {
@@ -50,24 +59,22 @@ export function buildStudioPreferences(Studio, deck) {
     options: choices,
   });
   function field(name, label, value) {
-    if (typeof value === "boolean")
-      {
-return {
+    if (typeof value === "boolean") {
+      return {
         type: "switch",
         name,
         label,
         value,
       };
-}
-    if (typeof value === "number")
-      {
-return {
+    }
+    if (typeof value === "number") {
+      return {
         type: "number",
         name,
         label,
         value,
       };
-}
+    }
     return {
       type: "text",
       name,
@@ -235,14 +242,14 @@ return {
               };
             for (const [key, value] of Object.entries(values)) {
               if (key.startsWith("v_")) {
-next[key.slice(2)] = value;
-}
+                next[key.slice(2)] = value;
+              }
               if (key.startsWith("m_")) {
-modules[key.slice(2)] = value;
-}
+                modules[key.slice(2)] = value;
+              }
               if (key.startsWith("l_")) {
-settings[key.slice(2)] = value;
-}
+                settings[key.slice(2)] = value;
+              }
             }
             state.visual = deck.normalizeVisual(next);
             Studio.configure({
@@ -256,8 +263,8 @@ settings[key.slice(2)] = value;
               },
             });
             if (Studio.services.lists) {
-localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
-}
+              localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
+            }
             await deck.saveState();
             deck.publish();
             Studio.invalidate("state");
@@ -282,8 +289,8 @@ localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
   function filters() {
     const scope = deck.scope();
     if (!scope) {
-return open();
-}
+      return open();
+    }
     const current = deck.feedSettings();
     Studio.menu.open({
       id: "rodx-feed-options",
@@ -343,4 +350,44 @@ return open();
     open,
     filters,
   };
+}
+
+export let Preferences;
+
+export function initializeDeckPreferences() {
+  Preferences = buildStudioPreferences(Studio, {
+    state,
+    normalizeVisual,
+    saveState,
+    publish: () => FeedFilters.publish(),
+    scope: () => FeedFilters.scope(),
+    feedSettings: () => FeedFilters.settings(),
+    toast: showRodxToast,
+  });
+}
+
+export function closePanel() {
+  state.open = false;
+  renderRoot();
+}
+
+export function openPanel(view = "saved") {
+  if (view === "visual") {
+    Studio.services.lists?.close();
+    state.open = false;
+    renderRoot();
+    Preferences.open();
+    return;
+  }
+  Studio.services.lists?.close();
+  state.view = view;
+  state.open = true;
+  state.message = "";
+  if (view === "editor" && !state.draft) {
+    state.draft = blankDraft();
+  }
+  renderRoot();
+  if (view === "xrepost") {
+    XRepost.onOpen();
+  }
 }

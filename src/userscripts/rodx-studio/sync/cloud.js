@@ -9,7 +9,7 @@ import { normalizedPreset, normalizedSearch } from "../storage/normalize.js";
 import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
 import { repaint } from "../ui/dock.tsx";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let CloudSync;
 
@@ -22,17 +22,16 @@ export function initializeDeckCloudSync() {
     let timers = new Map();
     let running = new Map();
     const config = () => {
-      if (!configPromise)
-        {
-configPromise = gmAvailable ? storage.get(STORAGE_KEY).catch(() => null) : Promise.resolve(null);
-}
+      if (!configPromise) {
+        configPromise = gmAvailable ? storage.get(STORAGE_KEY).catch(() => null) : Promise.resolve(null);
+      }
       return configPromise;
     };
     async function request(method, path, body) {
       const cfg = await config();
       if (!cfg?.token) {
-return null;
-}
+        return null;
+      }
       const gm =
         typeof GM_xmlhttpRequest === "function"
           ? GM_xmlhttpRequest
@@ -40,8 +39,8 @@ return null;
             ? GM.xmlHttpRequest.bind(GM)
             : null;
       if (!gm) {
-throw new Error("GM_xmlhttpRequest indisponível para sincronização");
-}
+        throw new Error("GM_xmlhttpRequest indisponível para sincronização");
+      }
       return new Promise((resolve, reject) => {
         gm({
           method,
@@ -60,9 +59,8 @@ throw new Error("GM_xmlhttpRequest indisponível para sincronização");
               return reject(new Error("Resposta não JSON do relay"));
             }
             if (response.status >= 200 && response.status < 300) {
-resolve(data);
-}
-            else {
+              resolve(data);
+            } else {
               const error = new Error(data.error || `Relay HTTP ${response.status}`);
               error.status = response.status;
               error.remote = data;
@@ -82,8 +80,8 @@ resolve(data);
       const cfg = await config();
       const token = prompt("Chave pessoal RodX (rodx_…); deixe vazio para desativar", cfg?.token || "");
       if (token == null) {
-return;
-}
+        return;
+      }
       if (token.trim() && !/^rodx_[A-Za-z0-9_-]{30,}$/.test(token.trim())) {
         showRodxToast("A chave pessoal deve começar com rodx_", "error");
         return;
@@ -98,8 +96,8 @@ return;
       );
       try {
         if (token.trim()) {
-await request("GET", "/me");
-}
+          await request("GET", "/me");
+        }
         await storage.set(
           STORAGE_KEY,
           token.trim()
@@ -111,8 +109,8 @@ await request("GET", "/me");
         revision.clear();
         showRodxToast(token.trim() ? "Nuvem pessoal conectada" : "Nuvem desativada");
         if (token.trim() && state.account) {
-void onAccountLoaded(state.account, state.accountGeneration);
-}
+          void onAccountLoaded(state.account, state.accountGeneration);
+        }
       } catch (error) {
         configPromise = old;
         showRodxToast(`Falha de autenticação: ${error.message}`, "error");
@@ -120,8 +118,8 @@ void onAccountLoaded(state.account, state.accountGeneration);
     }
     function queueSnapshot(payload) {
       if (!payload?.account) {
-return;
-}
+        return;
+      }
       const account = payload.account;
       clearTimeout(timers.get(account));
       timers.set(
@@ -138,8 +136,8 @@ return;
     async function sendSnapshot(account, payload) {
       const cfg = await config();
       if (!cfg?.token) {
-return;
-}
+        return;
+      }
       const prev = running.get(account) || Promise.resolve();
       const next = prev
         .catch(() => {})
@@ -149,8 +147,8 @@ return;
             await onAccountLoaded(account, state.accountGeneration);
           }
           if (!revision.has(account)) {
-return;
-}
+            return;
+          }
           try {
             const database = await Studio.services.lists?.exportDatabase();
             const result = await request("PUT", "/snapshot", {
@@ -164,10 +162,9 @@ return;
               database &&
               (!verified?.data?.studioDatabase ||
                 verified.data.studioDatabase.members?.length !== database.members.length)
-            )
-              {
-throw new Error("O relay não confirmou o banco completo. Cópia local preservada.");
-}
+            ) {
+              throw new Error("O relay não confirmou o banco completo. Cópia local preservada.");
+            }
           } catch (error) {
             if (error.status === 409) {
               // The remote copy changed. Keep both copies for manual reconciliation;
@@ -182,10 +179,9 @@ throw new Error("O relay não confirmou o banco completo. Cópia local preservad
                   }),
                 );
               } catch (_) {}
-              if (state.account === account)
-                {
-showRodxToast("Conflito na nuvem: cópia local preservada", "error");
-}
+              if (state.account === account) {
+                showRodxToast("Conflito na nuvem: cópia local preservada", "error");
+              }
             }
             throw error;
           }
@@ -195,14 +191,14 @@ showRodxToast("Conflito na nuvem: cópia local preservada", "error");
         await next;
       } finally {
         if (running.get(account) === next) {
-running.delete(account);
-}
+          running.delete(account);
+        }
       }
     }
     async function reconcileHistory(account) {
       if (!SearchHistory?.importRemote) {
-return;
-}
+        return;
+      }
       let offset = 0;
       for (let i = 0; i < 1000; i++) {
         const remote = await request(
@@ -210,12 +206,12 @@ return;
           `/history?account=${encodeURIComponent(account)}&limit=500&offset=${offset}`,
         );
         if (!remote) {
-return;
-}
+          return;
+        }
         await SearchHistory.importRemote(account, remote.entries || []);
         if (!remote.hasMore) {
-break;
-}
+          break;
+        }
         offset = remote.nextOffset;
       }
       // Upload current local history after remote merge. Batched, idempotent.
@@ -223,16 +219,16 @@ break;
       for (let i = 0; i < 1000; i++) {
         const local = await SearchHistory.exportPage(account, offset, 100);
         if (!local.rows.length) {
-break;
-}
+          break;
+        }
         await request("POST", "/history", {
           account,
           entries: local.rows,
         });
         offset += local.rows.length;
         if (!local.more) {
-break;
-}
+          break;
+        }
       }
     }
     async function reconcileSeen(account) {
@@ -244,16 +240,16 @@ break;
         );
         const entries = result?.entries || [];
         if (state.account !== account) {
-return;
-}
+          return;
+        }
         for (const row of entries) {
-if (!state.seen.has(row.id)) {
-state.seen.set(row.id, row.at);
-}
-}
+          if (!state.seen.has(row.id)) {
+            state.seen.set(row.id, row.at);
+          }
+        }
         if (entries.length < 1000) {
-break;
-}
+          break;
+        }
         offset += entries.length;
       }
       Seen.flushSoon();
@@ -270,13 +266,13 @@ break;
     }
     async function onAccountLoaded(account, generation) {
       if (!account || !(await config())?.token) {
-return;
-}
+        return;
+      }
       try {
         const remote = await request("GET", `/snapshot?account=${encodeURIComponent(account)}`);
         if (!remote || state.account !== account || state.accountGeneration !== generation) {
-return;
-}
+          return;
+        }
         revision.set(account, remote.revision);
         const local = await storage.get(PREFIX + account).catch(() => null);
         if (remote.data) {
@@ -294,35 +290,33 @@ return;
             state.searches = (remote.data.searches || []).map(normalizedSearch).filter(Boolean);
             state.presets = (remote.data.presets || []).map(normalizedPreset).filter(Boolean);
             state.visual = normalizeVisual(remote.data.visual);
-            if (remote.data.studioDatabase)
-              {
-await Studio.services.lists?.importDatabase(remote.data.studioDatabase);
-}
+            if (remote.data.studioDatabase) {
+              await Studio.services.lists?.importDatabase(remote.data.studioDatabase);
+            }
             if (remote.data.runtimePreferences) {
-Studio.configure(remote.data.runtimePreferences);
-}
+              Studio.configure(remote.data.runtimePreferences);
+            }
             state.selectionList = (remote.data.selectionList || []).slice(0, 150);
-            if (remote.data.relayPreferences)
-              {
-await Relay.applyPreferences(account, remote.data.relayPreferences);
-}
+            if (remote.data.relayPreferences) {
+              await Relay.applyPreferences(account, remote.data.relayPreferences);
+            }
             await storage.set(PREFIX + account, remote.data);
             recoveryWrite(PREFIX + account, remote.data);
             repaint();
           } else if (local && localTime > remoteTime) {
-queueSnapshot(local);
-}
+            queueSnapshot(local);
+          }
         } else if (local?.searches && !running.has(account)) {
-queueSnapshot(local);
-}
+          queueSnapshot(local);
+        }
         // History and seen are independent from the snapshot and never truncated.
         void reconcileHistory(account).catch((err) => console.warn("[RodX cloud history]", err));
         void reconcileSeen(account).catch((err) => console.warn("[RodX cloud seen]", err));
       } catch (error) {
         console.warn("[RodX cloud] Sem conexão; usando dados locais:", error);
         if (state.account === account) {
-state.storageWarning = `Nuvem indisponível: ${error.message}`;
-}
+          state.storageWarning = `Nuvem indisponível: ${error.message}`;
+        }
       }
     }
     function recordHistory(account, entry) {

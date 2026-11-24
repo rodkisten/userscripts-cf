@@ -5,9 +5,9 @@ import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lis
 import { VERSION } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { XClientLists } from "./client.js";
-import { studioListIndex } from "./routes.js";
+import { studioListIndex } from "./access.tsx";
 import { state } from "../state/deck.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let ProfileLists;
 
@@ -46,8 +46,8 @@ export function initializeDeckProfileLists() {
         /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|highlights|articles))?\/?$/,
       );
       if (!match || excluded.has(match[1].toLowerCase())) {
-return "";
-}
+        return "";
+      }
       return match[1];
     }
     function stop() {
@@ -86,8 +86,8 @@ return "";
     async function addToLists() {
       modal?.close();
       if (Studio.services.lists) {
-return Studio.services.lists.picker(handle, host);
-}
+        return Studio.services.lists.picker(handle, host);
+      }
       const expected = handle;
       const primary =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
@@ -111,14 +111,14 @@ return Studio.services.lists.picker(handle, host);
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise<any>((resolve) => setTimeout(resolve, RUNTIME_LIMITS.listsProfile.resolveDelayMs));
         if (profile() !== expected) {
-return;
-}
+          return;
+        }
         const action = [...document.querySelectorAll<HTMLElement>(DOM_SELECTORS.menuItems)].find((el) =>
           label.test(el.textContent || ""),
         );
         if (!action) {
-continue;
-}
+          continue;
+        }
         action.click();
         cache.delete(account + ":" + handle.toLowerCase());
         return;
@@ -137,10 +137,9 @@ continue;
       const body = document.createElement("div");
       body.className = "all-items";
       items.forEach((item) => body.append(listLink(item)));
-      if (!items.length)
-        {
-body.textContent = loading ? "Carregando as listas públicas…" : error || "Nenhuma lista disponível.";
-}
+      if (!items.length) {
+        body.textContent = loading ? "Carregando as listas públicas…" : error || "Nenhuma lista disponível.";
+      }
       const footer = document.createElement("footer");
       const native = document.createElement("a");
       native.href = membershipURL();
@@ -149,16 +148,16 @@ body.textContent = loading ? "Carregando as listas públicas…" : error || "Nen
       modal.append(header, body, footer);
       modal.addEventListener("click", (event) => {
         if (event.target === modal) {
-modal.close();
-}
+          modal.close();
+        }
       });
       shadow.append(modal);
       modal.showModal();
     }
     function render() {
       if (!shadow) {
-return;
-}
+        return;
+      }
       let row = shadow.querySelector(RODX_SELECTORS.listRows);
       if (!row) {
         const style = document.createElement("style");
@@ -188,8 +187,8 @@ return;
         strip.append(status);
       }
       if (error) {
-strip.append(button("Tentar novamente", load));
-}
+        strip.append(button("Tentar novamente", load));
+      }
       const native = document.createElement("a");
       native.href = membershipURL();
       native.textContent = "Ver no X";
@@ -224,10 +223,9 @@ strip.append(button("Tentar novamente", load));
           account !== expectedAccount ||
           requestController !== controller ||
           controller.signal.aborted
-        )
-          {
-return;
-}
+        ) {
+          return;
+        }
         await Studio.services.lists?.ingest(loaded);
         items = loaded.map((item) => ({
           ...item,
@@ -238,10 +236,9 @@ return;
         }));
         remember();
       } catch (reason) {
-        if (handle !== expectedHandle || account !== expectedAccount || requestController !== controller)
-          {
-return;
-}
+        if (handle !== expectedHandle || account !== expectedAccount || requestController !== controller) {
+          return;
+        }
         error =
           reason.name === "AbortError"
             ? "Tempo esgotado ao consultar listas. Use Ver no X."
@@ -260,8 +257,8 @@ return;
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainElement) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainRoleContainers);
       if (!main) {
-return null;
-}
+        return null;
+      }
       const tabs = main.querySelector<HTMLElement>(DOM_SELECTORS.tabLists);
       if (tabs) {
         const block = tabs.closest(NATIVE_X_SELECTORS.scrollSnapList) || tabs;
@@ -284,21 +281,19 @@ return null;
         };
       }
       const bio = main.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileDescription);
-      if (bio)
-        {
-return {
+      if (bio) {
+        return {
           parent: bio.parentElement,
           before: bio.nextSibling,
         };
-}
+      }
       const name = main.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileHeaderIdentity);
-      if (name && !name.closest(DOM_SELECTORS.articles))
-        {
-return {
+      if (name && !name.closest(DOM_SELECTORS.articles)) {
+        return {
           parent: name.parentElement,
           before: name.nextSibling,
         };
-}
+      }
       return null;
     }
     function scan() {
@@ -312,15 +307,15 @@ return {
         handle = "";
       }
       if (!current) {
-return;
-}
+        return;
+      }
       if (host?.isConnected) {
-return;
-}
+        return;
+      }
       const point = mountPoint(current);
       if (!point?.parent || point.parent.closest(DOM_SELECTORS.articles)) {
-return;
-}
+        return;
+      }
       stop();
       host?.remove();
       handle = current;
@@ -338,13 +333,13 @@ return;
       error = "";
       render();
       if (!(hit && Date.now() - hit.at < 300000)) {
-void load();
-}
+        void load();
+      }
     }
     Studio.on("lists:names-ready", () => {
       if (host?.isConnected) {
-render();
-}
+        render();
+      }
     });
     // Isolate the profile strip from failures in other timeline enhancements.
 

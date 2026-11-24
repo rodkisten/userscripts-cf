@@ -6,8 +6,8 @@ import ts from "typescript";
  *
  * @param {string} source Código-fonte a ser analisado
  * @param {string} [filename="entry.ts"] Nome do arquivo para inferir a sintaxe (TS, TSX, JS, JSX)
- * @param {{ contextIdentifier?: string }} [options={}] Opções de análise
- * @returns {{ features: string[], dynamic: boolean }}
+ * @param {{ contextIdentifier?: string, includePaths?: boolean }} [options={}] Opções de análise
+ * @returns {{ features: string[], dynamic: boolean, paths?: string[] }}
  */
 export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {}) {
   const rootName = options.contextIdentifier ?? "ctx";
@@ -16,6 +16,8 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
 
   /** @type {Set<string>} */
   const features = new Set();
+  /** @type {Set<string>} */
+  const paths = new Set();
   let dynamic = false;
 
   // Pilha de escopos léxicos: cada Set guarda os nomes de variáveis que são aliases do `ctx` naquele escopo.
@@ -37,6 +39,49 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
 
   const popScope = () => {
     scopeStack.pop();
+  };
+
+  /** @param {ts.Node | undefined} node */
+  const contextPath = (node) => {
+    if (!node) return null;
+    let current = unwrapExpression(node);
+    const segments = [];
+
+    while (ts.isPropertyAccessExpression(current) || ts.isElementAccessExpression(current)) {
+      if (ts.isPropertyAccessExpression(current)) {
+        segments.unshift(current.name.text);
+      } else {
+        const arg = current.argumentExpression;
+        if (!arg || (!ts.isStringLiteralLike(arg) && !ts.isNoSubstitutionTemplateLiteral(arg))) {
+          return null;
+        }
+        segments.unshift(arg.text);
+      }
+      current = unwrapExpression(current.expression);
+    }
+
+    return ts.isIdentifier(current) && currentScope().has(current.text) ? segments : null;
+  };
+
+  /** @param {ts.Node} node */
+  const isNestedAccessReceiver = (node) => {
+    const parent = node.parent;
+    if (!parent) return false;
+    if (ts.isPropertyAccessExpression(parent) || ts.isElementAccessExpression(parent)) {
+      return unwrapExpression(parent.expression) === unwrapExpression(node);
+    }
+    return false;
+  };
+
+  /** @param {ts.Node} node */
+  const recordPath = (node) => {
+    const segments = contextPath(node);
+    if (!segments?.length) return false;
+    features.add(segments[0]);
+    if (options.includePaths && !isNestedAccessReceiver(node)) {
+      paths.add(segments.join("."));
+    }
+    return true;
   };
 
   /** @param {ts.BindingName} nameNode */
@@ -124,17 +169,16 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
       }
     }
 
-    // 3. Acesso direto a propriedade: `ctx.auth` ou `ctx?.auth`
-    if (ts.isPropertyAccessExpression(node) && isContext(node.expression)) {
-      features.add(node.name.text);
+    // 3. Acessos de propriedade estáticos, incluindo cadeias como
+    // `ctx.ui.mountReact`. O conjunto `features` preserva o contrato
+    // top-level; `paths` permite decisões mais finas no bundler.
+    if (ts.isPropertyAccessExpression(node)) {
+      recordPath(node);
     }
 
     // 4. Acesso por índice/chave: `ctx["auth"]` ou `ctx[key]`
-    if (ts.isElementAccessExpression(node) && isContext(node.expression)) {
-      const arg = node.argumentExpression;
-      if (arg && (ts.isStringLiteralLike(arg) || ts.isNoSubstitutionTemplateLiteral(arg))) {
-        features.add(arg.text);
-      } else {
+    if (ts.isElementAccessExpression(node)) {
+      if (!recordPath(node) && isContext(node.expression)) {
         dynamic = true;
       }
     }
@@ -188,10 +232,14 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
 
   visit(file);
 
-  return {
+  const result = {
     features: [...features].sort(),
     dynamic,
   };
+  if (options.includePaths) {
+    result.paths = [...paths].sort();
+  }
+  return result;
 }
 
 /**

@@ -1,7 +1,7 @@
 import TelegramIcon from "../../../assets/icons/social-telegram.svg?component";
 import WhatsappIcon from "../../../assets/icons/social-whatsapp.svg?component";
 import InstagramIcon from "../../../assets/icons/social-instagram.svg?component";
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RODX_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-links-social-1.css?inline";
 export let SocialAppLinks;
@@ -13,8 +13,8 @@ export function initializeDeckSocialAppLinks() {
       try {
         const url = new URL(raw);
         if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) {
-return null;
-}
+          return null;
+        }
         const host = url.hostname.toLowerCase();
         const path = url.pathname;
         if (["t.me", "telegram.me", "telegram.dog"].includes(host) && path.length > 1) {
@@ -48,8 +48,8 @@ return null;
     }
     function ensureStyle() {
       if (styled) {
-return;
-}
+        return;
+      }
       styled = true;
       const style = document.createElement("style");
       style.id = "rodx-social-app-links-css";
@@ -58,8 +58,8 @@ return;
     }
     function decorate(anchor, app) {
       if (!app) {
-return;
-}
+        return;
+      }
       if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(RODX_SELECTORS.appLinkIcon)) {
         anchor.querySelector(RODX_SELECTORS.appLinkIcon)?.remove();
         const icon = document.createElement("span");
@@ -89,10 +89,9 @@ return;
         }[app.name];
       // These official HTTPS addresses are registered as universal links by
       // their respective apps. On devices without the app they remain usable.
-      if (!/^(?:t\.co|www\.t\.co)$/i.test(new URL(anchor.href, "https://x.com").hostname))
-        {
-anchor.href = app.url;
-}
+      if (!/^(?:t\.co|www\.t\.co)$/i.test(new URL(anchor.href, "https://x.com").hostname)) {
+        anchor.href = app.url;
+      }
       anchor.target = "_self";
       if (!anchor.dataset.rodxAppHandler) {
         anchor.dataset.rodxAppHandler = "1";
@@ -101,14 +100,14 @@ anchor.href = app.url;
     }
     function scan() {
       if (!document.body) {
-return;
-}
+        return;
+      }
       ensureStyle();
       let inspected = 0;
       for (const anchor of document.querySelectorAll<HTMLElement>(COMPOSITE_SELECTORS.tweetSocialLinks)) {
         if (++inspected > 320) {
-break;
-}
+          break;
+        }
         let app = identify(
           anchor.dataset.rodxExpanded ||
             anchor.getAttribute("data-expanded-url") ||
@@ -124,8 +123,8 @@ break;
           app = identify(/^https?:\/\//.test(visible) ? visible : "https://" + visible);
         }
         if (app) {
-decorate(anchor, app);
-}
+          decorate(anchor, app);
+        }
       }
     }
     return Object.freeze({

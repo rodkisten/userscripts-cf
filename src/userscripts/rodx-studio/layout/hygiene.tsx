@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import GrokReplacementSVGIcon from "../../../assets/icons/grok-replacement.svg?component";
 import {
@@ -10,7 +10,7 @@ import {
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css?inline";
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens
@@ -123,22 +123,22 @@ export function initializeDeckXInterfaceHygiene(): void {
       if (controls.length) {
         const original = controls[0];
         if (!replacement) {
-replacement = createOpenButton(article);
-}
+          replacement = createOpenButton(article);
+        }
         if (replacement.previousElementSibling !== original) {
-original.after(replacement);
-}
+          original.after(replacement);
+        }
         for (const control of controls) {
-control.classList.add(CSS_CLASSES.nativeGrokHidden);
-}
+          control.classList.add(CSS_CLASSES.nativeGrokHidden);
+        }
       } else if (replacement) {
         replacement.remove();
       }
 
       const oldOpen = article.querySelector<HTMLElement>(RODX_SELECTORS.expandResultAction);
       if (oldOpen) {
-oldOpen.hidden = Boolean(controls.length);
-}
+        oldOpen.hidden = Boolean(controls.length);
+      }
     }
 
     function hideGrok(root: ParentNode = document): void {
@@ -147,8 +147,8 @@ oldOpen.hidden = Boolean(controls.length);
       }
       for (const el of root.querySelectorAll<HTMLElement>(GROK_SELECTORS)) {
         if (el.closest(RODX_SELECTORS.grokReplacement)) {
-continue;
-}
+          continue;
+        }
         el.classList.add(CSS_CLASSES.nativeGrokHidden);
       }
       for (const element of root.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.dropdownOptions)) {
@@ -164,19 +164,19 @@ continue;
     function expandInlineMore(root: ParentNode = document): void {
       for (const control of root.querySelectorAll<HTMLElement>(INLINE_MORE_SELECTORS)) {
         if (expanded.has(control)) {
-continue;
-}
+          continue;
+        }
         if (!REGEX_PATTERNS.inlineMore.test((control.textContent || "").trim())) {
-continue;
-}
+          continue;
+        }
 
         const link = control.closest<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref);
         if (link && !REGEX_PATTERNS.emptyHref.test(link.getAttribute("href") || "")) {
-continue;
-}
+          continue;
+        }
         if (control.closest(NATIVE_X_SELECTORS.tweetActionMenuItems)) {
-continue;
-}
+          continue;
+        }
 
         expanded.add(control);
         control.click();
@@ -187,8 +187,8 @@ continue;
 
     function scan(): void {
       if (scheduled) {
-return;
-}
+        return;
+      }
       scheduled = true;
       queueMicrotask(() => {
         scheduled = false;

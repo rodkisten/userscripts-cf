@@ -56,10 +56,10 @@ async function resolveLocal(from, specifier) {
  * @param {string} source
  * @param {string} filename
  * @param {string} relPath
- * @param {Set<string>} dynamicFiles
+ * @param {Set<string>} dynamicImportFiles Files that contain non-literal import() expressions
  * @returns {Set<string>}
  */
-function collectModuleSpecifiers(source, filename, relPath, dynamicFiles) {
+function collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles) {
   const plugins = ["importAttributes", ["decorators", { decoratorsBeforeExport: true }]];
   if (/\.(?:ts|mts|cts|tsx)$/i.test(filename)) plugins.unshift("typescript");
   if (/\.(?:jsx|tsx)$/i.test(filename)) plugins.unshift("jsx");
@@ -90,7 +90,7 @@ function collectModuleSpecifiers(source, filename, relPath, dynamicFiles) {
       } else if (node.source?.type === "TemplateLiteral" && node.source.expressions.length === 0) {
         specifiers.add(node.source.quasis[0]?.value?.cooked ?? node.source.quasis[0]?.value?.raw ?? "");
       } else {
-        dynamicFiles.add(relPath);
+        dynamicImportFiles.add(relPath);
       }
       return;
     }
@@ -105,7 +105,7 @@ function collectModuleSpecifiers(source, filename, relPath, dynamicFiles) {
       } else if (argument?.type === "TemplateLiteral" && argument.expressions.length === 0) {
         specifiers.add(argument.quasis[0]?.value?.cooked ?? argument.quasis[0]?.value?.raw ?? "");
       } else if (argument) {
-        dynamicFiles.add(relPath);
+        dynamicImportFiles.add(relPath);
       }
       return;
     }
@@ -189,7 +189,11 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   /** @type {Set<string>} */
   const features = new Set();
   /** @type {Set<string>} */
-  const dynamicFiles = new Set();
+  const paths = new Set();
+  /** @type {Set<string>} */
+  const dynamicContextFiles = new Set();
+  /** @type {Set<string>} */
+  const dynamicImportFiles = new Set();
   /** @type {{ file: string, sourceBytes: number }[]} */
   const modules = [];
 
@@ -213,11 +217,12 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     // Arquivos JSON não possuem código executável nem imports
     if (filename.endsWith(".json")) continue;
 
-    const usage = analyzeRuntimeUsage(source, filename);
+    const usage = analyzeRuntimeUsage(source, filename, { includePaths: true });
     for (const feature of usage.features) features.add(feature);
-    if (usage.dynamic) dynamicFiles.add(relPath);
+    for (const capabilityPath of usage.paths || []) paths.add(capabilityPath);
+    if (usage.dynamic) dynamicContextFiles.add(relPath);
 
-    const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicFiles);
+    const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles);
 
     for (const specifier of specifiers) {
       const dependency = await resolveLocal(filename, specifier);
@@ -229,8 +234,15 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
 
   return {
     features: [...features].sort(),
-    dynamic: dynamicFiles.size > 0,
-    dynamicFiles: [...dynamicFiles].sort(),
+    paths: [...paths].sort(),
+    // "dynamic" means ScriptContext access cannot be proven statically and
+    // therefore runtime feature tree-shaking must fall back to the full API.
+    // Non-literal import() is tracked independently: loading an arbitrary
+    // module does not imply arbitrary access to the userscript ScriptContext.
+    dynamic: dynamicContextFiles.size > 0,
+    dynamicFiles: [...dynamicContextFiles].sort(),
+    dynamicImports: dynamicImportFiles.size > 0,
+    dynamicImportFiles: [...dynamicImportFiles].sort(),
     files: [...visited].map((file) => path.relative(rootPath, file).split(path.sep).join("/")).sort(),
     // Source bytes are diagnostic only; not bundled/minified byte attribution.
     sourceBytes: modules.reduce((sum, item) => sum + item.sourceBytes, 0),

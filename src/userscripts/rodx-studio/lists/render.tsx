@@ -1,7 +1,7 @@
 import { componentClasses } from "./view.tsx";
 import { classNames } from "../ui/class-names.ts";
 const cx = (value: string) => classNames(componentClasses, value);
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
@@ -34,7 +34,7 @@ import {
   tabArea,
   toggle,
 } from "./quick-picker.tsx";
-import { studioListIndex } from "./routes.js";
+import { studioListIndex } from "./access.tsx";
 import {
   ensureEmbeddedTimeline,
   removeEmbeddedTimeline,
@@ -284,19 +284,19 @@ export function initializeListsListPresets() {
 export function applyListPreset(id) {
   const saved = validListId(id) ? listPresets[id] : null;
   if (!saved) {
-return;
-}
+    return;
+  }
   for (const field of PER_LIST_FIELDS) {
-if (field in saved) {
-settings[field] = saved[field];
-}
-}
+    if (field in saved) {
+      settings[field] = saved[field];
+    }
+  }
 }
 
 export function saveListPreset(id = state.listId || routeListId()) {
   if (!validListId(id)) {
-return;
-}
+    return;
+  }
   listPresets[id] = {
     ...listPresets[id],
     ...Object.fromEntries(PER_LIST_FIELDS.map((k) => [k, settings[k]])),
@@ -313,13 +313,12 @@ export let saveSettings;
 export function initializeListsSaveSettings() {
   saveSettings = ({ publish = true } = {}) => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    if (publish)
-      {
-Studio.emit("lists:settings", {
+    if (publish) {
+      Studio.emit("lists:settings", {
         id: routeListId() || state.listId,
         settings,
       });
-}
+    }
     Studio.invalidate("state");
   };
 }
@@ -365,19 +364,18 @@ export function initializeListsListUsage() {
 }
 
 export function initializeRodX_lists_41() {
-  if (!listUsage || typeof listUsage !== "object")
-    {
-listUsage = {
+  if (!listUsage || typeof listUsage !== "object") {
+    listUsage = {
       lastId: "",
       stats: {},
     };
-}
+  }
 }
 
 export function initializeRodX_lists_42() {
   if (!listUsage.stats || typeof listUsage.stats !== "object") {
-listUsage.stats = {};
-}
+    listUsage.stats = {};
+  }
 }
 
 export function halfLifeMs() {
@@ -422,20 +420,20 @@ export function scoreAt(id, clock = Date.now()) {
 
 export function markListUsed(id, operationId) {
   if (!validListId(id) || !operationId) {
-return false;
-}
+    return false;
+  }
   const account = statsForAccount();
   const key = `${id}:${operationId}`;
   if (account.applied[key]) {
-return false;
-}
+    return false;
+  }
   const clock = Date.now();
   account.applied[key] = clock;
   // Bounded deduplication ledger: keep only operations from the last 60 days.
   for (const [eventId, at] of Object.entries(account.applied)) {
     if (clock - Number(at) > 60 * 86400000) {
-delete account.applied[eventId];
-}
+      delete account.applied[eventId];
+    }
   }
   const prev = usageStat(id);
   account.stats[id] = {
@@ -512,18 +510,17 @@ export function initializeListsDbPromise() {
 
 export function openDB() {
   if (dbPromise) {
-return dbPromise;
-}
+    return dbPromise;
+  }
   dbPromise = new Promise<any>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains("lists"))
-        {
-db.createObjectStore("lists", {
+      if (!db.objectStoreNames.contains("lists")) {
+        db.createObjectStore("lists", {
           keyPath: "id",
         });
-}
+      }
       if (!db.objectStoreNames.contains("members")) {
         const store = db.createObjectStore("members", {
           keyPath: "key",
@@ -561,8 +558,8 @@ export async function dbOp(store, mode, operation) {
     }
     tx.oncomplete = () => {
       if (mode === "readwrite") {
-Studio.emit("database:dirty");
-}
+        Studio.emit("database:dirty");
+      }
       resolve(result);
     };
     tx.onerror = () => reject(tx.error);
@@ -590,8 +587,8 @@ export function initializeListsPut() {
 
 export async function putMany(store, values) {
   if (!values.length) {
-return;
-}
+    return;
+  }
   const db = await openDB();
   await new Promise<any>((resolve, reject) => {
     const tx = db.transaction(store, "readwrite");
@@ -669,10 +666,9 @@ export function cleanListName(value) {
     /^(?:[\d.,]+\s*)?(?:seguidores?|followers?|membros?|members?|subscribers?|assinantes?)(?:\s*[,·:].*)?$/i.test(
       rawLabel,
     )
-  )
-    {
-return "";
-}
+  ) {
+    return "";
+  }
   value = rawLabel.replace(/\s*[·•]\s*[\d.,]+\s*(?:membros?|members?|seguidores?|followers?)(?:\s.*)?$/i, "");
   const candidates = String(value ?? "")
     .replace(/[\u200b-\u200d\ufeff]/g, "")
@@ -683,33 +679,32 @@ return "";
     // Reject complete interface headings before stripping a member-count suffix.
     // Otherwise 'Lista de membros' incorrectly becomes 'Lista de'.
     if (INVALID_LIST_NAMES.has(normalize(raw))) {
-continue;
-}
+      continue;
+    }
     const name = raw
       .replace(/\s+(?:[\d.,]+\s+)?(?:members|membros|followers|seguidores)\s*$/i, "")
       .replace(/^\s*[•·]\s*/, "")
       .trim();
     if (!name || name.length > 120 || INVALID_LIST_NAMES.has(normalize(name))) {
-continue;
-}
+      continue;
+    }
     if (/^(?:lista|list)\s*#?\s*\d{4,}$/i.test(name)) {
-continue;
-}
+      continue;
+    }
     if (
       /^\d[\d.,]*\s*(?:(?:members?|membros?|posts?|seguidores?|following|seguindo|assinantes?))?$/i.test(name)
-    )
-      {
-continue;
-}
+    ) {
+      continue;
+    }
     if (/^(?:members?|membros?|posts?|seguidores?)\s*:?\s*\d[\d.,]*$/i.test(name)) {
-continue;
-}
+      continue;
+    }
     if (/^(?:nome (?:pendente|não sincronizado)|loading|carregando|buscando listas?)/i.test(name)) {
-continue;
-}
+      continue;
+    }
     if (/^(?:@?[^\s]+\s+[·•]\s+)?(?:pinned|fixadas)$/i.test(name)) {
-continue;
-}
+      continue;
+    }
     return name;
   }
   return "";
@@ -752,8 +747,8 @@ export function isPlaceholderName(name, id = "") {
 
 export async function repairStoredListNames() {
   if (localStorage.getItem(NAME_MIGRATION_KEY + ":counts-v322") === "done") {
-return 0;
-}
+    return 0;
+  }
   const records = await getAll("lists");
   const updates = [];
   for (const row of records) {
@@ -774,8 +769,8 @@ return 0;
     }
   }
   if (updates.length) {
-await putMany("lists", updates);
-}
+    await putMany("lists", updates);
+  }
   localStorage.setItem(NAME_MIGRATION_KEY + ":counts-v322", "done");
   return updates.length;
 }
@@ -783,17 +778,17 @@ await putMany("lists", updates);
 export async function migrateManualAliases() {
   const key = NAME_MIGRATION_KEY + ":alias-v350";
   if (localStorage.getItem(key) === "done") {
-return;
-}
+    return;
+  }
   const rows = await getAll("lists");
   for (const row of rows) {
     if (row.nameSource !== "manual" || row.alias) {
-continue;
-}
+      continue;
+    }
     const alias = cleanListName(row.name);
     if (!alias) {
-continue;
-}
+      continue;
+    }
     await put("lists", {
       ...row,
       alias,
@@ -820,8 +815,8 @@ export function upsertList(id, patch: Record<string, any> = {}) {
   task
     .finally(() => {
       if (listWrites.get(key) === task) {
-listWrites.delete(key);
-}
+        listWrites.delete(key);
+      }
     })
     .catch(() => {});
   return task;
@@ -829,8 +824,8 @@ listWrites.delete(key);
 
 export async function writeListRecord(id, patch: Record<string, any> = {}) {
   if (!validListId(id)) {
-return false;
-}
+    return false;
+  }
   id = String(id);
   const old = await getOne("lists", id);
   const source = patch.nameSource || "placeholder";
@@ -840,8 +835,8 @@ return false;
   if (source === "manual") {
     const alias = incomingName;
     if (!alias) {
-return false;
-}
+      return false;
+    }
     await put("lists", {
       ...old,
       id,
@@ -904,10 +899,9 @@ return false;
     patch.scanComplete === undefined &&
     !patch.origin &&
     patch.memberCount === undefined
-  )
-    {
-return false;
-}
+  ) {
+    return false;
+  }
   await put("lists", next);
   Studio.emit("lists:changed", next);
   return true;
@@ -916,8 +910,8 @@ return false;
 export async function upsertMember(id, username, name = "") {
   const handle = cleanHandle(username);
   if (!validListId(id) || !validHandle(handle)) {
-return false;
-}
+    return false;
+  }
   const key = `${id}:${handle.toLowerCase()}`;
   const old = await getOne("members", key);
   await put("members", {
@@ -937,18 +931,16 @@ export async function refresh() {
     state.lists = (await getAll("lists")).sort((a, b) =>
       displayListName(a).localeCompare(displayListName(b), "pt-BR"),
     );
-    if (state.listId)
-      {
-state.members = (await membersFor(state.listId)).sort((a, b) => a.username.localeCompare(b.username));
-}
-    else {
-state.members = [];
-}
+    if (state.listId) {
+      state.members = (await membersFor(state.listId)).sort((a, b) => a.username.localeCompare(b.username));
+    } else {
+      state.members = [];
+    }
     // Passive updates must not steal focus or close an edit on iPhone.
     const focused = shadow.activeElement;
     if (!focused || !["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName)) {
-render();
-}
+      render();
+    }
     drawHomeBar();
     Studio.emit("lists:names-ready");
     refreshQuickPickerIfOpen();
@@ -973,8 +965,8 @@ export function initializeRodX_lists_116() {
   quickOptions.addEventListener("click", async (event) => {
     const row = event.target.closest(RODX_SELECTORS.quickPickerListOptions);
     if (!row || !quickUser) {
-return;
-}
+      return;
+    }
     const id = row.dataset.quickListId;
     const user = {
       ...quickUser,
@@ -986,8 +978,8 @@ return;
     );
     try {
       if (row.disabled) {
-return;
-}
+        return;
+      }
       row.disabled = true;
       try {
         reserveWrite();
@@ -1031,8 +1023,8 @@ export function initializeRodX_lists_118() {
     "scroll",
     () => {
       if (quickUser && !window.matchMedia("(max-width:600px)").matches) {
-positionQuickPicker();
-}
+        positionQuickPicker();
+      }
     },
     {
       passive: true,
@@ -1042,8 +1034,8 @@ positionQuickPicker();
 
 export function render() {
   if (!state.visible) {
-return;
-}
+    return;
+  }
   const tabs = [
     ["listas", "Listas"],
     ["membros", "Membros"],
@@ -1473,26 +1465,26 @@ export function buildQuery(overrideId = "") {
   const id = overrideId || state.listId || routeListId();
   const terms = [validListId(id) ? `list:${id}` : "", settings.queryText.trim()];
   if (settings.media === "videos") {
-terms.push("filter:native_video");
-}
+    terms.push("filter:native_video");
+  }
   if (settings.media === "native") {
-terms.push("filter:native_video");
-}
+    terms.push("filter:native_video");
+  }
   if (settings.media === "images") {
-terms.push("filter:images");
-}
+    terms.push("filter:images");
+  }
   if (settings.media === "media") {
-terms.push("filter:media");
-}
+    terms.push("filter:media");
+  }
   if (settings.hideReposts) {
-terms.push("-filter:retweets");
-}
+    terms.push("-filter:retweets");
+  }
   if (!settings.replies) {
-terms.push("-filter:replies");
-}
+    terms.push("-filter:replies");
+  }
   if (/^\d+$/.test(String(settings.minLikes))) {
-terms.push(`min_faves:${settings.minLikes}`);
-}
+    terms.push(`min_faves:${settings.minLikes}`);
+  }
   return terms.filter(Boolean).join(" ").trim();
 }
 
@@ -1684,9 +1676,8 @@ export function saveQueue(queue) {
 
 export function renderQueue() {
   const q = readQueue();
-  if (!q)
-    {
-return (
+  if (!q) {
+    return (
       <>
         <div className={cx("stack")}>
           <h3>{"Fila de operações"}</h3>
@@ -1694,7 +1685,7 @@ return (
         </div>
       </>
     );
-}
+  }
   const done = q.tasks.filter((x) => x.status === "ok").length;
   const failed = q.tasks.filter((x) => x.status === "error").length;
   const current = q.tasks[q.index];
@@ -1842,8 +1833,8 @@ export function drawListToolbar() {
   }
   const anchor = document.getElementById("rodx-feed-filters");
   if (!anchor) {
-return;
-}
+    return;
+  }
   if (!listToolbar) {
     listToolbar = document.createElement("div");
     listToolbar.id = "xls-list-toolbar";
@@ -1858,8 +1849,8 @@ return;
     listToolbar.append(exit);
   }
   if (anchor.nextElementSibling !== listToolbar) {
-anchor.after(listToolbar);
-}
+    anchor.after(listToolbar);
+  }
   ensureEmbeddedTimeline();
 }
 
@@ -1879,8 +1870,8 @@ export function initializeRodX_lists_230() {
 export function initializeRodX_lists_231() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.visible) {
-toggle(false);
-}
+      toggle(false);
+    }
   });
 }
 
@@ -1959,13 +1950,12 @@ export function initializeRodX_lists_236() {
       );
     },
     ingest: async (items) => {
-      for (const item of items)
-        {
-await upsertList(item.id, {
+      for (const item of items) {
+        await upsertList(item.id, {
           name: item.name,
           nameSource: "api",
         });
-}
+      }
       scheduleRefresh();
     },
     get: getOne,
@@ -1981,20 +1971,20 @@ await upsertList(item.id, {
     }),
     importDatabase: async (data) => {
       if (!data || typeof data !== "object") {
-return;
-}
+        return;
+      }
       for (const store of ["lists", "members", "timeline"]) {
         const rows = data[store];
         if (!Array.isArray(rows)) {
-continue;
-}
+          continue;
+        }
         const key = store === "lists" ? "id" : "key";
         const local = await getAll(store),
           merged = new Map<any, any>(local.map((row) => [row[key], row]));
         for (const row of rows) {
           if (!row || !row[key]) {
-continue;
-}
+            continue;
+          }
           const old = merged.get(row[key]);
           if (!old) {
             merged.set(row[key], row);
@@ -2076,16 +2066,15 @@ continue;
 }
 
 export function initializeRodX_lists_237() {
-  if (document.head)
-    {
-new MutationObserver(() => Studio.queue("lists.repository")).observe(document.head, {
+  if (document.head) {
+    new MutationObserver(() => Studio.queue("lists.repository")).observe(document.head, {
       childList: true,
       subtree: true,
       characterData: true,
       attributes: true,
       attributeFilter: ["content", "href"],
     });
-}
+  }
 }
 
 export function initializeRodX_lists_238() {

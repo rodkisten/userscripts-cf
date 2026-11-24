@@ -5,7 +5,7 @@ import { NativeQueryTags } from "../search/native-tags.js";
 import { QueryEngine } from "../search/query-compiler.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export let SelectionPopover;
 
@@ -23,28 +23,28 @@ export function initializeDeckSelectionPopover() {
         .replace(/\s+/gu, " ")
         .trim();
       if (!raw || raw.length > 500) {
-return "";
-}
+        return "";
+      }
       const braced = /^\{([\s\S]+)\}$/.exec(raw);
       const content = braced ? braced[1].trim() : raw;
       if (!content) {
-return "";
-}
+        return "";
+      }
       // Preserve the COMPLETE selected phrase, not just the first word.
       // {any text} explicitly requests an exact phrase.
       const quoted = /^"[\s\S]*"$/.test(content);
       const singleTag = /^#[\p{L}\p{M}\p{N}_]+$/u.test(content);
       const singleWord = /^[\p{L}\p{M}\p{N}_-]+$/u.test(content);
       if (singleTag || (singleWord && !braced) || (quoted && !braced)) {
-return content;
-}
+        return content;
+      }
       return '"' + content.replace(/^"|"$/g, "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
     };
     const show = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) {
-return close();
-}
+        return close();
+      }
       const ancestor = selection.anchorNode?.parentElement;
       const focus = selection.focusNode?.parentElement;
       const firstText = ancestor?.closest(NATIVE_X_SELECTORS.nativeTweetText);
@@ -55,8 +55,8 @@ return close();
       }
       const term = parse(selection.toString());
       if (!term) {
-return close();
-}
+        return close();
+      }
       let rect;
       try {
         rect = selection.getRangeAt(0).getBoundingClientRect();
@@ -64,8 +64,8 @@ return close();
         return;
       }
       if (!rect.width && !rect.height) {
-return;
-}
+        return;
+      }
       picked = term;
       close();
       node = document.createElement("div");
@@ -95,11 +95,9 @@ return;
               void saveState().catch((error) => showRodxToast(error.message, "error"));
             }
             showRodxToast("Seleção guardada nesta conta.");
-          } else if (term.startsWith("#"))
-            {
-NativeQueryTags.modify(term, act === "exclude" ? "exclude" : "add");
-}
-          else {
+          } else if (term.startsWith("#")) {
+            NativeQueryTags.modify(term, act === "exclude" ? "exclude" : "add");
+          } else {
             const raw = NativeQueryTags.current();
             const without = raw.trim();
             let changed;
@@ -111,11 +109,10 @@ NativeQueryTags.modify(term, act === "exclude" ? "exclude" : "add");
             }
             const native = document.querySelector<HTMLInputElement>(NATIVE_X_SELECTORS.nativeSearchInput);
             if (native) {
-NativeQueryTags.write(QueryEngine.normalized(changed));
-}
-            else {
-showRodxToast("Abra a busca para adicionar a palavra.");
-}
+              NativeQueryTags.write(QueryEngine.normalized(changed));
+            } else {
+              showRodxToast("Abra a busca para adicionar a palavra.");
+            }
           }
           close();
           // Prevent a delayed pointerup / selectionchange from reopening the
@@ -144,8 +141,8 @@ showRodxToast("Abra a busca para adicionar a palavra.");
       () => {
         last = Date.now();
         if (!node) {
-setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
-}
+          setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
+        }
       },
       true,
     );
@@ -164,8 +161,8 @@ setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
       "pointerdown",
       (e) => {
         if (node && !node.contains(e.target) && Date.now() - last > 80) {
-close();
-}
+          close();
+        }
       },
       true,
     );

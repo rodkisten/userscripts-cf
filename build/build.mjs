@@ -302,6 +302,7 @@ export async function compileTarget(target, context) {
       if (!selected.length) return null;
 
       const features = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))];
+      const paths = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].paths || []))];
       const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
 
       const runtime = await bundleRuntime(root, selected, {
@@ -309,6 +310,7 @@ export async function compileTarget(target, context) {
         release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
         catalog,
         features,
+        paths,
         dynamic,
         onBundleStats: (stats) => {
           runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats;
@@ -387,7 +389,8 @@ export async function compileTarget(target, context) {
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
     gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
-    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }).byteLength,
+    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } })
+      .byteLength,
   };
 
   const file = `${target.id}.user.js`;
@@ -467,11 +470,15 @@ export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   for (const target of targets) {
     const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
     const features = [...new Set(scripts.flatMap((s) => s.features))].sort();
+    const paths = [...new Set(scripts.flatMap((s) => s.paths || []))].sort();
     runtimeFeatureAudit.targets[target.id] = {
       scripts: target.definitions.map(({ id }) => id),
       features,
+      paths,
       dynamic: scripts.some((s) => s.dynamic),
       dynamicFiles: [...new Set(scripts.flatMap((s) => s.dynamicFiles))].sort(),
+      dynamicImports: scripts.some((s) => s.dynamicImports),
+      dynamicImportFiles: [...new Set(scripts.flatMap((s) => s.dynamicImportFiles || []))].sort(),
       treeShaken: !scripts.some((s) => s.dynamic) && target.id !== "standalone",
     };
   }
@@ -504,10 +511,12 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   }
 
   const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
-  const invalidRoot = bundleEntries.some(
-    ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
-  );
+  const invalidRoot = bundleEntries.some(([, stats]) => {
+    const expectsReact = stats.featureDefines?.__ROD_FEATURE_REACT__ !== false;
+    return expectsReact
+      ? stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx"
+      : stats.reactRootAudit?.roots !== 0 || stats.reactRootAudit?.owner !== null;
+  });
   if (invalidRoot) {
     throw new Error("[React root ownership] Missing or invalid per-world root audit report");
   }
@@ -541,9 +550,9 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
 
   const editorFamilies = [
-    ["codemirror", (id) => id.includes("/node_modules/@codemirror/")],
-    ["lezer", (id) => id.includes("/node_modules/@lezer/")],
-    ["acorn", (id) => id.includes("/node_modules/acorn/")],
+    ["codemirror", (id) => id.includes("node_modules/@codemirror/")],
+    ["lezer", (id) => id.includes("node_modules/@lezer/")],
+    ["acorn", (id) => id.includes("node_modules/acorn/")],
   ];
 
   return {
@@ -734,27 +743,47 @@ if (!isMerge) {
     }
 
     const mode = requestedTargets ? "SELECTIVE BUILD" : "FULL BUILD";
-    const reason = process.env.BUILD_REASON || (requestedTargets
-      ? "Explicit --targets selection"
-      : "No target filter supplied; complete distribution requested");
+    const reason =
+      process.env.BUILD_REASON ||
+      (requestedTargets
+        ? "Explicit --targets selection"
+        : "No target filter supplied; complete distribution requested");
     console.log("\n " + fmt.badge(mode, requestedTargets ? C.bgCyan : C.bgMagenta));
     console.log(" ┌─ " + fmt.bold("Build decision"));
     console.log(" │ Reason    " + reason);
     console.log(" │ Event     " + (process.env.GITHUB_EVENT_NAME || "local CLI"));
     console.log(" │ Targets   " + activeTargets.length + "/" + targets.length);
     console.log(" │ Skipped   " + (targets.length - activeTargets.length));
-    console.log(" └─ " + fmt.dim("standalone = all modules; unified = opted-in modules; individual = one module"));
-    log.table("Selected bundles", activeTargets.map((target) => ({
-      target: target.id,
-      kind: target.id === "standalone" || target.id === "unified" ? "aggregate" : "individual",
-      modules: target.definitions.map(({ id }) => id).join(", "),
-      reason: process.env.BUILD_TARGET_REASONS ? JSON.parse(process.env.BUILD_TARGET_REASONS)[target.id] || reason : reason,
-    })));
+    console.log(
+      " └─ " + fmt.dim("standalone = all modules; unified = opted-in modules; individual = one module"),
+    );
+    log.table(
+      "Selected bundles",
+      activeTargets.map((target) => ({
+        target: target.id,
+        kind: target.id === "standalone" || target.id === "unified" ? "aggregate" : "individual",
+        modules: target.definitions.map(({ id }) => id).join(", "),
+        reason: process.env.BUILD_TARGET_REASONS
+          ? JSON.parse(process.env.BUILD_TARGET_REASONS)[target.id] || reason
+          : reason,
+      })),
+    );
     if (process.env.GITHUB_STEP_SUMMARY) {
-      await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
-        "\n### Build decision: " + mode + "\n\n" + reason + "\n\n" +
-        "**Targets:** " + activeTargets.length + "/" + targets.length + "\n\n" +
-        activeTargets.map((target) => "- `" + target.id + "`").join("\n") + "\n");
+      await fs.appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        "\n### Build decision: " +
+          mode +
+          "\n\n" +
+          reason +
+          "\n\n" +
+          "**Targets:** " +
+          activeTargets.length +
+          "/" +
+          targets.length +
+          "\n\n" +
+          activeTargets.map((target) => "- `" + target.id + "`").join("\n") +
+          "\n",
+      );
     }
 
     const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
@@ -865,7 +894,7 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
     Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => ({
       target,
       roots: stats.reactRootAudit?.roots ?? "missing",
-      owner: stats.reactRootAudit?.owner ?? "missing",
+      owner: stats.reactRootAudit?.owner ?? "vanilla",
     })),
   );
 

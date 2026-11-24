@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
@@ -12,7 +12,7 @@ import { state } from "../state/deck.js";
 import { gmAvailable, storage } from "../storage/gm.js";
 import { Relay } from "../telegram/relay.tsx";
 import { renderRoot } from "../ui/search-workbench.tsx";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 export let XRepost;
 
@@ -56,14 +56,12 @@ export function initializeDeckXRepost() {
       let origin = "";
       if (looksLikeMarkup) {
         const parsed = new DOMParser().parseFromString(raw, "text/html");
-        for (const br of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.lineBreaks))
-          {
-br.replaceWith("\n");
-}
-        for (const block of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.paragraphs))
-          {
-block.append("\n");
-}
+        for (const br of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.lineBreaks)) {
+          br.replaceWith("\n");
+        }
+        for (const block of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.paragraphs)) {
+          block.append("\n");
+        }
         for (const anchor of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.linksWithHref)) {
           const label = String(anchor.textContent || "").trim();
           const href = safeSource(anchor.getAttribute("href"));
@@ -106,8 +104,8 @@ block.append("\n");
         }
         const legacy = url.pathname.match(/^\/i\/web\/status\/(\d{8,25})(?:\/|$)/);
         if (legacy) {
-return `${url.origin}/i/status/${legacy[1]}`;
-}
+          return `${url.origin}/i/status/${legacy[1]}`;
+        }
         return /^\/(?:[A-Za-z0-9_]{1,15}|i)\/status\/\d{8,25}(?:\/|$)/.test(url.pathname) ? url.href : "";
       } catch {
         return "";
@@ -123,12 +121,12 @@ return `${url.origin}/i/status/${legacy[1]}`;
         .find((entry) => /^retry-after\s*:/i.test(entry));
       const value = line?.split(":").slice(1).join(":").trim();
       if (!value) {
-return 0;
-}
+        return 0;
+      }
       const seconds = Number(value);
       if (Number.isFinite(seconds)) {
-return Math.min(120_000, Math.max(0, seconds * 1000));
-}
+        return Math.min(120_000, Math.max(0, seconds * 1000));
+      }
       const time = Date.parse(value);
       return Number.isFinite(time) ? Math.min(120_000, Math.max(0, time - Date.now())) : 0;
     }
@@ -137,8 +135,8 @@ return Math.min(120_000, Math.max(0, seconds * 1000));
     }
     async function call(path, method = "GET", payload = null, options: Record<string, any> = {}) {
       if (!Relay.configured()) {
-throw Error("Configure o token do Telegram Relay primeiro.");
-}
+        throw Error("Configure o token do Telegram Relay primeiro.");
+      }
       // Writes are never retried automatically: their result might be uncertain.
       const retries = method === "GET" ? 2 : 0;
       let last = null;
@@ -149,19 +147,19 @@ throw Error("Configure o token do Telegram Relay primeiro.");
         } catch (cause) {
           last = cause;
           if (attempt === retries) {
-throw cause;
-}
+            throw cause;
+          }
           await sleep(Math.min(12_000, 850 * 2 ** attempt) * (0.7 + Math.random() * 0.6));
           continue;
         }
         const status = Number(result.status);
         if (status >= 200 && status < 300 && result.data?.ok === true) {
-return result.data;
-}
+          return result.data;
+        }
         last = new Error(String(result.data?.error || `Relay HTTP ${status}`));
         if (attempt === retries || ![429, 502, 503, 504].includes(status)) {
-throw last;
-}
+          throw last;
+        }
         const backoff = Math.min(20_000, 1000 * 2 ** attempt) * (0.7 + Math.random() * 0.6);
         await sleep(Math.max(backoff, retryAfter(result.headers)));
       }
@@ -169,8 +167,8 @@ throw last;
     }
     function cleanupPreparedFiles() {
       for (const record of preparedFiles.values()) {
-URL.revokeObjectURL(record.url);
-}
+        URL.revokeObjectURL(record.url);
+      }
       preparedFiles.clear();
     }
     async function switchAccount(id) {
@@ -209,8 +207,8 @@ URL.revokeObjectURL(record.url);
     }
     async function savePreferences() {
       if (!gmAvailable || !account) {
-throw Error("Identifique sua conta e habilite GM Storage.");
-}
+        throw Error("Identifique sua conta e habilite GM Storage.");
+      }
       const shadow = state.rootShadow;
       const modeField = shadow?.querySelector(RODX_SELECTORS.repostShareMode);
       const destinationField = shadow?.querySelector(RODX_SELECTORS.repostDestination);
@@ -235,15 +233,15 @@ throw Error("Identifique sua conta e habilite GM Storage.");
       for (const group of rows.values()) {
         const match = group.find((item) => item.id === key);
         if (match) {
-return match;
-}
+          return match;
+        }
       }
       return null;
     }
     function requestRefresh() {
       if (state.open && state.view === "xrepost") {
-renderRoot();
-}
+        renderRoot();
+      }
     }
     async function refresh(force = false) {
       if (!Relay.configured()) {
@@ -252,11 +250,11 @@ renderRoot();
         return;
       }
       if (pendingPromise) {
-return pendingPromise;
-}
+        return pendingPromise;
+      }
       if (!force && fetchedAt && Date.now() - fetchedAt < 20_000) {
-return;
-}
+        return;
+      }
       const myEpoch = pageEpoch;
       loading = true;
       error = "";
@@ -269,23 +267,21 @@ return;
           }),
         );
         if (myEpoch !== pageEpoch) {
-return;
-}
+          return;
+        }
         const errors = [];
         for (const result of results) {
           if (result.status === "fulfilled") {
-rows.set(result.value.status, result.value.entries);
-}
-          else {
-errors.push(String(result.reason?.message || result.reason));
-}
+            rows.set(result.value.status, result.value.entries);
+          } else {
+            errors.push(String(result.reason?.message || result.reason));
+          }
         }
         if (errors.length) {
-error = errors.join(" · ");
-}
-        else {
-fetchedAt = Date.now();
-}
+          error = errors.join(" · ");
+        } else {
+          fetchedAt = Date.now();
+        }
       })().finally(() => {
         if (myEpoch === pageEpoch) {
           loading = false;
@@ -298,8 +294,8 @@ fetchedAt = Date.now();
     function scheduleRefresh() {
       clearTimeout(backgroundTimer);
       if (document.hidden || !state.open || state.view !== "xrepost") {
-return;
-}
+        return;
+      }
       backgroundTimer = setTimeout(
         () => {
           backgroundTimer = null;
@@ -581,19 +577,19 @@ return;
     }
     async function onTelegramConfirmed(post) {
       if (!post?.isVideo || !post.id) {
-return;
-}
+        return;
+      }
       const sourceUrl = safeSource(post.url) || safeSource(`https://x.com/i/status/${post.id}`);
       if (!sourceUrl) {
-return;
-}
+        return;
+      }
       if (preferences.shareMode === "off" && !preferences.enqueueAfterTelegram) {
-return;
-}
+        return;
+      }
       const identifier = `${account}:${post.id}`;
       if (prompted.has(identifier) || inflight.has(identifier)) {
-return;
-}
+        return;
+      }
       const promise = (async () => {
         const caption = normalizeCaption([post.author, post.text].filter(Boolean).join("\n\n"), {
           includeSourceUrl: preferences.includeSourceUrl,
@@ -609,8 +605,8 @@ return;
             item = result.item || null;
             if (item?.status) {
               if (item.status === "posted") {
-return;
-}
+                return;
+              }
               const previous = rows.get(item.status) || [];
               rows.set(item.status, [item, ...previous.filter((r) => r.id !== item.id)].slice(0, MAX_ROWS));
             }
@@ -621,8 +617,8 @@ return;
         }
         prompted.add(identifier);
         if (prompted.size > 150) {
-prompted.delete(prompted.values().next().value);
-}
+          prompted.delete(prompted.values().next().value);
+        }
         if (preferences.shareMode !== "off") {
           const target = item || {
             id: "",
@@ -632,11 +628,10 @@ prompted.delete(prompted.values().next().value);
             media_url: null,
           };
           if (preferences.shareMode === "review") {
-openCompose(target);
-}
-          else {
-openDirectShare(target);
-}
+            openCompose(target);
+          } else {
+            openDirectShare(target);
+          }
         }
       })().finally(() => inflight.delete(identifier));
       inflight.set(identifier, promise);
@@ -645,11 +640,10 @@ openDirectShare(target);
     async function claimNextDue() {
       if (currentClaim?.id) {
         if (preferences.shareMode === "review") {
-openCompose(currentClaim);
-}
-        else {
-openDirectShare(currentClaim);
-}
+          openCompose(currentClaim);
+        } else {
+          openDirectShare(currentClaim);
+        }
         return;
       }
       // D1 atomically selects the single earliest due item, not a guessed list entry.
@@ -661,11 +655,10 @@ openDirectShare(currentClaim);
       currentClaim = result.item;
       await refresh(true);
       if (preferences.shareMode === "review") {
-openCompose(currentClaim);
-}
-      else {
-openDirectShare(currentClaim);
-}
+        openCompose(currentClaim);
+      } else {
+        openDirectShare(currentClaim);
+      }
     }
     async function confirmPublished(item, postUrl = "") {
       if (!currentClaim?.claim_token || currentClaim.id !== item.id) {
@@ -687,16 +680,16 @@ openDirectShare(currentClaim);
     }
     async function delay(item) {
       if (!window.confirm("Adiar este item por pelo menos uma hora na fila D1?")) {
-return;
-}
+        return;
+      }
       const schedule = Math.floor(Date.now() / 1000) + 3600 + Math.floor(Math.random() * 600);
       await call(`/x/repost/queue/${encodeURIComponent(item.id)}`, "PATCH", {
         action: "reschedule",
         scheduledAt: schedule,
       });
       if (currentClaim?.id === item.id) {
-currentClaim = null;
-}
+        currentClaim = null;
+      }
       await refresh(true);
     }
     function openCompose(item) {
@@ -789,8 +782,8 @@ currentClaim = null;
                   close: true,
                   handler: async (ctx) => {
                     if (!window.confirm("O vídeo já aparece publicado no X?")) {
-return;
-}
+                      return;
+                    }
                     await confirmPublished(item, String(ctx.values.postUrl || ""));
                   },
                 },
@@ -808,14 +801,14 @@ return;
             ? GM.xmlHttpRequest.bind(GM)
             : null;
       if (!gm) {
-throw Error("Seu gerenciador não oferece download via GM.");
-}
+        throw Error("Seu gerenciador não oferece download via GM.");
+      }
       return new Promise<any>((resolve, reject) => {
         let done = false;
         const settle = (fn, value) => {
           if (done) {
-return;
-}
+            return;
+          }
           done = true;
           fn(value);
         };
@@ -846,8 +839,8 @@ return;
             ) {
               settle(resolve, new Blob([new Uint8Array(buffer).slice().buffer], { type: "video/mp4" }));
             } else {
-settle(reject, Error(`MP4 não disponível (HTTP ${code}).`));
-}
+              settle(reject, Error(`MP4 não disponível (HTTP ${code}).`));
+            }
           },
           onerror: () => settle(reject, Error("Não consegui baixar o MP4.")),
           onabort: () => settle(reject, Error("Download cancelado.")),
@@ -857,8 +850,8 @@ settle(reject, Error(`MP4 não disponível (HTTP ${code}).`));
     }
     async function getVideo(item) {
       if (preparedFiles.has(item.id)) {
-return preparedFiles.get(item.id).blob;
-}
+        return preparedFiles.get(item.id).blob;
+      }
       const generation = pageEpoch;
       const sources = [
         { url: Relay.relayUrl() + `/x/repost/queue/${encodeURIComponent(item.id)}/media`, auth: true },
@@ -881,8 +874,8 @@ return preparedFiles.get(item.id).blob;
         try {
           const blob = await requestVideo(source.url, source.auth);
           if (generation !== pageEpoch) {
-throw Error("Conta alterada durante o download.");
-}
+            throw Error("Conta alterada durante o download.");
+          }
           const url = URL.createObjectURL(blob);
           const record = { blob, url, at: Date.now() };
           preparedFiles.set(item.id, record);
@@ -900,21 +893,21 @@ throw Error("Conta alterada durante o download.");
     }
     function loadVideoOnce(item) {
       if (!item?.id) {
-return Promise.reject(Error("O vídeo ainda não foi registrado no D1."));
-}
+        return Promise.reject(Error("O vídeo ainda não foi registrado no D1."));
+      }
       if (preparedFiles.has(item.id)) {
-return Promise.resolve(preparedFiles.get(item.id).blob);
-}
+        return Promise.resolve(preparedFiles.get(item.id).blob);
+      }
       if (videoLoads.has(item.id)) {
-return videoLoads.get(item.id);
-}
+        return videoLoads.get(item.id);
+      }
       const task = getVideo(item);
       videoLoads.set(item.id, task);
       void task
         .finally(() => {
           if (videoLoads.get(item.id) === task) {
-videoLoads.delete(item.id);
-}
+            videoLoads.delete(item.id);
+          }
         })
         .catch(() => {});
       return task;
@@ -922,8 +915,8 @@ videoLoads.delete(item.id);
     function downloadPreparedVideo(item) {
       const record = preparedFiles.get(item.id);
       if (!record?.url) {
-throw Error("O vídeo precisa estar carregado antes de salvar.");
-}
+        throw Error("O vídeo precisa estar carregado antes de salvar.");
+      }
       const link = document.createElement("a");
       link.href = record.url;
       link.download = `rodx-${item.id}.mp4`;
@@ -996,11 +989,10 @@ throw Error("O vídeo precisa estar carregado antes de salvar.");
       const saveButton = panel.querySelector<HTMLElement>(RODX_SELECTORS.shareSaveAction);
       (textArea as HTMLInputElement).value = caption;
       const source = safeSource(item.source_url);
-      if (!source)
-        {
-(panel.querySelector<HTMLElement>(RODX_SELECTORS.shareSourceAction) as HTMLButtonElement).disabled =
+      if (!source) {
+        (panel.querySelector<HTMLElement>(RODX_SELECTORS.shareSourceAction) as HTMLButtonElement).disabled =
           true;
-}
+      }
 
       function status(message, isError = false) {
         statusElement.textContent = message;
@@ -1011,8 +1003,8 @@ throw Error("O vídeo precisa estar carregado antes de salvar.");
       panel.addEventListener("click", (event) => {
         const button = (event.target as HTMLElement).closest(RODX_SELECTORS.shareActions);
         if (!button || !panel.contains(button) || (button as HTMLButtonElement).disabled) {
-return;
-}
+          return;
+        }
         const actionName = (button as HTMLElement).dataset.shareAction;
         const text = normalizeCaption((textArea as HTMLInputElement).value);
         if (actionName === "native") {
@@ -1091,8 +1083,8 @@ return;
       void loadVideoOnce(item)
         .then((blob) => {
           if (account !== expectedAccount) {
-return;
-}
+            return;
+          }
           (nativeButton as HTMLButtonElement).disabled = false;
           (saveButton as HTMLButtonElement).disabled = false;
           status(
@@ -1102,8 +1094,8 @@ return;
         })
         .catch((cause) => {
           if (account !== expectedAccount) {
-return;
-}
+            return;
+          }
           status(
             `Não consegui recuperar o MP4: ${cause.message}. ` +
               "Confira o R2, o arquivo do Shortcut ou use o editor manual.",
@@ -1113,33 +1105,33 @@ return;
     }
     async function action(name, id = "") {
       if (name === "xrepost-refresh") {
-return refresh(true);
-}
+        return refresh(true);
+      }
       if (name === "xrepost-save") {
-return savePreferences();
-}
+        return savePreferences();
+      }
       if (name === "xrepost-next") {
-return claimNextDue();
-}
+        return claimNextDue();
+      }
       if (name === "xrepost-tab") {
         if (STATUSES.includes(id)) {
-view = id;
-}
+          view = id;
+        }
         return requestRefresh();
       }
       const item = rowItem(id);
       if (!item) {
-throw Error("Item não encontrado. Atualize a fila do D1.");
-}
+        throw Error("Item não encontrado. Atualize a fila do D1.");
+      }
       if (name === "xrepost-prepare") {
-return openDirectShare(item);
-}
+        return openDirectShare(item);
+      }
       if (name === "xrepost-edit") {
-return openCompose(item);
-}
+        return openCompose(item);
+      }
       if (name === "xrepost-delay") {
-return delay(item);
-}
+        return delay(item);
+      }
       if (name === "xrepost-copy") {
         await navigator.clipboard.writeText(shareCaption(item));
         showRodxToast("Legenda copiada.");
@@ -1149,9 +1141,8 @@ return delay(item);
       "visibilitychange",
       () => {
         if (document.hidden) {
-clearTimeout(backgroundTimer);
-}
-        else if (state.open && state.view === "xrepost") {
+          clearTimeout(backgroundTimer);
+        } else if (state.open && state.view === "xrepost") {
           void refresh(true).finally(scheduleRefresh);
         }
       },
