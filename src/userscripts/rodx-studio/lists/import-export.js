@@ -38,7 +38,7 @@ import {
   validHandle,
   validListId,
 } from "./render.tsx";
-import { studioListIndex } from "./routes.js";
+import { studioListIndex } from "./access.tsx";
 import { loadTimeline, reportTimelineError, timeline } from "./timeline.tsx";
 import { shadow } from "./view.tsx";
 
