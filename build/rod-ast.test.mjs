@@ -125,7 +125,7 @@ describe("analyzeRuntimeGraph", () => {
     expect(graph.sourceBytes).toBeGreaterThan(0);
   });
 
-  it("detecta imports dinâmicos literais e marca dinâmicos não-literais", async () => {
+  it("separa imports dinâmicos não-literais de acesso dinâmico ao ScriptContext", async () => {
     const root = await createTempProject({
       "src/entry.ts": `
         export async function load(ctx, name: string) {
@@ -142,8 +142,10 @@ describe("analyzeRuntimeGraph", () => {
     const graph = await analyzeRuntimeGraph("src/entry.ts", { root });
 
     expect(graph.features).toEqual(["storage"]);
-    expect(graph.dynamic).toBe(true);
-    expect(graph.dynamicFiles).toEqual(["src/entry.ts"]);
+    expect(graph.dynamic).toBe(false);
+    expect(graph.dynamicFiles).toEqual([]);
+    expect(graph.dynamicImports).toBe(true);
+    expect(graph.dynamicImportFiles).toEqual(["src/entry.ts"]);
   });
 
   it("bloqueia imports que escapam da pasta raiz (path traversal)", async () => {

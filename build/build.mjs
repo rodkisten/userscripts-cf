@@ -477,6 +477,8 @@ export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
       paths,
       dynamic: scripts.some((s) => s.dynamic),
       dynamicFiles: [...new Set(scripts.flatMap((s) => s.dynamicFiles))].sort(),
+      dynamicImports: scripts.some((s) => s.dynamicImports),
+      dynamicImportFiles: [...new Set(scripts.flatMap((s) => s.dynamicImportFiles || []))].sort(),
       treeShaken: !scripts.some((s) => s.dynamic) && target.id !== "standalone",
     };
   }
