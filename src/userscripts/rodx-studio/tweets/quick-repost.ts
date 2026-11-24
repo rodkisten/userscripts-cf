@@ -18,12 +18,16 @@ export function initializeDeckQuickRepost(): void {
       (event: MouseEvent) => {
         // Only actual taps on X's native repost action, never programmatic clicks,
         // quotes, menu actions or interactions with RodX controls.
-        if (!event.isTrusted || active) return;
+        if (!event.isTrusted || active) {
+return;
+}
 
         const target = event.target as HTMLElement | null;
         const button = target?.closest?.(NATIVE_X_SELECTORS.retweetToggleButtons) as HTMLElement | null;
 
-        if (!button || button.closest(NATIVE_X_SELECTORS.retweetConfirmButtons)) return;
+        if (!button || button.closest(NATIVE_X_SELECTORS.retweetConfirmButtons)) {
+return;
+}
 
         const undo = button.getAttribute("data-testid") === "unretweet";
         const selector = undo ? '[data-testid="unretweetConfirm"]' : '[data-testid="retweetConfirm"]';
@@ -33,7 +37,9 @@ export function initializeDeckQuickRepost(): void {
 
         const stop = (): void => {
           observer?.disconnect();
-          if (timeout !== null) clearTimeout(timeout);
+          if (timeout !== null) {
+clearTimeout(timeout);
+}
           active = null;
         };
 
@@ -44,7 +50,9 @@ export function initializeDeckQuickRepost(): void {
             return rect.width > 0 && rect.height > 0;
           });
 
-          if (!visible || !active) return;
+          if (!visible || !active) {
+return;
+}
           stop();
           visible.click();
         };

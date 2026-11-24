@@ -12,8 +12,12 @@ import { Seen } from "../tweets/seen.js";
 import { repaint } from "../ui/dock.tsx";
 
 export function freshAccountState(main, recovery) {
-  if (!recovery) return main;
-  if (!main || !Array.isArray(main.searches)) return recovery;
+  if (!recovery) {
+return main;
+}
+  if (!main || !Array.isArray(main.searches)) {
+return recovery;
+}
   const m = Date.parse(main.updatedAt || "") || 0;
   const r = Date.parse(recovery.updatedAt || "") || 0;
   return r > m ? recovery : main;
@@ -44,7 +48,9 @@ export async function loadAccount(identity) {
   const keyId = identity.key;
   state.account = keyId || null;
   Studio.state.account = state.account;
-  if (keyId) state.lastIdentifiedAccount = keyId;
+  if (keyId) {
+state.lastIdentifiedAccount = keyId;
+}
   void Relay.switchAccount(keyId || "");
   state.accountLabel = identity.label;
   state.accountSource = identity.source;
@@ -74,7 +80,9 @@ export async function loadAccount(identity) {
     state.valueListenerId = null;
   }
   repaint();
-  if (!keyId) return;
+  if (!keyId) {
+return;
+}
   const key = PREFIX + keyId;
   try {
     let primary = null;
@@ -88,16 +96,22 @@ export async function loadAccount(identity) {
     if (recovered && value === recovered && (!primary || primary.updatedAt !== recovered.updatedAt)) {
       state.storageWarning = "Pesquisas recuperadas do backup local deste navegador.";
     }
-    if (state.accountGeneration !== generation) return;
+    if (state.accountGeneration !== generation) {
+return;
+}
     if (!value && identity.id && identity.handle) {
       // One-way migration from v1 (@handle) to v2 (stable account ID).
       // Skip if this handle was already bound to another numeric ID.
       const bindingKey = PREFIX + "binding:" + identity.handle;
       const binding = await storage.get(bindingKey);
-      if (state.accountGeneration !== generation) return;
+      if (state.accountGeneration !== generation) {
+return;
+}
       if ((!binding || binding === identity.id) && (!previousId || previousId === keyId)) {
         const old = await storage.get(PREFIX + identity.handle);
-        if (state.accountGeneration !== generation) return;
+        if (state.accountGeneration !== generation) {
+return;
+}
         if (old?.searches && Array.isArray(old.searches)) {
           value = {
             ...old,
@@ -110,7 +124,9 @@ export async function loadAccount(identity) {
         await storage.set(bindingKey, identity.id);
       }
     }
-    if (state.accountGeneration !== generation) return;
+    if (state.accountGeneration !== generation) {
+return;
+}
     state.searches = Array.isArray(value?.searches)
       ? value.searches.map(normalizedSearch).filter(Boolean)
       : [];
@@ -122,12 +138,18 @@ export async function loadAccount(identity) {
       ? value.selectionList.filter((v) => typeof v === "string").slice(0, 150)
       : [];
   } catch (err) {
-    if (state.accountGeneration === generation) state.message = `Erro ao ler dados: ${err.message}`;
+    if (state.accountGeneration === generation) {
+state.message = `Erro ao ler dados: ${err.message}`;
+}
   }
-  if (state.accountGeneration !== generation) return;
+  if (state.accountGeneration !== generation) {
+return;
+}
   if (gmAvailable && typeof GM_addValueChangeListener === "function") {
     state.valueListenerId = GM_addValueChangeListener(key, (_key, _old, value, remote) => {
-      if (!remote || state.account !== keyId) return;
+      if (!remote || state.account !== keyId) {
+return;
+}
       state.searches = Array.isArray(value?.searches)
         ? value.searches.map(normalizedSearch).filter(Boolean)
         : [];
@@ -146,7 +168,9 @@ export async function loadAccount(identity) {
 }
 
 export async function saveState() {
-  if (!state.account) throw new Error("Conta não identificada. Use o botão Definir conta.");
+  if (!state.account) {
+throw new Error("Conta não identificada. Use o botão Definir conta.");
+}
   const handle = state.account;
   const key = PREFIX + handle;
   const payload = {
@@ -183,7 +207,9 @@ export async function saveState() {
         }
         state.storageWarning = "";
       } catch (error) {
-        if (!backedUp) throw new Error(`Falha ao salvar: ${error.message}. Faça um backup JSON.`);
+        if (!backedUp) {
+throw new Error(`Falha ao salvar: ${error.message}. Faça um backup JSON.`);
+}
         state.storageWarning = `GM Storage indisponível: dados preservados neste navegador. ${error.message}`;
         console.warn("[RodX] Salvamento recuperável, sem confirmação GM:", error);
       }

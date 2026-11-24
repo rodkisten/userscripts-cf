@@ -48,8 +48,12 @@ export function createStudioStore() {
     seen(id: string, wanted: boolean) {
       setState((draft) => {
         const next = { ...draft.seen };
-        if (wanted) next[id] = Date.now();
-        else delete next[id];
+        if (wanted) {
+next[id] = Date.now();
+}
+        else {
+delete next[id];
+}
         const bounded = Object.fromEntries(
           Object.entries(next)
             .sort((a, b) => b[1] - a[1])
@@ -69,8 +73,12 @@ export function createStudioStore() {
       setState((draft) => {
         const other = kind === "include" ? "exclude" : "include";
         const match = draft.search[kind].findIndex((item) => normalize(item) === normalize(tag));
-        if (match >= 0) draft.search[kind].splice(match, 1);
-        else draft.search[kind].push(tag);
+        if (match >= 0) {
+draft.search[kind].splice(match, 1);
+}
+        else {
+draft.search[kind].push(tag);
+}
         draft.search[other] = draft.search[other].filter((item) => normalize(item) !== normalize(tag));
       });
     },

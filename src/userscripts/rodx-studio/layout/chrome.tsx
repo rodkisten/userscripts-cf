@@ -79,7 +79,9 @@ export function initializeDeckScrollChrome(): void {
     const chrome = new Set<HTMLElement>();
 
     function setHidden(value: boolean): void {
-      if (hidden === value) return;
+      if (hidden === value) {
+return;
+}
       hidden = value;
       document.documentElement.classList.toggle(CSS_CLASSES.chromeHidden, value);
     }
@@ -88,11 +90,17 @@ export function initializeDeckScrollChrome(): void {
       const main =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
-      if (!main) return;
+      if (!main) {
+return;
+}
 
       for (const seed of main.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.stickyChromeCandidates)) {
-        if (seed.closest(DOM_SELECTORS.articles)) continue;
-        if (seed.matches(NATIVE_X_SELECTORS.topNavigationBars)) chrome.add(seed);
+        if (seed.closest(DOM_SELECTORS.articles)) {
+continue;
+}
+        if (seed.matches(NATIVE_X_SELECTORS.topNavigationBars)) {
+chrome.add(seed);
+}
         let node: HTMLElement | null = seed;
         while (node && node !== main) {
           const pos = getComputedStyle(node).position;
@@ -178,17 +186,23 @@ export function initializeDeckScrollChrome(): void {
     function clearActive(): void {
       active?.classList.remove(CSS_CLASSES.topbarFloatingSource);
       active = null;
-      if (portal) portal.hidden = true;
+      if (portal) {
+portal.hidden = true;
+}
     }
 
     function pin(top: number): void {
       let candidate: HTMLElement | undefined;
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        if (article.hidden || getComputedStyle(article).display === "none") continue;
+        if (article.hidden || getComputedStyle(article).display === "none") {
+continue;
+}
         const r = article.getBoundingClientRect();
         if (r.top <= top + CHROME_METRICS.pinTopBuffer && r.bottom > top + CHROME_METRICS.pinBottomBuffer) {
           candidate = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
-          if (candidate) break;
+          if (candidate) {
+break;
+}
         }
       }
 
@@ -206,7 +220,9 @@ export function initializeDeckScrollChrome(): void {
           const target = (event.target as HTMLElement)?.closest<HTMLElement>(
             RODX_SELECTORS.tweetTopbarControls,
           );
-          if (!target || !active) return;
+          if (!target || !active) {
+return;
+}
           event.preventDefault();
           event.stopImmediatePropagation();
 
@@ -321,17 +337,23 @@ export function initializeDeckScrollChrome(): void {
         window.getSelection()?.toString() ||
         (activeEl && activeEl.matches(DOM_SELECTORS.editableFields))
       )
-        return;
+        {
+return;
+}
 
       const top = offset();
       let distance: number = Number(CHROME_METRICS.snapMaxDistance);
 
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
-        if (article.hidden || getComputedStyle(article).display === "none") continue;
+        if (article.hidden || getComputedStyle(article).display === "none") {
+continue;
+}
         const r = article.getBoundingClientRect();
         const delta = r.top - top;
         if (r.height > innerHeight * CHROME_METRICS.snapScreenRatio || Math.abs(delta) >= Math.abs(distance))
-          continue;
+          {
+continue;
+}
         distance = delta;
       }
 
@@ -348,7 +370,9 @@ export function initializeDeckScrollChrome(): void {
     }
 
     function request(): void {
-      if (!raf) raf = requestAnimationFrame(update);
+      if (!raf) {
+raf = requestAnimationFrame(update);
+}
     }
 
     window.addEventListener(

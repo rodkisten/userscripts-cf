@@ -60,19 +60,29 @@ export function initializeDeckVideoTapGuard() {
     const identities = new WeakMap();
     let nextId = 0;
     function identity(article) {
-      if (!identities.has(article)) identities.set(article, `article-${++nextId}`);
+      if (!identities.has(article)) {
+identities.set(article, `article-${++nextId}`);
+}
       return identities.get(article);
     }
     function mediaContext(target) {
       const el = target?.nodeType === 1 ? target : target?.parentElement;
-      if (!el?.closest || el.closest(COMPOSITE_SELECTORS.immersiveActionRoots)) return null;
+      if (!el?.closest || el.closest(COMPOSITE_SELECTORS.immersiveActionRoots)) {
+return null;
+}
       const article = el.closest(NATIVE_X_SELECTORS.tweetArticleContainers);
-      if (!article) return null;
+      if (!article) {
+return null;
+}
       const hit = el.closest(PLAYER);
-      if (!hit || !article.contains(hit)) return null;
+      if (!hit || !article.contains(hit)) {
+return null;
+}
       // tweetPhoto can wrap an image: never intercept images just because the
       // article also contains a video somewhere else (e.g. a media carousel).
-      if (!hit.matches(VIDEO) && !hit.querySelector(VIDEO)) return null;
+      if (!hit.matches(VIDEO) && !hit.querySelector(VIDEO)) {
+return null;
+}
       // Sliders can be wrapped in divs rather than actual input elements.
       // Ignore the entire control hitbox, not just the slider thumb.
       const control = el.closest(CONTROL);
@@ -87,7 +97,9 @@ export function initializeDeckVideoTapGuard() {
         ]
           .filter(Boolean)
           .join(" ");
-        if (!isPlayerSurface || CONTROL_LABEL.test(label)) return null;
+        if (!isPlayerSurface || CONTROL_LABEL.test(label)) {
+return null;
+}
       }
       // The player can expose an unlabelled draggable timeline. Do not
       // interpret horizontal scrubbing as a request to open the viewer.
@@ -100,7 +112,9 @@ export function initializeDeckVideoTapGuard() {
             .join(" "),
         )
       )
-        return null;
+        {
+return null;
+}
       const player =
         el.closest(NATIVE_X_SELECTORS.videoPlayerWrappers) ||
         (hit.matches(DOM_SELECTORS.videos) ? hit : hit.querySelector(DOM_SELECTORS.videos)) ||
@@ -124,13 +138,19 @@ export function initializeDeckVideoTapGuard() {
       };
     }
     function onSeekStrip(event, context) {
-      if (!context || !event) return false;
+      if (!context || !event) {
+return false;
+}
       const video = context.player.matches?.(DOM_SELECTORS.videos)
         ? context.player
         : context.player.querySelector?.(DOM_SELECTORS.videos);
-      if (!video) return false;
+      if (!video) {
+return false;
+}
       const rect = video.getBoundingClientRect();
-      if (!rect.width || !rect.height) return false;
+      if (!rect.width || !rect.height) {
+return false;
+}
       const p = point(event);
       // An X player may only expose its progress bar when tapped. The final
       // 54px (max. 32% of a short video) must be free for native seek actions.
@@ -153,7 +173,9 @@ export function initializeDeckVideoTapGuard() {
     function cancel(event) {
       // Prevent link navigation as well as React's delegated onClick.
       // Does not alter playback state or call preventDefault on touchend.
-      if (event.cancelable && event.type === "click") event.preventDefault();
+      if (event.cancelable && event.type === "click") {
+event.preventDefault();
+}
       event.stopImmediatePropagation();
     }
     function onTouchStart(event) {
@@ -183,24 +205,38 @@ export function initializeDeckVideoTapGuard() {
       };
     }
     function onTouchMove(event) {
-      if (!touch) return;
+      if (!touch) {
+return;
+}
       const p = point(event);
-      if (Math.abs(touch.x - p.x) > MOVE_LIMIT || Math.abs(touch.y - p.y) > MOVE_LIMIT) touch.moved = true;
+      if (Math.abs(touch.x - p.x) > MOVE_LIMIT || Math.abs(touch.y - p.y) > MOVE_LIMIT) {
+touch.moved = true;
+}
     }
     function onPointerUp(event) {
       // Some X player implementations listen to pointerup in addition to click.
       // Only guard a genuine touch gesture; mouse clicks go through onClick.
-      if (event.pointerType !== "touch" || !touch || touch.double || touch.moved) return;
+      if (event.pointerType !== "touch" || !touch || touch.double || touch.moved) {
+return;
+}
       const ctx = mediaContext(event.target);
-      if (ctx?.key === touch.key && !onSeekStrip(event, ctx)) event.stopImmediatePropagation();
+      if (ctx?.key === touch.key && !onSeekStrip(event, ctx)) {
+event.stopImmediatePropagation();
+}
     }
     function onTouchEnd(event) {
-      if (!touch) return;
+      if (!touch) {
+return;
+}
       const gesture = touch;
       touch = null;
-      if (gesture.moved || event.changedTouches?.length !== 1) return;
+      if (gesture.moved || event.changedTouches?.length !== 1) {
+return;
+}
       const ctx = mediaContext(event.target);
-      if (!ctx || ctx.key !== gesture.key || onSeekStrip(event, ctx)) return;
+      if (!ctx || ctx.key !== gesture.key || onSeekStrip(event, ctx)) {
+return;
+}
       const p = point(event),
         now = Date.now();
       const double =
@@ -213,14 +249,18 @@ export function initializeDeckVideoTapGuard() {
           },
           now,
         );
-      if (double) recent = null;
+      if (double) {
+recent = null;
+}
       else
-        recent = {
+        {
+recent = {
           key: ctx.key,
           x: p.x,
           y: p.y,
           at: now,
         };
+}
       // The synthetic click follows touchend. Use this verdict for that click,
       // rather than incorrectly counting it as a new tap.
       syntheticClick = {
@@ -230,7 +270,9 @@ export function initializeDeckVideoTapGuard() {
         at: now,
         allow: double,
       };
-      if (!double) event.stopImmediatePropagation();
+      if (!double) {
+event.stopImmediatePropagation();
+}
     }
     function onClick(event) {
       const ctx = mediaContext(event.target);
@@ -250,7 +292,9 @@ export function initializeDeckVideoTapGuard() {
       ) {
         const allow = syntheticClick.allow;
         syntheticClick = null;
-        if (!allow) cancel(event);
+        if (!allow) {
+cancel(event);
+}
         return;
       }
       syntheticClick = null;

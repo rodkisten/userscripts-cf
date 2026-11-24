@@ -39,7 +39,11 @@ export function openPanel(view = "saved") {
   state.view = view;
   state.open = true;
   state.message = "";
-  if (view === "editor" && !state.draft) state.draft = blankDraft();
+  if (view === "editor" && !state.draft) {
+state.draft = blankDraft();
+}
   renderRoot();
-  if (view === "xrepost") XRepost.onOpen();
+  if (view === "xrepost") {
+XRepost.onOpen();
+}
 }

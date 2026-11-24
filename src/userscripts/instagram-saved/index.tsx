@@ -34,7 +34,9 @@ export default {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
 
-    if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
+    if (!ctx.menu) {
+throw new Error("Instagram Bookmarks requires the runtime menu feature");
+}
     const hub = installRodActions(ctx.menu, (component, container) => ({
       dispose: ctx.ui.mountReact(component, container),
     }));
@@ -131,7 +133,9 @@ export default {
     }
     const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
     async function relay(config: Config, items: MediaPayload[], account: string, channels: string[]) {
-      if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
+      if (currentAccount() !== account) {
+throw Error("Conta alterada antes do envio ao Relay");
+}
       const relayOptions = {
         method: "POST",
         transport: "gm" as const,
@@ -146,7 +150,9 @@ export default {
       };
       const response = await ctx.http.request(RELAY, relayOptions);
       abort.throwIfAborted();
-      if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
+      if (currentAccount() !== account) {
+throw Error("Conta alterada durante envio ao Relay");
+}
       if (!response.ok) {
         const error = Error(`Relay HTTP ${response.status}`) as Error & {
           status?: number;
@@ -158,7 +164,9 @@ export default {
       }
       const data: unknown = await response.json();
       abort.throwIfAborted();
-      if (currentAccount() !== account) throw Error("Conta alterada após resposta do Relay");
+      if (currentAccount() !== account) {
+throw Error("Conta alterada após resposta do Relay");
+}
       if (!data || typeof data !== "object" || !("results" in data) || !Array.isArray(data.results)) {
         throw Error("Relay sem confirmação por item");
       }
@@ -230,7 +238,9 @@ export default {
           let processedTotal = 0;
           const sessionLimit = Math.max(1, Math.floor(Number(settings.maxItemsPerSession) || 1));
           for (const [index, collectionId] of settings.collectionIds.entries()) {
-            if (processedTotal >= sessionLimit) break;
+            if (processedTotal >= sessionLimit) {
+break;
+}
             let collectionProcessed = 0;
             setRuntime((draft) => {
               draft.progress = {
@@ -243,7 +253,9 @@ export default {
               };
             });
             abort.throwIfAborted();
-            if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
+            if (currentAccount() !== account) {
+throw Error("Conta alterada entre coleções");
+}
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             const ledgerKey = `delivered-channels:v1:${account}:${collectionId}`;
             const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
@@ -308,13 +320,17 @@ export default {
                   }
                   const page = await response.json();
                   abort.throwIfAborted();
-                  if (currentAccount() !== account) throw Error("Conta alterada após leitura do Instagram");
+                  if (currentAccount() !== account) {
+throw Error("Conta alterada após leitura do Instagram");
+}
                   return page;
                 }, 50),
             });
             processedTotal += collectionProcessed;
             setRuntime((draft) => {
-              if (draft.progress) draft.progress.sent = count;
+              if (draft.progress) {
+draft.progress.sent = count;
+}
             });
           }
           await set("lastError", null);

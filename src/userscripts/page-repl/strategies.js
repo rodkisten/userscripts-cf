@@ -12,7 +12,9 @@ export function createStrategies(host = window) {
   const parent = () => host.document.head || host.document.documentElement;
   const nonce = () => host.document.querySelector(DOM_SELECTORS.nonceScript)?.nonce || "";
   const requirePage = () => {
-    if (!page) throw new Unavailable("unsafeWindow não disponível");
+    if (!page) {
+throw new Unavailable("unsafeWindow não disponível");
+}
     return page;
   };
   function script(
@@ -20,9 +22,13 @@ export function createStrategies(host = window) {
     { type = "", withNonce = false, write = "textContent", url = false, gm = null, trusted = false } = {},
   ) {
     const attrs = {};
-    if (type) attrs.type = type;
+    if (type) {
+attrs.type = type;
+}
     if (withNonce) {
-      if (!nonce()) throw new Unavailable("Nenhum nonce observável na página");
+      if (!nonce()) {
+throw new Unavailable("Nenhum nonce observável na página");
+}
       attrs.nonce = nonce();
     }
     let objectURL,
@@ -31,26 +37,35 @@ export function createStrategies(host = window) {
       objectURL = host.URL.createObjectURL(new host.Blob([source], { type: "application/javascript" }));
       attrs.src = objectURL;
     }
-    if (url === "data") attrs.src = "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
+    if (url === "data") {
+attrs.src = "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
+}
     if (trusted) {
       const tt = page?.trustedTypes || host.trustedTypes;
-      if (!tt) throw new Unavailable("Trusted Types não disponível");
+      if (!tt) {
+throw new Unavailable("Trusted Types não disponível");
+}
       const policy = (trustedPolicy ||= tt.createPolicy("rodx-repl-" + crypto.randomUUID(), {
         createScript: (value) => value,
       }));
       content = policy.createScript(source);
     }
-    if (!url) attrs[write] = content;
+    if (!url) {
+attrs[write] = content;
+}
     let node;
     const dispose = () => {
       node?.remove?.();
-      if (objectURL) host.URL.revokeObjectURL(objectURL);
+      if (objectURL) {
+host.URL.revokeObjectURL(objectURL);
+}
     };
     try {
       if (gm) {
         const value = gm(parent(), "script", attrs);
         if (value?.then)
-          return value.then(
+          {
+return value.then(
             (result) => {
               node = result;
               return dispose;
@@ -60,12 +75,17 @@ export function createStrategies(host = window) {
               throw error;
             },
           );
+}
         node = value;
       } else {
         node = host.document.createElement("script");
         for (const [key, value] of Object.entries(attrs)) {
-          if (key === "appendText") node.append(host.document.createTextNode(value));
-          else node[key] = value;
+          if (key === "appendText") {
+node.append(host.document.createTextNode(value));
+}
+          else {
+node[key] = value;
+}
         }
         parent().append(node);
       }
@@ -130,7 +150,9 @@ export function createStrategies(host = window) {
       world: "página esperada",
       run(source) {
         const p = page?.wrappedJSObject || host.wrappedJSObject;
-        if (!p) throw new Unavailable("wrappedJSObject não disponível");
+        if (!p) {
+throw new Unavailable("wrappedJSObject não disponível");
+}
         p.eval(source);
       },
     },
@@ -140,7 +162,9 @@ export function createStrategies(host = window) {
       world: "página esperada",
       run(source) {
         const p = requirePage();
-        if (typeof p.execScript !== "function") throw new Unavailable("execScript não disponível");
+        if (typeof p.execScript !== "function") {
+throw new Unavailable("execScript não disponível");
+}
         p.execScript(source);
       },
     },
@@ -155,7 +179,9 @@ export function createStrategies(host = window) {
       label: "GM_addElement · script",
       world: "página",
       run(source) {
-        if (typeof GM_addElement !== "function") throw new Unavailable("GM_addElement não disponível");
+        if (typeof GM_addElement !== "function") {
+throw new Unavailable("GM_addElement não disponível");
+}
         return script(source, { gm: GM_addElement });
       },
     },
@@ -165,7 +191,9 @@ export function createStrategies(host = window) {
       world: "página",
       run(source) {
         if (typeof GM === "undefined" || typeof GM.addElement !== "function")
-          throw new Unavailable("GM.addElement não disponível");
+          {
+throw new Unavailable("GM.addElement não disponível");
+}
         return script(source, { gm: GM.addElement.bind(GM) });
       },
     },
@@ -180,7 +208,9 @@ export function createStrategies(host = window) {
       label: "import(Blob) · sandbox",
       world: "realm do importador",
       async run(source) {
-        if (!host.URL.createObjectURL) throw new Unavailable("Blob URL não disponível");
+        if (!host.URL.createObjectURL) {
+throw new Unavailable("Blob URL não disponível");
+}
         const url = host.URL.createObjectURL(new host.Blob([source], { type: "application/javascript" }));
         try {
           await import(/* @vite-ignore */ url);

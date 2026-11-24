@@ -109,7 +109,9 @@ export let refreshingCloud = false;
 
 export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
   const el = event.target instanceof Element ? event.target : null;
-  if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) return;
+  if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) {
+return;
+}
   if (
     !state.visual.blockTweetOpen ||
     event.defaultPrevented ||
@@ -120,17 +122,27 @@ export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
     event.shiftKey ||
     event.altKey
   )
-    return;
+    {
+return;
+}
   const article = el.closest<HTMLElement>(XDOM.tweet);
-  if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) return;
-  if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) return;
-  if (window.getSelection()?.toString().trim()) return;
+  if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) {
+return;
+}
+  if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) {
+return;
+}
+  if (window.getSelection()?.toString().trim()) {
+return;
+}
   event.preventDefault();
   event.stopImmediatePropagation();
 }
 
 export function handleCrossTabStorageSynchronization(event: StorageEvent): void {
-  if (gmAvailable || event.key !== PREFIX + state.account) return;
+  if (gmAvailable || event.key !== PREFIX + state.account) {
+return;
+}
   try {
     const db = JSON.parse(event.newValue || "null");
     state.searches = Array.isArray(db?.searches) ? db.searches.map(normalizedSearch).filter(Boolean) : [];
@@ -193,13 +205,19 @@ export function configureStudioSpaNavigation(): void {
         a.search === target.search &&
         !a.closest(RODX_SELECTORS.studioOwnedElements),
     );
-    if (anchor) anchor.click();
-    else location.assign(target.href);
+    if (anchor) {
+anchor.click();
+}
+    else {
+location.assign(target.href);
+}
   };
 }
 
 export function initializeStudioListsModule(): void {
-  if (Studio.enabled("lists")) createListsModule();
+  if (Studio.enabled("lists")) {
+createListsModule();
+}
 }
 
 export function setupStudioListTypeahead(): void {
@@ -226,7 +244,9 @@ export function bindListsSettingsEventEmitter(): void {
   Studio.on(
     "lists:settings",
     ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
-      if (!id) return;
+      if (!id) {
+return;
+}
       const scope = "list:" + id;
       const mediaValue = settings.media;
       const mappedMedia = ["videos", "native"].includes(mediaValue || "")
@@ -242,7 +262,9 @@ export function bindListsSettingsEventEmitter(): void {
         media: mappedMedia,
       };
 
-      if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) return;
+      if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) {
+return;
+}
       state.visual.feedFilters = {
         ...state.visual.feedFilters,
         [scope]: config,
@@ -254,7 +276,9 @@ export function bindListsSettingsEventEmitter(): void {
 }
 
 export function setupInterfaceHygieneModule(): void {
-  if (Studio.enabled(STUDIO_GROUPS.hygiene)) XInterfaceHygiene.install();
+  if (Studio.enabled(STUDIO_GROUPS.hygiene)) {
+XInterfaceHygiene.install();
+}
 }
 
 export function resetDatabaseState(): void {
@@ -264,10 +288,14 @@ export function resetDatabaseState(): void {
 
 export function setupDatabaseDirtyAutoSaveWatcher(): void {
   Studio.on("database:dirty", () => {
-    if (refreshingCloud) return;
+    if (refreshingCloud) {
+return;
+}
     clearTimeout(databaseSaveTimer);
     databaseSaveTimer = setTimeout(() => {
-      if (state.account) void saveState().catch(console.warn);
+      if (state.account) {
+void saveState().catch(console.warn);
+}
     }, RUNTIME_LIMITS.bootstrapDeckEvents.databaseSaveDebounceMs);
   });
 }
@@ -276,7 +304,9 @@ export function registerCloudBackgroundSyncJob(): void {
   Studio.register(
     STUDIO_JOBS.cloudRefresh,
     async () => {
-      if (!state.account || refreshingCloud) return;
+      if (!state.account || refreshingCloud) {
+return;
+}
       refreshingCloud = true;
       try {
         await CloudSync.onAccountLoaded(state.account, state.accountGeneration);
@@ -290,7 +320,9 @@ export function registerCloudBackgroundSyncJob(): void {
 
 export function setupVisibilityChangeCloudSyncTrigger(): void {
   document.addEventListener(EVENT_TYPES.visibilityChange, () => {
-    if (!document.hidden) Studio.queue(STUDIO_JOBS.cloudRefresh);
+    if (!document.hidden) {
+Studio.queue(STUDIO_JOBS.cloudRefresh);
+}
   });
 }
 
@@ -376,7 +408,9 @@ export function registerMediaExperienceSetupJob(): void {
       SeekPreviews.scan();
       VideoExperience.scan();
       PlayerPreference.scan();
-      if (PlayerPreference.needsRodX()) VideoTransport.scan();
+      if (PlayerPreference.needsRodX()) {
+VideoTransport.scan();
+}
       ViewportPlayback.scan();
       ImmersiveSwipe.scan();
     },

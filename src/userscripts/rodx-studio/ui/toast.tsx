@@ -21,14 +21,18 @@ export function disposeRodxToast() {
 }
 
 function disposeToast() {
-  if (container) disposeView(container);
+  if (container) {
+disposeView(container);
+}
   container = undefined;
   host?.remove();
   host = undefined;
 }
 
 function ensureToast() {
-  if (host?.isConnected && container) return;
+  if (host?.isConnected && container) {
+return;
+}
   disposeToast();
   host = document.createElement("div");
   host.id = "rodx-native-toast";
@@ -57,7 +61,9 @@ function ToastView({ message, kind }: ToastState) {
 export function showRodxToast(message: unknown, kind: ToastKind = "info") {
   ensureToast();
   currentToast = { message: String(message || ""), kind };
-  if (container) mountView(container, () => <ToastView {...currentToast} />);
+  if (container) {
+mountView(container, () => <ToastView {...currentToast} />);
+}
   clearTimeout(rodxToastTimer);
   rodxToastTimer = setTimeout(() => {
     disposeToast();

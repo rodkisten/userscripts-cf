@@ -22,7 +22,9 @@ export function readPost(node: Element, routeSub: string): Post | null {
       ?.textContent?.trim() ||
     link?.textContent?.trim() ||
     "";
-  if (!id || !title) return null;
+  if (!id || !title) {
+return null;
+}
   const sub = (
     host.getAttribute("data-gws-sub") ||
     host.getAttribute("subreddit-prefixed-name") ||
@@ -37,7 +39,9 @@ export function readPost(node: Element, routeSub: string): Post | null {
       node.querySelector('[slot="nsfw-badge"], [data-testid="nsfw-badge"]')) &&
     !tags.some((tag) => /^nsfw$/i.test(tag))
   )
-    tags.push("NSFW");
+    {
+tags.push("NSFW");
+}
   return {
     id,
     title,

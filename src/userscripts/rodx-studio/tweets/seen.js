@@ -11,17 +11,23 @@ export function initializeDeckSeen() {
     const key = (account) => PREFIX + "viewed:" + account;
     let savedVersion = 0;
     async function load(account) {
-      if (!account) return;
+      if (!account) {
+return;
+}
       state.seenAccount = account;
       let value = null;
       try {
         value = await storage.get(key(account));
       } catch (_) {}
       if (!value)
-        try {
+        {
+try {
           value = JSON.parse(localStorage.getItem(key(account)) || "null");
         } catch (_) {}
-      if (state.account !== account) return;
+}
+      if (state.account !== account) {
+return;
+}
       state.seen = new Map(
         (Array.isArray(value) ? value : [])
           .filter((a) => Array.isArray(a) && /^\d{5,25}$/.test(a[0]))
@@ -32,7 +38,9 @@ export function initializeDeckSeen() {
       clearTimeout(state.seenSaveTimer);
       const version = ++savedVersion;
       state.seenSaveTimer = setTimeout(async () => {
-        if (version !== savedVersion || !state.account) return;
+        if (version !== savedVersion || !state.account) {
+return;
+}
         const account = state.account;
         const entries = [...state.seen.entries()].slice(-10000);
         try {
@@ -46,11 +54,15 @@ export function initializeDeckSeen() {
       }, RUNTIME_LIMITS.tweetsSeen.flushSoonDelayMs);
     }
     function mark(id) {
-      if (!state.account || !id || state.seen.has(id)) return;
+      if (!state.account || !id || state.seen.has(id)) {
+return;
+}
       const at = Date.now();
       state.seen.set(id, at);
       CloudSync.markSeen(state.account, id, at);
-      if (state.seen.size > 10000) state.seen.delete(state.seen.keys().next().value);
+      if (state.seen.size > 10000) {
+state.seen.delete(state.seen.keys().next().value);
+}
       flushSoon();
     }
     return Object.freeze({

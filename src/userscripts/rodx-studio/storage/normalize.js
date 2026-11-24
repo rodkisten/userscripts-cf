@@ -5,7 +5,9 @@ import { QueryEngine, compileQuery } from "../search/query-compiler.js";
 import { uid } from "../shared/text.js";
 
 export function normalizedSearch(value) {
-  if (!value || typeof value !== "object") return null;
+  if (!value || typeof value !== "object") {
+return null;
+}
   const id = typeof value.id === "string" && /^[a-zA-Z0-9_-]{1,110}$/.test(value.id) ? value.id : uid();
   const fields = copyFields(value.fields);
   const blocks = normalizeBlockTree(value.blocks);
@@ -15,7 +17,9 @@ export function normalizedSearch(value) {
   if (query && !Object.values(fields).some((v) => v && v !== "any") && !blocks.children.length) {
     fields.extra = query; // Preserve raw queries from older backups only.
   }
-  if (!query || query.length > 8000) return null;
+  if (!query || query.length > 8000) {
+return null;
+}
   const sort = SORTS.some(([key]) => key === value.sort) ? value.sort : "live";
   return {
     id,
@@ -33,15 +37,21 @@ export function normalizedSearch(value) {
 }
 
 export function normalizedPreset(value) {
-  if (!value || typeof value !== "object") return null;
+  if (!value || typeof value !== "object") {
+return null;
+}
   const query = String(value.query || "")
     .trim()
     .slice(0, 8001);
-  if (!query || query.length > 8000) return null;
+  if (!query || query.length > 8000) {
+return null;
+}
   const name = String(value.name || "")
     .trim()
     .slice(0, 100);
-  if (!name) return null;
+  if (!name) {
+return null;
+}
   return {
     id: typeof value.id === "string" && /^[a-zA-Z0-9_-]{1,110}$/.test(value.id) ? value.id : uid(),
     name,

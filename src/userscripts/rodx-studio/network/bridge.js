@@ -18,7 +18,8 @@ export function connectStudioNetwork(Studio) {
       }),
     );
   for (const type of ["status", "request", "response", "media", "result", "inspect"])
-    document.addEventListener(channel + ":" + type, (event) => {
+    {
+document.addEventListener(channel + ":" + type, (event) => {
       let data;
       try {
         data = JSON.parse(event.detail);
@@ -42,7 +43,9 @@ export function connectStudioNetwork(Studio) {
         const cache = Studio.state.mediaSources || (Studio.state.mediaSources = new Map());
         for (const item of data.items || []) {
           cache.set(item.id, item.media);
-          if (cache.size > 160) cache.delete(cache.keys().next().value);
+          if (cache.size > 160) {
+cache.delete(cache.keys().next().value);
+}
         }
         Studio.emit("network:media", data);
       } else {
@@ -51,31 +54,42 @@ export function connectStudioNetwork(Studio) {
           if (bytes <= 2_000_000) {
             buffer.push([type, data, bytes]);
             bufferBytes += bytes;
-            while (buffer.length > 6 || bufferBytes > 2_000_000) bufferBytes -= buffer.shift()[2];
+            while (buffer.length > 6 || bufferBytes > 2_000_000) {
+bufferBytes -= buffer.shift()[2];
+}
           }
         }
         Studio.emit("network:" + type, data);
       }
     });
+}
   Studio.net = {
     subscribe(request, response) {
       hasConsumer = true;
       Studio.on("network:request", request);
       Studio.on("network:response", response);
-      for (const [type, data] of buffer.splice(0)) (type === "request" ? request : response)(data);
+      for (const [type, data] of buffer.splice(0)) {
+(type === "request" ? request : response)(data);
+}
       bufferBytes = 0;
     },
     request(path, options = {}) {
       if (!Studio.state.network.ready)
-        return Promise.reject(Error("Ponte de rede indisponível. Recarregue o X."));
+        {
+return Promise.reject(Error("Ponte de rede indisponível. Recarregue o X."));
+}
       const { signal, ...safe } = options;
-      if (signal?.aborted) return Promise.reject(new DOMException("Abortado", "AbortError"));
+      if (signal?.aborted) {
+return Promise.reject(new DOMException("Abortado", "AbortError"));
+}
       return new Promise((resolve, reject) => {
         const number = ++id,
           cleanup = () => signal?.removeEventListener("abort", abort);
         const abort = () => {
           const task = pending.get(number);
-          if (!task) return;
+          if (!task) {
+return;
+}
           clearTimeout(task.timer);
           cleanup();
           pending.delete(number);
@@ -88,9 +102,11 @@ export function connectStudioNetwork(Studio) {
           cleanup();
           pending.delete(number);
           if ((safe.method || "GET") === "GET")
-            call("cancel", {
+            {
+call("cancel", {
               id: number,
             });
+}
           reject(Error("Tempo esgotado na ponte. Verifique a ação antes de repetir."));
         }, RUNTIME_LIMITS.networkBridge.connectStudioNetworkDelayMs);
         pending.set(number, {
@@ -112,7 +128,9 @@ export function connectStudioNetwork(Studio) {
   };
   try {
     if (typeof unsafeWindow !== "undefined")
-      studioPageBridge(unsafeWindow, channel, DEFAULT_SETTINGS, RUNTIME_LIMITS.networkPageBridge);
+      {
+studioPageBridge(unsafeWindow, channel, DEFAULT_SETTINGS, RUNTIME_LIMITS.networkPageBridge);
+}
   } catch {}
   const tried = new Set();
   let observer, timeout;
@@ -123,13 +141,19 @@ export function connectStudioNetwork(Studio) {
       return;
     }
     const root = document.documentElement;
-    if (!root) return;
+    if (!root) {
+return;
+}
     const nonce = document.querySelector(DOM_SELECTORS.nonceScript)?.nonce || "";
-    if (tried.has(nonce)) return;
+    if (tried.has(nonce)) {
+return;
+}
     tried.add(nonce);
     try {
       const script = document.createElement("script");
-      if (nonce) script.nonce = nonce;
+      if (nonce) {
+script.nonce = nonce;
+}
       script.textContent =
         ";(" +
         studioPageBridge.toString() +

@@ -11,11 +11,15 @@ export function installListTypeahead(Studio) {
     choices = [],
     index = 0;
   function close() {
-    if (host) host.hidden = true;
+    if (host) {
+host.hidden = true;
+}
     field = null;
   }
   function choose(row) {
-    if (!field || !row) return;
+    if (!field || !row) {
+return;
+}
     const input = field,
       value = input.value;
     const next = value.slice(0, start) + "list:" + row.id + value.slice(end);
@@ -102,7 +106,9 @@ export function installListTypeahead(Studio) {
       };
       list.append(button);
     });
-    if (!choices.length) list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
+    if (!choices.length) {
+list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
+}
   }
   const isSearch = (el) =>
     el?.matches?.(NATIVE_X_SELECTORS.searchQueryFields) && !el.closest?.(RODX_SELECTORS.quickSearchButton);
@@ -110,7 +116,9 @@ export function installListTypeahead(Studio) {
     "input",
     (e) => {
       const input = e.composedPath().find(isSearch);
-      if (input) render(input);
+      if (input) {
+render(input);
+}
     },
     true,
   );
@@ -118,15 +126,21 @@ export function installListTypeahead(Studio) {
     "click",
     (e) => {
       const input = e.composedPath().find(isSearch);
-      if (input) render(input);
-      else if (e.target !== host) close();
+      if (input) {
+render(input);
+}
+      else if (e.target !== host) {
+close();
+}
     },
     true,
   );
   document.addEventListener(
     "keydown",
     (e) => {
-      if (!e.composedPath().includes(field) || host?.hidden) return;
+      if (!e.composedPath().includes(field) || host?.hidden) {
+return;
+}
       if (e.key === "Escape") {
         close();
         return;

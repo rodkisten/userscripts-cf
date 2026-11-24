@@ -49,7 +49,9 @@ export function requireAccountTokens(value, operator) {
 }
 
 export function dateUTCPlusOne(date) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Data final inválida.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+throw new Error("Data final inválida.");
+}
   const parsed = new Date(`${date}T00:00:00.000Z`);
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
     throw new Error("Data final inválida.");
@@ -61,7 +63,9 @@ export function dateUTCPlusOne(date) {
 export function numberFilter(fields, minKey, maxKey, operator) {
   const items = [];
   const parse = (value, label) => {
-    if (value === "") return null;
+    if (value === "") {
+return null;
+}
     if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) > 1e12) {
       throw new Error(`${label}: informe um inteiro não negativo.`);
     }
@@ -72,7 +76,11 @@ export function numberFilter(fields, minKey, maxKey, operator) {
   if (min !== null && max !== null && min > max) {
     throw new Error(`Valor mínimo maior que máximo em ${operator}.`);
   }
-  if (min !== null) items.push(`${operator}:${min}`);
-  if (max !== null) items.push(`-${operator}:${max + 1}`);
+  if (min !== null) {
+items.push(`${operator}:${min}`);
+}
+  if (max !== null) {
+items.push(`-${operator}:${max + 1}`);
+}
   return items;
 }

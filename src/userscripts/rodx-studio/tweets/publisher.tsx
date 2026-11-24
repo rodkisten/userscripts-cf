@@ -57,9 +57,13 @@ export function initializeDeckXRepost() {
       if (looksLikeMarkup) {
         const parsed = new DOMParser().parseFromString(raw, "text/html");
         for (const br of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.lineBreaks))
-          br.replaceWith("\n");
+          {
+br.replaceWith("\n");
+}
         for (const block of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.paragraphs))
-          block.append("\n");
+          {
+block.append("\n");
+}
         for (const anchor of parsed.body.querySelectorAll<HTMLElement>(DOM_SELECTORS.linksWithHref)) {
           const label = String(anchor.textContent || "").trim();
           const href = safeSource(anchor.getAttribute("href"));
@@ -101,7 +105,9 @@ export function initializeDeckXRepost() {
           return "";
         }
         const legacy = url.pathname.match(/^\/i\/web\/status\/(\d{8,25})(?:\/|$)/);
-        if (legacy) return `${url.origin}/i/status/${legacy[1]}`;
+        if (legacy) {
+return `${url.origin}/i/status/${legacy[1]}`;
+}
         return /^\/(?:[A-Za-z0-9_]{1,15}|i)\/status\/\d{8,25}(?:\/|$)/.test(url.pathname) ? url.href : "";
       } catch {
         return "";
@@ -116,9 +122,13 @@ export function initializeDeckXRepost() {
         .split(/\r?\n/)
         .find((entry) => /^retry-after\s*:/i.test(entry));
       const value = line?.split(":").slice(1).join(":").trim();
-      if (!value) return 0;
+      if (!value) {
+return 0;
+}
       const seconds = Number(value);
-      if (Number.isFinite(seconds)) return Math.min(120_000, Math.max(0, seconds * 1000));
+      if (Number.isFinite(seconds)) {
+return Math.min(120_000, Math.max(0, seconds * 1000));
+}
       const time = Date.parse(value);
       return Number.isFinite(time) ? Math.min(120_000, Math.max(0, time - Date.now())) : 0;
     }
@@ -126,7 +136,9 @@ export function initializeDeckXRepost() {
       return new Promise<any>((resolve) => setTimeout(resolve, ms));
     }
     async function call(path, method = "GET", payload = null, options: Record<string, any> = {}) {
-      if (!Relay.configured()) throw Error("Configure o token do Telegram Relay primeiro.");
+      if (!Relay.configured()) {
+throw Error("Configure o token do Telegram Relay primeiro.");
+}
       // Writes are never retried automatically: their result might be uncertain.
       const retries = method === "GET" ? 2 : 0;
       let last = null;
@@ -136,21 +148,29 @@ export function initializeDeckXRepost() {
           result = await Relay.transport({ path, method, payload, timeout: options.timeout || 30_000 });
         } catch (cause) {
           last = cause;
-          if (attempt === retries) throw cause;
+          if (attempt === retries) {
+throw cause;
+}
           await sleep(Math.min(12_000, 850 * 2 ** attempt) * (0.7 + Math.random() * 0.6));
           continue;
         }
         const status = Number(result.status);
-        if (status >= 200 && status < 300 && result.data?.ok === true) return result.data;
+        if (status >= 200 && status < 300 && result.data?.ok === true) {
+return result.data;
+}
         last = new Error(String(result.data?.error || `Relay HTTP ${status}`));
-        if (attempt === retries || ![429, 502, 503, 504].includes(status)) throw last;
+        if (attempt === retries || ![429, 502, 503, 504].includes(status)) {
+throw last;
+}
         const backoff = Math.min(20_000, 1000 * 2 ** attempt) * (0.7 + Math.random() * 0.6);
         await sleep(Math.max(backoff, retryAfter(result.headers)));
       }
       throw last || Error("Falha de comunicação com a fila D1.");
     }
     function cleanupPreparedFiles() {
-      for (const record of preparedFiles.values()) URL.revokeObjectURL(record.url);
+      for (const record of preparedFiles.values()) {
+URL.revokeObjectURL(record.url);
+}
       preparedFiles.clear();
     }
     async function switchAccount(id) {
@@ -188,7 +208,9 @@ export function initializeDeckXRepost() {
       }
     }
     async function savePreferences() {
-      if (!gmAvailable || !account) throw Error("Identifique sua conta e habilite GM Storage.");
+      if (!gmAvailable || !account) {
+throw Error("Identifique sua conta e habilite GM Storage.");
+}
       const shadow = state.rootShadow;
       const modeField = shadow?.querySelector(RODX_SELECTORS.repostShareMode);
       const destinationField = shadow?.querySelector(RODX_SELECTORS.repostDestination);
@@ -212,12 +234,16 @@ export function initializeDeckXRepost() {
       const key = String(id || "");
       for (const group of rows.values()) {
         const match = group.find((item) => item.id === key);
-        if (match) return match;
+        if (match) {
+return match;
+}
       }
       return null;
     }
     function requestRefresh() {
-      if (state.open && state.view === "xrepost") renderRoot();
+      if (state.open && state.view === "xrepost") {
+renderRoot();
+}
     }
     async function refresh(force = false) {
       if (!Relay.configured()) {
@@ -225,8 +251,12 @@ export function initializeDeckXRepost() {
         requestRefresh();
         return;
       }
-      if (pendingPromise) return pendingPromise;
-      if (!force && fetchedAt && Date.now() - fetchedAt < 20_000) return;
+      if (pendingPromise) {
+return pendingPromise;
+}
+      if (!force && fetchedAt && Date.now() - fetchedAt < 20_000) {
+return;
+}
       const myEpoch = pageEpoch;
       loading = true;
       error = "";
@@ -238,14 +268,24 @@ export function initializeDeckXRepost() {
             return { status, entries: Array.isArray(response.items) ? response.items : [] };
           }),
         );
-        if (myEpoch !== pageEpoch) return;
+        if (myEpoch !== pageEpoch) {
+return;
+}
         const errors = [];
         for (const result of results) {
-          if (result.status === "fulfilled") rows.set(result.value.status, result.value.entries);
-          else errors.push(String(result.reason?.message || result.reason));
+          if (result.status === "fulfilled") {
+rows.set(result.value.status, result.value.entries);
+}
+          else {
+errors.push(String(result.reason?.message || result.reason));
+}
         }
-        if (errors.length) error = errors.join(" · ");
-        else fetchedAt = Date.now();
+        if (errors.length) {
+error = errors.join(" · ");
+}
+        else {
+fetchedAt = Date.now();
+}
       })().finally(() => {
         if (myEpoch === pageEpoch) {
           loading = false;
@@ -257,7 +297,9 @@ export function initializeDeckXRepost() {
     }
     function scheduleRefresh() {
       clearTimeout(backgroundTimer);
-      if (document.hidden || !state.open || state.view !== "xrepost") return;
+      if (document.hidden || !state.open || state.view !== "xrepost") {
+return;
+}
       backgroundTimer = setTimeout(
         () => {
           backgroundTimer = null;
@@ -538,12 +580,20 @@ export function initializeDeckXRepost() {
       );
     }
     async function onTelegramConfirmed(post) {
-      if (!post?.isVideo || !post.id) return;
+      if (!post?.isVideo || !post.id) {
+return;
+}
       const sourceUrl = safeSource(post.url) || safeSource(`https://x.com/i/status/${post.id}`);
-      if (!sourceUrl) return;
-      if (preferences.shareMode === "off" && !preferences.enqueueAfterTelegram) return;
+      if (!sourceUrl) {
+return;
+}
+      if (preferences.shareMode === "off" && !preferences.enqueueAfterTelegram) {
+return;
+}
       const identifier = `${account}:${post.id}`;
-      if (prompted.has(identifier) || inflight.has(identifier)) return;
+      if (prompted.has(identifier) || inflight.has(identifier)) {
+return;
+}
       const promise = (async () => {
         const caption = normalizeCaption([post.author, post.text].filter(Boolean).join("\n\n"), {
           includeSourceUrl: preferences.includeSourceUrl,
@@ -558,7 +608,9 @@ export function initializeDeckXRepost() {
             });
             item = result.item || null;
             if (item?.status) {
-              if (item.status === "posted") return;
+              if (item.status === "posted") {
+return;
+}
               const previous = rows.get(item.status) || [];
               rows.set(item.status, [item, ...previous.filter((r) => r.id !== item.id)].slice(0, MAX_ROWS));
             }
@@ -568,7 +620,9 @@ export function initializeDeckXRepost() {
           }
         }
         prompted.add(identifier);
-        if (prompted.size > 150) prompted.delete(prompted.values().next().value);
+        if (prompted.size > 150) {
+prompted.delete(prompted.values().next().value);
+}
         if (preferences.shareMode !== "off") {
           const target = item || {
             id: "",
@@ -577,8 +631,12 @@ export function initializeDeckXRepost() {
             status: "unverified",
             media_url: null,
           };
-          if (preferences.shareMode === "review") openCompose(target);
-          else openDirectShare(target);
+          if (preferences.shareMode === "review") {
+openCompose(target);
+}
+          else {
+openDirectShare(target);
+}
         }
       })().finally(() => inflight.delete(identifier));
       inflight.set(identifier, promise);
@@ -586,8 +644,12 @@ export function initializeDeckXRepost() {
     }
     async function claimNextDue() {
       if (currentClaim?.id) {
-        if (preferences.shareMode === "review") openCompose(currentClaim);
-        else openDirectShare(currentClaim);
+        if (preferences.shareMode === "review") {
+openCompose(currentClaim);
+}
+        else {
+openDirectShare(currentClaim);
+}
         return;
       }
       // D1 atomically selects the single earliest due item, not a guessed list entry.
@@ -598,8 +660,12 @@ export function initializeDeckXRepost() {
       }
       currentClaim = result.item;
       await refresh(true);
-      if (preferences.shareMode === "review") openCompose(currentClaim);
-      else openDirectShare(currentClaim);
+      if (preferences.shareMode === "review") {
+openCompose(currentClaim);
+}
+      else {
+openDirectShare(currentClaim);
+}
     }
     async function confirmPublished(item, postUrl = "") {
       if (!currentClaim?.claim_token || currentClaim.id !== item.id) {
@@ -620,13 +686,17 @@ export function initializeDeckXRepost() {
       );
     }
     async function delay(item) {
-      if (!window.confirm("Adiar este item por pelo menos uma hora na fila D1?")) return;
+      if (!window.confirm("Adiar este item por pelo menos uma hora na fila D1?")) {
+return;
+}
       const schedule = Math.floor(Date.now() / 1000) + 3600 + Math.floor(Math.random() * 600);
       await call(`/x/repost/queue/${encodeURIComponent(item.id)}`, "PATCH", {
         action: "reschedule",
         scheduledAt: schedule,
       });
-      if (currentClaim?.id === item.id) currentClaim = null;
+      if (currentClaim?.id === item.id) {
+currentClaim = null;
+}
       await refresh(true);
     }
     function openCompose(item) {
@@ -718,7 +788,9 @@ export function initializeDeckXRepost() {
                   role: "custom",
                   close: true,
                   handler: async (ctx) => {
-                    if (!window.confirm("O vídeo já aparece publicado no X?")) return;
+                    if (!window.confirm("O vídeo já aparece publicado no X?")) {
+return;
+}
                     await confirmPublished(item, String(ctx.values.postUrl || ""));
                   },
                 },
@@ -735,11 +807,15 @@ export function initializeDeckXRepost() {
           : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
             ? GM.xmlHttpRequest.bind(GM)
             : null;
-      if (!gm) throw Error("Seu gerenciador não oferece download via GM.");
+      if (!gm) {
+throw Error("Seu gerenciador não oferece download via GM.");
+}
       return new Promise<any>((resolve, reject) => {
         let done = false;
         const settle = (fn, value) => {
-          if (done) return;
+          if (done) {
+return;
+}
           done = true;
           fn(value);
         };
@@ -769,7 +845,9 @@ export function initializeDeckXRepost() {
               !/json|html/i.test(contentType)
             ) {
               settle(resolve, new Blob([new Uint8Array(buffer).slice().buffer], { type: "video/mp4" }));
-            } else settle(reject, Error(`MP4 não disponível (HTTP ${code}).`));
+            } else {
+settle(reject, Error(`MP4 não disponível (HTTP ${code}).`));
+}
           },
           onerror: () => settle(reject, Error("Não consegui baixar o MP4.")),
           onabort: () => settle(reject, Error("Download cancelado.")),
@@ -778,7 +856,9 @@ export function initializeDeckXRepost() {
       });
     }
     async function getVideo(item) {
-      if (preparedFiles.has(item.id)) return preparedFiles.get(item.id).blob;
+      if (preparedFiles.has(item.id)) {
+return preparedFiles.get(item.id).blob;
+}
       const generation = pageEpoch;
       const sources = [
         { url: Relay.relayUrl() + `/x/repost/queue/${encodeURIComponent(item.id)}/media`, auth: true },
@@ -800,7 +880,9 @@ export function initializeDeckXRepost() {
       for (const source of sources) {
         try {
           const blob = await requestVideo(source.url, source.auth);
-          if (generation !== pageEpoch) throw Error("Conta alterada durante o download.");
+          if (generation !== pageEpoch) {
+throw Error("Conta alterada durante o download.");
+}
           const url = URL.createObjectURL(blob);
           const record = { blob, url, at: Date.now() };
           preparedFiles.set(item.id, record);
@@ -817,21 +899,31 @@ export function initializeDeckXRepost() {
       throw failed || Error("Vídeo não encontrado no Relay.");
     }
     function loadVideoOnce(item) {
-      if (!item?.id) return Promise.reject(Error("O vídeo ainda não foi registrado no D1."));
-      if (preparedFiles.has(item.id)) return Promise.resolve(preparedFiles.get(item.id).blob);
-      if (videoLoads.has(item.id)) return videoLoads.get(item.id);
+      if (!item?.id) {
+return Promise.reject(Error("O vídeo ainda não foi registrado no D1."));
+}
+      if (preparedFiles.has(item.id)) {
+return Promise.resolve(preparedFiles.get(item.id).blob);
+}
+      if (videoLoads.has(item.id)) {
+return videoLoads.get(item.id);
+}
       const task = getVideo(item);
       videoLoads.set(item.id, task);
       void task
         .finally(() => {
-          if (videoLoads.get(item.id) === task) videoLoads.delete(item.id);
+          if (videoLoads.get(item.id) === task) {
+videoLoads.delete(item.id);
+}
         })
         .catch(() => {});
       return task;
     }
     function downloadPreparedVideo(item) {
       const record = preparedFiles.get(item.id);
-      if (!record?.url) throw Error("O vídeo precisa estar carregado antes de salvar.");
+      if (!record?.url) {
+throw Error("O vídeo precisa estar carregado antes de salvar.");
+}
       const link = document.createElement("a");
       link.href = record.url;
       link.download = `rodx-${item.id}.mp4`;
@@ -905,8 +997,10 @@ export function initializeDeckXRepost() {
       (textArea as HTMLInputElement).value = caption;
       const source = safeSource(item.source_url);
       if (!source)
-        (panel.querySelector<HTMLElement>(RODX_SELECTORS.shareSourceAction) as HTMLButtonElement).disabled =
+        {
+(panel.querySelector<HTMLElement>(RODX_SELECTORS.shareSourceAction) as HTMLButtonElement).disabled =
           true;
+}
 
       function status(message, isError = false) {
         statusElement.textContent = message;
@@ -916,7 +1010,9 @@ export function initializeDeckXRepost() {
       // Download is asynchronous and must finish BEFORE the user taps this button on Safari.
       panel.addEventListener("click", (event) => {
         const button = (event.target as HTMLElement).closest(RODX_SELECTORS.shareActions);
-        if (!button || !panel.contains(button) || (button as HTMLButtonElement).disabled) return;
+        if (!button || !panel.contains(button) || (button as HTMLButtonElement).disabled) {
+return;
+}
         const actionName = (button as HTMLElement).dataset.shareAction;
         const text = normalizeCaption((textArea as HTMLInputElement).value);
         if (actionName === "native") {
@@ -994,7 +1090,9 @@ export function initializeDeckXRepost() {
       const expectedAccount = account;
       void loadVideoOnce(item)
         .then((blob) => {
-          if (account !== expectedAccount) return;
+          if (account !== expectedAccount) {
+return;
+}
           (nativeButton as HTMLButtonElement).disabled = false;
           (saveButton as HTMLButtonElement).disabled = false;
           status(
@@ -1003,7 +1101,9 @@ export function initializeDeckXRepost() {
           );
         })
         .catch((cause) => {
-          if (account !== expectedAccount) return;
+          if (account !== expectedAccount) {
+return;
+}
           status(
             `Não consegui recuperar o MP4: ${cause.message}. ` +
               "Confira o R2, o arquivo do Shortcut ou use o editor manual.",
@@ -1012,18 +1112,34 @@ export function initializeDeckXRepost() {
         });
     }
     async function action(name, id = "") {
-      if (name === "xrepost-refresh") return refresh(true);
-      if (name === "xrepost-save") return savePreferences();
-      if (name === "xrepost-next") return claimNextDue();
+      if (name === "xrepost-refresh") {
+return refresh(true);
+}
+      if (name === "xrepost-save") {
+return savePreferences();
+}
+      if (name === "xrepost-next") {
+return claimNextDue();
+}
       if (name === "xrepost-tab") {
-        if (STATUSES.includes(id)) view = id;
+        if (STATUSES.includes(id)) {
+view = id;
+}
         return requestRefresh();
       }
       const item = rowItem(id);
-      if (!item) throw Error("Item não encontrado. Atualize a fila do D1.");
-      if (name === "xrepost-prepare") return openDirectShare(item);
-      if (name === "xrepost-edit") return openCompose(item);
-      if (name === "xrepost-delay") return delay(item);
+      if (!item) {
+throw Error("Item não encontrado. Atualize a fila do D1.");
+}
+      if (name === "xrepost-prepare") {
+return openDirectShare(item);
+}
+      if (name === "xrepost-edit") {
+return openCompose(item);
+}
+      if (name === "xrepost-delay") {
+return delay(item);
+}
       if (name === "xrepost-copy") {
         await navigator.clipboard.writeText(shareCaption(item));
         showRodxToast("Legenda copiada.");
@@ -1032,7 +1148,9 @@ export function initializeDeckXRepost() {
     document.addEventListener(
       "visibilitychange",
       () => {
-        if (document.hidden) clearTimeout(backgroundTimer);
+        if (document.hidden) {
+clearTimeout(backgroundTimer);
+}
         else if (state.open && state.view === "xrepost") {
           void refresh(true).finally(scheduleRefresh);
         }

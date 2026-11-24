@@ -61,12 +61,18 @@ export function reserveWrite() {
   const ledger = writeLedger();
   const hourly = ledger.filter((ms) => ms > Date.now() - 3600000);
   if (hourly.length >= MAX_WRITES_HOUR)
-    throw new Error("Limite local: 10 alterações/hora. Fila pausada; retome mais tarde.");
+    {
+throw new Error("Limite local: 10 alterações/hora. Fila pausada; retome mais tarde.");
+}
   if (ledger.length >= MAX_WRITES_DAY)
-    throw new Error("Limite local: 40 alterações/24 h. Fila pausada; retome amanhã.");
+    {
+throw new Error("Limite local: 40 alterações/24 h. Fila pausada; retome amanhã.");
+}
   const blockedUntil = Number(sessionStorage.getItem(`${APP}:rate-low-until`) || 0);
   if (blockedUntil > Date.now())
-    throw new Error("O X informou cota quase esgotada. Fila pausada até a janela de limite terminar.");
+    {
+throw new Error("O X informou cota quase esgotada. Fila pausada até a janela de limite terminar.");
+}
   ledger.push(Date.now()); // Reserva conservadora inclusive quando a rede falha.
   localStorage.setItem(WRITE_LEDGER_KEY, JSON.stringify(ledger));
 }
@@ -74,7 +80,9 @@ export function reserveWrite() {
 export function acquireLease() {
   const existing = loadJSON(QUEUE_LEASE_KEY, null);
   if (existing?.expiresAt > Date.now() && existing.owner !== ownTabId)
-    throw new Error("A fila já está ativa em outra aba do X.");
+    {
+throw new Error("A fila já está ativa em outra aba do X.");
+}
   localStorage.setItem(
     QUEUE_LEASE_KEY,
     JSON.stringify({
@@ -82,28 +90,40 @@ export function acquireLease() {
       expiresAt: Date.now() + 150000,
     }),
   );
-  if (loadJSON(QUEUE_LEASE_KEY, null)?.owner !== ownTabId) throw new Error("Outra aba assumiu a fila.");
+  if (loadJSON(QUEUE_LEASE_KEY, null)?.owner !== ownTabId) {
+throw new Error("Outra aba assumiu a fila.");
+}
 }
 
 export function releaseLease() {
-  if (loadJSON(QUEUE_LEASE_KEY, null)?.owner === ownTabId) localStorage.removeItem(QUEUE_LEASE_KEY);
+  if (loadJSON(QUEUE_LEASE_KEY, null)?.owner === ownTabId) {
+localStorage.removeItem(QUEUE_LEASE_KEY);
+}
 }
 
 export function makeQueue(members) {
   const target = state.lists.find((x) => x.id === state.targetId);
   if (!validListId(state.listId) || !target || state.listId === target.id)
-    return notice("Escolha outra lista sua como destino.", "error");
+    {
+return notice("Escolha outra lista sua como destino.", "error");
+}
   const unique = [
     ...new Map<any, any>(
       members.filter((m) => validHandle(m.username)).map((m) => [m.username.toLowerCase(), m]),
     ).values(),
   ];
-  if (!unique.length) return notice("Selecione membros válidos.", "error");
+  if (!unique.length) {
+return notice("Selecione membros válidos.", "error");
+}
   const active = readQueue();
   if (active && !["done", "cancelled"].includes(active.status))
-    return notice("Pause/cancele a fila existente antes de iniciar outra.", "error");
+    {
+return notice("Pause/cancele a fila existente antes de iniciar outra.", "error");
+}
   const text = `Copiar ${unique.length} membro(s) para ${target.name}?\nSeguir: ${state.follow ? "SIM" : "NÃO"} · Desativar reposts: ${state.disableReposts ? "SIM" : "NÃO"}\n\nRequests internos em série, máximo de 10 escritas/hora e 40/24h, com pausa em limites. Nenhuma ação será revertida automaticamente.`;
-  if (!window.confirm(text)) return;
+  if (!window.confirm(text)) {
+return;
+}
   const q = {
     version: 2,
     sourceId: state.listId,
@@ -138,10 +158,16 @@ export function makeQueue(members) {
 }
 
 export async function enqueueQuickAdd(user, targetId, { follow = false, disableReposts = false } = {}) {
-  if (!validHandle(user.username) || !validListId(targetId)) throw new Error("Usuário ou lista inválidos.");
-  if (user.sourceId === targetId) throw new Error("Esse usuário já está na lista de origem.");
+  if (!validHandle(user.username) || !validListId(targetId)) {
+throw new Error("Usuário ou lista inválidos.");
+}
+  if (user.sourceId === targetId) {
+throw new Error("Esse usuário já está na lista de origem.");
+}
   const target = state.lists.find((l) => l.id === targetId);
-  if (!target) throw new Error("Lista ainda não está sincronizada.");
+  if (!target) {
+throw new Error("Lista ainda não está sincronizada.");
+}
   let q = readQueue();
   if (q && q.status === "running" && !queueRunning) {
     q.status = "paused";
@@ -155,7 +181,9 @@ export async function enqueueQuickAdd(user, targetId, { follow = false, disableR
         (t.targetId || q.targetId) === targetId &&
         !["error", "skipped"].includes(t.status),
     );
-    if (duplicate) throw new Error("Esse usuário já está na fila para essa lista.");
+    if (duplicate) {
+throw new Error("Esse usuário já está na fila para essa lista.");
+}
   } else {
     q = {
       version: 3,
@@ -186,7 +214,9 @@ export async function enqueueQuickAdd(user, targetId, { follow = false, disableR
     repostsDone: false,
   });
   saveQueue(q);
-  if (q.status === "running") runQueue();
+  if (q.status === "running") {
+runQueue();
+}
   return q;
 }
 
@@ -196,7 +226,9 @@ export function initializeListsQueueWait() {
   queueWait = async (ms) => {
     const until = Date.now() + Math.max(0, ms);
     while (document.hidden || Date.now() < until) {
-      if (readQueue()?.status !== "running") throw new Error("Fila pausada");
+      if (readQueue()?.status !== "running") {
+throw new Error("Fila pausada");
+}
       acquireLease(); // Renova o lease mesmo durante pausas longas, evitando outra aba executar.
       if (document.hidden) {
         await sleep(2000);
@@ -212,8 +244,12 @@ export async function resolveUserId(username) {
   const matches = (await getAll("members")).find(
     (m) => m.username.toLowerCase() === username.toLowerCase() && validListId(m.userId),
   );
-  if (matches) return matches.userId;
-  if (!requestTemplates.UserByScreenName) return "";
+  if (matches) {
+return matches.userId;
+}
+  if (!requestTemplates.UserByScreenName) {
+return "";
+}
   const vars = JSON.parse(requestTemplates.UserByScreenName.params.variables || "{}");
   const key = "screen_name" in vars ? "screen_name" : "screenName";
   const r = templateRequest("UserByScreenName", {
@@ -249,7 +285,9 @@ export async function addMemberInternal(listId, userId, username) {
         queryId,
       },
     });
-    if (!result || !result.data) throw new Error("O X não confirmou a inclusão GraphQL.");
+    if (!result || !result.data) {
+throw new Error("O X não confirmou a inclusão GraphQL.");
+}
     return;
   }
   // Legacy interno admite @handle; o X pode desativar este recurso a qualquer momento.
@@ -260,7 +298,9 @@ export async function addMemberInternal(listId, userId, username) {
       screen_name: username,
     },
   });
-  if (!result || typeof result !== "object") throw new Error("Sem confirmação de inclusão na lista.");
+  if (!result || typeof result !== "object") {
+throw new Error("Sem confirmação de inclusão na lista.");
+}
 }
 
 export async function followInternal(username) {
@@ -271,7 +311,9 @@ export async function followInternal(username) {
       follow: "true",
     },
   });
-  if (!result || typeof result !== "object") throw new Error("O X não confirmou o follow.");
+  if (!result || typeof result !== "object") {
+throw new Error("O X não confirmou o follow.");
+}
 }
 
 export async function disableRepostsInternal(username) {
@@ -282,15 +324,21 @@ export async function disableRepostsInternal(username) {
       retweets: "false",
     },
   });
-  if (!result || typeof result !== "object") throw new Error("O X não confirmou a configuração de reposts.");
+  if (!result || typeof result !== "object") {
+throw new Error("O X não confirmou a configuração de reposts.");
+}
 }
 
 export function pauseQueue(reason, retryAfter = 0) {
   const q = readQueue();
-  if (!q) return;
+  if (!q) {
+return;
+}
   q.status = "paused";
   q.lastError = reason;
-  if (retryAfter) q.nextAt = Date.now() + retryAfter * 1000;
+  if (retryAfter) {
+q.nextAt = Date.now() + retryAfter * 1000;
+}
   const task = q.tasks[q.index];
   if (task && task.status !== "ok") {
     task.status = "error";
@@ -309,29 +357,47 @@ export function initializeListsQueueRunning() {
 }
 
 export async function runQueue() {
-  if (queueRunning) return;
+  if (queueRunning) {
+return;
+}
   queueRunning = true;
   try {
     acquireLease();
     let q = readQueue();
-    if (!q || q.status !== "running") return;
+    if (!q || q.status !== "running") {
+return;
+}
     if (!state.authReady)
-      throw new Error(
+      {
+throw new Error(
         "Autenticação interna ainda não identificada. Navegue no X normalmente e retome a fila.",
       );
+}
     while ((q = readQueue())?.status === "running" && q.index < q.tasks.length) {
       acquireLease();
-      if (!navigator.onLine) throw new Error("Sem conexão.");
-      if (q.nextAt > Date.now()) await queueWait(q.nextAt - Date.now());
-      if (document.hidden) await queueWait(2000);
+      if (!navigator.onLine) {
+throw new Error("Sem conexão.");
+}
+      if (q.nextAt > Date.now()) {
+await queueWait(q.nextAt - Date.now());
+}
+      if (document.hidden) {
+await queueWait(2000);
+}
       q = readQueue();
-      if (q.status !== "running") break;
+      if (q.status !== "running") {
+break;
+}
       const task = q.tasks[q.index];
-      if (!validHandle(task.username)) throw new Error("Membro com @usuário inválido.");
+      if (!validHandle(task.username)) {
+throw new Error("Membro com @usuário inválido.");
+}
       if (task.status === "processing" && !task.copied && !task.followDone && !task.repostsDone)
-        throw new Error(
+        {
+throw new Error(
           "A última tentativa foi interrompida em andamento; confira o destino antes de continuar.",
         );
+}
       task.status = "processing";
       saveQueue(q);
       if (!task.copied) {
@@ -339,12 +405,16 @@ export async function runQueue() {
         const known = await membersFor(targetId);
         const already = known.some((m) => m.username.toLowerCase() === task.username.toLowerCase());
         if (!already) {
-          if (!task.userId) task.userId = await resolveUserId(task.username);
+          if (!task.userId) {
+task.userId = await resolveUserId(task.username);
+}
           reserveWrite();
           q.nextAt = Date.now() + queueDelay();
           saveQueue(q);
           await addMemberInternal(targetId, task.userId, task.username);
-        } else task.warnings.push("Já consta no cache local do destino; não foi reenviado.");
+        } else {
+task.warnings.push("Já consta no cache local do destino; não foi reenviado.");
+}
         q = readQueue();
         q.tasks[q.index].copied = true;
         saveQueue(q);
@@ -352,7 +422,9 @@ export async function runQueue() {
       }
       if ((task.follow ?? q.follow) && !q.tasks[q.index].followDone) {
         q = readQueue();
-        if (q.status !== "running") throw new Error("Fila pausada");
+        if (q.status !== "running") {
+throw new Error("Fila pausada");
+}
         await queueWait(Math.max(0, (q.nextAt || 0) - Date.now()));
         reserveWrite();
         q.nextAt = Date.now() + queueDelay();
@@ -364,7 +436,9 @@ export async function runQueue() {
       }
       if ((task.disableReposts ?? q.disableReposts) && !q.tasks[q.index].repostsDone) {
         q = readQueue();
-        if (q.status !== "running") throw new Error("Fila pausada");
+        if (q.status !== "running") {
+throw new Error("Fila pausada");
+}
         await queueWait(Math.max(0, (q.nextAt || 0) - Date.now()));
         reserveWrite();
         q.nextAt = Date.now() + queueDelay();
@@ -378,7 +452,9 @@ export async function runQueue() {
       q.tasks[q.index].status = "ok";
       q.tasks[q.index].error = "";
       q.index++;
-      if (q.index >= q.tasks.length) q.status = "done";
+      if (q.index >= q.tasks.length) {
+q.status = "done";
+}
       saveQueue(q);
       scheduleRefresh();
       if (q.status === "done") {
@@ -388,7 +464,9 @@ export async function runQueue() {
       await queueWait(Math.max(0, (q.nextAt || 0) - Date.now()));
     }
   } catch (error) {
-    if (error.message !== "Fila pausada") pauseQueue(error.message || String(error), error.retryAfter || 0);
+    if (error.message !== "Fila pausada") {
+pauseQueue(error.message || String(error), error.retryAfter || 0);
+}
   } finally {
     queueRunning = false;
     releaseLease();

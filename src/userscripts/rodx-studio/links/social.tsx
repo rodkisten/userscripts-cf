@@ -12,7 +12,9 @@ export function initializeDeckSocialAppLinks() {
     function identify(raw) {
       try {
         const url = new URL(raw);
-        if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) return null;
+        if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) {
+return null;
+}
         const host = url.hostname.toLowerCase();
         const path = url.pathname;
         if (["t.me", "telegram.me", "telegram.dog"].includes(host) && path.length > 1) {
@@ -45,7 +47,9 @@ export function initializeDeckSocialAppLinks() {
       return null;
     }
     function ensureStyle() {
-      if (styled) return;
+      if (styled) {
+return;
+}
       styled = true;
       const style = document.createElement("style");
       style.id = "rodx-social-app-links-css";
@@ -53,7 +57,9 @@ export function initializeDeckSocialAppLinks() {
       (document.head || document.documentElement).append(style);
     }
     function decorate(anchor, app) {
-      if (!app) return;
+      if (!app) {
+return;
+}
       if (anchor.dataset.rodxApp !== app.name || !anchor.querySelector(RODX_SELECTORS.appLinkIcon)) {
         anchor.querySelector(RODX_SELECTORS.appLinkIcon)?.remove();
         const icon = document.createElement("span");
@@ -84,7 +90,9 @@ export function initializeDeckSocialAppLinks() {
       // These official HTTPS addresses are registered as universal links by
       // their respective apps. On devices without the app they remain usable.
       if (!/^(?:t\.co|www\.t\.co)$/i.test(new URL(anchor.href, "https://x.com").hostname))
-        anchor.href = app.url;
+        {
+anchor.href = app.url;
+}
       anchor.target = "_self";
       if (!anchor.dataset.rodxAppHandler) {
         anchor.dataset.rodxAppHandler = "1";
@@ -92,11 +100,15 @@ export function initializeDeckSocialAppLinks() {
       }
     }
     function scan() {
-      if (!document.body) return;
+      if (!document.body) {
+return;
+}
       ensureStyle();
       let inspected = 0;
       for (const anchor of document.querySelectorAll<HTMLElement>(COMPOSITE_SELECTORS.tweetSocialLinks)) {
-        if (++inspected > 320) break;
+        if (++inspected > 320) {
+break;
+}
         let app = identify(
           anchor.dataset.rodxExpanded ||
             anchor.getAttribute("data-expanded-url") ||
@@ -111,7 +123,9 @@ export function initializeDeckSocialAppLinks() {
           const visible = (anchor.textContent || "").trim();
           app = identify(/^https?:\/\//.test(visible) ? visible : "https://" + visible);
         }
-        if (app) decorate(anchor, app);
+        if (app) {
+decorate(anchor, app);
+}
       }
     }
     return Object.freeze({

@@ -122,15 +122,23 @@ export function initializeDeckXInterfaceHygiene(): void {
       let replacement = article.querySelector<HTMLElement>(RODX_SELECTORS.grokReplacement);
       if (controls.length) {
         const original = controls[0];
-        if (!replacement) replacement = createOpenButton(article);
-        if (replacement.previousElementSibling !== original) original.after(replacement);
-        for (const control of controls) control.classList.add(CSS_CLASSES.nativeGrokHidden);
+        if (!replacement) {
+replacement = createOpenButton(article);
+}
+        if (replacement.previousElementSibling !== original) {
+original.after(replacement);
+}
+        for (const control of controls) {
+control.classList.add(CSS_CLASSES.nativeGrokHidden);
+}
       } else if (replacement) {
         replacement.remove();
       }
 
       const oldOpen = article.querySelector<HTMLElement>(RODX_SELECTORS.expandResultAction);
-      if (oldOpen) oldOpen.hidden = Boolean(controls.length);
+      if (oldOpen) {
+oldOpen.hidden = Boolean(controls.length);
+}
     }
 
     function hideGrok(root: ParentNode = document): void {
@@ -138,7 +146,9 @@ export function initializeDeckXInterfaceHygiene(): void {
         replaceTweetGrok(article);
       }
       for (const el of root.querySelectorAll<HTMLElement>(GROK_SELECTORS)) {
-        if (el.closest(RODX_SELECTORS.grokReplacement)) continue;
+        if (el.closest(RODX_SELECTORS.grokReplacement)) {
+continue;
+}
         el.classList.add(CSS_CLASSES.nativeGrokHidden);
       }
       for (const element of root.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.dropdownOptions)) {
@@ -153,12 +163,20 @@ export function initializeDeckXInterfaceHygiene(): void {
 
     function expandInlineMore(root: ParentNode = document): void {
       for (const control of root.querySelectorAll<HTMLElement>(INLINE_MORE_SELECTORS)) {
-        if (expanded.has(control)) continue;
-        if (!REGEX_PATTERNS.inlineMore.test((control.textContent || "").trim())) continue;
+        if (expanded.has(control)) {
+continue;
+}
+        if (!REGEX_PATTERNS.inlineMore.test((control.textContent || "").trim())) {
+continue;
+}
 
         const link = control.closest<HTMLAnchorElement>(DOM_SELECTORS.linksWithHref);
-        if (link && !REGEX_PATTERNS.emptyHref.test(link.getAttribute("href") || "")) continue;
-        if (control.closest(NATIVE_X_SELECTORS.tweetActionMenuItems)) continue;
+        if (link && !REGEX_PATTERNS.emptyHref.test(link.getAttribute("href") || "")) {
+continue;
+}
+        if (control.closest(NATIVE_X_SELECTORS.tweetActionMenuItems)) {
+continue;
+}
 
         expanded.add(control);
         control.click();
@@ -168,7 +186,9 @@ export function initializeDeckXInterfaceHygiene(): void {
     let scheduled = false;
 
     function scan(): void {
-      if (scheduled) return;
+      if (scheduled) {
+return;
+}
       scheduled = true;
       queueMicrotask(() => {
         scheduled = false;

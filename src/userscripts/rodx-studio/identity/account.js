@@ -9,7 +9,9 @@ export function readAccountCookie() {
   } catch (_) {
     return "";
   }
-  if (!raw) return "";
+  if (!raw) {
+return "";
+}
   let decoded = raw;
   try {
     decoded = decodeURIComponent(raw);
@@ -20,10 +22,14 @@ export function readAccountCookie() {
 }
 
 export function handleFromHref(href) {
-  if (!href) return "";
+  if (!href) {
+return "";
+}
   try {
     const url = new URL(href, location.origin);
-    if (url.origin !== location.origin) return "";
+    if (url.origin !== location.origin) {
+return "";
+}
     const match = url.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
     const reserved = new Set([
       "home",
@@ -56,7 +62,9 @@ export function extractHandle() {
   for (const selector of selectors) {
     for (const link of document.querySelectorAll(selector)) {
       const name = handleFromHref(link.getAttribute("href"));
-      if (name) return name;
+      if (name) {
+return name;
+}
     }
   }
   const switcher = document.querySelector(NATIVE_X_SELECTORS.accountSwitcher);
@@ -69,11 +77,15 @@ export function extractHandle() {
     ].filter(Boolean);
     for (const label of labels) {
       const match = label.match(/(?:^|[^\w])@([A-Za-z0-9_]{1,15})(?!\w)/);
-      if (match) return match[1].toLowerCase();
+      if (match) {
+return match[1].toLowerCase();
+}
     }
     for (const link of switcher.querySelectorAll(DOM_SELECTORS.linksWithHref)) {
       const name = handleFromHref(link.getAttribute("href"));
-      if (name) return name;
+      if (name) {
+return name;
+}
     }
   }
   return "";
@@ -83,29 +95,35 @@ export function extractIdentity() {
   const id = readAccountCookie();
   const handle = extractHandle();
   if (id)
-    return {
+    {
+return {
       key: `uid-${id}`,
       label: handle ? `@${handle}` : `ID ${id}`,
       handle,
       id,
       source: "Cookie de sessão (ID)",
     };
+}
   if (handle)
-    return {
+    {
+return {
       key: handle,
       label: `@${handle}`,
       handle,
       id: "",
       source: "Perfil conectado",
     };
+}
   if (state.manualAccount)
-    return {
+    {
+return {
       key: state.manualAccount,
       label: `@${state.manualAccount}`,
       handle: state.manualAccount,
       id: "",
       source: "Conta definida manualmente",
     };
+}
   return {
     key: "",
     label: "Conta não identificada",

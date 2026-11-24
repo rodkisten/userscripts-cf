@@ -51,19 +51,23 @@ export function buildStudioPreferences(Studio, deck) {
   });
   function field(name, label, value) {
     if (typeof value === "boolean")
-      return {
+      {
+return {
         type: "switch",
         name,
         label,
         value,
       };
+}
     if (typeof value === "number")
-      return {
+      {
+return {
         type: "number",
         name,
         label,
         value,
       };
+}
     return {
       type: "text",
       name,
@@ -230,9 +234,15 @@ export function buildStudioPreferences(Studio, deck) {
                 ...Studio.config.modules,
               };
             for (const [key, value] of Object.entries(values)) {
-              if (key.startsWith("v_")) next[key.slice(2)] = value;
-              if (key.startsWith("m_")) modules[key.slice(2)] = value;
-              if (key.startsWith("l_")) settings[key.slice(2)] = value;
+              if (key.startsWith("v_")) {
+next[key.slice(2)] = value;
+}
+              if (key.startsWith("m_")) {
+modules[key.slice(2)] = value;
+}
+              if (key.startsWith("l_")) {
+settings[key.slice(2)] = value;
+}
             }
             state.visual = deck.normalizeVisual(next);
             Studio.configure({
@@ -245,7 +255,9 @@ export function buildStudioPreferences(Studio, deck) {
                 reposts: values.globalReposts,
               },
             });
-            if (Studio.services.lists) localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
+            if (Studio.services.lists) {
+localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
+}
             await deck.saveState();
             deck.publish();
             Studio.invalidate("state");
@@ -269,7 +281,9 @@ export function buildStudioPreferences(Studio, deck) {
   }
   function filters() {
     const scope = deck.scope();
-    if (!scope) return open();
+    if (!scope) {
+return open();
+}
     const current = deck.feedSettings();
     Studio.menu.open({
       id: "rodx-feed-options",

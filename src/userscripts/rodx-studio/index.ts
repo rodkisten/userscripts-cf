@@ -77,7 +77,9 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 // Funções Públicas (Pontos de Referência / Entrada)
 // ============================================================================
 export function startRodX(ctx: ScriptContext): void {
-  if (hasRodXAlreadyStarted(window)) return;
+  if (hasRodXAlreadyStarted(window)) {
+return;
+}
   markRodXAsStarted(window);
   configureSharedMount((component, target) => ctx.ui.mountReact(component, target));
 

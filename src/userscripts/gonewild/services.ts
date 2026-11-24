@@ -16,10 +16,14 @@ import {
 export function requestText(url: string, signal: AbortSignal): Promise<string> {
   const request = gmRequest();
   if (!request)
-    return fetch(url, { credentials: "omit", signal }).then((response) => {
-      if (!response.ok) throw Error(`HTTP ${response.status}`);
+    {
+return fetch(url, { credentials: "omit", signal }).then((response) => {
+      if (!response.ok) {
+throw Error(`HTTP ${response.status}`);
+}
       return response.text();
     });
+}
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
     const cancel = () => {
@@ -68,7 +72,9 @@ export function mediaFromHTML(html: string, base: string) {
   );
   for (const candidate of candidates) {
     const url = safeURL(candidate, base);
-    if (url && HOSTS.test(url.hostname) && AUDIO_EXT.test(url.href)) return url.href;
+    if (url && HOSTS.test(url.hostname) && AUDIO_EXT.test(url.href)) {
+return url.href;
+}
   }
   return "";
 }
@@ -76,10 +82,14 @@ export function readNativeMedia(doc: Document = document) {
   for (const node of doc.querySelectorAll<HTMLMediaElement | HTMLSourceElement>(
     "audio[src], audio source[src]",
   )) {
-    if (node.closest("[data-react-mount], #gws-sg-root")) continue;
+    if (node.closest("[data-react-mount], #gws-sg-root")) {
+continue;
+}
     const raw = (node as HTMLMediaElement).currentSrc || node.getAttribute("src") || "";
     const url = safeURL(raw);
-    if (url && HOSTS.test(url.hostname) && AUDIO_EXT.test(url.href)) return url.href;
+    if (url && HOSTS.test(url.hostname) && AUDIO_EXT.test(url.href)) {
+return url.href;
+}
   }
   const scripts = [...doc.querySelectorAll("script:not([src])")]
     .map((node) => node.textContent || "")
@@ -95,7 +105,9 @@ export function readRecordings(doc: Document = document): Recording[] {
         url && /^(?:www\.)?soundgasm\.net$/i.test(url.hostname) && /^\/u\/[^/]+\/[^/]+/.test(url.pathname)
       );
     });
-    if (!link || seen.has(link.pathname)) return [];
+    if (!link || seen.has(link.pathname)) {
+return [];
+}
     seen.add(link.pathname);
     return [
       {
@@ -120,17 +132,26 @@ export function readRecordings(doc: Document = document): Recording[] {
 let active = 0;
 const waiting: Array<() => void> = [];
 async function limited<T>(operation: () => Promise<T>, signal: AbortSignal) {
-  if (active >= 2) await new Promise<void>((resolve) => waiting.push(resolve));
-  else active++;
+  if (active >= 2) {
+await new Promise<void>((resolve) => waiting.push(resolve));
+}
+  else {
+active++;
+}
   try {
     signal.throwIfAborted();
     return await operation();
   } finally {
     const next = waiting.shift();
-    if (next) next();
-    else active--;
+    if (next) {
+next();
+}
+    else {
+active--;
+}
   }
 }
+
 export async function resolvePostAudio(post: Post, bridge: any, signal: AbortSignal, force = false) {
   return limited(async () => {
     let body = post.body,
@@ -154,7 +175,9 @@ export async function resolvePostAudio(post: Post, bridge: any, signal: AbortSig
         }
       }
     } catch (error) {
-      if (signal.aborted) throw error;
+      if (signal.aborted) {
+throw error;
+}
     }
     const cache = readJSON<Record<string, { at: number; items: AudioItem[] }>>(KEYS.cache, {});
     let items =
@@ -164,9 +187,13 @@ export async function resolvePostAudio(post: Post, bridge: any, signal: AbortSig
       for (const external of [...new Set(links)].slice(0, 5)) {
         let playable = AUDIO_EXT.test(external) ? external : null;
         try {
-          if (!playable) playable = mediaFromHTML(await requestText(external, signal), external) || null;
+          if (!playable) {
+playable = mediaFromHTML(await requestText(external, signal), external) || null;
+}
         } catch (error) {
-          if (signal.aborted) throw error;
+          if (signal.aborted) {
+throw error;
+}
         }
         items.push({ external, playable });
       }
@@ -212,12 +239,16 @@ export async function searchPosts(
     raw_json: "1",
     after,
   }))
-    url.searchParams.set(key, value);
+    {
+url.searchParams.set(key, value);
+}
   const response = await fetch(url, { credentials: "same-origin", signal });
   if (!response.ok) {
     url.pathname = url.pathname.replace(/\.json$/, "/");
     const fallback = await fetch(url, { credentials: "same-origin", signal });
-    if (!fallback.ok) throw Error(`Reddit HTTP ${fallback.status}`);
+    if (!fallback.ok) {
+throw Error(`Reddit HTTP ${fallback.status}`);
+}
     const doc = new DOMParser().parseFromString(await fallback.text(), "text/html");
     return {
       posts: [...doc.querySelectorAll(POST_SELECTOR)]
@@ -255,7 +286,8 @@ export async function boundedAudio(
 ): Promise<ArrayBuffer> {
   const request = gmRequest();
   if (request)
-    return new Promise((resolve, reject) => {
+    {
+return new Promise((resolve, reject) => {
       signal.throwIfAborted();
       let handle: any;
       const cancel = () => {
@@ -289,19 +321,30 @@ export async function boundedAudio(
       });
       signal.addEventListener("abort", cancel, { once: true });
     });
+}
   const response = await fetch(url, { credentials: "omit", signal });
-  if (!response.ok) throw Error(`HTTP ${response.status}`);
-  if (Number(response.headers.get("content-length") || 0) > limit) throw Error("Arquivo excede 14 MB");
+  if (!response.ok) {
+throw Error(`HTTP ${response.status}`);
+}
+  if (Number(response.headers.get("content-length") || 0) > limit) {
+throw Error("Arquivo excede 14 MB");
+}
   const reader = response.body?.getReader();
-  if (!reader) throw Error("Stream indisponível");
+  if (!reader) {
+throw Error("Stream indisponível");
+}
   let size = 0;
   const chunks: Uint8Array[] = [];
   try {
     while (true) {
       const item = await reader.read();
-      if (item.done) break;
+      if (item.done) {
+break;
+}
       size += item.value.byteLength;
-      if (size > limit) throw Error("Arquivo excede 14 MB");
+      if (size > limit) {
+throw Error("Arquivo excede 14 MB");
+}
       chunks.push(item.value);
     }
   } finally {

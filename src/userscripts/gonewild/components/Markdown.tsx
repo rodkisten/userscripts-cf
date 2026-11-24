@@ -8,6 +8,7 @@ type Block = {
   ordered?: boolean;
   items?: string[];
 };
+
 export function markdownBlocks(source: string): Block[] {
   const lines = source
     .replace(/\r\n?/g, "\n")
@@ -24,7 +25,9 @@ export function markdownBlocks(source: string): Block[] {
     if (fence) {
       const captured: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].trim().startsWith(fence[1])) captured.push(lines[i++]);
+      while (i < lines.length && !lines[i].trim().startsWith(fence[1])) {
+captured.push(lines[i++]);
+}
       i++;
       result.push({ kind: "code", text: captured.join("\n") });
       continue;
@@ -42,7 +45,9 @@ export function markdownBlocks(source: string): Block[] {
     }
     if (/^\s*>/.test(line)) {
       const captured: string[] = [];
-      while (i < lines.length && /^\s*>/.test(lines[i])) captured.push(lines[i++].replace(/^\s*>\s?/, ""));
+      while (i < lines.length && /^\s*>/.test(lines[i])) {
+captured.push(lines[i++].replace(/^\s*>\s?/, ""));
+}
       result.push({ kind: "quote", text: captured.join("\n") });
       continue;
     }
@@ -52,7 +57,9 @@ export function markdownBlocks(source: string): Block[] {
         ordered = /^\d/.test(item[1]);
       while (i < lines.length) {
         const next = /^\s{0,3}([-+*]|\d+[.)])\s+(.+)$/.exec(lines[i]);
-        if (!next || /^\d/.test(next[1]) !== ordered) break;
+        if (!next || /^\d/.test(next[1]) !== ordered) {
+break;
+}
         items.push(next[2]);
         i++;
       }
@@ -65,7 +72,9 @@ export function markdownBlocks(source: string): Block[] {
       lines[i].trim() &&
       !/^\s*(?:#{1,6}\s|>|[-+*]\s|\d+[.)]\s|`{3,}|~{3,})/.test(lines[i])
     )
-      captured.push(lines[i++]);
+      {
+captured.push(lines[i++]);
+}
     result.push({ kind: "paragraph", text: captured.join("\n") });
   }
   return result;
@@ -82,16 +91,23 @@ function PlainText({ text }: { text: string }) {
     </>
   );
 }
+
 function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
-  if (depth > 5) return <PlainText text={text} />;
+  if (depth > 5) {
+return <PlainText text={text} />;
+}
   const tokens =
     /(\`[^\`\n]+\`)|\[([^\]\n]{1,300})\]\s*\((https?:\/\/[^\s)]+(?:\([^\n)]*\)[^\s)]*)*)\)|<(https?:\/\/[^>\s]+)>|(https?:\/\/[^\s<>'"\[\]]+)|(\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_)/gi;
   const result: ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(tokens)) {
     const index = match.index ?? 0;
-    if (index > last) result.push(<PlainText key={last} text={text.slice(last, index)} />);
-    if (match[1]) result.push(<code key={index}>{match[1].slice(1, -1)}</code>);
+    if (index > last) {
+result.push(<PlainText key={last} text={text.slice(last, index)} />);
+}
+    if (match[1]) {
+result.push(<code key={index}>{match[1].slice(1, -1)}</code>);
+}
     else if (match[2] || match[4] || match[5]) {
       const raw = match[3] || match[4] || match[5];
       const href = safeURL(raw.replace(/[.,;!?]+$/, ""), "https://www.reddit.com")?.href;
@@ -120,20 +136,27 @@ function Inline({ text, depth = 0 }: { text: string; depth?: number }) {
     }
     last = index + match[0].length;
   }
-  if (last < text.length) result.push(<PlainText key={last} text={text.slice(last)} />);
+  if (last < text.length) {
+result.push(<PlainText key={last} text={text.slice(last)} />);
+}
   return <>{result}</>;
 }
+
 export function Markdown({ text }: { text: string }) {
   return (
     <>
       {markdownBlocks(text).map((block, index) => {
-        if (block.kind === "rule") return <hr key={index} />;
+        if (block.kind === "rule") {
+return <hr key={index} />;
+}
         if (block.kind === "code")
-          return (
+          {
+return (
             <pre key={index}>
               <code>{block.text}</code>
             </pre>
           );
+}
         if (block.kind === "list") {
           const children = block.items?.map((item, i) => (
             <li key={i}>
@@ -143,7 +166,9 @@ export function Markdown({ text }: { text: string }) {
           return block.ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>;
         }
         const content = <Inline text={block.text} />;
-        if (block.kind === "quote") return <blockquote key={index}>{content}</blockquote>;
+        if (block.kind === "quote") {
+return <blockquote key={index}>{content}</blockquote>;
+}
         if (block.kind === "heading") {
           switch (block.level) {
             case 1:

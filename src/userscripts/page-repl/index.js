@@ -27,7 +27,9 @@ export default {
   async init(ctx) {
     const persist = createStorage(ctx.storage, location.origin);
     const state = await persist.read();
-    if (ctx.signal.aborted) return;
+    if (ctx.signal.aborted) {
+return;
+}
     state.history ||= [];
     const knownNames = new Set(),
       records = [],
@@ -38,9 +40,12 @@ export default {
       runner,
       historyCursor = state.history.length;
     if (!document.documentElement)
-      await new Promise((resolve) => {
+      {
+await new Promise((resolve) => {
         const observer = new MutationObserver(() => {
-          if (document.documentElement) finish();
+          if (document.documentElement) {
+finish();
+}
         });
         const finish = () => {
           observer.disconnect();
@@ -49,9 +54,14 @@ export default {
         };
         observer.observe(document, { childList: true });
         ctx.signal.addEventListener("abort", finish, { once: true });
-        if (ctx.signal.aborted || document.documentElement) finish();
+        if (ctx.signal.aborted || document.documentElement) {
+finish();
+}
       });
-    if (ctx.signal.aborted) return;
+}
+    if (ctx.signal.aborted) {
+return;
+}
     const shadow = ctx.ui.root;
     const host = ctx.ui.host;
     host.id = "rodx-page-repl";
@@ -102,7 +112,9 @@ export default {
     }
     function print(kind, title, value) {
       records.push({ at: new Date().toISOString(), kind, title, value });
-      if (records.length > 150) records.shift();
+      if (records.length > 150) {
+records.shift();
+}
       ui.setRecords([...records]);
     }
     function event(event) {
@@ -112,16 +124,22 @@ export default {
         return;
       }
       if (event.type === "console")
-        print(event.value.method === "error" ? "error" : "log", event.value.method, event.value.args);
+        {
+print(event.value.method === "error" ? "error" : "log", event.value.method, event.value.args);
+}
       if (event.type === "finished") {
         results.set(event.result.method, event.result);
         if (!event.result.probe)
-          print(
+          {
+print(
             event.result.status === "OK" ? "result" : "error",
             event.result.label + " · " + event.result.status,
             event.result.detail,
           );
-        for (const name of event.result.detail?.names || []) knownNames.add(name);
+}
+        for (const name of event.result.detail?.names || []) {
+knownNames.add(name);
+}
         renderMethods();
       }
     }
@@ -159,7 +177,9 @@ export default {
           label,
           checked: Boolean(input?.checked),
           onCheckedChange: (checked) => {
-            if (!input) return;
+            if (!input) {
+return;
+}
             input.checked = checked;
             input.dispatchEvent(new Event("change", { bubbles: true }));
             save();
@@ -216,30 +236,42 @@ export default {
     };
     function tab(name) {
       for (const view of shadow.querySelectorAll(RODX_SELECTORS.replView))
-        view.hidden = view.dataset.view !== name;
+        {
+view.hidden = view.dataset.view !== name;
+}
       for (const button of shadow.querySelectorAll(RODX_SELECTORS.replTab))
-        button.setAttribute("aria-selected", String(button.dataset.tab === name));
-      if (name === "history") renderHistory();
+        {
+button.setAttribute("aria-selected", String(button.dataset.tab === name));
+}
+      if (name === "history") {
+renderHistory();
+}
     }
     function enabledMethods() {
       return strategies.filter((method) => !method.advanced || $(RODX_SELECTORS.replAdvanced).checked);
     }
     async function probe() {
       for (const method of enabledMethods()) {
-        if (abort.signal.aborted) break;
+        if (abort.signal.aborted) {
+break;
+}
         $(RODX_SELECTORS.replStatus).textContent = "Testando " + method.label;
         await runner.run(method, probeCode, { signal: abort.signal, probe: true });
       }
     }
     async function execute(all = false) {
       const text = editor.value;
-      if (text.length > 2000000) throw Error("Código maior que 2 MB.");
+      if (text.length > 2000000) {
+throw Error("Código maior que 2 MB.");
+}
       const raw = $(RODX_SELECTORS.replRawMode).checked;
       const compiled = raw
         ? { code: text, names: [] }
         : compile(text, { persist: $(RODX_SELECTORS.replPersist).checked, knownNames: [...knownNames] });
       if (!state.history.length || state.history.at(-1).code !== text)
-        state.history.push({ code: text, at: new Date().toISOString() });
+        {
+state.history.push({ code: text, at: new Date().toISOString() });
+}
       let bytes = state.history.reduce((sum, item) => sum + item.code.length, 0);
       while (state.history.length > 50 || bytes > 2000000) {
         bytes -= state.history.shift().code.length;
@@ -248,7 +280,9 @@ export default {
       save();
       if (all) {
         for (const method of enabledMethods()) {
-          if (abort.signal.aborted) break;
+          if (abort.signal.aborted) {
+break;
+}
           await runner.run(method, compiled.code, { signal: abort.signal, raw });
         }
         return;
@@ -256,36 +290,50 @@ export default {
       let method = strategies.find((item) => item.id === $(RODX_SELECTORS.replMethod).value);
       if (!method) {
         for (const candidate of automaticCandidates(enabledMethods())) {
-          if (abort.signal.aborted) return;
+          if (abort.signal.aborted) {
+return;
+}
           const id = candidate.id;
           let result = results.get(id);
           if (!result || !result.probe)
-            result = await runner.run(candidate, probeCode, { signal: abort.signal, probe: true });
+            {
+result = await runner.run(candidate, probeCode, { signal: abort.signal, probe: true });
+}
           if (result.status === "OK") {
             method = candidate;
             break;
           }
         }
         if (!method)
-          throw Error(
+          {
+throw Error(
             "Nenhum método de página confirmou execução. Selecione um método manualmente, incluindo sandbox, ou veja Métodos.",
           );
+}
       }
-      if (!abort.signal.aborted) await runner.run(method, compiled.code, { signal: abort.signal, raw });
+      if (!abort.signal.aborted) {
+await runner.run(method, compiled.code, { signal: abort.signal, raw });
+}
     }
     async function locked(action) {
-      if (busy) return;
+      if (busy) {
+return;
+}
       busy = true;
       runner.configure($(RODX_SELECTORS.replTimeout).value);
       abort = new AbortController();
-      for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) b.disabled = true;
+      for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) {
+b.disabled = true;
+}
       try {
         await action();
       } catch (error) {
         print("error", error.name, error.message);
       } finally {
         busy = false;
-        for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) b.disabled = false;
+        for (const b of shadow.querySelectorAll(RODX_SELECTORS.replExecutionActions)) {
+b.disabled = false;
+}
         $(RODX_SELECTORS.replStatus).textContent = "Pronto · " + results.size + " métodos observados";
       }
     }
@@ -319,8 +367,12 @@ export default {
     }
     async function fetchURL() {
       const url = new URL($(RODX_SELECTORS.replUrl).value);
-      if (!/^https?:$/.test(url.protocol)) throw Error("Use uma URL HTTP/HTTPS.");
-      if (typeof GM_xmlhttpRequest !== "function") throw Error("GM_xmlhttpRequest indisponível.");
+      if (!/^https?:$/.test(url.protocol)) {
+throw Error("Use uma URL HTTP/HTTPS.");
+}
+      if (typeof GM_xmlhttpRequest !== "function") {
+throw Error("GM_xmlhttpRequest indisponível.");
+}
       const text = await new Promise((resolve, reject) =>
         GM_xmlhttpRequest({
           method: "GET",
@@ -334,16 +386,22 @@ export default {
           ontimeout: () => reject(Error("Timeout do download GM")),
         }),
       );
-      if (text.length > 2000000) throw Error("Script remoto maior que 2 MB.");
+      if (text.length > 2000000) {
+throw Error("Script remoto maior que 2 MB.");
+}
       editor.value = text;
       save();
       print("log", "URL carregada no editor", "Código não executado.");
     }
     function external() {
       const url = new URL($(RODX_SELECTORS.replUrl).value);
-      if (!/^https?:$/.test(url.protocol)) throw Error("Use HTTP/HTTPS.");
+      if (!/^https?:$/.test(url.protocol)) {
+throw Error("Use HTTP/HTTPS.");
+}
       const script = document.createElement("script");
-      if ($(RODX_SELECTORS.replModule).checked) script.type = "module";
+      if ($(RODX_SELECTORS.replModule).checked) {
+script.type = "module";
+}
       script.src = url.href;
       script.onload = () => {
         print(
@@ -392,7 +450,9 @@ export default {
         ui.setRecords([]);
       },
       reset: () => {
-        if (busy) return;
+        if (busy) {
+return;
+}
         freshRunner();
         knownNames.clear();
         print(
@@ -414,8 +474,12 @@ export default {
         input.onchange = async () => {
           try {
             const file = input.files?.[0];
-            if (!file) return;
-            if (file.size > 4000000) throw Error("Arquivo maior que 4 MB.");
+            if (!file) {
+return;
+}
+            if (file.size > 4000000) {
+throw Error("Arquivo maior que 4 MB.");
+}
             const value = JSON.parse(await file.text());
             const history = (value.history || [])
               .filter((item) => typeof item.code === "string" && item.code.length <= 2000000)
@@ -439,7 +503,9 @@ export default {
     };
     ctx.listen(shadow, "click", (event) => {
       const button = event.target.closest(RODX_SELECTORS.replActionsAndTabs);
-      if (!button) return;
+      if (!button) {
+return;
+}
       if (button.dataset.tab) {
         tab(button.dataset.tab);
         return;
@@ -487,10 +553,14 @@ export default {
       launcher.setPointerCapture?.(event.pointerId);
     });
     ctx.listen(launcher, "pointermove", (event) => {
-      if (!drag) return;
+      if (!drag) {
+return;
+}
       const dx = event.clientX - drag.x,
         dy = event.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 6) drag.moved = true;
+      if (Math.abs(dx) + Math.abs(dy) > 6) {
+drag.moved = true;
+}
       if (drag.moved) {
         state.position = {
           x: Math.max(4, Math.min(innerWidth - 50, drag.startX - dx)),
@@ -500,8 +570,12 @@ export default {
       }
     });
     ctx.listen(launcher, "pointerup", () => {
-      if (!drag) return;
-      if (drag.moved) save();
+      if (!drag) {
+return;
+}
+      if (drag.moved) {
+save();
+}
       else {
         panel.hidden = !panel.hidden;
         if (!panel.hidden) {
@@ -522,7 +596,9 @@ export default {
       }
     });
     if (typeof GM_registerMenuCommand === "function")
-      GM_registerMenuCommand("Abrir REPL JavaScript", () => (panel.hidden = false));
+      {
+GM_registerMenuCommand("Abrir REPL JavaScript", () => (panel.hidden = false));
+}
     ctx.dock?.register([
       {
         id: "open",

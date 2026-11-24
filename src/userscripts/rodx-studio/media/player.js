@@ -18,7 +18,9 @@ export function initializeDeckPlayerPreference() {
     let loading = false,
       failed = false;
     function load() {
-      if (loading || customElements.get("video-skin")) return;
+      if (loading || customElements.get("video-skin")) {
+return;
+}
       loading = true;
       try {
         // The userscript manager evaluates the external @require before this script.
@@ -27,14 +29,18 @@ export function initializeDeckPlayerPreference() {
         failed = true;
         console.error("[RodX] Falha ao inicializar Video.js 10.3.0:", error);
       }
-      if (failed) console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
+      if (failed) {
+console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
+}
     }
     function configureGestures(entry) {
       const container =
         entry.skin.shadowRoot?.querySelector(MEDIA_COMPONENT_SELECTORS.mediaContainer) ||
         entry.skin.querySelector(MEDIA_COMPONENT_SELECTORS.mediaContainer);
       SeekPreviews.attach(entry.video, entry);
-      if (!container || entry.gestureContainer === container) return;
+      if (!container || entry.gestureContainer === container) {
+return;
+}
       const specs = [
         {
           type: "tap",
@@ -70,11 +76,17 @@ export function initializeDeckPlayerPreference() {
         const gesture = matches.shift() || document.createElement("media-gesture");
         matches.forEach((el) => el.remove());
         for (const key of ["type", "action", "value", "pointer", "region"]) {
-          if (spec[key] === undefined) gesture.removeAttribute(key);
-          else gesture.setAttribute(key, spec[key]);
+          if (spec[key] === undefined) {
+gesture.removeAttribute(key);
+}
+          else {
+gesture.setAttribute(key, spec[key]);
+}
         }
         gesture.removeAttribute("disabled");
-        if (!gesture.isConnected) container.append(gesture);
+        if (!gesture.isConnected) {
+container.append(gesture);
+}
       }
       entry.gestureContainer = container;
     }
@@ -92,12 +104,16 @@ export function initializeDeckPlayerPreference() {
           performance.now() - down.at > 250 ||
           Math.hypot(event.clientX - down.x, event.clientY - down.y) > 12
         )
-          return;
+          {
+return;
+}
         const path = event.composedPath();
         const play = path.some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaPlayButton));
         const interactive = path.some((el) => el?.matches?.(DOM_SELECTORS.playerInteractiveControls));
         if (!play) {
-          if (interactive || event.pointerType !== "mouse") return;
+          if (interactive || event.pointerType !== "mouse") {
+return;
+}
           const rect = video.getBoundingClientRect();
           if (
             !rect.width ||
@@ -105,11 +121,15 @@ export function initializeDeckPlayerPreference() {
             event.clientX < rect.left + rect.width / 3 ||
             event.clientX > rect.right - rect.width / 3
           )
-            return;
+            {
+return;
+}
         }
         intent = video.paused ? "play" : "pause";
         armedUntil = performance.now() + 650;
-        if (intent === "play") delete video.dataset.rodxGesturePaused;
+        if (intent === "play") {
+delete video.dataset.rodxGesturePaused;
+}
       };
       root.addEventListener(
         "pointerdown",
@@ -143,7 +163,9 @@ export function initializeDeckPlayerPreference() {
       video.addEventListener(
         "pause",
         () => {
-          if (performance.now() <= armedUntil && intent === "pause") video.dataset.rodxGesturePaused = "1";
+          if (performance.now() <= armedUntil && intent === "pause") {
+video.dataset.rodxGesturePaused = "1";
+}
         },
         {
           signal: lifecycle.signal,
@@ -156,8 +178,12 @@ export function initializeDeckPlayerPreference() {
         "play",
         () => {
           if (video.dataset.rodxGesturePaused) {
-            if (performance.now() <= armedUntil && intent === "play") delete video.dataset.rodxGesturePaused;
-            else video.pause();
+            if (performance.now() <= armedUntil && intent === "play") {
+delete video.dataset.rodxGesturePaused;
+}
+            else {
+video.pause();
+}
           }
         },
         {
@@ -169,7 +195,9 @@ export function initializeDeckPlayerPreference() {
     function restore(video, entry) {
       SeekPreviews.cleanup(video);
       entry.cleanupGestures?.();
-      if (entry.skin.contains(video)) entry.root.before(video);
+      if (entry.skin.contains(video)) {
+entry.root.before(video);
+}
       entry.root.remove();
       video.controls = entry.controls;
       clearComponentStyle(video);
@@ -179,18 +207,28 @@ export function initializeDeckPlayerPreference() {
     }
     function scan() {
       const mode = state.visual.playerMode;
-      if (mode === "videojs" && Studio.dom.nodes("video").length) load();
+      if (mode === "videojs" && Studio.dom.nodes("video").length) {
+load();
+}
       for (const [video, entry] of mounted) {
-        if (!video.isConnected || mode !== "videojs") restore(video, entry);
-        else configureGestures(entry);
+        if (!video.isConnected || mode !== "videojs") {
+restore(video, entry);
+}
+        else {
+configureGestures(entry);
+}
       }
       for (const video of document.querySelectorAll(NATIVE_X_SELECTORS.visiblePageVideos)) {
         const wrapper = video.closest(NATIVE_X_SELECTORS.videoComponentWrappers) || video.parentElement;
-        if (!wrapper) continue;
+        if (!wrapper) {
+continue;
+}
         wrapper.querySelectorAll(RODX_SELECTORS.videoTransport).forEach((bar) => {
           bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
         });
-        if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) continue;
+        if (mode !== "videojs" || !customElements.get("video-skin") || mounted.has(video)) {
+continue;
+}
         const root = document.createElement("video-player");
         const skin = document.createElement("video-skin");
         root.dataset.rodxPlayerControl = "1";
@@ -206,7 +244,9 @@ export function initializeDeckPlayerPreference() {
         skin.style.setProperty("aspect-ratio", String(ratio), "important");
         video.addEventListener("loadedmetadata", () => {
           if (video.videoWidth && video.videoHeight)
-            skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeight), "important");
+            {
+skin.style.setProperty("aspect-ratio", String(video.videoWidth / video.videoHeight), "important");
+}
         });
         const entry = {
           video,
@@ -223,7 +263,9 @@ export function initializeDeckPlayerPreference() {
         mounted.set(video, entry);
         configureGestures(entry);
         void Promise.resolve(skin.updateComplete).then(() => {
-          if (root.isConnected) configureGestures(entry);
+          if (root.isConnected) {
+configureGestures(entry);
+}
         });
         entry.cleanupGestures = respectGesturePause(video, root);
         let requestedAudio;
@@ -234,7 +276,9 @@ export function initializeDeckPlayerPreference() {
               event.composedPath().some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls))
             ) {
               requestedAudio = video.muted || video.volume === 0;
-              if (requestedAudio) VideoExperience.enableAudio(video, true);
+              if (requestedAudio) {
+VideoExperience.enableAudio(video, true);
+}
             }
           },
           true,

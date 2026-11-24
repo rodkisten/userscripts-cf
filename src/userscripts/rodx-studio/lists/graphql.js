@@ -30,7 +30,9 @@ import { ingestObservedTimeline } from "./timeline.tsx";
 import { scheduleRefresh } from "./view.tsx";
 
 export function listOperation(url) {
-  if (!/\/(?:i\/api\/)?(?:graphql|2\/lists|1\.1\/lists)/i.test(url)) return false;
+  if (!/\/(?:i\/api\/)?(?:graphql|2\/lists|1\.1\/lists)/i.test(url)) {
+return false;
+}
   return /list/i.test(url) || (operationName(url) === "SearchTimeline" && Boolean(responseListId(url)));
 }
 
@@ -38,11 +40,15 @@ export function responseListId(url) {
   try {
     const u = new URL(url, location.origin);
     for (const key of ["list_id", "listId", "list_id_str", "id"]) {
-      if (validListId(u.searchParams.get(key))) return u.searchParams.get(key);
+      if (validListId(u.searchParams.get(key))) {
+return u.searchParams.get(key);
+}
     }
     const vars = JSON.parse(u.searchParams.get("variables") || "{}");
     for (const key of ["listId", "list_id", "listIdStr"]) {
-      if (validListId(vars[key])) return String(vars[key]);
+      if (validListId(vars[key])) {
+return String(vars[key]);
+}
     }
     const query = String(vars.rawQuery || vars.query || u.searchParams.get("q") || "");
     const listFromSearch = query.match(/(?:^|\s)list:(\d{1,30})(?=\s|$)/i)?.[1];
@@ -53,11 +59,15 @@ export function responseListId(url) {
 }
 
 export function parseApiListObject(obj, parentKey = "", path = "") {
-  if (!obj || Array.isArray(obj) || typeof obj !== "object") return null;
+  if (!obj || Array.isArray(obj) || typeof obj !== "object") {
+return null;
+}
   const legacy = obj.legacy && typeof obj.legacy === "object" ? obj.legacy : {};
   const type = String(obj.__typename || "");
   const isTypedList = /^(?:List|TwitterList|ListWithMembers|ListResult)$/i.test(type);
-  if (/^(?:User|Tweet|TimelineTweet|Media|UserResults)$/i.test(type)) return null;
+  if (/^(?:User|Tweet|TimelineTweet|Media|UserResults)$/i.test(type)) {
+return null;
+}
   const listContext =
     /(?:^|\.)(?:list|lists|list_results|list_result|listResult|listResults|owned_lists|ownedLists|subscriptions|ownerships)(?:\.|$)/i.test(
       path,
@@ -76,7 +86,9 @@ export function parseApiListObject(obj, parentKey = "", path = "") {
     !isTypedList &&
     !(hasListMetadata && (listContext || "member_count" in obj || "member_count" in legacy))
   )
-    return null;
+    {
+return null;
+}
   const id = String(
     obj.rest_id ||
       obj.id_str ||
@@ -87,9 +99,13 @@ export function parseApiListObject(obj, parentKey = "", path = "") {
       (isTypedList ? obj.id || legacy.id : "") ||
       "",
   );
-  if (!validListId(id)) return null;
+  if (!validListId(id)) {
+return null;
+}
   const name = cleanListName(obj.name || legacy.name || obj.title || legacy.title || "");
-  if (!name) return null;
+  if (!name) {
+return null;
+}
   return {
     id,
     name,
@@ -98,7 +114,9 @@ export function parseApiListObject(obj, parentKey = "", path = "") {
 }
 
 export async function ingestListResponse(data, url) {
-  if (!data || typeof data !== "object") return;
+  if (!data || typeof data !== "object") {
+return;
+}
   const isMembers = /listmembers|list_members|membersoflist/i.test(url);
   const sourceId = responseListId(url) || (isMembers ? routeListId() : "");
   const foundLists = new Map();
@@ -108,14 +126,22 @@ export async function ingestListResponse(data, url) {
   let visited = 0;
   while (stack.length && visited++ < 30000) {
     const [obj, parentKey, path] = stack.pop();
-    if (!obj || typeof obj !== "object" || seen.has(obj)) continue;
+    if (!obj || typeof obj !== "object" || seen.has(obj)) {
+continue;
+}
     seen.add(obj);
     if (Array.isArray(obj)) {
-      for (const item of obj) if (item && typeof item === "object") stack.push([item, parentKey, path]);
+      for (const item of obj) {
+if (item && typeof item === "object") {
+stack.push([item, parentKey, path]);
+}
+}
       continue;
     }
     const result = parseApiListObject(obj, parentKey, path);
-    if (result) foundLists.set(result.id, result);
+    if (result) {
+foundLists.set(result.id, result);
+}
     const legacy = obj.legacy && typeof obj.legacy === "object" ? obj.legacy : {};
     if (isMembers && validListId(sourceId)) {
       const username = obj.screen_name || legacy.screen_name || obj.core?.screen_name;
@@ -131,7 +157,9 @@ export async function ingestListResponse(data, url) {
       }
     }
     for (const [key, value] of Object.entries(obj)) {
-      if (value && typeof value === "object") stack.push([value, key, (path + "." + key).slice(-350)]);
+      if (value && typeof value === "object") {
+stack.push([value, key, (path + "." + key).slice(-350)]);
+}
     }
   }
   state.networkResponses++;
@@ -148,7 +176,8 @@ export async function ingestListResponse(data, url) {
     for (const user of foundUsers.values()) {
       const old = known.get(user.username.toLowerCase());
       if (!old || (user.name && old.name !== user.name) || (user.userId && old.userId !== user.userId))
-        updates.push({
+        {
+updates.push({
           key: `${sourceId}:${user.username.toLowerCase()}`,
           listId: sourceId,
           username: user.username,
@@ -157,18 +186,23 @@ export async function ingestListResponse(data, url) {
           discoveredAt: old?.discoveredAt || now(),
           syncedAt: now(),
         });
+}
     }
     if (updates.length) {
       await putMany("members", updates);
       changed = true;
     }
-    if (!foundLists.has(sourceId)) changed = (await upsertList(sourceId, {})) || changed;
+    if (!foundLists.has(sourceId)) {
+changed = (await upsertList(sourceId, {})) || changed;
+}
   }
   if (changed) {
     state.lastPassiveSync = timeText(now());
     scheduleRefresh();
   }
-  if (foundLists.size || foundUsers.size) scheduleNameRefresh();
+  if (foundLists.size || foundUsers.size) {
+scheduleNameRefresh();
+}
 }
 
 export let requestTemplates;
@@ -216,7 +250,9 @@ export function rememberTemplate(url, method = "GET", body = "") {
       op,
     )
   )
-    return;
+    {
+return;
+}
   try {
     const u = new URL(url, location.origin);
     const jsonBody = typeof body === "string" && body.startsWith("{") ? JSON.parse(body) : null;
@@ -232,7 +268,9 @@ export function rememberTemplate(url, method = "GET", body = "") {
         /* may not have variables */
       }
     }
-    if (jsonBody?.variables) delete jsonBody.transactionId;
+    if (jsonBody?.variables) {
+delete jsonBody.transactionId;
+}
     const nextTemplate = {
       path: u.pathname,
       method: String(method).toUpperCase(),
@@ -252,12 +290,16 @@ export function rememberTemplate(url, method = "GET", body = "") {
           : null,
       queryId: jsonBody?.queryId || u.pathname.split("/")[4] || "",
     };
-    if (JSON.stringify(requestTemplates[op]) === JSON.stringify(nextTemplate)) return;
+    if (JSON.stringify(requestTemplates[op]) === JSON.stringify(nextTemplate)) {
+return;
+}
     requestTemplates[op] = nextTemplate;
     // Para requests de leitura, conservar as features e variables de origem, sem credenciais.
     localStorage.setItem(API_TEMPLATES_KEY, JSON.stringify(requestTemplates));
     state.apiTemplates = Object.keys(requestTemplates);
-    if (op === "ListByRestId") scheduleNameRefresh(3000);
+    if (op === "ListByRestId") {
+scheduleNameRefresh(3000);
+}
   } catch {
     /* No-op */
   }
@@ -271,7 +313,9 @@ export function recordObservedRequest(url, method, headers, body) {
       return "";
     }
   })();
-  if (!pathname.startsWith("/i/api/")) return;
+  if (!pathname.startsWith("/i/api/")) {
+return;
+}
   rememberTemplate(url, method, body);
 }
 
@@ -315,7 +359,9 @@ export function initializeRodX_lists_162() {
   Studio.net.subscribe(
     (m) => recordObservedRequest(m.url, m.method, null, m.body),
     (m) => {
-      if (!m.payload || !listOperation(m.url)) return;
+      if (!m.payload || !listOperation(m.url)) {
+return;
+}
       // Serialize ingestion so newer authoritative names cannot be overtaken by old writes.
       ingestQueue = ingestQueue
         .catch(() => {})
@@ -344,15 +390,23 @@ export async function requestInternal(
   { method = "GET", params = null, payload = null, form = null } = {},
 ) {
   bridgeReady = Studio.state.network.ready;
-  if (!bridgeReady) throw new InternalAPIError("Ponte de rede indisponível. Recarregue o X.");
+  if (!bridgeReady) {
+throw new InternalAPIError("Ponte de rede indisponível. Recarregue o X.");
+}
   const url = new URL(path, location.origin);
   if (url.origin !== location.origin || !url.pathname.startsWith("/i/api/"))
-    throw new Error("Request fora da API interna desta origem.");
+    {
+throw new Error("Request fora da API interna desta origem.");
+}
   if (params)
-    Object.entries(params).forEach(([key, value]) => {
+    {
+Object.entries(params).forEach(([key, value]) => {
       if (value !== null && value !== undefined)
-        url.searchParams.set(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+        {
+url.searchParams.set(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+}
     });
+}
   if (bridgeReady) {
     const result = await bridgeRequest(url.pathname, {
       method,
@@ -370,21 +424,29 @@ export async function requestInternal(
       throw new InternalAPIError("HTTP 429: limite do X atingido. Fila pausada.", 429, cooldown);
     }
     if ([401, 403].includes(result.status))
-      throw new InternalAPIError(
+      {
+throw new InternalAPIError(
         `HTTP ${result.status}: sessão/permissão do X impede a ação.`,
         result.status,
       );
-    if (!result.status) throw new InternalAPIError(result.error || "Erro de conexão na ponte de requests.");
+}
+    if (!result.status) {
+throw new InternalAPIError(result.error || "Erro de conexão na ponte de requests.");
+}
     if (result.status < 200 || result.status >= 300)
-      throw new InternalAPIError(
+      {
+throw new InternalAPIError(
         `HTTP ${result.status}: ${String(result.data?.errors?.[0]?.message || result.data?.detail || "Falha da API").slice(0, 180)}`,
         result.status,
       );
+}
     if (result.data?.errors?.length)
-      throw new InternalAPIError(
+      {
+throw new InternalAPIError(
         String(result.data.errors[0]?.message || "Erro da API").slice(0, 180),
         result.status,
       );
+}
     if (result.remaining !== null && result.remaining !== undefined && Number(result.remaining) <= 1) {
       const reset = Number(result.reset || 0);
       sessionStorage.setItem(`${APP}:rate-low-until`, String(reset ? reset * 1000 : Date.now() + 900000));
@@ -397,9 +459,11 @@ export async function requestInternal(
 export function templateRequest(op, variables = {}, omit = []) {
   const t = requestTemplates[op];
   if (!t || t.method !== "GET")
-    throw new Error(
+    {
+throw new Error(
       `Não observei a operação ${op}. Abra uma vez a página correspondente no X para aprender a consulta.`,
     );
+}
   const params = {
     ...t.params,
   };
@@ -409,7 +473,9 @@ export function templateRequest(op, variables = {}, omit = []) {
   } catch {
     base = {};
   }
-  for (const key of omit) delete base[key];
+  for (const key of omit) {
+delete base[key];
+}
   Object.assign(base, variables);
   params.variables = JSON.stringify(base);
   return {
@@ -424,33 +490,47 @@ export function bottomCursor(data) {
   let i = 0;
   while (stack.length && i++ < 30000) {
     const node = stack.pop();
-    if (!node || typeof node !== "object" || seen.has(node)) continue;
+    if (!node || typeof node !== "object" || seen.has(node)) {
+continue;
+}
     seen.add(node);
     if (
       (node.cursorType === "Bottom" || /cursor-bottom/i.test(String(node.entryId || ""))) &&
       typeof (node.value || node.content?.value) === "string"
     )
-      return node.value || node.content.value;
-    for (const val of Object.values(node)) if (val && typeof val === "object") stack.push(val);
+      {
+return node.value || node.content.value;
+}
+    for (const val of Object.values(node)) {
+if (val && typeof val === "object") {
+stack.push(val);
+}
+}
   }
   return "";
 }
 
 export async function syncListMembersApi(id, { maxPages = 8, manual = false } = {}) {
   if (!requestTemplates.ListMembers)
-    throw new Error(
+    {
+throw new Error(
       "Ainda não capturei a consulta ListMembers. Abra uma vez os membros de uma lista pelo próprio X.",
     );
+}
   const t = requestTemplates.ListMembers;
   const previousSync = (await getOne("lists", id))?.scannedAt;
   let cursor = localStorage.getItem(memberCursorKey(id)) || "";
-  if (manual) cursor = ""; // Novo scan explícito pode reler desde o começo.
+  if (manual) {
+cursor = "";
+} // Novo scan explícito pode reler desde o começo.
   let pages = 0,
     complete = false,
     lastCursor = "";
   const count = Math.max(1, Math.min(25, maxPages));
   for (let i = 0; i < count && !state.scanStopped; i++) {
-    if (document.hidden) break; // Safari pode suspender timers e conexões em segundo plano.
+    if (document.hidden) {
+break;
+} // Safari pode suspender timers e conexões em segundo plano.
     const vars = {
       listId: id,
     };
@@ -459,7 +539,9 @@ export async function syncListMembersApi(id, { maxPages = 8, manual = false } = 
       delete vars.listId;
       vars.list_id = id;
     }
-    if (cursor) vars.cursor = cursor;
+    if (cursor) {
+vars.cursor = cursor;
+}
     const r = templateRequest("ListMembers", vars, cursor ? [] : ["cursor"]);
     const data = await requestInternal(r.path, {
       params: r.params,
@@ -478,15 +560,23 @@ export async function syncListMembersApi(id, { maxPages = 8, manual = false } = 
     localStorage.setItem(memberCursorKey(id), cursor);
     const blocked = Number(sessionStorage.getItem(`${APP}:rate-low-until`) || 0);
     if (blocked > Date.now())
-      throw new Error("O X informou que a cota de requests está quase esgotada. Coleta pausada.");
-    if (i < count - 1) await sleep(5000); // Sem rajadas de páginas.
+      {
+throw new Error("O X informou que a cota de requests está quase esgotada. Coleta pausada.");
+}
+    if (i < count - 1) {
+await sleep(5000);
+} // Sem rajadas de páginas.
   }
   if (pages || previousSync)
-    await upsertList(id, {
+    {
+await upsertList(id, {
       scannedAt: now(),
       scanComplete: complete,
     });
-  if (pages) scheduleRefresh();
+}
+  if (pages) {
+scheduleRefresh();
+}
   return {
     pages,
     complete,
@@ -501,8 +591,12 @@ export function initializeListsDirectNameRefreshes() {
 
 export async function refreshListName(id) {
   id = String(id || "");
-  if (!validListId(id)) throw Error("ID de lista inválido.");
-  if (directNameRefreshes.has(id)) return directNameRefreshes.get(id);
+  if (!validListId(id)) {
+throw Error("ID de lista inválido.");
+}
+  if (directNameRefreshes.has(id)) {
+return directNameRefreshes.get(id);
+}
   const task = (async () => {
     const previous = await getOne("lists", id);
     const op = ["ListByRestId", "ListById", "ListDetails", "ListLookup"].find(
@@ -521,12 +615,18 @@ export async function refreshListName(id) {
         const key = ["listId", "list_id", "list_id_str", "id"].find((key) =>
           /^\d+$/.test(String(vars?.[key] || "")),
         );
-        if (!key) throw Error("A consulta observada não fornece variável segura para o ID.");
+        if (!key) {
+throw Error("A consulta observada não fornece variável segura para o ID.");
+}
         const params = { ...template.params };
         const variables = { ...vars, [key]: id };
         const options = { method: template.method, params };
-        if (template.method === "POST") options.payload = { ...template.readPayload, variables };
-        else options.params.variables = JSON.stringify(variables);
+        if (template.method === "POST") {
+options.payload = { ...template.readPayload, variables };
+}
+        else {
+options.params.variables = JSON.stringify(variables);
+}
         const response = await Promise.race([
           requestInternal(template.path, options),
           new Promise((_, reject) => {
@@ -542,14 +642,20 @@ export async function refreshListName(id) {
           visited = 0;
         while (stack.length && visited++ < 30000) {
           const [node, parent, path] = stack.pop();
-          if (!node || typeof node !== "object") continue;
+          if (!node || typeof node !== "object") {
+continue;
+}
           const candidate = parseApiListObject(node, parent, path);
           if (candidate?.id === id && candidate.name) {
             evidence = candidate;
             break;
           }
           for (const [key, value] of Object.entries(node))
-            if (value && typeof value === "object") stack.push([value, key, path + "." + key]);
+            {
+if (value && typeof value === "object") {
+stack.push([value, key, path + "." + key]);
+}
+}
         }
         await ingestListResponse(response, template.path + "?" + new URLSearchParams(params));
         if (evidence) {
@@ -557,13 +663,17 @@ export async function refreshListName(id) {
           await put("lists", { ...current, apiName: evidence.name, nameVerifiedAt: now() });
           updated = true;
           Studio.emit("lists:names-ready");
-        } else error = "A resposta não contém nome válido associado ao ID desta lista.";
+        } else {
+error = "A resposta não contém nome válido associado ao ID desta lista.";
+}
       } catch (cause) {
         error = String(cause.message || cause);
       } finally {
         clearTimeout(timer);
       }
-    } else error = "Abra uma lista no X para aprender uma consulta real de metadados.";
+    } else {
+error = "Abra uma lista no X para aprender uma consulta real de metadados.";
+}
     await refresh();
     return { updated, error, current: await getOne("lists", id) };
   })().finally(() => directNameRefreshes.delete(id));
@@ -573,9 +683,13 @@ export async function refreshListName(id) {
 
 export async function showListNameDialog(id, refreshFirst = true) {
   const current = await getOne("lists", id);
-  if (!current) throw Error("Lista não encontrada.");
+  if (!current) {
+throw Error("Lista não encontrada.");
+}
   let outcome = { current, error: "", updated: false };
-  if (refreshFirst) outcome = await refreshListName(id);
+  if (refreshFirst) {
+outcome = await refreshListName(id);
+}
   const row = outcome.current || current;
   const label = `${displayListName(row)} · ID ${id}`;
   const source = row.alias ? "Alias local" : row.nameSource || "pendente";
@@ -601,7 +715,9 @@ export async function showListNameDialog(id, refreshFirst = true) {
         role: "submit",
         handler: async (ctx) => {
           const alias = cleanListName(ctx.values.alias);
-          if (!alias) throw Error("Informe um nome válido, inclusive emoji.");
+          if (!alias) {
+throw Error("Informe um nome válido, inclusive emoji.");
+}
           await upsertList(id, { name: alias, nameSource: "manual" });
           await refresh();
         },
@@ -641,7 +757,9 @@ export function initializeListsNameRefreshBusy() {
 }
 
 export function scheduleNameRefresh(delay = 7000) {
-  if (nameRefreshTimer || nameRefreshBusy || document.hidden || !settings.autoSyncApi) return;
+  if (nameRefreshTimer || nameRefreshBusy || document.hidden || !settings.autoSyncApi) {
+return;
+}
   nameRefreshTimer = setTimeout(() => {
     nameRefreshTimer = null;
     refreshPendingListNames().catch((e) => console.debug("[X Lists Studio] Name refresh:", e.message));
@@ -656,7 +774,9 @@ export async function refreshPendingListNames() {
     !settings.autoSyncApi ||
     (!bridgeReady && (!sessionAuth.authorization || !csrfCookie()))
   )
-    return;
+    {
+return;
+}
   const t = requestTemplates.ListByRestId;
   const base = (() => {
     try {
@@ -666,14 +786,20 @@ export async function refreshPendingListNames() {
     }
   })();
   const key = ["listId", "list_id", "id"].find((k) => k in base);
-  if (!key) return; // Don't invent a GraphQL request shape.
+  if (!key) {
+return;
+} // Don't invent a GraphQL request shape.
   const blocked = Number(sessionStorage.getItem(`${APP}:rate-low-until`) || 0);
-  if (blocked > Date.now()) return;
+  if (blocked > Date.now()) {
+return;
+}
   const ledger = (loadJSON(NAME_REFRESH_LEDGER_KEY, []) || []).filter(
     (x) => Number.isFinite(x) && Date.now() - x < 24 * 60 * 60 * 1000,
   );
   const lastHour = ledger.filter((x) => Date.now() - x < 60 * 60 * 1000).length;
-  if (lastHour >= 12 || ledger.length >= 40) return;
+  if (lastHour >= 12 || ledger.length >= 40) {
+return;
+}
   const lists = await getAll("lists");
   const target = lists
     .filter(
@@ -689,7 +815,9 @@ export async function refreshPendingListNames() {
         (a.nameVerifiedAt ? Date.parse(a.nameVerifiedAt) : 0) -
         (b.nameVerifiedAt ? Date.parse(b.nameVerifiedAt) : 0),
     )[0];
-  if (!target) return;
+  if (!target) {
+return;
+}
   nameRefreshBusy = true;
   nameRefreshTimes.set(target.id, Date.now());
   ledger.push(Date.now());
@@ -703,11 +831,15 @@ export async function refreshPendingListNames() {
     });
     await ingestListResponse(data, `${request.path}?${new URLSearchParams(request.params)}`);
   } catch (err) {
-    if (err?.status === 429 || err?.status === 401 || err?.status === 403) return;
+    if (err?.status === 429 || err?.status === 401 || err?.status === 403) {
+return;
+}
     console.debug("[X Lists Studio] List metadata unavailable:", err.message);
   } finally {
     nameRefreshBusy = false;
-    if (!document.hidden) scheduleNameRefresh(18000);
+    if (!document.hidden) {
+scheduleNameRefresh(18000);
+}
   }
 }
 
@@ -724,11 +856,17 @@ export function initializeListsAutoSyncBusy() {
 }
 
 export async function tryAutoRead() {
-  if (!settings.autoSyncApi || autoSyncBusy || document.hidden || state.scan || queueRunning) return;
+  if (!settings.autoSyncApi || autoSyncBusy || document.hidden || state.scan || queueRunning) {
+return;
+}
   const id = routeListId();
-  if (!id || (!bridgeReady && (!sessionAuth.authorization || !csrfCookie()))) return;
+  if (!id || (!bridgeReady && (!sessionAuth.authorization || !csrfCookie()))) {
+return;
+}
   const last = autoReadTimes.get(id) || 0;
-  if (Date.now() - last < 30 * 60 * 1000) return;
+  if (Date.now() - last < 30 * 60 * 1000) {
+return;
+}
   autoReadTimes.set(id, Date.now());
   autoSyncBusy = true;
   try {
@@ -746,9 +884,11 @@ export async function tryAutoRead() {
       );
     }
     if (requestTemplates.ListMembers)
-      await syncListMembersApi(id, {
+      {
+await syncListMembersApi(id, {
         maxPages: 2,
       });
+}
   } catch (err) {
     console.debug("[X Lists Studio] Leitura interna indisponível:", err.message);
   } finally {

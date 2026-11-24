@@ -13,10 +13,16 @@ export function initializeDeckNativeQueryTags() {
     const current = () => input()?.value || nativeSearch()?.query || "";
     const set = (value) => {
       const field = input();
-      if (!field) return false;
+      if (!field) {
+return false;
+}
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      if (setter) setter.call(field, value);
-      else field.value = value;
+      if (setter) {
+setter.call(field, value);
+}
+      else {
+field.value = value;
+}
       try {
         field.dispatchEvent(
           new InputEvent("input", {
@@ -41,8 +47,12 @@ export function initializeDeckNativeQueryTags() {
     };
     const route = () => {
       const nav = document.querySelector(NATIVE_X_SELECTORS.exploreSidebarLinks);
-      if (nav) nav.click();
-      else showRodxToast("Abra a busca do X para editar as hashtags.", "info");
+      if (nav) {
+nav.click();
+}
+      else {
+showRodxToast("Abra a busca do X para editar as hashtags.", "info");
+}
     };
     const modify = (words, mode = "add") => {
       const values = Array.isArray(words) ? words : [words];
@@ -57,7 +67,9 @@ export function initializeDeckNativeQueryTags() {
           return;
         }
         const next = QueryEngine.batch(current(), values, mode);
-        if (next !== current()) set(next);
+        if (next !== current()) {
+set(next);
+}
         ResultEnhancer.syncTags();
         showRodxToast(
           mode === "exclude"
@@ -69,13 +81,21 @@ export function initializeDeckNativeQueryTags() {
       }
     };
     const flush = () => {
-      if (!input()) return;
-      for (const item of pending.splice(0)) if (Date.now() - item.at < 16000) modify(item.words, item.mode);
+      if (!input()) {
+return;
+}
+      for (const item of pending.splice(0)) {
+if (Date.now() - item.at < 16000) {
+modify(item.words, item.mode);
+}
+}
     };
     document.addEventListener(
       "input",
       (event) => {
-        if (event.target === input()) ResultEnhancer.syncTags();
+        if (event.target === input()) {
+ResultEnhancer.syncTags();
+}
       },
       true,
     );
@@ -84,10 +104,14 @@ export function initializeDeckNativeQueryTags() {
       "paste",
       (event) => {
         const field = input();
-        if (!field || event.target !== field) return;
+        if (!field || event.target !== field) {
+return;
+}
         const raw = event.clipboardData?.getData("text/plain") || "";
         const tags = QueryEngine.tags(raw, false);
-        if (tags.length < 2) return;
+        if (tags.length < 2) {
+return;
+}
         event.preventDefault();
         modify(tags, "add");
       },

@@ -10,13 +10,19 @@ export function buildTree(entries: Entry[]): Node[] {
   const root: Node = { name: "", path: "", folder: true, children: [] };
   const known = new Map<string, Node>([["", root]]);
   for (const entry of entries) {
-    if (!["blob", "tree"].includes(entry.type) || !entry.path || entry.path.startsWith("/")) continue;
+    if (!["blob", "tree"].includes(entry.type) || !entry.path || entry.path.startsWith("/")) {
+continue;
+}
     const parts = entry.path.split("/");
     for (let i = 1; i <= parts.length; i++) {
       const path = parts.slice(0, i).join("/");
-      if (known.has(path)) continue;
+      if (known.has(path)) {
+continue;
+}
       const parent = known.get(parts.slice(0, i - 1).join("/"));
-      if (!parent) break;
+      if (!parent) {
+break;
+}
       const node: Node = {
         name: parts[i - 1],
         path,
@@ -37,9 +43,13 @@ export function buildTree(entries: Entry[]): Node[] {
 }
 export function filterTree(nodes: Node[], term: string): Node[] {
   const needle = term.trim().toLocaleLowerCase();
-  if (!needle) return nodes;
+  if (!needle) {
+return nodes;
+}
   const visit = (node: Node): Node | null => {
-    if (node.name.toLocaleLowerCase().includes(needle)) return node;
+    if (node.name.toLocaleLowerCase().includes(needle)) {
+return node;
+}
     const children = node.children.map(visit).filter((value): value is Node => value !== null);
     return children.length ? { ...node, children } : null;
   };
@@ -50,7 +60,9 @@ export function splitTreeLocation(
   ref: string,
 ): { branch: string; current: string } | null {
   const refParts = ref.split("/");
-  if (!ref || refParts.some((part, i) => segments[i] !== part)) return null;
+  if (!ref || refParts.some((part, i) => segments[i] !== part)) {
+return null;
+}
   return { branch: ref, current: segments.slice(refParts.length).join("/") };
 }
 function selectedGitHubRef(): string {
@@ -62,14 +74,19 @@ function selectedGitHubRef(): string {
   ];
   for (const selector of selectors) {
     const label = document.querySelector(selector)?.textContent?.trim();
-    if (label) return label.replace(/^Branch:\s*/i, "").trim();
+    if (label) {
+return label.replace(/^Branch:\s*/i, "").trim();
+}
   }
   return "";
 }
+
 const treeCache = new Map<string, { expires: number; nodes: Node[] }>();
 export function readTreeCache(key: string, now = Date.now()): Node[] | null {
   const entry = treeCache.get(key);
-  if (!entry) return null;
+  if (!entry) {
+return null;
+}
   if (entry.expires <= now) {
     treeCache.delete(key);
     return null;
@@ -83,7 +100,9 @@ export function writeTreeCache(key: string, nodes: Node[], now = Date.now()) {
   treeCache.set(key, { nodes, expires: now + 300000 });
   while (treeCache.size > 12) {
     const oldest = treeCache.keys().next().value;
-    if (oldest === undefined) break;
+    if (oldest === undefined) {
+break;
+}
     treeCache.delete(oldest);
   }
 }
@@ -104,7 +123,9 @@ function TreeRow(props: {
       return;
     }
     setExpanded(true);
-    if (!props.node.sha || children.length) return;
+    if (!props.node.sha || children.length) {
+return;
+}
     setLoading(true);
     setError("");
     try {
@@ -192,6 +213,7 @@ function TreeRow(props: {
     </>
   );
 }
+
 export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
   type ViewState = {
     state: "loading" | "ready" | "error";
@@ -238,7 +260,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
     : [];
   let headers: Record<string, string> = { Accept: "application/vnd.github+json" };
   const loadFolder = async (node: Node): Promise<Node[]> => {
-    if (!node.sha) return node.children;
+    if (!node.sha) {
+return node.children;
+}
     const response = await fetch(
       "https://api.github.com/repos/" +
         repo.owner +
@@ -248,7 +272,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         encodeURIComponent(node.sha),
       { headers, signal: controller.signal },
     );
-    if (!response.ok) throw Error("HTTP " + response.status);
+    if (!response.ok) {
+throw Error("HTTP " + response.status);
+}
     const data = await response.json();
     return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
   };
@@ -327,7 +353,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         headers,
         signal: controller.signal,
       });
-      if (!info.ok) throw Error("GitHub API: " + info.status);
+      if (!info.ok) {
+throw Error("GitHub API: " + info.status);
+}
       const details = await info.json();
       const apiBase = "https://api.github.com/repos/" + repo.owner + "/" + repo.repo + "/git/trees/";
       const candidates = isTree
@@ -359,7 +387,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       let response: Response | undefined;
       let match: { branch: string; current: string } | undefined;
       for (const candidate of candidates) {
-        if (!candidate.branch || visited.has(candidate.branch)) continue;
+        if (!candidate.branch || visited.has(candidate.branch)) {
+continue;
+}
         visited.add(candidate.branch);
         const attempt = await fetch(apiBase + encodeURIComponent(candidate.branch) + "?recursive=1", {
           headers,
@@ -371,9 +401,13 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           break;
         }
         if (attempt.status !== 404 && attempt.status !== 422)
-          throw Error("Árvore indisponível: HTTP " + attempt.status);
+          {
+throw Error("Árvore indisponível: HTTP " + attempt.status);
+}
       }
-      if (!response || !match) throw Error("Não foi possível resolver a branch da URL");
+      if (!response || !match) {
+throw Error("Não foi possível resolver a branch da URL");
+}
       setResolvedBranch(match.branch);
       setCurrent(match.current);
       const data = await response.json();
@@ -383,18 +417,24 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           headers,
           signal: controller.signal,
         });
-        if (!root.ok) throw Error("Não foi possível carregar a raiz: HTTP " + root.status);
+        if (!root.ok) {
+throw Error("Não foi possível carregar a raiz: HTTP " + root.status);
+}
         const rootData = await root.json();
         entries = rootData.tree || [];
       }
       const tree = buildTree(entries);
       writeTreeCache(base + ":" + match.branch, tree);
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+return;
+}
       setNodes(tree);
       setState("ready");
       (container as HTMLElement).style.display = "none";
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+return;
+}
       setMessage(error instanceof Error ? error.message : String(error));
       setState("error");
     }

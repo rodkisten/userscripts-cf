@@ -6,7 +6,9 @@ type RecordItem = { kind: string; title: string; value: unknown };
 type MethodItem = { id: string; label: string; world: string; result?: any };
 type HistoryItem = { code: string; at: string };
 const pretty = (value: unknown) => {
-  if (typeof value === "string") return value;
+  if (typeof value === "string") {
+return value;
+}
   try {
     return JSON.stringify(value, null, 2) ?? String(value);
   } catch {

@@ -7,7 +7,9 @@ import { normalizedPreset, normalizedSearch } from "./normalize.js";
 import { repaint } from "../ui/dock.tsx";
 
 export function exportJSON() {
-  if (!state.account) throw new Error("Conta não identificada.");
+  if (!state.account) {
+throw new Error("Conta não identificada.");
+}
   const payload = {
     format: IDENT,
     version: 3,
@@ -33,8 +35,12 @@ export function exportJSON() {
 }
 
 export async function importJSON(file, strategy) {
-  if (!state.account) throw new Error("Conta não identificada.");
-  if (!file || file.size > 15 * 1024 * 1024) throw new Error("Arquivo inexistente ou maior que 15 MB.");
+  if (!state.account) {
+throw new Error("Conta não identificada.");
+}
+  if (!file || file.size > 15 * 1024 * 1024) {
+throw new Error("Arquivo inexistente ou maior que 15 MB.");
+}
   const parsed = JSON.parse(await file.text());
   if (parsed?.format !== IDENT || !Array.isArray(parsed.searches)) {
     throw new Error("O arquivo não é um backup válido do RodX Search Deck.");
@@ -44,8 +50,12 @@ export async function importJSON(file, strategy) {
     ? parsed.presets.map(normalizedPreset).filter(Boolean)
     : [];
   if (!imported.length && !incomingPresets.length)
-    throw new Error("O backup não contém buscas ou presets válidos.");
-  if (strategy === "replace" && !confirm(`Substituir todas as pesquisas de @${state.account}?`)) return;
+    {
+throw new Error("O backup não contém buscas ou presets válidos.");
+}
+  if (strategy === "replace" && !confirm(`Substituir todas as pesquisas de @${state.account}?`)) {
+return;
+}
   const previous = state.searches.slice();
   const previousPresets = state.presets.slice();
   if (strategy === "replace") {
@@ -54,10 +64,14 @@ export async function importJSON(file, strategy) {
     state.selectionList = Array.isArray(parsed.selectionList) ? parsed.selectionList.slice(0, 150) : [];
   } else {
     const merged = new Map<any, any>(state.searches.map((s) => [s.id, s]));
-    for (const s of imported) merged.set(s.id, s);
+    for (const s of imported) {
+merged.set(s.id, s);
+}
     state.searches = [...merged.values()];
     const presets = new Map<any, any>(state.presets.map((p) => [p.id, p]));
-    for (const p of incomingPresets) presets.set(p.id, p);
+    for (const p of incomingPresets) {
+presets.set(p.id, p);
+}
     state.presets = [...presets.values()];
   }
   try {

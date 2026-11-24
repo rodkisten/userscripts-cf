@@ -75,8 +75,12 @@ export default {
       cancelPicker();
     };
     const cancelPicker = () => {
-      if (pickerListener) document.removeEventListener("pointerdown", pickerListener, true);
-      if (pickerCancelListener) document.removeEventListener("keydown", pickerCancelListener, true);
+      if (pickerListener) {
+document.removeEventListener("pointerdown", pickerListener, true);
+}
+      if (pickerCancelListener) {
+document.removeEventListener("keydown", pickerCancelListener, true);
+}
       pickerListener = undefined;
       pickerCancelListener = undefined;
       setPicking(false);
@@ -118,7 +122,9 @@ export default {
       overlay = undefined;
       highlightTarget = el;
       lastRect = "";
-      if (!el) return;
+      if (!el) {
+return;
+}
       overlay = document.createElement("div");
       overlay.setAttribute("aria-hidden", "true");
       overlay.style.cssText =
@@ -131,8 +137,12 @@ export default {
       markElement(el);
       setSelectionName(el ? pickSelector(el) : "Nenhum elemento");
       setDepth(0);
-      if (!el) return;
-      if (scroll()) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!el) {
+return;
+}
+      if (scroll()) {
+el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
     };
     const moveSelection = (direction) => {
       const next =
@@ -143,15 +153,21 @@ export default {
             : direction === "previous"
               ? selected?.previousElementSibling
               : selected?.nextElementSibling;
-      if (!next || own(next)) return;
+      if (!next || own(next)) {
+return;
+}
       highlight(next);
       setSelector(pickSelector(next));
       renderSource();
     };
     const traverse = (level) => {
-      if (!selected) return;
+      if (!selected) {
+return;
+}
       let node = selected;
-      for (let i = 0; i < level && node.parentElement; i++) node = node.parentElement;
+      for (let i = 0; i < level && node.parentElement; i++) {
+node = node.parentElement;
+}
       if (!own(node)) {
         markElement(node);
         setDepth(level);
@@ -159,15 +175,23 @@ export default {
       }
     };
     const locateInSource = () => {
-      if (!editor || !selected || tab() !== "dom") return;
+      if (!editor || !selected || tab() !== "dom") {
+return;
+}
       const source = editor.state.doc.toString();
       const marker = selected.outerHTML.slice(0, Math.min(100, selected.outerHTML.indexOf(">") + 1));
       const index = source.indexOf(marker);
-      if (index >= 0) editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
-      else setStatus("Elemento não localizado no snapshot");
+      if (index >= 0) {
+editor.dispatch({ selection: { anchor: index }, scrollIntoView: true });
+}
+      else {
+setStatus("Elemento não localizado no snapshot");
+}
     };
     const renderSource = () => {
-      if (!editorRoot || !open()) return;
+      if (!editorRoot || !open()) {
+return;
+}
       const mode = tab();
       const source =
         mode === "dom"
@@ -184,7 +208,9 @@ export default {
       if (editor && editor.dom.parentElement === editorRoot) {
         const effects = editorMode === mode ? [] : [syntax.reconfigure(language)];
         if (editor.state.doc.toString() !== content || effects.length)
-          editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: content }, effects });
+          {
+editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: content }, effects });
+}
         editorMode = mode;
       } else {
         editor?.destroy();
@@ -209,7 +235,9 @@ export default {
       domObserver?.disconnect();
       domObserver = undefined;
       clearTimeout(refreshTimer);
-      if (!live() || !open() || tab() !== "dom") return;
+      if (!live() || !open() || tab() !== "dom") {
+return;
+}
       domObserver = new MutationObserver((mutations) => {
         if (
           mutations.some(
@@ -217,7 +245,9 @@ export default {
               !own(m.target) && m.target !== overlay && ![...m.addedNodes].every((node) => node === overlay),
           )
         )
-          schedule();
+          {
+schedule();
+}
       });
       domObserver.observe(document.documentElement, {
         subtree: true,
@@ -242,8 +272,12 @@ export default {
       }
     };
     const copy = (text) => {
-      if (ctx.clipboard?.copy) ctx.clipboard.copy(text);
-      else navigator.clipboard?.writeText(text);
+      if (ctx.clipboard?.copy) {
+ctx.clipboard.copy(text);
+}
+      else {
+navigator.clipboard?.writeText(text);
+}
     };
     const pick = () => {
       cancelPicker();
@@ -251,7 +285,9 @@ export default {
       setOpen(false);
       pickerListener = (event) => {
         const target = event.composedPath?.().find((node) => node instanceof Element && !own(node));
-        if (!target || own(event.target)) return;
+        if (!target || own(event.target)) {
+return;
+}
         event.preventDefault();
         event.stopImmediatePropagation();
         cancelPicker();
@@ -290,7 +326,9 @@ export default {
     observePageFetch(
       (event) => {
         setRecords((prev) => [...prev, event].slice(-INSPECTOR_CONFIG.maxCapturedRequests));
-        if (open() && tab() === "network") schedule();
+        if (open() && tab() === "network") {
+schedule();
+}
       },
       { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters },
     );
@@ -299,7 +337,9 @@ export default {
         setRecords((prev) =>
           [...prev, { transport: "xhr", ...event }].slice(-INSPECTOR_CONFIG.maxCapturedRequests),
         );
-        if (open() && tab() === "network") schedule();
+        if (open() && tab() === "network") {
+schedule();
+}
       },
       { signal: ctx.signal, maxBodyCharacters: INSPECTOR_CONFIG.maxBodyCharacters },
     );
@@ -325,7 +365,9 @@ export default {
         tab();
         live();
         updateLiveObserver();
-        if (isOpen) queueMicrotask(renderSource);
+        if (isOpen) {
+queueMicrotask(renderSource);
+}
         else {
           editor?.destroy();
           editor = undefined;
@@ -364,7 +406,9 @@ export default {
               aria-modal="false"
               aria-label="DOM Inspector"
               onKeyDown={(event) => {
-                if (event.key === "Escape") setOpen(false);
+                if (event.key === "Escape") {
+setOpen(false);
+}
               }}
             >
               <header className={styles.header}>

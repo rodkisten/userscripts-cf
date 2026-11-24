@@ -50,14 +50,20 @@ export function currentSearch() {
 }
 
 export function displayPreview() {
-  if (!state.rootShadow || !state.draft) return;
+  if (!state.rootShadow || !state.draft) {
+return;
+}
   const el = state.rootShadow.querySelector(RODX_SELECTORS.queryPreview);
-  if (!el) return;
+  if (!el) {
+return;
+}
   const issues = analyzeDraft(state.draft);
   let query = "";
   try {
     query = compileQuery(state.draft.fields, state.draft.blocks);
-    if (!query) query = "Adicione hashtags, palavras, mídia ou filtros…";
+    if (!query) {
+query = "Adicione hashtags, palavras, mídia ou filtros…";
+}
   } catch (error) {
     query = error.message;
   }
@@ -75,10 +81,13 @@ export function displayPreview() {
   }
   const summary = state.rootShadow.querySelector(RODX_SELECTORS.analyzerSummary);
   const errors = issues.filter((i) => i.level === "error");
-  if (summary) summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
+  if (summary) {
+summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
+}
   const pane = state.rootShadow.querySelector(RODX_SELECTORS.queryDiagnostics);
   if (pane)
-    mountView(pane, () =>
+    {
+mountView(pane, () =>
       issues.length ? (
         issues.map((issue) => (
           <>
@@ -105,13 +114,16 @@ export function displayPreview() {
         </>
       ),
     );
+}
   const raw = state.rootShadow.querySelector(RODX_SELECTORS.rawQueryField);
   if (raw && !state.rawDirty) {
     state.rawQueryDraft = query.startsWith("Adicione hashtags,") ? "" : query;
     raw.value = state.rawQueryDraft;
   }
   const colored = state.rootShadow.querySelector(RODX_SELECTORS.rawHighlight);
-  if (colored) mountView(colored, () => highlightQuery(raw?.value || ""));
+  if (colored) {
+mountView(colored, () => highlightQuery(raw?.value || ""));
+}
 }
 
 export function validateRawWorkbench(text) {
@@ -119,7 +131,9 @@ export function validateRawWorkbench(text) {
   const colored = state.rootShadow?.querySelector(RODX_SELECTORS.rawHighlight);
   const list = state.rootShadow?.querySelector(RODX_SELECTORS.rawIssues);
   const issues = diagnosticSpans(text);
-  if (colored) mountView(colored, () => highlightWithIssues(text, issues));
+  if (colored) {
+mountView(colored, () => highlightWithIssues(text, issues));
+}
   let semantic = [];
   try {
     const native = parseLocalDirectives(text).native;
@@ -130,22 +144,26 @@ export function validateRawWorkbench(text) {
     });
   } catch (e) {
     if (!issues.some((i) => i.severity === "error"))
-      issues.push({
+      {
+issues.push({
         start: 0,
         end: Math.min(text.length, 1),
         severity: "error",
         message: e.message,
         suggestion: "Confira os operadores booleanos e parênteses.",
       });
+}
   }
   for (const item of semantic)
-    issues.push({
+    {
+issues.push({
       start: 0,
       end: 0,
       severity: item.level,
       message: item.message,
       suggestion: "Ajuste os blocos duplicados ou conflitantes.",
     });
+}
   if (target) {
     const errors = issues.filter((i) => i.severity === "error").length;
     target.textContent = errors
@@ -160,7 +178,8 @@ export function validateRawWorkbench(text) {
     );
   }
   if (list)
-    mountView(list, () =>
+    {
+mountView(list, () =>
       issues.map((i) => (
         <>
           <button
@@ -177,6 +196,7 @@ export function validateRawWorkbench(text) {
         </>
       )),
     );
+}
   return issues;
 }
 
@@ -336,7 +356,9 @@ export function TagTray() {
 
 export function renderTags() {
   const container = state.rootShadow?.querySelector(RODX_SELECTORS.tagTray);
-  if (container && state.draft) mountView(container, () => <TagTray />);
+  if (container && state.draft) {
+mountView(container, () => <TagTray />);
+}
 }
 
 export function addChips(value, focus = true) {
@@ -348,9 +370,13 @@ export function addChips(value, focus = true) {
           .split(/[,;\n]+/)
           .map((x) => x.trim())
           .filter(Boolean);
-  if (!parts.length) return;
+  if (!parts.length) {
+return;
+}
   const t = tray();
-  if (pasted.length > 1) t.op = "OR";
+  if (pasted.length > 1) {
+t.op = "OR";
+}
   if (blockStats(state.draft.blocks) + parts.length > MAX_BLOCK_NODES) {
     throw new Error("Limite de blocos atingido.");
   }
@@ -359,14 +385,18 @@ export function addChips(value, focus = true) {
     if (/^".*"$/.test(part)) {
       type = "phrase";
       part = part.slice(1, -1);
-    } else if (/\s/.test(part)) type = "phrase";
+    } else if (/\s/.test(part)) {
+type = "phrase";
+}
     t.children.push(newBlock(type, part.replace(/^#/, "")));
   }
   const removed = compactBlockTree(state.draft.blocks);
   state.autoFixSummary = removed ? `${removed} duplicata(s) eliminada(s) automaticamente.` : "";
   renderTags();
   renderBlockEditor();
-  if (focus) state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.focus();
+  if (focus) {
+state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.focus();
+}
 }
 
 export function SelectionList() {
@@ -856,12 +886,16 @@ export function BlockBuilder() {
 export function renderBlockEditor() {
   const root = state.rootShadow;
   const container = root?.querySelector(RODX_SELECTORS.blocksContainer);
-  if (container && state.draft) mountView(container, () => blockHTML(state.draft.blocks, 0, true));
+  if (container && state.draft) {
+mountView(container, () => blockHTML(state.draft.blocks, 0, true));
+}
   displayPreview();
 }
 
 export function modifyBlocks(action, id = "") {
-  if (!state.draft) return;
+  if (!state.draft) {
+return;
+}
   const root = state.draft.blocks;
   const match = findBlockNode(root, id);
   if (action === "block-clear") {
@@ -879,13 +913,19 @@ export function modifyBlocks(action, id = "") {
     } else if (action === "template-media-or") {
       group = newBlockGroup("OR", [newBlock("media", "images"), newBlock("media", "videos")]);
     }
-    if (group) root.children.push(group);
+    if (group) {
+root.children.push(group);
+}
   } else if (action.startsWith("block-add-")) {
-    if (!match || match.node.kind !== "group") return;
+    if (!match || match.node.kind !== "group") {
+return;
+}
     const type = action.slice("block-add-".length);
     const depth = depthOfNode(root, id);
     if (type === "group") {
-      if (depth >= MAX_BLOCK_DEPTH - 2) throw new Error("Limite de profundidade de grupos atingido.");
+      if (depth >= MAX_BLOCK_DEPTH - 2) {
+throw new Error("Limite de profundidade de grupos atingido.");
+}
       match.node.children.push(newBlockGroup("OR", [newBlock()]));
     } else {
       const valid = {
@@ -893,12 +933,16 @@ export function modifyBlocks(action, id = "") {
         keyword: "keyword",
         media: "media",
       };
-      if (valid[type]) match.node.children.push(newBlock(valid[type]));
+      if (valid[type]) {
+match.node.children.push(newBlock(valid[type]));
+}
     }
   } else if (match && match.parent) {
     const siblings = match.parent.children;
     const index = siblings.findIndex((item) => item.id === id);
-    if (action === "block-remove") siblings.splice(index, 1);
+    if (action === "block-remove") {
+siblings.splice(index, 1);
+}
     if (action === "block-up" && index > 0) {
       [siblings[index - 1], siblings[index]] = [siblings[index], siblings[index - 1]];
     }
@@ -1383,7 +1427,9 @@ export function DataSettings() {
 
 export function Workspace() {
   const disabled = !state.account;
-  if (state.view === "editor" && !state.draft) state.draft = blankDraft();
+  if (state.view === "editor" && !state.draft) {
+state.draft = blankDraft();
+}
   return (
     <>
       <div className={cx("scrim")} data-act={"close"}></div>
@@ -1935,7 +1981,9 @@ export function blankDraft() {
 }
 
 export function applyXTheme(host) {
-  if (!host) return;
+  if (!host) {
+return;
+}
   // X's own primary column gets the reliable text color, and the palette
   // follows that setting even if Safari uses another OS appearance.
   const element =
@@ -1972,9 +2020,13 @@ function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [st
     shadowStyleCache.set(root, registered);
   }
   for (const [key, css] of styles) {
-    if (!css) continue;
+    if (!css) {
+continue;
+}
     const existing = registered.get(key);
-    if (existing?.isConnected && existing.textContent === css) continue;
+    if (existing?.isConnected && existing.textContent === css) {
+continue;
+}
     existing?.remove();
     const sheet = root.ownerDocument.createElement("style");
     sheet.dataset.rodxStylesheet = key;
@@ -1996,7 +2048,9 @@ function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") 
 }
 
 export function renderRoot() {
-  if (!state.rootShadow) return;
+  if (!state.rootShadow) {
+return;
+}
   applyXTheme(state.rootHost);
   const oldBody = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
   const oldView = state.rootShadow.querySelector(RODX_SELECTORS.replPanel)?.dataset.view;
@@ -2012,10 +2066,14 @@ export function renderRoot() {
   if (state.open) {
     applyComponentStyle(state.rootHost, "rx-search-workbench-rootHost", false);
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
-  } else Studio.menu.close("workspace");
+  } else {
+Studio.menu.close("workspace");
+}
   if (restoreScroll) {
     const body = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
-    if (body) body.scrollTop = scrollTop;
+    if (body) {
+body.scrollTop = scrollTop;
+}
   }
   if (state.open && state.view === "editor") {
     displayPreview();
@@ -2025,7 +2083,9 @@ export function renderRoot() {
 
 export function renderDock() {
   const dock = state.dockShadow;
-  if (!dock) return;
+  if (!dock) {
+return;
+}
   applyXTheme(state.dockHost);
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
@@ -2101,17 +2161,21 @@ export function renderDock() {
         (button.onclick = () => Studio.navigate(studioListIndex(Studio) + "/" + button.dataset.studioList)),
     );
   const nav = dock.querySelector(RODX_SELECTORS.searchDock);
-  if (nav) nav.scrollLeft = horizontalScroll;
+  if (nav) {
+nav.scrollLeft = horizontalScroll;
+}
 }
 
 export function inspectNativeQuery(query) {
   const text = String(query || "").trim();
   if (!text)
-    return {
+    {
+return {
       level: "idle",
       message: "Digite uma pesquisa",
       details: [],
     };
+}
   try {
     const blocks = parseQueryBlocks(text);
     const issues = analyzeDraft({
@@ -2121,17 +2185,21 @@ export function inspectNativeQuery(query) {
     const errors = issues.filter((item) => item.level === "error");
     const warnings = issues.filter((item) => item.level !== "error");
     if (errors.length)
-      return {
+      {
+return {
         level: "error",
         message: `${errors.length} erro(s)`,
         details: issues,
       };
+}
     if (warnings.length)
-      return {
+      {
+return {
         level: "warning",
         message: `${warnings.length} aviso(s)`,
         details: issues,
       };
+}
     return {
       level: "ok",
       message: "✓ Sintaxe OK",

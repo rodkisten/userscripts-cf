@@ -11,7 +11,9 @@ export function initializeDeckImmersiveSwipe() {
       gesture = null;
     const targetIsVideo = (target) => {
       const viewer = ImmersiveDownload.current();
-      if (!viewer?.video || !target) return null;
+      if (!viewer?.video || !target) {
+return null;
+}
       if (
         target.closest?.(
           [
@@ -23,19 +25,29 @@ export function initializeDeckImmersiveSwipe() {
           ].join(","),
         )
       )
-        return null;
+        {
+return null;
+}
       const rect = viewer.video.getBoundingClientRect();
       const point = target.getBoundingClientRect?.();
-      if (point && rect.height && point.top >= rect.bottom - Math.min(54, rect.height * 0.32)) return null;
+      if (point && rect.height && point.top >= rect.bottom - Math.min(54, rect.height * 0.32)) {
+return null;
+}
       const player = viewer.video.closest(NATIVE_X_SELECTORS.nativeVideoPlayerContainer);
-      if (target === viewer.video || viewer.video.contains(target) || player?.contains(target)) return viewer;
+      if (target === viewer.video || viewer.video.contains(target) || player?.contains(target)) {
+return viewer;
+}
       return null;
     };
     function onStart(e) {
       gesture = null;
-      if (!state.visual.swipeToCloseVideo || e.touches.length !== 1) return;
+      if (!state.visual.swipeToCloseVideo || e.touches.length !== 1) {
+return;
+}
       const viewer = targetIsVideo(e.target);
-      if (!viewer) return;
+      if (!viewer) {
+return;
+}
       const t = e.touches[0];
       gesture = {
         x: t.clientX,
@@ -46,29 +58,43 @@ export function initializeDeckImmersiveSwipe() {
       };
     }
     function onMove(e) {
-      if (!gesture || e.touches.length !== 1) return;
+      if (!gesture || e.touches.length !== 1) {
+return;
+}
       const p = e.touches[0],
         dx = p.clientX - gesture.x,
         dy = p.clientY - gesture.y;
       if (dy > 36 && dy > Math.abs(dx) * 1.35) {
         gesture.accepted = true;
-        if (e.cancelable) e.preventDefault();
+        if (e.cancelable) {
+e.preventDefault();
+}
       } else if (Math.abs(dx) > Math.max(45, Math.abs(dy) * 1.5)) {
         gesture = null;
       }
     }
     function onEnd(e) {
-      if (!gesture) return;
+      if (!gesture) {
+return;
+}
       const g = gesture;
       gesture = null;
       const t = e.changedTouches?.[0];
-      if (!t) return;
+      if (!t) {
+return;
+}
       const dx = t.clientX - g.x,
         dy = t.clientY - g.y;
-      if (!g.accepted || dy < 95 || dy < Math.abs(dx) * 1.35) return;
+      if (!g.accepted || dy < 95 || dy < Math.abs(dx) * 1.35) {
+return;
+}
       const viewer = ImmersiveDownload.current();
-      if (!viewer || viewer.key !== g.id) return;
-      if (e.cancelable) e.preventDefault();
+      if (!viewer || viewer.key !== g.id) {
+return;
+}
+      if (e.cancelable) {
+e.preventDefault();
+}
       e.stopPropagation();
       const layer = viewer.layer;
       const close = [...layer.querySelectorAll(DOM_SELECTORS.interactiveButtons)].find((el) => {
@@ -93,12 +119,16 @@ export function initializeDeckImmersiveSwipe() {
       );
       if (/\/status\/\d+\/video\/\d+/.test(location.pathname) && history.length > 1) {
         setTimeout(() => {
-          if (ImmersiveDownload.current()?.key === g.id) history.back();
+          if (ImmersiveDownload.current()?.key === g.id) {
+history.back();
+}
         }, RUNTIME_LIMITS.mediaImmersive.onEndDelayMs);
       }
     }
     function scan() {
-      if (installed) return;
+      if (installed) {
+return;
+}
       installed = true;
       document.addEventListener("touchstart", onStart, {
         capture: true,

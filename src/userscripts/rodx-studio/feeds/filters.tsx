@@ -21,19 +21,31 @@ export function initializeDeckFeedFilters() {
       lastPublished = "";
     function scope() {
       const p = location.pathname;
-      if (p === "/home" || p === "/") return "home";
-      if (p === "/i/bookmarks" || p === "/bookmarks") return "bookmarks";
+      if (p === "/home" || p === "/") {
+return "home";
+}
+      if (p === "/i/bookmarks" || p === "/bookmarks") {
+return "bookmarks";
+}
       const community = p.match(/^\/i\/communities\/(\d+)/);
-      if (community) return "community:" + community[1];
+      if (community) {
+return "community:" + community[1];
+}
       const list = p.match(/^\/(?:i|[A-Za-z0-9_]{1,15})\/lists\/(\d+)/);
-      if (list) return "list:" + list[1];
+      if (list) {
+return "list:" + list[1];
+}
       const user = p.match(/^\/([\w]{1,15})(?:\/(?:media|with_replies|highlights|articles))?\/?$/);
       if (
         user &&
         !/^(search|explore|notifications|messages|settings|i|compose|login|signup|lists)$/i.test(user[1])
       )
-        return "profile:" + user[1].toLowerCase();
-      if (p === "/search") return "search";
+        {
+return "profile:" + user[1].toLowerCase();
+}
+      if (p === "/search") {
+return "search";
+}
       return "";
     }
     function settings() {
@@ -53,13 +65,15 @@ export function initializeDeckFeedFilters() {
       let patterns = [];
       try {
         if (location.pathname === "/search")
-          patterns = parseLocalDirectives(currentFullQuery())
+          {
+patterns = parseLocalDirectives(currentFullQuery())
             .local.map(compileLocalRule)
             .map(({ kind, source, flags }) => ({
               kind,
               source,
               flags,
             }));
+}
       } catch (_) {}
       const config = {
         ...settings(),
@@ -71,14 +85,18 @@ export function initializeDeckFeedFilters() {
       };
       const encoded = JSON.stringify(config);
       document.documentElement.classList.toggle("rodx-snap-enabled", state.visual.snap === true);
-      if (encoded === lastPublished) return;
+      if (encoded === lastPublished) {
+return;
+}
       lastPublished = encoded;
       document.documentElement.setAttribute("data-rodx-feed-config", encoded);
       try {
         const saved = JSON.parse(sessionStorage.getItem("rodx:feed:routes") || "{}");
         saved[location.pathname] = config;
         const keys = Object.keys(saved);
-        for (const key of keys.slice(0, Math.max(0, keys.length - 100))) delete saved[key];
+        for (const key of keys.slice(0, Math.max(0, keys.length - 100))) {
+delete saved[key];
+}
         sessionStorage.setItem("rodx:feed:routes", JSON.stringify(saved));
       } catch (_) {}
       document.documentElement.classList.toggle("rodx-snap-enabled", state.visual.snap === true);
@@ -106,15 +124,23 @@ export function initializeDeckFeedFilters() {
     }
     async function change(event) {
       const input = event.target;
-      if (!input.dataset.filter) return;
+      if (!input.dataset.filter) {
+return;
+}
       const field = input.dataset.filter;
-      if (field === "snap") state.visual.snap = input.checked;
+      if (field === "snap") {
+state.visual.snap = input.checked;
+}
       else {
         const config = {
           ...settings(),
         };
-        if (field === "reposts") config.reposts = input.checked;
-        else config.media = input.checked ? field : "all";
+        if (field === "reposts") {
+config.reposts = input.checked;
+}
+        else {
+config.media = input.checked ? field : "all";
+}
         state.visual.feedFilters = {
           ...state.visual.feedFilters,
           [scope()]: config,
@@ -164,7 +190,9 @@ export function initializeDeckFeedFilters() {
       const main =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
-      if (!main) return;
+      if (!main) {
+return;
+}
       host?.remove();
       host = document.createElement("div");
       host.id = "rodx-feed-filters";
@@ -176,7 +204,9 @@ export function initializeDeckFeedFilters() {
         (e) => void change(e).catch((error) => showRodxToast(error.message, "error")),
       );
       shadow.addEventListener("click", (e) => {
-        if (e.target.closest(RODX_SELECTORS.feedRefreshControls)) location.reload();
+        if (e.target.closest(RODX_SELECTORS.feedRefreshControls)) {
+location.reload();
+}
         if (e.target.closest(RODX_SELECTORS.feedFilterMenu)) {
           expanded = !expanded;
           render();
@@ -184,8 +214,12 @@ export function initializeDeckFeedFilters() {
       });
       const tabs = main.querySelector<HTMLElement>(DOM_SELECTORS.tabLists);
       const block = tabs?.closest(NATIVE_X_SELECTORS.scrollSnapList) || tabs;
-      if (block?.parentElement) block.after(host);
-      else main.prepend(host);
+      if (block?.parentElement) {
+block.after(host);
+}
+      else {
+main.prepend(host);
+}
       key = current;
       signature = "";
       render();

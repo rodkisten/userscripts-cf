@@ -9,8 +9,12 @@ import { ensureDock, repaint } from "../ui/dock.tsx";
 import { initializeRoot } from "../ui/root.tsx";
 
 export function tick() {
-  if (!document.body) return;
-  if (!state.rootHost?.isConnected) initializeRoot();
+  if (!document.body) {
+return;
+}
+  if (!state.rootHost?.isConnected) {
+initializeRoot();
+}
   const route = `${location.pathname}${location.search}`;
   SearchHistory.currentRoute();
   if (route !== state.lastUrl) {

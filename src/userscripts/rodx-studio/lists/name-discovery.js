@@ -20,8 +20,12 @@ export function discoverListNames(document, href, clean) {
     if (title) {
       text = text.replace(/^\(\d+\)\s*/, "").replace(/\s*(?:\/|\||[-–—])\s*(?:X|Twitter)\s*$/i, "");
       const quoted = text.match(/[“"]([^”"]+)[”"]/);
-      if (quoted) text = quoted[1];
-      else if (text.includes(" / ")) text = text.split(" / ").at(-1);
+      if (quoted) {
+text = quoted[1];
+}
+      else if (text.includes(" / ")) {
+text = text.split(" / ").at(-1);
+}
       text = text.replace(/\s*\(@[A-Za-z0-9_]+\)\s*$/, "");
     }
     text = text.replace(/^(?:view list|open list|ver lista|abrir lista)\s*:?\s*/i, "");
@@ -30,18 +34,26 @@ export function discoverListNames(document, href, clean) {
         text,
       )
     )
-      return "";
+      {
+return "";
+}
     return clean(text);
   }
   function add(id, value, source, evidence) {
     const label = name(value, source !== "card");
     if (id && label && !result.has(id))
-      result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
+      {
+result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
+}
   }
   for (const anchor of document.querySelectorAll(NATIVE_X_SELECTORS.listLinks)) {
-    if (anchor.closest(NATIVE_X_SELECTORS.articleUserCellsOrOwnedRoot(own))) continue;
+    if (anchor.closest(NATIVE_X_SELECTORS.articleUserCellsOrOwnedRoot(own))) {
+continue;
+}
     const id = idOf(anchor.getAttribute("href"));
-    if (!id) continue;
+    if (!id) {
+continue;
+}
     const heading = anchor.querySelector(NATIVE_X_SELECTORS.listCardHeadings);
     const leaves = [...anchor.querySelectorAll(DOM_SELECTORS.autoDirectionText)].filter(
       (el) => !el.children.length,
@@ -52,11 +64,15 @@ export function discoverListNames(document, href, clean) {
       anchor.getAttribute("aria-label"),
       ...leaves.map((el) => el.textContent),
     ];
-    if (!anchor.children.length) candidates.push(anchor.textContent);
+    if (!anchor.children.length) {
+candidates.push(anchor.textContent);
+}
     const combined = anchor.textContent || "";
     const firstLine = combined.match(/^(.*?)\s*[·•]\s*[\d.,]+\s*(?:membros?|members?)/i)?.[1];
     const label = name(firstLine) || candidates.map((v) => name(v)).find(Boolean);
-    if (label) add(id, label, "card", new URL(anchor.getAttribute("href"), url).pathname);
+    if (label) {
+add(id, label, "card", new URL(anchor.getAttribute("href"), url).pathname);
+}
   }
   const routeId = idOf(url.href);
   if (routeId && !/\/(members|followers)\/?$/.test(url.pathname)) {

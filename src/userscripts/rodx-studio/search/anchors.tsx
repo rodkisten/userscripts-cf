@@ -59,7 +59,9 @@ export function initializeDeckSearchAnchors() {
     }
     function capture() {
       const q = query();
-      if (!searchPage() || !q || dismissed === q || Date.now() < captureBlockedUntil) return;
+      if (!searchPage() || !q || dismissed === q || Date.now() < captureBlockedUntil) {
+return;
+}
       const article = [...Studio.dom.nodes(XDOM.tweet)].find((a) => a.getBoundingClientRect().bottom > 65);
       const status =
         article?.querySelector(DOM_SELECTORS.timestamps)?.closest(NATIVE_X_SELECTORS.statusLinks) ||
@@ -119,9 +121,12 @@ export function initializeDeckSearchAnchors() {
         );
         await new Promise<any>((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryShortDelayMs));
         const form = field.closest(DOM_SELECTORS.forms);
-        if (form) form.requestSubmit();
+        if (form) {
+form.requestSubmit();
+}
         else
-          field.dispatchEvent(
+          {
+field.dispatchEvent(
             new KeyboardEvent("keydown", {
               key: "Enter",
               code: "Enter",
@@ -130,13 +135,18 @@ export function initializeDeckSearchAnchors() {
               bubbles: true,
             }),
           );
+}
         for (let i = 0; i < 15; i++) {
           await new Promise<any>((r) => setTimeout(r, RUNTIME_LIMITS.searchAnchors.navigationRetryDelayMs));
-          if (matches()) return;
+          if (matches()) {
+return;
+}
         }
       }
       // A real navigation is the bounded fallback; never leave a dead pending UI.
-      if (!matches()) location.assign(wanted.href);
+      if (!matches()) {
+location.assign(wanted.href);
+}
     }
     function restore(entry) {
       cancelRestore?.();
@@ -155,7 +165,9 @@ export function initializeDeckSearchAnchors() {
           stop();
           return;
         }
-        if (!searchPage() || query() !== entry.query) return;
+        if (!searchPage() || query() !== entry.query) {
+return;
+}
         const target =
           entry.tweet &&
           [...Studio.dom.nodes(XDOM.tweet)].find((a) =>
@@ -168,9 +180,13 @@ export function initializeDeckSearchAnchors() {
           if (Math.abs(delta) > 2) {
             scrollBy(0, delta);
             stable = 0;
-          } else if (++stable >= 3) stop();
+          } else if (++stable >= 3) {
+stop();
+}
         } else if (ticks < 8)
-          scrollTo(0, Math.min(entry.y, Math.max(0, document.documentElement.scrollHeight - innerHeight)));
+          {
+scrollTo(0, Math.min(entry.y, Math.max(0, document.documentElement.scrollHeight - innerHeight)));
+}
       }, RUNTIME_LIMITS.searchAnchors.restoreIntervalMs);
       cancelRestore = stop;
       document.addEventListener("touchstart", stop, {
@@ -183,7 +199,9 @@ export function initializeDeckSearchAnchors() {
       });
     }
     async function returnToSearch() {
-      if (!origin || pending) return;
+      if (!origin || pending) {
+return;
+}
       const entry = {
         ...origin,
       };
@@ -194,7 +212,9 @@ export function initializeDeckSearchAnchors() {
       if (delta < 0 && delta >= -40) {
         history.go(delta);
         await new Promise<any>((r) => setTimeout(r, RUNTIME_LIMITS.navigation.retryLongDelayMs));
-        if (searchPage() && query() === entry.query) return;
+        if (searchPage() && query() === entry.query) {
+return;
+}
       }
       try {
         await nativeSearch(entry.query, entry.href);
@@ -210,7 +230,9 @@ export function initializeDeckSearchAnchors() {
       const main =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
-      if (!main) return false;
+      if (!main) {
+return false;
+}
       if (!host) {
         document.querySelectorAll<HTMLElement>(RODX_SELECTORS.searchAnchors).forEach((el) => el.remove());
         host = document.createElement("section");
@@ -246,24 +268,34 @@ export function initializeDeckSearchAnchors() {
       }
       if (host.parentElement !== main) {
         const style = getComputedStyle(main);
-        if (style.display.includes("flex") && style.flexDirection === "row") return false;
+        if (style.display.includes("flex") && style.flexDirection === "row") {
+return false;
+}
         main.prepend(host);
       }
       return true;
     }
     function positiveListIds(searchText) {
-      if (!searchText) return [];
+      if (!searchText) {
+return [];
+}
       try {
         const tree = parseQueryBlocks(searchText);
         const ids = new Set<any>();
         const visit = (node, excluded = false) => {
-          if (!node || typeof node !== "object") return;
+          if (!node || typeof node !== "object") {
+return;
+}
           const negated = excluded !== Boolean(node.not);
           if (node.kind === "group") {
-            for (const child of node.children || []) visit(child, negated);
+            for (const child of node.children || []) {
+visit(child, negated);
+}
           } else if (!negated && node.type === "raw") {
             const match = /^list:(\d+)$/i.exec(String(node.value || ""));
-            if (match) ids.add(match[1]);
+            if (match) {
+ids.add(match[1]);
+}
           }
         };
         visit(tree);
@@ -275,7 +307,9 @@ export function initializeDeckSearchAnchors() {
     }
     let listNameCheck = "";
     function render() {
-      if (!mount()) return;
+      if (!mount()) {
+return;
+}
       const native = document.querySelector<HTMLInputElement>(NATIVE_X_SELECTORS.nativeSearchInput);
       const positiveIds = searchPage() ? positiveListIds(query()) : [];
       const listContext = shadow.querySelector(RODX_SELECTORS.searchListContext);
@@ -306,7 +340,9 @@ export function initializeDeckSearchAnchors() {
             missing.slice(0, 3).map((id) => Studio.services.lists?.refreshName(id).catch(() => null)),
           )
             .then((found) => {
-              if (found.some(Boolean)) Studio.emit("lists:names-ready");
+              if (found.some(Boolean)) {
+Studio.emit("lists:names-ready");
+}
             })
             .catch(() => {});
         }
@@ -328,26 +364,34 @@ export function initializeDeckSearchAnchors() {
     document.addEventListener("rodx:before-route", (event) => {
       try {
         const data = JSON.parse((event as CustomEvent).detail);
-        if (new URL(data.from, location.origin).pathname === "/search") capture();
+        if (new URL(data.from, location.origin).pathname === "/search") {
+capture();
+}
       } catch (_) {}
     });
     document.addEventListener(
       "click",
       (event) => {
         const link = (event.target as HTMLElement).closest?.(DOM_SELECTORS.linksWithHref);
-        if (!link) return;
+        if (!link) {
+return;
+}
         const testid = link.getAttribute("data-testid") || "";
         if (
           /^AppTabBar_|^SideNav_/.test(testid) ||
           ["/home", "/explore", "/notifications", "/messages"].includes(link.getAttribute("href"))
         ) {
-          if (Date.now() < navigationUntil && !event.isTrusted) return;
+          if (Date.now() < navigationUntil && !event.isTrusted) {
+return;
+}
           navigationUntil = 0;
           captureBlockedUntil = Date.now() + 2000;
           clear();
           return;
         }
-        if (searchPage()) capture();
+        if (searchPage()) {
+capture();
+}
       },
       true,
     );
@@ -357,7 +401,9 @@ export function initializeDeckSearchAnchors() {
       () => {
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
-          if (searchPage()) capture();
+          if (searchPage()) {
+capture();
+}
         }, RUNTIME_LIMITS.searchAnchors.initializeDeckSearchAnchorsDelayMs);
       },
       {
@@ -367,7 +413,9 @@ export function initializeDeckSearchAnchors() {
     function scan() {
       if (account !== state.account) {
         account = state.account;
-        if (origin && origin.account !== account) origin = null;
+        if (origin && origin.account !== account) {
+origin = null;
+}
       }
       if (lastRoute !== route()) {
         lastRoute = route();

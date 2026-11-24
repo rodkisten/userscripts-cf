@@ -57,20 +57,30 @@ export function parseCSV(text) {
       if (quote && text[i + 1] === '"') {
         field += '"';
         i++;
-      } else quote = !quote;
+      } else {
+quote = !quote;
+}
     } else if (ch === "," && !quote) {
       row.push(field);
       field = "";
     } else if ((ch === "\n" || ch === "\r") && !quote) {
-      if (ch === "\r" && text[i + 1] === "\n") i++;
+      if (ch === "\r" && text[i + 1] === "\n") {
+i++;
+}
       row.push(field);
-      if (row.some(Boolean)) rows.push(row);
+      if (row.some(Boolean)) {
+rows.push(row);
+}
       row = [];
       field = "";
-    } else field += ch;
+    } else {
+field += ch;
+}
   }
   row.push(field);
-  if (row.some(Boolean)) rows.push(row);
+  if (row.some(Boolean)) {
+rows.push(row);
+}
   return rows;
 }
 
@@ -84,7 +94,9 @@ export async function exportCSV() {
 }
 
 export async function importFile(file) {
-  if (!file || file.size > 20 * 1024 * 1024) throw new Error("Selecione JSON/CSV de até 20 MB.");
+  if (!file || file.size > 20 * 1024 * 1024) {
+throw new Error("Selecione JSON/CSV de até 20 MB.");
+}
   const text = await file.text();
   let lists = [],
     members = [],
@@ -97,7 +109,9 @@ export async function importFile(file) {
     const idCol = headings.indexOf("list_id"),
       handleCol = headings.indexOf("username"),
       nameCol = headings.indexOf("name");
-    if (idCol < 0 || handleCol < 0) throw new Error("CSV requer as colunas list_id e username.");
+    if (idCol < 0 || handleCol < 0) {
+throw new Error("CSV requer as colunas list_id e username.");
+}
     members = rows.map((r) => ({
       listId: String(r[idCol] || ""),
       username: r[handleCol],
@@ -105,7 +119,9 @@ export async function importFile(file) {
     }));
   } else {
     const json = JSON.parse(text.replace(/^\uFEFF/, ""));
-    if (!json || !Array.isArray(json.lists)) throw new Error("JSON precisa conter lists: [].");
+    if (!json || !Array.isArray(json.lists)) {
+throw new Error("JSON precisa conter lists: [].");
+}
     lists = json.lists;
     importedSettings =
       json.settings && typeof json.settings === "object" && !Array.isArray(json.settings)
@@ -133,7 +149,9 @@ export async function importFile(file) {
   const cleanLists = [];
   for (const l of lists) {
     const id = String(l.id || l.listId || "");
-    if (!validListId(id)) continue;
+    if (!validListId(id)) {
+continue;
+}
     cleanLists.push({
       id,
       name: cleanListName(l.name) || "",
@@ -152,7 +170,9 @@ export async function importFile(file) {
   for (const m of members) {
     const id = String(m.listId || m.list_id || "");
     const username = cleanHandle(m.username || m.handle || "");
-    if (!validListId(id) || !validHandle(username)) continue;
+    if (!validListId(id) || !validHandle(username)) {
+continue;
+}
     cleanMembers.push({
       key: `${id}:${username.toLowerCase()}`,
       listId: id,
@@ -199,10 +219,12 @@ export async function importFile(file) {
   const previousMembers = await getAll("members");
   const byKey = new Map(previousMembers.map((m) => [m.key, m]));
   for (const m of cleanMembers)
-    byKey.set(m.key, {
+    {
+byKey.set(m.key, {
       ...m,
       ...byKey.get(m.key),
     });
+}
   await putMany("members", [...byKey.values()]);
   if (
     importedSettings &&
@@ -211,21 +233,33 @@ export async function importFile(file) {
     for (const key of Object.keys(DEFAULTS)) {
       if (key in importedSettings) {
         if (key === "homeIds")
-          settings.homeIds = (Array.isArray(importedSettings.homeIds) ? importedSettings.homeIds : [])
+          {
+settings.homeIds = (Array.isArray(importedSettings.homeIds) ? importedSettings.homeIds : [])
             .map(String)
             .filter(validListId);
-        else if (typeof importedSettings[key] === typeof DEFAULTS[key]) settings[key] = importedSettings[key];
+}
+        else if (typeof importedSettings[key] === typeof DEFAULTS[key]) {
+settings[key] = importedSettings[key];
+}
       }
     }
     saveSettings();
   }
   if (importedPresets && window.confirm("Importar também os filtros e modos de timeline por lista?")) {
     for (const [id, preset] of Object.entries(importedPresets)) {
-      if (!validListId(id) || !preset || typeof preset !== "object" || Array.isArray(preset)) continue;
+      if (!validListId(id) || !preset || typeof preset !== "object" || Array.isArray(preset)) {
+continue;
+}
       const safe = {};
       for (const key of PER_LIST_FIELDS)
-        if (key in preset && typeof preset[key] === typeof DEFAULTS[key]) safe[key] = preset[key];
-      if (typeof preset.customTimeline === "boolean") safe.customTimeline = preset.customTimeline;
+        {
+if (key in preset && typeof preset[key] === typeof DEFAULTS[key]) {
+safe[key] = preset[key];
+}
+}
+      if (typeof preset.customTimeline === "boolean") {
+safe.customTimeline = preset.customTimeline;
+}
       listPresets[id] = {
         ...listPresets[id],
         ...safe,
@@ -236,7 +270,9 @@ export async function importFile(file) {
   if (importedUsage && window.confirm("Importar também as listas recentes e os contadores do dropdown?")) {
     const stats = importedUsage.stats && typeof importedUsage.stats === "object" ? importedUsage.stats : {};
     for (const [id, stat] of Object.entries(stats)) {
-      if (!validListId(id) || !stat || typeof stat !== "object") continue;
+      if (!validListId(id) || !stat || typeof stat !== "object") {
+continue;
+}
       const local = listUsage.stats[id] || {
         count: 0,
         lastUsed: 0,
@@ -246,7 +282,9 @@ export async function importFile(file) {
         lastUsed: Math.max(Number(local.lastUsed) || 0, Number(stat.lastUsed) || 0),
       };
     }
-    if (validListId(importedUsage.lastId)) listUsage.lastId = importedUsage.lastId;
+    if (validListId(importedUsage.lastId)) {
+listUsage.lastId = importedUsage.lastId;
+}
     localStorage.setItem(LIST_USAGE_KEY, JSON.stringify(listUsage));
   }
   await refresh();
@@ -266,7 +304,9 @@ export function initializeRodX_lists_227() {
       return;
     }
     const button = event.target.closest(RODX_SELECTORS.dataActions);
-    if (!button) return;
+    if (!button) {
+return;
+}
     const action = button.dataset.action,
       id = button.dataset.id;
     try {
@@ -279,13 +319,15 @@ export function initializeRodX_lists_227() {
           (m) => m.username.toLowerCase() === String(button.dataset.user || "").toLowerCase(),
         );
         if (user)
-          await openQuickPicker(
+          {
+await openQuickPicker(
             {
               ...user,
               sourceId: state.listId,
             },
             button,
           );
+}
         return;
       }
       if (action === "open-lists-page") {
@@ -318,9 +360,13 @@ export function initializeRodX_lists_227() {
       }
       if (action === "add-list") {
         const input = window.prompt("Cole a URL ou o ID numérico de uma lista do X:");
-        if (!input) return;
+        if (!input) {
+return;
+}
         const parsed = input.match(LIST_URL_RE)?.[1] || (/^\d{1,30}$/.test(input.trim()) ? input.trim() : "");
-        if (!parsed) throw new Error("URL/ID de lista inválido.");
+        if (!parsed) {
+throw new Error("URL/ID de lista inválido.");
+}
         const name =
           window.prompt("Nome local desta lista (opcional):", `Lista ${parsed}`) || `Lista ${parsed}`;
         await upsertList(parsed, {
@@ -348,8 +394,12 @@ export function initializeRodX_lists_227() {
         const pins = settings.homeIds || [];
         const index = pins.indexOf(id);
         if (action === "toggle-home-pin") {
-          if (index >= 0) pins.splice(index, 1);
-          else pins.push(id);
+          if (index >= 0) {
+pins.splice(index, 1);
+}
+          else {
+pins.push(id);
+}
         } else {
           const target = index + (action === "pin-left" ? -1 : 1);
           if (index >= 0 && target >= 0 && target < pins.length) {
@@ -402,7 +452,9 @@ export function initializeRodX_lists_227() {
         return;
       }
       if (action === "load-timeline") {
-        if (!validListId(state.listId)) throw new Error("Escolha uma lista.");
+        if (!validListId(state.listId)) {
+throw new Error("Escolha uma lista.");
+}
         await loadTimeline({
           listId: state.listId,
           force: true,
@@ -424,7 +476,9 @@ export function initializeRodX_lists_227() {
         return;
       }
       if (action === "open-search") {
-        if (!validListId(state.listId)) throw new Error("Escolha uma lista antes de buscar.");
+        if (!validListId(state.listId)) {
+throw new Error("Escolha uma lista antes de buscar.");
+}
         const query = buildQuery();
         location.assign(
           `https://x.com/search?q=${encodeURIComponent(query)}&src=typed_query&f=${settings.sort}`,
@@ -453,13 +507,17 @@ export function initializeRodX_lists_227() {
       }
       if (action === "retry-current") {
         const q = readQueue();
-        if (!q?.tasks[q.index]?.uncertain) return;
+        if (!q?.tasks[q.index]?.uncertain) {
+return;
+}
         if (
           !window.confirm(
             "Você verificou o resultado no X? Repetir uma operação incerta pode resultar em uma solicitação duplicada.",
           )
         )
-          return;
+          {
+return;
+}
         q.tasks[q.index].uncertain = false;
         q.tasks[q.index].status = "pending";
         saveQueue(q);
@@ -468,8 +526,12 @@ export function initializeRodX_lists_227() {
       }
       if (action === "skip-current") {
         const q = readQueue();
-        if (!q?.tasks[q.index]?.uncertain) return;
-        if (!window.confirm("Pular este perfil? O X pode tê-lo adicionado anteriormente.")) return;
+        if (!q?.tasks[q.index]?.uncertain) {
+return;
+}
+        if (!window.confirm("Pular este perfil? O X pode tê-lo adicionado anteriormente.")) {
+return;
+}
         q.tasks[q.index].status = "skipped";
         q.tasks[q.index].uncertain = false;
         q.index++;
@@ -480,11 +542,19 @@ export function initializeRodX_lists_227() {
         const q = readQueue();
         if (q) {
           if (q.version < 2)
-            throw new Error("Fila antiga usa navegação. Cancele e crie uma fila nova via API.");
-          if (q.tasks[q.index]?.uncertain) throw new Error("Verifique o resultado incerto antes de retomar.");
+            {
+throw new Error("Fila antiga usa navegação. Cancele e crie uma fila nova via API.");
+}
+          if (q.tasks[q.index]?.uncertain) {
+throw new Error("Verifique o resultado incerto antes de retomar.");
+}
           if (q.nextAt > Date.now())
-            throw new Error(`Retome somente após ${timeText(new Date(q.nextAt).toISOString())}.`);
-          if (q.tasks[q.index]?.status === "error") q.tasks[q.index].status = "pending";
+            {
+throw new Error(`Retome somente após ${timeText(new Date(q.nextAt).toISOString())}.`);
+}
+          if (q.tasks[q.index]?.status === "error") {
+q.tasks[q.index].status = "pending";
+}
           q.status = "running";
           saveQueue(q);
           runQueue();
@@ -492,7 +562,9 @@ export function initializeRodX_lists_227() {
         return;
       }
       if (action === "cancel-queue") {
-        if (!window.confirm("Cancelar a fila? Operações já realizadas no X não serão revertidas.")) return;
+        if (!window.confirm("Cancelar a fila? Operações já realizadas no X não serão revertidas.")) {
+return;
+}
         const q = readQueue();
         if (q) {
           q.status = "cancelled";
@@ -517,8 +589,12 @@ export function initializeRodX_lists_228() {
       }
       if (element.classList.contains("member-check")) {
         const key = cleanHandle(element.value).toLowerCase();
-        if (element.checked) state.selected.add(key);
-        else state.selected.delete(key);
+        if (element.checked) {
+state.selected.add(key);
+}
+        else {
+state.selected.delete(key);
+}
         render();
         return;
       }
@@ -534,10 +610,12 @@ export function initializeRodX_lists_228() {
         if (PER_LIST_FIELDS.includes(key)) {
           saveListPreset();
           if (listPresets[routeListId()]?.customTimeline && routeListId())
-            loadTimeline({
+            {
+loadTimeline({
               listId: routeListId(),
               force: true,
             }).catch(reportTimelineError);
+}
         }
         applyRepostFilter();
         drawHomeBar();
@@ -553,7 +631,9 @@ export function initializeRodX_lists_228() {
           saveSettings();
           state.selected.clear();
           await refresh();
-        } else render();
+        } else {
+render();
+}
         return;
       }
     } catch (error) {
@@ -576,9 +656,13 @@ export function initializeRodX_lists_229() {
           ? Math.max(60, Math.min(3600, Number(event.target.value) || 90))
           : event.target.value;
       saveSettings();
-      if (PER_LIST_FIELDS.includes(key)) saveListPreset();
+      if (PER_LIST_FIELDS.includes(key)) {
+saveListPreset();
+}
       const preview = qs(RODX_SELECTORS.listsQueryInput, shadow);
-      if (preview) preview.textContent = buildQuery();
+      if (preview) {
+preview.textContent = buildQuery();
+}
     }
   });
 }

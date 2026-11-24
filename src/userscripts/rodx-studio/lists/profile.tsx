@@ -45,7 +45,9 @@ export function initializeDeckProfileLists() {
       const match = location.pathname.match(
         /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|highlights|articles))?\/?$/,
       );
-      if (!match || excluded.has(match[1].toLowerCase())) return "";
+      if (!match || excluded.has(match[1].toLowerCase())) {
+return "";
+}
       return match[1];
     }
     function stop() {
@@ -83,7 +85,9 @@ export function initializeDeckProfileLists() {
     }
     async function addToLists() {
       modal?.close();
-      if (Studio.services.lists) return Studio.services.lists.picker(handle, host);
+      if (Studio.services.lists) {
+return Studio.services.lists.picker(handle, host);
+}
       const expected = handle;
       const primary =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
@@ -106,11 +110,15 @@ export function initializeDeckProfileLists() {
       const label = /(?:add.*remove.*lists?|adicionar.*(?:remover|listas)|agregar.*listas|añadir.*listas)/i;
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise<any>((resolve) => setTimeout(resolve, RUNTIME_LIMITS.listsProfile.resolveDelayMs));
-        if (profile() !== expected) return;
+        if (profile() !== expected) {
+return;
+}
         const action = [...document.querySelectorAll<HTMLElement>(DOM_SELECTORS.menuItems)].find((el) =>
           label.test(el.textContent || ""),
         );
-        if (!action) continue;
+        if (!action) {
+continue;
+}
         action.click();
         cache.delete(account + ":" + handle.toLowerCase());
         return;
@@ -130,7 +138,9 @@ export function initializeDeckProfileLists() {
       body.className = "all-items";
       items.forEach((item) => body.append(listLink(item)));
       if (!items.length)
-        body.textContent = loading ? "Carregando as listas públicas…" : error || "Nenhuma lista disponível.";
+        {
+body.textContent = loading ? "Carregando as listas públicas…" : error || "Nenhuma lista disponível.";
+}
       const footer = document.createElement("footer");
       const native = document.createElement("a");
       native.href = membershipURL();
@@ -138,13 +148,17 @@ export function initializeDeckProfileLists() {
       footer.append(button("＋ Adicionar às minhas listas", addToLists), native);
       modal.append(header, body, footer);
       modal.addEventListener("click", (event) => {
-        if (event.target === modal) modal.close();
+        if (event.target === modal) {
+modal.close();
+}
       });
       shadow.append(modal);
       modal.showModal();
     }
     function render() {
-      if (!shadow) return;
+      if (!shadow) {
+return;
+}
       let row = shadow.querySelector(RODX_SELECTORS.listRows);
       if (!row) {
         const style = document.createElement("style");
@@ -173,7 +187,9 @@ export function initializeDeckProfileLists() {
         status.title = error;
         strip.append(status);
       }
-      if (error) strip.append(button("Tentar novamente", load));
+      if (error) {
+strip.append(button("Tentar novamente", load));
+}
       const native = document.createElement("a");
       native.href = membershipURL();
       native.textContent = "Ver no X";
@@ -209,7 +225,9 @@ export function initializeDeckProfileLists() {
           requestController !== controller ||
           controller.signal.aborted
         )
-          return;
+          {
+return;
+}
         await Studio.services.lists?.ingest(loaded);
         items = loaded.map((item) => ({
           ...item,
@@ -221,7 +239,9 @@ export function initializeDeckProfileLists() {
         remember();
       } catch (reason) {
         if (handle !== expectedHandle || account !== expectedAccount || requestController !== controller)
-          return;
+          {
+return;
+}
         error =
           reason.name === "AbortError"
             ? "Tempo esgotado ao consultar listas. Use Ver no X."
@@ -239,7 +259,9 @@ export function initializeDeckProfileLists() {
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainElement) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainRoleContainers);
-      if (!main) return null;
+      if (!main) {
+return null;
+}
       const tabs = main.querySelector<HTMLElement>(DOM_SELECTORS.tabLists);
       if (tabs) {
         const block = tabs.closest(NATIVE_X_SELECTORS.scrollSnapList) || tabs;
@@ -263,16 +285,20 @@ export function initializeDeckProfileLists() {
       }
       const bio = main.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileDescription);
       if (bio)
-        return {
+        {
+return {
           parent: bio.parentElement,
           before: bio.nextSibling,
         };
+}
       const name = main.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileHeaderIdentity);
       if (name && !name.closest(DOM_SELECTORS.articles))
-        return {
+        {
+return {
           parent: name.parentElement,
           before: name.nextSibling,
         };
+}
       return null;
     }
     function scan() {
@@ -285,10 +311,16 @@ export function initializeDeckProfileLists() {
         modal = null;
         handle = "";
       }
-      if (!current) return;
-      if (host?.isConnected) return;
+      if (!current) {
+return;
+}
+      if (host?.isConnected) {
+return;
+}
       const point = mountPoint(current);
-      if (!point?.parent || point.parent.closest(DOM_SELECTORS.articles)) return;
+      if (!point?.parent || point.parent.closest(DOM_SELECTORS.articles)) {
+return;
+}
       stop();
       host?.remove();
       handle = current;
@@ -305,10 +337,14 @@ export function initializeDeckProfileLists() {
       items = hit?.items.slice() || [];
       error = "";
       render();
-      if (!(hit && Date.now() - hit.at < 300000)) void load();
+      if (!(hit && Date.now() - hit.at < 300000)) {
+void load();
+}
     }
     Studio.on("lists:names-ready", () => {
-      if (host?.isConnected) render();
+      if (host?.isConnected) {
+render();
+}
     });
     // Isolate the profile strip from failures in other timeline enhancements.
 

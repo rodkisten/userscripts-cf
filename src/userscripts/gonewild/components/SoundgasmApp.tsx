@@ -26,8 +26,12 @@ function CopyButton({ text, label, id }: { text: string; label: string; id?: str
       onClick={async () => {
         try {
           const clipboard = gmClipboard();
-          if (clipboard) await clipboard(text, "text");
-          else await navigator.clipboard.writeText(text);
+          if (clipboard) {
+await clipboard(text, "text");
+}
+          else {
+await navigator.clipboard.writeText(text);
+}
           setMessage("✓ Copiado");
         } catch {
           setMessage("Não foi possível copiar");
@@ -38,6 +42,7 @@ function CopyButton({ text, label, id }: { text: string; label: string; id?: str
     </button>
   );
 }
+
 function RecordingCard({
   recording,
   subreddit,
@@ -88,6 +93,7 @@ function RecordingCard({
     </article>
   );
 }
+
 function Catalogue({ data, bridge }: { data: SoundgasmData; bridge: any }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("original");
@@ -148,6 +154,7 @@ function Catalogue({ data, bridge }: { data: SoundgasmData; bridge: any }) {
     </>
   );
 }
+
 export function SoundgasmApp({
   data,
   bridge,

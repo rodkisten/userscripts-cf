@@ -14,7 +14,9 @@ export function createSeekPreviews(Studio, getOptions) {
   Studio.on("network:media", ({ items }) => {
     for (const item of items || []) {
       sources.set(item.id, item.media);
-      if (sources.size > 160) sources.delete(sources.keys().next().value);
+      if (sources.size > 160) {
+sources.delete(sources.keys().next().value);
+}
     }
   });
   function release() {
@@ -33,11 +35,17 @@ export function createSeekPreviews(Studio, getOptions) {
   }
   function cleanup(video) {
     const item = entries.get(video);
-    if (!item) return;
+    if (!item) {
+return;
+}
     item.abort.abort();
-    for (const frame of item.frames.values()) URL.revokeObjectURL(frame.url);
+    for (const frame of item.frames.values()) {
+URL.revokeObjectURL(frame.url);
+}
     entries.delete(video);
-    if (active === item) release();
+    if (active === item) {
+release();
+}
   }
   function source(item) {
     const video = item.video,
@@ -91,7 +99,9 @@ export function createSeekPreviews(Studio, getOptions) {
     item.thumbnail.dataset.rodxPreview = list.length ? "frame" : "unavailable";
   }
   async function capture(item, time) {
-    if (!getOptions().seekPreviews || !Number.isFinite(time) || item.failed) return;
+    if (!getOptions().seekPreviews || !Number.isFinite(time) || item.failed) {
+return;
+}
     const step = Math.max(1, Number(getOptions().previewStepSeconds) || 5),
       bucket = Math.floor(time / step) * step;
     if (item.frames.has(bucket)) {
@@ -129,14 +139,18 @@ export function createSeekPreviews(Studio, getOptions) {
         video.load();
         await ready;
       }
-      if (sequence !== serial || signal.aborted) return;
+      if (sequence !== serial || signal.aborted) {
+return;
+}
       const target = Math.max(0.01, Math.min(bucket, Math.max(0.01, video.duration - 0.1)));
       if (Math.abs(video.currentTime - target) > 0.05 || video.readyState < 2) {
         const seeked = wait(video, "seeked", signal);
         video.currentTime = target;
         await seeked;
       }
-      if (sequence !== serial || signal.aborted) return;
+      if (sequence !== serial || signal.aborted) {
+return;
+}
       const width = 240,
         height = Math.max(1, Math.round((width * (video.videoHeight || 9)) / (video.videoWidth || 16)));
       const canvas = document.createElement("canvas");
@@ -144,7 +158,9 @@ export function createSeekPreviews(Studio, getOptions) {
       canvas.height = height;
       canvas.getContext("2d").drawImage(video, 0, 0, width, height);
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.65));
-      if (!blob || sequence !== serial || signal.aborted) return;
+      if (!blob || sequence !== serial || signal.aborted) {
+return;
+}
       const frame = {
         startTime: bucket,
         endTime: bucket + step,
@@ -180,13 +196,21 @@ export function createSeekPreviews(Studio, getOptions) {
   function attach(video, entry) {
     const skin = entry.skin,
       root = skin.shadowRoot;
-    if (!root) return;
+    if (!root) {
+return;
+}
     let item = entries.get(video);
-    if (item?.skin === skin) return;
-    if (item) cleanup(video);
+    if (item?.skin === skin) {
+return;
+}
+    if (item) {
+cleanup(video);
+}
     const slider = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaTimeSlider),
       thumbnail = root.querySelector(MEDIA_COMPONENT_SELECTORS.mediaSliderThumbnail);
-    if (!slider || !thumbnail) return;
+    if (!slider || !thumbnail) {
+return;
+}
     const style = document.createElement("style");
     style.dataset.rodxPlaybackStyle = "1";
     style.textContent = extractedCSS1;
@@ -203,11 +227,17 @@ export function createSeekPreviews(Studio, getOptions) {
     };
     entries.set(video, item);
     const schedule = (event) => {
-      if (!getOptions().seekPreviews) return;
+      if (!getOptions().seekPreviews) {
+return;
+}
       const rect = slider.getBoundingClientRect();
-      if (!rect.width || !Number.isFinite(video.duration)) return;
+      if (!rect.width || !Number.isFinite(video.duration)) {
+return;
+}
       const x = event.clientX ?? event.touches?.[0]?.clientX;
-      if (!Number.isFinite(x)) return;
+      if (!Number.isFinite(x)) {
+return;
+}
       const time = Math.max(0, Math.min(1, (x - rect.left) / rect.width)) * video.duration;
       clearTimeout(timer);
       timer = setTimeout(() => void capture(item, time), RUNTIME_LIMITS.mediaSeekPreview.attachDelayMs);
@@ -225,17 +255,21 @@ export function createSeekPreviews(Studio, getOptions) {
       signal: abort.signal,
     });
     for (const type of ["pointerup", "pointercancel", "pointerleave", "touchend"])
-      slider.addEventListener(
+      {
+slider.addEventListener(
         type,
         () => {
           clearTimeout(timer);
-          if (active === item) release();
+          if (active === item) {
+release();
+}
         },
         {
           passive: true,
           signal: abort.signal,
         },
       );
+}
   }
   function scan() {
     for (const [video, item] of entries) {
@@ -246,12 +280,16 @@ export function createSeekPreviews(Studio, getOptions) {
       item.skin.toggleAttribute("data-rodx-no-dim", getOptions().videoPauseDim !== true);
       if (!getOptions().seekPreviews) {
         item.thumbnail.dataset.rodxPreview = "unavailable";
-        if (active === item) release();
+        if (active === item) {
+release();
+}
       }
     }
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) release();
+    if (document.hidden) {
+release();
+}
   });
   return {
     attach,

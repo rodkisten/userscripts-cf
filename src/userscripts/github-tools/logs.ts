@@ -2,7 +2,9 @@ export type StepAddress = { owner: string; repo: string; jobId: string; stepNumb
 
 export function stepLogURL(step: StepAddress) {
   if (!/^\d+$/.test(step.jobId) || !Number.isSafeInteger(step.stepNumber) || step.stepNumber < 1)
-    throw Error("Step ou job inválido");
+    {
+throw Error("Step ou job inválido");
+}
   return `https://api.github.com/repos/${encodeURIComponent(step.owner)}/${encodeURIComponent(step.repo)}/actions/jobs/${step.jobId}/logs`;
 }
 
@@ -21,15 +23,25 @@ export async function loadStepOutput(step: StepAddress, token = "", signal?: Abo
   });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403)
-      throw Error("Configure um token GitHub com Actions: read no menu do userscript.");
-    if (response.status === 404) throw Error("Log indisponível ou sem acesso. Tente após o step terminar.");
-    if (response.status === 410) throw Error("Log expirado e não pode mais ser recuperado.");
+      {
+throw Error("Configure um token GitHub com Actions: read no menu do userscript.");
+}
+    if (response.status === 404) {
+throw Error("Log indisponível ou sem acesso. Tente após o step terminar.");
+}
+    if (response.status === 410) {
+throw Error("Log expirado e não pode mais ser recuperado.");
+}
     throw Error(`GitHub HTTP ${response.status}`);
   }
   const text = await response.text();
   if (/text\/html|application\/json/i.test(response.headers.get("content-type") || ""))
-    throw Error("GitHub não retornou um arquivo de log.");
-  if (!text.trim()) throw Error("Este job ainda não possui output.");
+    {
+throw Error("GitHub não retornou um arquivo de log.");
+}
+  if (!text.trim()) {
+throw Error("Este job ainda não possui output.");
+}
   // GitHub's supported REST endpoint returns the whole job log, not an
   // individual step. Split by runner-generated step section markers only
   // when present. Never silently copy a different step's content.

@@ -2,7 +2,9 @@ export function createStudioMenus(Studio) {
   let api;
   const panels = new Map();
   function library() {
-    if (api) return api;
+    if (api) {
+return api;
+}
     const runtimeMenu = Studio.ctx?.menu;
     if (!runtimeMenu?.open) {
       throw new Error("ctx.menu indisponível: inicialize o RodX pelo runtime.");
@@ -25,16 +27,26 @@ export function createStudioMenus(Studio) {
   // The workspace keeps its existing ShadowRoot and event handlers.
   function panel(id, title, node, onClose) {
     const existing = panels.get(id);
-    if (existing) return existing;
+    if (existing) {
+return existing;
+}
     const previousParent = node.parentNode;
     const nextSibling = node.nextSibling;
     const previousStyle = node.getAttribute("style");
     const restore = () => {
-      if (previousStyle === null) node.removeAttribute("style");
-      else node.setAttribute("style", previousStyle);
+      if (previousStyle === null) {
+node.removeAttribute("style");
+}
+      else {
+node.setAttribute("style", previousStyle);
+}
       if (previousParent?.isConnected) {
-        if (nextSibling?.parentNode === previousParent) previousParent.insertBefore(node, nextSibling);
-        else previousParent.appendChild(node);
+        if (nextSibling?.parentNode === previousParent) {
+previousParent.insertBefore(node, nextSibling);
+}
+        else {
+previousParent.appendChild(node);
+}
       }
     };
     let closed = false;
@@ -62,7 +74,9 @@ export function createStudioMenus(Studio) {
     };
     panels.set(id, handle);
     void dialog.result.finally(() => {
-      if (closed) return;
+      if (closed) {
+return;
+}
       closed = true;
       panels.delete(id);
       restore();

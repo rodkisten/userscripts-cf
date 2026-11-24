@@ -36,34 +36,60 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
   const declarations = new WeakSet();
   if (persist) {
     for (const variable of scope.variables) {
-      if (reserved.has(variable.name)) throw Error(`Nome reservado do REPL: ${variable.name}`);
+      if (reserved.has(variable.name)) {
+throw Error(`Nome reservado do REPL: ${variable.name}`);
+}
       names.add(variable.name);
       for (const definition of variable.defs) {
-        if (definition.type === "Variable") declarations.add(definition.parent);
-        if (definition.name) replacements.set(definition.name, member(variable.name));
+        if (definition.type === "Variable") {
+declarations.add(definition.parent);
+}
+        if (definition.name) {
+replacements.set(definition.name, member(variable.name));
+}
       }
       for (const reference of variable.references)
-        replacements.set(reference.identifier, member(variable.name));
+        {
+replacements.set(reference.identifier, member(variable.name));
+}
     }
     for (const reference of scope.through)
-      if (knownNames.includes(reference.identifier.name) && !reserved.has(reference.identifier.name))
-        replacements.set(reference.identifier, member(reference.identifier.name));
+      {
+if (knownNames.includes(reference.identifier.name) && !reserved.has(reference.identifier.name))
+        {
+replacements.set(reference.identifier, member(reference.identifier.name));
+}
+}
   }
   function rewrite(node) {
-    if (!node || typeof node !== "object") return node;
-    if (replacements.has(node)) return replacements.get(node);
+    if (!node || typeof node !== "object") {
+return node;
+}
+    if (replacements.has(node)) {
+return replacements.get(node);
+}
     for (const [key, value] of Object.entries(node)) {
-      if (["range", "loc", "start", "end"].includes(key)) continue;
-      if (Array.isArray(value)) node[key] = value.map(rewrite);
-      else if (value && typeof value === "object") node[key] = rewrite(value);
+      if (["range", "loc", "start", "end"].includes(key)) {
+continue;
+}
+      if (Array.isArray(value)) {
+node[key] = value.map(rewrite);
+}
+      else if (value && typeof value === "object") {
+node[key] = rewrite(value);
+}
     }
     if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier")
-      node.shorthand = false;
+      {
+node.shorthand = false;
+}
     return node;
   }
   // Rewrite declarations into mutable session properties. Local function bindings remain lexical.
   function transform(node, parentKey) {
-    if (!node || typeof node !== "object") return node;
+    if (!node || typeof node !== "object") {
+return node;
+}
     if (persist && node.type === "VariableDeclaration" && declarations.has(node)) {
       const expressions = node.declarations.map((declaration) => ({
         type: "AssignmentExpression",
@@ -73,7 +99,9 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
       }));
       const expression =
         expressions.length === 1 ? expressions[0] : { type: "SequenceExpression", expressions };
-      if (parentKey === "left") return expression.left;
+      if (parentKey === "left") {
+return expression.left;
+}
       return parentKey === "init" ? expression : { type: "ExpressionStatement", expression };
     }
     if (
@@ -96,13 +124,23 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
       };
     }
     for (const [key, value] of Object.entries(node)) {
-      if (["range", "loc", "start", "end"].includes(key)) continue;
-      if (Array.isArray(value)) node[key] = value.map((item) => transform(item, key));
-      else if (value && typeof value === "object") node[key] = transform(value, key);
+      if (["range", "loc", "start", "end"].includes(key)) {
+continue;
+}
+      if (Array.isArray(value)) {
+node[key] = value.map((item) => transform(item, key));
+}
+      else if (value && typeof value === "object") {
+node[key] = transform(value, key);
+}
     }
-    if (replacements.has(node)) return replacements.get(node);
+    if (replacements.has(node)) {
+return replacements.get(node);
+}
     if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier")
-      node.shorthand = false;
+      {
+node.shorthand = false;
+}
     return node;
   }
   transform(ast, "program");
@@ -110,6 +148,8 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
   ast.body = hoisted.concat(ast.body.filter((node) => !node.replHoisted));
   const last = ast.body.at(-1);
   if (last?.type === "ExpressionStatement" && !last.replHoisted)
-    ast.body[ast.body.length - 1] = { type: "ReturnStatement", argument: last.expression };
+    {
+ast.body[ast.body.length - 1] = { type: "ReturnStatement", argument: last.expression };
+}
   return { code: generate(ast), names: [...names] };
 }

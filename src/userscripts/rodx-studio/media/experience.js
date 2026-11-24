@@ -12,7 +12,9 @@ export function initializeDeckVideoExperience() {
       /(?:^|\W)(?:mute|unmute|volume|sound|som|áudio|audio|silenciar|ativar som|desativar som)(?:\W|$)/i;
     function allowNativeVolume(event) {
       const control = event.target?.closest?.(NATIVE_X_SELECTORS.volumeControlCandidates);
-      if (!control) return;
+      if (!control) {
+return;
+}
       const label = [
         control.getAttribute("aria-label"),
         control.getAttribute("title"),
@@ -20,7 +22,9 @@ export function initializeDeckVideoExperience() {
       ]
         .filter(Boolean)
         .join(" ");
-      if (!MUTE_LABEL.test(label)) return;
+      if (!MUTE_LABEL.test(label)) {
+return;
+}
       const video = control
         .closest(NATIVE_X_SELECTORS.videoOverlayContainers)
         ?.querySelector(DOM_SELECTORS.videos);
@@ -36,18 +40,30 @@ export function initializeDeckVideoExperience() {
       // own its adaptive resolution and progress timeline.
       document.querySelectorAll(RODX_SELECTORS.videoQualityControl).forEach((select) => select.remove());
       for (const video of Studio.dom.nodes("video")) {
-        if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) video.muted = true;
-        if (initialized.has(video)) continue;
+        if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) {
+video.muted = true;
+}
+        if (initialized.has(video)) {
+continue;
+}
         initialized.add(video);
         video.addEventListener("play", () => {
-          if (state.visual.videoMute && !soundEnabled.has(video)) video.muted = true;
+          if (state.visual.videoMute && !soundEnabled.has(video)) {
+video.muted = true;
+}
         });
         video.addEventListener("volumechange", () => {
-          if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) video.muted = true;
+          if (state.visual.videoMute && !soundEnabled.has(video) && !video.muted) {
+video.muted = true;
+}
         });
         video.addEventListener("loadstart", () => {
-          if (!video.dataset.rodxUserUnmuted) soundEnabled.delete(video);
-          if (state.visual.videoMute && !soundEnabled.has(video)) video.muted = true;
+          if (!video.dataset.rodxUserUnmuted) {
+soundEnabled.delete(video);
+}
+          if (state.visual.videoMute && !soundEnabled.has(video)) {
+video.muted = true;
+}
         });
       }
     }
@@ -57,7 +73,9 @@ export function initializeDeckVideoExperience() {
         video.dataset.rodxUserUnmuted = "1";
         video.defaultMuted = false;
         video.removeAttribute("muted");
-        if (video.volume === 0) video.volume = 1;
+        if (video.volume === 0) {
+video.volume = 1;
+}
       } else {
         soundEnabled.delete(video);
         delete video.dataset.rodxUserUnmuted;

@@ -169,12 +169,16 @@ export function initializeRodX_lists_88() {
 
 export function initializeRodX_lists_89() {
   qs(RODX_SELECTORS.listsOverlay, shadow).addEventListener("click", (event) => {
-    if (event.target === overlay) toggle(false);
+    if (event.target === overlay) {
+toggle(false);
+}
   });
 }
 
 export function toggle(open) {
-  if (open) Studio.services.deck?.close();
+  if (open) {
+Studio.services.deck?.close();
+}
   state.visible = open;
   overlay.classList.toggle("open", open);
   if (open) {
@@ -183,13 +187,17 @@ export function toggle(open) {
       overlay.classList.remove("open");
     });
     refresh();
-  } else Studio.menu.close("lists");
+  } else {
+Studio.menu.close("lists");
+}
 }
 
 export function notice(message, type = "") {
   state.message = message;
   state.messageType = type;
-  if (state.visible) render();
+  if (state.visible) {
+render();
+}
 }
 
 export let noteHTML;
@@ -296,7 +304,9 @@ export function initializeListsQuickOptions() {
 
 export function quickToast(message) {
   const el = qs(RODX_SELECTORS.quickPickerToast, shadow);
-  if (!el) return;
+  if (!el) {
+return;
+}
   el.textContent = message;
   el.classList.add("show");
   clearTimeout(quickToastTimer);
@@ -315,23 +325,33 @@ export function closeQuickPicker() {
 }
 
 export function positionQuickPicker() {
-  if (!quickAnchor || !quickUser || !quickPicker.classList.contains("open")) return;
-  if (window.matchMedia("(max-width:600px)").matches) return;
+  if (!quickAnchor || !quickUser || !quickPicker.classList.contains("open")) {
+return;
+}
+  if (window.matchMedia("(max-width:600px)").matches) {
+return;
+}
   const rect = quickAnchor.getBoundingClientRect();
   const viewport = window.visualViewport;
   const width = Math.min(350, window.innerWidth - 16);
   let left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8);
   const height = Math.min(500, Math.round(window.innerHeight * 0.65));
   let top = rect.bottom + 6;
-  if (top + height > window.innerHeight - 8) top = Math.max(8, rect.top - height - 6);
+  if (top + height > window.innerHeight - 8) {
+top = Math.max(8, rect.top - height - 6);
+}
   quickPicker.style.setProperty("left", `${left}px`, "important");
   quickPicker.style.setProperty("top", `${top}px`, "important");
   if (viewport && viewport.scale !== 1)
-    quickPicker.style.setProperty("top", `${Math.max(8, top)}px`, "important");
+    {
+quickPicker.style.setProperty("top", `${Math.max(8, top)}px`, "important");
+}
 }
 
 export function renderQuickOptions() {
-  if (!quickUser) return;
+  if (!quickUser) {
+return;
+}
   const term = normalize(quickSearchValue);
   const byId = new Map<any, any>(state.lists.map((row) => [String(row.id), row]));
   const known = new Set(quickOrder);
@@ -391,11 +411,15 @@ export function renderQuickOptions() {
 }
 
 export function refreshQuickPickerIfOpen() {
-  if (quickUser && quickPicker.classList.contains("open") && !quickSearchValue) renderQuickOptions();
+  if (quickUser && quickPicker.classList.contains("open") && !quickSearchValue) {
+renderQuickOptions();
+}
 }
 
 export async function openQuickPicker(user, anchor) {
-  if (!user?.username || !validHandle(user.username)) return;
+  if (!user?.username || !validHandle(user.username)) {
+return;
+}
   if (!state.lists.length) {
     await refresh();
   }

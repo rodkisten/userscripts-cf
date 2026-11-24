@@ -8,9 +8,13 @@ import { state } from "../state/deck.js";
 
 export function canonicalizeQuery(source) {
   const raw = String(source || "").trim();
-  if (!raw) throw new Error("Informe uma query para salvar.");
+  if (!raw) {
+throw new Error("Informe uma query para salvar.");
+}
   const diagnostic = diagnosticSpans(raw).find((item) => item.severity === "error");
-  if (diagnostic) throw new Error(`${diagnostic.message}. ${diagnostic.suggestion || ""}`.trim());
+  if (diagnostic) {
+throw new Error(`${diagnostic.message}. ${diagnostic.suggestion || ""}`.trim());
+}
   const parts = parseLocalDirectives(raw);
   const blocks = parts.native ? parseQueryBlocks(parts.native) : emptyBlockTree();
   const removed = compactBlockTree(blocks);
@@ -19,12 +23,18 @@ export function canonicalizeQuery(source) {
     blocks,
   });
   const fatal = checked.find((issue) => issue.level === "error");
-  if (fatal) throw new Error(fatal.message);
+  if (fatal) {
+throw new Error(fatal.message);
+}
   // Preserve local operators, validated separately from native X operators.
-  for (const rule of parts.local) compileLocalRule(rule);
+  for (const rule of parts.local) {
+compileLocalRule(rule);
+}
   const local = parts.local.map((rule) => `${rule.kind}:${rule.pattern}`);
   const query = QueryEngine.normalized([compileBlockTree(blocks), ...local].filter(Boolean).join(" "));
-  if (!query) throw new Error("A query ficou vazia após normalização.");
+  if (!query) {
+throw new Error("A query ficou vazia após normalização.");
+}
   return {
     query,
     blocks,
@@ -33,7 +43,9 @@ export function canonicalizeQuery(source) {
 }
 
 export function synchronizeDraftForSave() {
-  if (!state.draft) throw new Error("Nenhuma pesquisa em edição.");
+  if (!state.draft) {
+throw new Error("Nenhuma pesquisa em edição.");
+}
   // Users expect Save to parse the latest text they typed, without needing
   // to press a separate Apply button in the query lab.
   const text = state.rawDirty
@@ -63,7 +75,9 @@ export function analyzeDraft(draft) {
     });
   const scan = (node) => {
     if (node.kind === "term") {
-      if (!String(node.value || "").trim()) return;
+      if (!String(node.value || "").trim()) {
+return;
+}
       try {
         compileBlockTerm(node);
       } catch (e) {
@@ -74,16 +88,24 @@ export function analyzeDraft(draft) {
     const map = new Map();
     for (const child of node.children) {
       scan(child);
-      if (child.kind === "term" && !String(child.value || "").trim()) continue;
+      if (child.kind === "term" && !String(child.value || "").trim()) {
+continue;
+}
       const key = signature(child);
       if (map.has(key))
-        flag("error", "duplicate", `Bloco duplicado: ${key.slice(0, 75)}. Use Corrigir duplicatas.`, [
+        {
+flag("error", "duplicate", `Bloco duplicado: ${key.slice(0, 75)}. Use Corrigir duplicatas.`, [
           child.id,
           map.get(key),
         ]);
-      else map.set(key, child.id);
+}
+      else {
+map.set(key, child.id);
+}
     }
-    if (node.op !== "AND") return;
+    if (node.op !== "AND") {
+return;
+}
     // Only direct mandatory terms of an AND group can be contradictory;
     // a child OR group represents alternatives and cannot be flattened.
     const terms = node.children.filter((c) => c.kind === "term" && c.value.trim());
@@ -93,12 +115,14 @@ export function analyzeDraft(draft) {
       const key = `${term.type}:${term.value.replace(/^#/, "").toLocaleLowerCase()}`;
       const same = term.not ? positive.get(key) : negative.get(key);
       if (same)
-        flag(
+        {
+flag(
           "error",
           "contradiction",
           `Conflito: ${term.value} está sendo exigido e excluído ao mesmo tempo.`,
           [same, term.id],
         );
+}
       (term.not ? negative : positive).set(key, term.id);
     }
     const media = terms.filter((c) => c.type === "media" && !c.not);
@@ -127,7 +151,9 @@ export function analyzeDraft(draft) {
       mandatory.push(node);
       return;
     }
-    if (node.not || node.op !== "AND") return;
+    if (node.not || node.op !== "AND") {
+return;
+}
     node.children.forEach(walk);
   };
   walk(draft.blocks);

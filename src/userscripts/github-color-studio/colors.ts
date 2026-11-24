@@ -26,15 +26,21 @@ function codeMask(source: string): string {
       if (char === "*" && next === "/") {
         output[i] = output[++i] = " ";
         mode = "code";
-      } else if (char !== "\n") output[i] = " ";
+      } else if (char !== "\n") {
+output[i] = " ";
+}
     } else {
       if (char === "\\") {
         output[i] = " ";
-        if (i + 1 < source.length) output[++i] = " ";
+        if (i + 1 < source.length) {
+output[++i] = " ";
+}
       } else if ((mode === "single" && char === "'") || (mode === "double" && char === '"')) {
         output[i] = " ";
         mode = "code";
-      } else if (char !== "\n") output[i] = " ";
+      } else if (char !== "\n") {
+output[i] = " ";
+}
     }
   }
   return output.join("");
@@ -43,7 +49,9 @@ function codeMask(source: string): string {
 export function normalizeColor(value: string): string {
   const trimmed = value.trim().toLowerCase();
   if (/^#[0-9a-f]{3,4}$/.test(trimmed))
-    return "#" + [...trimmed.slice(1)].map((char) => char + char).join("");
+    {
+return "#" + [...trimmed.slice(1)].map((char) => char + char).join("");
+}
   return trimmed.replace(/\s+/g, " ");
 }
 
@@ -52,7 +60,9 @@ export function scanColors(source: string): ColorMatch[] {
   return [...masked.matchAll(COLOR)].flatMap((match) => {
     const from = match.index,
       value = source.slice(from, from + match[0].length);
-    if (typeof CSS !== "undefined" && !CSS.supports("color", value)) return [];
+    if (typeof CSS !== "undefined" && !CSS.supports("color", value)) {
+return [];
+}
     return [{ from, to: from + value.length, value, normalized: normalizeColor(value) }];
   });
 }
@@ -78,13 +88,21 @@ export function scanVariables(source: string): {
 
 export function renameVariable(source: string, previous: string, next: string): string {
   if (!/^--[\w-]+$/.test(previous) || !/^--[\w-]+$/.test(next))
-    throw new Error("Nome de variável CSS inválido");
-  if (previous === next) return source;
+    {
+throw new Error("Nome de variável CSS inválido");
+}
+  if (previous === next) {
+return source;
+}
   const { declarations, references } = scanVariables(source);
   if (declarations.filter((item) => item.name === previous).length !== 1)
-    throw new Error("A renomeação exige uma única definição neste arquivo");
+    {
+throw new Error("A renomeação exige uma única definição neste arquivo");
+}
   if (declarations.some((item) => item.name === next))
-    throw new Error("A variável de destino já existe neste arquivo");
+    {
+throw new Error("A variável de destino já existe neste arquivo");
+}
   return [...declarations, ...references]
     .filter((item) => item.name === previous)
     .sort((a, b) => b.from - a.from)
@@ -92,7 +110,9 @@ export function renameVariable(source: string, previous: string, next: string): 
 }
 
 export function validateCSS(source: string): boolean {
-  if (typeof CSSStyleSheet === "undefined") return false;
+  if (typeof CSSStyleSheet === "undefined") {
+return false;
+}
   try {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(source);

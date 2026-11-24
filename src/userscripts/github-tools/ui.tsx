@@ -11,7 +11,9 @@ export function FileToolbar(props: {
 }) {
   const [copy, setCopy] = useState({ busy: false, label: "⧉ Copiar tudo", message: "" });
   const run = () => {
-    if (copy.busy) return;
+    if (copy.busy) {
+return;
+}
     setCopy((previous) => ({ ...previous, busy: true, label: "Preparando…", message: "" }));
     let result: Promise<unknown>;
     try {
@@ -74,7 +76,9 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
   const copy = (event: import("react").MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     event.preventDefault();
-    if (state.busy) return;
+    if (state.busy) {
+return;
+}
     setState((previous) => ({ ...previous, busy: true, message: "" }));
     const output = props.ctx.storage
       .get("actionsToken", "")
@@ -95,8 +99,12 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
     } else {
       writing = output.then(async (text: string) => {
         const gm = globalThis as any;
-        if (gm.GM_setClipboard) await gm.GM_setClipboard(text, "text");
-        else await navigator.clipboard.writeText(text);
+        if (gm.GM_setClipboard) {
+await gm.GM_setClipboard(text, "text");
+}
+        else {
+await navigator.clipboard.writeText(text);
+}
       });
     }
     void writing
@@ -129,7 +137,9 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
   const match = location.pathname.match(
     /^\/([^/]+)\/([^/]+)\/(?:actions\/runs\/\d+\/job|runs\/\d+\/jobs)\/(\d+)/,
   );
-  if (!match) return;
+  if (!match) {
+return;
+}
   const [path, owner, repo, jobId] = match;
   const candidates = [
     ...document.querySelectorAll<HTMLElement>(
@@ -139,11 +149,15 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
   const seen = new Set<number>();
   for (const step of candidates) {
     const number = stepNumber(step);
-    if (!number || seen.has(number)) continue;
+    if (!number || seen.has(number)) {
+continue;
+}
     seen.add(number);
     const key = `${path}:${number}`;
     const existing = step.querySelector<HTMLElement>("[data-ghft-step-host]");
-    if (existing?.dataset.ghftStepHost === key) continue;
+    if (existing?.dataset.ghftStepHost === key) {
+continue;
+}
     existing?.remove();
     const header = step.querySelector("summary, .js-check-step-header, [data-testid='step-header']");
     const host = document.createElement("span");
@@ -178,7 +192,9 @@ export function GitHubTokenSettings(props: {
         className={styles.tokenForm}
         onSubmit={(event) => {
           event.preventDefault();
-          if (state.busy) return;
+          if (state.busy) {
+return;
+}
           const token = state.token.trim();
           setState((previous) => ({ ...previous, busy: true, error: "" }));
           void props

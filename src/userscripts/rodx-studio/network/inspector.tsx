@@ -53,17 +53,29 @@ export function createNetworkInspector(Studio) {
     /((?:[?&]|\\")(?:(?:access|auth|refresh|session)[_-]?token|key|secret|ct0)=)[^&#\s"']+/gi,
   ];
   function redact(value, key = "") {
-    if (state.reveal) return value;
-    if (sensitive.test(key)) return "[REDACTED]";
-    if (Array.isArray(value)) return value.map((x) => redact(x));
+    if (state.reveal) {
+return value;
+}
+    if (sensitive.test(key)) {
+return "[REDACTED]";
+}
+    if (Array.isArray(value)) {
+return value.map((x) => redact(x));
+}
     if (value && typeof value === "object")
-      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, redact(v, k)]));
+      {
+return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, redact(v, k)]));
+}
     if (typeof value === "string")
-      return secretPatterns.reduce((raw, re) => raw.replace(re, "$1[REDACTED]"), value);
+      {
+return secretPatterns.reduce((raw, re) => raw.replace(re, "$1[REDACTED]"), value);
+}
     return value;
   }
   function viewText(raw) {
-    if (raw == null || raw === "") return "";
+    if (raw == null || raw === "") {
+return "";
+}
     try {
       return JSON.stringify(redact(JSON.parse(raw)), null, 2);
     } catch {
@@ -74,7 +86,11 @@ export function createNetworkInspector(Studio) {
     try {
       const url = new URL(value);
       for (const key of url.searchParams.keys())
-        if (sensitive.test(key)) url.searchParams.set(key, "[REDACTED]");
+        {
+if (sensitive.test(key)) {
+url.searchParams.set(key, "[REDACTED]");
+}
+}
       return url.href;
     } catch {
       return String(value);
@@ -96,17 +112,23 @@ export function createNetworkInspector(Studio) {
         state.bytes <= settings.maxBytes &&
         now - first.at <= settings.ttlMs
       )
-        break;
+        {
+break;
+}
       records.delete(order.shift());
       selected.delete(first.id);
       state.bytes -= first._size || 0;
       state.countDropped++;
-      if (state.active === first.id) state.active = "";
+      if (state.active === first.id) {
+state.active = "";
+}
     }
   }
   let renderTimer = 0;
   function refreshSoon() {
-    if (!state.open || renderTimer) return;
+    if (!state.open || renderTimer) {
+return;
+}
     renderTimer = setTimeout(() => {
       renderTimer = 0;
       renderRows();
@@ -114,16 +136,22 @@ export function createNetworkInspector(Studio) {
     }, RUNTIME_LIMITS.networkInspector.refreshSoonDelayMs);
   }
   Studio.on("network:inspect", (event) => {
-    if (!state.capture) return;
+    if (!state.capture) {
+return;
+}
     const id = String(event.id);
     const old = records.get(id);
     if (event.phase === "request") {
-      if (old) return;
+      if (old) {
+return;
+}
       const record = {
         ...event,
         id,
         operation: (() => {
-          if (event.operationName) return event.operationName;
+          if (event.operationName) {
+return event.operationName;
+}
           try {
             const url = new URL(event.url);
             return url.searchParams.get("operationName") || url.pathname.split("/").pop() || "GraphQL";
@@ -139,7 +167,9 @@ export function createNetworkInspector(Studio) {
     } else if (old) {
       const phase = old.phase;
       Object.assign(old, event);
-      if (event.phase === "request-body") old.phase = phase;
+      if (event.phase === "request-body") {
+old.phase = phase;
+}
       const newBytes = bytes(old);
       state.bytes += newBytes - old._size;
       old._size = newBytes;
@@ -252,9 +282,15 @@ export function createNetworkInspector(Studio) {
     const term = state.search.toLocaleLowerCase("pt-BR");
     const match = (item) => {
       const status = Number(item.status || 0);
-      if (state.status === "error" && !(item.error || status >= 400)) return false;
-      if (state.status === "pending" && item.phase === "response") return false;
-      if (state.status === "success" && !(status >= 200 && status < 400)) return false;
+      if (state.status === "error" && !(item.error || status >= 400)) {
+return false;
+}
+      if (state.status === "pending" && item.phase === "response") {
+return false;
+}
+      if (state.status === "success" && !(status >= 200 && status < 400)) {
+return false;
+}
       return (
         !term ||
         [item.operation, item.url, item.method, status, item.id].some((value) =>
@@ -329,11 +365,13 @@ export function createNetworkInspector(Studio) {
   }
   function textValue(item) {
     if (state.tab === "Headers")
-      return JSON.stringify({
+      {
+return JSON.stringify({
         request: item.headers || {},
         response: item.responseHeaders || {},
         unavailable: "Headers restritos pelo navegador não são recuperáveis",
       });
+}
     if (state.tab === "Payload") {
       const u = new URL(item.url || location.href, location.origin);
       return JSON.stringify({
@@ -366,7 +404,9 @@ export function createNetworkInspector(Studio) {
     details.append(wrap);
     details.dataset.path = path;
     details.addEventListener("toggle", () => {
-      if (!(details as HTMLDetailsElement).open || details.dataset.loaded) return;
+      if (!(details as HTMLDetailsElement).open || details.dataset.loaded) {
+return;
+}
       details.dataset.loaded = "1";
       let offset = 0;
       const pushPage = () => {
@@ -513,11 +553,17 @@ export function createNetworkInspector(Studio) {
         const copy = structuredClone(item);
         delete copy._size;
         copy.url = safeURL(copy.url);
-        for (const key of ["headers", "responseHeaders"]) copy[key] = redact(copy[key] || {});
-        for (const key of ["requestBody", "originalBody", "filteredBody"]) copy[key] = viewText(copy[key]);
+        for (const key of ["headers", "responseHeaders"]) {
+copy[key] = redact(copy[key] || {});
+}
+        for (const key of ["requestBody", "originalBody", "filteredBody"]) {
+copy[key] = viewText(copy[key]);
+}
         return copy;
       });
-    if (!rows.length) return;
+    if (!rows.length) {
+return;
+}
     const blob = new Blob(
       [JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), rows }, null, 2)],
       {
@@ -577,8 +623,12 @@ export function createNetworkInspector(Studio) {
     }
     if ((event.target as HTMLElement).matches(RODX_SELECTORS.inspectorSelection)) {
       if ((event.target as HTMLInputElement).checked)
-        selected.add((event.target as HTMLElement).dataset.rxSelect);
-      else selected.delete((event.target as HTMLElement).dataset.rxSelect);
+        {
+selected.add((event.target as HTMLElement).dataset.rxSelect);
+}
+      else {
+selected.delete((event.target as HTMLElement).dataset.rxSelect);
+}
     }
   });
   root.addEventListener("click", async (event) => {
@@ -656,18 +706,24 @@ export function createNetworkInspector(Studio) {
         break;
       case "path": {
         const path = window.prompt("Caminho JSON, por exemplo $.data.user.result", "$");
-        if (!path) break;
+        if (!path) {
+break;
+}
         const keys = path
           .replace(/^\$\.?/, "")
           .split(".")
           .filter(Boolean);
         let prefix = "$";
         for (const key of ["", ...keys]) {
-          if (key) prefix += "." + key;
+          if (key) {
+prefix += "." + key;
+}
           const branch = [...root.querySelectorAll<HTMLElement>(RODX_SELECTORS.inspectorTreeDetails)].find(
             (el) => el.dataset.path === prefix,
           );
-          if (branch) (branch as HTMLDetailsElement).open = true;
+          if (branch) {
+(branch as HTMLDetailsElement).open = true;
+}
           await Promise.resolve(undefined);
         }
         root
@@ -688,7 +744,9 @@ export function createNetworkInspector(Studio) {
         root.querySelector<HTMLElement>(RODX_SELECTORS.inspectorRetentionField(field)) as HTMLInputElement
       ).value = String(settings[field] / Number(scale));
     }
-    if (state.open) return;
+    if (state.open) {
+return;
+}
     state.open = true;
     root.style.setProperty("display", "block", "important");
     const diagnostic = Studio.diagnostics().selectors;
@@ -716,6 +774,8 @@ export function createNetworkInspector(Studio) {
       dropped: state.countDropped,
     }),
   };
-  if (typeof GM_registerMenuCommand === "function") GM_registerMenuCommand("RodX Studio · REDE", open);
+  if (typeof GM_registerMenuCommand === "function") {
+GM_registerMenuCommand("RodX Studio · REDE", open);
+}
   return Studio.services.networkInspector;
 }

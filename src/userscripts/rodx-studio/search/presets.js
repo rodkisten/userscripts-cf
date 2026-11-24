@@ -22,18 +22,26 @@ import { blankDraft, renderBlockEditor, renderRoot, renderTags } from "../ui/sea
 
 export function resolvePreset(id) {
   const found = state.presets.find((p) => p.id === id);
-  if (!found) throw new Error("Preset não encontrado nesta conta.");
+  if (!found) {
+throw new Error("Preset não encontrado nesta conta.");
+}
   return found;
 }
 
 export async function savePreset(asNew = false) {
-  if (!state.account) throw new Error("Conta não identificada.");
-  if (!state.draft) throw new Error("Abra o editor antes de salvar um preset.");
+  if (!state.account) {
+throw new Error("Conta não identificada.");
+}
+  if (!state.draft) {
+throw new Error("Abra o editor antes de salvar um preset.");
+}
   const input = state.rootShadow?.querySelector(RODX_SELECTORS.presetNameField);
   const name = String(input?.value || state.draft.presetName || "")
     .trim()
     .slice(0, 100);
-  if (!name) throw new Error("Digite um nome para o preset.");
+  if (!name) {
+throw new Error("Digite um nome para o preset.");
+}
   const normalized = synchronizeDraftForSave();
   const query = normalized.query;
   const existing = asNew ? null : state.presets.find((p) => p.id === state.presetEditingId);
@@ -45,10 +53,16 @@ export async function savePreset(asNew = false) {
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   });
-  if (!record) throw new Error("Preset inválido.");
+  if (!record) {
+throw new Error("Preset inválido.");
+}
   const previous = state.presets.slice();
-  if (existing) state.presets = state.presets.map((p) => (p.id === existing.id ? record : p));
-  else state.presets.push(record);
+  if (existing) {
+state.presets = state.presets.map((p) => (p.id === existing.id ? record : p));
+}
+  else {
+state.presets.push(record);
+}
   try {
     await saveState();
   } catch (error) {
@@ -103,7 +117,9 @@ export function insertPreset(id, replace = false) {
 }
 
 export function maxDepth(node, depth = 0) {
-  if (node.kind !== "group" || !node.children.length) return depth;
+  if (node.kind !== "group" || !node.children.length) {
+return depth;
+}
   return Math.max(...node.children.map((c) => maxDepth(c, depth + 1)));
 }
 
@@ -130,7 +146,9 @@ export function editPreset(id) {
 export async function deletePreset(id) {
   const preset = resolvePreset(id);
   if (!confirm(`Excluir o preset “${preset.name}”? As buscas que usam cópias dele não serão alteradas.`))
-    return;
+    {
+return;
+}
   const previous = state.presets.slice();
   state.presets = state.presets.filter((p) => p.id !== id);
   try {
@@ -139,13 +157,17 @@ export async function deletePreset(id) {
     state.presets = previous;
     throw error;
   }
-  if (state.presetEditingId === id) state.presetEditingId = null;
+  if (state.presetEditingId === id) {
+state.presetEditingId = null;
+}
   renderRoot();
 }
 
 export function toggleBlockOperator(id) {
   const node = findBlockNode(state.draft.blocks, id)?.node;
-  if (!node || node.kind !== "group") return;
+  if (!node || node.kind !== "group") {
+return;
+}
   node.op = node.op === "AND" ? "OR" : "AND";
   renderTags();
   renderBlockEditor();
@@ -153,9 +175,13 @@ export function toggleBlockOperator(id) {
 
 export function applyRawBlocks() {
   const value = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField)?.value || "";
-  if (!value.trim()) throw new Error("Informe uma query para converter.");
+  if (!value.trim()) {
+throw new Error("Informe uma query para converter.");
+}
   const issue = diagnosticSpans(value).find((i) => i.severity === "error");
-  if (issue) throw new Error(`${issue.message}. ${issue.suggestion}`);
+  if (issue) {
+throw new Error(`${issue.message}. ${issue.suggestion}`);
+}
   const parts = parseLocalDirectives(value);
   const parsed = parts.native.trim() ? parseQueryBlocks(parts.native) : emptyBlockTree();
   const removed = compactBlockTree(parsed);
@@ -164,7 +190,9 @@ export function applyRawBlocks() {
     blocks: parsed,
   };
   const errors = analyzeDraft(test).filter((i) => i.level === "error");
-  if (errors.length) throw new Error(errors[0].message);
+  if (errors.length) {
+throw new Error(errors[0].message);
+}
   // Local rules stay in extra, editable alongside native Boolean blocks.
   state.draft.fields = copyFields();
   state.draft.fields.extra = parts.local.map((x) => `${x.kind}:${x.pattern}`).join(" ");
@@ -177,18 +205,28 @@ export function applyRawBlocks() {
 
 export function chipAction(action, id) {
   const group = tray();
-  if (action === "toggle-tray") return toggleBlockOperator(group.id);
+  if (action === "toggle-tray") {
+return toggleBlockOperator(group.id);
+}
   const item = group.children.find((x) => x.id === id);
-  if (!item) return;
-  if (action === "chip-remove") group.children = group.children.filter((x) => x.id !== id);
+  if (!item) {
+return;
+}
+  if (action === "chip-remove") {
+group.children = group.children.filter((x) => x.id !== id);
+}
   if (action === "chip-cycle") {
     const kinds = ["hashtag", "keyword", "phrase"];
     item.type = kinds[(kinds.indexOf(item.type) + 1) % kinds.length];
-    if (item.type === "hashtag") item.value = item.value.replace(/^#/, "");
+    if (item.type === "hashtag") {
+item.value = item.value.replace(/^#/, "");
+}
   }
   if (action === "chip-edit") {
     const change = prompt("Editar termo:", item.value);
-    if (change === null) return;
+    if (change === null) {
+return;
+}
     item.value = change.trim().replace(item.type === "hashtag" ? /^#/ : /^(?!)$/, "");
   }
   renderTags();

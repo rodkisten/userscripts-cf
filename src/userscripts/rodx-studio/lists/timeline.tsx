@@ -81,15 +81,25 @@ export function initializeListsScrollObserver() {
 
 export function attachScrollObserver() {
   scrollObserver?.disconnect();
-  if (!embeddedTimeline?.isConnected || !window.IntersectionObserver || !timeline.hasMore) return;
+  if (!embeddedTimeline?.isConnected || !window.IntersectionObserver || !timeline.hasMore) {
+return;
+}
   const sentinel = embeddedTimeline.shadowRoot?.getElementById("xls-more-sentinel");
-  if (!sentinel) return;
+  if (!sentinel) {
+return;
+}
   scrollObserver = new IntersectionObserver(
     (entries) => {
       if (!entries.some((e) => e.isIntersecting) || document.hidden || timeline.loading || !timeline.hasMore)
-        return;
-      if (clientFilterPosts(timeline.items).length < 3) return;
-      if (Date.now() - lastAutoPageAt < 15000) return;
+        {
+return;
+}
+      if (clientFilterPosts(timeline.items).length < 3) {
+return;
+}
+      if (Date.now() - lastAutoPageAt < 15000) {
+return;
+}
       lastAutoPageAt = Date.now();
       loadTimeline({
         listId: timeline.listId,
@@ -122,8 +132,12 @@ export function initializeListsTimelineQueryKey() {
 export function safeMediaURL(value, kind = "image") {
   try {
     const url = new URL(String(value || ""));
-    if (url.protocol !== "https:") return "";
-    if (kind === "video") return url.hostname === "video.twimg.com" ? url.toString() : "";
+    if (url.protocol !== "https:") {
+return "";
+}
+    if (kind === "video") {
+return url.hostname === "video.twimg.com" ? url.toString() : "";
+}
     return ["pbs.twimg.com", "abs.twimg.com"].includes(url.hostname) ? url.toString() : "";
   } catch {
     return "";
@@ -137,12 +151,16 @@ export function extractTimelinePosts(data) {
   let steps = 0;
   while (stack.length && steps++ < 50000 && output.size < 160) {
     const obj = stack.pop();
-    if (!obj || typeof obj !== "object" || seen.has(obj)) continue;
+    if (!obj || typeof obj !== "object" || seen.has(obj)) {
+continue;
+}
     seen.add(obj);
     // Capture a Tweet only from an actual result, not arbitrary list metadata.
     if (obj.tweet_results?.result) {
       let t = obj.tweet_results.result;
-      if (t?.tweet) t = t.tweet; // TweetWithVisibilityResults
+      if (t?.tweet) {
+t = t.tweet;
+} // TweetWithVisibilityResults
       const legacy = t?.legacy || {},
         id = String(t?.rest_id || legacy.id_str || "");
       const user = t?.core?.user_results?.result || t?.core?.user?.result || {};
@@ -154,7 +172,9 @@ export function extractTimelinePosts(data) {
         let media = null;
         for (const item of mediaArr) {
           const image = safeMediaURL(item.media_url_https || item.media_url);
-          if (!image) continue;
+          if (!image) {
+continue;
+}
           const variants = (item.video_info?.variants || [])
             .filter((x) => x.content_type === "video/mp4" && safeMediaURL(x.url, "video"))
             .sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
@@ -163,7 +183,9 @@ export function extractTimelinePosts(data) {
             image,
             video: variants[0] ? safeMediaURL(variants[0].url, "video") : "",
           };
-          if (media.type === "video") break;
+          if (media.type === "video") {
+break;
+}
         }
         const text = String(
           t?.note_tweet?.note_tweet_results?.result?.text || legacy.full_text || legacy.text || "",
@@ -185,27 +207,53 @@ export function extractTimelinePosts(data) {
           avatar: safeMediaURL(userLegacy.profile_image_url_https || user?.avatar?.image_url || ""),
           url: `https://x.com/${encodeURIComponent(username)}/status/${id}`,
         };
-        if (!output.has(id)) output.set(id, post);
+        if (!output.has(id)) {
+output.set(id, post);
+}
       }
     }
     if (Array.isArray(obj)) {
-      for (let i = obj.length - 1; i >= 0; i--) if (obj[i] && typeof obj[i] === "object") stack.push(obj[i]);
+      for (let i = obj.length - 1; i >= 0; i--) {
+if (obj[i] && typeof obj[i] === "object") {
+stack.push(obj[i]);
+}
+}
     } else
-      for (const [key, value] of Object.entries(obj))
-        if (key !== "tweet_results" && value && typeof value === "object") stack.push(value);
+      {
+for (const [key, value] of Object.entries(obj))
+        {
+if (key !== "tweet_results" && value && typeof value === "object") {
+stack.push(value);
+}
+}
+}
   }
   return [...output.values()];
 }
 
 export function clientFilterPosts(posts) {
   return posts.filter((p) => {
-    if (settings.hideReposts && p.isRepost) return false;
-    if (!settings.replies && p.isReply) return false;
+    if (settings.hideReposts && p.isRepost) {
+return false;
+}
+    if (!settings.replies && p.isReply) {
+return false;
+}
     if (settings.media === "videos" || settings.media === "native")
-      if (p.media?.type !== "video") return false;
-    if (settings.media === "images" && p.media?.type !== "image") return false;
-    if (settings.media === "media" && !p.media) return false;
-    if (Number(settings.minLikes) > 0 && p.likes < Number(settings.minLikes)) return false;
+      {
+if (p.media?.type !== "video") {
+return false;
+}
+}
+    if (settings.media === "images" && p.media?.type !== "image") {
+return false;
+}
+    if (settings.media === "media" && !p.media) {
+return false;
+}
+    if (Number(settings.minLikes) > 0 && p.likes < Number(settings.minLikes)) {
+return false;
+}
     return true;
   });
 }
@@ -408,7 +456,9 @@ export async function cachedTimeline(listId, queryKey) {
 }
 
 export async function cacheTimeline(listId, queryKey, posts) {
-  if (!validListId(listId) || !posts.length) return;
+  if (!validListId(listId) || !posts.length) {
+return;
+}
   const stamp = Date.now();
   const rows = posts.slice(0, 140).map((post, i) => ({
     key: `${listId}:${queryKey}:${post.id}`,
@@ -430,7 +480,9 @@ export async function cacheTimeline(listId, queryKey, posts) {
     const stale = records.sort((a, b) => b.savedAt - a.savedAt).slice(300);
     await new Promise<any>((resolve, reject) => {
       const tx = db.transaction("timeline", "readwrite");
-      for (const r of stale) tx.objectStore("timeline").delete(r.key);
+      for (const r of stale) {
+tx.objectStore("timeline").delete(r.key);
+}
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error);
     });
@@ -446,9 +498,11 @@ export function timelineRequest(mode, id, query, cursor = "") {
         : "ListTweetsTimeline";
   const tmpl = requestTemplates[op];
   if (!tmpl || tmpl.method !== "GET")
-    throw new Error(
+    {
+throw new Error(
       `Ainda não observei ${op}. Abra uma vez a ${mode === "search" ? "busca nativa" : "lista"} normalmente no X; depois use Timeline Studio.`,
     );
+}
   let existing = {};
   try {
     existing = JSON.parse(tmpl.params.variables || "{}");
@@ -458,15 +512,21 @@ export function timelineRequest(mode, id, query, cursor = "") {
     variables = {
       rawQuery: query,
     };
-    if ("count" in existing) variables.count = Math.min(40, Math.max(10, Number(existing.count) || 20));
-    if ("product" in existing) variables.product = settings.sort === "top" ? "Top" : "Latest";
+    if ("count" in existing) {
+variables.count = Math.min(40, Math.max(10, Number(existing.count) || 20));
+}
+    if ("product" in existing) {
+variables.product = settings.sort === "top" ? "Top" : "Latest";
+}
   } else {
     const idKey = "listId" in existing ? "listId" : "list_id" in existing ? "list_id" : "listId";
     variables = {
       [idKey]: id,
     };
   }
-  if (cursor) variables.cursor = cursor;
+  if (cursor) {
+variables.cursor = cursor;
+}
   return templateRequest(op, variables, cursor ? [] : ["cursor"]);
 }
 
@@ -498,14 +558,18 @@ export function refreshTimelineView() {
     if (embeddedTimeline.dataset.xlsSignature !== signature) {
       embeddedTimeline.dataset.xlsSignature = signature;
       const root = embeddedTimeline.shadowRoot;
-      if (root) mountView(root.getElementById("xls-feed-root"), () => renderTimelineCards());
+      if (root) {
+mountView(root.getElementById("xls-feed-root"), () => renderTimelineCards());
+}
       attachScrollObserver();
     }
   }
   if (state.visible && state.tab === "busca") {
     const preview = qs(RODX_SELECTORS.listsSearchPreview, shadow);
     if (preview && timeline.listId === state.listId && timeline.query === buildQuery(state.listId))
-      mountView(preview, () => renderTimelineCards(true));
+      {
+mountView(preview, () => renderTimelineCards(true));
+}
   }
 }
 
@@ -514,9 +578,15 @@ export async function loadTimeline({
   more = false,
   force = false,
 } = {}) {
-  if (!validListId(listId)) throw new Error("Selecione uma lista válida.");
-  if (document.hidden) throw new Error("Volte para a aba do X para carregar a timeline.");
-  if (timeline.loading) return;
+  if (!validListId(listId)) {
+throw new Error("Selecione uma lista válida.");
+}
+  if (document.hidden) {
+throw new Error("Volte para a aba do X para carregar a timeline.");
+}
+  if (timeline.loading) {
+return;
+}
   const query = buildQuery(listId);
   const mode = requestTemplates.SearchTimeline ? "search" : "native";
   const queryKey = timelineQueryKey(mode, query);
@@ -525,8 +595,12 @@ export async function loadTimeline({
     timeline.query === query &&
     timeline.mode === mode &&
     timeline.queryKey === queryKey;
-  if (more && (!same || !timeline.hasMore)) return;
-  if (!more && same && !force && timeline.items.length) return;
+  if (more && (!same || !timeline.hasMore)) {
+return;
+}
+  if (!more && same && !force && timeline.items.length) {
+return;
+}
   if (!more) {
     timeline.listId = listId;
     timeline.query = query;
@@ -540,7 +614,9 @@ export async function loadTimeline({
     const seq = ++timeline.seq;
     cachedTimeline(listId, queryKey)
       .then((posts) => {
-        if (seq !== timeline.seq || timeline.items.length) return;
+        if (seq !== timeline.seq || timeline.items.length) {
+return;
+}
         timeline.items = posts;
         refreshTimelineView();
       })
@@ -551,16 +627,24 @@ export async function loadTimeline({
   timeline.error = "";
   refreshTimelineView();
   try {
-    if (!navigator.onLine) throw new Error("Sem conexão com a internet; exibindo cache quando disponível.");
+    if (!navigator.onLine) {
+throw new Error("Sem conexão com a internet; exibindo cache quando disponível.");
+}
     if (!sessionAuth.authorization || !csrfCookie())
-      throw new Error("Aguarde o X carregar uma timeline para identificar a sessão atual.");
+      {
+throw new Error("Aguarde o X carregar uma timeline para identificar a sessão atual.");
+}
     const until = Number(sessionStorage.getItem(`${APP}:rate-low-until`) || 0);
     if (until > Date.now())
-      throw new Error(
+      {
+throw new Error(
         `O X informou cota quase esgotada. Não fazer novas requisições até ${timeText(new Date(until).toISOString())}.`,
       );
+}
     const stampKey = `${listId}:${queryKey}`;
-    if (!more && !force && Date.now() - (readThrottle.get(stampKey) || 0) < 45_000) return;
+    if (!more && !force && Date.now() - (readThrottle.get(stampKey) || 0) < 45_000) {
+return;
+}
     const cursor = more ? timeline.cursor : "";
     const request = timelineRequest(mode, listId, query, cursor);
     readThrottle.set(stampKey, Date.now());
@@ -568,7 +652,9 @@ export async function loadTimeline({
       params: request.params,
     });
     const posts = extractTimelinePosts(data);
-    if (seq !== timeline.seq) return;
+    if (seq !== timeline.seq) {
+return;
+}
     const unique = new Map<any, any>([...(more ? timeline.items : []), ...posts].map((p) => [p.id, p]));
     timeline.items = [...unique.values()].slice(0, 400);
     const next = bottomCursor(data);
@@ -576,11 +662,15 @@ export async function loadTimeline({
     timeline.cursor = timeline.hasMore ? next : "";
     timeline.updatedAt = now();
     if (!posts.length)
-      timeline.status =
+      {
+timeline.status =
         "O X não retornou posts reconhecíveis para esta consulta. Pode ser uma lista privada, vazia ou um formato de resposta alterado.";
+}
     await cacheTimeline(listId, queryKey, posts);
   } catch (error) {
-    if (seq === timeline.seq) timeline.error = String(error?.message || error);
+    if (seq === timeline.seq) {
+timeline.error = String(error?.message || error);
+}
   } finally {
     if (seq === timeline.seq) {
       timeline.loading = false;
@@ -591,11 +681,17 @@ export async function loadTimeline({
 
 export async function ingestObservedTimeline(data, url) {
   const op = operationName(url);
-  if (!["SearchTimeline", "ListLatestTweetsTimeline", "ListTweetsTimeline"].includes(op)) return;
+  if (!["SearchTimeline", "ListLatestTweetsTimeline", "ListTweetsTimeline"].includes(op)) {
+return;
+}
   const listId = responseListId(url);
-  if (!validListId(listId)) return;
+  if (!validListId(listId)) {
+return;
+}
   const posts = extractTimelinePosts(data);
-  if (!posts.length) return;
+  if (!posts.length) {
+return;
+}
   let query = "",
     mode = "native";
   let sort = "live";
@@ -605,7 +701,9 @@ export async function ingestObservedTimeline(data, url) {
       query = String(vars.rawQuery || "");
       sort = String(vars.product || "Latest").toLowerCase() === "top" ? "top" : "live";
     } catch {}
-    if (!query.includes(`list:${listId}`)) return;
+    if (!query.includes(`list:${listId}`)) {
+return;
+}
     mode = "search";
   }
   const key = timelineQueryKey(mode, query, sort);
@@ -639,7 +737,9 @@ export function ensureEmbeddedTimeline() {
     removeEmbeddedTimeline();
     return;
   }
-  if (!listToolbar?.isConnected) return;
+  if (!listToolbar?.isConnected) {
+return;
+}
   if (!embeddedTimeline) {
     embeddedTimeline = document.createElement("section");
     embeddedTimeline.id = "xls-timeline-inject";
@@ -687,19 +787,25 @@ export function ensureEmbeddedTimeline() {
         state.tab = "busca";
         toggle(true);
       } else if (action === "timeline-more")
-        loadTimeline({
+        {
+loadTimeline({
           listId: id,
           more: true,
         }).catch(reportTimelineError);
+}
       else if (action === "timeline-refresh")
-        loadTimeline({
+        {
+loadTimeline({
           listId: id,
           force: true,
         }).catch(reportTimelineError);
+}
     });
   }
   if (listToolbar.nextElementSibling !== embeddedTimeline)
-    listToolbar.insertAdjacentElement("afterend", embeddedTimeline);
+    {
+listToolbar.insertAdjacentElement("afterend", embeddedTimeline);
+}
   if (!document.getElementById("xls-custom-feed-style")) {
     const style = document.createElement("style");
     style.id = "xls-custom-feed-style";
@@ -714,7 +820,9 @@ export function ensureEmbeddedTimeline() {
     timeline.query !== query ||
     timeline.queryKey !== timelineQueryKey(timeline.mode || "native", query)
   )
-    loadTimeline({
+    {
+loadTimeline({
       listId: id,
     }).catch(reportTimelineError);
+}
 }

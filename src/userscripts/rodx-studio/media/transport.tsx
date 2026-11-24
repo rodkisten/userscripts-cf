@@ -12,12 +12,17 @@ const formatTime = (value: number) => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 };
 function seekableDuration(video: HTMLVideoElement) {
-  if (Number.isFinite(video.duration) && video.duration > 0) return video.duration;
+  if (Number.isFinite(video.duration) && video.duration > 0) {
+return video.duration;
+}
   try {
-    if (video.seekable.length) return video.seekable.end(video.seekable.length - 1);
+    if (video.seekable.length) {
+return video.seekable.end(video.seekable.length - 1);
+}
   } catch {}
   return 0;
 }
+
 export function VideoControls(props: { video: HTMLVideoElement }) {
   const [playback, setPlayback] = useState({ duration: 0, time: 0, paused: true, muted: true });
   const [scrubbing, setScrubbing] = useState(false);
@@ -28,7 +33,9 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
     const duration = seekableDuration(video);
     const time = Number.isFinite(video.currentTime) ? video.currentTime : 0;
     setPlayback({ duration, time, paused: video.paused, muted: video.muted || video.volume === 0 });
-    if (!scrubbingRef.current) setPosition(duration ? Math.round((time / duration) * 1000) : 0);
+    if (!scrubbingRef.current) {
+setPosition(duration ? Math.round((time / duration) * 1000) : 0);
+}
   };
   useEffect(() => {
     const events = [
@@ -52,7 +59,9 @@ export function VideoControls(props: { video: HTMLVideoElement }) {
   const seek = (value: number) => {
     const duration = seekableDuration(props.video);
     setPosition(value);
-    if (!duration) return;
+    if (!duration) {
+return;
+}
     try {
       props.video.currentTime = (duration * value) / 1000;
     } catch {}
@@ -135,14 +144,22 @@ export function initializeDeckVideoTransport() {
   VideoTransport = {
     scan() {
       for (const video of document.querySelectorAll<HTMLVideoElement>(NATIVE_X_SELECTORS.visiblePageVideos)) {
-        if (installed.get(video)?.isConnected || video.closest(RODX_SELECTORS.videoTransport)) continue;
+        if (installed.get(video)?.isConnected || video.closest(RODX_SELECTORS.videoTransport)) {
+continue;
+}
         const wrapper =
           video.closest<HTMLElement>(NATIVE_X_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
-        if (!wrapper || wrapper.querySelector(RODX_SELECTORS.directVideoTransport)) continue;
+        if (!wrapper || wrapper.querySelector(RODX_SELECTORS.directVideoTransport)) {
+continue;
+}
         const rect = wrapper.getBoundingClientRect();
-        if (rect.width && (rect.width < 135 || rect.height < 90)) continue;
+        if (rect.width && (rect.width < 135 || rect.height < 90)) {
+continue;
+}
         if (getComputedStyle(wrapper).position === "static")
-          wrapper.style.setProperty("position", "relative", "important");
+          {
+wrapper.style.setProperty("position", "relative", "important");
+}
         const host = document.createElement("div");
         host.dataset.rodxTransportMount = "";
         wrapper.append(host);

@@ -44,14 +44,18 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
   function config(url) {
     const path = location.pathname,
       raw = doc.documentElement?.getAttribute("data-rodx-feed-config") || "";
-    if (raw === cachedRaw && path === cachedRoute) return cachedConfig;
+    if (raw === cachedRaw && path === cachedRoute) {
+return cachedConfig;
+}
     cachedRaw = raw;
     cachedRoute = path;
     let active = {};
     try {
       active = JSON.parse(raw || "{}");
       if (active.route !== path)
-        active = JSON.parse(page.sessionStorage.getItem("rodx:feed:routes") || "{}")[path] || {};
+        {
+active = JSON.parse(page.sessionStorage.getItem("rodx:feed:routes") || "{}")[path] || {};
+}
     } catch {}
     let defaults = { ...defaultSettings.feed };
     try {
@@ -67,19 +71,23 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     active._seen = new Set(active.seen || []);
     active._patterns = [];
     for (const p of active.patterns || [])
-      try {
+      {
+try {
         active._patterns.push({
           ...p,
           re: new RegExp(p.source, p.flags === "i" ? "i" : ""),
         });
       } catch {}
+}
     cachedConfig = active;
     return active;
   }
   const capture = (input, override) => {
     try {
       const h = new Headers(input || {});
-      if (override) new Headers(override).forEach((v, k) => h.set(k, v));
+      if (override) {
+new Headers(override).forEach((v, k) => h.set(k, v));
+}
       const allow = [
         "authorization",
         "x-csrf-token",
@@ -91,7 +99,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       ];
       for (const key of allow) {
         const value = h.get(key);
-        if (value) headers.set(key, value);
+        if (value) {
+headers.set(key, value);
+}
       }
       const ready = Boolean(headers.get("authorization"));
       if (ready !== sessionReady) {
@@ -127,30 +137,44 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
         String(heading).trim(),
       )
     )
-      return false;
+      {
+return false;
+}
     const t = tweet(entry);
-    if (!t?.legacy) return true;
+    if (!t?.legacy) {
+return true;
+}
     const legacy = t.legacy;
     const repost = !!(
       legacy.retweeted_status_result ||
       legacy.retweeted_status_id_str ||
       legacy.retweeted_status
     );
-    if (settings.reposts === false && repost) return false;
+    if (settings.reposts === false && repost) {
+return false;
+}
     const actual = unwrap(legacy.retweeted_status_result?.result) || t;
     const media = actual.legacy?.extended_entities?.media || actual.legacy?.entities?.media || [];
     if (settings.media === "media" && !media.some((m) => ["photo", "video", "animated_gif"].includes(m.type)))
-      return false;
+      {
+return false;
+}
     if (settings.media === "video" && !media.some((m) => m.type === "video" || m.type === "animated_gif"))
-      return false;
+      {
+return false;
+}
     if (
       settings.media === "image" &&
       (!media.some((m) => m.type === "photo") ||
         media.some((m) => m.type === "video" || m.type === "animated_gif"))
     )
-      return false;
+      {
+return false;
+}
     const id = String(t.rest_id || legacy.id_str || "");
-    if (settings._seen?.has(id) || settings._seen?.has(String(actual.rest_id || ""))) return false;
+    if (settings._seen?.has(id) || settings._seen?.has(String(actual.rest_id || ""))) {
+return false;
+}
     const words = actual.note_tweet?.note_tweet_results?.result?.text || actual.legacy?.full_text || "";
     const urls = (actual.legacy?.entities?.urls || []).flatMap((u) =>
       [u.expanded_url, u.unwound_url, u.url].filter(Boolean),
@@ -161,21 +185,29 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
           ? !rule.re.test(words.slice(0, runtimeLimits.maxPatternCharacters))
           : !urls.some((url) => rule.re.test(String(url).slice(0, runtimeLimits.maxPatternCharacters)))
       )
-        return false;
+        {
+return false;
+}
     }
     if (settings.limit > 0 && id) {
       if (!accepted.has(id)) {
-        if (accepted.size > runtimeLimits.maxAcceptedPostIds) return false;
+        if (accepted.size > runtimeLimits.maxAcceptedPostIds) {
+return false;
+}
         accepted.set(id, accepted.size);
       }
-      if (accepted.get(id) >= settings.limit) return false;
+      if (accepted.get(id) >= settings.limit) {
+return false;
+}
     }
     return true;
   }
   function filter(data, settings) {
     let changed = false;
     function walk(node) {
-      if (!node || typeof node !== "object") return;
+      if (!node || typeof node !== "object") {
+return;
+}
       for (const key of Object.keys(node)) {
         const value = node[key];
         if (Array.isArray(value)) {
@@ -187,7 +219,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
             }
           }
           node[key].forEach(walk);
-        } else walk(value);
+        } else {
+walk(value);
+}
       }
     }
     walk(data);
@@ -200,7 +234,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
             entry?.content?.itemContent?.list_results?.result;
     }
     function order(node) {
-      if (!node || typeof node !== "object") return;
+      if (!node || typeof node !== "object") {
+return;
+}
       for (const value of Object.values(node)) {
         if (Array.isArray(value)) {
           const slots = value.map((v, i) => (listNode(v) ? i : -1)).filter((i) => i >= 0);
@@ -215,21 +251,29 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
                 ),
               );
             slots.forEach((slot, i) => {
-              if (value[slot] !== sorted[i]) changed = true;
+              if (value[slot] !== sorted[i]) {
+changed = true;
+}
               value[slot] = sorted[i];
             });
           }
           value.forEach(order);
-        } else order(value);
+        } else {
+order(value);
+}
       }
     }
     order(data);
     return changed;
   }
   function transform(url, body, parsed) {
-    if (!allowed.test(String(url))) return body;
+    if (!allowed.test(String(url))) {
+return body;
+}
     const settings = config(url);
-    if (settings.route && settings.route !== page.location.pathname) return body;
+    if (settings.route && settings.route !== page.location.pathname) {
+return body;
+}
     const scope =
       (settings.route || "") +
       (settings.query || "") +
@@ -246,7 +290,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
 
   // Parse at most once, inspect the unfiltered payload and transform before React reads it.
   function process(url, raw) {
-    if (raw.length > runtimeLimits.maxFilterResponseCharacters) return raw;
+    if (raw.length > runtimeLimits.maxFilterResponseCharacters) {
+return raw;
+}
     const payload = JSON.parse(raw);
     if (allowed.test(url)) {
       const items = [],
@@ -254,7 +300,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       let visited = 0;
       while (stack.length && visited++ < runtimeLimits.maxTraversalNodes) {
         const node = stack.pop();
-        if (!node || typeof node !== "object") continue;
+        if (!node || typeof node !== "object") {
+continue;
+}
         if (node.rest_id && node.legacy) {
           const actual =
             node.legacy.retweeted_status_result?.result?.tweet ||
@@ -274,26 +322,36 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
               };
             });
           if (media.length)
-            items.push({
+            {
+items.push({
               id: String(node.rest_id),
               media,
             });
+}
         }
-        for (const value of Object.values(node)) if (value && typeof value === "object") stack.push(value);
+        for (const value of Object.values(node)) {
+if (value && typeof value === "object") {
+stack.push(value);
+}
+}
       }
       if (items.length)
-        emit("media", {
+        {
+emit("media", {
           items: items.slice(0, runtimeLimits.maxCapturedMediaItems),
         });
+}
     }
     if (
       relevant(url) &&
       (!/\/SearchTimeline(?:\?|$)/.test(url) || /list(?::|%3A)/i.test(decodeURIComponent(url)))
     )
-      emit("response", {
+      {
+emit("response", {
         url,
         payload,
       });
+}
     return allowed.test(url) ? transform(url, raw, payload) : raw;
   }
   // One MAIN-world interceptor owns the raw GraphQL inspector and feed transformation.
@@ -330,14 +388,18 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     try {
       for (const line of String(xhr.getAllResponseHeaders() || "").split(/\r?\n/)) {
         const i = line.indexOf(":");
-        if (i > 0) result[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
+        if (i > 0) {
+result[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
+}
       }
     } catch {}
     return result;
   };
   function traceBegin(kind, url, method, requestHeaders, body, origin = "page") {
     if (!graphqlRequest(url) || doc.documentElement?.getAttribute("data-rodx-inspect-paused") === "true")
-      return null;
+      {
+return null;
+}
     const id = ++traceSequence;
     const start = performance.now();
     const target = new URL(String(url), location.href);
@@ -352,10 +414,12 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
         const operations = Array.isArray(parsed) ? parsed : [parsed];
         batchCount = Array.isArray(parsed) ? parsed.length : 0;
         if (!operationName)
-          operationName = operations
+          {
+operationName = operations
             .map((value) => String(value?.operationName || "").trim())
             .filter(Boolean)
             .join(", ");
+}
       } catch {}
     }
     const content = traceClip(typeof body === "string" ? body : body == null ? "" : null);
@@ -384,7 +448,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     return { id, start, url: String(url) };
   }
   function traceFinish(trace, details) {
-    if (!trace) return;
+    if (!trace) {
+return;
+}
     emit("inspect", {
       phase: "response",
       id: trace.id,
@@ -394,9 +460,13 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     });
   }
   function traceClip(raw, bytesLimit = traceBodyLimit()) {
-    if (typeof raw !== "string") return { raw: "", retained: false, size: null };
+    if (typeof raw !== "string") {
+return { raw: "", retained: false, size: null };
+}
     const bytes = new page.TextEncoder().encode(raw);
-    if (bytes.byteLength <= bytesLimit) return { raw, retained: true, size: bytes.byteLength };
+    if (bytes.byteLength <= bytesLimit) {
+return { raw, retained: true, size: bytes.byteLength };
+}
     const truncated = new page.TextDecoder().decode(bytes.subarray(0, bytesLimit));
     return { raw: truncated, retained: false, size: bytes.byteLength };
   }
@@ -416,7 +486,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     });
   }
   async function traceReadStream(stream) {
-    if (!stream) return { raw: "", retained: true, size: 0, note: "" };
+    if (!stream) {
+return { raw: "", retained: true, size: 0, note: "" };
+}
     const reader = stream.getReader();
     const chunks = [];
     const limit = traceBodyLimit();
@@ -434,10 +506,14 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
           timedOut = truncated = true;
           break;
         }
-        if (part.done) break;
+        if (part.done) {
+break;
+}
         const remaining = limit - total;
         if (part.value.byteLength > remaining) {
-          if (remaining) chunks.push(part.value.subarray(0, remaining));
+          if (remaining) {
+chunks.push(part.value.subarray(0, remaining));
+}
           total = limit;
           truncated = true;
           break;
@@ -447,8 +523,12 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       }
     } finally {
       clearTimeout(timer);
-      if (truncated) void reader.cancel().catch(() => {});
-      else reader.releaseLock();
+      if (truncated) {
+void reader.cancel().catch(() => {});
+}
+      else {
+reader.releaseLock();
+}
     }
     const bytes = new Uint8Array(total);
     let offset = 0;
@@ -468,7 +548,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     };
   }
   async function tracePassiveResponse(trace, response) {
-    if (!trace) return;
+    if (!trace) {
+return;
+}
     const type = response.headers.get("content-type") || "";
     if (/event-stream|octet-stream|video|audio/i.test(type) || !response.body) {
       traceFinishText(
@@ -514,11 +596,13 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       if (u.origin === location.origin && u.pathname.startsWith("/i/api/")) {
         capture(input?.headers, init?.headers);
         if (relevant(url))
-          emit("request", {
+          {
+emit("request", {
             url,
             method: init?.method || input?.method || "GET",
             body: typeof init?.body === "string" ? init.body : "",
           });
+}
       }
     } catch {}
     const method = init?.method || input?.method || "GET";
@@ -532,7 +616,8 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       } catch {}
     }
     if (requestCopy)
-      void (async () => {
+      {
+void (async () => {
         try {
           const content = await traceReadStream(requestCopy.body);
           emit("inspect", {
@@ -543,9 +628,12 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
             requestBytes: content.size,
             requestNote: content.note,
           });
-          if (relevant(url)) emit("request", { url, method, body: content.raw });
+          if (relevant(url)) {
+emit("request", { url, method, body: content.raw });
+}
         } catch {}
       })();
+}
     let result;
     try {
       result = Reflect.apply(originalFetch, this, arguments);
@@ -555,32 +643,40 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     }
     if (!allowed.test(url) && !relevant(url)) {
       if (trace)
-        result
+        {
+result
           .then(
             (response) => void tracePassiveResponse(trace, response),
             (error) => traceError(trace, error),
           )
           .catch(() => {});
+}
       return result;
     }
     const requestRoute = location.pathname + location.search;
     return Promise.resolve(result).then(
       async (response) => {
         if (!response.ok) {
-          if (trace) void tracePassiveResponse(trace, response);
+          if (trace) {
+void tracePassiveResponse(trace, response);
+}
           return response;
         }
         try {
           const contentType = response.headers.get("content-type") || "";
           if (/event-stream|multipart/i.test(contentType)) {
-            if (trace) void tracePassiveResponse(trace, response);
+            if (trace) {
+void tracePassiveResponse(trace, response);
+}
             return response;
           }
           const raw = await response.clone().text();
           // An old in-flight request cannot inherit a new route's filter/limit.
           const body = requestRoute === location.pathname + location.search ? process(url, raw) : raw;
           traceFinishText(trace, response, raw, body);
-          if (body === raw) return response;
+          if (body === raw) {
+return response;
+}
           const h = new page.Headers(response.headers);
           h.delete("content-length");
           h.delete("content-encoding");
@@ -590,21 +686,25 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
             headers: h,
           });
           for (const key of ["url", "redirected", "type"])
-            try {
+            {
+try {
               Object.defineProperty(next, key, {
                 value: response[key],
               });
             } catch {}
+}
           return next;
         } catch (error) {
           if (trace)
-            traceFinishText(
+            {
+traceFinishText(
               trace,
               response,
               null,
               null,
               "Falha ao ler o clone: " + String(error?.message || error),
             );
+}
           return response;
         }
       },
@@ -623,10 +723,18 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     proto.open = function (method, url, ...rest) {
       // Reused XHR instances must not retain a response override or old listeners.
       const old = meta.get(this);
-      if (old?.listener) this.removeEventListener("readystatechange", old.listener);
-      if (old?.traceListener) this.removeEventListener("loadend", old.traceListener);
-      if (old?.abortListener) this.removeEventListener("abort", old.abortListener);
-      if (old?.errorListener) this.removeEventListener("error", old.errorListener);
+      if (old?.listener) {
+this.removeEventListener("readystatechange", old.listener);
+}
+      if (old?.traceListener) {
+this.removeEventListener("loadend", old.traceListener);
+}
+      if (old?.abortListener) {
+this.removeEventListener("abort", old.abortListener);
+}
+      if (old?.errorListener) {
+this.removeEventListener("error", old.errorListener);
+}
       try {
         delete this.response;
         delete this.responseText;
@@ -647,10 +755,14 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
           m.route !== location.pathname + location.search ||
           (!allowed.test(m.url) && !relevant(m.url))
         )
-          return;
+          {
+return;
+}
         try {
           const json = this.responseType === "json";
-          if (!json && this.responseType && this.responseType !== "text") return;
+          if (!json && this.responseType && this.responseType !== "text") {
+return;
+}
           const raw = json ? JSON.stringify(this.response) : this.responseText,
             body = process(m.url, raw);
           m.traceOriginal = raw;
@@ -661,17 +773,21 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
               value: json ? JSON.parse(body) : body,
             });
             if (!json)
-              Object.defineProperty(this, "responseText", {
+              {
+Object.defineProperty(this, "responseText", {
                 configurable: true,
                 value: body,
               });
+}
           }
         } catch {}
       };
       this.addEventListener("readystatechange", m.listener);
       m.traceListener = () => {
         const trace = m.trace;
-        if (!trace || m.traceFinished) return;
+        if (!trace || m.traceFinished) {
+return;
+}
         m.traceFinished = true;
         let raw = m.traceOriginal;
         if (raw == null) {
@@ -725,11 +841,13 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
         capture(m.headers);
         m.trace = traceBegin("xhr", m.url, m.method, m.headers, body, "page");
         if (relevant(m.url))
-          emit("request", {
+          {
+emit("request", {
             url: m.url,
             method: m.method,
             body: typeof body === "string" ? body : "",
           });
+}
       }
       return Reflect.apply(send, this, arguments);
     };
@@ -747,31 +865,55 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
     } catch {
       return;
     }
-    if (!call || typeof call.id !== "number" || !call.path) return;
+    if (!call || typeof call.id !== "number" || !call.path) {
+return;
+}
     let scriptTrace = null;
     try {
       const url = new URL(call.path, location.origin);
-      if (url.origin !== location.origin || !url.pathname.startsWith("/i/api/")) throw Error("URL inválida");
+      if (url.origin !== location.origin || !url.pathname.startsWith("/i/api/")) {
+throw Error("URL inválida");
+}
       const method = String(call.method || "GET").toUpperCase();
-      if (!["GET", "POST"].includes(method)) throw Error("Método não permitido");
+      if (!["GET", "POST"].includes(method)) {
+throw Error("Método não permitido");
+}
       if (call.params)
-        for (const [k, v] of Object.entries(call.params)) {
+        {
+for (const [k, v] of Object.entries(call.params)) {
           if (v !== null && v !== undefined)
-            url.searchParams.set(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+            {
+url.searchParams.set(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+}
         }
+}
       if (!sessionReady || !headers.get("authorization"))
-        throw Error("O X ainda não enviou uma requisição autenticada nesta sessão.");
+        {
+throw Error("O X ainda não enviou uma requisição autenticada nesta sessão.");
+}
       const reqHeaders = new Headers(headers);
       const csrf = decodeURIComponent(document.cookie.match(/(?:^|;\s*)ct0=([^;]+)/)?.[1] || "");
-      if (csrf) reqHeaders.set("x-csrf-token", csrf);
+      if (csrf) {
+reqHeaders.set("x-csrf-token", csrf);
+}
       reqHeaders.set("accept", "*/*");
-      if (call.form) reqHeaders.set("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
-      else if (method === "POST") reqHeaders.set("content-type", "application/json");
+      if (call.form) {
+reqHeaders.set("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
+}
+      else if (method === "POST") {
+reqHeaders.set("content-type", "application/json");
+}
       let body;
-      if (call.form) body = new URLSearchParams(call.form).toString();
-      else if (call.payload !== undefined && call.payload !== null) body = JSON.stringify(call.payload);
+      if (call.form) {
+body = new URLSearchParams(call.form).toString();
+}
+      else if (call.payload !== undefined && call.payload !== null) {
+body = JSON.stringify(call.payload);
+}
       const controller = new AbortController();
-      if (method === "GET") controllers.set(call.id, controller);
+      if (method === "GET") {
+controllers.set(call.id, controller);
+}
       scriptTrace = traceBegin("fetch", url.toString(), method, reqHeaders, body, "script");
       const r = await nativeFetch(url.toString(), {
         method,
@@ -782,7 +924,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
         body,
       });
       const raw = await r.text();
-      if (scriptTrace) traceFinishText(scriptTrace, r, raw);
+      if (scriptTrace) {
+traceFinishText(scriptTrace, r, raw);
+}
       let data = null;
       if (raw.length < runtimeLimits.maxResponsePreviewCharacters) {
         try {
@@ -799,7 +943,9 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
       };
       emit("result", result);
     } catch (error) {
-      if (scriptTrace) traceError(scriptTrace, error);
+      if (scriptTrace) {
+traceError(scriptTrace, error);
+}
       emit("result", {
         id: call.id,
         status: 0,

@@ -20,7 +20,9 @@ export function initializeRoot() {
   shadow.addEventListener("toggle", onGroupToggle, true);
   shadow.addEventListener("keydown", (event) => {
     const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput);
-    if (!input) return;
+    if (!input) {
+return;
+}
     if ((event as KeyboardEvent).key === "Enter" || (event as KeyboardEvent).key === "Tab") {
       if ((input as HTMLInputElement).value.trim()) {
         event.preventDefault();
@@ -68,7 +70,9 @@ export function initializeRoot() {
   shadow.addEventListener(
     "touchend",
     (event) => {
-      if (yStart == null || !state.open) return;
+      if (yStart == null || !state.open) {
+return;
+}
       const delta = ((event as TouchEvent).changedTouches[0]?.clientY ?? yStart) - yStart;
       yStart = null;
       if (delta > 110) {

@@ -13,7 +13,9 @@ export function initializeDeckDragDock() {
       swallowUntil = 0;
     const point = (event) => event.touches?.[0] || event.changedTouches?.[0] || event;
     const reset = () => {
-      if (!active) return;
+      if (!active) {
+return;
+}
       clearTimeout(active.timer);
       const shadow = active.shadow;
       shadow
@@ -23,11 +25,15 @@ export function initializeDeckDragDock() {
       active = null;
     };
     function move(fromId, beforeId, after = false) {
-      if (!fromId || !beforeId || fromId === beforeId) return;
+      if (!fromId || !beforeId || fromId === beforeId) {
+return;
+}
       const previous = state.searches.slice();
       const from = state.searches.findIndex((s) => s.id === fromId);
       const dest = state.searches.findIndex((s) => s.id === beforeId);
-      if (from < 0 || dest < 0) return;
+      if (from < 0 || dest < 0) {
+return;
+}
       const [item] = state.searches.splice(from, 1);
       const at = state.searches.findIndex((s) => s.id === beforeId);
       state.searches.splice(at + (after ? 1 : 0), 0, item);
@@ -39,12 +45,16 @@ export function initializeDeckDragDock() {
       });
     }
     function closestTarget(x, y) {
-      if (!active) return null;
+      if (!active) {
+return null;
+}
       const elements = [...active.shadow.querySelectorAll(RODX_SELECTORS.draggableItems)].filter(
         (el) => el.dataset.dragId !== active.id,
       );
       const direct = active.shadow.elementFromPoint?.(x, y)?.closest?.(RODX_SELECTORS.draggableItems);
-      if (direct && direct.dataset.dragId !== active.id) return direct;
+      if (direct && direct.dataset.dragId !== active.id) {
+return direct;
+}
       // A touch can land between tabs or outside the dock; use nearest center.
       return (
         elements.reduce((best, node) => {
@@ -60,13 +70,19 @@ export function initializeDeckDragDock() {
       );
     }
     function setDrop(x, y) {
-      if (!active?.started) return;
+      if (!active?.started) {
+return;
+}
       const shadow = active.shadow;
       const nav = shadow.querySelector(RODX_SELECTORS.searchDock);
       if (nav) {
         const r = nav.getBoundingClientRect();
-        if (x > r.right - 34) nav.scrollLeft += 15;
-        else if (x < r.left + 34) nav.scrollLeft -= 15;
+        if (x > r.right - 34) {
+nav.scrollLeft += 15;
+}
+        else if (x < r.left + 34) {
+nav.scrollLeft -= 15;
+}
       }
       const item = closestTarget(x, y);
       shadow
@@ -86,7 +102,9 @@ export function initializeDeckDragDock() {
       }
     }
     function start(x, y) {
-      if (!active || active.started) return;
+      if (!active || active.started) {
+return;
+}
       active.started = true;
       active.handle.closest(RODX_SELECTORS.draggableItems)?.classList.add("dragging");
       const ghost = document.createElement("div");
@@ -100,21 +118,27 @@ export function initializeDeckDragDock() {
       shadow.addEventListener(
         "dragstart",
         (e) => {
-          if (e.target.closest(RODX_SELECTORS.draggableItems)) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.draggableItems)) {
+e.preventDefault();
+}
         },
         true,
       );
       shadow.addEventListener(
         "selectstart",
         (e) => {
-          if (e.target.closest(RODX_SELECTORS.dragHandles)) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.dragHandles)) {
+e.preventDefault();
+}
         },
         true,
       );
       shadow.addEventListener(
         "contextmenu",
         (e) => {
-          if (e.target.closest(RODX_SELECTORS.dragHandles)) e.preventDefault();
+          if (e.target.closest(RODX_SELECTORS.dragHandles)) {
+e.preventDefault();
+}
         },
         true,
       );
@@ -130,8 +154,12 @@ export function initializeDeckDragDock() {
       );
       const down = (e) => {
         const h = e.target.closest?.(RODX_SELECTORS.dragHandles);
-        if (!h) return;
-        if (active) reset();
+        if (!h) {
+return;
+}
+        if (active) {
+reset();
+}
         const p = point(e),
           id = h.dataset.dragHandle;
         active = {
@@ -147,35 +175,57 @@ export function initializeDeckDragDock() {
           label: h.nextElementSibling?.textContent?.trim() || "Timeline",
         };
         // Touch-handle never scrolls or selects; the timeline itself remains scrollable.
-        if (e.type === "touchstart" && e.cancelable) e.preventDefault();
+        if (e.type === "touchstart" && e.cancelable) {
+e.preventDefault();
+}
         active.timer = setTimeout(() => {
-          if (active && active.id === id) start(active.startX, active.startY);
+          if (active && active.id === id) {
+start(active.startX, active.startY);
+}
         }, RUNTIME_LIMITS.uiDraggableDock.attachDelayMs);
       };
       const track = (e) => {
-        if (!active) return;
+        if (!active) {
+return;
+}
         const p = point(e);
-        if (!p) return;
-        if (e.cancelable) e.preventDefault();
+        if (!p) {
+return;
+}
+        if (e.cancelable) {
+e.preventDefault();
+}
         if (!active.started) {
           if (Math.hypot(p.clientX - active.startX, p.clientY - active.startY) > 5) {
             clearTimeout(active.timer);
             start(p.clientX, p.clientY);
           }
         }
-        if (active.started) setDrop(p.clientX, p.clientY);
+        if (active.started) {
+setDrop(p.clientX, p.clientY);
+}
       };
       const up = (e) => {
-        if (!active) return;
+        if (!active) {
+return;
+}
         const p = point(e);
         if (active.started) {
-          if (p) setDrop(p.clientX, p.clientY);
+          if (p) {
+setDrop(p.clientX, p.clientY);
+}
           const { id, target, after } = active;
           swallowUntil = Date.now() + 650;
           reset();
-          if (target) move(id, target, after);
-        } else reset();
-        if (e.type === "touchend" && e.cancelable) e.preventDefault();
+          if (target) {
+move(id, target, after);
+}
+        } else {
+reset();
+}
+        if (e.type === "touchend" && e.cancelable) {
+e.preventDefault();
+}
       };
       shadow.addEventListener("touchstart", down, {
         capture: true,
@@ -193,28 +243,36 @@ export function initializeDeckDragDock() {
       shadow.addEventListener(
         "pointerdown",
         (e) => {
-          if (e.pointerType !== "touch") down(e);
+          if (e.pointerType !== "touch") {
+down(e);
+}
         },
         true,
       );
       shadow.addEventListener(
         "pointermove",
         (e) => {
-          if (e.pointerType !== "touch") track(e);
+          if (e.pointerType !== "touch") {
+track(e);
+}
         },
         true,
       );
       shadow.addEventListener(
         "pointerup",
         (e) => {
-          if (e.pointerType !== "touch") up(e);
+          if (e.pointerType !== "touch") {
+up(e);
+}
         },
         true,
       );
       shadow.addEventListener(
         "pointercancel",
         (e) => {
-          if (e.pointerType !== "touch") reset();
+          if (e.pointerType !== "touch") {
+reset();
+}
         },
         true,
       );

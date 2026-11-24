@@ -22,7 +22,9 @@ export function initializeDeckImmersiveDownload() {
           : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
             ? GM.xmlHttpRequest.bind(GM)
             : null;
-      if (!gm) return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via GM."));
+      if (!gm) {
+return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via GM."));
+}
       return new Promise<any>((resolve, reject) => {
         let complete = false;
         const success = (data) => {
@@ -57,8 +59,12 @@ export function initializeDeckImmersiveDownload() {
       try {
         const url = new URL(String(value || "").replaceAll("&amp;", "&"));
         // The resolver is not trusted to return arbitrary off-domain URLs.
-        if (url.protocol !== "https:" || !/^(?:video|pbs)\.twimg\.com$/i.test(url.hostname)) return "";
-        if (!/\.mp4(?:$|\?)/i.test(url.href) && !/\/video\//i.test(url.pathname)) return "";
+        if (url.protocol !== "https:" || !/^(?:video|pbs)\.twimg\.com$/i.test(url.hostname)) {
+return "";
+}
+        if (!/\.mp4(?:$|\?)/i.test(url.href) && !/\/video\//i.test(url.pathname)) {
+return "";
+}
         return url.href;
       } catch {
         return "";
@@ -66,7 +72,9 @@ export function initializeDeckImmersiveDownload() {
     }
     function locate() {
       const layer = document.getElementById("layers");
-      if (!layer) return null;
+      if (!layer) {
+return null;
+}
       const videos = [...layer.querySelectorAll<HTMLVideoElement>(DOM_SELECTORS.videos)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
@@ -81,14 +89,18 @@ export function initializeDeckImmersiveDownload() {
           rect.right > 0
         );
       });
-      if (!visible.length) return null;
+      if (!visible.length) {
+return null;
+}
       const isViewer = Boolean(layer.querySelector<HTMLElement>(NATIVE_X_SELECTORS.mediaViewerRoots()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
       const nativePlayerInStatus = Boolean(
         route && layer.querySelector<HTMLVideoElement>(NATIVE_X_SELECTORS.playableVideoContainers()),
       );
-      if (!isViewer && !isVideoRoute && !nativePlayerInStatus) return null;
+      if (!isViewer && !isVideoRoute && !nativePlayerInStatus) {
+return null;
+}
       const video = visible.sort((a, b) => {
         const ra = a.getBoundingClientRect(),
           rb = b.getBoundingClientRect();
@@ -99,7 +111,9 @@ export function initializeDeckImmersiveDownload() {
         related.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks) ||
         layer.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
-      if (!id) return null;
+      if (!id) {
+return null;
+}
       const owner =
         link?.getAttribute("href")?.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1] ||
         location.pathname.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1];
@@ -116,7 +130,9 @@ export function initializeDeckImmersiveDownload() {
       };
     }
     function setLabel(title) {
-      if (!button) return;
+      if (!button) {
+return;
+}
       mountView(button, () => (
         <>
           {<DownloadSVGIcon />}
@@ -128,7 +144,9 @@ export function initializeDeckImmersiveDownload() {
       button.disabled = busy;
     }
     function style() {
-      if (styleAdded) return;
+      if (styleAdded) {
+return;
+}
       const css = document.createElement("style");
       css.id = "rodx-immersive-download-css";
       css.textContent = extractedCSS1;
@@ -137,9 +155,13 @@ export function initializeDeckImmersiveDownload() {
     }
     async function resolveMP4(viewer) {
       const current = mediaUrl(viewer.video.currentSrc || viewer.video.src);
-      if (current) return current;
+      if (current) {
+return current;
+}
       const cached = cache.get(viewer.key);
-      if (cached && Date.now() - cached.at < 600_000) return cached.url;
+      if (cached && Date.now() - cached.at < 600_000) {
+return cached.url;
+}
       setLabel("Obtendo vídeo…");
       // Same public Twitter resolver contract used by AIO Downloader v4.3.9.
       const response = await request({
@@ -172,8 +194,12 @@ export function initializeDeckImmersiveDownload() {
           .filter((url) => /\.mp4(?:$|\?)/i.test(url)),
       }));
       let item = candidates.find((x) => x.index === viewer.videoIndex && x.links.length);
-      if (!item && viewer.videoIndex === 0) item = candidates.find((x) => x.links.length);
-      if (!item) throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
+      if (!item && viewer.videoIndex === 0) {
+item = candidates.find((x) => x.links.length);
+}
+      if (!item) {
+throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
+}
       const rank = (url) => {
         const match = url.match(/\/vid\/(\d+)x(\d+)\//i);
         return match ? Number(match[1]) * Number(match[2]) : 0;
@@ -183,7 +209,9 @@ export function initializeDeckImmersiveDownload() {
         url: best,
         at: Date.now(),
       });
-      if (cache.size > 100) cache.delete(cache.keys().next().value);
+      if (cache.size > 100) {
+cache.delete(cache.keys().next().value);
+}
       return best;
     }
     async function download(url, filename) {
@@ -217,7 +245,9 @@ export function initializeDeckImmersiveDownload() {
               onerror: fail,
               ontimeout: fail,
             });
-            if (value && typeof value.then === "function") value.then(okay, fail);
+            if (value && typeof value.then === "function") {
+value.then(okay, fail);
+}
           });
           return;
         } catch (error) {
@@ -245,7 +275,9 @@ export function initializeDeckImmersiveDownload() {
             type: "video/mp4",
           });
         }
-        if (!(blob instanceof Blob) || !blob.size) throw new Error("Resposta de mídia vazia.");
+        if (!(blob instanceof Blob) || !blob.size) {
+throw new Error("Resposta de mídia vazia.");
+}
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = objectUrl;
@@ -261,7 +293,9 @@ export function initializeDeckImmersiveDownload() {
         const choice = window.confirm(`${error.message}\nAbrir MP4 em uma aba para salvar pelo Safari?`);
         if (choice) {
           const tab = window.open(url, "_blank", "noopener,noreferrer");
-          if (!tab) throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
+          if (!tab) {
+throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
+}
           return "opened";
         }
         throw error;
@@ -270,15 +304,21 @@ export function initializeDeckImmersiveDownload() {
     async function click(event) {
       event.preventDefault();
       event.stopPropagation();
-      if (busy) return;
+      if (busy) {
+return;
+}
       const current = locate();
-      if (!current) return;
+      if (!current) {
+return;
+}
       busy = true;
       setLabel("Preparando…");
       try {
         const url = await resolveMP4(current);
         const now = locate();
-        if (!now || now.key !== current.key) throw new Error("O vídeo aberto mudou durante a preparação.");
+        if (!now || now.key !== current.key) {
+throw new Error("O vídeo aberto mudou durante a preparação.");
+}
         const outcome = await download(url, `X-${current.id}-${current.videoIndex + 1}.mp4`);
         setLabel(outcome === "opened" ? "MP4 aberto" : "Baixado ✓");
         await new Promise<any>((resolve) => setTimeout(resolve, RUNTIME_LIMITS.mediaDownload.resolveDelayMs));
@@ -293,7 +333,9 @@ export function initializeDeckImmersiveDownload() {
     }
     function scan(force = false) {
       const now = Date.now();
-      if (!force && now - lastScan < 500) return;
+      if (!force && now - lastScan < 500) {
+return;
+}
       lastScan = now;
       const viewer = locate();
       if (!viewer) {
@@ -318,7 +360,9 @@ export function initializeDeckImmersiveDownload() {
       }
       if (activeKey !== viewer.key) {
         activeKey = viewer.key;
-        if (!busy) setLabel("Download");
+        if (!busy) {
+setLabel("Download");
+}
       }
     }
     return Object.freeze({

@@ -23,6 +23,7 @@ function controls(): HTMLElement[] {
       return ACTION_LABEL.test(label);
     });
 }
+
 function nativeSave(scope: ParentNode = document): HTMLElement | null {
   return (
     controls()
@@ -37,6 +38,7 @@ function nativeSave(scope: ParentNode = document): HTMLElement | null {
       ) || null
   );
 }
+
 function activeBookmark(): { source: HTMLElement; identity: string } | null {
   // A visible Reel must own its native control. Never fall back to a global
   // bookmark, because Instagram keeps adjacent slides mounted during swipes.
@@ -50,24 +52,36 @@ function activeBookmark(): { source: HTMLElement; identity: string } | null {
     .filter(({ rect, visibleArea }) => rect.width > 0 && rect.height > 0 && visibleArea > 0)
     .sort((a, b) => b.visibleArea - a.visibleArea);
   const active = videos[0];
-  if (!active) return null;
+  if (!active) {
+return null;
+}
   const scope = active.video.closest<HTMLElement>('article, [role="dialog"], [data-testid="reel"]');
-  if (!scope) return null;
+  if (!scope) {
+return null;
+}
   const source = nativeSave(scope);
-  if (!source || !source.isConnected) return null;
+  if (!source || !source.isConnected) {
+return null;
+}
   const link = [...scope.querySelectorAll<HTMLAnchorElement>('a[href*="/reel/"], a[href*="/p/"]')].find(
     (anchor) => /\/(?:reel|p)\/[^/]+/.test(anchor.pathname),
   );
   const scopedId = link?.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1];
   // Never borrow the current URL for a different visible slide.
-  if (!scopedId && videos.length > 1) return null;
+  if (!scopedId && videos.length > 1) {
+return null;
+}
   const identity = scopedId || location.pathname.match(/\/(?:reel|p)\/([^/]+)/)?.[1];
-  if (!identity) return null;
+  if (!identity) {
+return null;
+}
   return { source, identity };
 }
 
 function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown" {
-  if (!source) return "unknown";
+  if (!source) {
+return "unknown";
+}
   const label = [
     source.getAttribute("aria-label"),
     source.getAttribute("title"),
@@ -79,15 +93,21 @@ function nativeState(source: HTMLElement | null): "saved" | "unsaved" | "unknown
     .filter(Boolean)
     .join(" ")
     .trim();
-  if (SAVED.test(label)) return "saved";
-  if (UNSAVED.test(label)) return "unsaved";
+  if (SAVED.test(label)) {
+return "saved";
+}
+  if (UNSAVED.test(label)) {
+return "unsaved";
+}
   return "unknown";
 }
 
 async function waitForSaved(source: HTMLElement, signal: AbortSignal, timeout = 2200): Promise<boolean> {
   const end = Date.now() + timeout;
   while (!signal.aborted && Date.now() < end) {
-    if (nativeState(source) === "saved") return true;
+    if (nativeState(source) === "saved") {
+return true;
+}
     await sleep(120);
   }
   return false;
@@ -101,8 +121,12 @@ function collectionOption(id: string): HTMLElement | null {
   );
   return (
     [...candidates].find((node) => {
-      if (node.getAttribute("data-collection-id") !== id) return false;
-      if (!node.isConnected || node.getAttribute("aria-disabled") === "true") return false;
+      if (node.getAttribute("data-collection-id") !== id) {
+return false;
+}
+      if (!node.isConnected || node.getAttribute("aria-disabled") === "true") {
+return false;
+}
       const rect = node.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     }) || null
@@ -117,28 +141,42 @@ async function waitForCollection(
   const end = Date.now() + timeout;
   while (!signal.aborted && Date.now() < end) {
     const option = collectionOption(id);
-    if (option) return option;
+    if (option) {
+return option;
+}
     await sleep(120);
   }
   return null;
 }
 
 async function saveToCollections(ids: string[], signal: AbortSignal, source: HTMLElement): Promise<void> {
-  if (!source.isConnected) throw Error("Botão nativo de salvar não encontrado neste Reel");
-  if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
+  if (!source.isConnected) {
+throw Error("Botão nativo de salvar não encontrado neste Reel");
+}
+  if (!ids.length) {
+throw Error("Configure pelo menos uma coleção antes de enviar");
+}
   if (nativeState(source) === "saved") {
     throw Error(
       "Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.",
     );
   }
   if (nativeState(source) !== "unsaved")
-    throw Error("Não foi possível confirmar o estado do bookmark nativo");
-  if (signal.aborted) throw Error("Operação cancelada");
+    {
+throw Error("Não foi possível confirmar o estado do bookmark nativo");
+}
+  if (signal.aborted) {
+throw Error("Operação cancelada");
+}
   source.click();
   if (!(await waitForSaved(source, signal)))
-    throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
+    {
+throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
+}
   for (const id of ids) {
-    if (signal.aborted || !source.isConnected) throw Error("Operação cancelada ou Reel alterado");
+    if (signal.aborted || !source.isConnected) {
+throw Error("Operação cancelada ou Reel alterado");
+}
     const option = await waitForCollection(id, signal);
     if (!option) {
       throw Error(
@@ -171,7 +209,9 @@ export function mountReelBookmark(
   let operation = 0;
   let mount: { host: HTMLElement; dispose: () => void } | undefined;
   const render = () => {
-    if (!mount) return;
+    if (!mount) {
+return;
+}
     // The mounted React button reads the latest state through the shared portal.
     mount.dispose();
     mount.dispose = ctx.ui.mountReact(
@@ -181,19 +221,27 @@ export function mountReelBookmark(
   };
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (state === "loading" || state === "saved" || signal.aborted) return;
+    if (state === "loading" || state === "saved" || signal.aborted) {
+return;
+}
     const token = ++operation;
     const reel = activeReel;
     const source = selectedSave;
-    if (!source?.isConnected || !reel) return;
+    if (!source?.isConnected || !reel) {
+return;
+}
     setState("loading");
     try {
       await saveToCollections(await getCollectionIds(), signal, source);
-      if (token !== operation || signal.aborted || reel !== activeReel || source !== selectedSave) return;
+      if (token !== operation || signal.aborted || reel !== activeReel || source !== selectedSave) {
+return;
+}
       setState("saved");
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
-      if (token !== operation || signal.aborted || reel !== activeReel) return;
+      if (token !== operation || signal.aborted || reel !== activeReel) {
+return;
+}
       setState("error");
       notify((error as Error).message);
     }
@@ -230,16 +278,22 @@ export function mountReelBookmark(
     } else if (state !== "loading" && state !== "error") {
       const observed = nativeState(source);
       const next = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
-      if (next !== state) setState(next);
+      if (next !== state) {
+setState(next);
+}
     }
-    if (mount?.host.isConnected && anchor === source) return;
+    if (mount?.host.isConnected && anchor === source) {
+return;
+}
     clear();
     selectedSave = source;
     anchor = source;
     const host = document.createElement("span");
     host.dataset.rodCollectionAction = "true";
     source.parentNode?.insertBefore(host, source.nextSibling);
-    if (!host.isConnected) return;
+    if (!host.isConnected) {
+return;
+}
     const dispose = ctx.ui.mountReact(
       <ReelBookmarkButton state={state} disabled={state === "error"} onActivate={() => void send()} />,
       host,
@@ -258,7 +312,9 @@ export function mountReelBookmark(
             ),
         )
       )
-        scheduleRefresh();
+        {
+scheduleRefresh();
+}
     },
     {
       subtree: true,
@@ -271,7 +327,9 @@ export function mountReelBookmark(
   // Coalesce navigation, touch/swipe and DOM updates into one scan per frame.
   let frame = 0;
   const scheduleRefresh = () => {
-    if (signal.aborted || frame) return;
+    if (signal.aborted || frame) {
+return;
+}
     frame = requestAnimationFrame(() => {
       frame = 0;
       refresh();

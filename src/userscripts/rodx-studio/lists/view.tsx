@@ -11,7 +11,9 @@ export function initializeListsRefreshScheduled() {
 }
 
 export function scheduleRefresh() {
-  if (refreshScheduled) return;
+  if (refreshScheduled) {
+return;
+}
   refreshScheduled = true;
   setTimeout(() => {
     refreshScheduled = false;

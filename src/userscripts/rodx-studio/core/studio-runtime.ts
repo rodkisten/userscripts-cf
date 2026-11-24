@@ -170,7 +170,9 @@ export function createStudioRuntime(): StudioRuntime {
   let generation = 0;
 
   function on(type: string, fn: EventCallback): () => void {
-    if (!listeners.has(type)) listeners.set(type, new Set());
+    if (!listeners.has(type)) {
+listeners.set(type, new Set());
+}
     listeners.get(type)!.add(fn);
     return () => {
       listeners.get(type)?.delete(fn);
@@ -188,7 +190,9 @@ export function createStudioRuntime(): StudioRuntime {
   }
 
   function slice<T>(name: string, value: T): T {
-    if (state[name] !== undefined) return state[name] as T;
+    if (state[name] !== undefined) {
+return state[name] as T;
+}
     state[name] = value;
     return value;
   }
@@ -198,7 +202,9 @@ export function createStudioRuntime(): StudioRuntime {
   }
 
   function queue(id: string): void {
-    if (!jobs.has(id)) return;
+    if (!jobs.has(id)) {
+return;
+}
     pending.add(id);
     if (!drainTimer && !document.hidden) {
       drainTimer = window.setTimeout(drain, config.scanDelayMs);
@@ -211,7 +217,9 @@ export function createStudioRuntime(): StudioRuntime {
       cache.clear();
     }
     for (const [id, job] of jobs) {
-      if (job.events.includes(reason)) queue(id);
+      if (job.events.includes(reason)) {
+queue(id);
+}
     }
     emit(reason, state.route);
   }
@@ -221,7 +229,9 @@ export function createStudioRuntime(): StudioRuntime {
     fn: JobFunction,
     { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 }: RegisterOptions = {},
   ): () => void {
-    if (jobs.has(id)) throw Error("Duplicate module: " + id);
+    if (jobs.has(id)) {
+throw Error("Duplicate module: " + id);
+}
 
     jobs.set(id, {
       fn,
@@ -249,7 +259,9 @@ export function createStudioRuntime(): StudioRuntime {
 
   function drain(): void {
     drainTimer = 0;
-    if (document.hidden) return;
+    if (document.hidden) {
+return;
+}
 
     const begin = performance.now();
     let remainingDelay = Infinity;
@@ -313,7 +325,9 @@ export function createStudioRuntime(): StudioRuntime {
         console.warn(STUDIO_LOGGER_TAG, id, error);
       }
 
-      if (performance.now() - begin >= config.budgetMs) break;
+      if (performance.now() - begin >= config.budgetMs) {
+break;
+}
     }
 
     if (pending.size && !drainTimer) {
@@ -328,7 +342,9 @@ export function createStudioRuntime(): StudioRuntime {
 
   function nodes(selector: string): Element[] {
     const hit = cache.get(selector);
-    if (hit?.generation === generation) return hit.nodes;
+    if (hit?.generation === generation) {
+return hit.nodes;
+}
 
     const elementNodes = Array.from(document.querySelectorAll(selector));
     cache.set(selector, {
@@ -342,7 +358,9 @@ export function createStudioRuntime(): StudioRuntime {
     node?.nodeType === 1 && Boolean((node as Element).closest?.(OWN_SELECTOR));
 
   function start(): void {
-    if (started || !document.body) return;
+    if (started || !document.body) {
+return;
+}
     started = true;
 
     const context = runtime.ctx;
@@ -366,15 +384,21 @@ export function createStudioRuntime(): StudioRuntime {
           typeof value !== "object" ||
           Array.isArray(value)
         )
-          return;
+          {
+return;
+}
         const loaded = value as Partial<StudioConfig>;
         Object.assign(config, loaded, {
           feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
           modules: { ...defaults.modules, ...loaded.modules },
         });
         if (legacy !== undefined && !configEdited)
-          await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
-        if (!context.signal.aborted && !configEdited) invalidate("state");
+          {
+await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
+}
+        if (!context.signal.aborted && !configEdited) {
+invalidate("state");
+}
       })
       .catch((error: unknown) => {
         console.warn("[RodX] Could not hydrate runtime configuration", error);
@@ -394,7 +418,9 @@ export function createStudioRuntime(): StudioRuntime {
               ),
           )
         )
-          return;
+          {
+return;
+}
 
         if (!domTimer) {
           domTimer = window.setTimeout(() => {
@@ -415,7 +441,9 @@ export function createStudioRuntime(): StudioRuntime {
     let lastRoute = state.route;
     const route = () => {
       const next = location.pathname + location.search;
-      if (next === lastRoute) return;
+      if (next === lastRoute) {
+return;
+}
       lastRoute = next;
       state.route = next;
       invalidate("route");
@@ -438,15 +466,21 @@ export function createStudioRuntime(): StudioRuntime {
 
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
     context.interval(() => {
-      if (!document.hidden) route();
+      if (!document.hidden) {
+route();
+}
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
     context.interval(() => {
-      if (!document.hidden) invalidate("maintenance");
+      if (!document.hidden) {
+invalidate("maintenance");
+}
     }, config.maintenanceMs);
 
     context.interval(() => {
-      if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
+      if (!document.hidden && enabled("media") && nodes("video").length) {
+invalidate("media");
+}
     }, 500);
 
     context.onDispose(() => {

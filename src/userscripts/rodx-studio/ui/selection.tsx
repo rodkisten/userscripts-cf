@@ -22,21 +22,29 @@ export function initializeDeckSelectionPopover() {
       const raw = String(value || "")
         .replace(/\s+/gu, " ")
         .trim();
-      if (!raw || raw.length > 500) return "";
+      if (!raw || raw.length > 500) {
+return "";
+}
       const braced = /^\{([\s\S]+)\}$/.exec(raw);
       const content = braced ? braced[1].trim() : raw;
-      if (!content) return "";
+      if (!content) {
+return "";
+}
       // Preserve the COMPLETE selected phrase, not just the first word.
       // {any text} explicitly requests an exact phrase.
       const quoted = /^"[\s\S]*"$/.test(content);
       const singleTag = /^#[\p{L}\p{M}\p{N}_]+$/u.test(content);
       const singleWord = /^[\p{L}\p{M}\p{N}_-]+$/u.test(content);
-      if (singleTag || (singleWord && !braced) || (quoted && !braced)) return content;
+      if (singleTag || (singleWord && !braced) || (quoted && !braced)) {
+return content;
+}
       return '"' + content.replace(/^"|"$/g, "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
     };
     const show = () => {
       const selection = window.getSelection();
-      if (!selection || selection.isCollapsed) return close();
+      if (!selection || selection.isCollapsed) {
+return close();
+}
       const ancestor = selection.anchorNode?.parentElement;
       const focus = selection.focusNode?.parentElement;
       const firstText = ancestor?.closest(NATIVE_X_SELECTORS.nativeTweetText);
@@ -46,14 +54,18 @@ export function initializeDeckSelectionPopover() {
         return close();
       }
       const term = parse(selection.toString());
-      if (!term) return close();
+      if (!term) {
+return close();
+}
       let rect;
       try {
         rect = selection.getRangeAt(0).getBoundingClientRect();
       } catch {
         return;
       }
-      if (!rect.width && !rect.height) return;
+      if (!rect.width && !rect.height) {
+return;
+}
       picked = term;
       close();
       node = document.createElement("div");
@@ -84,7 +96,9 @@ export function initializeDeckSelectionPopover() {
             }
             showRodxToast("Seleção guardada nesta conta.");
           } else if (term.startsWith("#"))
-            NativeQueryTags.modify(term, act === "exclude" ? "exclude" : "add");
+            {
+NativeQueryTags.modify(term, act === "exclude" ? "exclude" : "add");
+}
           else {
             const raw = NativeQueryTags.current();
             const without = raw.trim();
@@ -96,8 +110,12 @@ export function initializeDeckSelectionPopover() {
               return;
             }
             const native = document.querySelector<HTMLInputElement>(NATIVE_X_SELECTORS.nativeSearchInput);
-            if (native) NativeQueryTags.write(QueryEngine.normalized(changed));
-            else showRodxToast("Abra a busca para adicionar a palavra.");
+            if (native) {
+NativeQueryTags.write(QueryEngine.normalized(changed));
+}
+            else {
+showRodxToast("Abra a busca para adicionar a palavra.");
+}
           }
           close();
           // Prevent a delayed pointerup / selectionchange from reopening the
@@ -125,7 +143,9 @@ export function initializeDeckSelectionPopover() {
       "selectionchange",
       () => {
         last = Date.now();
-        if (!node) setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
+        if (!node) {
+setTimeout(show, RUNTIME_LIMITS.uiSelection.showDelayMs);
+}
       },
       true,
     );
@@ -143,7 +163,9 @@ export function initializeDeckSelectionPopover() {
     document.addEventListener(
       "pointerdown",
       (e) => {
-        if (node && !node.contains(e.target) && Date.now() - last > 80) close();
+        if (node && !node.contains(e.target) && Date.now() - last > 80) {
+close();
+}
       },
       true,
     );

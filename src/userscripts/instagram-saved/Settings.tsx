@@ -163,7 +163,9 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
             }}
             onBlur={(event) => {
               const input = event.currentTarget;
-              if (!input.value.trim()) return;
+              if (!input.value.trim()) {
+return;
+}
               update({ collectionIds: [...new Set([...form.collectionIds, ...ids(input.value)])] });
               input.value = "";
             }}
@@ -254,7 +256,9 @@ export function SettingsDialog({
     <Dialog.Root
       open
       onOpenChange={(open) => {
-        if (!open && !busy) close();
+        if (!open && !busy) {
+close();
+}
       }}
     >
       <Dialog.Portal>
@@ -279,7 +283,9 @@ export function SettingsDialog({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (busy) return;
+              if (busy) {
+return;
+}
               setBusy(true);
               setFailure("");
               void save(draft)

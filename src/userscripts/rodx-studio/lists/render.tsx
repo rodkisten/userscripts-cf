@@ -283,12 +283,20 @@ export function initializeListsListPresets() {
 
 export function applyListPreset(id) {
   const saved = validListId(id) ? listPresets[id] : null;
-  if (!saved) return;
-  for (const field of PER_LIST_FIELDS) if (field in saved) settings[field] = saved[field];
+  if (!saved) {
+return;
+}
+  for (const field of PER_LIST_FIELDS) {
+if (field in saved) {
+settings[field] = saved[field];
+}
+}
 }
 
 export function saveListPreset(id = state.listId || routeListId()) {
-  if (!validListId(id)) return;
+  if (!validListId(id)) {
+return;
+}
   listPresets[id] = {
     ...listPresets[id],
     ...Object.fromEntries(PER_LIST_FIELDS.map((k) => [k, settings[k]])),
@@ -306,10 +314,12 @@ export function initializeListsSaveSettings() {
   saveSettings = ({ publish = true } = {}) => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     if (publish)
-      Studio.emit("lists:settings", {
+      {
+Studio.emit("lists:settings", {
         id: routeListId() || state.listId,
         settings,
       });
+}
     Studio.invalidate("state");
   };
 }
@@ -356,14 +366,18 @@ export function initializeListsListUsage() {
 
 export function initializeRodX_lists_41() {
   if (!listUsage || typeof listUsage !== "object")
-    listUsage = {
+    {
+listUsage = {
       lastId: "",
       stats: {},
     };
 }
+}
 
 export function initializeRodX_lists_42() {
-  if (!listUsage.stats || typeof listUsage.stats !== "object") listUsage.stats = {};
+  if (!listUsage.stats || typeof listUsage.stats !== "object") {
+listUsage.stats = {};
+}
 }
 
 export function halfLifeMs() {
@@ -407,15 +421,21 @@ export function scoreAt(id, clock = Date.now()) {
 }
 
 export function markListUsed(id, operationId) {
-  if (!validListId(id) || !operationId) return false;
+  if (!validListId(id) || !operationId) {
+return false;
+}
   const account = statsForAccount();
   const key = `${id}:${operationId}`;
-  if (account.applied[key]) return false;
+  if (account.applied[key]) {
+return false;
+}
   const clock = Date.now();
   account.applied[key] = clock;
   // Bounded deduplication ledger: keep only operations from the last 60 days.
   for (const [eventId, at] of Object.entries(account.applied)) {
-    if (clock - Number(at) > 60 * 86400000) delete account.applied[eventId];
+    if (clock - Number(at) > 60 * 86400000) {
+delete account.applied[eventId];
+}
   }
   const prev = usageStat(id);
   account.stats[id] = {
@@ -491,15 +511,19 @@ export function initializeListsDbPromise() {
 }
 
 export function openDB() {
-  if (dbPromise) return dbPromise;
+  if (dbPromise) {
+return dbPromise;
+}
   dbPromise = new Promise<any>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains("lists"))
-        db.createObjectStore("lists", {
+        {
+db.createObjectStore("lists", {
           keyPath: "id",
         });
+}
       if (!db.objectStoreNames.contains("members")) {
         const store = db.createObjectStore("members", {
           keyPath: "key",
@@ -536,7 +560,9 @@ export async function dbOp(store, mode, operation) {
       request.onerror = () => reject(request.error);
     }
     tx.oncomplete = () => {
-      if (mode === "readwrite") Studio.emit("database:dirty");
+      if (mode === "readwrite") {
+Studio.emit("database:dirty");
+}
       resolve(result);
     };
     tx.onerror = () => reject(tx.error);
@@ -563,7 +589,9 @@ export function initializeListsPut() {
 }
 
 export async function putMany(store, values) {
-  if (!values.length) return;
+  if (!values.length) {
+return;
+}
   const db = await openDB();
   await new Promise<any>((resolve, reject) => {
     const tx = db.transaction(store, "readwrite");
@@ -642,7 +670,9 @@ export function cleanListName(value) {
       rawLabel,
     )
   )
-    return "";
+    {
+return "";
+}
   value = rawLabel.replace(/\s*[·•]\s*[\d.,]+\s*(?:membros?|members?|seguidores?|followers?)(?:\s.*)?$/i, "");
   const candidates = String(value ?? "")
     .replace(/[\u200b-\u200d\ufeff]/g, "")
@@ -652,20 +682,34 @@ export function cleanListName(value) {
   for (const raw of candidates) {
     // Reject complete interface headings before stripping a member-count suffix.
     // Otherwise 'Lista de membros' incorrectly becomes 'Lista de'.
-    if (INVALID_LIST_NAMES.has(normalize(raw))) continue;
+    if (INVALID_LIST_NAMES.has(normalize(raw))) {
+continue;
+}
     const name = raw
       .replace(/\s+(?:[\d.,]+\s+)?(?:members|membros|followers|seguidores)\s*$/i, "")
       .replace(/^\s*[•·]\s*/, "")
       .trim();
-    if (!name || name.length > 120 || INVALID_LIST_NAMES.has(normalize(name))) continue;
-    if (/^(?:lista|list)\s*#?\s*\d{4,}$/i.test(name)) continue;
+    if (!name || name.length > 120 || INVALID_LIST_NAMES.has(normalize(name))) {
+continue;
+}
+    if (/^(?:lista|list)\s*#?\s*\d{4,}$/i.test(name)) {
+continue;
+}
     if (
       /^\d[\d.,]*\s*(?:(?:members?|membros?|posts?|seguidores?|following|seguindo|assinantes?))?$/i.test(name)
     )
-      continue;
-    if (/^(?:members?|membros?|posts?|seguidores?)\s*:?\s*\d[\d.,]*$/i.test(name)) continue;
-    if (/^(?:nome (?:pendente|não sincronizado)|loading|carregando|buscando listas?)/i.test(name)) continue;
-    if (/^(?:@?[^\s]+\s+[·•]\s+)?(?:pinned|fixadas)$/i.test(name)) continue;
+      {
+continue;
+}
+    if (/^(?:members?|membros?|posts?|seguidores?)\s*:?\s*\d[\d.,]*$/i.test(name)) {
+continue;
+}
+    if (/^(?:nome (?:pendente|não sincronizado)|loading|carregando|buscando listas?)/i.test(name)) {
+continue;
+}
+    if (/^(?:@?[^\s]+\s+[·•]\s+)?(?:pinned|fixadas)$/i.test(name)) {
+continue;
+}
     return name;
   }
   return "";
@@ -707,7 +751,9 @@ export function isPlaceholderName(name, id = "") {
 }
 
 export async function repairStoredListNames() {
-  if (localStorage.getItem(NAME_MIGRATION_KEY + ":counts-v322") === "done") return 0;
+  if (localStorage.getItem(NAME_MIGRATION_KEY + ":counts-v322") === "done") {
+return 0;
+}
   const records = await getAll("lists");
   const updates = [];
   for (const row of records) {
@@ -727,19 +773,27 @@ export async function repairStoredListNames() {
       });
     }
   }
-  if (updates.length) await putMany("lists", updates);
+  if (updates.length) {
+await putMany("lists", updates);
+}
   localStorage.setItem(NAME_MIGRATION_KEY + ":counts-v322", "done");
   return updates.length;
 }
 
 export async function migrateManualAliases() {
   const key = NAME_MIGRATION_KEY + ":alias-v350";
-  if (localStorage.getItem(key) === "done") return;
+  if (localStorage.getItem(key) === "done") {
+return;
+}
   const rows = await getAll("lists");
   for (const row of rows) {
-    if (row.nameSource !== "manual" || row.alias) continue;
+    if (row.nameSource !== "manual" || row.alias) {
+continue;
+}
     const alias = cleanListName(row.name);
-    if (!alias) continue;
+    if (!alias) {
+continue;
+}
     await put("lists", {
       ...row,
       alias,
@@ -765,14 +819,18 @@ export function upsertList(id, patch: Record<string, any> = {}) {
   listWrites.set(key, task);
   task
     .finally(() => {
-      if (listWrites.get(key) === task) listWrites.delete(key);
+      if (listWrites.get(key) === task) {
+listWrites.delete(key);
+}
     })
     .catch(() => {});
   return task;
 }
 
 export async function writeListRecord(id, patch: Record<string, any> = {}) {
-  if (!validListId(id)) return false;
+  if (!validListId(id)) {
+return false;
+}
   id = String(id);
   const old = await getOne("lists", id);
   const source = patch.nameSource || "placeholder";
@@ -781,7 +839,9 @@ export async function writeListRecord(id, patch: Record<string, any> = {}) {
   const incomingName = allowedNameSource ? cleanListName(patch.name) : "";
   if (source === "manual") {
     const alias = incomingName;
-    if (!alias) return false;
+    if (!alias) {
+return false;
+}
     await put("lists", {
       ...old,
       id,
@@ -845,7 +905,9 @@ export async function writeListRecord(id, patch: Record<string, any> = {}) {
     !patch.origin &&
     patch.memberCount === undefined
   )
-    return false;
+    {
+return false;
+}
   await put("lists", next);
   Studio.emit("lists:changed", next);
   return true;
@@ -853,7 +915,9 @@ export async function writeListRecord(id, patch: Record<string, any> = {}) {
 
 export async function upsertMember(id, username, name = "") {
   const handle = cleanHandle(username);
-  if (!validListId(id) || !validHandle(handle)) return false;
+  if (!validListId(id) || !validHandle(handle)) {
+return false;
+}
   const key = `${id}:${handle.toLowerCase()}`;
   const old = await getOne("members", key);
   await put("members", {
@@ -874,11 +938,17 @@ export async function refresh() {
       displayListName(a).localeCompare(displayListName(b), "pt-BR"),
     );
     if (state.listId)
-      state.members = (await membersFor(state.listId)).sort((a, b) => a.username.localeCompare(b.username));
-    else state.members = [];
+      {
+state.members = (await membersFor(state.listId)).sort((a, b) => a.username.localeCompare(b.username));
+}
+    else {
+state.members = [];
+}
     // Passive updates must not steal focus or close an edit on iPhone.
     const focused = shadow.activeElement;
-    if (!focused || !["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName)) render();
+    if (!focused || !["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName)) {
+render();
+}
     drawHomeBar();
     Studio.emit("lists:names-ready");
     refreshQuickPickerIfOpen();
@@ -902,7 +972,9 @@ export function initializeRodX_lists_115() {
 export function initializeRodX_lists_116() {
   quickOptions.addEventListener("click", async (event) => {
     const row = event.target.closest(RODX_SELECTORS.quickPickerListOptions);
-    if (!row || !quickUser) return;
+    if (!row || !quickUser) {
+return;
+}
     const id = row.dataset.quickListId;
     const user = {
       ...quickUser,
@@ -913,7 +985,9 @@ export function initializeRodX_lists_116() {
       },
     );
     try {
-      if (row.disabled) return;
+      if (row.disabled) {
+return;
+}
       row.disabled = true;
       try {
         reserveWrite();
@@ -956,7 +1030,9 @@ export function initializeRodX_lists_118() {
   window.addEventListener(
     "scroll",
     () => {
-      if (quickUser && !window.matchMedia("(max-width:600px)").matches) positionQuickPicker();
+      if (quickUser && !window.matchMedia("(max-width:600px)").matches) {
+positionQuickPicker();
+}
     },
     {
       passive: true,
@@ -965,7 +1041,9 @@ export function initializeRodX_lists_118() {
 }
 
 export function render() {
-  if (!state.visible) return;
+  if (!state.visible) {
+return;
+}
   const tabs = [
     ["listas", "Listas"],
     ["membros", "Membros"],
@@ -1394,13 +1472,27 @@ export function renderMembers() {
 export function buildQuery(overrideId = "") {
   const id = overrideId || state.listId || routeListId();
   const terms = [validListId(id) ? `list:${id}` : "", settings.queryText.trim()];
-  if (settings.media === "videos") terms.push("filter:native_video");
-  if (settings.media === "native") terms.push("filter:native_video");
-  if (settings.media === "images") terms.push("filter:images");
-  if (settings.media === "media") terms.push("filter:media");
-  if (settings.hideReposts) terms.push("-filter:retweets");
-  if (!settings.replies) terms.push("-filter:replies");
-  if (/^\d+$/.test(String(settings.minLikes))) terms.push(`min_faves:${settings.minLikes}`);
+  if (settings.media === "videos") {
+terms.push("filter:native_video");
+}
+  if (settings.media === "native") {
+terms.push("filter:native_video");
+}
+  if (settings.media === "images") {
+terms.push("filter:images");
+}
+  if (settings.media === "media") {
+terms.push("filter:media");
+}
+  if (settings.hideReposts) {
+terms.push("-filter:retweets");
+}
+  if (!settings.replies) {
+terms.push("-filter:replies");
+}
+  if (/^\d+$/.test(String(settings.minLikes))) {
+terms.push(`min_faves:${settings.minLikes}`);
+}
   return terms.filter(Boolean).join(" ").trim();
 }
 
@@ -1593,7 +1685,8 @@ export function saveQueue(queue) {
 export function renderQueue() {
   const q = readQueue();
   if (!q)
-    return (
+    {
+return (
       <>
         <div className={cx("stack")}>
           <h3>{"Fila de operações"}</h3>
@@ -1601,6 +1694,7 @@ export function renderQueue() {
         </div>
       </>
     );
+}
   const done = q.tasks.filter((x) => x.status === "ok").length;
   const failed = q.tasks.filter((x) => x.status === "error").length;
   const current = q.tasks[q.index];
@@ -1747,7 +1841,9 @@ export function drawListToolbar() {
     return;
   }
   const anchor = document.getElementById("rodx-feed-filters");
-  if (!anchor) return;
+  if (!anchor) {
+return;
+}
   if (!listToolbar) {
     listToolbar = document.createElement("div");
     listToolbar.id = "xls-list-toolbar";
@@ -1761,7 +1857,9 @@ export function drawListToolbar() {
     };
     listToolbar.append(exit);
   }
-  if (anchor.nextElementSibling !== listToolbar) anchor.after(listToolbar);
+  if (anchor.nextElementSibling !== listToolbar) {
+anchor.after(listToolbar);
+}
   ensureEmbeddedTimeline();
 }
 
@@ -1780,7 +1878,9 @@ export function initializeRodX_lists_230() {
 
 export function initializeRodX_lists_231() {
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.visible) toggle(false);
+    if (event.key === "Escape" && state.visible) {
+toggle(false);
+}
   });
 }
 
@@ -1860,10 +1960,12 @@ export function initializeRodX_lists_236() {
     },
     ingest: async (items) => {
       for (const item of items)
-        await upsertList(item.id, {
+        {
+await upsertList(item.id, {
           name: item.name,
           nameSource: "api",
         });
+}
       scheduleRefresh();
     },
     get: getOne,
@@ -1878,15 +1980,21 @@ export function initializeRodX_lists_236() {
       queue: readQueue() ? { ...readQueue(), status: "paused" } : null,
     }),
     importDatabase: async (data) => {
-      if (!data || typeof data !== "object") return;
+      if (!data || typeof data !== "object") {
+return;
+}
       for (const store of ["lists", "members", "timeline"]) {
         const rows = data[store];
-        if (!Array.isArray(rows)) continue;
+        if (!Array.isArray(rows)) {
+continue;
+}
         const key = store === "lists" ? "id" : "key";
         const local = await getAll(store),
           merged = new Map<any, any>(local.map((row) => [row[key], row]));
         for (const row of rows) {
-          if (!row || !row[key]) continue;
+          if (!row || !row[key]) {
+continue;
+}
           const old = merged.get(row[key]);
           if (!old) {
             merged.set(row[key], row);
@@ -1969,13 +2077,15 @@ export function initializeRodX_lists_236() {
 
 export function initializeRodX_lists_237() {
   if (document.head)
-    new MutationObserver(() => Studio.queue("lists.repository")).observe(document.head, {
+    {
+new MutationObserver(() => Studio.queue("lists.repository")).observe(document.head, {
       childList: true,
       subtree: true,
       characterData: true,
       attributes: true,
       attributeFilter: ["content", "href"],
     });
+}
 }
 
 export function initializeRodX_lists_238() {

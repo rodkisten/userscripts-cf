@@ -15,7 +15,9 @@ export function initializeDeckXClientLists() {
             : null;
       if (!gm) {
         const response = await fetch(url);
-        if (!response.ok) throw Error("Bundle do X: HTTP " + response.status);
+        if (!response.ok) {
+throw Error("Bundle do X: HTTP " + response.status);
+}
         return response.text();
       }
       return new Promise((resolve, reject) =>
@@ -31,7 +33,9 @@ export function initializeDeckXClientLists() {
       );
     }
     async function client() {
-      if (clientPromise) return clientPromise;
+      if (clientPromise) {
+return clientPromise;
+}
       clientPromise = (async () => {
         const urls = [...document.scripts]
           .map((s) => s.src)
@@ -39,7 +43,9 @@ export function initializeDeckXClientLists() {
             (src) =>
               /^https:\/\/abs\.twimg\.com\/responsive-web\//.test(src) && /\/main\.[^/]+\.js/.test(src),
           );
-        if (!urls.length) throw Error("Bundle principal do X não encontrado.");
+        if (!urls.length) {
+throw Error("Bundle principal do X não encontrado.");
+}
         const text = await source(urls[0]);
         const operations = new Map();
         for (const match of text.matchAll(/queryId:["']([^"']+)["'],operationName:["']([^"']+)["']/g)) {
@@ -68,14 +74,20 @@ export function initializeDeckXClientLists() {
         signal,
       });
       if (result.status < 200 || result.status >= 300)
-        throw Error(result.error || "Listas: HTTP " + result.status);
-      if (result.data?.errors?.length) throw Error(result.data.errors.map((e) => e.message).join("; "));
+        {
+throw Error(result.error || "Listas: HTTP " + result.status);
+}
+      if (result.data?.errors?.length) {
+throw Error(result.data.errors.map((e) => e.message).join("; "));
+}
       return result.data;
     }
     async function query(name, variables, signal) {
       const c = await client(),
         op = c.operations.get(name);
-      if (!op) throw Error("Operação " + name + " não encontrada no cliente atual do X.");
+      if (!op) {
+throw Error("Operação " + name + " não encontrada no cliente atual do X.");
+}
       return api(
         "/i/api/graphql/" + op.id + "/" + name,
         {
@@ -95,7 +107,9 @@ export function initializeDeckXClientLists() {
         signal,
       );
       const id = user.data?.user?.result?.rest_id;
-      if (!id) throw Error("ID do perfil não encontrado.");
+      if (!id) {
+throw Error("ID do perfil não encontrado.");
+}
       const lists = new Map();
       let cursor,
         pages = 0;
@@ -115,22 +129,30 @@ export function initializeDeckXClientLists() {
         );
         let next;
         function walk(node) {
-          if (!node || typeof node !== "object") return;
+          if (!node || typeof node !== "object") {
+return;
+}
           if (node.__typename === "List" || node.list?.__typename === "List") {
             const value = node.list || node;
             const id = value.id_str || value.rest_id;
             const name = value.name;
             if (id && name)
-              lists.set(String(id), {
+              {
+lists.set(String(id), {
                 id: String(id),
                 name: String(name),
               });
+}
           }
-          if (node.cursorType === "Bottom") next = node.value;
+          if (node.cursorType === "Bottom") {
+next = node.value;
+}
           Object.values(node).forEach((value) => (Array.isArray(value) ? value.forEach(walk) : walk(value)));
         }
         walk(response);
-        if (!next || next === cursor) break;
+        if (!next || next === cursor) {
+break;
+}
         cursor = next;
       } while (++pages < 10);
       return [...lists.values()];
@@ -147,17 +169,23 @@ export function initializeDeckXClientLists() {
         }).toString();
         const data = await api(url.pathname, Object.fromEntries(url.searchParams), signal);
         if (!Array.isArray(data.lists))
-          throw Error(data.errors?.[0]?.message || "Resposta de listas inesperada.");
+          {
+throw Error(data.errors?.[0]?.message || "Resposta de listas inesperada.");
+}
         for (const list of data.lists) {
           const id = String(list.id_str || "");
           if (id && list.name)
-            lists.set(id, {
+            {
+lists.set(id, {
               id,
               name: list.name,
             });
+}
         }
         const next = String(data.next_cursor_str || "0");
-        if (next === cursor) break;
+        if (next === cursor) {
+break;
+}
         cursor = next;
       }
       return [...lists.values()];
@@ -166,7 +194,9 @@ export function initializeDeckXClientLists() {
       try {
         return await memberships(handle, signal);
       } catch (first) {
-        if (signal?.aborted) throw first;
+        if (signal?.aborted) {
+throw first;
+}
         try {
           return await legacyMemberships(handle, signal);
         } catch (second) {
