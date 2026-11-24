@@ -510,7 +510,9 @@ export function observePageXHR(
           requestBody = serialized.slice(0, bodyLimit);
           requestTruncated = serialized.length > bodyLimit;
         } else if (typeof FormData !== "undefined" && body instanceof FormData) {
-          const serialized = [...body.entries()].map(([key, value]) => `${key}=${typeof value === "string" ? value : `[File:${value.name}]`}`).join("&");
+          const serialized = [...body.entries()]
+            .map(([key, value]) => `${key}=${typeof value === "string" ? value : `[File:${value.name}]`}`)
+            .join("&");
           requestBody = serialized.slice(0, bodyLimit);
           requestTruncated = serialized.length > bodyLimit;
         } else if (body != null && bodyLimit > 0) requestBody = "[Binary or Stream Body]";

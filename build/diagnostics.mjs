@@ -76,12 +76,18 @@ export function diagnosticPrelude(target, version, scripts) {
       String(value ?? "")
         .replace(BEARER_RE, "$1[REDACTED]")
         .replace(SECRET_PARAM_RE, "$1[REDACTED]")
-        .replace(/("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi, "$1[REDACTED]$2");
+        .replace(
+          /("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi,
+          "$1[REDACTED]$2",
+        );
 
     const safeDetails = (value) => {
       if (value == null) return null;
-      try { return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000)); }
-      catch { return null; }
+      try {
+        return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000));
+      } catch {
+        return null;
+      }
     };
 
     const sendRemote = (record) => {
@@ -99,14 +105,16 @@ export function diagnosticPrelude(target, version, scripts) {
           request: safeDetails(record.request),
           response: safeDetails(record.response),
         };
-        void root.fetch(REMOTE_ENDPOINT, {
-          method: "POST",
-          mode: "cors",
-          credentials: "omit",
-          keepalive: true,
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
+        void root
+          .fetch(REMOTE_ENDPOINT, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            keepalive: true,
+            headers: { "Content-Type": "text/plain;charset=UTF-8" },
+            body: JSON.stringify(payload),
+          })
+          .catch(() => {});
       } catch {}
     };
 

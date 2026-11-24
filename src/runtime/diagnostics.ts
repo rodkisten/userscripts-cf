@@ -66,11 +66,22 @@ export function observeNetworkDiagnostics(
     else signal?.addEventListener("abort", release, { once: true });
     return release;
   }
-  const capture = (kind: "fetch" | "xhr", event: {
-    url: string; method?: string; status?: number; error?: string; durationMs?: number;
-    requestBody?: string | null; body?: string | null; requestContentType?: string | null;
-    responseContentType?: string | null; requestTruncated?: boolean; truncated?: boolean;
-  }) => {
+  const capture = (
+    kind: "fetch" | "xhr",
+    event: {
+      url: string;
+      method?: string;
+      status?: number;
+      error?: string;
+      durationMs?: number;
+      requestBody?: string | null;
+      body?: string | null;
+      requestContentType?: string | null;
+      responseContentType?: string | null;
+      requestTruncated?: boolean;
+      truncated?: boolean;
+    },
+  ) => {
     if (!event.error && !(event.status && event.status >= 400)) return;
     if (event.url.includes("manage.migos.club/error/capture")) return;
     let location = "[unavailable]";
