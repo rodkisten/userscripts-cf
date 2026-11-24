@@ -15,3 +15,12 @@ Bundle impact is measured against `.github/bundle-baseline.json` by the Bundle D
 `ctx.toaster` and `ctx.toast` now enable Sonner explicitly. Static bundles that do not reference either capability can tree-shake Sonner and its view layer. The periodic update checker keeps its user-visible update action through a tiny runtime-owned DOM notice when Sonner is absent, so bundle reduction does not remove update discoverability.
 
 The build inspection test verifies that a disabled toaster feature retains zero modules from `node_modules/sonner`.
+
+
+## React bootstrap capability
+
+The runtime now has two entrypoints: `runtime-react.tsx` for targets that need `ctx.ui`, menu/toast capabilities, dynamic context access or the global Dock, and `runtime-vanilla.ts` for statically proven framework-free targets.
+
+The selection is compile-time and conservative. A vanilla execution world must retain zero React roots and zero `react-dom` modules. A React execution world must still retain exactly one root owned by `src/core/runtime-react.tsx`.
+
+This first cut intentionally keeps every `ctx.ui` consumer on the React runtime, even when a particular script only uses DOM helpers. Nested UI capability analysis can reduce that boundary later without weakening correctness.
