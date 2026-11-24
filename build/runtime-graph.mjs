@@ -87,10 +87,7 @@ function collectModuleSpecifiers(source, filename, relPath, dynamicFiles) {
     if (node.type === "ImportExpression") {
       if (node.source?.type === "StringLiteral") {
         specifiers.add(node.source.value);
-      } else if (
-        node.source?.type === "TemplateLiteral" &&
-        node.source.expressions.length === 0
-      ) {
+      } else if (node.source?.type === "TemplateLiteral" && node.source.expressions.length === 0) {
         specifiers.add(node.source.quasis[0]?.value?.cooked ?? node.source.quasis[0]?.value?.raw ?? "");
       } else {
         dynamicFiles.add(relPath);
