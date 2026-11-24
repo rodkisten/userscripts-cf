@@ -25,6 +25,7 @@ declare const __ROD_FEATURE_HTTP__: boolean;
 declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
 declare const __ROD_FEATURE_QUERY__: boolean;
+declare const __ROD_FEATURE_UI__: boolean;
 
 import {
   installCoreStyles,
@@ -108,13 +109,7 @@ export type ScriptContext = Record<string, unknown> & {
     delete(key: string): Promise<void>;
   };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui?: ReturnType<typeof createUIFeature> & {
-    readonly root: ShadowRoot;
-    readonly host: HTMLDivElement;
-    mount(node: Node): Node;
-    style(css: string): HTMLStyleElement;
-    pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
-    registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+  readonly ui?: RuntimeUIBase & {
     mountReact(component: import("react").ReactElement, container?: Element | ShadowRoot): () => void;
   };
   readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
@@ -157,6 +152,15 @@ export interface DomEventsEngine {
   ): void;
   dispose(): void;
 }
+
+export type RuntimeUIBase = {
+  readonly root: ShadowRoot;
+  readonly host: HTMLDivElement;
+  mount(node: Node): Node;
+  style(css: string): HTMLStyleElement;
+  pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
+  registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+};
 
 export interface RuntimeAPI {
   readonly ready: Promise<void>;
@@ -413,6 +417,7 @@ export function createCoreRuntime(
       readonly network: unknown;
       readonly rod: ReturnType<typeof initializeRodFeatures>;
       readonly queryService: unknown;
+      readonly ui: RuntimeUIBase | undefined;
       readonly updaterInstance: ReturnType<typeof createUpdateChecker> | null;
       readonly host: Window & typeof globalThis;
       readonly desiredURL: string;
@@ -662,6 +667,43 @@ export function createCoreRuntime(
       return node;
     }
 
+    const uiFeature =
+      typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : undefined;
+    const ui: RuntimeUIBase | undefined = uiFeature
+      ? Object.freeze({
+          get root() {
+            return ensureUIRoot();
+          },
+          get host() {
+            return ensureUIRoot().host as HTMLDivElement;
+          },
+          mount(node: Node) {
+            ensureUIRoot().append(node);
+            return node;
+          },
+          style(css: string) {
+            return addStyle(css, ensureUIRoot());
+          },
+          pageStyle(css: string, options?: { id?: string }) {
+            const target = host.document.head || host.document.documentElement;
+            const id = options?.id;
+            const existing = id ? host.document.getElementById(id) : null;
+            if (existing instanceof host.HTMLStyleElement) {
+              existing.textContent = String(css);
+              return existing;
+            }
+            const node = addStyle(css, target);
+            if (id) node.id = id;
+            return node;
+          },
+          registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]) {
+            const dispose = uiFeature.registerShadowStyles(ensureUIRoot(), styles);
+            onDispose(dispose);
+            return dispose;
+          },
+        })
+      : undefined;
+
     function getStore() {
       let store = stores.get(definition.id);
       if (!store) {
@@ -846,6 +888,7 @@ export function createCoreRuntime(
           network,
           rod,
           queryService,
+          ui,
           updaterInstance: updaterInstanceRef.current,
           host,
           desiredURL,
@@ -890,6 +933,7 @@ export function createCoreRuntime(
         return getEvents();
       },
       storage,
+      ui,
       menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? instanceMenu : undefined,
       dock: Object.freeze({
         register(actions: ReadonlyArray<DockAction>) {
