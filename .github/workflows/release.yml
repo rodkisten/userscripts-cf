@@ -5,11 +5,6 @@ run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && input
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
-      - "playground/**"
-      - ".github/workflows/playground.yml"
   workflow_dispatch:
     inputs:
       bump:
@@ -27,18 +22,58 @@ on:
 permissions:
   contents: write
 
-# Only the newest push release should continue. Manual releases use a separate group.
+# Serialize release attempts so queued runs can recover after a failed publication.
 concurrency:
   group: userscripts-releases-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.run_id) || 'main' }}
-  cancel-in-progress: ${{ github.event_name == 'push' }}
+  # A later formatting/merge commit must not cancel a deploy-triggered release.
+  cancel-in-progress: false
 
 jobs:
+  detect:
+    name: 🔎 Check for unreleased deploys
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.source.outputs.skip == 'false' }}
+      released_version: ${{ steps.source.outputs.released_version }}
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: 🔎 Detect Unreleased Deploy Commit
+        id: source
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          latest_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n1)"
+          if [[ -z "$latest_tag" ]]; then
+            commit_range="HEAD"
+            echo "released_version=0.0.0" >> "$GITHUB_OUTPUT"
+          else
+            commit_range="$latest_tag..HEAD"
+            echo "released_version=${latest_tag#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+          if git log "$commit_range" --format=%B | grep -Fq '[deploy]'; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "🚀 Found an unreleased [deploy] commit after ${latest_tag:-the beginning of history}." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "⏭️ No unreleased [deploy] commit after ${latest_tag:-the beginning of history}; release skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   release:
     name: 📦 Build, Deploy & Publish
+    needs: detect
     environment: production
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[deploy]') && !contains(github.event.head_commit.message, '[skip ci]'))) &&
+      (github.event_name == 'workflow_dispatch' || needs.detect.outputs.should_release == 'true') &&
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
@@ -82,33 +117,28 @@ jobs:
       - name: 📦 Install Locked Dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: 🤖 Check Dependency-Bot Commits
-        id: source
-        run: |
-          set -euo pipefail
-          AUTHOR="$(git log -1 --format=%an)"
-          EMAIL="$(git log -1 --format=%ae)"
-          SUBJECT="$(git log -1 --format=%s)"
-          if [[ "$AUTHOR $EMAIL $SUBJECT" =~ ([Rr]enovate|[Dd]ependabot) ]]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "🤖 Dependency bot change detected: publication skipped."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: 🏷️ Select Next Version
-        if: steps.source.outputs.skip != 'true'
         id: version
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          # Resume a release after a failed upload without incrementing twice.
+          # Resume a version already committed by a release that failed before tagging.
           LAST_SUBJECT="$(git log -1 --format=%s)"
           CURRENT="$(node -p 'require("./package.json").version')"
+          RELEASED="${{ needs.detect.outputs.released_version }}"
           RELEASE_STATE="$(gh release view "v$CURRENT" --json isDraft --jq '.isDraft' 2>/dev/null || echo missing)"
-          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" && "$RELEASE_STATE" != "false" ]]; then
+          RESUME=false
+          if [[ "$RELEASE_STATE" != "false" ]] && {
+            [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" ]] ||
+            [[ "$EVENT_NAME" == "push" && "$CURRENT" != "$RELEASED" ]]
+          }; then
+            RESUME=true
+          fi
+
+          if [[ "$RESUME" == "true" ]]; then
             VERSION="$CURRENT"
             echo "resume=true" >> "$GITHUB_OUTPUT"
             echo "♻️ Resuming incomplete release v$VERSION"
@@ -123,12 +153,12 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: 🧪 Typecheck, Build & Test
-        if: steps.source.outputs.skip != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.skip_tests)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
         run: npm test
 
       - name: 🏗️ Build Userscripts (Tests & Typecheck Non-Blocking)
         id: manual-build
-        if: steps.source.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.skip_tests
+        if: github.event_name == 'workflow_dispatch' && inputs.skip_tests
         run: |
           set -euo pipefail
           if npm run --if-present typecheck; then
@@ -151,13 +181,12 @@ jobs:
           fi
 
       - name: 🔍 Verify Installable Userscript Metadata
-        if: steps.source.outputs.skip != 'true'
         run: |
           node --input-type=module -e 'import fs from "node:fs"; const manifest=JSON.parse(fs.readFileSync("dist/manifest.json","utf8")); if(!manifest.scripts.length) throw Error("No scripts built"); for(const script of manifest.scripts) {const source=fs.readFileSync(`dist/${script.file}`,"utf8"); if(!source.startsWith("// ==UserScript==")) throw Error(`Missing metadata: ${script.file}`)}'
 
       # Formatting is handled separately and must not block publishing.
       - name: 🛡️ Guard Against Superseded Automatic Release
-        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
@@ -168,7 +197,7 @@ jobs:
 
       - name: 📝 Commit & Push Version to Main
         id: version-commit
-        if: steps.source.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
+        if: steps.version.outputs.resume != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -182,11 +211,10 @@ jobs:
           echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: ⚙️ Prepare Cloudflare Worker Assets
-        if: steps.source.outputs.skip != 'true'
         run: node build/hosting.mjs
 
       - name: 🛡️ Guard Against Outdated Release Before Cloudflare Deploy
-        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
@@ -198,7 +226,6 @@ jobs:
 
       - name: ☁️ Deploy Versioned Userscripts to Cloudflare
         id: cloudflare
-        if: steps.source.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -213,7 +240,6 @@ jobs:
 
       - name: 🎉 Publish GitHub Release & Checksums
         id: gh-release
-        if: steps.source.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -223,7 +249,7 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         env:
-          SKIPPED: ${{ steps.source.outputs.skip }}
+          SKIPPED: "false"
           JOB_STATUS: ${{ job.status }}
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}

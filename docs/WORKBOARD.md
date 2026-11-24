@@ -640,6 +640,13 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] Corrigidos os 18 TS2347 em `search-workbench.tsx`: os acessos a `rootShadow` e `dockShadow` agora têm o tipo `ShadowRoot`, preservando as consultas DOM genéricas. `npm run typecheck` passou integralmente e `node build/build.mjs --targets=rodx-studio` compilou o bundle seletivo com sucesso (2026-11-24).
 - [ ] Fazer smoke test manual no Safari iPhone. Não foram criados/executados testes de UI ou userscript, conforme política vigente.
 
+### Versionamento e releases na main (2026-11-24 · correção local validada)
+
+- [x] Causa confirmada: o workflow só aceitava `[deploy]` na mensagem do commit de topo e cancelava releases ativos a cada push. Os runs da release de PR #141 e #143 foram `skipped` ([45420920220](https://github.com/rodkisten/userscripts-cf/actions/runs/45420920220), [45445834196](https://github.com/rodkisten/userscripts-cf/actions/runs/45445834196)); execuções de commits `[deploy]` também foram canceladas, por exemplo [45303238887](https://github.com/rodkisten/userscripts-cf/actions/runs/45303238887).
+- [x] Workflow agora procura commits `[deploy]` ainda não cobertos pela última tag, executa a detecção antes do ambiente de produção, não cancela deploys por pushes seguintes e retoma a versão já preparada quando um release falha antes de criar a tag.
+- [x] `npm run typecheck`, build completo (`14/14` targets), Prettier, parsing YAML e `bash -n` dos 13 blocos shell passaram localmente.
+- [ ] Validar a execução de release após merge: o estado observado antes desta correção era `package.json`/release `v8.0.0`, apesar de commits `[deploy]` posteriores à tag.
+
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.
