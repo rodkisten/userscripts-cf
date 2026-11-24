@@ -1,0 +1,40 @@
+name: AST style repair
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: style-repair-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: app
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app.outputs.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint:fix
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Publish verified source repairs
+        env:
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+        run: |
+          git add -- src/userscripts
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "$APP_SLUG[bot]"
+          git config user.email "$APP_SLUG[bot]@users.noreply.github.com"
+          git commit -m "style: normalize userscript control blocks and spacing"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
