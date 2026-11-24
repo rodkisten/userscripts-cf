@@ -66,6 +66,9 @@ jobs:
             node --check "$script"
           done
 
+      - name: Repository-wide JS/TS syntax verification
+        run: node build/check-source-syntax.mjs
+
       - name: "[EXP] Mapear grafo de dependências e testes"
         id: graph
         env:
@@ -130,7 +133,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
-          key: userscripts-validation-v3-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml', 'tsconfig.react.json') }}
+          key: userscripts-validation-v3-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', 'tsconfig.react.json') }}
 
       - name: ✅ Validate affected code
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
