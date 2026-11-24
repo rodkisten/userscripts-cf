@@ -57,8 +57,20 @@ function createVirtualEntryPlugin(virtualID, entryCode) {
 // ============================================================================
 function needsReactRuntime(options) {
   const used = new Set(options.features || []);
-  const fullRuntime = Boolean(options.dynamic || options.dock || !Array.isArray(options.features));
-  return fullRuntime || ["ui", "menu", "toaster", "toast"].some((feature) => used.has(feature));
+  const paths = new Set(options.paths || []);
+  const fullRuntime = Boolean(
+    options.dynamic || options.dock || !Array.isArray(options.features) || !Array.isArray(options.paths),
+  );
+  if (fullRuntime) return true;
+  if (["menu", "toaster", "toast"].some((feature) => used.has(feature))) return true;
+  if (!used.has("ui")) return false;
+
+  const uiPaths = [...paths].filter((capabilityPath) => capabilityPath === "ui" || capabilityPath.startsWith("ui."));
+  if (!uiPaths.length || uiPaths.includes("ui")) return true;
+  return uiPaths.some(
+    (capabilityPath) =>
+      capabilityPath === "ui.mountReact" || capabilityPath.startsWith("ui.mountReact."),
+  );
 }
 
 function buildVirtualEntryCode(root, definitions, options) {
