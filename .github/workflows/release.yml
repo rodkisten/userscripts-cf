@@ -61,8 +61,8 @@ jobs:
       - name: 🟢 Setup Node.js
         uses: rodkisten/github/setup-node@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: '24'
-          install: 'false'
+          node-version: "24"
+          install: "false"
 
       # The release workflow can recover from package.json updates merged without
       # a matching lockfile. The version commit below persists the repaired lock.
