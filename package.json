@@ -32,7 +32,10 @@
     "test:design-system": "npm run typecheck:react",
     "typecheck:react": "tsc --noEmit -p tsconfig.react.json",
     "test:unit": "node build/run-runtime-utility-tests.mjs",
-    "check:react-only": "node build/check-react-only.mjs"
+    "check:react-only": "node build/check-react-only.mjs",
+    "bundle:metrics": "node scripts/bundle-diet.mjs snapshot",
+    "bundle:report": "node scripts/bundle-diet.mjs report",
+    "bundle:baseline": "node scripts/bundle-diet.mjs baseline"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",

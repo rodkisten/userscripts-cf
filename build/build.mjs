@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
+import { brotliCompressSync, constants as zlibConstants, gzipSync } from "node:zlib";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
@@ -387,6 +387,7 @@ export async function compileTarget(target, context) {
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
     gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
+    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }).byteLength,
   };
 
   const file = `${target.id}.user.js`;
@@ -405,7 +406,7 @@ export async function compileTarget(target, context) {
 
   log.pass(
     file,
-    `${fmt.bytes(sourceBuffer.byteLength)} · gzip ${fmt.bytes(auditEntry.gzipBytes)} · ${fmt.duration(elapsed)}`,
+    `${fmt.bytes(sourceBuffer.byteLength)} · gzip ${fmt.bytes(auditEntry.gzipBytes)} · br ${fmt.bytes(auditEntry.brotliBytes)} · ${fmt.duration(elapsed)}`,
   );
 
   return {
@@ -486,6 +487,7 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
     runtimeFeatureAudit.targets[target].output = {
       bytes: measurements.bytes,
       gzipBytes: measurements.gzipBytes,
+      brotliBytes: measurements.brotliBytes,
       debugBytes: measurements.debugBytes,
       debugGzipBytes: measurements.debugGzipBytes,
       runtimes: runtime.map(
@@ -904,6 +906,7 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
       target,
       bytes: audit.bytes,
       gzip: audit.gzipBytes,
+      brotli: audit.brotliBytes,
       debug: audit.debugBytes,
       debugGzip: audit.debugGzipBytes,
       staticClasses: audit.staticClasses,

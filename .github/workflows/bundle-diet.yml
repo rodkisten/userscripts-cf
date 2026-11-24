@@ -1,0 +1,110 @@
+name: 📦 Bundle Diet
+
+run-name: "📦 Bundle Diet · ${{ github.event.pull_request && format('PR #{0}', github.event.pull_request.number) || inputs.mode || github.ref_name }}"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Operation
+        type: choice
+        options: [report, baseline]
+        default: baseline
+      baseline-reason:
+        description: Why the baseline is being replaced
+        type: string
+        default: Bundle Diet initial baseline
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bundle-diet-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    name: "⚖️ Measure & report bundles"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 🤖 Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: 📥 Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🟢 Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: 🏗️ Build complete distribution
+        env:
+          BUILD_REASON: Bundle Diet needs a complete comparable distribution.
+        run: npm run build
+
+      - name: ⚖️ Capture raw, gzip, Brotli and module metrics
+        run: npm run bundle:metrics
+
+      - name: 💬 Update Bundle Diet PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: npm run bundle:report
+
+      - name: 📌 Write versioned baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'baseline'
+        env:
+          BASELINE_REASON: ${{ inputs.baseline-reason }}
+        run: npm run bundle:baseline
+
+      - name: 🤖 Commit baseline with Rod GitHub App
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'baseline'
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/bundle-baseline.json; then
+            echo "Baseline already matches the current build." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "Rod GitHub App"
+          git config user.email "rod-github-app@users.noreply.github.com"
+          git add .github/bundle-baseline.json
+          git commit -m "chore(bundle): establish size baseline"
+          git push origin "HEAD:$BRANCH"
+          echo "### 📌 Bundle baseline updated" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$(git rev-parse --short HEAD)\` now stores the reference metrics." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📤 Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-metrics-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            dist/bundle-metrics.json
+            dist/runtime-feature-audit.json
+            dist/css-class-audit.json
+          retention-days: 30

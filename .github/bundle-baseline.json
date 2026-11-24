@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "sha": null,
+  "generatedAt": null,
+  "baseline": true,
+  "baselineReason": "Run the Bundle Diet workflow in baseline mode to capture the initial reference.",
+  "bundles": {},
+  "totals": {
+    "rawBytes": 0,
+    "gzipBytes": 0,
+    "brotliBytes": 0
+  }
+}
