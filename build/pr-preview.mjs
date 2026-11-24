@@ -18,8 +18,9 @@ if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.h
 const prefix = process.env.USERSCRIPTS_PREVIEW_ROOT === "true" ? "" : `/${number}`;
 const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
-const shortSha = (process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "").slice(0, 8);
-if (!/^[0-9a-f]{8}$/i.test(shortSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a commit SHA");
+const sourceSha = process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "";
+if (!/^[0-9a-f]{40}$/i.test(sourceSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a full commit SHA");
+const shortSha = sourceSha.slice(0, 8);
 // Timestamp is numeric so a newer preview never sorts below an older commit hash.
 const publishedAt = new Date(process.env.PREVIEW_BUILD_TIMESTAMP || Date.now());
 if (Number.isNaN(publishedAt.getTime())) throw Error("Invalid PREVIEW_BUILD_TIMESTAMP");
@@ -42,6 +43,7 @@ const catalog = {
   pr: number,
   version: previewVersion,
   commit: shortSha,
+  sourceSha,
   publishedAt: publishedAt.toISOString(),
   releaseLabel,
   baseURL: origin + prefix,
