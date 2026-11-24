@@ -55,6 +55,12 @@ function createVirtualEntryPlugin(virtualID, entryCode) {
 // ============================================================================
 // // @TODO: Mover para build/runtime-codegen.mjs
 // ============================================================================
+function needsReactRuntime(options) {
+  const used = new Set(options.features || []);
+  const fullRuntime = Boolean(options.dynamic || options.dock || !Array.isArray(options.features));
+  return fullRuntime || ["ui", "menu", "toaster", "toast"].some((feature) => used.has(feature));
+}
+
 function buildVirtualEntryCode(root, definitions, options) {
   const imports = new Array(definitions.length);
   const entries = new Array(definitions.length);
@@ -76,7 +82,9 @@ function buildVirtualEntryCode(root, definitions, options) {
        api.dispose = async () => { dock.dispose(); await disposeRuntime(); };`
     : "";
 
-  const runtimeImport = JSON.stringify(path.join(root, "src/core/runtime-react.js"));
+  const runtimeImport = JSON.stringify(
+    path.join(root, needsReactRuntime(options) ? "src/core/runtime-react.js" : "src/core/runtime-vanilla.js"),
+  );
 
   return `${imports.join("\n")}
     ${dockImport}
@@ -98,8 +106,10 @@ function resolveFeatureDefines(options) {
 
   const clipboard = enabled("clipboard");
   const toaster = enabled("toaster") || enabled("toast");
+  const react = needsReactRuntime(options);
 
   return {
+    __ROD_FEATURE_REACT__: JSON.stringify(react),
     __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
     __ROD_FEATURE_TOASTER__: JSON.stringify(toaster),
     __ROD_FEATURE_QUERY__: JSON.stringify(enabled("query")),
@@ -150,7 +160,7 @@ function validateSingleChunkOutput(output) {
   return { chunk: chunks[0], cssAssets };
 }
 
-function validateAndAuditReactRoots(rootCallsites, chunkModules) {
+function validateAndAuditReactRoots(rootCallsites, chunkModules, expectReact) {
   const EXPECTED_OWNER = "src/core/runtime-react.tsx";
   const runtimeOwnerCalls = [];
   const unexpectedRootCalls = [];
@@ -175,14 +185,23 @@ function validateAndAuditReactRoots(rootCallsites, chunkModules) {
     }
   }
 
-  if (runtimeOwnerCalls.length !== 1 || unexpectedRootCalls.length > 0 || includedRootModules.length !== 1) {
+  if (expectReact) {
+    if (runtimeOwnerCalls.length !== 1 || unexpectedRootCalls.length > 0 || includedRootModules.length !== 1) {
+      throw new Error(
+        `[React root ownership] React execution world must include exactly one root from ${EXPECTED_OWNER}. ` +
+          JSON.stringify({ runtimeOwnerCalls, unexpectedRootCalls, includedRootModules }),
+      );
+    }
+    return { roots: 1, owner: EXPECTED_OWNER };
+  }
+
+  if (runtimeOwnerCalls.length > 0 || unexpectedRootCalls.length > 0 || includedRootModules.length > 0) {
     throw new Error(
-      `[React root ownership] Each built execution world must include exactly one root from ${EXPECTED_OWNER}. ` +
+      "[React root ownership] Vanilla execution world unexpectedly retained a React root. " +
         JSON.stringify({ runtimeOwnerCalls, unexpectedRootCalls, includedRootModules }),
     );
   }
-
-  return { roots: runtimeOwnerCalls.length, owner: EXPECTED_OWNER };
+  return { roots: 0, owner: null };
 }
 
 function emitBundleStats(root, chunk, featureDefines, reactRootAudit, onBundleStats) {
@@ -287,7 +306,11 @@ export async function bundleRuntime(root, definitions, options = {}) {
 
   const output = (Array.isArray(result) ? result : [result]).flatMap((item) => item.output);
   const { chunk, cssAssets } = validateSingleChunkOutput(output);
-  const reactRootAudit = validateAndAuditReactRoots(rootCallsites, chunk.modules);
+  const reactRootAudit = validateAndAuditReactRoots(
+    rootCallsites,
+    chunk.modules,
+    featureDefines.__ROD_FEATURE_REACT__ === "true",
+  );
 
   if (typeof options.onBundleStats === "function") {
     emitBundleStats(root, chunk, featureDefines, reactRootAudit, options.onBundleStats);
