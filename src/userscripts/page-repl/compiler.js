@@ -1,6 +1,6 @@
 import { parse } from "acorn";
 import { analyze } from "eslint-scope";
-import { generate } from "astring";
+import { generate } from "astring";\nimport { analyzePersistentBindings } from "./compiler-scope.js";
 
 const reserved = new Set(["ctx", "console", "$", "$$", "$0", "_"]);
 const member = (name) => ({
@@ -25,41 +25,28 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
     allowReturnOutsideFunction: true,
     ranges: true,
   });
-  const scope = analyze(ast, {
-    ecmaVersion: 2025,
-    sourceType: "script",
-    optimistic: true,
-    ignoreEval: true,
-  }).globalScope;
   const names = new Set();
   const replacements = new WeakMap();
   const declarations = new WeakSet();
   if (persist) {
-    for (const variable of scope.variables) {
-      if (reserved.has(variable.name)) {
-throw Error(`Nome reservado do REPL: ${variable.name}`);
-}
-      names.add(variable.name);
-      for (const definition of variable.defs) {
-        if (definition.type === "Variable") {
-declarations.add(definition.parent);
-}
-        if (definition.name) {
-replacements.set(definition.name, member(variable.name));
-}
+    const analysis = analyzePersistentBindings(ast, knownNames);
+    for (const name of analysis.names) {
+      if (reserved.has(name)) {
+        throw Error(`Nome reservado do REPL: ${name}`);
       }
-      for (const reference of variable.references)
-        {
-replacements.set(reference.identifier, member(variable.name));
-}
+      names.add(name);
     }
-    for (const reference of scope.through)
-      {
-if (knownNames.includes(reference.identifier.name) && !reserved.has(reference.identifier.name))
-        {
-replacements.set(reference.identifier, member(reference.identifier.name));
-}
-}
+    for (const declaration of analysis.variableDeclarations) {
+      declarations.add(declaration);
+    }
+    for (const identifier of analysis.globalDefinitions) {
+      replacements.set(identifier, member(identifier.name));
+    }
+    for (const [identifier, name] of analysis.references) {
+      if (!reserved.has(name)) {
+        replacements.set(identifier, member(name));
+      }
+    }
   }
   function rewrite(node) {
     if (!node || typeof node !== "object") {

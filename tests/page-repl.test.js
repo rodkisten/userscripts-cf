@@ -29,6 +29,37 @@ test("REPL preserves local shadowing, hoisted functions and loop declarations", 
   assert.throws(() => compile("const ctx = 1"), /reservado/);
 });
 
+test("REPL scope resolver keeps local bindings local while persisting globals", async () => {
+  const first = await evaluate("const saved = 5; var outer = 2; ({ saved, outer })");
+  assert.deepEqual(first.value, { saved: 5, outer: 2 });
+
+  const second = await evaluate(
+    "(() => { const saved = 9; { let outer = 7; if (outer !== 7) throw Error('shadow'); } return saved; })() + saved + outer",
+    first.ctx,
+    ["saved", "outer"],
+  );
+  assert.equal(second.value, 16);
+
+  const blockVar = await evaluate("{ var persisted = 4; } persisted");
+  assert.equal(blockVar.value, 4);
+  assert.equal(blockVar.ctx.vars.persisted, 4);
+
+  const blockLet = await evaluate("{ let privateValue = 7; } typeof privateValue");
+  assert.equal(blockLet.value, "undefined");
+  assert.equal("privateValue" in blockLet.ctx.vars, false);
+});
+
+test("REPL scope resolver preserves implicit arguments and class-local names", async () => {
+  const ctx = { vars: { arguments: 100 } };
+  const args = await evaluate("function count() { return arguments.length; } count(1, 2, 3)", ctx, ["arguments"]);
+  assert.equal(args.value, 3);
+
+  const klass = await evaluate(
+    "class Box { static self() { return Box; } value() { return 4; } } Box.self() === Box && new Box().value()",
+  );
+  assert.equal(klass.value, 4);
+});
+
 test("runner receives values, console and context evidence, without duplicating transports", async () => {
   const host = new Window({
     url: "https://example.com",

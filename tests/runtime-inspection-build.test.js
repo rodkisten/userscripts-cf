@@ -51,6 +51,16 @@ describe("inspectable build artifacts", () => {
     expect(editors.bundles["github-color-studio:sandbox"].families.acorn.renderedBytes).toBe(0);
     expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
     expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBeGreaterThan(0);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/eslint-scope/"),
+      ),
+    ).toBe(false);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/estraverse/"),
+      ),
+    ).toBe(false);
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
