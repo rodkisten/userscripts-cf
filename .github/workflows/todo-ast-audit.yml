@@ -1,4 +1,4 @@
-name: AST Function & Debt Audit
+name: 🗒️ AST Function & Debt Audit
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ on:
       - '**.cjs'
       - '**.ts'
       - '**.tsx'
+  workflow_dispatch: 
 
 permissions:
   contents: read
@@ -21,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
