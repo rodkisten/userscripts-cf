@@ -10,7 +10,6 @@ This keeps the public context contract intact for tests, dynamic/full-runtime bu
 
 Bundle impact is measured against `.github/bundle-baseline.json` by the Bundle Diet workflow.
 
-
 ## Toaster capability
 
 `ctx.toaster` and `ctx.toast` now enable Sonner explicitly. Static bundles that do not reference either capability can tree-shake Sonner and its view layer. The periodic update checker keeps its user-visible update action through a tiny runtime-owned DOM notice when Sonner is absent, so bundle reduction does not remove update discoverability.
