@@ -28,10 +28,14 @@ jobs:
     steps:
       - name: 🔑 Gerar Token do GitHub App
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+          permission-actions: write
 
       - name: 🤖 Obter Identidade do GitHub App
         id: bot-identity
@@ -171,9 +175,11 @@ jobs:
 
       - name: 🟢 Setup Node.js
         if: steps.parse.outputs.prettier == 'true' || steps.parse.outputs.lockfile == 'true'
-        uses: actions/setup-node@v4
+        uses: rodkisten/github/setup-node@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           node-version: '20'
+          install: 'false'
+          cache: 'false'
 
       - name: 🎨 Executar Prettier
         if: steps.parse.outputs.prettier == 'true'

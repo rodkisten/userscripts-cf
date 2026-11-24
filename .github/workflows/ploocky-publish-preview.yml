@@ -23,12 +23,14 @@ jobs:
       - name: Validate requested branch
         env:
           SOURCE_BRANCH: ${{ inputs.source_branch }}
-        run: |
-          set -euo pipefail
-          if [[ ! "$SOURCE_BRANCH" =~ ^automation/ploocky/[a-zA-Z0-9._/-]+$ ]] || [[ "$SOURCE_BRANCH" == *..* ]] || [[ "$SOURCE_BRANCH" == */. ]] || [[ "$SOURCE_BRANCH" == */ ]]; then
-            echo "::error::Source must be an automation/ploocky/* branch"
-            exit 1
-          fi
+        uses: rodkisten/github/console-run@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        with:
+          command: |
+            set -euo pipefail
+            if [[ ! "$SOURCE_BRANCH" =~ ^automation/ploocky/[a-zA-Z0-9._/-]+$ ]] || [[ "$SOURCE_BRANCH" == *..* ]] || [[ "$SOURCE_BRANCH" == */. ]] || [[ "$SOURCE_BRANCH" == */ ]]; then
+              echo "::error::Source must be an automation/ploocky/* branch"
+              exit 1
+            fi
       - name: Authenticate Ploocky App
         id: app-token
         uses: actions/create-github-app-token@v2
