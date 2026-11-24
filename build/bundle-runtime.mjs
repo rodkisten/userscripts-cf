@@ -53,33 +53,78 @@ function createVirtualEntryPlugin(virtualID, entryCode) {
 }
 
 function createFeatureShimPlugin(featureDefines) {
-  const storageDisabled = featureDefines.__ROD_FEATURE_STORAGE__ === "false";
-  const virtualStorageID = "\0userscripts-cf-storage-disabled";
+  const disabled = {
+    storage: featureDefines.__ROD_FEATURE_STORAGE__ === "false",
+    menu: featureDefines.__ROD_FEATURE_MENU__ === "false",
+    toaster: featureDefines.__ROD_FEATURE_TOASTER__ === "false",
+  };
+
+  const virtualIDs = {
+    storage: "\0userscripts-cf-storage-disabled",
+    menu: "\0userscripts-cf-menu-disabled",
+    toaster: "\0userscripts-cf-toaster-disabled",
+  };
 
   return {
     name: "userscripts-cf-feature-shims",
     enforce: "pre",
     resolveId(source) {
+      const normalized = source.replaceAll("\\", "/");
+
       if (
-        storageDisabled &&
-        /(?:^|\/)runtime\/modular\/features\/storage\.(?:js|ts)$/.test(source.replaceAll("\\", "/"))
+        disabled.storage &&
+        /(?:^|\/)runtime\/modular\/features\/storage\.(?:js|ts)$/.test(normalized)
       ) {
-        return virtualStorageID;
+        return virtualIDs.storage;
       }
+
+      if (
+        disabled.menu &&
+        /(?:^|\/)runtime\/modular\/features\/menu\.(?:js|ts)$/.test(normalized)
+      ) {
+        return virtualIDs.menu;
+      }
+
+      if (
+        disabled.toaster &&
+        /(?:^|\/)runtime\/modular\/features\/toaster\.(?:js|ts|tsx)$/.test(normalized)
+      ) {
+        return virtualIDs.toaster;
+      }
+
       return null;
     },
     load(id) {
-      if (id !== virtualStorageID) return null;
-      return `
-        const unavailable = Object.freeze({
-          create() {
-            throw new Error("RodStorage capability was removed from this userscript bundle");
-          },
-        });
-        export function createStorageFeature() {
-          return unavailable;
-        }
-      `;
+      if (id === virtualIDs.storage) {
+        return `
+          const unavailable = Object.freeze({
+            create() {
+              throw new Error("RodStorage capability was removed from this userscript bundle");
+            },
+          });
+          export function createStorageFeature() {
+            return unavailable;
+          }
+        `;
+      }
+
+      if (id === virtualIDs.menu) {
+        return `
+          export function createMenuFeature() {
+            return undefined;
+          }
+        `;
+      }
+
+      if (id === virtualIDs.toaster) {
+        return `
+          export function createToasterFeature() {
+            return undefined;
+          }
+        `;
+      }
+
+      return null;
     },
   };
 }
