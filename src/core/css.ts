@@ -853,42 +853,5 @@ export class DOMPos {
   }
 }
 
-// ============================================================================
-// CSS Style Manipulation Utilities
-// ============================================================================
-
-export interface SetStyleOptions {
-  important?: boolean;
-}
-
-/**
- * Safely sets a typed CSS property on an element using CSSOM setProperty.
- * @example
- * setCssProperty(element, "backgroundColor", "red", { important: true });
- */
-export function setCssProperty<K extends keyof CSSStyleDeclaration>(
-  element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
-  property: K,
-  value: CSSStyleDeclaration[K] | string,
-  options?: SetStyleOptions,
-): void {
-  const priority = options?.important ? "important" : "";
-  element.style.setProperty(property as string, String(value), priority);
-}
-
-/**
- * Applies multiple typed CSS properties concurrently to an element.
- * @example
- * setCssProperties(element, { backgroundColor: "blue", zIndex: "10" });
- */
-export function setCssProperties(
-  element: HTMLElement | SVGElement | { style: CSSStyleDeclaration },
-  styles: Partial<Record<keyof CSSStyleDeclaration, string | number>>,
-  options?: SetStyleOptions,
-): void {
-  for (const [property, value] of Object.entries(styles)) {
-    if (value !== undefined && value !== null) {
-      setCssProperty(element, property as keyof CSSStyleDeclaration, String(value), options);
-    }
-  }
-}
+export { setCssProperty, setCssProperties } from "./css-properties.js";
+export type { SetStyleOptions } from "./css-properties.js";
