@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       selected_branch:
-        description: 'Branch to repair'
+        description: "Branch to repair"
         required: false
-        default: 'main'
+        default: "main"
         type: string
-    
+
 permissions:
   contents: write
 
@@ -31,14 +31,14 @@ jobs:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
-     
+
       - uses: actions/checkout@v6
         with:
           token: ${{ steps.app-token.outputs.token }}
           ref: ${{ inputs.selected_branch || github.ref_name }}
           fetch-depth: 0
           persist-credentials: true
-     
+
       - name: Verify branch and synchronize
         shell: bash
         env:
@@ -48,17 +48,17 @@ jobs:
           git fetch origin "$BRANCH"
           git checkout "$BRANCH"
           git pull --ff-only origin "$BRANCH"
-     
+
       - name: Regenerate and validate lockfile
         uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager: npm
-          install: 'false'
+          install: "false"
           script: |
             npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
             npm ci --legacy-peer-deps --no-audit --no-fund
-      
+
       - name: Commit regenerated lockfile
         id: generated_output
         shell: bash
