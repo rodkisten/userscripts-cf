@@ -40,7 +40,7 @@ import { NativeTranslation } from "../translation/native.js";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
 import { ensureDock, repaint } from "../ui/dock.tsx";
 import { performAction } from "../ui/events.tsx";
-import { closePanel, openPanel } from "../ui/preferences.js";
+import { closePanel, openPanel } from "../ui/preferences.tsx";
 import { renderDock } from "../ui/search-workbench.tsx";
 
 // ============================================================================

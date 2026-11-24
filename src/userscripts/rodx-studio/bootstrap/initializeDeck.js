@@ -40,7 +40,7 @@ import { initializeDeckProfileLists } from "../lists/profile.tsx";
 import { initializeDeckFeedFilters } from "../feeds/filters.tsx";
 import { initializeDeckScrollChrome } from "../layout/chrome.tsx";
 import { initializeDeckCompactLayout } from "../layout/tweets.tsx";
-import { initializeDeckPreferences } from "../ui/preferences.js";
+import { initializeDeckPreferences } from "../ui/preferences.tsx";
 import { initializeDeckDirectLinks } from "../links/direct.js";
 import { initializeDeckSocialAppLinks } from "../links/social.tsx";
 import { initializeDeckVideoTapGuard } from "../media/gestures.tsx";

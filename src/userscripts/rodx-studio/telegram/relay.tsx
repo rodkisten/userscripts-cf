@@ -17,7 +17,7 @@ import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
 import { gmAvailable, storage } from "../storage/gm.js";
 import { XRepost } from "../tweets/publisher.tsx";
-import { openPanel } from "../ui/preferences.js";
+import { openPanel } from "../ui/preferences.tsx";
 import { renderRoot } from "../ui/search-workbench.tsx";
 
 export let Relay;

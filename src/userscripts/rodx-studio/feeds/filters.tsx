@@ -6,7 +6,7 @@ import { currentFullQuery, visibleLimit } from "./local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "./local-rules.js";
 import { state } from "../state/deck.js";
 import { saveState } from "../storage/account.js";
-import { Preferences } from "../ui/preferences.js";
+import { Preferences } from "../ui/preferences.tsx";
 import { showRodxToast } from "../ui/runtime.tsx";
 
 export let FeedFilters;

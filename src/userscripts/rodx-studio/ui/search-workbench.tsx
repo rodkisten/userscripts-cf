@@ -42,7 +42,7 @@ import { state } from "../state/deck.js";
 import { gmAvailable } from "../storage/gm.js";
 import { Relay } from "../telegram/relay.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
-import { closePanel } from "./preferences.js";
+import { closePanel } from "./preferences.tsx";
 
 export function currentSearch() {
   return nativeSearch();

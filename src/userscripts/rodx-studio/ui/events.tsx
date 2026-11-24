@@ -28,7 +28,7 @@ import { Relay } from "../telegram/relay.tsx";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
 import { repaint } from "./dock.tsx";
-import { openPanel } from "./preferences.js";
+import { openPanel } from "./preferences.tsx";
 import {
   addChips,
   displayPreview,
