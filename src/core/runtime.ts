@@ -26,14 +26,10 @@ declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
 declare const __ROD_FEATURE_QUERY__: boolean;
 declare const __ROD_FEATURE_UI__: boolean;
+declare const __ROD_FEATURE_CSS__: boolean;
 
-import {
-  installCoreStyles,
-  applyComponentStyle,
-  clearComponentStyle,
-  setCssProperty,
-  setCssProperties,
-} from "./css.js";
+import { installCoreStyles, applyComponentStyle, clearComponentStyle } from "./css.js";
+import { setCssProperty, setCssProperties } from "./css-properties.js";
 
 export const STORAGE_NAMESPACE_PREFIX = "userscripts-cf/";
 export const DB_NAMESPACE_SEGMENT = "/db/";
@@ -1040,13 +1036,16 @@ export function createCoreRuntime(
         if (id) node.id = id;
         return node;
       },
-      css: Object.freeze({
-        installCoreStyles,
-        applyComponentStyle,
-        clearComponentStyle,
-        setCssProperty,
-        setCssProperties,
-      }),
+      css:
+        typeof __ROD_FEATURE_CSS__ === "undefined" || __ROD_FEATURE_CSS__
+          ? Object.freeze({
+              installCoreStyles,
+              applyComponentStyle,
+              clearComponentStyle,
+              setCssProperty,
+              setCssProperties,
+            })
+          : undefined,
       async dispose() {
         const trace = (stage: string) => {
           if ((host as unknown as { __ROD_RUNTIME_TRACE__?: boolean }).__ROD_RUNTIME_TRACE__)
