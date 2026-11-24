@@ -1,6 +1,6 @@
 import { mountView, disposeView } from "./react-mount.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
-import styles, { css } from "./toast.module.css";
+import styles, { css } from "./components.module.css";
 
 type ToastKind = "info" | "success" | "warning" | "error";
 type ToastState = { message: string; kind: ToastKind };

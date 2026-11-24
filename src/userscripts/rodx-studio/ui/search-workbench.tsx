@@ -1,4 +1,4 @@
-import { componentClasses } from "../styles/deck.js";
+import { componentClasses, searchCSS } from "./styles.js";
 import { classNames } from "../ui/class-names.ts";
 const cx = (value: string) => classNames(componentClasses, value);
 import { mountView } from "./react-mount.tsx";
@@ -40,7 +40,6 @@ import { analyzeDraft } from "../search/validation.js";
 import { html } from "../shared/text.js";
 import { state } from "../state/deck.js";
 import { gmAvailable } from "../storage/gm.js";
-import { CSS, CUSTOM_CSS } from "../styles/deck.js";
 import { Relay } from "../telegram/relay.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
 import { closePanel } from "./preferences.js";
@@ -2038,8 +2037,7 @@ continue;
 
 function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") {
   ensureShadowStyles(root, [
-    ["search-deck.module", CSS],
-    ["search-custom.module", CUSTOM_CSS],
+    ["search.module", searchCSS],
     [
       variant === "workspace" ? "workspace-overrides" : "dock-overrides",
       variant === "workspace" ? workbenchOverrides2 : workbenchOverrides1,

@@ -13,7 +13,6 @@ import {
   initializeDeckSORTS,
   initializeDeckGROUPS,
 } from "../config/search.js";
-import { initializeDeckCSS, initializeDeckCUSTOM_CSS } from "../styles/deck.js";
 import { initializeDeckState } from "../state/deck.js";
 import { initializeDeckCopyFields } from "../search/blocks.js";
 import {
@@ -112,8 +111,6 @@ export function initializeDeck() {
   initializeDeckMAX_BLOCK_DEPTH();
   initializeDeckSORTS();
   initializeDeckGROUPS();
-  initializeDeckCSS();
-  initializeDeckCUSTOM_CSS();
   initializeDeckState();
   initializeDeckCopyFields();
   initializeDeckHtml();

@@ -4,7 +4,7 @@ import VolumeMutedIcon from "../../../assets/icons/volume-muted.svg?component";
 import VolumeOnIcon from "../../../assets/icons/volume-on.svg?component";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import transportCSS from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
-import styles, { css } from "./Transport.module.css";
+import styles, { css } from "../ui/components.module.css";
 import { VideoExperience } from "./experience.js";
 
 const formatTime = (value: number) => {

@@ -1,4 +1,4 @@
-import styles, { css as filterCSS } from "./FeedFilters.module.css";
+import styles, { css as filterCSS } from "../ui/components.module.css";
 import { mountView } from "../ui/react-mount.tsx";
 import { RODX_SELECTORS, DOM_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio.js";
