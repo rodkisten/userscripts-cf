@@ -1,11 +1,11 @@
 import fs from 'node:fs';
-import { logger } from './utils/logger.mjs';
+import { AgentReporter } from './utils/ci-logger.mjs';
 import {
   getGitHubClient,
   upsertStickyComment,
   writeJobSummary,
   type GitHubClient
-} from './utils/github.mjs';
+} from './utils/github.ts';
 
 interface ScriptSuggestion {
   path: string;
@@ -35,6 +35,8 @@ interface WorkflowAuditReport {
   existingScripts: string[];
   invalidReferences: InvalidWorkflowReference[];
 }
+
+const logger = new AgentReporter('Workflow audit');
 
 const MARKER = '<!-- invalid-workflow-scripts-audit -->';
 const LABEL_NAME = 'INVALID WORKFLOW';
@@ -87,7 +89,7 @@ async function removeLabelIfPresent(
       `/repos/${owner}/${repo}/issues/${issueNumber}/labels/${encodedLabel}`,
       { method: 'DELETE' }
     );
-    logger.success(`Label "${LABEL_NAME}" removida do PR #${issueNumber} após correção.`);
+    logger.pass(`Label "${LABEL_NAME}" removida do PR #${issueNumber} após correção.`);
   } catch {
     // Label não estava aplicada; ignora
   }
@@ -177,7 +179,7 @@ async function upsertWorkflowIssue(
         method: 'PATCH',
         body: JSON.stringify({ state: 'closed' })
       });
-      logger.success(`Issue #${existingIssue.number} fechada automaticamente após correção.`);
+      logger.pass(`Issue #${existingIssue.number} fechada automaticamente após correção.`);
     }
     return;
   }
@@ -195,7 +197,7 @@ async function upsertWorkflowIssue(
         labels: [LABEL_NAME]
       })
     });
-    logger.success(`Issue existente #${existingIssue.number} atualizada.`);
+    logger.pass(`Issue existente #${existingIssue.number} atualizada.`);
   } else {
     const created = await github.request<{ number: number }>(
       `/repos/${owner}/${repo}/issues`,
@@ -208,7 +210,7 @@ async function upsertWorkflowIssue(
         })
       }
     );
-    logger.success(`Nova Issue #${created.number} criada com a label "${LABEL_NAME}".`);
+    logger.pass(`Nova Issue #${created.number} criada com a label "${LABEL_NAME}".`);
   }
 }
 
@@ -219,7 +221,7 @@ async function main() {
   const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null;
 
   if (!fs.existsSync(reportPath)) {
-    logger.error(`Relatório não encontrado em: ${reportPath}`);
+    logger.fail(`Relatório não encontrado em: ${reportPath}`);
     process.exit(1);
   }
 
@@ -233,7 +235,7 @@ async function main() {
   // 2. Escreve o Job Summary
   const markdown = buildReportMarkdown(report);
   await writeJobSummary(markdown);
-  logger.success('Job Summary de workflows publicado.');
+  logger.pass('Job Summary de workflows publicado.');
 
   if (!owner || !repo) {
     logger.warn('REPO_OWNER ou REPO_NAME ausentes; pulando integração com Issue/PR.');
@@ -262,9 +264,9 @@ async function main() {
     });
 
     if (status === 'created') {
-      logger.success(`Comentário de workflow inválido criado no PR #${prNumber}.`);
+      logger.pass(`Comentário de workflow inválido criado no PR #${prNumber}.`);
     } else if (status === 'updated') {
-      logger.success(`Comentário atualizado no PR #${prNumber}.`);
+      logger.pass(`Comentário atualizado no PR #${prNumber}.`);
     }
   } else {
     logger.info('Execução fora de Pull Request; gerenciando Issue...');
@@ -277,6 +279,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error('Erro ao executar auditoria de workflows:', err);
+  logger.fail('Erro ao executar auditoria de workflows:', err);
   process.exit(1);
 });
