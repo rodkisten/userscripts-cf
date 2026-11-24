@@ -105,6 +105,28 @@ describe("inspectable build artifacts", () => {
       }
 
       for (const runtime of target.output.runtimes) {
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const expectsReact = runtime.featureDefines.__ROD_FEATURE_REACT__ !== false;
+        expect(runtime.reactRootAudit?.roots).toBe(expectsReact ? 1 : 0);
+        expect(runtime.reactRootAudit?.owner).toBe(
+          expectsReact ? "src/core/runtime-react.tsx" : null,
+        );
+
+        if (expectsReact) continue;
+
+        const retainedReactRuntime = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.includes("/node_modules/react-dom/") ||
+              item.id.endsWith("src/core/runtime-react.tsx")),
+        );
+        expect(
+          retainedReactRuntime,
+          `Vanilla runtime retained React DOM in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
         expect(runtime.includedModuleCount).toBeGreaterThan(0);
         expect(runtime.topModules.length).toBeGreaterThan(0);
         expect(runtime.topModules.every((module) => module.renderedBytes > 0)).toBe(true);
