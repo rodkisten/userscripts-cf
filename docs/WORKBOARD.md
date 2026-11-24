@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 23114)
+Total output lines: 728
+
 ## PR preview deployment
 
 PR preview workflow now builds numbered installers and deploys each PR to an isolated Cloudflare Pages branch (`pr-<number>`). It requires repository variable `USERSCRIPTS_PREVIEW_PAGES_PROJECT` and secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The PR comment receives the actual Cloudflare `*.pages.dev` URL only after a successful HTTP verification. The custom `userscripts.preview.migos.club/<number>/` path remains a separate routing task; preview cleanup after merge is not yet implemented.
@@ -311,87 +314,7 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 
 ### React-only hard cutover (2026-11-18)
 
-- User explicitly revoked all Solid compatibility, authorized broken builds and requested a minimal Vite config. Direct Solid dependencies and lockfile package entries removed; TSX root config now targets React; mixed JSX transpiler removed from Vite. Remaining legacy Solid source and imports still require deletion or migration; **do not restore Solid to fix CI**.
-
-### First physical Solid UI deletion batch (2026-11-18)
-
-- Deleted nine obsolete Solid UI implementation files from `src/runtime/solid-ui`: Button, Dialog, SolidDropdown, Rod Dock, clipboard, ObjectInspector, Badge, mount-point, and shadow-mount. Last deletion commit [`01df0147`](https://github.com/rodkisten/userscripts-cf/commit/01df0147108de6e78173717fbcd45bb6294d40cf). This intentionally breaks consumers that still import these files; user explicitly authorized breakage.
-- GitHub code search still found dozens of Solid imports across userscripts, playground, studio, and remaining Solid UI. **React-only cleanup not complete**; do not mark done or reintroduce Solid compatibility.
-
-### Solid deletion batch 2 (2026-11-18)
-
-- Removed `src/core/runtime-solid.ts`, `src/runtime/events/solid.ts`, `src/runtime/solid-ui/reactive-store.ts` and 14 more Solid-only TSX implementations across diagnostic stack, form controls, toaster, and object inspector. Last deletion [`c1f97cb1`](https://github.com/rodkisten/userscripts-cf/commit/c1f97cb1e63f07f64a7cd3a3c93a044d4cddf020). No compatibility shims added.
-- This is an intentional breaking deletion; consumers remain and must be migrated to React. GitHub search index can lag deletions. Do not report the project as Solid-free or CI-green.
-
-### Solid deletion batch 3 (2026-11-18)
-
-- Deleted 20 additional Solid-only menu components, state stores, form helpers, toaster helpers, entrypoints and types under `src/runtime/solid-ui/`, including `src/runtime/solid-ui/index.ts` ([last deletion `aaaa336e`](https://github.com/rodkisten/userscripts-cf/commit/aaaa336e4ebf78775a83dcdd9d757a2df132c507)).
-- **Not a complete React migration**: userscript consumers and further Solid modules remain; builds are intentionally permitted to fail. The next batch must migrate actual user-facing entrypoints and remove their Solid imports, not restore compatibility.
-
-### React/Radix-only component policy and Rod Actions migration (2026-11-18)
-
-- User reaffirmed: **do not create custom foundational components**. Use shadcn/ui and Radix UI primitives for buttons, dialogs, menus, etc.; existing app-specific compositions are allowed. No Solid compatibility.
-- [`cad779a0`](https://github.com/rodkisten/userscripts-cf/commit/cad779a006cefb30970dfa7102c9f861acf60253) replaces the Solid-based `src/runtime/actions/index.tsx` hub with React `createRoot` and `@radix-ui/react-dialog`, retaining register/open API and tab rendering; [`fe2af46c`](https://github.com/rodkisten/userscripts-cf/commit/fe2af46cf88d417b9c9041baa1ca492cdff46c30) keeps Radix portal in the hub ShadowRoot. This removes runtime Solid imports from the hub but **does not migrate its legacy consumer tabs or guarantee a successful build**. Clipboard auto-registration was not carried forward; restore using a React implementation.
-
-### Rod Actions React consumers (2026-11-18)
-
-- Migrated `src/runtime/actions/ClipboardPanel.tsx` and `src/runtime/actions/Panel.tsx` from Solid signals/For/Show to React state/effects and JSX. Clipboard panel preserves subscribe/unsubscribe, search, pin, remove and read; copying now uses `navigator.clipboard.writeText` and needs Safari/GM clipboard fallback verification. Commits [`94bd8e60`](https://github.com/rodkisten/userscripts-cf/commit/94bd8e606235675c1d2d2875980e99f88ff97b6d), [`bb2755ac`](https://github.com/rodkisten/userscripts-cf/commit/bb2755ac8c5db16a94d02af62d419e2b32301de9).
-- Restored clipboard registration in React Rod Actions hub [`ede083aa`](https://github.com/rodkisten/userscripts-cf/commit/ede083aad023ddedfa0125cf529ba327f095026a). No new foundational UI primitives added; Radix Dialog remains the hub primitive. **CI/runtime not verified**; remaining Solid consumers and old build failures persist.
-
-### Instagram Reel bookmark React mount (2026-11-18)
-
-- [`529c1be4`](https://github.com/rodkisten/userscripts-cf/commit/529c1be4788b7d01bfacf65d8eefaec28a87c6a5) migrates `ReelBookmarkButton.tsx` from Solid Show/class to React JSX; [`4f358842`](https://github.com/rodkisten/userscripts-cf/commit/4f358842c7b76bf18e531b01650ee2c32c6b6123) replaces Solid mountPoint/createSignal with React createRoot/unmount in `reel-bookmark.tsx`. No new shared foundational components created.
-- **Not verified**: multiple-Reel navigation and first-item-only bug, native save behavior, Safari/Tampermonkey, and build. `instagram-saved/index.tsx` and `Settings.tsx` still require migration; do not claim Instagram is React-only yet.
-
-### Instagram saved settings React-only cutover (2026-11-18)
-
-- [`912daa9e`](https://github.com/rodkisten/userscripts-cf/commit/912daa9e95e0596a751c88d279486a921665c1c5): replaced Solid store/dialog in `src/userscripts/instagram-saved/Settings.tsx` with React state and Radix Dialog.
-- [`31dc7d85`](https://github.com/rodkisten/userscripts-cf/commit/31dc7d854642146fe4e95a29590f5d033cfdd486): replaced `mountSolid` and `Show` in `instagram-saved/index.tsx` with `ctx.ui.mountReact` and `useSyncExternalStore`-based notifications for runtime changes; kept Rod Actions tab integration.
-- **Unverified**: full build, typecheck, native Instagram behavior, portal styling within ShadowRoot, multi-Reel navigation. Existing form inputs/buttons are markup, not a new reusable component library; replace with shadcn/Radix primitives as the existing design system is consolidated.
-
-### GoneWild entrypoint inspection (2026-11-18)
-
-- [`6807cf09`](https://github.com/rodkisten/userscripts-cf/commit/6807cf093c1b0d90d164ecc1f1fba5f77da5b74c) replaces the Audiochan return-link Solid mount with a React root in a ShadowRoot and disposal cleanup.
-- **Remaining blocking Solid consumers:** `gonewild/reddit-adapter.tsx`, `gonewild/soundgasm-adapter.tsx`, `gonewild/components/SoundgasmApp.tsx`, and its child components. Soundgasm uses a Solid error boundary and Solid data store, so removing its mount alone would break the fallback. Prioritize coordinated adapter + component migration, then verify the native-player safeguard and Reddit layout.
-- No build or browser validation performed for this change.
-
-### GoneWild presentational React migration (2026-11-18)
-
-- [`90a3dae0`](https://github.com/rodkisten/userscripts-cf/commit/90a3dae02c445b7a0bdccffc93ff78dbc39bf4eb): migrated `components/Markdown.tsx` from Solid For/Dynamic/createMemo to React JSX and keyed mapped children; preserved Markdown block parsing, inline links and safeURL checks.
-- [`3e4fc84d`](https://github.com/rodkisten/userscripts-cf/commit/3e4fc84d33cca4d5245b79120c01b3a6340ab246): migrated `components/Tags.tsx` from Solid For to React JSX with keys. Neither creates a shared basic UI primitive.
-- **Important:** parent SoundgasmApp, Player, Reddit adapter, store and Feed are still Solid; mixing these React children directly into Solid parents is not a validated working state. Must migrate the entire component tree and adapters before expecting Soundgasm/Reddit to work. Build/browser tests not run.
-
-### Soundgasm React subtree cutover (2026-11-18)
-
-- [`ade885c9`](https://github.com/rodkisten/userscripts-cf/commit/ade885c9c1d3cb64168d1178ca166542eca68b19): migrated SoundgasmApp, profile catalogue, search, sort, descriptions, copy and tags integration to React JSX/hooks.
-- [`0a81829a`](https://github.com/rodkisten/userscripts-cf/commit/0a81829aca8d8467a5e18c1f2d1d9368b175fdef) and [`f08b281b`](https://github.com/rodkisten/userscripts-cf/commit/f08b281b88f1e2fce2cafb3a8b1aec1e4266fadd): migrated Player from Solid lifecycle/store to React hooks and corrected initial ref declarations.
-- [`a4bdfb95`](https://github.com/rodkisten/userscripts-cf/commit/a4bdfb9571107de53502c4446347c783ad11fc50): migrated Soundgasm adapter to React root, error boundary and data rerenders, retaining native player visibility fallback.
-- **Not verified**: npm build, typecheck, Safari/iOS playback, delayed jPlayer source, error retry, waveform and catalogue. Treat this as a source migration, not proof the blank-screen bug is fixed. Reddit adapter/Feed/store remain Solid.
-
-### Reddit/GoneWild React tree cutover (2026-11-18)
-
-- [`bd4695af`](https://github.com/rodkisten/userscripts-cf/commit/bd4695afdfece19984abfedf5cde1db9eb507871) / [`a15b7dcf`](https://github.com/rodkisten/userscripts-cf/commit/a15b7dcf16157f35908d1e9f29522c3ca9855831): replace Solid store with immutable snapshots and subscribe/getSnapshot for React external-store hooks. Native structuredClone, no new dependency.
-- [`21f01cf4`](https://github.com/rodkisten/userscripts-cf/commit/21f01cf476f3458f3f0bf31f7f45ba93ce969107): replace Solid FeedRoot/PostCard/SettingsShell with React JSX, hooks and Radix Dialog; preserve search, tagging, media resolution and settings actions.
-- [`62e0d8aa`](https://github.com/rodkisten/userscripts-cf/commit/62e0d8aaf364489d15149ed0271bf97ddff149fb): replace Solid Reddit adapter mounts with React roots and subscribe-based rescans, preserve native link rewrite/restore and cleanup. [`cc3c7049`](https://github.com/rodkisten/userscripts-cf/commit/cc3c704908cc5f5ac9c941e64ed3ae9ad5be5483) / [`631826c5`](https://github.com/rodkisten/userscripts-cf/commit/631826c5db4d4beb73221a6d5ca2fe60bfc011b9) keep Radix portal inside ShadowRoot.
-- **Not verified:** build, typecheck, live Reddit layout, long-press menu, network filter, mobile Safari. Do not mark fixed. Need validate before further refactor. Existing native buttons are not new shared primitives; shadcn/Radix design-system consolidation remains pending.
-
-### React GoneWild stabilization pass (2026-11-18)
-
-- [`e633a97c`](https://github.com/rodkisten/userscripts-cf/commit/e633a97cb0ae50625c9c8337e67d60c38d51600e): corrected React Player callbacks that captured null audio/canvas refs on initial render; callbacks now dereference refs at use time.
-- [`d8973911`](https://github.com/rodkisten/userscripts-cf/commit/d8973911bf40850f12058d7cd90d533dd1ebedec): aligned tag state with `.gws-tag[data-active]` CSS and fixed subreddit regex parsing after Solid→React rewrite.
-- [`762e7ff7`](https://github.com/rodkisten/userscripts-cf/commit/762e7ff777e65c061eabb9d191fa656c3f98014c): gave Reddit settings ShadowRoot an overlay stacking context with pointer-events disabled at host level, leaving the actual dialog interactive.
-- GitHub combined commit statuses query returned no statuses for the last commit. This **does not establish build success**. Live Reddit/Soundgasm, TS typecheck, release and Safari playback remain unverified. Next: inspect failing Actions logs and run actual build before declaring resolved.
-
-### CI diagnosis and GoneWild store subscription (2026-11-18)
-
-- Inspected Actions run [`44234869187`](https://github.com/rodkisten/userscripts-cf/actions/runs/44234869187), job `134568452192`. Legacy TypeScript: success; React TypeScript: success; production build: failure. The build log reports Rolldown `[PARSE_ERROR] Unexpected JSX expression` in TSX (including `src/userscripts/github-tools/index.tsx:408`). This run predates the latest React migrations, so do **not** infer current main CI status from it.
-- [`ef940bd2`](https://github.com/rodkisten/userscripts-cf/commit/ef940bd235e9289ba7fe733b1d1153f889e1533e): React Feed now subscribes directly to the immutable state snapshot using `useSyncExternalStore`; async audio loading no longer remains latched when its active request finishes.
-- **Unresolved P0:** verify current main run and address Vite 8/Rolldown TSX transform/parser without restoring Solid or masking checks. Run `npm ci`, `npm run typecheck`, `npm run typecheck:react`, `npm run build` and validate Safari before marking any item complete. No local CI runner or fresh successful build was available in this work block.
-
-### Vite 8/Rolldown React TSX parser fix (2026-11-18)
-
-- [`86efa837`](https://github.com/rodkisten/userscripts-cf/commit/86efa837e5b4e0c67b6804a5b03d41779a40623a): existing `runtimeHelpers()` pre-transform now compiles TSX/JSX with TypeScript's `transpileModule` to React automatic JSX runtime, after the context-aware AST rewrites. This avoids raw JSX reaching Rolldown and does not add Solid or another Vite plugin.
-- [`ca1b0d74`](https://github.com/rodkisten/userscripts-cf/commit/ca1b0d74fc492d690ffd78adf8c57d13c264d760) and [`a20cf19c`](https://github.com/rodkisten/userscripts-cf/commit/a20cf19caf286206717e71a7cfb980a9c35ab847): tests cover context rewrite + JSX lowering and JSX-only modules.
+- User explicitly revoked all Solid compatibility, authorized broken builds and requested a minimal Vite config. Direct Solid dependencies and lockfile package entries removed; TSX root config now targets React; mixed JSX transpiler removed f…3114 tokens truncated…xt rewrite + JSX lowering and JSX-only modules.
 - **Verification pending:** no new successful Actions run or local build was observed. Run typecheck, Vitest and production build; TSX transform fixes the identified parser path but does not prove the remaining Solid imports or runtime integration compile.
 
 ### Runtime blockers found in source review (2026-11-18)
@@ -707,6 +630,15 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] Global diagnostic prelude posts captured runtime errors to `https://manage.migos.club/error/capture` without cookies; request/response previews are bounded and common credentials are redacted.
 - [x] Runtime network diagnostics attach method, URL, status, duration, content types and bounded text request/response previews for failed or 5xx requests.
 - [ ] Validate typecheck, runtime utilities and generated standalone/unified bundles; verify the authenticated Manage viewer and production CORS endpoint before release.
+
+### GitHub, Dock e menus móveis (2026-11-24 · em validação)
+
+- [x] GitHub Tools: carregar o CSS Modules da barra dentro do Shadow DOM; manter um único ícone por arquivo/pasta; salvar e restaurar a posição da árvore ao voltar de um arquivo.
+- [x] Studio menus: aplicar a superfície Radix compartilhada, com bottom sheet alto, corpo rolável, abas presas no topo, ações fixas e controles de 16 px para Safari.
+- [x] Rod Dock: mover a folha de estilo para o Shadow DOM fora da árvore React e usar viewport dinâmico e rolagem vertical nativa no painel.
+- [x] `npm run typecheck:react`, `npm run check:react-roots`, Prettier e bundles seletivos `github-tools`, `rod-dock` e `rodx-studio` passaram localmente.
+- [ ] O typecheck global ainda falha com 18 TS2347 preexistentes em `src/userscripts/rodx-studio/ui/search-workbench.tsx` (chamadas genéricas em funções sem tipo); correção é acompanhada no P0.
+- [ ] Fazer smoke test manual no Safari iPhone. Não foram criados/executados testes de UI ou userscript, conforme política vigente.
 
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 

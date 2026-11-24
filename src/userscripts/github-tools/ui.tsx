@@ -12,8 +12,8 @@ export function FileToolbar(props: {
   const [copy, setCopy] = useState({ busy: false, label: "⧉ Copiar tudo", message: "" });
   const run = () => {
     if (copy.busy) {
-return;
-}
+      return;
+    }
     setCopy((previous) => ({ ...previous, busy: true, label: "Preparando…", message: "" }));
     let result: Promise<unknown>;
     try {
@@ -29,7 +29,7 @@ return;
       .finally(() => setCopy((previous) => ({ ...previous, busy: false, label: "⧉ Copiar tudo" })));
   };
   return (
-    <>
+    <div className={styles.toolbar}>
       <button className={styles.button} data-ghft-copy="" disabled={copy.busy} onClick={run}>
         {copy.label}
       </button>
@@ -67,7 +67,7 @@ return;
       <span className={styles.message} role="status">
         {copy.message}
       </span>
-    </>
+    </div>
   );
 }
 
@@ -77,8 +77,8 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
     event.stopPropagation();
     event.preventDefault();
     if (state.busy) {
-return;
-}
+      return;
+    }
     setState((previous) => ({ ...previous, busy: true, message: "" }));
     const output = props.ctx.storage
       .get("actionsToken", "")
@@ -100,11 +100,10 @@ return;
       writing = output.then(async (text: string) => {
         const gm = globalThis as any;
         if (gm.GM_setClipboard) {
-await gm.GM_setClipboard(text, "text");
-}
-        else {
-await navigator.clipboard.writeText(text);
-}
+          await gm.GM_setClipboard(text, "text");
+        } else {
+          await navigator.clipboard.writeText(text);
+        }
       });
     }
     void writing
@@ -138,8 +137,8 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
     /^\/([^/]+)\/([^/]+)\/(?:actions\/runs\/\d+\/job|runs\/\d+\/jobs)\/(\d+)/,
   );
   if (!match) {
-return;
-}
+    return;
+  }
   const [path, owner, repo, jobId] = match;
   const candidates = [
     ...document.querySelectorAll<HTMLElement>(
@@ -150,14 +149,14 @@ return;
   for (const step of candidates) {
     const number = stepNumber(step);
     if (!number || seen.has(number)) {
-continue;
-}
+      continue;
+    }
     seen.add(number);
     const key = `${path}:${number}`;
     const existing = step.querySelector<HTMLElement>("[data-ghft-step-host]");
     if (existing?.dataset.ghftStepHost === key) {
-continue;
-}
+      continue;
+    }
     existing?.remove();
     const header = step.querySelector("summary, .js-check-step-header, [data-testid='step-header']");
     const host = document.createElement("span");
@@ -193,8 +192,8 @@ export function GitHubTokenSettings(props: {
         onSubmit={(event) => {
           event.preventDefault();
           if (state.busy) {
-return;
-}
+            return;
+          }
           const token = state.token.trim();
           setState((previous) => ({ ...previous, busy: true, error: "" }));
           void props
