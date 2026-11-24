@@ -189,6 +189,8 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   /** @type {Set<string>} */
   const features = new Set();
   /** @type {Set<string>} */
+  const paths = new Set();
+  /** @type {Set<string>} */
   const dynamicFiles = new Set();
   /** @type {{ file: string, sourceBytes: number }[]} */
   const modules = [];
@@ -213,8 +215,9 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     // Arquivos JSON não possuem código executável nem imports
     if (filename.endsWith(".json")) continue;
 
-    const usage = analyzeRuntimeUsage(source, filename);
+    const usage = analyzeRuntimeUsage(source, filename, { includePaths: true });
     for (const feature of usage.features) features.add(feature);
+    for (const capabilityPath of usage.paths || []) paths.add(capabilityPath);
     if (usage.dynamic) dynamicFiles.add(relPath);
 
     const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicFiles);
@@ -229,6 +232,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
 
   return {
     features: [...features].sort(),
+    paths: [...paths].sort(),
     dynamic: dynamicFiles.size > 0,
     dynamicFiles: [...dynamicFiles].sort(),
     files: [...visited].map((file) => path.relative(rootPath, file).split(path.sep).join("/")).sort(),
