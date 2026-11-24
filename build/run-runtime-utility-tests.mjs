@@ -15,7 +15,7 @@ async function walk(dir) {
     if (entry.isDirectory()) await walk(path);
     else if (/\.test\.[cm]?[jt]sx?$/.test(entry.name)) {
       const relativePath = relative(root.pathname, path).replaceAll("\\", "/");
-      if (allowed.test(entry.name) && !prohibited.test(relativePath)) {
+      if (allowed.test(entry.name) && !prohibited.test(relativePath) && relativePath !== "build.test.js") {
         suites.push("tests/" + relativePath);
       }
     }
@@ -30,11 +30,6 @@ const compiledRuntimeIndex = suites.indexOf(compiledRuntimeSuite);
 if (compiledRuntimeIndex !== -1) {
   suites.splice(compiledRuntimeIndex, 1);
   suites.unshift(compiledRuntimeSuite);
-}
-if (process.env.RUNTIME_TEST_SKIP_DIST === "true") {
-  const index = suites.indexOf("tests/build.test.js");
-  if (index !== -1) suites.splice(index, 1);
-  console.log("Skipping dist-dependent build tests because no full distribution was built.");
 }
 if (!suites.length) {
   console.error("No eligible runtime/utility test suites found. Refusing silent success.");

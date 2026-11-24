@@ -156,6 +156,11 @@ jobs:
         run: npm run build
         timeout-minutes: 35
 
+      - name: Verify distribution metadata and hashes
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
+        run: node build/verify-distribution.mjs
+        timeout-minutes: 2
+
       - name: Runtime and utility tests
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
         run: npm run test:unit
