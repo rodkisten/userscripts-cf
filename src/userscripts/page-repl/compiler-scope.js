@@ -135,8 +135,8 @@ export function analyzePersistentBindings(ast, knownNames = []) {
   const globalScope = createScope(null, "program");
   const nodeScopes = new WeakMap();
   const declarationIdentifiers = new WeakSet();
-  const globalDefinitions = new WeakSet();
-  const variableDeclarations = new WeakSet();
+  const globalDefinitions = new Set();
+  const variableDeclarations = new Set();
   const names = new Set();
 
   const declarePattern = (pattern, scope, declaration, persistent) => {
@@ -276,7 +276,7 @@ export function analyzePersistentBindings(ast, knownNames = []) {
   collect(ast, globalScope);
 
   const known = new Set(knownNames);
-  const references = new WeakMap();
+  const references = new Map();
 
   function resolveReferences(node, parent = null, key = "") {
     if (!node || typeof node !== "object") {
