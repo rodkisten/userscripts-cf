@@ -1062,7 +1062,10 @@ export function createCoreRuntime(
       },
     };
 
-    resolvedContext = Object.assign(baseContext, specificContext) as ScriptContext;
+    // The selected runtime layer completes framework-specific capabilities
+    // (for example ui.mountReact) before script initialization. Keep the core
+    // object framework-free while preserving the public ScriptContext contract.
+    resolvedContext = Object.assign(baseContext, specificContext) as unknown as ScriptContext;
     return resolvedContext;
   }
 
