@@ -86,6 +86,39 @@ test("REPL range emitter preserves function hoisting and class identity", async 
   assert.equal(klass.value, 5);
 });
 
+test("Lezer compiler preserves persistent bindings through native lexical scope", async () => {
+  const first = await evaluate("let n = 2; function inc(step = 1) { n += step; return n; } inc()");
+  assert.equal(first.value, 3);
+
+  const second = await evaluate(
+    "(() => { let n = 10; return n; })() + inc(2) + n",
+    first.ctx,
+    ["n", "inc"],
+  );
+  assert.equal(second.value, 20);
+  assert.equal(second.ctx.vars.n, 5);
+});
+
+test("Lezer compiler handles destructuring, bare var and for bindings", async () => {
+  const destructured = await evaluate(
+    "const {a, nested: {b}, c = 4} = {a: 1, nested: {b: 2}}; const [x, ...rest] = [3, 4, 5]; ({a, b, c, x, rest})",
+  );
+  assert.deepEqual(destructured.value, { a: 1, b: 2, c: 4, x: 3, rest: [4, 5] });
+
+  const bare = await evaluate("var empty; empty");
+  assert.equal(bare.value, undefined);
+  assert.equal(Object.hasOwn(bare.ctx.vars, "empty"), true);
+
+  const loop = await evaluate("let total = 0; for (var item of [1, 2, 3]) total += item; total + item");
+  assert.equal(loop.value, 9);
+});
+
+test("Lezer compiler keeps reserved names out of the persistent with scope", async () => {
+  const result = await evaluate("const value = typeof console.log; value");
+  assert.equal(result.value, "function");
+  assert.throws(() => compile("const console = 1"), /reservado/);
+});
+
 test("runner receives values, console and context evidence, without duplicating transports", async () => {
   const host = new Window({
     url: "https://example.com",
