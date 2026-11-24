@@ -184,13 +184,83 @@ export function initializeRodFeatures(
   };
 }
 
+function showLightweightUpdateNotice(
+  host: Window & typeof globalThis,
+  update: {
+    readonly id: string;
+    readonly name: string;
+    readonly installedVersion: string;
+    readonly latestVersion: string;
+    readonly downloadURL: string;
+  },
+  onDismiss: () => void,
+): () => void {
+  const document = host.document;
+  const id = `${UPDATE_PREFIX}notice-${update.id}`;
+  document.getElementById(id)?.remove();
+
+  const notice = document.createElement("aside");
+  notice.id = id;
+  notice.setAttribute("role", "status");
+  notice.style.cssText =
+    "all:initial;position:fixed;right:12px;bottom:12px;z-index:2147483647;" +
+    "display:grid;grid-template-columns:1fr auto;gap:8px 12px;max-width:min(360px,calc(100vw - 24px));" +
+    "box-sizing:border-box;padding:12px 14px;border:1px solid rgba(255,255,255,.14);" +
+    "border-radius:12px;background:#18181b;color:#fafafa;box-shadow:0 12px 36px rgba(0,0,0,.35);" +
+    "font:13px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+
+  const copy = document.createElement("div");
+  copy.style.cssText = "all:initial;display:grid;gap:2px;color:inherit;font:inherit";
+
+  const title = document.createElement("strong");
+  title.style.cssText = "all:initial;color:inherit;font:600 13px/1.4 system-ui,-apple-system,sans-serif";
+  title.textContent = `Atualização disponível · ${update.name}`;
+
+  const version = document.createElement("span");
+  version.style.cssText = "all:initial;color:#a1a1aa;font:12px/1.4 system-ui,-apple-system,sans-serif";
+  version.textContent = `${update.installedVersion} → ${update.latestVersion}`;
+  copy.append(title, version);
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.setAttribute("aria-label", "Dispensar atualização");
+  close.textContent = "×";
+  close.style.cssText =
+    "all:initial;align-self:start;cursor:pointer;color:#a1a1aa;font:20px/1 system-ui,-apple-system,sans-serif";
+
+  const action = document.createElement("a");
+  action.href = update.downloadURL;
+  action.target = "_blank";
+  action.rel = "noopener noreferrer";
+  action.textContent = UPDATE_LABEL;
+  action.style.cssText =
+    "all:initial;grid-column:1/-1;cursor:pointer;display:inline-flex;justify-content:center;" +
+    "padding:7px 10px;border-radius:8px;background:#fafafa;color:#18181b;" +
+    "font:600 12px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none";
+
+  const dispose = () => notice.remove();
+  close.addEventListener(
+    "click",
+    () => {
+      onDismiss();
+      dispose();
+    },
+    { once: true },
+  );
+
+  notice.append(copy, close, action);
+  (document.body || document.documentElement).append(notice);
+  return dispose;
+}
+
 export function setupUpdateChecker(
   release: { readonly id: string; readonly version: string; readonly manifestURL: string },
   host: Window & typeof globalThis,
   rod: ReturnType<typeof initializeRodFeatures>,
   updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null },
 ) {
-  return createUpdateChecker({
+  let disposeLightweightNotice: (() => void) | undefined;
+  const checker = createUpdateChecker({
     id: release.id,
     installedVersion: release.version,
     manifestURL: release.manifestURL,
@@ -203,24 +273,41 @@ export function setupUpdateChecker(
       }
     },
     notify(update) {
-      rod.toaster?.warning({
-        id: `${UPDATE_PREFIX}${update.id}-${update.latestVersion}`,
-        title: `Atualização disponível · ${update.name}`,
-        description: `${update.installedVersion} → ${update.latestVersion}`,
-        duration: 0,
-        closeButton: true,
-        actions: [
-          {
-            label: UPDATE_LABEL,
-            handle: () => {
-              host.open(update.downloadURL, "_blank", "noopener,noreferrer");
+      if (rod.toaster) {
+        rod.toaster.warning({
+          id: `${UPDATE_PREFIX}${update.id}-${update.latestVersion}`,
+          title: `Atualização disponível · ${update.name}`,
+          description: `${update.installedVersion} → ${update.latestVersion}`,
+          duration: 0,
+          closeButton: true,
+          actions: [
+            {
+              label: UPDATE_LABEL,
+              handle: () => {
+                host.open(update.downloadURL, "_blank", "noopener,noreferrer");
+              },
             },
-          },
-        ],
-        onDismiss: () => updaterInstanceRef.current?.dismiss(update.latestVersion),
+          ],
+          onDismiss: () => updaterInstanceRef.current?.dismiss(update.latestVersion),
+        });
+        return;
+      }
+
+      disposeLightweightNotice?.();
+      disposeLightweightNotice = showLightweightUpdateNotice(host, update, () => {
+        updaterInstanceRef.current?.dismiss(update.latestVersion);
       });
     },
   });
+
+  return {
+    ...checker,
+    stop() {
+      checker.stop();
+      disposeLightweightNotice?.();
+      disposeLightweightNotice = undefined;
+    },
+  };
 }
 
 export function createDomEventsEngine(
@@ -344,6 +431,7 @@ export function createCoreRuntime(
   const installedHelpers = options?.installHelpers ? options.installHelpers() : [];
 
   const stores = new Map<string, ReturnType<typeof rod.storage.create>>();
+  let queryClient: QueryClient | undefined;
 
   // Query is an optional runtime capability. Keeping the entire QueryClient
   // construction behind a compile-time feature flag lets Rolldown remove
@@ -351,7 +439,6 @@ export function createCoreRuntime(
   const queryService =
     typeof __ROD_FEATURE_QUERY__ === "undefined" || __ROD_FEATURE_QUERY__
       ? (() => {
-          let queryClient: QueryClient | undefined;
           const getQueryClient = () =>
             (queryClient ??= new QueryClient({
               defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },

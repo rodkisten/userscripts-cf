@@ -97,10 +97,11 @@ function resolveFeatureDefines(options) {
   const enabled = (feature) => fullRuntime || used.has(feature);
 
   const clipboard = enabled("clipboard");
+  const toaster = enabled("toaster") || enabled("toast");
 
   return {
     __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
-    __ROD_FEATURE_TOASTER__: "true",
+    __ROD_FEATURE_TOASTER__: JSON.stringify(toaster),
     __ROD_FEATURE_QUERY__: JSON.stringify(enabled("query")),
     __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),

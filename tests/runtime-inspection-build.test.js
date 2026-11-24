@@ -60,7 +60,7 @@ describe("inspectable build artifacts", () => {
       // A disabled feature must contribute zero rendered bytes to the output.
       const optionalModules = {
         __ROD_FEATURE_MENU__: "src/runtime/modular/features/menu.ts",
-        __ROD_FEATURE_TOASTER__: "src/runtime/modular/features/toaster.ts",
+        __ROD_FEATURE_TOASTER__: "src/runtime/modular/features/toaster.tsx",
         __ROD_FEATURE_CLIPBOARD__: "src/runtime/modular/features/clipboard.ts",
         __ROD_FEATURE_GM__: "src/runtime/modular/features/gm.ts",
         __ROD_FEATURE_DOM__: "src/runtime/modular/features/dom.ts",
@@ -80,6 +80,18 @@ describe("inspectable build artifacts", () => {
           );
         }
       }
+      for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_TOASTER__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedSonner = report.modules.filter(
+          (item) => item.id.includes("/node_modules/sonner/") && item.renderedBytes > 0,
+        );
+        expect(
+          retainedSonner,
+          `Disabled __ROD_FEATURE_TOASTER__ retained Sonner in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
       for (const runtime of target.output.runtimes) {
         if (runtime.featureDefines.__ROD_FEATURE_QUERY__ !== false) continue;
         const report = audit.bundles[script.id + ":" + runtime.world];
