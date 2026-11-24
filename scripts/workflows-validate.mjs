@@ -269,7 +269,8 @@ function analyzeWorkflowFile(absWorkflowPath, allRepoScripts, gitCtx) {
   let currentWorkingDirIndent = -1;
 
   // Captura tokens que terminam com .js, .mjs, .cjs, .ts ou .tsx
-  const fileRefRegex = /(?:^|[\s"'`=:(])([a-zA-Z0-9_./\\-]+\.(?:mjs|cjs|tsx|ts|js))(?=$|[\s"'`),;:|&])/g;
+  // Only inspect literal entrypoints passed to a script interpreter.
+  const fileRefRegex = /(?:^|[\s;&|])(?:node|tsx|ts-node|bun|deno\s+run)\s+(?:--[\w-]+(?:=[^\s]+)?\s+)*["']?([\w./-]+\.(?:mjs|cjs|tsx|ts|js))(?=$|[\s"' ;&|])/g;
 
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
@@ -297,6 +298,9 @@ function analyzeWorkflowFile(absWorkflowPath, allRepoScripts, gitCtx) {
     // Ignora globs de filtro de trigger (ex: paths: ['**.ts'])
     if (trimmed.startsWith('-') && trimmed.includes('*')) continue;
 
+    // YAML metadata, artifact paths and prose are not executable commands.
+    if (/^(?:-\s*)?(?:name|uses|path|paths|description|if|echo):/.test(trimmed)) continue;
+    if (/^(?:echo|printf)\s/.test(trimmed)) continue;
     fileRefRegex.lastIndex = 0;
     let match;
 
