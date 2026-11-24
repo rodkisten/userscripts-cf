@@ -31,10 +31,10 @@ jobs:
         uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           package-manager: npm
-          install: 'true'
+          install: "true"
           install-args: |
             --legacy-peer-deps
-          script: ':'
+          script: ":"
 
       - name: Build, package & publish PR preview to Cloudflare R2
         id: publish
