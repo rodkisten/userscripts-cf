@@ -64,10 +64,7 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
       if (ts.isIdentifier(key) || ts.isStringLiteralLike(key)) {
         features.add(key.text);
       } else if (ts.isComputedPropertyName(key)) {
-        if (
-          ts.isStringLiteralLike(key.expression) ||
-          ts.isNoSubstitutionTemplateLiteral(key.expression)
-        ) {
+        if (ts.isStringLiteralLike(key.expression) || ts.isNoSubstitutionTemplateLiteral(key.expression)) {
           features.add(key.expression.text);
         } else {
           dynamic = true;
@@ -135,10 +132,7 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
     // 4. Acesso por índice/chave: `ctx["auth"]` ou `ctx[key]`
     if (ts.isElementAccessExpression(node) && isContext(node.expression)) {
       const arg = node.argumentExpression;
-      if (
-        arg &&
-        (ts.isStringLiteralLike(arg) || ts.isNoSubstitutionTemplateLiteral(arg))
-      ) {
+      if (arg && (ts.isStringLiteralLike(arg) || ts.isNoSubstitutionTemplateLiteral(arg))) {
         features.add(arg.text);
       } else {
         dynamic = true;
@@ -154,7 +148,8 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
       // Chamada de função/método: `fn(ctx)` ou `ctx()`
       (ts.isCallExpression(node) && (isContext(node.expression) || node.arguments.some(isContext))) ||
       // Instanciação: `new Class(ctx)`
-      (ts.isNewExpression(node) && (isContext(node.expression) || Boolean(node.arguments?.some(isContext)))) ||
+      (ts.isNewExpression(node) &&
+        (isContext(node.expression) || Boolean(node.arguments?.some(isContext)))) ||
       // Retorno explícito: `return ctx`
       (ts.isReturnStatement(node) && isContext(node.expression)) ||
       // Shorthand em objeto: `{ ctx }`
