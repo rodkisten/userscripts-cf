@@ -202,6 +202,7 @@ function resolveFeatureDefines(options) {
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
     __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
     __ROD_FEATURE_UI__: JSON.stringify(enabled("ui")),
+    __ROD_FEATURE_CSS__: JSON.stringify(enabled("css")),
     __ROD_FEATURE_HTTP__: JSON.stringify(
       enabled("http") || enabled("interceptRequest") || enabled("interceptResponse"),
     ),
