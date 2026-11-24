@@ -3,11 +3,10 @@
   "scripts": {
     "inspektor": { "version": "8.0.0" },
     "rod-dock": { "version": "8.0.0" },
-    "github-color-studio": { "version": "8.0.0" },
+    "github": { "version": "8.0.0" },
     "tiktok-cleaner": { "version": "8.0.0" },
     "dom-inspector": { "version": "8.0.0" },
     "mobile-editor-fab": { "version": "8.0.0" },
-    "github-tools": { "version": "8.0.0" },
     "instagram-saved": { "version": "8.0.0" },
     "rodx-studio": { "version": "8.0.0" },
     "example-site": { "version": "8.0.0" },
