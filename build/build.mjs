@@ -504,10 +504,12 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   }
 
   const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
-  const invalidRoot = bundleEntries.some(
-    ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
-  );
+  const invalidRoot = bundleEntries.some(([, stats]) => {
+    const expectsReact = stats.featureDefines?.__ROD_FEATURE_REACT__ !== false;
+    return expectsReact
+      ? stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx"
+      : stats.reactRootAudit?.roots !== 0 || stats.reactRootAudit?.owner !== null;
+  });
   if (invalidRoot) {
     throw new Error("[React root ownership] Missing or invalid per-world root audit report");
   }
@@ -865,7 +867,7 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
     Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => ({
       target,
       roots: stats.reactRootAudit?.roots ?? "missing",
-      owner: stats.reactRootAudit?.owner ?? "missing",
+      owner: stats.reactRootAudit?.owner ?? "vanilla",
     })),
   );
 
