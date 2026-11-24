@@ -65,11 +65,12 @@ function needsReactRuntime(options) {
   if (["menu", "toaster", "toast"].some((feature) => used.has(feature))) return true;
   if (!used.has("ui")) return false;
 
-  const uiPaths = [...paths].filter((capabilityPath) => capabilityPath === "ui" || capabilityPath.startsWith("ui."));
+  const uiPaths = [...paths].filter(
+    (capabilityPath) => capabilityPath === "ui" || capabilityPath.startsWith("ui."),
+  );
   if (!uiPaths.length || uiPaths.includes("ui")) return true;
   return uiPaths.some(
-    (capabilityPath) =>
-      capabilityPath === "ui.mountReact" || capabilityPath.startsWith("ui.mountReact."),
+    (capabilityPath) => capabilityPath === "ui.mountReact" || capabilityPath.startsWith("ui.mountReact."),
   );
 }
 
