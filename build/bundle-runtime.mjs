@@ -52,6 +52,38 @@ function createVirtualEntryPlugin(virtualID, entryCode) {
   };
 }
 
+function createFeatureShimPlugin(featureDefines) {
+  const storageDisabled = featureDefines.__ROD_FEATURE_STORAGE__ === "false";
+  const virtualStorageID = "\0userscripts-cf-storage-disabled";
+
+  return {
+    name: "userscripts-cf-feature-shims",
+    enforce: "pre",
+    resolveId(source) {
+      if (
+        storageDisabled &&
+        /(?:^|\/)runtime\/modular\/features\/storage\.(?:js|ts)$/.test(source.replaceAll("\\", "/"))
+      ) {
+        return virtualStorageID;
+      }
+      return null;
+    },
+    load(id) {
+      if (id !== virtualStorageID) return null;
+      return `
+        const unavailable = Object.freeze({
+          create() {
+            throw new Error("RodStorage capability was removed from this userscript bundle");
+          },
+        });
+        export function createStorageFeature() {
+          return unavailable;
+        }
+      `;
+    },
+  };
+}
+
 // ============================================================================
 // // @TODO: Mover para build/runtime-codegen.mjs
 // ============================================================================
@@ -126,6 +158,7 @@ function resolveFeatureDefines(options) {
     __ROD_FEATURE_MENU__: JSON.stringify(enabled("menu") || clipboard),
     __ROD_FEATURE_TOASTER__: JSON.stringify(toaster),
     __ROD_FEATURE_QUERY__: JSON.stringify(enabled("query")),
+    __ROD_FEATURE_STORAGE__: JSON.stringify(enabled("storage") || enabled("db")),
     __ROD_FEATURE_CLIPBOARD__: JSON.stringify(clipboard),
     __ROD_FEATURE_GM__: JSON.stringify(enabled("gm")),
     __ROD_FEATURE_DOM__: JSON.stringify(enabled("dom")),
@@ -309,6 +342,7 @@ export async function bundleRuntime(root, definitions, options = {}) {
       define: featureDefines,
       plugins: [
         createRootAuditPlugin(root, rootCallsites),
+        createFeatureShimPlugin(featureDefines),
         instrumentErrorsPlugin(root),
         createVirtualEntryPlugin(virtualID, entryCode),
       ],
