@@ -51,11 +51,11 @@ jobs:
         continue-on-error: true
         uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager: npm
-          install: 'true'
+          install: "true"
           install-args: --legacy-peer-deps
-          script: ':'
+          script: ":"
       - name: 🛡️ Check build and release JavaScript syntax
         shell: bash
         run: |
@@ -228,8 +228,8 @@ jobs:
           TARGET: ${{ matrix.target }}
           BUILD_REASON: PR validation matrix selected this target.
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager: npm
-          install: 'true'
+          install: "true"
           install-args: --legacy-peer-deps
           script: node build/build.mjs "--targets=$TARGET"
