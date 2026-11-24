@@ -285,7 +285,7 @@ export default {
                   }
                   const instagramOptions = {
                     transport: "fetch" as const,
-                    cacheMode: "off",
+                    cacheMode: "off" as const,
                     credentials: "same-origin" as const,
                     signal: abort,
                     headers: {
