@@ -84,7 +84,15 @@ export function analyzeRuntimeUsage(source, filename = "entry.ts", options = {})
     if (ts.isFunctionLike(node)) {
       pushScope();
       for (const param of node.parameters) {
-        registerShadowing(param.name);
+        if (ts.isIdentifier(param.name) && param.name.text === rootName) {
+          // Runtime modules conventionally receive ScriptContext as `ctx`.
+          // A parameter with the configured context name establishes a fresh
+          // context binding for this function; it must not be treated as
+          // ordinary lexical shadowing.
+          currentScope().add(rootName);
+        } else {
+          registerShadowing(param.name);
+        }
       }
 
       // Retorno implícito em Arrow Function: `() => ctx`
