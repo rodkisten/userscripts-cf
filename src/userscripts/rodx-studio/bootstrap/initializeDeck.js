@@ -106,8 +106,9 @@ function runInitializers(...initializers: DeckInitializer[]): void {
 }
 
 export function initializeDeck(): void {
-  // 1. Configuração e estado fundamental do Search Deck.
+  // Cada fase mantém a ordem histórica de inicialização do Deck.
   runInitializers(
+    // Configuração, estado e compilação.
     initializeDeckVERSION,
     initializeDeckPREFIX,
     initializeDeckIDENT,
@@ -129,10 +130,8 @@ export function initializeDeck(): void {
     initializeDeckSplitAccounts,
     initializeDeckQueryEngine,
     initializeDeckSignature,
-  );
 
-  // 2. Storage, recuperação e sincronização em nuvem.
-  runInitializers(
+    // GM, storage e sincronização.
     initializeDeckModernGM,
     initializeDeckGmGet,
     initializeDeckGmSet,
@@ -140,31 +139,26 @@ export function initializeDeck(): void {
     initializeDeckStorage,
     initializeDeckRecoveryKey,
     initializeDeckCloudSync,
-  );
 
-  // 3. Integrações com listas, conta, rede social e tradução.
-  runInitializers(
+    // Integrações e superfície do Deck.
+    initializeDeckImmersiveDownload,
     initializeDeckRelay,
     initializeDeckXRepost,
     initializeDeckXClientLists,
     initializeDeckProfileLists,
     initializeDeckFeedFilters,
+    initializeDeckScrollChrome,
+    initializeDeckCompactLayout,
     initializeDeckPreferences,
     initializeDeckDirectLinks,
     initializeDeckSocialAppLinks,
+    initializeDeckVideoTapGuard,
     initializeDeckQuickRepost,
     initializeDeckSeen,
     initializeDeckNativeTranslation,
     initializeDeckForeignTags,
-    initializeDeckResultEnhancer,
-  );
 
-  // 4. Mídia e layout.
-  runInitializers(
-    initializeDeckImmersiveDownload,
-    initializeDeckScrollChrome,
-    initializeDeckCompactLayout,
-    initializeDeckVideoTapGuard,
+    // Mídia, busca e aprimoramentos.
     initializeDeckVideoExperience,
     initializeDeckSeekPreviews,
     initializeDeckPlayerPreference,
@@ -173,12 +167,11 @@ export function initializeDeck(): void {
     initializeDeckViewportPlayback,
     initializeDeckImmersiveSwipe,
     initializeDeckNativeQueryTags,
-  );
-
-  // 5. UI compartilhada, histórico e eventos do deck.
-  runInitializers(
+    initializeDeckResultEnhancer,
     initializeDeckRodxToastTimer,
     initializeDeckDragDock,
+
+    // Eventos legados e módulos finais.
     initializeRodX_deck_164,
     initializeDeckSelectionPopover,
     initializeDeckXInterfaceHygiene,
