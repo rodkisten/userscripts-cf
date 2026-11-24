@@ -258,13 +258,12 @@ export function initializeDeckRelay() {
       };
     }
     async function save() {
-      if (!gmAvailable)
-        {
-throw new Error("Sem GM Storage: por segurança, não salvo credenciais no localStorage do X.");
-}
+      if (!gmAvailable) {
+        throw new Error("Sem GM Storage: por segurança, não salvo credenciais no localStorage do X.");
+      }
       if (!identity) {
-throw new Error("Identifique primeiro sua conta do X.");
-}
+        throw new Error("Identifique primeiro sua conta do X.");
+      }
       const form = getForm();
       const normalized = {
         enabled: form.enabled,
@@ -282,8 +281,8 @@ throw new Error("Identifique primeiro sua conta do X.");
         labelSent: form.labelSent,
       };
       if (normalized.enabled && !normalized.token) {
-throw new Error("Informe o Bearer token.");
-}
+        throw new Error("Informe o Bearer token.");
+      }
       if (normalized.enabled && !normalized.channels) {
         throw new Error("Informe pelo menos um canal ou tópico para a confirmação D1.");
       }
@@ -305,8 +304,8 @@ throw new Error("Informe o Bearer token.");
       inFlight.clear();
       checkQueue.clear();
       if (checkTimer) {
-clearTimeout(checkTimer);
-}
+        clearTimeout(checkTimer);
+      }
       checkTimer = null;
       if (removeButtons) {
         viewerButton?.remove();
@@ -314,8 +313,8 @@ clearTimeout(checkTimer);
         viewerCard = null;
         viewerKey = "";
         for (const card of cards.values()) {
-card.button?.remove();
-}
+          card.button?.remove();
+        }
         cards.clear();
       }
       lastScan = 0;
@@ -325,8 +324,8 @@ card.button?.remove();
     async function switchAccount(account) {
       const newId = String(account || "");
       if (identity === newId) {
-return;
-}
+        return;
+      }
       identity = newId;
       void XRepost.switchAccount(newId);
       settings = {
@@ -335,13 +334,13 @@ return;
       invalidate(true);
       const currentEpoch = epoch;
       if (!newId || !gmAvailable) {
-return;
-}
+        return;
+      }
       try {
         const loaded = await storage.get(KEY + newId);
         if (currentEpoch !== epoch || identity !== newId) {
-return;
-}
+          return;
+        }
         if (loaded && typeof loaded === "object") {
           // Legacy 2.2 could store an unfinished disabled relay with no token/destination.
           // Treat this state as never configured, without overriding an intentional off.
@@ -361,12 +360,12 @@ return;
             ...settings,
           });
           if (currentEpoch !== epoch || identity !== newId) {
-return;
-}
+            return;
+          }
         }
         if (state.open && state.view === "relay") {
-renderRoot();
-}
+          renderRoot();
+        }
         scan(true);
       } catch (err) {
         console.warn("[RodX Relay] Falha ao ler configuração:", err.message);
@@ -385,8 +384,8 @@ renderRoot();
     }
     async function applyPreferences(account, preferences) {
       if (!preferences || !gmAvailable || !account || typeof preferences !== "object") {
-return;
-}
+        return;
+      }
       const original = (await storage.get(KEY + account)) || {
         ...DEFAULTS,
       };
@@ -414,8 +413,8 @@ return;
       timeout = RUNTIME_LIMITS.telegramRelay.requestTimeoutMs,
     }) {
       if (!settings.token) {
-return Promise.reject(new Error("Token não configurado."));
-}
+        return Promise.reject(new Error("Token não configurado."));
+      }
       const request =
         typeof GM_xmlhttpRequest === "function"
           ? GM_xmlhttpRequest
@@ -449,8 +448,8 @@ return Promise.reject(new Error("Token não configurado."));
             : {}),
           onload(response) {
             if (settled) {
-return;
-}
+              return;
+            }
             settled = true;
             let data = {};
             try {
@@ -501,8 +500,8 @@ return;
     }
     function parsePost(article) {
       if (!(article instanceof Element)) {
-return null;
-}
+        return null;
+      }
       const timeLink = article
         .querySelector<HTMLElement>(DOM_SELECTORS.timestamps)
         ?.closest(NATIVE_X_SELECTORS.statusLinks);
@@ -515,8 +514,8 @@ return null;
           const parsed = new URL((a as HTMLAnchorElement).href, location.origin);
           const match = parsed.pathname.match(TWITTER_STATUS);
           if (!match) {
-continue;
-}
+            continue;
+          }
           const id = match[1];
           const owner = parsed.pathname.match(/^\/([^/]+)\/status\//)?.[1] || "";
           const text =
@@ -577,8 +576,8 @@ continue;
     function paint(card) {
       const button = card.button;
       if (!button?.isConnected) {
-return;
-}
+        return;
+      }
       const entry = currentStatus(card.post);
       const destinations = channels();
       const sent = confirmedChannels(card.post);
@@ -622,12 +621,12 @@ return;
     }
     function queue(post, force = false) {
       if (!settings.enabled || (!settings.autoCheck && !force) || !channels().length) {
-return;
-}
+        return;
+      }
       const entry = currentStatus(post);
       if (!force && entry && (entry.checking || Date.now() - entry.at < STATUS_TTL)) {
-return;
-}
+        return;
+      }
       checkQueue.set(post.key, post);
       status.set(post.key, {
         signature: channels().join("|"),
@@ -637,28 +636,27 @@ return;
         sent: [],
       });
       paintAll(post.key);
-      if (!checkTimer)
-        {
-checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.statusCheckDebounceMs);
-}
+      if (!checkTimer) {
+        checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.statusCheckDebounceMs);
+      }
     }
     function paintAll(key) {
       const card = cards.get(key);
       if (card) {
-paint(card);
-}
+        paint(card);
+      }
       if (viewerCard?.post.key === key) {
-paint(viewerCard);
-}
+        paint(viewerCard);
+      }
       const overlay = videoOverlays.get(key);
       if (overlay) {
-paint(overlay);
-}
+        paint(overlay);
+      }
     }
     async function checkNow(posts) {
       if (!settings.enabled || !settings.token || !channels().length) {
-return;
-}
+        return;
+      }
       const myEpoch = epoch;
       const requestChannels = channels();
       const entries = [...new Map<any, any>(posts.map((p) => [p.key, p])).values()];
@@ -684,8 +682,8 @@ return;
             payload: request,
           });
           if (epoch !== myEpoch) {
-return;
-}
+            return;
+          }
           if (
             response.status < HTTP_STATUS.ok ||
             response.status >= HTTP_STATUS.redirectBoundary ||
@@ -700,8 +698,8 @@ return;
               : [];
           for (const [i, post] of slice.entries()) {
             if (latestCheck.get(post.key) !== stamps.get(post.key)) {
-continue;
-}
+              continue;
+            }
             const item =
               list.find(
                 (record) =>
@@ -728,8 +726,8 @@ continue;
             const sent = requestChannels.filter((ch) => {
               const requested = item.requestedChannels?.[ch];
               if (requested) {
-return requested.sent === true;
-}
+                return requested.sent === true;
+              }
               const found = Array.isArray(item.channels)
                 ? item.channels.find((c) => String(c.channelId) === ch)
                 : null;
@@ -746,12 +744,12 @@ return requested.sent === true;
           }
         } catch (error) {
           if (epoch !== myEpoch) {
-return;
-}
+            return;
+          }
           for (const post of slice) {
             if (latestCheck.get(post.key) !== stamps.get(post.key)) {
-continue;
-}
+              continue;
+            }
             status.set(post.key, {
               signature: requestChannels.join("|"),
               known: false,
@@ -771,8 +769,8 @@ continue;
     }
     async function flushCheck() {
       if (checking || !settings.enabled || !checkQueue.size) {
-return;
-}
+        return;
+      }
       checking = true;
       try {
         while (checkQueue.size) {
@@ -784,16 +782,15 @@ return;
         console.warn("[RodX Relay] Verificação falhou:", error.message);
       } finally {
         checking = false;
-        if (checkQueue.size && !checkTimer)
-          {
-checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.queuedCheckRetryMs);
-}
+        if (checkQueue.size && !checkTimer) {
+          checkTimer = setTimeout(runQueuedChecks, RUNTIME_LIMITS.telegramRelay.queuedCheckRetryMs);
+        }
       }
     }
     function notice(message, kind = "info") {
       if (!state.rootShadow) {
-return;
-}
+        return;
+      }
       let node = state.rootShadow.querySelector(RODX_SELECTORS.relayNotice);
       if (!node) {
         node = document.createElement("div");
@@ -918,8 +915,8 @@ return;
     }
     async function deliver(post, destinations, force = false) {
       if (inFlight.has(post.key)) {
-return inFlight.get(post.key);
-}
+        return inFlight.get(post.key);
+      }
       const activeEpoch = epoch;
       const promise = (async () => {
         paintAll(post.key);
@@ -927,8 +924,8 @@ return inFlight.get(post.key);
         try {
           result = await sendRequest(post, destinations, force);
           if (activeEpoch !== epoch) {
-return;
-}
+            return;
+          }
           const siblings = Array.isArray(result.data?.deliveries) ? result.data.deliveries : [];
           const failures = result.data?.channels?.notSent || [];
           const conflicted = failures
@@ -943,38 +940,32 @@ return;
             /* do not mark sent without D1 confirmation */
           }
           if (activeEpoch !== epoch) {
-return;
-}
+            return;
+          }
           const confirmed = confirmedChannels(post);
           const left = channels().filter((c) => !confirmed.includes(c));
           if (!left.length) {
-notice("✓ Enviado e confirmado pelo relay.", "success");
-}
-          else if (confirmed.length)
-            {
-notice(`Envio parcial: ${confirmed.length}/${channels().length} destinos confirmados.`, "info");
-}
-          else if (duplicate || siblings.length)
-            {
-notice("Relay respondeu, mas a entrega ainda não foi confirmada no D1.");
-}
-          else {
-notice("Envio solicitado. Confira o status no relay.");
-}
+            notice("✓ Enviado e confirmado pelo relay.", "success");
+          } else if (confirmed.length) {
+            notice(`Envio parcial: ${confirmed.length}/${channels().length} destinos confirmados.`, "info");
+          } else if (duplicate || siblings.length) {
+            notice("Relay respondeu, mas a entrega ainda não foi confirmada no D1.");
+          } else {
+            notice("Envio solicitado. Confira o status no relay.");
+          }
           // Telegram delivery must not launch the X repost/Relay composer.
           // Reposting remains available only through an explicit user action.
           if (!force && conflicted.length) {
             // Verify exact destinations once more before offering a force operation.
             const reallySent = conflicted.filter((ch) => confirmed.includes(ch));
-            if (reallySent.length)
-              {
-showConfirm({
+            if (reallySent.length) {
+              showConfirm({
                 post,
                 destinations: reallySent,
                 title: "Já enviado ao Telegram",
                 onAccept: () => deliver(post, reallySent, true),
               });
-}
+            }
           }
           return result;
         } catch (error) {
@@ -987,10 +978,9 @@ showConfirm({
               /* preserve original error */
             }
             const count = confirmedChannels(post).length;
-            if (count)
-              {
-notice(`Relay com erro; ${count}/${channels().length} destinos constam no D1.`, "error");
-}
+            if (count) {
+              notice(`Relay com erro; ${count}/${channels().length} destinos constam no D1.`, "error");
+            }
           }
           throw error;
         } finally {
@@ -1004,8 +994,8 @@ notice(`Relay com erro; ${count}/${channels().length} destinos constam no D1.`, 
     }
     async function onPostClick(post) {
       if (clicking.has(post.key) || inFlight.has(post.key)) {
-return;
-}
+        return;
+      }
       clicking.add(post.key);
       const initiatingEpoch = epoch;
       const initiatingAccount = identity;
@@ -1017,8 +1007,8 @@ return;
           return;
         }
         if (inFlight.has(post.key)) {
-return;
-}
+          return;
+        }
         // Fresh channel-aware D1 check; never trust an old local positive badge.
         try {
           await checkNow([post]);
@@ -1027,8 +1017,8 @@ return;
           return;
         }
         if (initiatingEpoch !== epoch || initiatingAccount !== identity) {
-return;
-}
+          return;
+        }
         const sent = confirmedChannels(post);
         const missing = channels().filter((ch) => !sent.includes(ch));
         if (!missing.length) {
@@ -1048,8 +1038,8 @@ return;
     }
     function ensureStyle() {
       if (styleAdded) {
-return;
-}
+        return;
+      }
       const css = document.createElement("style");
       css.id = "rodx-relay-native-css";
       css.textContent = extractedCSS1;
@@ -1058,25 +1048,24 @@ return;
     }
     function observe(card) {
       if (!settings.autoCheck) {
-return;
-}
+        return;
+      }
       if (!("IntersectionObserver" in window)) {
         queue(card.post);
         return;
       }
-      if (!observer)
-        {
-observer = new IntersectionObserver(
+      if (!observer) {
+        observer = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
               if (!entry.isIntersecting) {
-continue;
-}
+                continue;
+              }
               const id = (entry.target as HTMLElement).dataset.rodxRelayId;
               const found = id ? cards.get(`twitter:${id}`) : null;
               if (found && found.article === entry.target) {
-queue(found.post);
-}
+                queue(found.post);
+              }
             }
           },
           {
@@ -1084,7 +1073,7 @@ queue(found.post);
             threshold: 0,
           },
         );
-}
+      }
       try {
         observer.observe(card.article);
       } catch {
@@ -1099,8 +1088,8 @@ queue(found.post);
         return;
       }
       if (previous) {
-previous.button?.remove();
-}
+        previous.button?.remove();
+      }
       const action =
         article.querySelector(COMPOSITE_SELECTORS.replyButton)?.closest(DOM_SELECTORS.actionGroups) ||
         article.querySelector(DOM_SELECTORS.actionGroups);
@@ -1129,12 +1118,12 @@ previous.button?.remove();
     function addVideoOverlay(article, post) {
       const video = article.querySelector(DOM_SELECTORS.videos);
       if (!video) {
-return;
-}
+        return;
+      }
       const wrapper = video.closest(NATIVE_X_SELECTORS.tweetVideoContainers) || video.parentElement;
       if (!wrapper) {
-return;
-}
+        return;
+      }
       let card = videoOverlays.get(post.key);
       if (card && (card.wrapper !== wrapper || !card.button.isConnected)) {
         card.button.remove();
@@ -1142,10 +1131,9 @@ return;
         card = null;
       }
       if (!card) {
-        if (getComputedStyle(wrapper).position === "static")
-          {
-wrapper.style.setProperty("position", "relative", "important");
-}
+        if (getComputedStyle(wrapper).position === "static") {
+          wrapper.style.setProperty("position", "relative", "important");
+        }
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rodx-tg-action rodx-tg-video-overlay";
@@ -1156,8 +1144,8 @@ wrapper.style.setProperty("position", "relative", "important");
           event.stopPropagation();
           const current = videoOverlays.get(post.key);
           if (!current || current.button !== button) {
-return;
-}
+            return;
+          }
           void onPostClick(current.post).catch((error) =>
             notice(error.message || "Falha no envio.", "error"),
           );
@@ -1176,27 +1164,27 @@ return;
     function scan(force = false) {
       if (!settings.enabled || !identity || !document.body) {
         for (const card of cards.values()) {
-card.button?.remove();
-}
+          card.button?.remove();
+        }
         cards.clear();
         for (const overlay of videoOverlays.values()) {
-overlay.button.remove();
-}
+          overlay.button.remove();
+        }
         videoOverlays.clear();
         return;
       }
       const now = Date.now();
       if (!force && now - lastScan < RUNTIME_LIMITS.telegramRelay.scanThrottleMs) {
-return;
-}
+        return;
+      }
       lastScan = now;
       ensureStyle();
       const articles = document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.tweetArticleContainers);
       let count = 0;
       for (const article of articles) {
         if (count++ >= RUNTIME_LIMITS.telegramRelay.maxArticlesPerScan) {
-break;
-}
+          break;
+        }
         const post = parsePost(article);
         if (!post?.isVideo) {
           const oldKey = article.dataset.rodxRelayId;
@@ -1235,8 +1223,8 @@ break;
         const active = new Set(cards.keys());
         for (const key of status.keys()) {
           if (status.size <= RUNTIME_LIMITS.telegramRelay.statusCacheLowWaterMark) {
-break;
-}
+            break;
+          }
           if (!active.has(key)) {
             status.delete(key);
             latestCheck.delete(key);
@@ -1246,8 +1234,8 @@ break;
       if (cards.size > RUNTIME_LIMITS.telegramRelay.cardCacheMaxEntries) {
         for (const [key, card] of cards) {
           if (!card.article.isConnected) {
-cards.delete(key);
-}
+            cards.delete(key);
+          }
         }
       }
     }
@@ -1287,8 +1275,8 @@ cards.delete(key);
           // Query current viewer, never send the previous video after navigation.
           const actual = ImmersiveDownload.current();
           if (!actual || actual.key !== viewerKey) {
-return;
-}
+            return;
+          }
           void onPostClick(viewerCard.post).catch((error) =>
             notice(error.message || "Falha no envio.", "error"),
           );
@@ -1300,8 +1288,8 @@ return;
           post,
         };
         if (settings.autoCheck) {
-queue(post);
-}
+          queue(post);
+        }
       }
       paint(viewerCard);
     }
@@ -1324,23 +1312,23 @@ queue(post);
       if (response.status >= HTTP_STATUS.ok && response.status < HTTP_STATUS.redirectBoundary) {
         notice("Relay conectado ✓", "success");
       } else {
-throw new Error(`Relay HTTP ${response.status}.`);
-}
+        throw new Error(`Relay HTTP ${response.status}.`);
+      }
     }
     async function action(name) {
       if (name === "relay-cancel" || name === "relay-force") {
-return handleConfirm(name);
-}
+        return handleConfirm(name);
+      }
       if (name === "relay-save") {
-return save();
-}
+        return save();
+      }
       if (name === "relay-health") {
         await save();
         return health();
       }
       if (name === "relay-refresh") {
-return refresh();
-}
+        return refresh();
+      }
     }
     return Object.freeze({
       settingsHTML,

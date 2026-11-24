@@ -23,8 +23,8 @@ export function initializeDeckImmersiveDownload() {
             ? GM.xmlHttpRequest.bind(GM)
             : null;
       if (!gm) {
-return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via GM."));
-}
+        return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via GM."));
+      }
       return new Promise<any>((resolve, reject) => {
         let complete = false;
         const success = (data) => {
@@ -60,11 +60,11 @@ return Promise.reject(new Error("Seu gerenciador não permite downloads HTTP via
         const url = new URL(String(value || "").replaceAll("&amp;", "&"));
         // The resolver is not trusted to return arbitrary off-domain URLs.
         if (url.protocol !== "https:" || !/^(?:video|pbs)\.twimg\.com$/i.test(url.hostname)) {
-return "";
-}
+          return "";
+        }
         if (!/\.mp4(?:$|\?)/i.test(url.href) && !/\/video\//i.test(url.pathname)) {
-return "";
-}
+          return "";
+        }
         return url.href;
       } catch {
         return "";
@@ -73,8 +73,8 @@ return "";
     function locate() {
       const layer = document.getElementById("layers");
       if (!layer) {
-return null;
-}
+        return null;
+      }
       const videos = [...layer.querySelectorAll<HTMLVideoElement>(DOM_SELECTORS.videos)];
       const visible = videos.filter((element) => {
         const rect = element.getBoundingClientRect();
@@ -90,8 +90,8 @@ return null;
         );
       });
       if (!visible.length) {
-return null;
-}
+        return null;
+      }
       const isViewer = Boolean(layer.querySelector<HTMLElement>(NATIVE_X_SELECTORS.mediaViewerRoots()));
       const route = location.pathname.match(/\/status\/(\d{8,25})(?:\/|$)/);
       const isVideoRoute = /\/status\/\d+\/video\/\d+/.test(location.pathname);
@@ -99,8 +99,8 @@ return null;
         route && layer.querySelector<HTMLVideoElement>(NATIVE_X_SELECTORS.playableVideoContainers()),
       );
       if (!isViewer && !isVideoRoute && !nativePlayerInStatus) {
-return null;
-}
+        return null;
+      }
       const video = visible.sort((a, b) => {
         const ra = a.getBoundingClientRect(),
           rb = b.getBoundingClientRect();
@@ -112,8 +112,8 @@ return null;
         layer.querySelector<HTMLElement>(NATIVE_X_SELECTORS.statusLinks);
       const id = route?.[1] || link?.getAttribute("href")?.match(/\/status\/(\d+)/)?.[1] || "";
       if (!id) {
-return null;
-}
+        return null;
+      }
       const owner =
         link?.getAttribute("href")?.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1] ||
         location.pathname.match(/^\/([a-zA-Z0-9_]{1,15})\/status\//)?.[1];
@@ -131,8 +131,8 @@ return null;
     }
     function setLabel(title) {
       if (!button) {
-return;
-}
+        return;
+      }
       mountView(button, () => (
         <>
           {<DownloadSVGIcon />}
@@ -145,8 +145,8 @@ return;
     }
     function style() {
       if (styleAdded) {
-return;
-}
+        return;
+      }
       const css = document.createElement("style");
       css.id = "rodx-immersive-download-css";
       css.textContent = extractedCSS1;
@@ -156,12 +156,12 @@ return;
     async function resolveMP4(viewer) {
       const current = mediaUrl(viewer.video.currentSrc || viewer.video.src);
       if (current) {
-return current;
-}
+        return current;
+      }
       const cached = cache.get(viewer.key);
       if (cached && Date.now() - cached.at < 600_000) {
-return cached.url;
-}
+        return cached.url;
+      }
       setLabel("Obtendo vídeo…");
       // Same public Twitter resolver contract used by AIO Downloader v4.3.9.
       const response = await request({
@@ -195,11 +195,11 @@ return cached.url;
       }));
       let item = candidates.find((x) => x.index === viewer.videoIndex && x.links.length);
       if (!item && viewer.videoIndex === 0) {
-item = candidates.find((x) => x.links.length);
-}
+        item = candidates.find((x) => x.links.length);
+      }
       if (!item) {
-throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
-}
+        throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
+      }
       const rank = (url) => {
         const match = url.match(/\/vid\/(\d+)x(\d+)\//i);
         return match ? Number(match[1]) * Number(match[2]) : 0;
@@ -210,8 +210,8 @@ throw new Error("Não encontrei um MP4 que corresponda ao vídeo selecionado.");
         at: Date.now(),
       });
       if (cache.size > 100) {
-cache.delete(cache.keys().next().value);
-}
+        cache.delete(cache.keys().next().value);
+      }
       return best;
     }
     async function download(url, filename) {
@@ -246,8 +246,8 @@ cache.delete(cache.keys().next().value);
               ontimeout: fail,
             });
             if (value && typeof value.then === "function") {
-value.then(okay, fail);
-}
+              value.then(okay, fail);
+            }
           });
           return;
         } catch (error) {
@@ -276,8 +276,8 @@ value.then(okay, fail);
           });
         }
         if (!(blob instanceof Blob) || !blob.size) {
-throw new Error("Resposta de mídia vazia.");
-}
+          throw new Error("Resposta de mídia vazia.");
+        }
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = objectUrl;
@@ -294,8 +294,8 @@ throw new Error("Resposta de mídia vazia.");
         if (choice) {
           const tab = window.open(url, "_blank", "noopener,noreferrer");
           if (!tab) {
-throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
-}
+            throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
+          }
           return "opened";
         }
         throw error;
@@ -305,20 +305,20 @@ throw new Error("Safari bloqueou a nova aba. Abra o link MP4 a partir do X.");
       event.preventDefault();
       event.stopPropagation();
       if (busy) {
-return;
-}
+        return;
+      }
       const current = locate();
       if (!current) {
-return;
-}
+        return;
+      }
       busy = true;
       setLabel("Preparando…");
       try {
         const url = await resolveMP4(current);
         const now = locate();
         if (!now || now.key !== current.key) {
-throw new Error("O vídeo aberto mudou durante a preparação.");
-}
+          throw new Error("O vídeo aberto mudou durante a preparação.");
+        }
         const outcome = await download(url, `X-${current.id}-${current.videoIndex + 1}.mp4`);
         setLabel(outcome === "opened" ? "MP4 aberto" : "Baixado ✓");
         await new Promise<any>((resolve) => setTimeout(resolve, RUNTIME_LIMITS.mediaDownload.resolveDelayMs));
@@ -334,8 +334,8 @@ throw new Error("O vídeo aberto mudou durante a preparação.");
     function scan(force = false) {
       const now = Date.now();
       if (!force && now - lastScan < 500) {
-return;
-}
+        return;
+      }
       lastScan = now;
       const viewer = locate();
       if (!viewer) {
@@ -361,8 +361,8 @@ return;
       if (activeKey !== viewer.key) {
         activeKey = viewer.key;
         if (!busy) {
-setLabel("Download");
-}
+          setLabel("Download");
+        }
       }
     }
     return Object.freeze({

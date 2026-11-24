@@ -121,8 +121,8 @@ export function initializeDeckResultEnhancer(): void {
 
     function ensureStyle(): void {
       if (style?.isConnected) {
-return;
-}
+        return;
+      }
       style = document.createElement("style");
       style.id = SELECTORS_IDS.resultsStyle;
       style.textContent = extractedCSS1;
@@ -202,8 +202,8 @@ return;
     function collectHashtags(article: HTMLElement): HashtagInfo[] {
       const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) {
-return [];
-}
+        return [];
+      }
       const found = new Map<string, HashtagInfo>();
 
       for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.encodedHashtagLinks)) {
@@ -239,8 +239,8 @@ return [];
       for (const item of document.querySelectorAll<HTMLElement>(RODX_SELECTORS.hashtagItems)) {
         const tagAttr = item.dataset.tag;
         if (!tagAttr) {
-continue;
-}
+          continue;
+        }
         const id = normalizedTag(tagAttr);
         const yes = positive.has(id);
         const no = negative.has(id);
@@ -251,29 +251,29 @@ continue;
 
         const add = item.querySelector<HTMLElement>(RODX_SELECTORS.tagAddButton);
         if (add) {
-add.hidden = yes;
-}
+          add.hidden = yes;
+        }
 
         const remove = item.querySelector<HTMLElement>(RODX_SELECTORS.tagExcludeButton);
         if (remove) {
-remove.hidden = no;
-}
+          remove.hidden = no;
+        }
       }
     }
 
     function suppressNativeHashtagList(article: HTMLElement, tags: HashtagInfo[]): void {
       const text = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.nativeTweetText);
       if (!text) {
-return;
-}
+        return;
+      }
 
       text.classList.remove(CSS_CLASSES.nativeOnlyTags);
       for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove(CSS_CLASSES.nativeTagTail, CSS_CLASSES.nativeTagSource);
       }
       if (tags.length < 2) {
-return;
-}
+        return;
+      }
 
       const onlyTags = REGEX_PATTERNS.hashtagOnly;
       const multi = REGEX_PATTERNS.hashtagMulti;
@@ -289,28 +289,31 @@ return;
       ).reverse();
       for (const node of candidates) {
         if (node.classList.contains(CSS_CLASSES.nativeTagSource)) {
-continue;
-}
+          continue;
+        }
         if (node.closest(RODX_SELECTORS.nativeTagSource)) {
-continue;
-}
+          continue;
+        }
         const value = (node.innerText || node.textContent || "").trim();
         if (!value || !onlyTags.test(value) || !multi.test(value)) {
-continue;
-}
+          continue;
+        }
         const parent = node.parentElement;
-        if (parent && parent !== text && onlyTags.test((parent.innerText || parent.textContent || "").trim()))
-          {
-continue;
-}
+        if (
+          parent &&
+          parent !== text &&
+          onlyTags.test((parent.innerText || parent.textContent || "").trim())
+        ) {
+          continue;
+        }
         node.classList.add(CSS_CLASSES.nativeTagSource);
       }
 
       const lines = (text.innerText || text.textContent || "").split(/\n+/);
       const listLines = lines.filter((line) => onlyTags.test(line.trim()) && multi.test(line.trim()));
       if (!listLines.length) {
-return;
-}
+        return;
+      }
 
       const wanted = new Set(
         listLines
@@ -320,19 +323,18 @@ return;
 
       for (const anchor of text.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.hashtagLinks)) {
         if (anchor.closest(RODX_SELECTORS.nativeTagSource)) {
-continue;
-}
+          continue;
+        }
         const anchorText = anchor.textContent || "";
         const tag = anchorText.trim().normalize("NFKC").toLocaleLowerCase();
         if (!wanted.has(tag)) {
-continue;
-}
+          continue;
+        }
 
         const parentText = (anchor.parentElement?.textContent || "").trim();
-        if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, "")))
-          {
-continue;
-}
+        if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, ""))) {
+          continue;
+        }
         anchor.classList.add(CSS_CLASSES.nativeTagSource);
       }
 
@@ -357,8 +359,8 @@ continue;
       for (const br of breaks.slice(-2)) {
         const following = (br.nextSibling?.textContent || "").trim();
         if (following && onlyTags.test(following)) {
-br.classList.add(CSS_CLASSES.nativeTagTail);
-}
+          br.classList.add(CSS_CLASSES.nativeTagTail);
+        }
       }
     }
 
@@ -379,10 +381,9 @@ br.classList.add(CSS_CLASSES.nativeTagTail);
       }
 
       if (actions?.parentElement) {
-        if (tray.parentElement !== actions.parentElement || tray.nextElementSibling !== actions)
-          {
-actions.before(tray);
-}
+        if (tray.parentElement !== actions.parentElement || tray.nextElementSibling !== actions) {
+          actions.before(tray);
+        }
       } else if (!tray.isConnected) {
         article.append(tray);
       }
@@ -413,11 +414,10 @@ actions.before(tray);
               event.preventDefault();
               event.stopImmediatePropagation();
               if (mode === "exclude") {
-appendToNativeSearch(tag, "exclude");
-}
-              else {
-appendToNativeSearch(tag);
-}
+                appendToNativeSearch(tag, "exclude");
+              } else {
+                appendToNativeSearch(tag);
+              }
             });
             item.append(button);
           }
@@ -442,8 +442,8 @@ appendToNativeSearch(tag);
     function ensureBookmark(article: HTMLElement): void {
       const group = findActions(article);
       if (!group) {
-return;
-}
+        return;
+      }
       const native = group.querySelector<HTMLElement>(NATIVE_X_SELECTORS.bookmarkToggleButtons);
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
@@ -454,8 +454,8 @@ return;
         return;
       }
       if (existing) {
-return;
-}
+        return;
+      }
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -481,14 +481,14 @@ return;
         const finish = (): void => {
           observer?.disconnect();
           if (timeout !== null) {
-clearTimeout(timeout);
-}
+            clearTimeout(timeout);
+          }
         };
 
         const choose = (): void => {
           if (committed) {
-return;
-}
+            return;
+          }
           const options = Array.from(
             document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
           ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
@@ -498,8 +498,8 @@ return;
             options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
 
           if (!target) {
-return;
-}
+            return;
+          }
           committed = true;
           finish();
           target.click();
@@ -532,8 +532,8 @@ return;
 
     function setupReader(): void {
       if (state.readObserver || document.visibilityState !== "visible") {
-return;
-}
+        return;
+      }
       const getHeight = (): number => window.innerHeight || document.documentElement.clientHeight;
 
       function fullyOutside(rect: DOMRectReadOnly): boolean {
@@ -548,8 +548,8 @@ return;
       function pause(article: HTMLElement, progress: ReadProgress): void {
         const timer = state.readTimers.get(article);
         if (timer != null) {
-clearTimeout(timer);
-}
+          clearTimeout(timer);
+        }
         state.readTimers.delete(article);
         progress.started = 0;
       }
@@ -572,14 +572,14 @@ clearTimeout(timer);
             const article = entry.target as HTMLElement;
             const id = postId(article);
             if (!id) {
-continue;
-}
+              continue;
+            }
 
             let progress = state.readProgress.get(article) as ReadProgress | undefined;
             if (!progress || progress.id !== id || progress.account !== state.account) {
               if (progress) {
-pause(article, progress);
-}
+                pause(article, progress);
+              }
               progress = {
                 id,
                 account: state.account,
@@ -606,8 +606,8 @@ pause(article, progress);
             }
 
             if (progress.qualified) {
-continue;
-}
+              continue;
+            }
             if (
               !entry.isIntersecting ||
               !sufficientlyVisible(rect, entry.intersectionRect.height, entry.intersectionRatio)
@@ -617,8 +617,8 @@ continue;
             }
 
             if (progress.started) {
-continue;
-}
+              continue;
+            }
             progress.started = performance.now();
             const delay = state.visual.seenDelayMs;
 
@@ -654,8 +654,8 @@ continue;
         state.readVisibilityHandlerInstalled = true;
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") {
-return;
-}
+            return;
+          }
           state.readTimers.forEach(clearTimeout);
           state.readTimers.clear();
           state.readObserver?.disconnect();
@@ -694,21 +694,20 @@ return;
       const local = currentRules();
       const main = document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn);
       if (!main) {
-return;
-}
+        return;
+      }
 
       const matches = main.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
         if (!id) {
-continue;
-}
+          continue;
+        }
         const cell = article.closest<HTMLElement>(NATIVE_X_SELECTORS.timelineCells) || article;
 
-        if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
-          {
-cell.style.removeProperty("display");
-}
+        if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1") {
+          cell.style.removeProperty("display");
+        }
 
         delete cell.dataset.rodxUnmatched;
         delete cell.dataset.rodxLimited;
@@ -753,11 +752,10 @@ cell.style.removeProperty("display");
             event.preventDefault();
             event.stopPropagation();
             if (state.seen.has(id)) {
-state.seen.delete(id);
-}
-            else {
-state.seen.set(id, Date.now());
-}
+              state.seen.delete(id);
+            } else {
+              state.seen.set(id, Date.now());
+            }
             Seen.flushSoon?.();
             setSeen(article, id);
           });
@@ -765,9 +763,8 @@ state.seen.set(id, Date.now());
 
           const nativeActions = findActions(article);
           if (nativeActions) {
-nativeActions.append(actions);
-}
-          else {
+            nativeActions.append(actions);
+          } else {
             actions.hidden = true;
             article.append(actions);
           }

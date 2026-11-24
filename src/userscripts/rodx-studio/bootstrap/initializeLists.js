@@ -295,7 +295,6 @@ export function initializeLists() {
   initializeRodX_lists_241();
 }
 
-
 export function createListsModule() {
   initializeLists();
   return Studio.services.lists;

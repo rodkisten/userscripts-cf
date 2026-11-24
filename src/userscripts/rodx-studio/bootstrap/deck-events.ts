@@ -110,8 +110,8 @@ export let refreshingCloud = false;
 export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
   const el = event.target instanceof Element ? event.target : null;
   if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) {
-return;
-}
+    return;
+  }
   if (
     !state.visual.blockTweetOpen ||
     event.defaultPrevented ||
@@ -121,28 +121,27 @@ return;
     event.ctrlKey ||
     event.shiftKey ||
     event.altKey
-  )
-    {
-return;
-}
+  ) {
+    return;
+  }
   const article = el.closest<HTMLElement>(XDOM.tweet);
   if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) {
-return;
-}
+    return;
+  }
   if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) {
-return;
-}
+    return;
+  }
   if (window.getSelection()?.toString().trim()) {
-return;
-}
+    return;
+  }
   event.preventDefault();
   event.stopImmediatePropagation();
 }
 
 export function handleCrossTabStorageSynchronization(event: StorageEvent): void {
   if (gmAvailable || event.key !== PREFIX + state.account) {
-return;
-}
+    return;
+  }
   try {
     const db = JSON.parse(event.newValue || "null");
     state.searches = Array.isArray(db?.searches) ? db.searches.map(normalizedSearch).filter(Boolean) : [];
@@ -206,18 +205,17 @@ export function configureStudioSpaNavigation(): void {
         !a.closest(RODX_SELECTORS.studioOwnedElements),
     );
     if (anchor) {
-anchor.click();
-}
-    else {
-location.assign(target.href);
-}
+      anchor.click();
+    } else {
+      location.assign(target.href);
+    }
   };
 }
 
 export function initializeStudioListsModule(): void {
   if (Studio.enabled("lists")) {
-createListsModule();
-}
+    createListsModule();
+  }
 }
 
 export function setupStudioListTypeahead(): void {
@@ -245,8 +243,8 @@ export function bindListsSettingsEventEmitter(): void {
     "lists:settings",
     ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
       if (!id) {
-return;
-}
+        return;
+      }
       const scope = "list:" + id;
       const mediaValue = settings.media;
       const mappedMedia = ["videos", "native"].includes(mediaValue || "")
@@ -263,8 +261,8 @@ return;
       };
 
       if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) {
-return;
-}
+        return;
+      }
       state.visual.feedFilters = {
         ...state.visual.feedFilters,
         [scope]: config,
@@ -277,8 +275,8 @@ return;
 
 export function setupInterfaceHygieneModule(): void {
   if (Studio.enabled(STUDIO_GROUPS.hygiene)) {
-XInterfaceHygiene.install();
-}
+    XInterfaceHygiene.install();
+  }
 }
 
 export function resetDatabaseState(): void {
@@ -289,13 +287,13 @@ export function resetDatabaseState(): void {
 export function setupDatabaseDirtyAutoSaveWatcher(): void {
   Studio.on("database:dirty", () => {
     if (refreshingCloud) {
-return;
-}
+      return;
+    }
     clearTimeout(databaseSaveTimer);
     databaseSaveTimer = setTimeout(() => {
       if (state.account) {
-void saveState().catch(console.warn);
-}
+        void saveState().catch(console.warn);
+      }
     }, RUNTIME_LIMITS.bootstrapDeckEvents.databaseSaveDebounceMs);
   });
 }
@@ -305,8 +303,8 @@ export function registerCloudBackgroundSyncJob(): void {
     STUDIO_JOBS.cloudRefresh,
     async () => {
       if (!state.account || refreshingCloud) {
-return;
-}
+        return;
+      }
       refreshingCloud = true;
       try {
         await CloudSync.onAccountLoaded(state.account, state.accountGeneration);
@@ -321,8 +319,8 @@ return;
 export function setupVisibilityChangeCloudSyncTrigger(): void {
   document.addEventListener(EVENT_TYPES.visibilityChange, () => {
     if (!document.hidden) {
-Studio.queue(STUDIO_JOBS.cloudRefresh);
-}
+      Studio.queue(STUDIO_JOBS.cloudRefresh);
+    }
   });
 }
 
@@ -409,8 +407,8 @@ export function registerMediaExperienceSetupJob(): void {
       VideoExperience.scan();
       PlayerPreference.scan();
       if (PlayerPreference.needsRodX()) {
-VideoTransport.scan();
-}
+        VideoTransport.scan();
+      }
       ViewportPlayback.scan();
       ImmersiveSwipe.scan();
     },

@@ -10,11 +10,11 @@ import { initializeRoot } from "../ui/search-workbench.tsx";
 
 export function tick() {
   if (!document.body) {
-return;
-}
+    return;
+  }
   if (!state.rootHost?.isConnected) {
-initializeRoot();
-}
+    initializeRoot();
+  }
   const route = `${location.pathname}${location.search}`;
   SearchHistory.currentRoute();
   if (route !== state.lastUrl) {

@@ -12,14 +12,14 @@ export function installListTypeahead(Studio) {
     index = 0;
   function close() {
     if (host) {
-host.hidden = true;
-}
+      host.hidden = true;
+    }
     field = null;
   }
   function choose(row) {
     if (!field || !row) {
-return;
-}
+      return;
+    }
     const input = field,
       value = input.value;
     const next = value.slice(0, start) + "list:" + row.id + value.slice(end);
@@ -107,8 +107,8 @@ return;
       list.append(button);
     });
     if (!choices.length) {
-list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
-}
+      list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
+    }
   }
   const isSearch = (el) =>
     el?.matches?.(NATIVE_X_SELECTORS.searchQueryFields) && !el.closest?.(RODX_SELECTORS.quickSearchButton);
@@ -117,8 +117,8 @@ list.textContent = "Nenhuma lista local. Abra suas Listas para sincronizar.";
     (e) => {
       const input = e.composedPath().find(isSearch);
       if (input) {
-render(input);
-}
+        render(input);
+      }
     },
     true,
   );
@@ -127,11 +127,10 @@ render(input);
     (e) => {
       const input = e.composedPath().find(isSearch);
       if (input) {
-render(input);
-}
-      else if (e.target !== host) {
-close();
-}
+        render(input);
+      } else if (e.target !== host) {
+        close();
+      }
     },
     true,
   );
@@ -139,8 +138,8 @@ close();
     "keydown",
     (e) => {
       if (!e.composedPath().includes(field) || host?.hidden) {
-return;
-}
+        return;
+      }
       if (e.key === "Escape") {
         close();
         return;

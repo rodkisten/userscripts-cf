@@ -118,8 +118,8 @@ export async function performAction(action, id = "") {
     case "copy-native": {
       const query = liveNativeQuery();
       if (!query) {
-throw new Error("Nada para copiar.");
-}
+        throw new Error("Nada para copiar.");
+      }
       try {
         await navigator.clipboard.writeText(query);
       } catch (_) {
@@ -128,8 +128,8 @@ throw new Error("Nada para copiar.");
         document.body.append(ta);
         ta.select();
         if (!document.execCommand("copy")) {
-throw new Error("Não foi possível copiar automaticamente.");
-}
+          throw new Error("Não foi possível copiar automaticamente.");
+        }
         ta.remove();
       }
       return;
@@ -140,8 +140,8 @@ throw new Error("Não foi possível copiar automaticamente.");
       const raw = state.rootShadow?.querySelector(RODX_SELECTORS.manualAccountField)?.value || "";
       const handle = raw.trim().replace(/^@/, "").toLowerCase();
       if (!/^[a-z0-9_]{1,15}$/.test(handle)) {
-throw new Error("Informe um @usuário válido.");
-}
+        throw new Error("Informe um @usuário válido.");
+      }
       state.manualAccount = handle;
       const identity = extractIdentity();
       if (identity.id || (identity.handle && identity.handle !== handle)) {
@@ -174,8 +174,8 @@ throw new Error("Informe um @usuário válido.");
     case "block-toggle-not": {
       const found = findBlockNode(state.draft.blocks, id);
       if (!found || found.node.kind !== "group" || !found.parent) {
-return;
-}
+        return;
+      }
       found.node.not = !found.node.not;
       return renderBlockEditor();
     }
@@ -191,13 +191,13 @@ return;
     case "raw-sync": {
       const raw = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField);
       if (raw) {
-raw.value = getPreviewQuery();
-}
+        raw.value = getPreviewQuery();
+      }
       state.rawDirty = false;
       state.rawQueryDraft = raw?.value || "";
       if (raw) {
-validateRawWorkbench(raw.value);
-}
+        validateRawWorkbench(raw.value);
+      }
       return;
     }
     case "focus-block": {
@@ -243,10 +243,9 @@ validateRawWorkbench(raw.value);
         ta.select();
         const copied = document.execCommand("copy");
         ta.remove();
-        if (!copied)
-          {
-throw new Error("Permissão de copiar bloqueada. Selecione o texto no preview para copiar.");
-}
+        if (!copied) {
+          throw new Error("Permissão de copiar bloqueada. Selecione o texto no preview para copiar.");
+        }
       }
       state.message = "Query copiada.";
       return renderRoot();
@@ -278,17 +277,15 @@ export function onClick(event) {
         state.selectionList.splice(index, 1);
         void saveState().catch((e) => showRodxToast(e.message, "error"));
         renderRoot();
-      } else if (term.startsWith("#"))
-        {
-NativeQueryTags.modify(term, selectionButton.dataset.act === "selection-exclude" ? "exclude" : "add");
-}
-      else {
+      } else if (term.startsWith("#")) {
+        NativeQueryTags.modify(term, selectionButton.dataset.act === "selection-exclude" ? "exclude" : "add");
+      } else {
         const old = NativeQueryTags.current(),
           mode = selectionButton.dataset.act === "selection-exclude";
         const updated = QueryEngine.termChange(old, term, mode ? "exclude" : "add");
         if (!NativeQueryTags.write(updated)) {
-showRodxToast("Abra a busca nativa do X.");
-}
+          showRodxToast("Abra a busca nativa do X.");
+        }
       }
     }
     return;
@@ -339,9 +336,8 @@ export function onFieldChange(event) {
       [name]: v,
     });
     const label = state.rootShadow?.querySelector(RODX_SELECTORS.visualValueByName(name));
-    if (label)
-      {
-label.textContent =
+    if (label) {
+      label.textContent =
         name === "font"
           ? `${state.visual.font}px`
           : name === "viewedThreshold"
@@ -351,27 +347,26 @@ label.textContent =
               : name === "autoPlayEnterPercent" || name === "autoPauseExitPercent"
                 ? `${state.visual[name]}%`
                 : `${state.visual.density.toFixed(1)}×`;
-}
-    if (event.type === "change")
-      {
-void saveState().catch((error) => {
+    }
+    if (event.type === "change") {
+      void saveState().catch((error) => {
         state.message = error.message;
         renderRoot();
       });
-}
+    }
     if (name === "playerMode" && Studio.enabled("media")) {
       PlayerPreference.scan();
       if (PlayerPreference.needsRodX()) {
-VideoTransport.scan();
-}
+        VideoTransport.scan();
+      }
     }
     FeedFilters.publish();
     ResultEnhancer.scan(true);
     return;
   }
   if (!state.draft) {
-return;
-}
+    return;
+  }
   if (target.matches?.(RODX_SELECTORS.rawQueryField)) {
     state.rawDirty = true;
     state.rawQueryDraft = target.value;
@@ -400,8 +395,8 @@ return;
       state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.setAttribute("data-pending", carry || "");
       const current = state.rootShadow?.querySelector(RODX_SELECTORS.chipInput);
       if (current) {
-current.value = carry || "";
-}
+        current.value = carry || "";
+      }
     }
     return;
   }
@@ -413,8 +408,8 @@ current.value = carry || "";
   if (blockId) {
     const found = findBlockNode(state.draft.blocks, blockId);
     if (!found) {
-return;
-}
+      return;
+    }
     if (target.hasAttribute("data-block-type") && found.node.kind === "term") {
       found.node.type = target.value;
       found.node.value = "";
@@ -436,8 +431,8 @@ return;
     return;
   }
   if (!target.matches?.(RODX_SELECTORS.queryFieldsAndMetadata)) {
-return;
-}
+    return;
+  }
   if (target.dataset.field) {
     state.draft.fields[target.dataset.field] = target.value;
   } else {
@@ -449,20 +444,19 @@ return;
 export function onGroupToggle(event) {
   const node = event.target;
   if (!node.matches?.(RODX_SELECTORS.settingsGroups)) {
-return;
-}
+    return;
+  }
   if (node.open) {
-state.openedGroups.add(node.dataset.group);
-}
-  else {
-state.openedGroups.delete(node.dataset.group);
-}
+    state.openedGroups.add(node.dataset.group);
+  } else {
+    state.openedGroups.delete(node.dataset.group);
+  }
 }
 
 export async function onFileChange(event) {
   if (!event.target.matches?.(RODX_SELECTORS.importFileInput)) {
-return;
-}
+    return;
+  }
   const file = event.target.files?.[0];
   const strategy = state.rootShadow.querySelector(RODX_SELECTORS.importStrategy)?.value || "merge";
   try {

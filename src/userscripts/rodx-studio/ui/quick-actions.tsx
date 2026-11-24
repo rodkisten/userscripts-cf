@@ -21,8 +21,8 @@ export function initializeDeckQuickUI() {
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
       if (!identity) {
-return "";
-}
+        return "";
+      }
       const link = [...identity.querySelectorAll(DOM_SELECTORS.relativeLinks)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
@@ -114,14 +114,12 @@ return "";
         for (let i = 0; i < end; i++) {
           const c = value[i];
           if (escaped) {
-escaped = false;
-}
-          else if (c === "\\") {
-escaped = true;
-}
-          else if (c === '"') {
-open = !open;
-}
+            escaped = false;
+          } else if (c === "\\") {
+            escaped = true;
+          } else if (c === '"') {
+            open = !open;
+          }
         }
         return open;
       };
@@ -142,11 +140,11 @@ open = !open;
         let start = cursor;
         let end = cursor;
         while (start > 0 && !boundary.test(value[start - 1])) {
-start--;
-}
+          start--;
+        }
         while (end < value.length && !boundary.test(value[end])) {
-end++;
-}
+          end++;
+        }
         return { start, end, value: value.slice(start, end) };
       };
       const insertAt = (text, start, end) => {
@@ -157,8 +155,8 @@ end++;
       };
       const applySuggestion = (row) => {
         if (!row) {
-return;
-}
+          return;
+        }
         const value = input.value;
         const cursor = preservedCursor;
         const list = listTokenAtCursor(value, cursor);
@@ -181,16 +179,15 @@ return;
         }
         const word = wordAtCursor(value, cursor);
         if (word.value) {
-insertAt(row.query, word.start, word.end);
-}
-        else {
-insertAt(`${value && !/\s$/.test(value) ? " " : ""}${row.query}`, cursor, cursor);
-}
+          insertAt(row.query, word.start, word.end);
+        } else {
+          insertAt(`${value && !/\s$/.test(value) ? " " : ""}${row.query}`, cursor, cursor);
+        }
       };
       const matchesFullQuery = (label, value, query) => {
         if (!query) {
-return true;
-}
+          return true;
+        }
         const terms = query.split(/\s+/).filter(Boolean);
         const content = normalize(`${label} ${value}`);
         return content.includes(query) || terms.every((term) => content.includes(term));
@@ -206,8 +203,8 @@ return true;
         const candidates = [];
         const add = (item) => {
           if (item?.query || item?.id) {
-candidates.push(item);
-}
+            candidates.push(item);
+          }
         };
         for (const item of state.searches || []) {
           if (matchesFullQuery(item.name, item.query, searchText)) {
@@ -299,8 +296,8 @@ candidates.push(item);
           const account = state.account || extractIdentity().key || "guest";
           const page = await SearchHistory.exportPage(account, 0, 60);
           if (stamp !== sequence || closed) {
-return;
-}
+            return;
+          }
           for (const item of page.rows || []) {
             if (matchesFullQuery("", item.query, searchText)) {
               add({
@@ -316,8 +313,8 @@ return;
           // Safari private browsing may block IndexedDB. Other suggestions remain usable.
         }
         if (stamp !== sequence || closed) {
-return;
-}
+          return;
+        }
         const seen = new Set<any>();
         const quotas = token
           ? { list: 11, full: 2, history: 1, token: 2 }
@@ -328,8 +325,8 @@ return;
           .filter((item) => {
             const key = `${item.kind}:${item.query || item.id}`;
             if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) {
-return false;
-}
+              return false;
+            }
             seen.add(key);
             countByKind[item.kind]++;
             return true;
@@ -355,8 +352,8 @@ return false;
           option.append(title, detail);
           option.addEventListener("pointerdown", (event) => {
             if (event.pointerType !== "touch") {
-event.preventDefault();
-}
+              event.preventDefault();
+            }
           });
           option.onclick = (event) => {
             event.preventDefault();
@@ -425,12 +422,12 @@ event.preventDefault();
       );
       input.addEventListener("keydown", (event) => {
         if (event.isComposing) {
-return;
-}
+          return;
+        }
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
           if (!rows.length) {
-return;
-}
+            return;
+          }
           event.preventDefault();
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
@@ -457,8 +454,8 @@ return;
           (event.target as HTMLElement).closest(RODX_SELECTORS.queryWorkbenchActions) as HTMLElement
         )?.dataset.rxqAction;
         if (!action) {
-return;
-}
+          return;
+        }
         event.preventDefault();
         if (action === "copy") {
           await navigator.clipboard.writeText(input.value);
@@ -510,8 +507,8 @@ return;
         event.preventDefault();
         validate();
         if ((submit as HTMLButtonElement).disabled) {
-return;
-}
+          return;
+        }
         const full = input.value.trim();
         handle.close();
         void SearchHistory.record(full, "floating", "live");
@@ -551,8 +548,8 @@ return;
     }
     function position() {
       if (!floating) {
-return;
-}
+        return;
+      }
       const c = Studio.config.searchButton || {},
         size = Math.max(36, Math.min(80, Number(c.size) || 48));
       const viewport = window.visualViewport;
@@ -583,13 +580,13 @@ return;
         };
         floating.onpointermove = (e) => {
           if (!press) {
-return;
-}
+            return;
+          }
           const dx = e.clientX - press.x,
             dy = e.clientY - press.y;
           if (Math.hypot(dx, dy) > 7) {
-moved = true;
-}
+            moved = true;
+          }
           if (moved) {
             e.preventDefault();
             floating.style.setProperty(
@@ -605,16 +602,15 @@ moved = true;
           }
         };
         floating.onpointerup = () => {
-          if (moved)
-            {
-Studio.configure({
+          if (moved) {
+            Studio.configure({
               searchButton: {
                 ...Studio.config.searchButton,
                 x: parseFloat(floating.style.left),
                 y: parseFloat(floating.style.top),
               },
             });
-}
+          }
           press = null;
         };
         floating.onpointercancel = () => {
@@ -623,8 +619,8 @@ Studio.configure({
         };
         floating.onclick = () => {
           if (!moved) {
-search();
-}
+            search();
+          }
           moved = false;
         };
         document.body.append(floating);
@@ -639,8 +635,8 @@ search();
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);
         if (!bar) {
-continue;
-}
+          continue;
+        }
         let button = bar.querySelector(RODX_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
@@ -654,8 +650,8 @@ continue;
             e.stopPropagation();
             const user = authorOf(article);
             if (user) {
-void Studio.services.lists?.picker(user, button);
-}
+              void Studio.services.lists?.picker(user, button);
+            }
           };
           bar.append(button);
         }
@@ -714,24 +710,23 @@ void Studio.services.lists?.picker(user, button);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
         const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
         if (currentName && currentName.textContent !== name) {
-currentName.textContent = name;
-}
+          currentName.textContent = name;
+        }
       }
       for (const a of document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.listLinks)) {
         if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) {
-continue;
-}
+          continue;
+        }
         const id = (a as HTMLAnchorElement).pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&
           (a.nextElementSibling as HTMLElement).dataset.rodxListVideo !== id
-        )
-          {
-a.nextElementSibling.remove();
-}
+        ) {
+          a.nextElementSibling.remove();
+        }
         if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) {
-continue;
-}
+          continue;
+        }
         const b = document.createElement("button");
         b.type = "button";
         b.textContent = "▷ Vídeos";

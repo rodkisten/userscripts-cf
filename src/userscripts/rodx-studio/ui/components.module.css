@@ -12,7 +12,6 @@
   touch-action: manipulation;
 }
 
-
 /* Media transport controls. */
 .transport {
   display: flex;
@@ -33,7 +32,6 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-
 
 /* Runtime toast. */
 .toast {

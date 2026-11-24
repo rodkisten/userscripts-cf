@@ -8,8 +8,8 @@ function createStudioMenus(Studio) {
   const panels = new Map();
   function library() {
     if (api) {
-return api;
-}
+      return api;
+    }
     const runtimeMenu = Studio.ctx?.menu;
     if (!runtimeMenu?.open) {
       throw new Error("ctx.menu indisponível: inicialize o RodX pelo runtime.");
@@ -33,25 +33,23 @@ return api;
   function panel(id, title, node, onClose) {
     const existing = panels.get(id);
     if (existing) {
-return existing;
-}
+      return existing;
+    }
     const previousParent = node.parentNode;
     const nextSibling = node.nextSibling;
     const previousStyle = node.getAttribute("style");
     const restore = () => {
       if (previousStyle === null) {
-node.removeAttribute("style");
-}
-      else {
-node.setAttribute("style", previousStyle);
-}
+        node.removeAttribute("style");
+      } else {
+        node.setAttribute("style", previousStyle);
+      }
       if (previousParent?.isConnected) {
         if (nextSibling?.parentNode === previousParent) {
-previousParent.insertBefore(node, nextSibling);
-}
-        else {
-previousParent.appendChild(node);
-}
+          previousParent.insertBefore(node, nextSibling);
+        } else {
+          previousParent.appendChild(node);
+        }
       }
     };
     let closed = false;
@@ -60,17 +58,19 @@ previousParent.appendChild(node);
       title,
       presentation: "dialog",
       size: "xl",
-      fields: [{
-        name: "workspace",
-        type: "custom",
-        render: () => {
-          node.style.setProperty("width", "100%", "important");
-          node.style.setProperty("height", "min(80dvh, 900px)", "important");
-          node.style.setProperty("position", "relative", "important");
-          node.style.setProperty("inset", "auto", "important");
-          return node;
+      fields: [
+        {
+          name: "workspace",
+          type: "custom",
+          render: () => {
+            node.style.setProperty("width", "100%", "important");
+            node.style.setProperty("height", "min(80dvh, 900px)", "important");
+            node.style.setProperty("position", "relative", "important");
+            node.style.setProperty("inset", "auto", "important");
+            return node;
+          },
         },
-      }],
+      ],
       actions: [{ id: "close", label: "Fechar", role: "cancel" }],
     });
     const handle = {
@@ -80,8 +80,8 @@ previousParent.appendChild(node);
     panels.set(id, handle);
     void dialog.result.finally(() => {
       if (closed) {
-return;
-}
+        return;
+      }
       closed = true;
       panels.delete(id);
       restore();
@@ -99,7 +99,6 @@ return;
     },
   };
 }
-
 
 export function initializeNetwork() {
   initializeOuterXDOM();

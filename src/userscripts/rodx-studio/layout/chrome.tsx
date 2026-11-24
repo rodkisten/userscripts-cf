@@ -96,8 +96,8 @@ export function initializeDeckScrollChrome(): void {
 
     function setHidden(value: boolean): void {
       if (hidden === value) {
-return;
-}
+        return;
+      }
       hidden = value;
       document.documentElement.classList.toggle(CSS_CLASSES.chromeHidden, value);
     }
@@ -107,16 +107,16 @@ return;
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
       if (!main) {
-return;
-}
+        return;
+      }
 
       for (const seed of main.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.stickyChromeCandidates)) {
         if (seed.closest(DOM_SELECTORS.articles)) {
-continue;
-}
+          continue;
+        }
         if (seed.matches(NATIVE_X_SELECTORS.topNavigationBars)) {
-chrome.add(seed);
-}
+          chrome.add(seed);
+        }
         let node: HTMLElement | null = seed;
         while (node && node !== main) {
           const pos = getComputedStyle(node).position;
@@ -203,22 +203,22 @@ chrome.add(seed);
       active?.classList.remove(CSS_CLASSES.topbarFloatingSource);
       active = null;
       if (portal) {
-portal.hidden = true;
-}
+        portal.hidden = true;
+      }
     }
 
     function pin(top: number): void {
       let candidate: HTMLElement | undefined;
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (article.hidden || getComputedStyle(article).display === "none") {
-continue;
-}
+          continue;
+        }
         const r = article.getBoundingClientRect();
         if (r.top <= top + CHROME_METRICS.pinTopBuffer && r.bottom > top + CHROME_METRICS.pinBottomBuffer) {
           candidate = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
           if (candidate) {
-break;
-}
+            break;
+          }
         }
       }
 
@@ -237,8 +237,8 @@ break;
             RODX_SELECTORS.tweetTopbarControls,
           );
           if (!target || !active) {
-return;
-}
+            return;
+          }
           event.preventDefault();
           event.stopImmediatePropagation();
 
@@ -352,24 +352,25 @@ return;
         document.visibilityState !== "visible" ||
         window.getSelection()?.toString() ||
         (activeEl && activeEl.matches(DOM_SELECTORS.editableFields))
-      )
-        {
-return;
-}
+      ) {
+        return;
+      }
 
       const top = offset();
       let distance: number = Number(CHROME_METRICS.snapMaxDistance);
 
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         if (article.hidden || getComputedStyle(article).display === "none") {
-continue;
-}
+          continue;
+        }
         const r = article.getBoundingClientRect();
         const delta = r.top - top;
-        if (r.height > innerHeight * CHROME_METRICS.snapScreenRatio || Math.abs(delta) >= Math.abs(distance))
-          {
-continue;
-}
+        if (
+          r.height > innerHeight * CHROME_METRICS.snapScreenRatio ||
+          Math.abs(delta) >= Math.abs(distance)
+        ) {
+          continue;
+        }
         distance = delta;
       }
 
@@ -387,8 +388,8 @@ continue;
 
     function request(): void {
       if (!raf) {
-raf = requestAnimationFrame(update);
-}
+        raf = requestAnimationFrame(update);
+      }
     }
 
     window.addEventListener(

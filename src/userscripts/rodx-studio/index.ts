@@ -78,8 +78,8 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 // ============================================================================
 export function startRodX(ctx: ScriptContext): void {
   if (hasRodXAlreadyStarted(window)) {
-return;
-}
+    return;
+  }
   markRodXAsStarted(window);
   configureSharedMount((component, target) => ctx.ui.mountReact(component, target));
 

@@ -59,24 +59,22 @@ export function buildStudioPreferences(Studio, deck) {
     options: choices,
   });
   function field(name, label, value) {
-    if (typeof value === "boolean")
-      {
-return {
+    if (typeof value === "boolean") {
+      return {
         type: "switch",
         name,
         label,
         value,
       };
-}
-    if (typeof value === "number")
-      {
-return {
+    }
+    if (typeof value === "number") {
+      return {
         type: "number",
         name,
         label,
         value,
       };
-}
+    }
     return {
       type: "text",
       name,
@@ -244,14 +242,14 @@ return {
               };
             for (const [key, value] of Object.entries(values)) {
               if (key.startsWith("v_")) {
-next[key.slice(2)] = value;
-}
+                next[key.slice(2)] = value;
+              }
               if (key.startsWith("m_")) {
-modules[key.slice(2)] = value;
-}
+                modules[key.slice(2)] = value;
+              }
               if (key.startsWith("l_")) {
-settings[key.slice(2)] = value;
-}
+                settings[key.slice(2)] = value;
+              }
             }
             state.visual = deck.normalizeVisual(next);
             Studio.configure({
@@ -265,8 +263,8 @@ settings[key.slice(2)] = value;
               },
             });
             if (Studio.services.lists) {
-localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
-}
+              localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
+            }
             await deck.saveState();
             deck.publish();
             Studio.invalidate("state");
@@ -291,8 +289,8 @@ localStorage.setItem("xls-v1:settings", JSON.stringify(settings));
   function filters() {
     const scope = deck.scope();
     if (!scope) {
-return open();
-}
+      return open();
+    }
     const current = deck.feedSettings();
     Studio.menu.open({
       id: "rodx-feed-options",
@@ -354,7 +352,6 @@ return open();
   };
 }
 
-
 export let Preferences;
 
 export function initializeDeckPreferences() {
@@ -387,10 +384,10 @@ export function openPanel(view = "saved") {
   state.open = true;
   state.message = "";
   if (view === "editor" && !state.draft) {
-state.draft = blankDraft();
-}
+    state.draft = blankDraft();
+  }
   renderRoot();
   if (view === "xrepost") {
-XRepost.onOpen();
-}
+    XRepost.onOpen();
+  }
 }

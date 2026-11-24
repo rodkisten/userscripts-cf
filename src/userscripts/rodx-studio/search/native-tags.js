@@ -14,15 +14,14 @@ export function initializeDeckNativeQueryTags() {
     const set = (value) => {
       const field = input();
       if (!field) {
-return false;
-}
+        return false;
+      }
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
       if (setter) {
-setter.call(field, value);
-}
-      else {
-field.value = value;
-}
+        setter.call(field, value);
+      } else {
+        field.value = value;
+      }
       try {
         field.dispatchEvent(
           new InputEvent("input", {
@@ -48,11 +47,10 @@ field.value = value;
     const route = () => {
       const nav = document.querySelector(NATIVE_X_SELECTORS.exploreSidebarLinks);
       if (nav) {
-nav.click();
-}
-      else {
-showRodxToast("Abra a busca do X para editar as hashtags.", "info");
-}
+        nav.click();
+      } else {
+        showRodxToast("Abra a busca do X para editar as hashtags.", "info");
+      }
     };
     const modify = (words, mode = "add") => {
       const values = Array.isArray(words) ? words : [words];
@@ -68,8 +66,8 @@ showRodxToast("Abra a busca do X para editar as hashtags.", "info");
         }
         const next = QueryEngine.batch(current(), values, mode);
         if (next !== current()) {
-set(next);
-}
+          set(next);
+        }
         ResultEnhancer.syncTags();
         showRodxToast(
           mode === "exclude"
@@ -82,20 +80,20 @@ set(next);
     };
     const flush = () => {
       if (!input()) {
-return;
-}
+        return;
+      }
       for (const item of pending.splice(0)) {
-if (Date.now() - item.at < 16000) {
-modify(item.words, item.mode);
-}
-}
+        if (Date.now() - item.at < 16000) {
+          modify(item.words, item.mode);
+        }
+      }
     };
     document.addEventListener(
       "input",
       (event) => {
         if (event.target === input()) {
-ResultEnhancer.syncTags();
-}
+          ResultEnhancer.syncTags();
+        }
       },
       true,
     );
@@ -105,13 +103,13 @@ ResultEnhancer.syncTags();
       (event) => {
         const field = input();
         if (!field || event.target !== field) {
-return;
-}
+          return;
+        }
         const raw = event.clipboardData?.getData("text/plain") || "";
         const tags = QueryEngine.tags(raw, false);
         if (tags.length < 2) {
-return;
-}
+          return;
+        }
         event.preventDefault();
         modify(tags, "add");
       },

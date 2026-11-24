@@ -1228,7 +1228,6 @@ input[type="checkbox"] {
   }
 }
 
-
 /* Search workspace refinements. Kept after base rules to preserve the cascade. */
 .tabs {
   overflow-x: auto;

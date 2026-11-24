@@ -52,19 +52,19 @@ export function currentSearch() {
 
 export function displayPreview() {
   if (!state.rootShadow || !state.draft) {
-return;
-}
+    return;
+  }
   const el = state.rootShadow.querySelector(RODX_SELECTORS.queryPreview);
   if (!el) {
-return;
-}
+    return;
+  }
   const issues = analyzeDraft(state.draft);
   let query = "";
   try {
     query = compileQuery(state.draft.fields, state.draft.blocks);
     if (!query) {
-query = "Adicione hashtags, palavras, mídia ou filtros…";
-}
+      query = "Adicione hashtags, palavras, mídia ou filtros…";
+    }
   } catch (error) {
     query = error.message;
   }
@@ -83,12 +83,11 @@ query = "Adicione hashtags, palavras, mídia ou filtros…";
   const summary = state.rootShadow.querySelector(RODX_SELECTORS.analyzerSummary);
   const errors = issues.filter((i) => i.level === "error");
   if (summary) {
-summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
-}
+    summary.textContent = `${errors.length} erro(s) · ${issues.length - errors.length} aviso(s)`;
+  }
   const pane = state.rootShadow.querySelector(RODX_SELECTORS.queryDiagnostics);
-  if (pane)
-    {
-mountView(pane, () =>
+  if (pane) {
+    mountView(pane, () =>
       issues.length ? (
         issues.map((issue) => (
           <>
@@ -115,7 +114,7 @@ mountView(pane, () =>
         </>
       ),
     );
-}
+  }
   const raw = state.rootShadow.querySelector(RODX_SELECTORS.rawQueryField);
   if (raw && !state.rawDirty) {
     state.rawQueryDraft = query.startsWith("Adicione hashtags,") ? "" : query;
@@ -123,8 +122,8 @@ mountView(pane, () =>
   }
   const colored = state.rootShadow.querySelector(RODX_SELECTORS.rawHighlight);
   if (colored) {
-mountView(colored, () => highlightQuery(raw?.value || ""));
-}
+    mountView(colored, () => highlightQuery(raw?.value || ""));
+  }
 }
 
 export function validateRawWorkbench(text) {
@@ -133,8 +132,8 @@ export function validateRawWorkbench(text) {
   const list = state.rootShadow?.querySelector(RODX_SELECTORS.rawIssues);
   const issues = diagnosticSpans(text);
   if (colored) {
-mountView(colored, () => highlightWithIssues(text, issues));
-}
+    mountView(colored, () => highlightWithIssues(text, issues));
+  }
   let semantic = [];
   try {
     const native = parseLocalDirectives(text).native;
@@ -144,27 +143,25 @@ mountView(colored, () => highlightWithIssues(text, issues));
       blocks,
     });
   } catch (e) {
-    if (!issues.some((i) => i.severity === "error"))
-      {
-issues.push({
+    if (!issues.some((i) => i.severity === "error")) {
+      issues.push({
         start: 0,
         end: Math.min(text.length, 1),
         severity: "error",
         message: e.message,
         suggestion: "Confira os operadores booleanos e parênteses.",
       });
-}
+    }
   }
-  for (const item of semantic)
-    {
-issues.push({
+  for (const item of semantic) {
+    issues.push({
       start: 0,
       end: 0,
       severity: item.level,
       message: item.message,
       suggestion: "Ajuste os blocos duplicados ou conflitantes.",
     });
-}
+  }
   if (target) {
     const errors = issues.filter((i) => i.severity === "error").length;
     target.textContent = errors
@@ -178,9 +175,8 @@ issues.push({
       "important",
     );
   }
-  if (list)
-    {
-mountView(list, () =>
+  if (list) {
+    mountView(list, () =>
       issues.map((i) => (
         <>
           <button
@@ -197,7 +193,7 @@ mountView(list, () =>
         </>
       )),
     );
-}
+  }
   return issues;
 }
 
@@ -358,8 +354,8 @@ export function TagTray() {
 export function renderTags() {
   const container = state.rootShadow?.querySelector(RODX_SELECTORS.tagTray);
   if (container && state.draft) {
-mountView(container, () => <TagTray />);
-}
+    mountView(container, () => <TagTray />);
+  }
 }
 
 export function addChips(value, focus = true) {
@@ -372,12 +368,12 @@ export function addChips(value, focus = true) {
           .map((x) => x.trim())
           .filter(Boolean);
   if (!parts.length) {
-return;
-}
+    return;
+  }
   const t = tray();
   if (pasted.length > 1) {
-t.op = "OR";
-}
+    t.op = "OR";
+  }
   if (blockStats(state.draft.blocks) + parts.length > MAX_BLOCK_NODES) {
     throw new Error("Limite de blocos atingido.");
   }
@@ -387,8 +383,8 @@ t.op = "OR";
       type = "phrase";
       part = part.slice(1, -1);
     } else if (/\s/.test(part)) {
-type = "phrase";
-}
+      type = "phrase";
+    }
     t.children.push(newBlock(type, part.replace(/^#/, "")));
   }
   const removed = compactBlockTree(state.draft.blocks);
@@ -396,8 +392,8 @@ type = "phrase";
   renderTags();
   renderBlockEditor();
   if (focus) {
-state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.focus();
-}
+    state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.focus();
+  }
 }
 
 export function SelectionList() {
@@ -888,15 +884,15 @@ export function renderBlockEditor() {
   const root = state.rootShadow;
   const container = root?.querySelector(RODX_SELECTORS.blocksContainer);
   if (container && state.draft) {
-mountView(container, () => blockHTML(state.draft.blocks, 0, true));
-}
+    mountView(container, () => blockHTML(state.draft.blocks, 0, true));
+  }
   displayPreview();
 }
 
 export function modifyBlocks(action, id = "") {
   if (!state.draft) {
-return;
-}
+    return;
+  }
   const root = state.draft.blocks;
   const match = findBlockNode(root, id);
   if (action === "block-clear") {
@@ -915,18 +911,18 @@ return;
       group = newBlockGroup("OR", [newBlock("media", "images"), newBlock("media", "videos")]);
     }
     if (group) {
-root.children.push(group);
-}
+      root.children.push(group);
+    }
   } else if (action.startsWith("block-add-")) {
     if (!match || match.node.kind !== "group") {
-return;
-}
+      return;
+    }
     const type = action.slice("block-add-".length);
     const depth = depthOfNode(root, id);
     if (type === "group") {
       if (depth >= MAX_BLOCK_DEPTH - 2) {
-throw new Error("Limite de profundidade de grupos atingido.");
-}
+        throw new Error("Limite de profundidade de grupos atingido.");
+      }
       match.node.children.push(newBlockGroup("OR", [newBlock()]));
     } else {
       const valid = {
@@ -935,15 +931,15 @@ throw new Error("Limite de profundidade de grupos atingido.");
         media: "media",
       };
       if (valid[type]) {
-match.node.children.push(newBlock(valid[type]));
-}
+        match.node.children.push(newBlock(valid[type]));
+      }
     }
   } else if (match && match.parent) {
     const siblings = match.parent.children;
     const index = siblings.findIndex((item) => item.id === id);
     if (action === "block-remove") {
-siblings.splice(index, 1);
-}
+      siblings.splice(index, 1);
+    }
     if (action === "block-up" && index > 0) {
       [siblings[index - 1], siblings[index]] = [siblings[index], siblings[index - 1]];
     }
@@ -1429,8 +1425,8 @@ export function DataSettings() {
 export function Workspace() {
   const disabled = !state.account;
   if (state.view === "editor" && !state.draft) {
-state.draft = blankDraft();
-}
+    state.draft = blankDraft();
+  }
   return (
     <>
       <div className={cx("scrim")} data-act={"close"}></div>
@@ -1983,8 +1979,8 @@ export function blankDraft() {
 
 export function applyXTheme(host) {
   if (!host) {
-return;
-}
+    return;
+  }
   // X's own primary column gets the reliable text color, and the palette
   // follows that setting even if Safari uses another OS appearance.
   const element =
@@ -2022,12 +2018,12 @@ function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [st
   }
   for (const [key, css] of styles) {
     if (!css) {
-continue;
-}
+      continue;
+    }
     const existing = registered.get(key);
     if (existing?.isConnected && existing.textContent === css) {
-continue;
-}
+      continue;
+    }
     existing?.remove();
     const sheet = root.ownerDocument.createElement("style");
     sheet.dataset.rodxStylesheet = key;
@@ -2049,8 +2045,8 @@ function ensureWorkbenchStyles(root: ShadowRoot, variant: "workspace" | "dock") 
 
 export function renderRoot() {
   if (!state.rootShadow) {
-return;
-}
+    return;
+  }
   applyXTheme(state.rootHost);
   const oldBody = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
   const oldView = state.rootShadow.querySelector(RODX_SELECTORS.replPanel)?.dataset.view;
@@ -2067,13 +2063,13 @@ return;
     applyComponentStyle(state.rootHost, "rx-search-workbench-rootHost", false);
     Studio.menu.panel("workspace", "RodX Studio", state.rootHost, closePanel);
   } else {
-Studio.menu.close("workspace");
-}
+    Studio.menu.close("workspace");
+  }
   if (restoreScroll) {
     const body = state.rootShadow.querySelector(RODX_SELECTORS.workspaceScrollArea);
     if (body) {
-body.scrollTop = scrollTop;
-}
+      body.scrollTop = scrollTop;
+    }
   }
   if (state.open && state.view === "editor") {
     displayPreview();
@@ -2084,8 +2080,8 @@ body.scrollTop = scrollTop;
 export function renderDock() {
   const dock = state.dockShadow;
   if (!dock) {
-return;
-}
+    return;
+  }
   applyXTheme(state.dockHost);
   const active = currentSearch();
   const pinned = state.searches.filter((search) => search.pinned);
@@ -2162,20 +2158,19 @@ return;
     );
   const nav = dock.querySelector(RODX_SELECTORS.searchDock);
   if (nav) {
-nav.scrollLeft = horizontalScroll;
-}
+    nav.scrollLeft = horizontalScroll;
+  }
 }
 
 export function inspectNativeQuery(query) {
   const text = String(query || "").trim();
-  if (!text)
-    {
-return {
+  if (!text) {
+    return {
       level: "idle",
       message: "Digite uma pesquisa",
       details: [],
     };
-}
+  }
   try {
     const blocks = parseQueryBlocks(text);
     const issues = analyzeDraft({
@@ -2184,22 +2179,20 @@ return {
     });
     const errors = issues.filter((item) => item.level === "error");
     const warnings = issues.filter((item) => item.level !== "error");
-    if (errors.length)
-      {
-return {
+    if (errors.length) {
+      return {
         level: "error",
         message: `${errors.length} erro(s)`,
         details: issues,
       };
-}
-    if (warnings.length)
-      {
-return {
+    }
+    if (warnings.length) {
+      return {
         level: "warning",
         message: `${warnings.length} aviso(s)`,
         details: issues,
       };
-}
+    }
     return {
       level: "ok",
       message: "✓ Sintaxe OK",
@@ -2230,7 +2223,6 @@ export function editNativeSearch() {
   renderRoot();
 }
 
-
 export function initializeRoot() {
   const host = document.createElement("div");
   host.id = `${IDENT}-root`;
@@ -2246,8 +2238,8 @@ export function initializeRoot() {
   shadow.addEventListener("keydown", (event) => {
     const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput);
     if (!input) {
-return;
-}
+      return;
+    }
     if ((event as KeyboardEvent).key === "Enter" || (event as KeyboardEvent).key === "Tab") {
       if ((input as HTMLInputElement).value.trim()) {
         event.preventDefault();
@@ -2296,8 +2288,8 @@ return;
     "touchend",
     (event) => {
       if (yStart == null || !state.open) {
-return;
-}
+        return;
+      }
       const delta = ((event as TouchEvent).changedTouches[0]?.clientY ?? yStart) - yStart;
       yStart = null;
       if (delta > 110) {
