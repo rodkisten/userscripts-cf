@@ -302,6 +302,7 @@ export async function compileTarget(target, context) {
       if (!selected.length) return null;
 
       const features = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))];
+      const paths = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].paths || []))];
       const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
 
       const runtime = await bundleRuntime(root, selected, {
@@ -309,6 +310,7 @@ export async function compileTarget(target, context) {
         release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
         catalog,
         features,
+        paths,
         dynamic,
         onBundleStats: (stats) => {
           runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats;
@@ -468,9 +470,11 @@ export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   for (const target of targets) {
     const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
     const features = [...new Set(scripts.flatMap((s) => s.features))].sort();
+    const paths = [...new Set(scripts.flatMap((s) => s.paths || []))].sort();
     runtimeFeatureAudit.targets[target.id] = {
       scripts: target.definitions.map(({ id }) => id),
       features,
+      paths,
       dynamic: scripts.some((s) => s.dynamic),
       dynamicFiles: [...new Set(scripts.flatMap((s) => s.dynamicFiles))].sort(),
       treeShaken: !scripts.some((s) => s.dynamic) && target.id !== "standalone",
