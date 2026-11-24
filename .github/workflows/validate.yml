@@ -127,13 +127,19 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/validate-pr-lint.mjs fix-and-gate
 
+      - name: Check design system documentation for PR changes
+        if: github.event_name == 'pull_request' && steps.install.outcome == 'success'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: npm run check:design-system
+
       - name: ♻️ Restore exact-source validation result
         id: validation_cache
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full != 'true' && github.event_name != 'workflow_dispatch' && !contains(github.event.pull_request.title, '(test:') && !contains(github.event.pull_request.title, '(build:')
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
-          key: userscripts-validation-v3-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', 'tsconfig.react.json') }}
+          key: userscripts-validation-v4-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', 'tsconfig.react.json') }}
 
       - name: ✅ Validate affected code
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'

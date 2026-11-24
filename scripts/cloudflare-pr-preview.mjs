@@ -130,6 +130,17 @@ async function runPublishPreview({ log, args, context }) {
       throw new Error(`Diretório esperado não foi gerado: ${previewDir}`);
     }
 
+    runOrThrow('node', ['build/design-system.mjs'], { log, label: 'build/design-system.mjs' });
+    for (const file of ['design-system.js', 'design-system.css']) {
+      const source = path.join('dist', file);
+      if (fs.existsSync(source)) fs.copyFileSync(source, path.join(previewDir, file));
+    }
+    let html = fs.readFileSync('hosting/design-system.html', 'utf8');
+    html = html.replace('src="/design-system.js"', 'src="./design-system.js"');
+    if (fs.existsSync(path.join(previewDir, 'design-system.css'))) {
+      html = html.replace('</head>', '<link rel="stylesheet" href="./design-system.css"></head>');
+    }
+    fs.writeFileSync(path.join(previewDir, 'design-system.html'), html);
     step.pass('Installers gerados', previewDir);
   });
 

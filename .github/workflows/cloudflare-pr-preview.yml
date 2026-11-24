@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: cf-pr-preview-${{ github.event.pull_request.number }}
@@ -22,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -35,13 +36,45 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Build, package & publish PR preview to Cloudflare R2
+        id: publish
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
         run: |
-          export PR_HEAD_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
           node scripts/cloudflare-pr-preview.mjs --mode=publish
+
+      - name: Authenticate preview comment publisher
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+      - name: Verify preview and source revision
+        env:
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 6); do
+            if [ "$(curl -fsSL --max-time 15 "${PREVIEW_URL}source-sha.txt")" = "$PR_HEAD_SHA" ]; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: Collect preview metadata
+        id: diff-info
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/github-actions.mjs collect
+      - name: Publish preview comment
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
+          COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
+          DIFF_ENTRY: ${{ steps.diff-info.outputs.diff_entry }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: node scripts/github-actions.mjs publish
 
   cleanup:
     name: "🧹 Cleanup PR #${{ github.event.pull_request.number }} preview"
@@ -52,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
 
