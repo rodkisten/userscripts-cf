@@ -52,7 +52,7 @@ jobs:
         env:
           BUILD_REASON: Bundle Diet needs a complete comparable distribution.
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager: npm
           install-args: --legacy-peer-deps
           script: |

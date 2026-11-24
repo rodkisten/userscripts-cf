@@ -49,10 +49,10 @@ jobs:
       - name: 📦 Setup and install dependencies
         uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: '22'
+          node-version: "22"
           package-manager: npm
           install-args: --legacy-peer-deps
-          script: ':'
+          script: ":"
 
       - name: 🎨 Format and lint with Rod Actions
         id: format
@@ -60,7 +60,7 @@ jobs:
         with:
           mode: fix
           scope: all
-          lint: 'true'
+          lint: "true"
           results-file: ${{ runner.temp }}/rod-format-results.json
 
       - name: 🛡️ Protect Workflow Files From Bot Commits
