@@ -51,7 +51,9 @@ test("REPL scope resolver keeps local bindings local while persisting globals", 
 
 test("REPL scope resolver preserves implicit arguments and class-local names", async () => {
   const ctx = { vars: { arguments: 100 } };
-  const args = await evaluate("function count() { return arguments.length; } count(1, 2, 3)", ctx, ["arguments"]);
+  const args = await evaluate("function count() { return arguments.length; } count(1, 2, 3)", ctx, [
+    "arguments",
+  ]);
   assert.equal(args.value, 3);
 
   const klass = await evaluate(

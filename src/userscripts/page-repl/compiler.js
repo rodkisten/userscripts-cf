@@ -50,33 +50,31 @@ export function compile(source, { persist = true, knownNames = [] } = {}) {
   }
   function rewrite(node) {
     if (!node || typeof node !== "object") {
-return node;
-}
+      return node;
+    }
     if (replacements.has(node)) {
-return replacements.get(node);
-}
+      return replacements.get(node);
+    }
     for (const [key, value] of Object.entries(node)) {
       if (["range", "loc", "start", "end"].includes(key)) {
-continue;
-}
+        continue;
+      }
       if (Array.isArray(value)) {
-node[key] = value.map(rewrite);
-}
-      else if (value && typeof value === "object") {
-node[key] = rewrite(value);
-}
+        node[key] = value.map(rewrite);
+      } else if (value && typeof value === "object") {
+        node[key] = rewrite(value);
+      }
     }
-    if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier")
-      {
-node.shorthand = false;
-}
+    if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier") {
+      node.shorthand = false;
+    }
     return node;
   }
   // Rewrite declarations into mutable session properties. Local function bindings remain lexical.
   function transform(node, parentKey) {
     if (!node || typeof node !== "object") {
-return node;
-}
+      return node;
+    }
     if (persist && node.type === "VariableDeclaration" && declarations.has(node)) {
       const expressions = node.declarations.map((declaration) => ({
         type: "AssignmentExpression",
@@ -87,8 +85,8 @@ return node;
       const expression =
         expressions.length === 1 ? expressions[0] : { type: "SequenceExpression", expressions };
       if (parentKey === "left") {
-return expression.left;
-}
+        return expression.left;
+      }
       return parentKey === "init" ? expression : { type: "ExpressionStatement", expression };
     }
     if (
@@ -112,31 +110,28 @@ return expression.left;
     }
     for (const [key, value] of Object.entries(node)) {
       if (["range", "loc", "start", "end"].includes(key)) {
-continue;
-}
+        continue;
+      }
       if (Array.isArray(value)) {
-node[key] = value.map((item) => transform(item, key));
-}
-      else if (value && typeof value === "object") {
-node[key] = transform(value, key);
-}
+        node[key] = value.map((item) => transform(item, key));
+      } else if (value && typeof value === "object") {
+        node[key] = transform(value, key);
+      }
     }
     if (replacements.has(node)) {
-return replacements.get(node);
-}
-    if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier")
-      {
-node.shorthand = false;
-}
+      return replacements.get(node);
+    }
+    if (node.type === "Property" && node.shorthand && node.value.type !== "Identifier") {
+      node.shorthand = false;
+    }
     return node;
   }
   transform(ast, "program");
   const hoisted = ast.body.filter((node) => node.replHoisted);
   ast.body = hoisted.concat(ast.body.filter((node) => !node.replHoisted));
   const last = ast.body.at(-1);
-  if (last?.type === "ExpressionStatement" && !last.replHoisted)
-    {
-ast.body[ast.body.length - 1] = { type: "ReturnStatement", argument: last.expression };
-}
+  if (last?.type === "ExpressionStatement" && !last.replHoisted) {
+    ast.body[ast.body.length - 1] = { type: "ReturnStatement", argument: last.expression };
+  }
   return { code: generate(ast), names: [...names] };
 }

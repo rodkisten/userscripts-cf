@@ -100,12 +100,9 @@ function isNonReferenceIdentifier(node, parent, key) {
     return true;
   }
   if (
-    [
-      "ImportSpecifier",
-      "ImportDefaultSpecifier",
-      "ImportNamespaceSpecifier",
-      "ExportSpecifier",
-    ].includes(parent.type)
+    ["ImportSpecifier", "ImportDefaultSpecifier", "ImportNamespaceSpecifier", "ExportSpecifier"].includes(
+      parent.type,
+    )
   ) {
     return true;
   }
@@ -217,11 +214,7 @@ export function analyzePersistentBindings(ast, knownNames = []) {
       return;
     }
 
-    if (
-      node.type === "ForStatement" ||
-      node.type === "ForInStatement" ||
-      node.type === "ForOfStatement"
-    ) {
+    if (node.type === "ForStatement" || node.type === "ForInStatement" || node.type === "ForOfStatement") {
       const declaration = node.type === "ForStatement" ? node.init : node.left;
       const loopScope =
         declaration?.type === "VariableDeclaration" && declaration.kind !== "var"
