@@ -1,6 +1,7 @@
 import fs from 'node:fs';
-import { logger } from '../../utils/logger.js';
-import { getGitHubClient, upsertStickyComment, writeJobSummary } from '../../utils/github.js';
+import { AgentReporter } from './utils/ci-logger.mjs';
+const logger = new AgentReporter('AST audit');
+import { getGitHubClient, upsertStickyComment, writeJobSummary } from './utils/github.ts';
 
 interface GitHubAnnotation {
   level: 'error' | 'warning' | 'notice';
@@ -207,7 +208,7 @@ async function main() {
   const repo = process.env.REPO_NAME;
 
   if (!fs.existsSync(reportPath)) {
-    logger.error(`Relatório AST não encontrado em: ${reportPath}`);
+    logger.fail(`Relatório AST não encontrado em: ${reportPath}`);
     process.exit(1);
   }
 
@@ -225,7 +226,7 @@ async function main() {
   // 2. Publica o Job Summary na aba Actions
   const { markdown, hasFindings } = formatAuditMarkdown(report);
   await writeJobSummary(markdown);
-  logger.success('Job Summary publicado com sucesso.');
+  logger.pass('Job Summary publicado com sucesso.');
 
   // 3. Cria ou atualiza o comentário fixo no Pull Request
   if (!prNumber || !owner || !repo) {
@@ -245,15 +246,15 @@ async function main() {
   });
 
   if (actionTaken === 'created') {
-    logger.success(`Comentário de auditoria criado no PR #${prNumber}.`);
+    logger.pass(`Comentário de auditoria criado no PR #${prNumber}.`);
   } else if (actionTaken === 'updated') {
-    logger.success(`Comentário existente atualizado no PR #${prNumber} após novo push.`);
+    logger.pass(`Comentário existente atualizado no PR #${prNumber} após novo push.`);
   } else {
     logger.info(`Nenhuma pendência encontrada e nenhum comentário anterior no PR #${prNumber}.`);
   }
 }
 
 main().catch((err) => {
-  logger.error('Falha ao publicar sumário/comentário AST:', err);
+  logger.fail('Falha ao publicar sumário/comentário AST:', err);
   process.exit(1);
 });
