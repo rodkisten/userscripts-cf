@@ -1,9 +1,5 @@
 import { javascriptLanguage } from "@codemirror/lang-javascript";
-import {
-  analyzePersistentDeclarations,
-  assertLezerSyntax,
-  emitLezerProgram,
-} from "./compiler-lezer.js";
+import { analyzePersistentDeclarations, assertLezerSyntax, emitLezerProgram } from "./compiler-lezer.js";
 
 const reserved = new Set(["ctx", "console", "$", "$$", "$0", "_"]);
 

@@ -90,11 +90,7 @@ test("Lezer compiler preserves persistent bindings through native lexical scope"
   const first = await evaluate("let n = 2; function inc(step = 1) { n += step; return n; } inc()");
   assert.equal(first.value, 3);
 
-  const second = await evaluate(
-    "(() => { let n = 10; return n; })() + inc(2) + n",
-    first.ctx,
-    ["n", "inc"],
-  );
+  const second = await evaluate("(() => { let n = 10; return n; })() + inc(2) + n", first.ctx, ["n", "inc"]);
   assert.equal(second.value, 20);
   assert.equal(second.ctx.vars.n, 5);
 });

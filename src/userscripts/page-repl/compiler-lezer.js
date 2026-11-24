@@ -1,5 +1,10 @@
 const patternTypes = new Set(["VariableDefinition", "ArrayPattern", "ObjectPattern"]);
-const functionTypes = new Set(["FunctionDeclaration", "FunctionExpression", "ArrowFunction", "MethodDeclaration"]);
+const functionTypes = new Set([
+  "FunctionDeclaration",
+  "FunctionExpression",
+  "ArrowFunction",
+  "MethodDeclaration",
+]);
 
 function children(node) {
   const result = [];
@@ -30,9 +35,7 @@ function nearestVarScope(scope) {
 }
 
 function variableKind(source, node) {
-  const token = children(node).find((item) =>
-    ["var", "let", "const", "using"].includes(item.name),
-  );
+  const token = children(node).find((item) => ["var", "let", "const", "using"].includes(item.name));
   if (token) {
     return token.name;
   }
@@ -84,9 +87,7 @@ function isFunctionLike(node) {
 }
 
 function loopHasLexicalBinding(source, node) {
-  const spec = children(node).find((item) =>
-    ["ForSpec", "ForInSpec", "ForOfSpec"].includes(item.name),
-  );
+  const spec = children(node).find((item) => ["ForSpec", "ForInSpec", "ForOfSpec"].includes(item.name));
   if (!spec) {
     return false;
   }
@@ -374,7 +375,7 @@ export function emitLezerProgram(source, tree, analysis, { persist = true, known
   return [
     `const __rodReplNames = new Set(${scopeNames});`,
     "const __rodReplScope = new Proxy(ctx.vars, {",
-    "  has(_target, key) { return typeof key === \"string\" && __rodReplNames.has(key); },",
+    '  has(_target, key) { return typeof key === "string" && __rodReplNames.has(key); },',
     "});",
     "with (__rodReplScope) {",
     ...hoisted,
