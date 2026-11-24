@@ -103,7 +103,7 @@ function runInitializers(...initializers) {
   }
 }
 
-export function initializeDeck(): void {
+export function initializeDeck() {
   // Cada fase mantém a ordem histórica de inicialização do Deck.
   runInitializers(
     // Configuração, estado e compilação.
