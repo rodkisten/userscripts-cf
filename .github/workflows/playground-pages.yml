@@ -125,7 +125,7 @@ jobs:
 
       - name: Build userscripts (cache miss)
         if: steps.bundles.outputs.cache-hit != 'true'
-        run: DEBUG=vite:* npm run build
+        run: npm run build
 
       - name: Verify cached distribution before preview
         run: node scripts/playground-pages.mjs --mode=verify-dist

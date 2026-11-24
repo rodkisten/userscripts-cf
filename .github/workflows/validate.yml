@@ -81,7 +81,7 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          SCOPE: ${{ inputs.scope || 'changed' }}
+          SCOPE: ${{ inputs.scope || (github.event_name == 'push' && 'all') || 'changed' }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs plan
 
@@ -141,7 +141,7 @@ jobs:
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs run
-        timeout-minutes: 5
+        timeout-minutes: 15
 
       - name: 🎨 Build visual playground (independent of typecheck)
         if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'

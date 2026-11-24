@@ -43,7 +43,9 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
     await cmd("git", ["fetch", "origin", baseRef, "--depth=1"]).nothrow();
 
     const originVerify = await cmd("git", ["rev-parse", "--verify", `origin/${baseRef}`]).nothrow();
-    const target =
+    const explicitBase = process.env.PR_BASE_SHA?.trim();
+    const validBase = explicitBase && !/^0+$/.test(explicitBase) && (await cmd("git", ["rev-parse", "--verify", `${explicitBase}^{commit}`]).nothrow()).exitCode === 0;
+    const target = validBase ? explicitBase :
       originVerify.exitCode === 0
         ? originVerify.stdout.trim()
         : (await cmd("git", ["rev-parse", "--verify", baseRef])).stdout.trim();
@@ -52,7 +54,8 @@ runAction("Impact & Test Map", async ({ log: logger }) => {
       "diff",
       "--name-only",
       "--diff-filter=ACMR",
-      `${target}...HEAD`,
+      target,
+      process.env.PR_HEAD_SHA || "HEAD",
       "--",
       "src",
     ]);
