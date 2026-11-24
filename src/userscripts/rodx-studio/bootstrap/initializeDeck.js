@@ -97,95 +97,122 @@ import { initializeDeckXInterfaceHygiene } from "../layout/hygiene.tsx";
 import { initializeDeckSearchHistory } from "../search/history.tsx";
 import { initializeDeckQuickUI } from "../ui/quick-actions.tsx";
 
-export function initializeDeck() {
-  initializeDeckVERSION();
-  initializeDeckPREFIX();
-  initializeDeckIDENT();
-  initializeDeckMAX_VISIBLE();
-  initializeDeckEMPTY_FIELDS();
-  initializeDeckLANGUAGE_OPTIONS();
-  initializeDeckANY_ONLY_EXCLUDE();
-  initializeDeckBLOCK_MEDIA();
-  initializeDeckBLOCK_TYPES();
-  initializeDeckMAX_BLOCK_NODES();
-  initializeDeckMAX_BLOCK_DEPTH();
-  initializeDeckSORTS();
-  initializeDeckGROUPS();
-  initializeDeckState();
-  initializeDeckCopyFields();
-  initializeDeckHtml();
-  initializeDeckUid();
-  initializeDeckTokens();
-  initializeDeckSplitAccounts();
-  initializeDeckQueryEngine();
-  initializeDeckSignature();
-  initializeDeckModernGM();
-  initializeDeckGmGet();
-  initializeDeckGmSet();
-  initializeDeckGmAvailable();
-  initializeDeckStorage();
-  initializeDeckRecoveryKey();
-  initializeDeckCloudSync();
-  initializeDeckImmersiveDownload();
-  initializeDeckRelay();
-  initializeDeckXRepost();
-  initializeDeckXClientLists();
-  initializeDeckProfileLists();
-  initializeDeckFeedFilters();
-  initializeDeckScrollChrome();
-  initializeDeckCompactLayout();
-  initializeDeckPreferences();
-  initializeDeckDirectLinks();
-  initializeDeckSocialAppLinks();
-  initializeDeckVideoTapGuard();
-  initializeDeckQuickRepost();
-  initializeDeckSeen();
-  initializeDeckNativeTranslation();
-  initializeDeckForeignTags();
-  initializeDeckVideoExperience();
-  initializeDeckSeekPreviews();
-  initializeDeckPlayerPreference();
-  initializeDeckSearchAnchors();
-  initializeDeckVideoTransport();
-  initializeDeckViewportPlayback();
-  initializeDeckImmersiveSwipe();
-  initializeDeckNativeQueryTags();
-  initializeDeckResultEnhancer();
-  initializeDeckRodxToastTimer();
-  initializeDeckDragDock();
-  initializeRodX_deck_164();
-  initializeDeckSelectionPopover();
-  initializeDeckXInterfaceHygiene();
-  initializeDeckSearchHistory();
-  initializeRodX_deck_169();
-  initializeRodX_deck_170();
-  initializeRodX_deck_171();
-  initializeRodX_deck_172();
-  initializeRodX_deck_173();
-  initializeDeckQuickUI();
-  initializeRodX_deck_175();
-  initializeRodX_deck_176();
-  initializeRodX_deck_177();
-  initializeRodX_deck_178();
-  initializeRodX_deck_179();
-  initializeRodX_deck_180();
-  initializeRodX_deck_181();
-  initializeRodX_deck_182();
-  initializeRodX_deck_183();
-  initializeDeckDatabaseSaveTimerAndRefreshingCloud();
-  initializeRodX_deck_185();
-  initializeRodX_deck_186();
-  initializeRodX_deck_187();
-  initializeRodX_deck_188();
-  initializeRodX_deck_189();
-  initializeRodX_deck_190();
-  initializeRodX_deck_191();
-  initializeRodX_deck_192();
-  initializeRodX_deck_193();
-  initializeRodX_deck_194();
-  initializeRodX_deck_195();
-  initializeRodX_deck_196();
-  initializeRodX_deck_197();
-  initializeRodX_deck_198();
-  initializeRodX_deck_199();
+type DeckInitializer = () => void;
+
+function runInitializers(...initializers: DeckInitializer[]): void {
+  for (const initialize of initializers) {
+    initialize();
+  }
+}
+
+export function initializeDeck(): void {
+  // 1. Configuração e estado fundamental do Search Deck.
+  runInitializers(
+    initializeDeckVERSION,
+    initializeDeckPREFIX,
+    initializeDeckIDENT,
+    initializeDeckMAX_VISIBLE,
+    initializeDeckEMPTY_FIELDS,
+    initializeDeckLANGUAGE_OPTIONS,
+    initializeDeckANY_ONLY_EXCLUDE,
+    initializeDeckBLOCK_MEDIA,
+    initializeDeckBLOCK_TYPES,
+    initializeDeckMAX_BLOCK_NODES,
+    initializeDeckMAX_BLOCK_DEPTH,
+    initializeDeckSORTS,
+    initializeDeckGROUPS,
+    initializeDeckState,
+    initializeDeckCopyFields,
+    initializeDeckHtml,
+    initializeDeckUid,
+    initializeDeckTokens,
+    initializeDeckSplitAccounts,
+    initializeDeckQueryEngine,
+    initializeDeckSignature,
+  );
+
+  // 2. Storage, recuperação e sincronização em nuvem.
+  runInitializers(
+    initializeDeckModernGM,
+    initializeDeckGmGet,
+    initializeDeckGmSet,
+    initializeDeckGmAvailable,
+    initializeDeckStorage,
+    initializeDeckRecoveryKey,
+    initializeDeckCloudSync,
+  );
+
+  // 3. Integrações com listas, conta, rede social e tradução.
+  runInitializers(
+    initializeDeckRelay,
+    initializeDeckXRepost,
+    initializeDeckXClientLists,
+    initializeDeckProfileLists,
+    initializeDeckFeedFilters,
+    initializeDeckPreferences,
+    initializeDeckDirectLinks,
+    initializeDeckSocialAppLinks,
+    initializeDeckQuickRepost,
+    initializeDeckSeen,
+    initializeDeckNativeTranslation,
+    initializeDeckForeignTags,
+    initializeDeckResultEnhancer,
+  );
+
+  // 4. Mídia e layout.
+  runInitializers(
+    initializeDeckImmersiveDownload,
+    initializeDeckScrollChrome,
+    initializeDeckCompactLayout,
+    initializeDeckVideoTapGuard,
+    initializeDeckVideoExperience,
+    initializeDeckSeekPreviews,
+    initializeDeckPlayerPreference,
+    initializeDeckSearchAnchors,
+    initializeDeckVideoTransport,
+    initializeDeckViewportPlayback,
+    initializeDeckImmersiveSwipe,
+    initializeDeckNativeQueryTags,
+  );
+
+  // 5. UI compartilhada, histórico e eventos do deck.
+  runInitializers(
+    initializeDeckRodxToastTimer,
+    initializeDeckDragDock,
+    initializeRodX_deck_164,
+    initializeDeckSelectionPopover,
+    initializeDeckXInterfaceHygiene,
+    initializeDeckSearchHistory,
+    initializeRodX_deck_169,
+    initializeRodX_deck_170,
+    initializeRodX_deck_171,
+    initializeRodX_deck_172,
+    initializeRodX_deck_173,
+    initializeDeckQuickUI,
+    initializeRodX_deck_175,
+    initializeRodX_deck_176,
+    initializeRodX_deck_177,
+    initializeRodX_deck_178,
+    initializeRodX_deck_179,
+    initializeRodX_deck_180,
+    initializeRodX_deck_181,
+    initializeRodX_deck_182,
+    initializeRodX_deck_183,
+    initializeDeckDatabaseSaveTimerAndRefreshingCloud,
+    initializeRodX_deck_185,
+    initializeRodX_deck_186,
+    initializeRodX_deck_187,
+    initializeRodX_deck_188,
+    initializeRodX_deck_189,
+    initializeRodX_deck_190,
+    initializeRodX_deck_191,
+    initializeRodX_deck_192,
+    initializeRodX_deck_193,
+    initializeRodX_deck_194,
+    initializeRodX_deck_195,
+    initializeRodX_deck_196,
+    initializeRodX_deck_197,
+    initializeRodX_deck_198,
+    initializeRodX_deck_199,
+  );
 }
