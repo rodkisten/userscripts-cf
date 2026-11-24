@@ -24,6 +24,7 @@ declare const __ROD_FEATURE_CLIPBOARD__: boolean;
 declare const __ROD_FEATURE_HTTP__: boolean;
 declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
+declare const __ROD_FEATURE_QUERY__: boolean;
 
 import {
   installCoreStyles,
@@ -343,33 +344,44 @@ export function createCoreRuntime(
   const installedHelpers = options?.installHelpers ? options.installHelpers() : [];
 
   const stores = new Map<string, ReturnType<typeof rod.storage.create>>();
-  let queryClient: QueryClient | undefined;
 
-  const getQueryClient = () =>
-    (queryClient ??= new QueryClient({
-      defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },
-    }));
+  // Query is an optional runtime capability. Keeping the entire QueryClient
+  // construction behind a compile-time feature flag lets Rolldown remove
+  // @tanstack/query-core from userscripts that never touch ctx.query.
+  const queryService =
+    typeof __ROD_FEATURE_QUERY__ === "undefined" || __ROD_FEATURE_QUERY__
+      ? (() => {
+          let queryClient: QueryClient | undefined;
+          const getQueryClient = () =>
+            (queryClient ??= new QueryClient({
+              defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },
+            }));
 
-  const queryService = Object.freeze({
-    get client() {
-      return getQueryClient();
-    },
-    createAsyncOptions(
-      createLoader: () => (
-        query: string,
-        context: { readonly signal?: AbortSignal },
-      ) => Promise<unknown> | unknown,
-      query: string,
-      options: Record<string, unknown> = {},
-    ) {
-      const queryKey = Array.isArray(options.queryKey) ? options.queryKey : [options.queryKey ?? "async"];
-      return {
-        ...options,
-        queryKey: [...queryKey, query],
-        queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) => createLoader()(query, { signal }),
-      };
-    },
-  });
+          return Object.freeze({
+            get client() {
+              return getQueryClient();
+            },
+            createAsyncOptions(
+              createLoader: () => (
+                query: string,
+                context: { readonly signal?: AbortSignal },
+              ) => Promise<unknown> | unknown,
+              query: string,
+              options: Record<string, unknown> = {},
+            ) {
+              const queryKey = Array.isArray(options.queryKey)
+                ? options.queryKey
+                : [options.queryKey ?? "async"];
+              return {
+                ...options,
+                queryKey: [...queryKey, query],
+                queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) =>
+                  createLoader()(query, { signal }),
+              };
+            },
+          });
+        })()
+      : undefined;
 
   const clipboard =
     typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__

@@ -81,6 +81,18 @@ describe("inspectable build artifacts", () => {
         }
       }
       for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_QUERY__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedQueryCore = report.modules.filter(
+          (item) => item.id.includes("/node_modules/@tanstack/query-core/") && item.renderedBytes > 0,
+        );
+        expect(
+          retainedQueryCore,
+          `Disabled __ROD_FEATURE_QUERY__ retained @tanstack/query-core in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
         expect(runtime.includedModuleCount).toBeGreaterThan(0);
         expect(runtime.topModules.length).toBeGreaterThan(0);
         expect(runtime.topModules.every((module) => module.renderedBytes > 0)).toBe(true);
