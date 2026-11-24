@@ -46,7 +46,9 @@ describe("inspectable build artifacts", () => {
       }
     }
     expect(editors.bundles["dom-inspector:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
-    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(
+      0,
+    );
     expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
     expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBeGreaterThan(0);
     for (const script of manifest.scripts) {
