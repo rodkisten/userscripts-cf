@@ -117,6 +117,26 @@ jobs:
       - name: 📦 Install Locked Dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: 🧩 Calculate AST Version Plan
+        id: version-plan
+        env:
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${BASE_SHA:-}" && "${BASE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
+            node build/version-plan.mjs --from="${BASE_SHA}"
+          else
+            node build/version-plan.mjs --files=""
+          fi
+          node build/apply-version-plan.mjs version-plan.json
+          affected="$(node -e 'const p=require("./version-plan.json"); process.stdout.write((p.affected||[]).join(","))')"
+          echo "affected=${affected}" >> "$GITHUB_OUTPUT"
+          if [[ -n "$affected" ]]; then
+            echo "🧩 Affected userscripts: ${affected}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⏭️ No userscript source dependency changed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: 🏷️ Select Next Version
         id: version
         env:
@@ -204,7 +224,7 @@ jobs:
           set -euo pipefail
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
+          git add package.json package-lock.json userscripts.versions.json
           git commit -m "chore(release): v$VERSION [skip ci]"
           git push origin HEAD:main
           SHA=$(git rev-parse HEAD)
