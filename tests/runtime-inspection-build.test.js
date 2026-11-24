@@ -45,6 +45,10 @@ describe("inspectable build artifacts", () => {
         ).toBe(true);
       }
     }
+    expect(editors.bundles["dom-inspector:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBeGreaterThan(0);
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
@@ -138,6 +142,7 @@ describe("inspectable build artifacts", () => {
         for (const runtime of target.output.runtimes) {
           expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(false);
           expect(runtime.featureDefines.__ROD_FEATURE_TOASTER__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_CSS__).toBe(false);
 
           const report = audit.bundles[script.id + ":" + runtime.world];
           const leakedMenuOrToastStack = report.modules.filter(
@@ -147,7 +152,8 @@ describe("inspectable build artifacts", () => {
                 item.id.includes("node_modules/@radix-ui/react-select/") ||
                 item.id.includes("node_modules/@radix-ui/react-menu/") ||
                 item.id.includes("node_modules/@floating-ui/") ||
-                item.id.includes("node_modules/sonner/")),
+                item.id.includes("node_modules/sonner/") ||
+                item.id === "src/styles/core.css?inline"),
           );
           expect(
             leakedMenuOrToastStack,
@@ -167,7 +173,7 @@ describe("inspectable build artifacts", () => {
         const retainedReactRuntime = report.modules.filter(
           (item) =>
             item.renderedBytes > 0 &&
-            (item.id.includes("/node_modules/react-dom/") || item.id.endsWith("src/core/runtime-react.tsx")),
+            (item.id.includes("node_modules/react-dom/") || item.id.endsWith("src/core/runtime-react.tsx")),
         );
         expect(
           retainedReactRuntime,
