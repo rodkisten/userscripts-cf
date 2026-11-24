@@ -81,10 +81,25 @@ describe("inspectable build artifacts", () => {
         }
       }
       for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_MENU__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedRuntimeMenu = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.endsWith("src/runtime/modular/features/menu.ts") ||
+              item.id.endsWith("src/runtime/modular/features/menu-view.tsx")),
+        );
+        expect(
+          retainedRuntimeMenu,
+          `Disabled __ROD_FEATURE_MENU__ retained runtime menu modules in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
         if (runtime.featureDefines.__ROD_FEATURE_TOASTER__ !== false) continue;
         const report = audit.bundles[script.id + ":" + runtime.world];
         const retainedSonner = report.modules.filter(
-          (item) => item.id.includes("/node_modules/sonner/") && item.renderedBytes > 0,
+          (item) => item.id.includes("node_modules/sonner/") && item.renderedBytes > 0,
         );
         expect(
           retainedSonner,
@@ -96,7 +111,7 @@ describe("inspectable build artifacts", () => {
         if (runtime.featureDefines.__ROD_FEATURE_QUERY__ !== false) continue;
         const report = audit.bundles[script.id + ":" + runtime.world];
         const retainedQueryCore = report.modules.filter(
-          (item) => item.id.includes("/node_modules/@tanstack/query-core/") && item.renderedBytes > 0,
+          (item) => item.id.includes("node_modules/@tanstack/query-core/") && item.renderedBytes > 0,
         );
         expect(
           retainedQueryCore,
@@ -117,6 +132,28 @@ describe("inspectable build artifacts", () => {
           retainedStorage,
           `Disabled __ROD_FEATURE_STORAGE__ retained RodStorage in ${script.id}:${runtime.world}`,
         ).toEqual([]);
+      }
+
+      if (script.id === "tiktok-cleaner" || script.id === "example-site") {
+        for (const runtime of target.output.runtimes) {
+          expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_TOASTER__).toBe(false);
+
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const leakedMenuOrToastStack = report.modules.filter(
+            (item) =>
+              item.renderedBytes > 0 &&
+              (item.id.endsWith("src/runtime/modular/features/menu-view.tsx") ||
+                item.id.includes("node_modules/@radix-ui/react-select/") ||
+                item.id.includes("node_modules/@radix-ui/react-menu/") ||
+                item.id.includes("node_modules/@floating-ui/") ||
+                item.id.includes("node_modules/sonner/")),
+          );
+          expect(
+            leakedMenuOrToastStack,
+            `Lightweight bundle retained menu/toast stack in ${script.id}:${runtime.world}`,
+          ).toEqual([]);
+        }
       }
 
       for (const runtime of target.output.runtimes) {
