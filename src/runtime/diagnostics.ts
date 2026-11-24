@@ -11,6 +11,7 @@ export type DiagnosticRecord = {
   url?: string;
   request?: unknown;
   response?: unknown;
+  scripts?: string[];
 };
 
 type DiagnosticRegistry = {
@@ -49,6 +50,7 @@ export function captureDiagnostic(
 export function observeNetworkDiagnostics(
   host: Window & typeof globalThis = window,
   signal?: AbortSignal,
+  owner?: string | readonly string[],
 ): () => void {
   const existing = networkObservations.get(host);
   if (existing) {
@@ -66,22 +68,11 @@ export function observeNetworkDiagnostics(
     else signal?.addEventListener("abort", release, { once: true });
     return release;
   }
-  const capture = (
-    kind: "fetch" | "xhr",
-    event: {
-      url: string;
-      method?: string;
-      status?: number;
-      error?: string;
-      durationMs?: number;
-      requestBody?: string | null;
-      body?: string | null;
-      requestContentType?: string | null;
-      responseContentType?: string | null;
-      requestTruncated?: boolean;
-      truncated?: boolean;
-    },
-  ) => {
+  const capture = (kind: "fetch" | "xhr", event: {
+    url: string; method?: string; status?: number; error?: string; durationMs?: number;
+    requestBody?: string | null; body?: string | null; requestContentType?: string | null;
+    responseContentType?: string | null; requestTruncated?: boolean; truncated?: boolean;
+  }) => {
     if (!event.error && !(event.status && event.status >= 400)) return;
     if (event.url.includes("manage.migos.club/error/capture")) return;
     let location = "[unavailable]";
@@ -108,7 +99,8 @@ export function observeNetworkDiagnostics(
         truncated: Boolean(event.truncated),
       },
     });
-    captureDiagnostic(diagnostic, `network.${kind}`, "unknown", host);
+    const owners = Array.isArray(owner) ? owner : owner ? [owner] : ["unknown"];
+    captureDiagnostic(diagnostic, `network.${kind}`, owners.join(","), host);
   };
   const stopFetch = observePageFetch((event) => capture("fetch", event), {
     host,

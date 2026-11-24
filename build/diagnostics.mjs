@@ -17,6 +17,8 @@ export function diagnosticPrelude(target, version, scripts) {
   const MAX_HISTORY = 250;
   const MAX_SEEN_IDS = 1000;
   const REMOTE_ENDPOINT = "https://manage.migos.club/error/capture";
+  const REMOTE_MIN_INTERVAL_MS = 15000;
+  const REMOTE_MAX_EVENTS_PER_HOUR = 100;
 
   const root = window;
   let state = root[key];
@@ -76,25 +78,38 @@ export function diagnosticPrelude(target, version, scripts) {
       String(value ?? "")
         .replace(BEARER_RE, "$1[REDACTED]")
         .replace(SECRET_PARAM_RE, "$1[REDACTED]")
-        .replace(
-          /("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi,
-          "$1[REDACTED]$2",
-        );
+        .replace(/("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi, "$1[REDACTED]$2");
 
     const safeDetails = (value) => {
       if (value == null) return null;
-      try {
-        return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000));
-      } catch {
-        return null;
-      }
+      try { return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000)); }
+      catch { return null; }
     };
+
+    let remoteWindowStarted = 0;
+    let remoteWindowSent = 0;
+    const remoteLastSent = new Map();
 
     const sendRemote = (record) => {
       try {
+        const now = Date.now();
+        if (now - remoteWindowStarted >= 3600000) {
+          remoteWindowStarted = now;
+          remoteWindowSent = 0;
+        }
+        const lastSent = remoteLastSent.get(record.fingerprint) || 0;
+        if (now - lastSent < REMOTE_MIN_INTERVAL_MS || remoteWindowSent >= REMOTE_MAX_EVENTS_PER_HOUR) return;
+        remoteLastSent.set(record.fingerprint, now);
+        remoteWindowSent++;
+        if (remoteLastSent.size > MAX_SEEN_IDS) {
+          const first = remoteLastSent.keys().next().value;
+          if (first) remoteLastSent.delete(first);
+        }
+        const activeScripts = Object.keys(state.scripts);
         const payload = {
           fingerprint: record.fingerprint,
           script: record.script,
+          scripts: record.scripts || activeScripts,
           source: record.source,
           message: String(record.message || "").slice(0, 4000),
           stack: String(record.stack || "").slice(0, 4000),
@@ -105,16 +120,14 @@ export function diagnosticPrelude(target, version, scripts) {
           request: safeDetails(record.request),
           response: safeDetails(record.response),
         };
-        void root
-          .fetch(REMOTE_ENDPOINT, {
-            method: "POST",
-            mode: "cors",
-            credentials: "omit",
-            keepalive: true,
-            headers: { "Content-Type": "text/plain;charset=UTF-8" },
-            body: JSON.stringify(payload),
-          })
-          .catch(() => {});
+        void root.fetch(REMOTE_ENDPOINT, {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          keepalive: true,
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
       } catch {}
     };
 
@@ -447,7 +460,9 @@ export function diagnosticPrelude(target, version, scripts) {
         const nowIso = new Date(nowMs).toISOString();
         const message = redact(error?.message || error || "Unknown error");
         const stack = redact(error?.stack || "");
-        const script = owner || "unknown";
+        const activeScripts = Object.keys(state.scripts);
+        const scripts = owner ? String(owner).split(",").filter(Boolean) : activeScripts;
+        const script = scripts.length === 1 ? scripts[0] : (scripts.length ? "multiple" : "page/global");
         const firstFrame = stack.split("\n", 2)[1] || "";
         const fingerprint = `${script}|${source}|${message}|${firstFrame}`;
 
@@ -459,6 +474,7 @@ export function diagnosticPrelude(target, version, scripts) {
           record.lastSeen = nowIso;
           if (error?.request) record.request = safeDetails(error.request);
           if (error?.response) record.response = safeDetails(error.response);
+          if (scripts.length) record.scripts = scripts;
         } else {
           record = {
             fingerprint,
@@ -473,6 +489,7 @@ export function diagnosticPrelude(target, version, scripts) {
             url: (root.location?.origin || "") + (root.location?.pathname || ""),
             request: safeDetails(error?.request),
             response: safeDetails(error?.response),
+            scripts,
           };
           state.history.unshift(record);
           historyIndex.set(fingerprint, record);
