@@ -107,7 +107,7 @@ const projectRoot = findProjectRoot(targetPath);
 // ============================================================================
 // 2. Configurações, Logs & Sistema de Cache (RAM + Disco)
 // ============================================================================
-const CACHE_VERSION = 3; // Inclui code + normalizedBodyHash
+const CACHE_VERSION = 4; // Inclui isClassMember e ignora closures/funções aninhadas
 const CACHE_DIR = path.join(projectRoot, 'node_modules', '.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'find-fn-ast.json');
 
@@ -123,6 +123,34 @@ const IGNORE_DIRS = new Set([
   'coverage',
   '.turbo',
   '.cache'
+]);
+
+const GENERIC_FUNCTION_NAMES = new Set([
+  'default',
+  'main',
+  'run',
+  'init',
+  'setup',
+  'teardown',
+  'start',
+  'stop',
+  'close',
+  'dispose',
+  'destroy',
+  'execute',
+  'handler',
+  'handle',
+  'render',
+  'update',
+  'reset',
+  'clear',
+  'parse',
+  'format',
+  'validate',
+  'build',
+  'create',
+  'get',
+  'set'
 ]);
 
 const log = {
@@ -434,6 +462,18 @@ function extractCommentsFast(sourceFile, fullText) {
   return comments;
 }
 
+function isFunctionLike(node) {
+  return (
+    ts.isFunctionDeclaration(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isArrowFunction(node) ||
+    ts.isMethodDeclaration(node) ||
+    ts.isConstructorDeclaration(node) ||
+    ts.isGetAccessorDeclaration(node) ||
+    ts.isSetAccessorDeclaration(node)
+  );
+}
+
 function analyzeFileCached(filePath) {
   let stats;
   try {
@@ -466,53 +506,62 @@ function analyzeFileCached(filePath) {
   const functions = [];
   const allSymbols = new Set();
 
-  function visit(node) {
+  function visit(node, insideFunctionScope = false) {
     let fnName = null;
     let targetNode = node;
     let fnImplNode = node;
+    let isClassMember = false;
 
-    if (
-      (ts.isFunctionDeclaration(node) ||
-        ts.isClassDeclaration(node) ||
-        ts.isInterfaceDeclaration(node) ||
-        ts.isTypeAliasDeclaration(node) ||
-        ts.isEnumDeclaration(node)) &&
-      node.name
-    ) {
-      allSymbols.add(node.name.text);
-    } else if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-      allSymbols.add(node.name.text);
+    // Coleta símbolos apenas fora de closures/funções internas
+    if (!insideFunctionScope) {
+      if (
+        (ts.isFunctionDeclaration(node) ||
+          ts.isClassDeclaration(node) ||
+          ts.isInterfaceDeclaration(node) ||
+          ts.isTypeAliasDeclaration(node) ||
+          ts.isEnumDeclaration(node)) &&
+        node.name
+      ) {
+        allSymbols.add(node.name.text);
+      } else if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+        allSymbols.add(node.name.text);
+      }
     }
 
-    if (ts.isFunctionDeclaration(node)) {
-      fnName = node.name ? node.name.text : 'default';
-    } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
-      fnName = node.name.text;
-      allSymbols.add(fnName);
-    } else if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer &&
-      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
-    ) {
-      fnName = node.name.text;
-      fnImplNode = node.initializer;
-      if (
-        node.parent &&
-        ts.isVariableDeclarationList(node.parent) &&
-        ts.isVariableStatement(node.parent.parent)
+    // Extrai apenas funções top-level do módulo ou membros diretos de classe
+    if (!insideFunctionScope) {
+      if (ts.isFunctionDeclaration(node)) {
+        fnName = node.name ? node.name.text : 'default';
+      } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
+        fnName = node.name.text;
+        isClassMember = true;
+        allSymbols.add(fnName);
+      } else if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
       ) {
-        targetNode = node.parent.parent;
+        fnName = node.name.text;
+        fnImplNode = node.initializer;
+        if (
+          node.parent &&
+          ts.isVariableDeclarationList(node.parent) &&
+          ts.isVariableStatement(node.parent.parent)
+        ) {
+          targetNode = node.parent.parent;
+        }
+      } else if (
+        ts.isPropertyDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
+      ) {
+        fnName = node.name.text;
+        fnImplNode = node.initializer;
+        isClassMember = true;
+        allSymbols.add(fnName);
       }
-    } else if (
-      ts.isPropertyDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer &&
-      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
-    ) {
-      fnName = node.name.text;
-      fnImplNode = node.initializer;
-      allSymbols.add(fnName);
     }
 
     if (fnName) {
@@ -540,6 +589,7 @@ function analyzeFileCached(filePath) {
 
       functions.push({
         name: fnName,
+        isClassMember,
         startLine,
         endLine,
         signature: `${prefix}${signature}`.trim(),
@@ -549,10 +599,11 @@ function analyzeFileCached(filePath) {
       });
     }
 
-    ts.forEachChild(node, visit);
+    const nextInsideScope = insideFunctionScope || isFunctionLike(node);
+    ts.forEachChild(node, (child) => visit(child, nextInsideScope));
   }
 
-  visit(sourceFile);
+  visit(sourceFile, false);
   const comments = extractCommentsFast(sourceFile, content);
 
   const parsedData = {
@@ -753,12 +804,14 @@ function auditGitChanges(repoFilesData, gitDiff) {
           continue;
         }
 
-        // Critério B: Mesmo nome de função já existente em outro arquivo (ou duplicado no mesmo)
-        // Ignora nomes genéricos muito comuns de lifecycle/componentes como "default" ou "render"
+        // Critério B: Mesmo nome de função top-level já existente
+        // Ignora métodos de classe e nomes genéricos de entrypoint/lifecycle (run, main, handler, etc.)
         if (
+          !fn.isClassMember &&
+          !existing.isClassMember &&
           fn.name === existing.name &&
-          fn.name !== 'default' &&
-          fn.name.length > 3
+          fn.name.length > 3 &&
+          !GENERIC_FUNCTION_NAMES.has(fn.name.toLowerCase())
         ) {
           matches.push({
             reason: 'DUPLICATE_NAME',
