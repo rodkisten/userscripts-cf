@@ -154,9 +154,9 @@ describe("analyzeRuntimeGraph", () => {
       "outside.ts": `export const x = 1;`,
     });
 
-    await expect(
-      analyzeRuntimeGraph("entry.ts", { root: path.join(root, "project") })
-    ).rejects.toThrow(/Import outside project/);
+    await expect(analyzeRuntimeGraph("entry.ts", { root: path.join(root, "project") })).rejects.toThrow(
+      /Import outside project/,
+    );
   });
 });
 
@@ -183,9 +183,7 @@ describe("analyzeImportGraph", () => {
       { target: "src/reexport.ts", spec: "./reexport.ts", kind: "ExportAllDeclaration" },
     ]);
 
-    expect(diagnostics).toEqual([
-      { file: "src/index.ts", code: "unresolved-module", spec: "./missing.ts" },
-    ]);
+    expect(diagnostics).toEqual([{ file: "src/index.ts", code: "unresolved-module", spec: "./missing.ts" }]);
   });
 
   it("captura erros de sintaxe sem lançar exceção", () => {
