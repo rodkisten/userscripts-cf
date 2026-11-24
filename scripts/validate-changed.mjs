@@ -133,11 +133,12 @@ export async function planValidation() {
     }
 
     // 2. Workflow dispatch com scope=all
-    if (eventName === "workflow_dispatch" && scope === "all") {
+    if (scope === "all") {
       setActionOutput("full", "true");
       setActionOutput("run", "true");
-      step.pass("Execução manual completa solicitada", "scope=all");
-      log.summary({ Run: "true", Full: "true", Mode: "workflow_dispatch" });
+      setActionOutput("matrix", "[]");
+      step.pass("Validação completa solicitada", "scope=all");
+      log.summary({ Run: "true", Full: "true", Mode: eventName });
       return;
     }
 
@@ -225,7 +226,7 @@ export async function planValidation() {
 export async function runValidation() {
   const isFull = process.env.FULL === "true";
   const prTitle = process.env.PR_TITLE || "";
-  const scopedBuildsMatrix = process.env.SCOPED_BUILDS_MATRIX === "true";
+  const scopedBuildsMatrix = process.env.SCOPED_BUILDS_MATRIX === "true" && process.env.EVENT_NAME === "pull_request";
   const scriptTestsSeparate = process.env.SCRIPT_TESTS_SEPARATE === "true";
 
   const log = new AgentReporter("VALIDATE RUN", isFull ? "Full Suite" : "Selective");
@@ -305,7 +306,7 @@ export async function runValidation() {
 
       const bundlerChanged = !hasChangedManifest || changedFiles.some((f) => BUNDLER_OR_CONFIG_RE.test(f));
       const labChanged = changedFiles.some((file) => file.startsWith("labs/"));
-      const hostingChanged = changedFiles.some(
+      const hostingChanged = !hasChangedManifest || changedFiles.some(
         (file) =>
           file.startsWith("playground/") || file.startsWith("public/") || file === "build/hosting.mjs",
       );

@@ -130,14 +130,15 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .validation-cache/passed
-          key: userscripts-validation-v2-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml') }}
+          key: userscripts-validation-v3-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', '.github/workflows/diagnostics.yml', 'tsconfig.react.json') }}
 
       - name: ✅ Validate affected code
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.validation_cache.outputs.cache-hit != 'true'
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
-          SCOPED_BUILDS_MATRIX: true
+          SCOPED_BUILDS_MATRIX: ${{ github.event_name == 'pull_request' }}
+          EVENT_NAME: ${{ github.event_name }}
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-changed.mjs run
