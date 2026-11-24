@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
   pages: write
   id-token: write
 
@@ -156,6 +157,19 @@ jobs:
         with:
           path: dist/pages
           name: github-pages-${{ github.run_attempt }}
+
+      - name: Wait for Pages artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
+        run: |
+          for attempt in $(seq 1 12); do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\" and .expired == false) | .id")
+            if [ -n "$count" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Pages artifact metadata did not become available"
+          exit 1
 
       - name: Reject outdated build before publishing
         run: node scripts/playground-pages.mjs --mode=check-latest
