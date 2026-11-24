@@ -40,7 +40,7 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
-          node scripts/find-fn.mjs --json --base "origin/${{ github.base_ref }}" > ast-audit-report.json
+          node scripts/find-fns.mjs --json --base "origin/${{ github.base_ref }}" > ast-audit-report.json
 
       - name: Publish Step Summary, Annotations & Upsert PR Comment
         env:
