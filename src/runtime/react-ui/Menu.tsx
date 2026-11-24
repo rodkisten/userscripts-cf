@@ -6,17 +6,28 @@ import type { RodMenuProps } from "./types";
 import { createInitialValues, loadPersistence, savePersistence } from "./core";
 import styles, { css as menuCss } from "./Menu.module.css";
 
-// Vite library/IIFE builds may not emit a standalone CSS asset. Install the
-// same scoped CSS once in the document so Radix portals stay styled on Safari.
-const MENU_STYLE_ID = "rod-react-menu-styles";
-if (typeof document !== "undefined" && !document.getElementById(MENU_STYLE_ID)) {
-  const style = document.createElement("style");
-  style.id = MENU_STYLE_ID;
-  style.textContent = menuCss;
-  document.head.appendChild(style);
-}
+import themeCss from "./theme.css?inline";
+import { registerShadowStyles } from "./shadow-styles";
 
 export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initialValues, className }) => {
+  const [portal, setPortal] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const host = document.createElement("div");
+    host.setAttribute("data-rod-menu-host", "");
+    const root = host.attachShadow({ mode: "open" });
+    const release = registerShadowStyles(root, [themeCss, menuCss]);
+    const container = document.createElement("div");
+    container.className = "rod-theme dark";
+    root.append(container);
+    document.body.append(host);
+    setPortal(container);
+    return () => {
+      release();
+      host.remove();
+      setPortal(null);
+    };
+  }, [isOpen]);
   const [values, setValues] = useState<Record<string, any>>(() => {
     const persisted = loadPersistence(schema.persistKey);
     return { ...createInitialValues(schema, initialValues), ...persisted };
@@ -46,7 +57,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         : surface === "popover"
           ? styles.surfacePopover
           : "";
-  if (!isOpen) return null;
+  if (!isOpen || !portal) return null;
 
   return (
     <Dialog.Root
@@ -56,12 +67,12 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
         if (!open) onClose();
       }}
     >
-      <Dialog.Portal container={typeof document !== "undefined" ? document.body : undefined}>
+      <Dialog.Portal container={portal}>
         {/* Non-modal prevents Radix from locking iOS Safari when content fails to paint. */}
         <Dialog.Content
           aria-label={schema.title || "Rod Menu"}
           aria-describedby={undefined}
-          className={`${styles.surface} ${surfaceClass} ${className || ""}`}
+          className={`bg-background text-foreground border-border ${styles.surface} ${surfaceClass} ${className || ""}`}
 
         >
           <Dialog.Title className={styles.accessibleTitle}>{schema.title || "Rod Menu"}</Dialog.Title>
