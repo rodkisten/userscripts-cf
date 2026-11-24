@@ -106,6 +106,7 @@ O `standalone` inclui todos os scripts e instala o Dock no sandbox. Cada instal�
 ## 2. Ciclo de vida
 
 1. `createRuntime` configura serviços compartilhados (menu, toaster, storage, clipboard conforme flags), listeners de navegação e regras do Script Manager.
+   O runtime mantém um observador de rede passivo por instância: falhas/HTTP 4xx+ são agrupadas no registro global de diagnósticos com URL, método, status, duração e previews textuais limitados de request/response; o observador é removido em `dispose()`.
 2. `ready` chama `navigate()`; o reconciliador compara a URL com `matches` e regras persistidas.
 3. Para cada módulo permitido e ainda inativo, cria `ctx` com `AbortController`, event bus, eventos compartilhados, estado, callbacks de cleanup e APIs.
 4. Executa `await module.init(ctx)`. Se retornar uma função, ela é registrada em `ctx.onDispose`. Se a URL mudar durante a inicialização, o contexto obsoleto é descartado.

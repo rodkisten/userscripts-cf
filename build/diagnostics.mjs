@@ -16,6 +16,7 @@ export function diagnosticPrelude(target, version, scripts) {
   const changeEvent = "rod-diagnostics:change";
   const MAX_HISTORY = 250;
   const MAX_SEEN_IDS = 1000;
+  const REMOTE_ENDPOINT = "https://manage.migos.club/error/capture";
 
   const root = window;
   let state = root[key];
@@ -74,7 +75,40 @@ export function diagnosticPrelude(target, version, scripts) {
     const redact = (value) =>
       String(value ?? "")
         .replace(BEARER_RE, "$1[REDACTED]")
-        .replace(SECRET_PARAM_RE, "$1[REDACTED]");
+        .replace(SECRET_PARAM_RE, "$1[REDACTED]")
+        .replace(/("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi, "$1[REDACTED]$2");
+
+    const safeDetails = (value) => {
+      if (value == null) return null;
+      try { return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000)); }
+      catch { return null; }
+    };
+
+    const sendRemote = (record) => {
+      try {
+        const payload = {
+          fingerprint: record.fingerprint,
+          script: record.script,
+          source: record.source,
+          message: String(record.message || "").slice(0, 4000),
+          stack: String(record.stack || "").slice(0, 4000),
+          url: String(record.url || "").slice(0, 2000),
+          count: record.count || 1,
+          firstSeen: record.firstSeen,
+          lastSeen: record.lastSeen,
+          request: safeDetails(record.request),
+          response: safeDetails(record.response),
+        };
+        void root.fetch(REMOTE_ENDPOINT, {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          keepalive: true,
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      } catch {}
+    };
 
     // ========================================================================
     // // @TODO: Mover para src/core/diagnostics/persistence.ts (quando bundled)
@@ -415,6 +449,8 @@ export function diagnosticPrelude(target, version, scripts) {
           record.writerCounts[tabId] = (record.writerCounts[tabId] || 0) + 1;
           record.count = sumWriterCounts(record.writerCounts);
           record.lastSeen = nowIso;
+          if (error?.request) record.request = safeDetails(error.request);
+          if (error?.response) record.response = safeDetails(error.response);
         } else {
           record = {
             fingerprint,
@@ -427,6 +463,8 @@ export function diagnosticPrelude(target, version, scripts) {
             firstSeen: nowIso,
             lastSeen: nowIso,
             url: (root.location?.origin || "") + (root.location?.pathname || ""),
+            request: safeDetails(error?.request),
+            response: safeDetails(error?.response),
           };
           state.history.unshift(record);
           historyIndex.set(fingerprint, record);
@@ -438,6 +476,7 @@ export function diagnosticPrelude(target, version, scripts) {
         persist();
 
         const snapshotRecord = { ...record, writerCounts: { ...record.writerCounts } };
+        sendRemote(snapshotRecord);
         durableQueue.push({
           id: `${tabId}:${++sequence}:${nowMs}`,
           fingerprint,

@@ -702,6 +702,12 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] Add bounded fetch/rebase/push retry to manual Prettier workflow, without force-push; stop on rebase conflicts and preserve other agents' commits.
 - [ ] Confirm the next formatter run and Rod AST/React checks before merge.
 
+### Manage error inbox integration (2026-11-24)
+
+- [x] Global diagnostic prelude posts captured runtime errors to `https://manage.migos.club/error/capture` without cookies; request/response previews are bounded and common credentials are redacted.
+- [x] Runtime network diagnostics attach method, URL, status, duration, content types and bounded text request/response previews for failed or 5xx requests.
+- [ ] Validate typecheck, runtime utilities and generated standalone/unified bundles; verify the authenticated Manage viewer and production CORS endpoint before release.
+
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.

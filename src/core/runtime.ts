@@ -423,6 +423,9 @@ export function createCoreRuntime(
     }) => Record<string, unknown>;
   },
 ) {
+  // Runtime-wide passive recorder: captures failed page requests once even
+  // when no individual userscript opts into diagnostics.
+  const stopNetworkDiagnostics = observeNetworkDiagnostics(host);
   const rod = initializeRodFeatures(host, options?.mountSharedReact);
   const updaterInstanceRef = { current: null as ReturnType<typeof createUpdateChecker> | null };
 
@@ -1138,6 +1141,7 @@ export function createCoreRuntime(
     },
     async dispose() {
       closed = true;
+      stopNetworkDiagnostics();
       if (options?.removeHelpers) {
         options.removeHelpers(installedHelpers);
       }
