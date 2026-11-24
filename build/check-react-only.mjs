@@ -50,10 +50,7 @@ export function inspectSolidReferences(source, filename = "source.tsx") {
       )
         report(node, "Solid require");
     }
-    if (
-      node.type === "TSImportType" &&
-      forbidden(node.source?.value ?? node.argument?.value)
-    ) {
+    if (node.type === "TSImportType" && forbidden(node.source?.value ?? node.argument?.value)) {
       report(node, "Solid type import");
     }
     if (node.type === "ImportAttribute" && forbidden(node.value?.value))
