@@ -140,6 +140,44 @@ describe("inspectable build artifacts", () => {
         ).toEqual([]);
       }
 
+      if (script.id === "page-repl") {
+        expect(target.dynamic).toBe(false);
+        expect(target.dynamicFiles).toEqual([]);
+        expect(target.dynamicImports).toBe(true);
+        expect(target.dynamicImportFiles).toContain("src/userscripts/page-repl/strategies.js");
+        expect(target.treeShaken).toBe(true);
+
+        for (const runtime of target.output.runtimes) {
+          expect(runtime.featureDefines.__ROD_FEATURE_REACT__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_STORAGE__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_UI__).toBe(true);
+
+          expect(runtime.featureDefines.__ROD_FEATURE_QUERY__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_TOASTER__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_CLIPBOARD__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_GM__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_DOM__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_HTTP__).toBe(false);
+
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const leakedFullRuntime = report.modules.filter(
+            (item) =>
+              item.renderedBytes > 0 &&
+              (item.id.includes("node_modules/@tanstack/query-core/") ||
+                item.id.includes("node_modules/sonner/") ||
+                item.id.endsWith("src/runtime/modular/features/clipboard.ts") ||
+                item.id.endsWith("src/runtime/modular/features/gm.ts") ||
+                item.id.endsWith("src/runtime/modular/features/dom.ts") ||
+                item.id.endsWith("src/runtime/modular/features/http.ts")),
+          );
+          expect(
+            leakedFullRuntime,
+            `page-repl retained full-runtime-only dependencies in ${runtime.world}`,
+          ).toEqual([]);
+        }
+      }
+
       if (script.id === "tiktok-cleaner" || script.id === "example-site") {
         for (const runtime of target.output.runtimes) {
           expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(false);
