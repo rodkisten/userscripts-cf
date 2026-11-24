@@ -1,4 +1,6 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
+import { Studio } from "../core/studio.js";
+import { state } from "../state/deck.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS, MEDIA_COMPONENT_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline";
@@ -296,4 +298,11 @@ release();
     cleanup,
     scan,
   };
+}
+
+
+export let SeekPreviews;
+
+export function initializeDeckSeekPreviews() {
+  SeekPreviews = createSeekPreviews(Studio, () => state.visual);
 }

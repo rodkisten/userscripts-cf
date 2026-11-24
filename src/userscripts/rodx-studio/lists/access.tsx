@@ -3,7 +3,14 @@ import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import ListNotebookSVGIcon from "../../../assets/icons/list-notebook.svg?component";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
-import { studioListIndex } from "./routes.js";
+
+export function studioListIndex(Studio) {
+  const profile = document.querySelector(NATIVE_X_SELECTORS.currentAccountLinks);
+  const fromLink = profile?.getAttribute("href")?.match(/^\/([\w]{1,15})\/?$/)?.[1];
+  const label = Studio.state.deck?.accountLabel?.replace(/^@/, "");
+  const user = fromLink || (/^[\w]{1,15}$/.test(label || "") ? label : "");
+  return user ? "/" + user + "/lists" : "/i/lists";
+}
 
 export function createListAccess(Studio, navigateSearch) {
   let footerButton, profileHost;

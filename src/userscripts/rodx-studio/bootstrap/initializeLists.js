@@ -1,3 +1,4 @@
+import { Studio } from "../core/studio.js";
 import {
   initializeListsAPP,
   initializeListsDB_NAME,
@@ -292,4 +293,10 @@ export function initializeLists() {
   initializeRodX_lists_239();
   initializeRodX_lists_240();
   initializeRodX_lists_241();
+}
+
+
+export function createListsModule() {
+  initializeLists();
+  return Studio.services.lists;
 }

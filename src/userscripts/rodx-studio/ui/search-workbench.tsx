@@ -20,7 +20,7 @@ import { Studio } from "../core/studio.js";
 import { nativeSearch } from "../feeds/local-limits.js";
 import { parseLocalDirectives } from "../feeds/local-rules.js";
 import { identityLabel } from "../identity/account.js";
-import { studioListIndex } from "../lists/routes.js";
+import { studioListIndex } from "../lists/access.tsx";
 import { captureCurrent } from "../search/actions.js";
 import { compactBlockTree, migrateLegacyTags, tray } from "../search/block-editing.js";
 import {

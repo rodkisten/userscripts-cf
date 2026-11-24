@@ -50,7 +50,7 @@ import { initializeDeckSeen } from "../tweets/seen.js";
 import { initializeDeckNativeTranslation } from "../translation/native.js";
 import { initializeDeckForeignTags } from "../translation/foreign-tags.tsx";
 import { initializeDeckVideoExperience } from "../media/experience.js";
-import { initializeDeckSeekPreviews } from "../media/previews.js";
+import { initializeDeckSeekPreviews } from "../media/seek-preview.tsx";
 import { initializeDeckPlayerPreference } from "../media/player.js";
 import { initializeDeckSearchAnchors } from "../search/anchors.tsx";
 import { initializeDeckVideoTransport } from "../media/transport.tsx";

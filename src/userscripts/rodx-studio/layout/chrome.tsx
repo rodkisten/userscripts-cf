@@ -5,11 +5,27 @@ import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../sele
 import { Studio } from "../core/studio.js";
 import { XDOM } from "../platform/selectors.js";
 import { state } from "../state/deck.js";
-import { studioContextLabel } from "../ui/context-label.js";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
+function studioContextLabel(Studio): string {
+  const path = location.pathname;
+  const query = new URL(location.href).searchParams.get("q");
+  if (path === "/search") {
+    return "Pesquisa · " + (query || "");
+  }
+  const listId = path.match(/\/(?:[\w]{1,15}\/)?lists\/(\d+)/)?.[1];
+  if (listId) {
+    const row = Studio.services.lists?.all().find((item) => item.id === listId);
+    return "Lista · " + (row ? Studio.services.lists.displayName(row) : "lista " + listId);
+  }
+  const user = path.match(/^\/([\w]{1,15})(?:\/(?:media|with_replies|highlights|articles))?\/?$/)?.[1];
+  return user && !/^(home|explore|notifications|messages|settings|bookmarks|i)$/.test(user)
+    ? "Perfil · @" + user
+    : "";
+}
+
 const ELEMENT_IDS = {
   activeTweetBar: "rodx-active-tweetbar",
 } as const;

@@ -1,6 +1,6 @@
 import { Studio } from "./core/studio.js";
 import { ScriptContext } from "../../core/runtime";
-import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
+import { initializeNetwork } from "./bootstrap/network.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
 import { configureSharedMount, disposeAllViews } from "./ui/react-mount.tsx";

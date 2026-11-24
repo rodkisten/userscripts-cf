@@ -5,7 +5,7 @@ import {
   COMPOSITE_SELECTORS,
   DOM_SELECTORS,
 } from "../../../selectors.js";
-import { createListsModule } from "../lists/index.js";
+import { createListsModule } from "../bootstrap/initializeLists.js";
 import { PREFIX } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { FeedFilters } from "../feeds/filters.tsx";
@@ -23,7 +23,7 @@ import { ImmersiveDownload } from "../media/download.tsx";
 import { VideoExperience } from "../media/experience.js";
 import { ImmersiveSwipe } from "../media/immersive.js";
 import { PlayerPreference } from "../media/player.js";
-import { SeekPreviews } from "../media/previews.js";
+import { SeekPreviews } from "../media/seek-preview.tsx";
 import { VideoTransport } from "../media/transport.tsx";
 import { ViewportPlayback } from "../media/viewport.js";
 import { XDOM } from "../platform/selectors.js";
