@@ -10,7 +10,7 @@ export function getGitHubClient(): GitHubClient {
     throw new Error('GITHUB_TOKEN não definido no ambiente.');
   }
 
-  const apiUrl = process.env.GITHUB_API_URL || '[https://api.github.com](https://api.github.com)';
+  const apiUrl = process.env.GITHUB_API_URL || 'https://api.github.com';
 
   return {
     async request<T>(endpoint: string, init?: RequestInit): Promise<T> {
