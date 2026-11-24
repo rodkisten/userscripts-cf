@@ -637,7 +637,7 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] Studio menus: aplicar a superfície Radix compartilhada, com bottom sheet alto, corpo rolável, abas presas no topo, ações fixas e controles de 16 px para Safari.
 - [x] Rod Dock: mover a folha de estilo para o Shadow DOM fora da árvore React e usar viewport dinâmico e rolagem vertical nativa no painel.
 - [x] `npm run typecheck:react`, `npm run check:react-roots`, Prettier e bundles seletivos `github-tools`, `rod-dock` e `rodx-studio` passaram localmente.
-- [ ] O typecheck global ainda falha com 18 TS2347 preexistentes em `src/userscripts/rodx-studio/ui/search-workbench.tsx` (chamadas genéricas em funções sem tipo); correção é acompanhada no P0.
+- [x] Corrigidos os 18 TS2347 em `search-workbench.tsx`: os acessos a `rootShadow` e `dockShadow` agora têm o tipo `ShadowRoot`, preservando as consultas DOM genéricas. `npm run typecheck` passou integralmente e `node build/build.mjs --targets=rodx-studio` compilou o bundle seletivo com sucesso (2026-11-24).
 - [ ] Fazer smoke test manual no Safari iPhone. Não foram criados/executados testes de UI ou userscript, conforme política vigente.
 
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.

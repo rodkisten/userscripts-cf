@@ -46,6 +46,7 @@ import { closePanel } from "./preferences.tsx";
 import { onClick, onFieldChange, onFileChange, onGroupToggle } from "./events.tsx";
 
 const cx = (value: string) => classNames(componentClasses, value);
+const rootShadow = (): ShadowRoot | null => state.rootShadow as ShadowRoot | null;
 
 // ============================================================================
 // 1. EXTRAÇÃO: theme-and-styles.ts (Tema dinâmico do X e cache de Shadow DOM)
@@ -159,7 +160,7 @@ export function inspectNativeQuery(query: unknown) {
 }
 
 export function displayPreview(): void {
-  const root = state.rootShadow;
+  const root = rootShadow();
   if (!root || !state.draft) return;
 
   const el = root.querySelector<HTMLElement>(RODX_SELECTORS.queryPreview);
@@ -229,7 +230,7 @@ export function displayPreview(): void {
 }
 
 export function validateRawWorkbench(text: string) {
-  const root = state.rootShadow;
+  const root = rootShadow();
   const target = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawStatus);
   const colored = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawHighlight);
   const list = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawIssues);
@@ -358,7 +359,7 @@ export function addChips(value: string, focus = true): void {
   renderBlockEditor();
 
   if (focus) {
-    state.rootShadow?.querySelector<HTMLInputElement>(RODX_SELECTORS.chipInput)?.focus();
+    rootShadow()?.querySelector<HTMLInputElement>(RODX_SELECTORS.chipInput)?.focus();
   }
 }
 
@@ -544,7 +545,7 @@ export function TagTray() {
 }
 
 export function renderTags(): void {
-  const container = state.rootShadow?.querySelector<HTMLElement>(RODX_SELECTORS.tagTray);
+  const container = rootShadow()?.querySelector<HTMLElement>(RODX_SELECTORS.tagTray);
   if (container && state.draft) {
     mountView(container, () => <TagTray />);
   }
@@ -904,7 +905,7 @@ export function BlockBuilder() {
 }
 
 export function renderBlockEditor(): void {
-  const container = state.rootShadow?.querySelector<HTMLElement>(RODX_SELECTORS.blocksContainer);
+  const container = rootShadow()?.querySelector<HTMLElement>(RODX_SELECTORS.blocksContainer);
   if (container && state.draft) {
     mountView(container, () => blockHTML(state.draft.blocks, 0, true));
   }
@@ -1646,7 +1647,7 @@ export function Workspace() {
 const boundDockShadows = new WeakSet<ShadowRoot>();
 
 export function renderRoot(): void {
-  const root = state.rootShadow;
+  const root = rootShadow();
   if (!root) return;
 
   applyXTheme(state.rootHost);
@@ -1678,7 +1679,7 @@ export function renderRoot(): void {
 }
 
 export function renderDock(): void {
-  const dock = state.dockShadow;
+  const dock = state.dockShadow as ShadowRoot | null;
   if (!dock) return;
 
   // Delegação única para listas do Studio (evita reatribuir onclick a cada render)
