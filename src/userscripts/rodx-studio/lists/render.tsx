@@ -34,7 +34,7 @@ import {
   tabArea,
   toggle,
 } from "./quick-picker.tsx";
-import { studioListIndex } from "./routes.js";
+import { studioListIndex } from "./access.tsx";
 import {
   ensureEmbeddedTimeline,
   removeEmbeddedTimeline,

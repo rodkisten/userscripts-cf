@@ -5,7 +5,7 @@ import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lis
 import { VERSION } from "../config/search.js";
 import { Studio } from "../core/studio.js";
 import { XClientLists } from "./client.js";
-import { studioListIndex } from "./routes.js";
+import { studioListIndex } from "./access.tsx";
 import { state } from "../state/deck.js";
 import { showRodxToast } from "../ui/runtime.tsx";
 
