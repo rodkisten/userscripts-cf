@@ -10,6 +10,7 @@ import {
   BLOCK_MEDIA,
   BLOCK_TYPES,
   GROUPS,
+  IDENT,
   MAX_BLOCK_DEPTH,
   MAX_BLOCK_NODES,
   MAX_VISIBLE,
@@ -43,6 +44,7 @@ import { gmAvailable } from "../storage/gm.js";
 import { Relay } from "../telegram/relay.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
 import { closePanel } from "./preferences.tsx";
+import { onClick, onFieldChange, onFileChange, onGroupToggle } from "./events.tsx";
 
 export function currentSearch() {
   return nativeSearch();
@@ -2225,5 +2227,90 @@ export function liveNativeQuery() {
 export function editNativeSearch() {
   captureCurrent();
   state.message = "Busca convertida em blocos editáveis. Operadores desconhecidos ficam como blocos livres.";
+  renderRoot();
+}
+
+
+export function initializeRoot() {
+  const host = document.createElement("div");
+  host.id = `${IDENT}-root`;
+  applyComponentStyle(host, "rx-root-host", false);
+  const shadow = host.attachShadow({
+    mode: "open",
+  });
+  shadow.addEventListener("click", onClick);
+  shadow.addEventListener("input", onFieldChange);
+  shadow.addEventListener("change", onFieldChange);
+  shadow.addEventListener("change", onFileChange);
+  shadow.addEventListener("toggle", onGroupToggle, true);
+  shadow.addEventListener("keydown", (event) => {
+    const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput);
+    if (!input) {
+return;
+}
+    if ((event as KeyboardEvent).key === "Enter" || (event as KeyboardEvent).key === "Tab") {
+      if ((input as HTMLInputElement).value.trim()) {
+        event.preventDefault();
+        try {
+          addChips((input as HTMLInputElement).value);
+        } catch (error) {
+          state.message = error.message;
+          renderRoot();
+        }
+      }
+    }
+    if ((event as KeyboardEvent).key === "Backspace" && !(input as HTMLInputElement).value) {
+      const t = tray();
+      if (t?.children.length) {
+        t.children.pop();
+        renderTags();
+        renderBlockEditor();
+      }
+    }
+  });
+  shadow.addEventListener("focusout", (event) => {
+    const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput);
+    if ((input as HTMLInputElement)?.value?.trim()) {
+      try {
+        addChips((input as HTMLInputElement).value, false);
+      } catch (error) {
+        state.message = error.message;
+        renderRoot();
+      }
+    }
+  });
+  // Escape hatch for iOS: drag downward on the header to return to the X timeline.
+  let yStart = null;
+  shadow.addEventListener(
+    "touchstart",
+    (event) => {
+      yStart = (event.target as HTMLElement).closest?.(RODX_SELECTORS.workspaceHeadRow)
+        ? (event as TouchEvent).touches[0]?.clientY
+        : null;
+    },
+    {
+      passive: true,
+    },
+  );
+  shadow.addEventListener(
+    "touchend",
+    (event) => {
+      if (yStart == null || !state.open) {
+return;
+}
+      const delta = ((event as TouchEvent).changedTouches[0]?.clientY ?? yStart) - yStart;
+      yStart = null;
+      if (delta > 110) {
+        state.open = false;
+        renderRoot();
+      }
+    },
+    {
+      passive: true,
+    },
+  );
+  document.body.append(host);
+  state.rootHost = host;
+  state.rootShadow = shadow;
   renderRoot();
 }

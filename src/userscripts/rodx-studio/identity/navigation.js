@@ -6,7 +6,7 @@ import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { loadAccount } from "../storage/account.js";
 import { ensureDock, repaint } from "../ui/dock.tsx";
-import { initializeRoot } from "../ui/root.tsx";
+import { initializeRoot } from "../ui/search-workbench.tsx";
 
 export function tick() {
   if (!document.body) {
