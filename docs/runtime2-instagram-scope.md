@@ -28,9 +28,12 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [x] Ignore acknowledgements for channels not requested by the current Relay batch when computing insertion totals.
 - [x] Validate Relay channel-array shapes before persisting confirmations and discard video variants with invalid dimensions.
 - [x] Preflight every per-item Relay acknowledgement before any checkpoint write, including malformed entries later in a batch.
+- [x] Follow-up PR: reject non-object channel confirmation payloads before any item in the batch is checkpointed.
+- [x] Reject mixed batches with non-retryable incomplete confirmations before writing any acknowledgements for that Relay response.
+- [x] Reject malformed Reel shortcodes before URL construction; reject null Instagram and Relay API responses with controlled errors and regression coverage.
 - [x] Skip malformed/null Instagram saved entries without interrupting the page, and safely classify malformed already-sent acknowledgements.
 - [ ] Verify ledger behavior against live Relay responses. Duplicate channel IDs fail before fetching, and confirmed timestamps are not overwritten.
-- [ ] Run targeted tests and TypeScript/build checks; the previous branch head had no reported workflow runs or commit statuses.
+- [x] Typecheck passed on commit `838cd36` in Actions run `44720958871`; the validation job also built 12 targets and generated 52 files. Instagram Saved feature tests remain intentionally absent.
 - [x] Route Instagram fetch and Relay GM requests through `ctx.http.request` with explicit transports, abort signal, no cache, HTTP status and Retry-After.
 - [ ] Verify GM bridge transport and cross-origin @connect grants in built Instagram userscript.
 - [x] Bind the visible Reel's native bookmark to its scoped publication identity and remount on swipe; refuse ambiguous multi-Reel identity.
@@ -39,10 +42,38 @@ Shared runtime modifications must be narrowly scoped, include Rod AST compatibil
 - [ ] Validate Safari iPhone, typecheck, selective builds, and Relay delivery.
 - [ ] Update README, Workboard and runtime lifecycle documentation after implementation and verification.
 
+## Radix collection controls
+
+The settings dialog uses Radix Checkbox for the automatic-sync toggle and the selected collection list. Users can add multiple collection IDs via comma/semicolon/whitespace input and Enter or blur, filter selected IDs with a local search field, see the selected count, and remove individual collections by unchecking them. The input parser now correctly recognizes whitespace rather than a literal backslash-s sequence. The list is mobile-scrollable and retains the existing settings persistence. Automatic collection discovery is **not** implemented yet; no undocumented Instagram endpoint is assumed. A future discovery adapter must be verified against live account responses before exposing collection names or thumbnails.
+
+## Configuration and concurrency feedback
+
+A manual run now explains missing collection IDs, Relay token, destination channels or Instagram login instead of silently returning. Manual synchronization is allowed even if the automatic schedule is disabled; the scheduled path still respects the automatic-sync toggle. If another tab owns the account's Web Lock, the panel displays a concurrency message rather than appearing to complete successfully. No Instagram Saved automated tests were introduced.
+
+## Manual sync control
+
+The Saved panel exposes a touch-friendly **Sync now** action beside Settings. It calls the existing manual sync entrypoint, disables itself while a run is active and keeps the progress/status visible. It does not bypass account, lock, collection or Relay configuration safeguards. Safari verification remains pending.
+
+## Collection progress
+
+The React Saved panel now reports the current collection position, total selected collections, active collection ID, per-collection processed media count and cumulative number of newly sent media items. The core emits progress after each completed batch, without assuming the number of remaining Instagram pages. Progress is cleared after completion or failure; persistent error messaging remains available. This is collection-level progress, not an estimated per-Reel completion percentage. Safari verification remains pending.
+
+## Session limits and safe resume
+
+`maxItemsPerSession` now caps the number of eligible Reels actually processed **across all selected collections in a run**, not separately for each collection. The runner subtracts each collection's processed count from the remaining session budget and stops before starting another collection once exhausted. This also applies when an Instagram page contains more items than the remaining limit. If the cap cuts a page short, the current collection cursor is retained rather than advancing to the next page; on the next run, the per-channel delivery ledger skips confirmed Reels and resumes the remaining items. This behavior has not been verified on Safari. Instagram Saved automated tests remain intentionally disabled.
+
 ## Current verification
 
-Source hardening, account-switch guards, per-channel ledger and utility regression tests committed; **tests have not been executed, and no typecheck, build, or Safari verification is claimed**. Git clone in the execution container failed because github.com DNS resolution is unavailable. No deployment requested. Do not merge until validated.
+Source hardening, account-switch guards and per-channel ledger committed; **Instagram Saved feature tests are intentionally absent. Typecheck and the general build completed in Actions run `44720958871`; the scoped build job was skipped because the broader validation failed on unrelated formatting/style issues. Safari verification is still pending**. Git clone in the execution container failed because github.com DNS resolution is unavailable. No deployment requested. Do not merge until validated.
 
 ## Coordination
 
 The concurrent React migration PR #120 owns React-only cleanup. Avoid changing its files. Rebase after it lands, resolve conflicts by preserving both sets of changes, and rerun validation.
+
+## Bookmark failure and retry safety
+
+The React bookmark action now remains actionable after an error, preserving the visible error state until a retry or a different Reel becomes active. A native bookmark already in the saved state is **not** interpreted as proof that the configured collections were selected; this path reports a clear error instead of claiming collection delivery. Errors after native saving likewise remain errors rather than being converted into success merely because the native bookmark is filled. Automatic discovery of collection names and a verified native collection-picker flow remain pending. No Instagram Saved tests were added or run.
+
+## Native Instagram collection picker guard
+
+The native collection lookup now requires a visible option with an exact `data-collection-id` inside a dialog/menu/listbox, with bounded waiting for asynchronous rendering. Matching arbitrary text labels is forbidden because names are not stable IDs. Until an authenticated Instagram response provides a verifiable membership confirmation, the script does not click collection options or claim successful collection association. The native save action may already have occurred; the user receives explicit manual-selection guidance. Radix remains the UI foundation for the userscript settings; no Instagram Saved tests were introduced.

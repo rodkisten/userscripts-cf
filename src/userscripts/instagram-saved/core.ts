@@ -46,6 +46,7 @@ export type SyncOptions = {
     jitterMs?: number;
   };
   onCursor?: (cursor: string) => Promise<unknown>;
+  onProgress?: (progress: { processed: number; sent: number; pageEligible: number }) => void;
   loadChannels?: () => Promise<Record<string, Record<string, number>>>;
   saveChannels?: (ledger: Record<string, Record<string, number>>) => Promise<unknown>;
 };
@@ -62,7 +63,7 @@ export function reelPayload(raw: Reel): MediaPayload | null {
     typeof m !== "object" ||
     m.product_type !== "clips" ||
     typeof m.code !== "string" ||
-    !m.code.trim()
+    !/^[A-Za-z0-9_-]+$/.test(m.code)
   ) {
     return null;
   }
@@ -144,10 +145,11 @@ export async function syncSaved({
   onCursor,
   loadChannels,
   saveChannels,
+  onProgress,
 }: SyncOptions) {
   if (
     !channels.length ||
-    channels.some((channel) => !channel.trim()) ||
+    channels.some((channel) => typeof channel !== "string" || !channel.trim()) ||
     new Set(channels).size !== channels.length
   ) {
     throw Error("Configure pelo menos um canal válido para sincronizar");
@@ -196,7 +198,7 @@ export async function syncSaved({
     signal?.throwIfAborted();
     const page = await fetchPage(cursor);
     signal?.throwIfAborted();
-    if (!Array.isArray(page.items) || page.status === "fail") {
+    if (!page || !Array.isArray(page.items) || page.status === "fail") {
       throw Error("Resposta de salvos inválida");
     }
     const items = page.items
@@ -209,10 +211,16 @@ export async function syncSaved({
         seen.add(item.mediaId);
         return !confirmed(item.mediaId);
       });
-    // Never advance the collection cursor past an unprocessed item.
-    // A page is the smallest safe checkpoint with this endpoint.
-    for (let offset = 0; offset < items.length; offset += limit) {
-      const batch = items.slice(offset, offset + limit);
+    // A partial page must keep its current cursor so the remaining Reels
+    // are revisited next session. Already acknowledged items are skipped.
+    const remaining = maxItems - processed;
+    if (remaining <= 0) {
+      return count;
+    }
+    const limitedItems = items.slice(0, remaining);
+    onProgress?.({ processed, sent: count, pageEligible: limitedItems.length });
+    for (let offset = 0; offset < limitedItems.length; offset += limit) {
+      const batch = limitedItems.slice(offset, offset + limit);
       const groups = new Map<string, { channels: string[]; items: MediaPayload[] }>();
       for (const item of batch) {
         const missing = ledger
@@ -236,7 +244,11 @@ export async function syncSaved({
             signal?.throwIfAborted();
             const response = await sendBatch(job.items, job.channels);
             signal?.throwIfAborted();
-            if (!Array.isArray(response.results)) {
+            if (
+              !response ||
+              !Array.isArray(response.results) ||
+              response.results.length !== job.items.length
+            ) {
               throw Error("Relay sem confirmação por item");
             }
             const byIndex = new Map<number, DeliveryResult>();
@@ -265,8 +277,11 @@ export async function syncSaved({
               }
               const channelResult = result.channels;
               if (
-                channelResult &&
-                ((channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
+                channelResult !== undefined &&
+                (channelResult === null ||
+                  typeof channelResult !== "object" ||
+                  Array.isArray(channelResult) ||
+                  (channelResult.inserted !== undefined && !Array.isArray(channelResult.inserted)) ||
                   (channelResult.covered !== undefined && !Array.isArray(channelResult.covered)) ||
                   (channelResult.notSent !== undefined && !Array.isArray(channelResult.notSent)) ||
                   (channelResult.inserted || []).some((id) => typeof id !== "string") ||
@@ -277,6 +292,19 @@ export async function syncSaved({
                   ))
               ) {
                 throw Error("Relay retornou confirmação de canais inválida");
+              }
+            }
+            // Also reject non-retryable incomplete deliveries before writing any
+            // acknowledgements from this response. A mixed 200/400 response
+            // must not partially checkpoint an otherwise rejected batch.
+            for (let i = 0; i < job.items.length; i++) {
+              const result = byIndex.get(i)!;
+              const status = classify(result, job.channels);
+              if (
+                !status.complete &&
+                !(result.status === 429 || (result.status !== undefined && result.status >= 500))
+              ) {
+                throw Error("Entrega não confirmada; sincronização interrompida");
               }
             }
             for (let i = 0; i < job.items.length; i++) {
@@ -321,9 +349,6 @@ export async function syncSaved({
                 }
                 continue;
               }
-              if (!(result.status === 429 || (result.status !== undefined && result.status >= 500))) {
-                throw Error("Entrega não confirmada; sincronização interrompida");
-              }
               const missing = ledger
                 ? job.channels.filter((channel) => !Object.hasOwn(ledger[item.mediaId] || {}, channel))
                 : job.channels;
@@ -351,10 +376,16 @@ export async function syncSaved({
         }
       }
       processed += batch.length;
+      onProgress?.({ processed, sent: count, pageEligible: limitedItems.length });
       await pause(
         Math.max(0, Number(settings.delayMs) || 0) +
           Math.random() * Math.max(0, Number(settings.jitterMs) || 0),
       );
+    }
+    // Do not persist the next page cursor if some eligible items remain.
+    // The per-channel ledger lets the next run safely replay this page.
+    if (limitedItems.length < items.length) {
+      return count;
     }
     pages++;
     const next = page.next_max_id;
