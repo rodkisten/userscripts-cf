@@ -71,17 +71,11 @@ function createFeatureShimPlugin(featureDefines) {
     resolveId(source) {
       const normalized = source.replaceAll("\\", "/");
 
-      if (
-        disabled.storage &&
-        /(?:^|\/)runtime\/modular\/features\/storage\.(?:js|ts)$/.test(normalized)
-      ) {
+      if (disabled.storage && /(?:^|\/)runtime\/modular\/features\/storage\.(?:js|ts)$/.test(normalized)) {
         return virtualIDs.storage;
       }
 
-      if (
-        disabled.menu &&
-        /(?:^|\/)runtime\/modular\/features\/menu\.(?:js|ts)$/.test(normalized)
-      ) {
+      if (disabled.menu && /(?:^|\/)runtime\/modular\/features\/menu\.(?:js|ts)$/.test(normalized)) {
         return virtualIDs.menu;
       }
 

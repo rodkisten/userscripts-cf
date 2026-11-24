@@ -899,8 +899,7 @@ export function createCoreRuntime(
       : {};
 
     const instanceMenu =
-      (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) &&
-      options?.mountSharedReact
+      (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) && options?.mountSharedReact
         ? createMenuFeature({
             container: ensureUIRoot,
             onDispose,
