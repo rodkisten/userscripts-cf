@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { RodMenu, RodMenuHost } from "./index.js";
 import {
   matches,
   readScriptRules,
@@ -11,7 +10,7 @@ import {
 } from "../../core/script-manager.js";
 import { getDiagnostics } from "../diagnostics.js";
 
-export type DockAction = { id: string; label: string; run: () => void };
+export type DockAction = { id: string; label: string; run: () => void; reorder?: (targetId: string) => void };
 export type DockModule = { id: string; name: string; actions: DockAction[] };
 export type DockScript = {
   id: string;
@@ -29,9 +28,10 @@ type DockController = {
   setOpen: (value: boolean) => void;
   portal: HTMLElement;
 };
+const DOCK_POSITION_KEY = "rod-dock:position";
 const css = `
-:host{all:initial;color-scheme:dark;font-family:ui-sans-serif,system-ui,sans-serif}
-*{box-sizing:border-box}
+:host{all:initial;color-scheme:dark;font-family:ui-sans-serif,system-ui,sans-serif;position:fixed;inset:0;z-index:2147483646;pointer-events:none}
+*{box-sizing:border-box}\n.rod-dock-root{position:fixed;inset:0;pointer-events:none}\n.rod-dock-root>*{pointer-events:auto}
 .launcher{pointer-events:auto;position:fixed;right:0;top:46%;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:white;box-shadow:0 4px 22px #0006;cursor:pointer}
 .overlay{position:fixed;inset:0;background:#0009;z-index:2147483646;pointer-events:auto}
 .panel{pointer-events:auto;position:fixed;top:0;right:0;bottom:0;width:min(420px,94vw);background:#09090b;color:#fafafa;border-left:1px solid #3f3f46;padding:18px;overflow:auto;z-index:2147483647;box-shadow:-12px 0 48px #0007}
@@ -42,6 +42,9 @@ button{font:inherit;cursor:pointer}
 .module summary{cursor:pointer;font-weight:600}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .action{font-size:13px}
+.action[draggable="true"]{touch-action:none;user-select:none;cursor:grab}
+.action[draggable="true"]:active{cursor:grabbing}
+.action.drop-target{outline:2px solid #a78bfa;outline-offset:2px}
 .script{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #27272a}
 .script small{display:block;color:#a1a1aa;margin-top:3px}
 input[type=checkbox]{accent-color:#a78bfa;width:18px;height:18px}
@@ -51,7 +54,11 @@ function DockView({ controller }: { controller: DockController }) {
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
   const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState(46);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSearch, setSettingsSearch] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [suppressClick, setSuppressClick] = useState<string | null>(null);
   useEffect(() => {
     const refresh = () => setDiagnostics([...(getDiagnostics()?.history ?? [])]);
     document.addEventListener("rod-diagnostics:change", refresh);
@@ -82,29 +89,6 @@ function DockView({ controller }: { controller: DockController }) {
   return (
     <>
       <style>{css}</style>
-      <RodMenuHost />
-      {!open && (
-        <button
-          className="launcher"
-          style={{ top: `${position}%`, touchAction: "none" }}
-          aria-label="Abrir Rod Dock"
-          onPointerDown={(event) => {
-            const startY = event.clientY;
-            const start = position;
-            const onMove = (next: PointerEvent) =>
-              setPosition(Math.max(12, Math.min(88, start + ((next.clientY - startY) * 100) / innerHeight)));
-            const onEnd = () => {
-              window.removeEventListener("pointermove", onMove);
-              window.removeEventListener("pointerup", onEnd);
-            };
-            window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onEnd, { once: true });
-          }}
-          onClick={() => setOpen(true)}
-        >
-          ☰
-        </button>
-      )}
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal container={portal}>
           <Dialog.Overlay className="overlay" />
@@ -119,24 +103,8 @@ function DockView({ controller }: { controller: DockController }) {
             <button
               className="action"
               onClick={() => {
-                setOpen(false);
-                RodMenu.open({
-                  id: "rod-dock-settings",
-                  title: "Preferências do Rod Dock",
-                  surface: "modal",
-                  fields: [{ id: "filter", type: "search", label: "Filtrar scripts", defaultValue: search }],
-                  actions: [
-                    {
-                      id: "apply",
-                      label: "Aplicar",
-                      onClick: ({ values, close }) => {
-                        setSearch(String(values.filter ?? ""));
-                        close();
-                      },
-                    },
-                    { id: "cancel", label: "Cancelar", role: "cancel", variant: "secondary" },
-                  ],
-                });
+                setSettingsSearch(search);
+                setSettingsOpen(true);
               }}
             >
               Preferências
@@ -191,7 +159,72 @@ function DockView({ controller }: { controller: DockController }) {
                 <summary>{module.name}</summary>
                 <div className="actions">
                   {module.actions.map((action) => (
-                    <button className="action" key={action.id} onClick={() => action.run()}>
+                    <button
+                      className={`action${dropTarget === action.id ? " drop-target" : ""}`}
+                      key={action.id}
+                      onClick={(event) => {
+                        if (suppressClick === action.id) {
+                          event.preventDefault();
+                          setSuppressClick(null);
+                          return;
+                        }
+                        action.run();
+                      }}
+                      onPointerDown={(event) => {
+                        if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) return;
+                        const source = event.currentTarget;
+                        const startX = event.clientX;
+                        const startY = event.clientY;
+                        let moved = false;
+                        source.setPointerCapture(event.pointerId);
+                        const move = (next: PointerEvent) => {
+                          if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) return;
+                          moved = true;
+                          setDragging(action.id);
+                          const target =
+                            source.getRootNode() instanceof ShadowRoot
+                              ? (source.getRootNode() as ShadowRoot).elementFromPoint(
+                                  next.clientX,
+                                  next.clientY,
+                                )
+                              : document.elementFromPoint(next.clientX, next.clientY);
+                          setDropTarget(
+                            target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
+                          );
+                        };
+                        const finish = (next: PointerEvent) => {
+                          source.removeEventListener("pointermove", move);
+                          source.removeEventListener("pointerup", finish);
+                          source.removeEventListener("pointercancel", cancel);
+                          const target = (source.getRootNode() as ShadowRoot).elementFromPoint(
+                            next.clientX,
+                            next.clientY,
+                          );
+                          const targetId = target
+                            ?.closest?.("[data-reorder-id]")
+                            ?.getAttribute("data-reorder-id");
+                          setDragging(null);
+                          setDropTarget(null);
+                          if (moved) {
+                            setSuppressClick(action.id);
+                            if (targetId && targetId !== action.id) action.reorder?.(targetId);
+                          }
+                        };
+                        const cancel = () => {
+                          setDragging(null);
+                          setDropTarget(null);
+                          source.removeEventListener("pointermove", move);
+                          source.removeEventListener("pointerup", finish);
+                          source.removeEventListener("pointercancel", cancel);
+                        };
+                        source.addEventListener("pointermove", move);
+                        source.addEventListener("pointerup", finish);
+                        source.addEventListener("pointercancel", cancel, { once: true });
+                      }}
+                      data-reorder-id={action.reorder ? action.id : undefined}
+                      aria-grabbed={action.reorder ? dragging === action.id : undefined}
+                      style={action.reorder ? { touchAction: "none" } : undefined}
+                    >
                       {action.label}
                     </button>
                   ))}
@@ -229,6 +262,48 @@ function DockView({ controller }: { controller: DockController }) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+      <Dialog.Root open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <Dialog.Portal container={portal}>
+          <Dialog.Overlay className="overlay" />
+          <Dialog.Content className="panel" aria-describedby={undefined}>
+            <header>
+              <Dialog.Title>Preferências do Rod Dock</Dialog.Title>
+              <Dialog.Close className="close" aria-label="Fechar preferências">
+                ✕
+              </Dialog.Close>
+            </header>
+            <label htmlFor="rod-dock-filter">Filtrar scripts</label>
+            <input
+              id="rod-dock-filter"
+              type="search"
+              value={settingsSearch}
+              onChange={(event) => setSettingsSearch(event.target.value)}
+              placeholder="Buscar script..."
+              style={{
+                width: "100%",
+                padding: 10,
+                marginBlock: 12,
+                borderRadius: 8,
+                background: "#27272a",
+                color: "white",
+                border: "1px solid #3f3f46",
+              }}
+            />
+            <div className="actions">
+              <button
+                className="action"
+                onClick={() => {
+                  setSearch(settingsSearch);
+                  setSettingsOpen(false);
+                }}
+              >
+                Aplicar
+              </button>
+              <Dialog.Close className="close">Cancelar</Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   );
 }
@@ -253,13 +328,54 @@ export function installRodDock({
     container: HTMLElement,
   ) => { update: (component: ReactElement) => void; dispose: () => void };
 }) {
+  const existing = document.querySelector<HTMLElement>("[data-rod-dock]");
+  if (existing) existing.remove();
   const host = document.createElement("div");
   host.dataset.rodDock = "";
-  host.style.cssText = "position:fixed;inset:0;width:0;height:0;z-index:2147483646;pointer-events:none";
+  host.style.cssText = "position:fixed;inset:0;z-index:2147483646;pointer-events:none";
   const shadow = host.attachShadow({ mode: "open" });
   const mountPoint = document.createElement("div");
   const portalPoint = document.createElement("div");
+  mountPoint.className = "rod-dock-root";
+  portalPoint.className = "rod-dock-root";
   shadow.append(mountPoint, portalPoint);
+  const launcher = document.createElement("button");
+  launcher.className = "launcher";
+  launcher.type = "button";
+  launcher.textContent = "☰";
+  launcher.setAttribute("aria-label", "Abrir Rod Dock");
+  launcher.style.cssText =
+    "position:fixed;right:0;top:46%;z-index:2147483647;pointer-events:auto;touch-action:none;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:#fff;font-size:18px";
+  shadow.append(launcher);
+  const saved = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  if (Number.isFinite(saved) && saved >= 12 && saved <= 88) launcher.style.top = saved + "%";
+  let dragStart: { x: number; y: number; top: number; moved: boolean } | null = null;
+  launcher.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    dragStart = { x: event.clientX, y: event.clientY, top: parseFloat(launcher.style.top), moved: false };
+    launcher.setPointerCapture(event.pointerId);
+  });
+  launcher.addEventListener("pointermove", (event) => {
+    if (!dragStart) return;
+    if (!dragStart.moved && Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y) < 10) return;
+    dragStart.moved = true;
+    launcher.style.top =
+      Math.max(12, Math.min(88, dragStart.top + ((event.clientY - dragStart.y) * 100) / window.innerHeight)) +
+      "%";
+  });
+  launcher.addEventListener("pointerup", () => {
+    if (!dragStart) return;
+    const moved = dragStart.moved;
+    dragStart = null;
+    if (moved) localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+    else setOpen(true);
+  });
+  launcher.addEventListener("pointercancel", () => {
+    dragStart = null;
+  });
+  launcher.addEventListener("click", (event) => {
+    if (event.detail === 0) setOpen(true);
+  });
   let sharedMount: ReturnType<NonNullable<typeof mountSharedReact>> | undefined;
   let disposed = false;
   let currentModules = modules;
@@ -276,6 +392,7 @@ export function installRodDock({
   };
   const setOpen = (next: boolean) => {
     isOpen = next;
+    launcher.hidden = next;
     render();
   };
   const setModules = (next: DockModule[]) => {
@@ -314,6 +431,8 @@ export function installRodDock({
   document.addEventListener("rod-dock:menu", onMenu);
   (document.body ?? document.documentElement).append(host);
   render();
+  // Notify late-loading feature modules that the shared Dock is ready to accept registrations.
+  document.dispatchEvent(new CustomEvent("rod-dock:ready"));
   const command =
     typeof registerMenu === "function" ? registerMenu("Abrir Rod Dock", () => setOpen(true)) : null;
   return {
@@ -325,7 +444,6 @@ export function installRodDock({
       disposed = true;
       document.removeEventListener("rod-dock:registry", onRegistration);
       document.removeEventListener("rod-dock:menu", onMenu);
-      RodMenu.close();
       sharedMount?.dispose();
       host.remove();
       if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function")

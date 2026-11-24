@@ -1,3 +1,7 @@
+## PR preview deployment
+
+PR preview workflow now builds numbered installers and deploys each PR to an isolated Cloudflare Pages branch (`pr-<number>`). It requires repository variable `USERSCRIPTS_PREVIEW_PAGES_PROJECT` and secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The PR comment receives the actual Cloudflare `*.pages.dev` URL only after a successful HTTP verification. The custom `userscripts.preview.migos.club/<number>/` path remains a separate routing task; preview cleanup after merge is not yet implemented.
+
 > **PR #120 · merge cleanup (2026-11-20):** The merge with main reintroduced duplicate `fmt` and `BuildReporter` declarations in `build/build.mjs`, causing the React 19 build to fail at parse time. Removed the duplicated implementations, retained imports from shared modules, and re-exported the public symbols for compatibility. Prettier and lint still require validation.
 
 > **PR #120 · HTTP interceptor typing (2026-11-20):** Validation job #136233221152 identified two TS2353 errors in Instagram Saved because the interceptor's `request` type discarded the shared `HttpRequestOptions` extensions (`transport`, `cacheMode`, `timeoutMs`). The interceptor now preserves the HTTP client's request options type, without changing request behavior. Prettier remains pending on five files.

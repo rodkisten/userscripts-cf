@@ -331,3 +331,23 @@ select:focus-visible {
     transition: none;
   }
 }
+
+/* Interactive laboratory: compact controls and readable diagnostics on mobile. */
+.studio-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.studio-toolbar > button:not(.studio-primary), .studio-diagnostics .studio-panel-head button {
+  background: #282432; color: #eae8f2; border: 1px solid #494052;
+  border-radius: 10px; min-height: 44px; padding: 9px 14px;
+}
+.studio-diagnostics { display: grid; gap: 14px; }
+.studio-diagnostics .studio-panel-head { margin: 0; }
+.studio-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.studio-metrics > div { padding: 14px; background: #25212f; border: 1px solid #40374e; border-radius: 12px; display: grid; gap: 3px; }
+.studio-metrics strong { font-size: clamp(14px, 3vw, 23px); overflow-wrap: anywhere; }
+.studio-metrics span { font-size: 11px; color: #aaa4bb; }
+.studio-json { margin: 0; padding: 14px; background: #111019; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto; font-size: 12px; }
+.studio-event-log { display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+.studio-event-log > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; padding: 10px; background: #211d2b; border-radius: 9px; font-size: 12px; }
+.studio-event-log time { color: #a99bbd; font-variant-numeric: tabular-nums; }
+.studio-event-log strong { color: #c9aaff; }
+.studio-event-log span { color: #c7c1d2; }
+@media (max-width: 480px) { .studio-toolbar { width: 100%; } .studio-toolbar > button { flex: 1; } .studio-metrics { gap: 6px; } .studio-metrics > div { padding: 9px; } }

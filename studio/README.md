@@ -20,7 +20,7 @@ The catalog has input types (text, email, password, search, URL, telephone), num
 
 RodMenu presentations: bottom-sheet, centered modal, right drawer and compact centered popover. The popover is **not yet anchored** to a trigger. Dialog focus management, Escape and outside-click dismissal are handled by Radix.
 
-The Inspector tab shows the current menu schema and last submitted values. The Code tab shows a copyable API example in read-only CodeMirror 6. The displayed example omits executable callback bodies, which must be supplied by the consumer.
+The interactive laboratory provides quick actions for bottom-sheet, modal, drawer and popover, a programmatic close button, a bounded timestamped event log, open counters and submitted-value JSON. It also records demo selection, reset and submit actions. The open/closed indicator reflects the menu state at the latest Studio render, not a subscription to all dismissals. The Inspector tab shows the current menu schema, recent events and last submitted values. The Code tab shows a copyable API example in read-only CodeMirror 6. The displayed example omits executable callback bodies, which must be supplied by the consumer.
 
 ## Mandatory feature documentation policy
 
@@ -52,3 +52,13 @@ Before merge, smoke-test on iPhone Safari: menu focus, Escape with hardware keyb
 - No multi-select, radio groups, file/media controls, tabs, or custom renderers in the React menu schema.
 - No real iframe device emulation.
 - Build and browser validation are required before production release.
+
+## Shared playground diagnostics
+
+`playground/capture.js` is injected inline by `build/hosting.mjs` into every emitted HTML page, before application scripts. It installs exactly one page-wide capture registry (`window.__rodPlaygroundCaptureV1`) and one Shadow DOM panel per document. The collapsible 🩺 Logs control collects `console.log/info/warn/error/debug`, `window.error`, resource errors, and unhandled promise rejections; repeated identical messages are counted, the log is capped, and messages are redacted for common credentials. The collector forwards console calls to their original implementations and never mounts a second React root. The dedicated Diagnostics Playground remains independent and is not replaced by this panel.
+
+The capture panel is local to the page and does not transmit logs to a server. It intentionally does not capture network bodies or intercept fetch/XHR. Use the panel to inspect failures on iOS Safari when the Studio menu does not appear.
+
+## Portal styling diagnostics
+
+The menu injects the compiled CSS exported by the custom CSS Modules plugin, matching the generated class names. Portal inspection records viewport coordinates, computed positioning, stacking order, class names and the presence of the injected stylesheet. A bottom sheet should have fixed positioning and a non-auto stacking order.

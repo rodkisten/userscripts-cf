@@ -34,6 +34,17 @@ describe("runtime feature selection", () => {
       ),
     ).toEqual({ features: ["toaster"], dynamic: false });
   });
+  it("treats a ctx function parameter as a fresh runtime context binding", () => {
+    expect(analyzeRuntimeUsage("export const open = (ctx) => ctx.menu.open();")).toEqual({
+      features: ["menu"],
+      dynamic: false,
+    });
+    expect(analyzeRuntimeUsage("export const read = (ctx, key) => ctx[key];")).toEqual({
+      features: [],
+      dynamic: true,
+    });
+  });
+
   it("tracks transitive context aliases", () => {
     expect(
       analyzeRuntimeUsage("const a = ctx; const b = a; b.menu.open(); b[\`toaster\`].success('ok');"),

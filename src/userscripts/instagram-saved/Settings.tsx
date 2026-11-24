@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import styles, { css } from "./Settings.module.css";
 export { css };
 
@@ -15,26 +16,53 @@ export type Form = {
 };
 export function SavedPanel({
   onOpen,
+  onSync,
   running,
   error,
+  progress,
 }: {
   onOpen: () => void;
+  onSync: () => void;
   running?: boolean;
   error?: string;
+  progress?: {
+    current: number;
+    total: number;
+    collection: string;
+    sent: number;
+    processed: number;
+    pageEligible: number;
+  };
 }) {
   return (
     <section className={styles.panel}>
       <style>{css}</style>
       <p>Sincronize as coleções escolhidas com o Relay, sem reenviar itens confirmados.</p>
-      <p role="status">{running ? "Sincronizando…" : error || "Pronto"}</p>
-      <button type="button" onClick={onOpen}>
-        ⚙ Configurações de salvos
-      </button>
+      <p role="status">
+        {running
+          ? progress
+            ? `Coleção ${progress.current}/${progress.total}: ${progress.collection} · ${progress.processed} processada(s) · ${progress.sent} enviada(s)`
+            : "Preparando sincronização…"
+          : error || "Pronto"}
+      </p>
+      <div className={styles.actions}>
+        <button type="button" onClick={onSync} disabled={running}>
+          {running ? "⏳ Sincronizando" : "↻ Sincronizar agora"}
+        </button>
+        <button type="button" onClick={onOpen}>
+          ⚙ Configurações
+        </button>
+      </div>
     </section>
   );
 }
 export function SavedSettings({ settings, onChange }: { settings: Form; onChange: (next: Form) => void }) {
   const [form, setForm] = useState<Form>(() => ({ ...settings }));
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const visibleCollectionIds = useMemo(
+    () => form.collectionIds.filter((id) => id.toLowerCase().includes(collectionSearch.trim().toLowerCase())),
+    [form.collectionIds, collectionSearch],
+  );
   const update = (patch: Partial<Form>) => {
     const next = { ...form, ...patch };
     setForm(next);
@@ -43,7 +71,7 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
   const ids = (raw: string) => [
     ...new Set(
       raw
-        .split(/[,;\\s]+/)
+        .split(/[,;\s]+/)
         .map((id) => id.trim())
         .filter(Boolean),
     ),
@@ -52,20 +80,100 @@ export function SavedSettings({ settings, onChange }: { settings: Form; onChange
     <section className={styles.panel}>
       <style>{css}</style>
       <label className={styles.toggle}>
-        <input
-          type="checkbox"
-          checked={form.enabled}
-          onChange={(event) => update({ enabled: event.currentTarget.checked })}
-        />
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger
+            type="button"
+            className={styles.radixCheckbox}
+            aria-label="Configurar sincronização automática"
+          >
+            {form.enabled ? "✓" : "○"}
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className={styles.collectionMenu} sideOffset={6}>
+              <DropdownMenu.CheckboxItem
+                checked={form.enabled}
+                onCheckedChange={(checked) => update({ enabled: checked === true })}
+              >
+                <DropdownMenu.ItemIndicator>✓ </DropdownMenu.ItemIndicator>
+                Sincronização automática
+              </DropdownMenu.CheckboxItem>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         Sincronização automática
       </label>
-      <label>
-        IDs das coleções (separados por vírgula)
-        <input
-          value={form.collectionIds.join(", ")}
-          onChange={(event) => update({ collectionIds: ids(event.currentTarget.value) })}
-        />
-      </label>
+      <fieldset className={styles.collectionPicker}>
+        <legend>Coleções selecionadas</legend>
+        <label>
+          Buscar nas coleções selecionadas
+          <input
+            type="search"
+            value={collectionSearch}
+            onChange={(event) => setCollectionSearch(event.currentTarget.value)}
+            placeholder="Filtrar IDs selecionados"
+          />
+        </label>
+        {form.collectionIds.length ? (
+          <div className={styles.collectionList}>
+            {visibleCollectionIds.map((id) => (
+              <label key={id} className={styles.toggle}>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger
+                    type="button"
+                    className={styles.radixCheckbox}
+                    aria-label={`Gerenciar coleção ${id}`}
+                  >
+                    ✓
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className={styles.collectionMenu} sideOffset={6}>
+                      <DropdownMenu.CheckboxItem
+                        checked
+                        onCheckedChange={(checked) => {
+                          if (checked !== true) {
+                            update({ collectionIds: form.collectionIds.filter((item) => item !== id) });
+                          }
+                        }}
+                      >
+                        <DropdownMenu.ItemIndicator>✓ </DropdownMenu.ItemIndicator>
+                        Coleção ${id}
+                      </DropdownMenu.CheckboxItem>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <span>{id}</span>
+              </label>
+            ))}
+            {!visibleCollectionIds.length && <p>Nenhuma coleção corresponde à busca.</p>}
+          </div>
+        ) : (
+          <p>Nenhuma coleção selecionada.</p>
+        )}
+        <label>
+          Adicionar IDs de coleções (vírgula ou espaço)
+          <input
+            placeholder="Cole IDs das coleções"
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                const input = event.currentTarget;
+                update({ collectionIds: [...new Set([...form.collectionIds, ...ids(input.value)])] });
+                input.value = "";
+              }
+            }}
+            onBlur={(event) => {
+              const input = event.currentTarget;
+              if (!input.value.trim()) return;
+              update({ collectionIds: [...new Set([...form.collectionIds, ...ids(input.value)])] });
+              input.value = "";
+            }}
+          />
+        </label>
+        <p>
+          {form.collectionIds.length} coleção(ões) selecionada(s). Pressione Enter para adicionar; desmarque
+          para remover.
+        </p>
+      </fieldset>
       <label>
         Token do Relay
         <input

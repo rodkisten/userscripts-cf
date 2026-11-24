@@ -8,6 +8,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
 import { format } from "prettier";
+import { build as viteBuild } from "vite";
 
 import { stripBuildComments } from "./strip-comments.mjs";
 import definitions from "../userscripts.config.js";
@@ -16,8 +17,6 @@ import { matchURL } from "../src/core/match.ts";
 import { pageBridge, install } from "./bridge.js";
 import { installSandbox } from "./contexts.js";
 import { bundleRuntime } from "./bundle-runtime.mjs";
-import { C, fmt } from "./format.mjs";
-import { BuildReporter } from "./reporter.mjs";
 import { diagnosticPrelude } from "./diagnostics.mjs";
 import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
@@ -26,8 +25,133 @@ import { auditReactRootOwnership } from "./react-root-audit.mjs";
 
 const execFileAsync = promisify(execFile);
 
-export { fmt } from "./format.mjs";
-export { BuildReporter, isCI } from "./reporter.mjs";
+// ============================================================================
+// // @TODO: Mover para build/vitest-reporter.mjs
+// ============================================================================
+export const isCI = Boolean(process.env.GITHUB_ACTIONS);
+
+const C = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+  magenta: "\x1b[35m",
+  gray: "\x1b[90m",
+  bgCyan: "\x1b[46m\x1b[30m",
+  bgGreen: "\x1b[42m\x1b[30m",
+  bgYellow: "\x1b[43m\x1b[30m",
+  bgRed: "\x1b[41m\x1b[37m",
+  bgMagenta: "\x1b[45m\x1b[37m",
+};
+
+export const fmt = {
+  duration: (ms) => (ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(2)}s`),
+  bytes: (b) => (b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} kB`),
+  badge: (label, bg = C.bgCyan) => `${bg}${C.bold} ${label} ${C.reset}`,
+  dim: (str) => `${C.dim}${str}${C.reset}`,
+  bold: (str) => `${C.bold}${str}${C.reset}`,
+  cyan: (str) => `${C.cyan}${str}${C.reset}`,
+  green: (str) => `${C.green}${str}${C.reset}`,
+  yellow: (str) => `${C.yellow}${str}${C.reset}`,
+  red: (str) => `${C.red}${str}${C.reset}`,
+};
+
+export class BuildReporter {
+  constructor(title, version) {
+    this.title = title;
+    this.version = version;
+    this.startTime = performance.now();
+    this.steps = [];
+  }
+
+  banner() {
+    console.log(
+      `\n ${fmt.badge("BUILD", C.bgCyan)} ${fmt.bold(this.title)} ${fmt.dim(`v${this.version}`)} ${isCI ? fmt.badge("CI", C.bgMagenta) : ""}\n`,
+    );
+  }
+
+  /**
+   * Executa um step isolado no estilo suite do Vitest com medição automática,
+   * tratamento de erro e ::group:: no GitHub Actions.
+   */
+  async step(name, fn) {
+    const stepIndex = this.steps.length + 1;
+    const stepStart = performance.now();
+    const header = `${fmt.cyan("❯")} ${fmt.bold(name)}`;
+
+    if (isCI) {
+      console.log(`::group::${header}`);
+    } else {
+      console.log(` ${header}`);
+    }
+
+    const ctx = {
+      pass: (label, meta = "") => {
+        const suffix = meta ? ` ${fmt.dim(meta)}` : "";
+        console.log(`   ${fmt.green("✓")} ${label}${suffix}`);
+      },
+      skip: (label, reason = "") => {
+        const suffix = reason ? ` ${fmt.dim(`(${reason})`)}` : "";
+        console.log(`   ${fmt.yellow("↓")} ${fmt.dim(label)}${suffix}`);
+      },
+      info: (label, value = "") => {
+        const val = value !== "" ? ` ${fmt.cyan(String(value))}` : "";
+        console.log(`   ${fmt.dim("·")} ${fmt.dim(label)}${val}`);
+      },
+      warn: (msg) => {
+        if (isCI) console.log(`::warning::${msg}`);
+        else console.log(`   ${fmt.yellow("⚠")} ${fmt.yellow(msg)}`);
+      },
+      table: (title, rows) => {
+        if (!rows.length) return;
+        console.log(`\n   ${fmt.dim("┌─")} ${fmt.bold(title)}`);
+        console.table(rows);
+      },
+    };
+
+    try {
+      const result = await fn(ctx);
+      const elapsed = performance.now() - stepStart;
+      this.steps.push({ index: stepIndex, name, status: "passed", elapsed });
+
+      console.log(` ${fmt.green("✓")} ${fmt.dim(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}\n`);
+      if (isCI) console.log("::endgroup::");
+      return result;
+    } catch (err) {
+      const elapsed = performance.now() - stepStart;
+      this.steps.push({ index: stepIndex, name, status: "failed", elapsed });
+
+      if (isCI) {
+        console.error(`::error title=${name}::${err.message}`);
+        console.log("::endgroup::");
+      }
+      console.error(
+        `\n ${fmt.badge("FAIL", C.bgRed)} ${fmt.bold(name)} ${fmt.dim(`(${fmt.duration(elapsed)})`)}`,
+      );
+      console.error(`   ${fmt.red("×")} ${fmt.red(err.stack || err.message)}\n`);
+      throw err;
+    }
+  }
+
+  summary(metrics = {}) {
+    const totalMs = performance.now() - this.startTime;
+    const passed = this.steps.filter((s) => s.status === "passed").length;
+
+    console.log(fmt.dim(" ─────────────────────────────────────────────────────────────"));
+    console.log(
+      ` ${fmt.bold("Steps")}      ${fmt.green(`${passed} passed`)} ${fmt.dim(`(${this.steps.length})`)}`,
+    );
+    for (const [key, val] of Object.entries(metrics)) {
+      console.log(` ${fmt.bold(key.padEnd(10))} ${fmt.cyan(String(val))}`);
+    }
+    console.log(
+      ` ${fmt.bold("Duration")}   ${fmt.bold(fmt.duration(totalMs))} ${fmt.dim(`(at ${new Date().toTimeString().slice(0, 8)})`)}\n`,
+    );
+  }
+}
 
 // ============================================================================
 // // @TODO: Mover para build/validate-config.mjs
@@ -103,7 +227,7 @@ export async function validateConfiguration(root, defs, dist, pkgVersion) {
 // // @TODO: Mover para build/metadata-generator.mjs
 // ============================================================================
 export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
-  const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue"]);
+  const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue", "GM_info"]);
   const requires = new Set();
   const connects = new Set();
 
@@ -181,7 +305,7 @@ export async function compileTarget(target, context) {
       const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
 
       const runtime = await bundleRuntime(root, selected, {
-        dock: target.id === "standalone" && world === "sandbox",
+        dock: (target.id === "standalone" || target.id === "rod-dock") && world === "sandbox",
         release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
         catalog,
         features,
@@ -215,11 +339,39 @@ export async function compileTarget(target, context) {
   const debugFile = `${target.id}.js`;
   const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
-  // Each world bundle is already emitted as a self-contained IIFE by
-  // bundleRuntime and formattedBody contains no imports/exports, so a manual
-  // function wrapper replaces the previous second full Vite/Rolldown pass.
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
-  const finalSource = `${metadata}\n\n(function() {\n${normalizedBody}})();\n`;
+  const chunks = await viteBuild({
+    configFile: false,
+    logLevel: "error",
+    plugins: [
+      {
+        name: "userscript-runtime-minify",
+        resolveId(id) {
+          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+        },
+        load(id) {
+          if (id === "\0virtual:userscript-runtime") return formattedBody;
+        },
+      },
+    ],
+    build: {
+      write: false,
+      minify: false,
+      sourcemap: false,
+      rolldownOptions: {
+        input: "virtual:userscript-runtime",
+        output: { format: "iife", name: "UserscriptsCFBundle" },
+      },
+    },
+  });
+
+  const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
+  const result = output.find((entry) => entry.type === "chunk");
+  if (!result?.code) {
+    throw new Error(`Minification did not produce JavaScript for ${target.id}`);
+  }
+
+  const finalSource = `${metadata}\n\n${result.code}\n`;
   const metaSource = `${metadata}\n`;
 
   const bodyBuffer = Buffer.from(formattedBody, "utf8");
@@ -454,13 +606,48 @@ export async function generateDirectoryChecksums(directory) {
 // ============================================================================
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
+const fragmentsDir = path.join(out, ".fragments");
 const iconSource = path.join(root, "assets", "icons");
 
 const requestedArg = process.argv.find((arg) => arg.startsWith("--targets="));
 const requestedTargets = requestedArg ? new Set(requestedArg.slice(10).split(",").filter(Boolean)) : null;
 
+const isListTargets = process.argv.includes("--list-targets");
+const isFragment = process.argv.includes("--fragment");
+const isMerge = process.argv.includes("--merge");
+
 const pkgRaw = await fs.readFile(path.join(root, "package.json"), "utf8");
 const { version } = JSON.parse(pkgRaw);
+
+const allTargets = [
+  {
+    id: "standalone",
+    definitions,
+    name: "🌻 Userscripts CF · Standalone (todos os módulos)",
+    namespace: "https://rod.migos.club/userscripts-cf/standalone",
+    version,
+  },
+  ...definitions.map((item) => ({
+    id: item.id,
+    definitions: [item],
+    name: item.name,
+    namespace: item.namespace,
+    version,
+  })),
+  {
+    id: "unified",
+    definitions: definitions.filter((item) => item.unified !== false),
+    name: distribution.unified?.name || "Userscripts CF · Unificado",
+    namespace: distribution.unified?.namespace,
+    version,
+  },
+];
+
+// Modo --list-targets: saída limpa para dynamic matrix no GitHub Actions
+if (isListTargets) {
+  process.stdout.write(JSON.stringify(allTargets.map((t) => t.id)) + "\n");
+  process.exit(0);
+}
 
 const reporter = new BuildReporter("userscripts-cf", version);
 reporter.banner();
@@ -478,30 +665,6 @@ const { baseURL, targets } = await reporter.step(
     log.pass("userscript entries validated", `${definitions.length} definitions`);
     log.pass("react root ownership", JSON.stringify(reactRootOwnership));
 
-    const allTargets = [
-      {
-        id: "standalone",
-        definitions,
-        name: "🌻 Userscripts CF · Standalone (todos os módulos)",
-        namespace: "https://rod.migos.club/userscripts-cf/standalone",
-        version,
-      },
-      ...definitions.map((item) => ({
-        id: item.id,
-        definitions: [item],
-        name: item.name,
-        namespace: item.namespace,
-        version,
-      })),
-      {
-        id: "unified",
-        definitions: definitions.filter((item) => item.unified !== false),
-        name: distribution.unified?.name || "Userscripts CF · Unificado",
-        namespace: distribution.unified?.namespace,
-        version,
-      },
-    ];
-
     if (
       requestedTargets &&
       (!requestedTargets.size || [...requestedTargets].some((id) => !allTargets.some((t) => t.id === id)))
@@ -515,14 +678,20 @@ const { baseURL, targets } = await reporter.step(
 
 // STEP 2: Análise de Grafo & Output Clean
 const runtimeFeatureAudit = await reporter.step(
-  "analyze runtime dependency graphs & clean dist",
+  "analyze runtime dependency graphs & prepare dist",
   async (log) => {
     const audit = { scripts: {}, targets: {}, bundles: {} };
 
     const [, analyzedScripts] = await Promise.all([
       (async () => {
-        await fs.rm(out, { recursive: true, force: true });
-        await fs.mkdir(path.join(out, "icons"), { recursive: true });
+        // No modo --merge, dist/ já contém os artefatos baixados da matriz
+        if (!isMerge) {
+          await fs.rm(out, { recursive: true, force: true });
+          await fs.mkdir(path.join(out, "icons"), { recursive: true });
+        }
+        if (isFragment) {
+          await fs.mkdir(fragmentsDir, { recursive: true });
+        }
       })(),
       Promise.all(
         definitions.map(async (definition) => ({
@@ -537,7 +706,7 @@ const runtimeFeatureAudit = await reporter.step(
     }
     buildRuntimeAndEditorAudits(targets, audit);
 
-    log.pass("cleaned output directory", path.relative(root, out));
+    log.pass(isMerge ? "preserved merged directory" : "cleaned output directory", path.relative(root, out));
     log.pass(
       "dependency graph resolved",
       `${audit.summary.uniqueModules} unique · ${audit.summary.sharedModules} shared`,
@@ -547,52 +716,119 @@ const runtimeFeatureAudit = await reporter.step(
   },
 );
 
-// STEP 3: Compilação Paralela dos Targets
-const { manifest, classAudit } = await reporter.step("compile & minify userscript targets", async (log) => {
-  const activeTargets = [];
-  for (const t of targets) {
-    if (!requestedTargets || requestedTargets.has(t.id)) {
-      activeTargets.push(t);
-    } else {
-      log.skip(t.id, "filtered by --targets");
+// STEP 3: Compilação Paralela dos Targets (ou leitura dos fragmentos no --merge)
+let manifest;
+let classAudit;
+
+if (!isMerge) {
+  const stepResult = await reporter.step("compile & minify userscript targets", async (log) => {
+    const activeTargets = [];
+    for (const t of targets) {
+      if (!requestedTargets || requestedTargets.has(t.id)) {
+        activeTargets.push(t);
+      } else {
+        log.skip(t.id, "filtered by --targets");
+      }
     }
-  }
 
-  const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
-    id,
-    name,
-    matches,
-    exclude,
-    excludeMatches,
-    excludes,
-    includes,
-  }));
+    const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
+      id,
+      name,
+      matches,
+      exclude,
+      excludeMatches,
+      excludes,
+      includes,
+    }));
 
-  const buildResults = await Promise.all(
-    activeTargets.map((target) =>
-      compileTarget(target, {
-        root,
-        out,
-        iconSource,
-        baseURL,
+    const buildResults = await Promise.all(
+      activeTargets.map((target) =>
+        compileTarget(target, {
+          root,
+          out,
+          iconSource,
+          baseURL,
+          version,
+          catalog,
+          runtimeFeatureAudit,
+          log,
+        }),
+      ),
+    );
+
+    // Salva fragmentos individuais para serem unificados no job de merge
+    if (isFragment) {
+      await Promise.all(
+        buildResults.map((res) => {
+          const targetBundles = Object.fromEntries(
+            Object.entries(runtimeFeatureAudit.bundles).filter(([key]) => key.startsWith(`${res.targetId}:`)),
+          );
+          return fs.writeFile(
+            path.join(fragmentsDir, `${res.targetId}.json`),
+            JSON.stringify({ ...res, bundles: targetBundles }, null, 2) + "\n",
+          );
+        }),
+      );
+      log.pass("fragment metadata saved", `${buildResults.length} fragment(s)`);
+    }
+
+    return {
+      manifest: {
+        schema: 1,
         version,
-        catalog,
-        runtimeFeatureAudit,
-        log,
-      }),
-    ),
-  );
+        baseURL,
+        scripts: buildResults.map((r) => r.manifestEntry),
+      },
+      classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
+    };
+  });
 
-  return {
-    manifest: {
-      schema: 1,
-      version,
-      baseURL,
-      scripts: buildResults.map((r) => r.manifestEntry),
-    },
-    classAudit: Object.fromEntries(buildResults.map((r) => [r.targetId, r.auditEntry])),
-  };
-});
+  manifest = stepResult.manifest;
+  classAudit = stepResult.classAudit;
+} else {
+  const mergedResult = await reporter.step("merge matrix build fragments", async (log) => {
+    const fragmentFiles = (await fs.readdir(fragmentsDir)).filter((f) => f.endsWith(".json"));
+    const fragmentsById = new Map();
+
+    for (const file of fragmentFiles) {
+      const data = JSON.parse(await fs.readFile(path.join(fragmentsDir, file), "utf8"));
+      fragmentsById.set(data.targetId, data);
+      Object.assign(runtimeFeatureAudit.bundles, data.bundles);
+    }
+
+    // Garante que todos os targets esperados estão presentes e preserva a ordem original
+    const orderedResults = targets.map((t) => {
+      const frag = fragmentsById.get(t.id);
+      if (!frag) throw new Error(`Missing build fragment for target: ${t.id}`);
+      return frag;
+    });
+
+    await fs.rm(fragmentsDir, { recursive: true, force: true });
+    log.pass("merged fragments into unified state", `${orderedResults.length} targets`);
+
+    return {
+      manifest: {
+        schema: 1,
+        version,
+        baseURL,
+        scripts: orderedResults.map((r) => r.manifestEntry),
+      },
+      classAudit: Object.fromEntries(orderedResults.map((r) => [r.targetId, r.auditEntry])),
+    };
+  });
+
+  manifest = mergedResult.manifest;
+  classAudit = mergedResult.classAudit;
+}
+
+// No modo --fragment, para por aqui: os artefatos parciais serão reunidos no job final
+if (isFragment) {
+  reporter.summary({
+    Mode: "fragment",
+    Targets: `${manifest.scripts.length} built`,
+  });
+  process.exit(0);
+}
 
 // STEP 4: Auditorias Pós-Build & Relatórios JSON
 await reporter.step("audit bundles, react roots & editor footprint", async (log) => {

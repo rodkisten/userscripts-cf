@@ -94,21 +94,43 @@ async function waitForSaved(source: HTMLElement, signal: AbortSignal, timeout = 
 }
 
 function collectionOption(id: string): HTMLElement | null {
+  // A visible Instagram collection picker must explicitly expose a matching
+  // collection ID. Text content alone is not a stable identity.
   const candidates = document.querySelectorAll<HTMLElement>(
-    '[role="dialog"] [role="button"], [role="dialog"] button, [role="menuitem"], [role="option"]',
+    '[role="dialog"] [data-collection-id], [role="menu"] [data-collection-id], [role="listbox"] [data-collection-id]',
   );
   return (
     [...candidates].find((node) => {
-      const text = (node.textContent || "").trim();
-      return text === id || node.getAttribute("data-collection-id") === id;
+      if (node.getAttribute("data-collection-id") !== id) return false;
+      if (!node.isConnected || node.getAttribute("aria-disabled") === "true") return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
     }) || null
   );
 }
 
+async function waitForCollection(
+  id: string,
+  signal: AbortSignal,
+  timeout = 1800,
+): Promise<HTMLElement | null> {
+  const end = Date.now() + timeout;
+  while (!signal.aborted && Date.now() < end) {
+    const option = collectionOption(id);
+    if (option) return option;
+    await sleep(120);
+  }
+  return null;
+}
+
 async function saveToCollections(ids: string[], signal: AbortSignal, source: HTMLElement): Promise<void> {
-  if (!source) throw Error("Botão nativo de salvar não encontrado neste Reel");
+  if (!source.isConnected) throw Error("Botão nativo de salvar não encontrado neste Reel");
   if (!ids.length) throw Error("Configure pelo menos uma coleção antes de enviar");
-  if (nativeState(source) === "saved") return;
+  if (nativeState(source) === "saved") {
+    throw Error(
+      "Reel já salvo. A associação às coleções não foi confirmada; abra o seletor nativo do Instagram.",
+    );
+  }
   if (nativeState(source) !== "unsaved")
     throw Error("Não foi possível confirmar o estado do bookmark nativo");
   if (signal.aborted) throw Error("Operação cancelada");
@@ -116,11 +138,19 @@ async function saveToCollections(ids: string[], signal: AbortSignal, source: HTM
   if (!(await waitForSaved(source, signal)))
     throw Error("Instagram não confirmou o salvamento. Verifique o Reel antes de tentar novamente");
   for (const id of ids) {
-    if (signal.aborted) throw Error("Operação cancelada");
-    const option = collectionOption(id);
-    if (!option) throw Error(`Reel salvo, mas a coleção ${id} não apareceu no seletor nativo`);
-    option.click();
-    await sleep(300);
+    if (signal.aborted || !source.isConnected) throw Error("Operação cancelada ou Reel alterado");
+    const option = await waitForCollection(id, signal);
+    if (!option) {
+      throw Error(
+        `Reel salvo, mas o Instagram não expôs um identificador verificável para a coleção ${id}. Selecione-a manualmente.`,
+      );
+    }
+    // A visible matching option is still not proof that Instagram will
+    // persist membership. Avoid an unverified mutation until its confirmation
+    // contract is known.
+    throw Error(
+      `Coleção ${id} encontrada, mas a confirmação de associação não está disponível. Selecione-a manualmente no Instagram.`,
+    );
   }
 }
 
@@ -145,13 +175,13 @@ export function mountReelBookmark(
     // The mounted React button reads the latest state through the shared portal.
     mount.dispose();
     mount.dispose = ctx.ui.mountReact(
-      <ReelBookmarkButton state={state} disabled={state === "error"} onActivate={() => void send()} />,
+      <ReelBookmarkButton state={state} disabled={false} onActivate={() => void send()} />,
       mount.host,
     );
   };
   let anchor: HTMLElement | null = null;
   const send = async () => {
-    if (state === "loading" || state === "saved" || state === "error" || signal.aborted) return;
+    if (state === "loading" || state === "saved" || signal.aborted) return;
     const token = ++operation;
     const reel = activeReel;
     const source = selectedSave;
@@ -164,7 +194,7 @@ export function mountReelBookmark(
       notify("Reel salvo. Seleção de coleções enviada ao Instagram");
     } catch (error) {
       if (token !== operation || signal.aborted || reel !== activeReel) return;
-      setState(nativeState(source) === "saved" ? "saved" : "error");
+      setState("error");
       notify((error as Error).message);
     }
   };
@@ -197,7 +227,7 @@ export function mountReelBookmark(
       selectedSave = source;
       const observed = nativeState(source);
       state = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
-    } else if (state !== "loading") {
+    } else if (state !== "loading" && state !== "error") {
       const observed = nativeState(source);
       const next = observed === "saved" ? "saved" : observed === "unsaved" ? "unsaved" : "error";
       if (next !== state) setState(next);
