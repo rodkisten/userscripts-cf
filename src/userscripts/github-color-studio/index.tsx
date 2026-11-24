@@ -23,9 +23,7 @@ type HostCodeMirrorView = {
 };
 
 type ViewCarrier = HTMLElement & {
-  cmView?:
-    | HostCodeMirrorView
-    | { view?: HostCodeMirrorView; rootView?: { view?: HostCodeMirrorView } };
+  cmView?: HostCodeMirrorView | { view?: HostCodeMirrorView; rootView?: { view?: HostCodeMirrorView } };
   view?: HostCodeMirrorView;
 };
 
@@ -86,13 +84,13 @@ function ColorStudio({
   function changeColor(from: string, to: string) {
     const next = source.replaceAll(from, to);
     if (applySource(next)) {
-setSource(next);
-}
+      setSource(next);
+    }
   }
   function changeName() {
     if (!selected || !rename || selectedDefs.length !== 1) {
-return;
-}
+      return;
+    }
     const next = renameVariable(source, selected, rename);
     if (
       window.confirm(
@@ -108,19 +106,19 @@ return;
   function convert(value: string): string {
     const rgb = normalizeColor(value);
     if (!rgb.startsWith("rgb")) {
-return value;
-}
+      return value;
+    }
     if (format === "rgb") {
-return rgb;
-}
+      return rgb;
+    }
     if (format === "hex") {
-return value.startsWith("#") ? value : normalizeColor(value);
-}
+      return value.startsWith("#") ? value : normalizeColor(value);
+    }
     if (format === "hsl") {
       const m = rgb.match(/[\d.]+/g)?.map(Number);
       if (!m || m.length < 3) {
-return value;
-}
+        return value;
+      }
       const [r, g, b] = m.slice(0, 3).map((v) => v / 255),
         max = Math.max(r, g, b),
         min = Math.min(r, g, b),
@@ -142,8 +140,8 @@ return value;
         }
         h *= 60;
         if (h < 0) {
-h += 360;
-}
+          h += 360;
+        }
       }
       return `hsl(${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
     }
@@ -154,8 +152,8 @@ h += 360;
       open
       onOpenChange={(open) => {
         if (!open) {
-close();
-}
+          close();
+        }
       }}
     >
       <Dialog.Portal>
@@ -304,8 +302,8 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
       document.body,
       () => {
         if (scheduled) {
-return;
-}
+          return;
+        }
         scheduled = true;
         queueMicrotask(() => {
           scheduled = false;
@@ -317,8 +315,8 @@ return;
     return () => observer.disconnect();
   }, [ctx]);
   if (!available) {
-return null;
-}
+    return null;
+  }
   return (
     <>
       <button
@@ -380,8 +378,8 @@ return null;
 export default {
   init(ctx: ScriptContext): void {
     if (!ctx.ui) {
-return;
-}
+      return;
+    }
     ctx.ui.pageStyle(css, { id: "rod-github-color-studio-style" });
     const dispose = ctx.ui.mountReact(<GitHubColorStudioApp ctx={ctx} />);
     ctx.onDispose(dispose);

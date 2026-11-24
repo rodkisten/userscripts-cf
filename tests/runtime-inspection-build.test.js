@@ -187,9 +187,7 @@ describe("inspectable build artifacts", () => {
         for (const runtime of target.output.runtimes) {
           const report = audit.bundles[script.id + ":" + runtime.world];
           const retainedJavaScriptLanguage = report.modules.filter(
-            (item) =>
-              item.renderedBytes > 0 &&
-              item.id.includes("node_modules/@codemirror/lang-javascript/"),
+            (item) => item.renderedBytes > 0 && item.id.includes("node_modules/@codemirror/lang-javascript/"),
           );
           expect(
             retainedJavaScriptLanguage,
