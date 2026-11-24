@@ -265,6 +265,7 @@ function analyzeWorkflowFile(absWorkflowPath, allRepoScripts, gitCtx) {
   const relWorkflowPath = path.relative(repoRoot, absWorkflowPath).replace(/\\/g, '/');
 
   const findings = [];
+  const generated = new Set();
   let currentWorkingDir = null;
   let currentWorkingDirIndent = -1;
 
@@ -301,6 +302,10 @@ function analyzeWorkflowFile(absWorkflowPath, allRepoScripts, gitCtx) {
     // YAML metadata, artifact paths and prose are not executable commands.
     if (/^(?:-\s*)?(?:name|uses|path|paths|description|if|echo):/.test(trimmed)) continue;
     if (/^(?:echo|printf)\s/.test(trimmed)) continue;
+    // Track literal output paths produced earlier in this workflow.
+    for (const output of rawLine.matchAll(/(?:^|\s)--out(?:=|\s+)["']?([\w./-]+\.(?:mjs|cjs|tsx|ts|js))(?=$|[\s"'])/g)) {
+      generated.add(path.resolve(repoRoot, currentWorkingDir || '.', output[1]));
+    }
     fileRefRegex.lastIndex = 0;
     let match;
 
@@ -332,7 +337,7 @@ function analyzeWorkflowFile(absWorkflowPath, allRepoScripts, gitCtx) {
       const resolvedAbs = path.resolve(baseDir, rawRef);
       const exists = fs.existsSync(resolvedAbs) && fs.statSync(resolvedAbs).isFile();
 
-      if (!exists) {
+      if (!exists && !generated.has(resolvedAbs)) {
         const normalizedRef = path.relative(repoRoot, resolvedAbs).replace(/\\/g, '/');
         const suggestions = findSimilarFiles(normalizedRef, allRepoScripts);
         const editUrl = buildEditUrl(gitCtx, relWorkflowPath, lineNum);
