@@ -222,7 +222,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     for (const capabilityPath of usage.paths || []) paths.add(capabilityPath);
     if (usage.dynamic) dynamicImportFiles.add(relPath);
 
-    const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicFiles);
+    const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles);
 
     for (const specifier of specifiers) {
       const dependency = await resolveLocal(filename, specifier);
