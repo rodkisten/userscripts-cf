@@ -16,7 +16,6 @@ Bundle impact is measured against `.github/bundle-baseline.json` by the Bundle D
 
 The build inspection test verifies that a disabled toaster feature retains zero modules from `node_modules/sonner`.
 
-
 ## React bootstrap capability
 
 The runtime now has two entrypoints: `runtime-react.tsx` for targets that need `ctx.ui`, menu/toast capabilities, dynamic context access or the global Dock, and `runtime-vanilla.ts` for statically proven framework-free targets.

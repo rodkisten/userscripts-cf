@@ -387,7 +387,8 @@ export async function compileTarget(target, context) {
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
     gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
-    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }).byteLength,
+    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } })
+      .byteLength,
   };
 
   const file = `${target.id}.user.js`;
@@ -736,27 +737,47 @@ if (!isMerge) {
     }
 
     const mode = requestedTargets ? "SELECTIVE BUILD" : "FULL BUILD";
-    const reason = process.env.BUILD_REASON || (requestedTargets
-      ? "Explicit --targets selection"
-      : "No target filter supplied; complete distribution requested");
+    const reason =
+      process.env.BUILD_REASON ||
+      (requestedTargets
+        ? "Explicit --targets selection"
+        : "No target filter supplied; complete distribution requested");
     console.log("\n " + fmt.badge(mode, requestedTargets ? C.bgCyan : C.bgMagenta));
     console.log(" ┌─ " + fmt.bold("Build decision"));
     console.log(" │ Reason    " + reason);
     console.log(" │ Event     " + (process.env.GITHUB_EVENT_NAME || "local CLI"));
     console.log(" │ Targets   " + activeTargets.length + "/" + targets.length);
     console.log(" │ Skipped   " + (targets.length - activeTargets.length));
-    console.log(" └─ " + fmt.dim("standalone = all modules; unified = opted-in modules; individual = one module"));
-    log.table("Selected bundles", activeTargets.map((target) => ({
-      target: target.id,
-      kind: target.id === "standalone" || target.id === "unified" ? "aggregate" : "individual",
-      modules: target.definitions.map(({ id }) => id).join(", "),
-      reason: process.env.BUILD_TARGET_REASONS ? JSON.parse(process.env.BUILD_TARGET_REASONS)[target.id] || reason : reason,
-    })));
+    console.log(
+      " └─ " + fmt.dim("standalone = all modules; unified = opted-in modules; individual = one module"),
+    );
+    log.table(
+      "Selected bundles",
+      activeTargets.map((target) => ({
+        target: target.id,
+        kind: target.id === "standalone" || target.id === "unified" ? "aggregate" : "individual",
+        modules: target.definitions.map(({ id }) => id).join(", "),
+        reason: process.env.BUILD_TARGET_REASONS
+          ? JSON.parse(process.env.BUILD_TARGET_REASONS)[target.id] || reason
+          : reason,
+      })),
+    );
     if (process.env.GITHUB_STEP_SUMMARY) {
-      await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,
-        "\n### Build decision: " + mode + "\n\n" + reason + "\n\n" +
-        "**Targets:** " + activeTargets.length + "/" + targets.length + "\n\n" +
-        activeTargets.map((target) => "- `" + target.id + "`").join("\n") + "\n");
+      await fs.appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        "\n### Build decision: " +
+          mode +
+          "\n\n" +
+          reason +
+          "\n\n" +
+          "**Targets:** " +
+          activeTargets.length +
+          "/" +
+          targets.length +
+          "\n\n" +
+          activeTargets.map((target) => "- `" + target.id + "`").join("\n") +
+          "\n",
+      );
     }
 
     const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
