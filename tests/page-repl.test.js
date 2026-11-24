@@ -62,6 +62,30 @@ test("REPL scope resolver preserves implicit arguments and class-local names", a
   assert.equal(klass.value, 4);
 });
 
+test("REPL range emitter preserves source syntax while rewriting persistent bindings", async () => {
+  const result = await evaluate(
+    "const key = 'x'; const obj = {key, [key]: key, method() { return key; }}; `value:${obj.method()}:${obj.x}`",
+  );
+  assert.equal(result.value, "value:x:x");
+
+  const sequence = await evaluate("let a = 1, b = 2; for (var n of [3, 4]) a += n; a + b + n");
+  assert.equal(sequence.value, 14);
+
+  const previous = await evaluate("const a = 3; ({a})");
+  const reused = await evaluate("({a, label: a})", previous.ctx, ["a"]);
+  assert.deepEqual(reused.value, { a: 3, label: 3 });
+});
+
+test("REPL range emitter preserves function hoisting and class identity", async () => {
+  const fn = await evaluate("const n = twice(4); function twice(value) { return value * 2; } n");
+  assert.equal(fn.value, 8);
+
+  const klass = await evaluate(
+    "class Box { static self() { return Box; } constructor(value) { this.value = value; } } new Box(5).value",
+  );
+  assert.equal(klass.value, 5);
+});
+
 test("runner receives values, console and context evidence, without duplicating transports", async () => {
   const host = new Window({
     url: "https://example.com",

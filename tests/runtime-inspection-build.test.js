@@ -61,6 +61,11 @@ describe("inspectable build artifacts", () => {
         (item) => item.renderedBytes > 0 && item.id.includes("node_modules/estraverse/"),
       ),
     ).toBe(false);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/astring/"),
+      ),
+    ).toBe(false);
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
