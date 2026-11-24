@@ -22,7 +22,18 @@ async function upload(name, optional = false, bodyOverride) {
     )
   )
     throw Error("Unsafe path " + name);
-  const body = bodyOverride ?? (await fs.readFile(path.join(dir, name)));
+  let body = bodyOverride;
+  if (body === undefined) {
+    try {
+      body = await fs.readFile(path.join(dir, name));
+    } catch (error) {
+      if (optional && error?.code === "ENOENT") {
+        console.warn("Optional preview asset was not generated", name, "— skipping");
+        return false;
+      }
+      throw error;
+    }
+  }
   const response = await fetch(origin + "/_publish/" + pr + "/" + name, {
     method: "PUT",
     headers: { authorization: "Bearer " + token, "content-type": "application/octet-stream" },
