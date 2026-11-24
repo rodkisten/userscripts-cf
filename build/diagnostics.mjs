@@ -78,12 +78,18 @@ export function diagnosticPrelude(target, version, scripts) {
       String(value ?? "")
         .replace(BEARER_RE, "$1[REDACTED]")
         .replace(SECRET_PARAM_RE, "$1[REDACTED]")
-        .replace(/("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi, "$1[REDACTED]$2");
+        .replace(
+          /("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi,
+          "$1[REDACTED]$2",
+        );
 
     const safeDetails = (value) => {
       if (value == null) return null;
-      try { return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000)); }
-      catch { return null; }
+      try {
+        return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000));
+      } catch {
+        return null;
+      }
     };
 
     let remoteWindowStarted = 0;
@@ -120,14 +126,16 @@ export function diagnosticPrelude(target, version, scripts) {
           request: safeDetails(record.request),
           response: safeDetails(record.response),
         };
-        void root.fetch(REMOTE_ENDPOINT, {
-          method: "POST",
-          mode: "cors",
-          credentials: "omit",
-          keepalive: true,
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
+        void root
+          .fetch(REMOTE_ENDPOINT, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            keepalive: true,
+            headers: { "Content-Type": "text/plain;charset=UTF-8" },
+            body: JSON.stringify(payload),
+          })
+          .catch(() => {});
       } catch {}
     };
 
@@ -462,7 +470,7 @@ export function diagnosticPrelude(target, version, scripts) {
         const stack = redact(error?.stack || "");
         const activeScripts = Object.keys(state.scripts);
         const scripts = owner ? String(owner).split(",").filter(Boolean) : activeScripts;
-        const script = scripts.length === 1 ? scripts[0] : (scripts.length ? "multiple" : "page/global");
+        const script = scripts.length === 1 ? scripts[0] : scripts.length ? "multiple" : "page/global";
         const firstFrame = stack.split("\n", 2)[1] || "";
         const fingerprint = `${script}|${source}|${message}|${firstFrame}`;
 
