@@ -57,9 +57,12 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           for attempt in $(seq 1 6); do
-            if [ "$(curl -fsSL --max-time 15 "${PREVIEW_URL}source-sha.txt")" = "$PR_HEAD_SHA" ]; then exit 0; fi
+            manifest="$(curl -fsSL --max-time 15 "${PREVIEW_URL}manifest.json" || true)"
+            source_sha="$(printf '%s' "$manifest" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).sourceSha||"")}catch{}})')"
+            if [ "$source_sha" = "$PR_HEAD_SHA" ]; then exit 0; fi
             sleep 5
           done
+          echo "::error::Published preview manifest does not match PR head $PR_HEAD_SHA"
           exit 1
       - name: Collect preview metadata
         id: diff-info
