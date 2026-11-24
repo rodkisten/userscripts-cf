@@ -4,9 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - '**/*.yml'
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yml"
 run-name: "📸 Preview Deploy • PR #${{ github.event.pull_request.number }} (${{ github.head_ref }})"
 
 permissions:
@@ -20,6 +20,7 @@ jobs:
       - name: 📥 Checkout do Código
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
@@ -42,6 +43,7 @@ jobs:
           PAGES_PROJECT: ${{ vars.USERSCRIPTS_PREVIEW_PAGES_PROJECT }}
         run: |
           set -euo pipefail
+          export PR_HEAD_SHA="$(git rev-parse HEAD)"
           if [[ -z "$PAGES_PROJECT" ]]; then
             echo "::error::Configure USERSCRIPTS_PREVIEW_PAGES_PROJECT"
             exit 1
@@ -58,6 +60,20 @@ jobs:
           fi
           node build/build.mjs "--targets=$TARGETS"
           node build/pr-preview.mjs
+          # Fail explicitly if a declared userscript is absent from this PR build.
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const dir = `dist/pr-preview/${process.env.PR_NUMBER}`;
+          const manifest = JSON.parse(fs.readFileSync(`${dir}/manifest.json`, "utf8"));
+          if (fs.existsSync("src/userscripts/inspektor/index.ts")) {
+            const entry = manifest.scripts.find((script) => script.id === "inspektor");
+            if (!entry) throw Error("Inspektor missing from PR preview manifest");
+            for (const file of [entry.file, entry.metaFile]) {
+              if (!fs.existsSync(`${dir}/${file}`)) throw Error("Inspektor preview missing: " + file);
+            }
+            console.log("Verified Inspektor installer in PR #" + process.env.PR_NUMBER);
+          }
+          NODE
           echo "### Preview build scope" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/preview-scope.json >> "$GITHUB_STEP_SUMMARY"

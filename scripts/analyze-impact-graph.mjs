@@ -1,11 +1,11 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, extname, join, relative } from 'node:path';
-import { runAction } from './utils/action.mjs';
-import { cmd, setOutputs } from './utils/inputs.mjs';
-import { logger, style, summary } from './utils/summary.mjs';
+import { existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, extname, join, relative } from "node:path";
+import { runAction } from "./utils/action.mjs";
+import { AgentReporter, ansi } from "./utils/ci-logger.mjs";
+import { appendStepSummary, runCmd, setActionOutput } from "./utils/ci-utils.mjs";
 
-const toPosix = (p) => p.split('\\').join('/');
-const escapeMermaidLabel = (text) => text.replaceAll('"', '&quot;');
+const toPosix = (p) => p.split("\\").join("/");
+const escapeMermaidLabel = (text) => text.replaceAll('"', "&quot;");
 
 function walkTests(dir, acc = []) {
   if (!existsSync(dir)) return acc;
@@ -20,48 +20,77 @@ function walkTests(dir, acc = []) {
   return acc;
 }
 
-runAction('Impact & Test Map', async () => {
-  const baseRef = (process.env.BASE_REF || 'main').trim();
-  logger.banner('Impact & Test Map', `Base: ${baseRef}`);
+function outputPathFromArgs(argv) {
+  const inline = argv.find((arg) => arg.startsWith("--out="));
+  if (inline) return inline.slice("--out=".length).trim();
 
-  const { diffTarget, rawChanged } = await logger.step('Resolve Git diff in src/', async () => {
-    await cmd('git', ['fetch', 'origin', baseRef, '--depth=1']).nothrow();
+  const index = argv.indexOf("--out");
+  return index >= 0 ? String(argv[index + 1] || "").trim() : "";
+}
 
-    const originVerify = await cmd('git', ['rev-parse', '--verify', `origin/${baseRef}`]).nothrow();
-    const target =
-      originVerify.exitCode === 0
-        ? originVerify.stdout.trim()
-        : (await cmd('git', ['rev-parse', '--verify', baseRef])).stdout.trim();
+function requireCommand(command, args, log) {
+  const result = runCmd(command, args, { logger: log, silent: true });
+  if (!result.ok) {
+    const detail = result.stderr || result.stdout || `exit ${result.status}`;
+    throw new Error(`${command} ${args.join(" ")} failed: ${detail}`);
+  }
+  return result;
+}
 
-    const diffRes = await cmd('git', [
-      'diff',
-      '--name-only',
-      '--diff-filter=ACMR',
-      `${target}...HEAD`,
-      '--',
-      'src',
-    ]);
+await runAction("Impact & Test Map", async ({ log }) => {
+  const logger = log instanceof AgentReporter ? log : new AgentReporter("Impact & Test Map");
+  const baseRef = (process.env.BASE_REF || "main").trim();
+  const outFile = outputPathFromArgs(process.argv.slice(2));
+
+  logger.subtitle = `Base: ${baseRef}`;
+  logger.banner();
+
+  const { diffTarget, rawChanged } = await logger.step("Resolve Git diff in src/", async () => {
+    runCmd("git", ["fetch", "--no-tags", "origin", baseRef], { logger, silent: true });
+
+    const originVerify = runCmd("git", ["rev-parse", "--verify", `origin/${baseRef}`], {
+      logger,
+      silent: true,
+    });
+    const localVerify = originVerify.ok
+      ? originVerify
+      : runCmd("git", ["rev-parse", "--verify", baseRef], { logger, silent: true });
+
+    if (!localVerify.ok) {
+      throw new Error(
+        `Unable to resolve base ref ${baseRef}: ${localVerify.stderr || localVerify.stdout || "unknown Git error"}`,
+      );
+    }
+
+    const target = localVerify.stdout.trim();
+    const diffRes = requireCommand(
+      "git",
+      ["diff", "--name-only", "--diff-filter=ACMR", `${target}...HEAD`, "--", "src"],
+      logger,
+    );
 
     const changed = diffRes.stdout
       .split(/\r?\n/)
       .map(toPosix)
-      .filter((f) => f && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(f));
+      .filter((file) => file && /\.(js|ts|mjs|mts|jsx|tsx)$/.test(file));
 
-    logger.item('Base SHA', `${target.slice(0, 7)} (${baseRef})`);
-    logger.item('Changed files in src/', changed.length, true);
+    logger.kvTable({
+      "Base SHA": `${target.slice(0, 7)} (${baseRef})`,
+      "Changed files in src/": changed.length,
+    });
 
     return { diffTarget: target, rawChanged: changed };
   });
 
-  const { folders, matchedNodeTests } = await logger.step('Map affected scopes & tests', () => {
-    const allTestFiles = [...new Set([...walkTests('src'), ...walkTests('tests')])];
+  const { folders, matchedNodeTests } = await logger.step("Map affected scopes & tests", () => {
+    const allTestFiles = [...new Set([...walkTests("src"), ...walkTests("tests")])];
     const grouped = new Map();
     const tests = new Set();
 
     for (const file of rawChanged) {
-      const rel = toPosix(relative('src', file));
-      const parts = rel.split('/');
-      const folder = parts.length > 1 ? `src/${parts[0]}` : 'src (raiz)';
+      const rel = toPosix(relative("src", file));
+      const parts = rel.split("/");
+      const folder = parts.length > 1 ? `src/${parts[0]}` : "src (raiz)";
 
       if (!grouped.has(folder)) {
         grouped.set(folder, { sourceFiles: [], testFiles: [] });
@@ -77,15 +106,11 @@ runAction('Impact & Test Map', async () => {
         bucket.sourceFiles.push(file);
         const stem = basename(file, extname(file));
         const fileDir = toPosix(dirname(file));
-        const mirroredDir = fileDir.replace(/^src(?=\/|$)/, 'tests');
+        const mirroredDir = fileDir.replace(/^src(?=\/|$)/, "tests");
 
-        const related = allTestFiles.filter((t) => {
-          const testDir = toPosix(dirname(t));
-          return (
-            basename(t).startsWith(`${stem}.`) ||
-            testDir === fileDir ||
-            testDir === mirroredDir
-          );
+        const related = allTestFiles.filter((testFile) => {
+          const testDir = toPosix(dirname(testFile));
+          return basename(testFile).startsWith(`${stem}.`) || testDir === fileDir || testDir === mirroredDir;
         });
 
         for (const testFile of related) {
@@ -95,17 +120,19 @@ runAction('Impact & Test Map', async () => {
       }
     }
 
-    logger.item('Affected scopes', grouped.size);
-    logger.item('Related test files', tests.size, true);
+    logger.kvTable({
+      "Affected scopes": grouped.size,
+      "Related test files": tests.size,
+    });
 
     return { folders: grouped, matchedNodeTests: tests };
   });
 
   const mermaid = [
-    'flowchart LR',
-    '  classDef folder fill:#1e293b,stroke:#38bdf8,color:#f8fafc,stroke-width:2px;',
-    '  classDef src fill:#0f172a,stroke:#94a3b8,color:#e2e8f0;',
-    '  classDef test fill:#064e3b,stroke:#34d399,color:#ecfdf5;',
+    "flowchart LR",
+    "  classDef folder fill:#1e293b,stroke:#38bdf8,color:#f8fafc,stroke-width:2px;",
+    "  classDef src fill:#0f172a,stroke:#94a3b8,color:#e2e8f0;",
+    "  classDef test fill:#064e3b,stroke:#34d399,color:#ecfdf5;",
   ];
   let nodeIdx = 0;
 
@@ -113,53 +140,83 @@ runAction('Impact & Test Map', async () => {
     mermaid.push('  empty["✅ Nenhuma modificação encontrada em src/"]');
   } else {
     for (const [folder, { sourceFiles, testFiles }] of folders.entries()) {
-      const fId = `folder_${nodeIdx++}`;
-      mermaid.push(`  subgraph ${fId}["📁 ${escapeMermaidLabel(folder)}"]`);
-      mermaid.push('    direction TB');
+      const folderId = `folder_${nodeIdx++}`;
+      mermaid.push(`  subgraph ${folderId}["📁 ${escapeMermaidLabel(folder)}"]`);
+      mermaid.push("    direction TB");
 
-      const srcIds = [...new Set(sourceFiles)].map((s) => {
+      const sourceIds = [...new Set(sourceFiles)].map((sourceFile) => {
         const id = `src_${nodeIdx++}`;
-        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(s))}"]:::src`);
+        mermaid.push(`    ${id}["📄 ${escapeMermaidLabel(basename(sourceFile))}"]:::src`);
         return id;
       });
 
-      const testIds = [...new Set(testFiles)].map((t) => {
+      const testIds = [...new Set(testFiles)].map((testFile) => {
         const id = `tst_${nodeIdx++}`;
-        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(t))}"]):::test`);
+        mermaid.push(`    ${id}(["🧪 ${escapeMermaidLabel(basename(testFile))}"]):::test`);
         return id;
       });
 
-      mermaid.push('  end');
-      mermaid.push(`  class ${fId} folder`);
+      mermaid.push("  end");
+      mermaid.push(`  class ${folderId} folder`);
 
-      if (srcIds.length > 0 && testIds.length > 0) {
-        for (const sId of srcIds) {
-          for (const tId of testIds) {
-            mermaid.push(`  ${sId} -.-> ${tId}`);
+      if (sourceIds.length > 0 && testIds.length > 0) {
+        for (const sourceId of sourceIds) {
+          for (const testId of testIds) {
+            mermaid.push(`  ${sourceId} -.-> ${testId}`);
           }
         }
       }
     }
   }
 
-  logger.divider('Outputs & Job Summary');
+  setActionOutput("has_files", rawChanged.length > 0);
+  setActionOutput("changed_files", rawChanged.join(" "));
+  setActionOutput("node_tests", [...matchedNodeTests].join(" "));
 
-  setOutputs({
-    has_files: rawChanged.length > 0,
-    changed_files: rawChanged.join(' '),
-    node_tests: [...matchedNodeTests].join(' '),
-  });
+  const scopeData = [...folders.entries()].map(([folder, value]) => ({
+    folder,
+    sourceFiles: [...new Set(value.sourceFiles)],
+    testFiles: [...new Set(value.testFiles)],
+  }));
 
-  await summary
-    .heading('📊 Mapa de Impacto & Testes Relacionados', 2)
-    .text(
-      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``
-    )
-    .code(mermaid.join('\n'), 'mermaid')
-    .write();
+  if (outFile) {
+    writeFileSync(
+      outFile,
+      `${JSON.stringify(
+        {
+          baseRef,
+          baseSha: diffTarget,
+          changedFiles: rawChanged,
+          relatedTests: [...matchedNodeTests],
+          scopes: scopeData,
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    logger.info("Impact graph JSON", outFile);
+  }
 
-  logger.success(
-    `Mapped ${style.bold(`${rawChanged.length} file(s)`)} across ${style.bold(`${folders.size} scope(s)`)}`
+  appendStepSummary(
+    [
+      "## 📊 Mapa de Impacto & Testes Relacionados",
+      "",
+      `**Base comparada:** \`${baseRef}\` (\`${diffTarget.slice(0, 7)}\`) · **Arquivos modificados em \`src/\`:** \`${rawChanged.length}\``,
+      "",
+      "```mermaid",
+      ...mermaid,
+      "```",
+    ].join("\n"),
   );
-  logger.divider('', '═');
+
+  logger.pass(
+    "Impact map generated",
+    `${ansi.bold(`${rawChanged.length} file(s)`)} across ${ansi.bold(`${folders.size} scope(s)`)}`,
+  );
+  logger.summary("success", {
+    Files: rawChanged.length,
+    Scopes: folders.size,
+    "Related tests": matchedNodeTests.size,
+  });
 });
