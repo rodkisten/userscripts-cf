@@ -234,4 +234,5 @@ jobs:
       - name: 🚀 Build selected userscript
         env:
           TARGET: ${{ matrix.target }}
+          BUILD_REASON: PR validation matrix selected this target.
         run: node build/build.mjs "--targets=$TARGET"

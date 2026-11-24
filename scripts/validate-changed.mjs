@@ -248,6 +248,7 @@ export async function runValidation() {
         const scopedBuilds = Array.isArray(scopeData.builds) ? scopeData.builds : [];
 
         if (scopedBuilds.length > 0 && scopedBuilds[0] !== "none") {
+          childEnv.BUILD_REASON = "Explicit PR-title build directive";
           if (scopedBuilds[0] === "all") {
             execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
             delete childEnv.RUNTIME_TEST_SKIP_DIST;
@@ -322,6 +323,8 @@ export async function runValidation() {
         step.info("Builds afetados", report.targets.join(", ") || "(nenhum)");
 
         if (report.targets.length > 0) {
+          childEnv.BUILD_REASON = "Changed files matched the runtime dependency graph";
+          childEnv.BUILD_TARGET_REASONS = JSON.stringify(Object.fromEntries(report.targets.map((id) => [id, id === "unified" ? "Aggregate of affected unified modules" : (report.reasons[id] || []).join(", ")])));
           execOrFail(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
             logger: log,
             env: childEnv,
@@ -332,6 +335,7 @@ export async function runValidation() {
           "Build completo necessário no job principal",
           hostingChanged ? "Hosting depende da distribuição completa" : "Matrix de builds indisponível",
         );
+        childEnv.BUILD_REASON = hostingChanged ? "Hosting requires the complete distribution" : "Full build required by validation plan";
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
@@ -425,6 +429,8 @@ export async function runValidation() {
       if (sourceChanged && fs.existsSync(AFFECTED_REPORT_PATH) && !hasIntegrationTest) {
         const report = JSON.parse(fs.readFileSync(AFFECTED_REPORT_PATH, "utf8"));
         if (report.targets.length > 0) {
+          childEnv.BUILD_REASON = "Changed files matched the runtime dependency graph";
+          childEnv.BUILD_TARGET_REASONS = JSON.stringify(Object.fromEntries(report.targets.map((id) => [id, id === "unified" ? "Aggregate of affected unified modules" : (report.reasons[id] || []).join(", ")])));
           step.info("Targets selecionados", report.targets.join(", "));
           execOrFail(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
             logger: log,
