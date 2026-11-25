@@ -4,6 +4,7 @@ import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
+import { todoIssueLink } from "../github/editor/todo-issue.js";
 
 const CODE_LINE_SELECTOR =
   '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
@@ -337,18 +338,30 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
         🎨
       </button>
       {lines.flatMap((line, lineIndex) => {
-        const colors = scanColors(
-          [...line.childNodes]
-            .filter(
-              (node) => !(node instanceof HTMLElement && node.classList.contains("rcs-inline-swatches")),
-            )
-            .map((node) => node.textContent ?? "")
-            .join(""),
-        );
-        return colors.length
+        const source = [...line.childNodes]
+          .filter((node) => !(node instanceof HTMLElement && node.classList.contains("rcs-inline-swatches")))
+          .map((node) => node.textContent ?? "")
+          .join("");
+        const colors = scanColors(source);
+        const lineId =
+          line.closest('[id^="LC"], [id^="L"]')?.id.replace(/^LC/, "L") ||
+          line.closest("tr")?.querySelector('[id^="L"]')?.id;
+        const issue = todoIssueLink(new URL(location.href), source, lineId);
+        return colors.length || issue
           ? [
               createPortal(
-                <span className="rcs-inline-swatches" aria-label="Cores da linha" key={lineIndex}>
+                <span className="rcs-inline-swatches" aria-label="Ações da linha" key={lineIndex}>
+                  {issue && (
+                    <a
+                      className="rcs-todo-issue"
+                      href={issue.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {issue.searchParams.get("title")?.split(":")[0]} · Criar issue
+                    </a>
+                  )}
                   {colors.map((color) => (
                     <button
                       key={color.from}
