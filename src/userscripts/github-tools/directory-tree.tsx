@@ -101,10 +101,12 @@ export function fileSelection(repo: { owner: string; repo: string }, branch: str
   }
   const current = store;
   return {
-    get: () => branch ? current.paths : emptySelection,
+    get: () => (branch ? current.paths : emptySelection),
     subscribe: (notify: () => void) => {
       current.listeners.add(notify);
-      return () => { current.listeners.delete(notify); };
+      return () => {
+        current.listeners.delete(notify);
+      };
     },
     set: (update: (previous: Set<string>) => Set<string>) => {
       if (!branch) {
@@ -116,7 +118,7 @@ export function fileSelection(repo: { owner: string; repo: string }, branch: str
       } catch {
         // Selection remains available in memory.
       }
-      current.listeners.forEach(notify => notify());
+      current.listeners.forEach((notify) => notify());
     },
   };
 }
@@ -368,7 +370,10 @@ export function mountDirectoryTree(
     );
   };
   function DirectoryTreeView() {
-    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(subscribe, () => snapshot);
+    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
+      subscribe,
+      () => snapshot,
+    );
     const selection = fileSelection(repo, resolvedBranch);
     const selected = useSyncExternalStore(selection.subscribe, selection.get);
     const setSelected = selection.set;

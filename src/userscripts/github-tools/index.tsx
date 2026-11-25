@@ -668,35 +668,40 @@ function startGitHub(ctx: any): void {
       }
       return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
     };
-    async function exportSelected(paths: string[], branch: string, download: boolean, progress: (done: number, total: number) => void) {
-        const items: FileItemInfo[] = paths.map((path) => {
-          const tail = [...branch.split("/"), ...path.split("/")].map(encodeURIComponent).join("/");
-          return {
-            row: listContainer,
-            name: path.split("/").pop() || path,
-            type: "file",
-            href: `${location.origin}/${repo.owner}/${repo.repo}/blob/${tail}`,
-            tail,
-            date: null,
-            exportPath: path,
-          };
-        });
-        const content = await buildCombinedClipboardText(items, repo, "content", progress);
-        if (!download) {
-          await handleClipboardWriteGesture(Promise.resolve(content));
-          return;
-        }
-        const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = `${repo.repo}-selected-files.txt`;
-        document.body.append(anchor);
-        try {
-          anchor.click();
-        } finally {
-          anchor.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 30000);
-        }
+    async function exportSelected(
+      paths: string[],
+      branch: string,
+      download: boolean,
+      progress: (done: number, total: number) => void,
+    ) {
+      const items: FileItemInfo[] = paths.map((path) => {
+        const tail = [...branch.split("/"), ...path.split("/")].map(encodeURIComponent).join("/");
+        return {
+          row: listContainer,
+          name: path.split("/").pop() || path,
+          type: "file",
+          href: `${location.origin}/${repo.owner}/${repo.repo}/blob/${tail}`,
+          tail,
+          date: null,
+          exportPath: path,
+        };
+      });
+      const content = await buildCombinedClipboardText(items, repo, "content", progress);
+      if (!download) {
+        await handleClipboardWriteGesture(Promise.resolve(content));
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${repo.repo}-selected-files.txt`;
+      document.body.append(anchor);
+      try {
+        anchor.click();
+      } finally {
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
     }
     function ToolbarView() {
       const currentInfo = useSyncExternalStore(subscribeInfo, () => info);
@@ -708,7 +713,9 @@ function startGitHub(ctx: any): void {
       const run = async (download: boolean) => {
         setBusy(true);
         try {
-          await exportSelected([...selected], branch, download, (done, total) => setStatus(`Lendo ${done}/${total}…`));
+          await exportSelected([...selected], branch, download, (done, total) =>
+            setStatus(`Lendo ${done}/${total}…`),
+          );
           setStatus(download ? "Download solicitado" : "Copiado");
         } catch (error) {
           setStatus(String(error));
@@ -716,17 +723,56 @@ function startGitHub(ctx: any): void {
           setBusy(false);
         }
       };
-      return <>
-        <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />
-        <div className={styles.toolbar}>
-          <span>{selected.size} selecionados</span>
-          <button className={styles.button} disabled={!branch || busy} onClick={() => selection.set(previous => new Set([...previous, ...(collectRepositoryDirectoryGroups(repo).find(entry => entry.parent === group.parent)?.items || []).filter(item => item.type === "file").map(formatDisplayPathForItem)]))}>Selecionar pasta</button>
-          <button className={styles.button} disabled={!selected.size || busy} onClick={() => selection.set(() => new Set())}>Limpar</button>
-          <button className={styles.button} disabled={!selected.size || busy} onClick={() => void run(false)}>Copiar selecionados</button>
-          <button className={styles.button} disabled={!selected.size || busy} onClick={() => void run(true)}>Baixar TXT</button>
-          <span role="status">{status}</span>
-        </div>
-      </>;
+      return (
+        <>
+          <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />
+          <div className={styles.toolbar}>
+            <span>{selected.size} selecionados</span>
+            <button
+              className={styles.button}
+              disabled={!branch || busy}
+              onClick={() =>
+                selection.set(
+                  (previous) =>
+                    new Set([
+                      ...previous,
+                      ...(
+                        collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)
+                          ?.items || []
+                      )
+                        .filter((item) => item.type === "file")
+                        .map(formatDisplayPathForItem),
+                    ]),
+                )
+              }
+            >
+              Selecionar pasta
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => selection.set(() => new Set())}
+            >
+              Limpar
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => void run(false)}
+            >
+              Copiar selecionados
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => void run(true)}
+            >
+              Baixar TXT
+            </button>
+            <span role="status">{status}</span>
+          </div>
+        </>
+      );
     }
     const mount = mountReactPoint(ctx, listContainer.parentNode!, <ToolbarView />, {
       before: listContainer,
@@ -735,13 +781,7 @@ function startGitHub(ctx: any): void {
     });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(
-      ctx,
-      listContainer,
-      repo,
-      restoreScroll,
-      exportSelected,
-    );
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, exportSelected);
     mounts.set(listContainer as HTMLElement, disposeTree);
     const record = {
       host: mount.host,
@@ -761,18 +801,27 @@ function startGitHub(ctx: any): void {
     const selection = fileSelection(repo, branch);
     const selected = useSyncExternalStore(selection.subscribe, selection.get);
     const path = formatDisplayPathForItem(item);
-    return <input type="checkbox" disabled={!branch} aria-label={`Selecionar ${path}`} checked={selected.has(path)} onClick={event => event.stopPropagation()} onChange={event => {
-      const checked = event.currentTarget.checked;
-      selection.set(previous => {
-        const next = new Set(previous);
-        if (checked) {
-          next.add(path);
-        } else {
-          next.delete(path);
-        }
-        return next;
-      });
-    }} />;
+    return (
+      <input
+        type="checkbox"
+        disabled={!branch}
+        aria-label={`Selecionar ${path}`}
+        checked={selected.has(path)}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => {
+          const checked = event.currentTarget.checked;
+          selection.set((previous) => {
+            const next = new Set(previous);
+            if (checked) {
+              next.add(path);
+            } else {
+              next.delete(path);
+            }
+            return next;
+          });
+        }}
+      />
+    );
   }
   const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
@@ -811,20 +860,21 @@ function startGitHub(ctx: any): void {
           ctx,
           anchor.parentNode!,
           <>
-          {item.type === "file" && <NativeSelection item={item} repo={repo} />}
-          <button
-            type="button"
-            className={styles.button}
-            title={"Favoritar " + item.name}
-            aria-label={"Favoritar " + item.name}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              dashboard.toggleFile(item.name, item.href);
-            }}
-          >
-            ☆
-          </button></>,
+            {item.type === "file" && <NativeSelection item={item} repo={repo} />}
+            <button
+              type="button"
+              className={styles.button}
+              title={"Favoritar " + item.name}
+              aria-label={"Favoritar " + item.name}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                dashboard.toggleFile(item.name, item.href);
+              }}
+            >
+              ☆
+            </button>
+          </>,
           { tag: "span", before: anchor, shadow: true, styles: [css] },
         );
         mounts.set(mount.host, mount.dispose);
