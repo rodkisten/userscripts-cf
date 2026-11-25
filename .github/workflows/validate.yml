@@ -393,8 +393,36 @@ jobs:
           retention-days: 3
           if-no-files-found: warn
 
+  ast-impact:
+    if: github.event.action != 'closed' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.paths.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$BASE" "$HEAD" -- 'build/rod-ast.mjs' 'build/rod-ast-summary.mjs' 'build/styles.mjs' 'docs/rod-ast.md' 'tests/fixtures/rod-ast.matrix.json' 'tests/fixtures/rod-ast.input.tsx' 'tests/rod-ast.test.mjs' 'tests/rod-ast-summary.test.mjs' 'src/core/runtime.ts' 'src/core/runtime-context-react.tsx' 'src/core/react-context-contract.ts' 'vite.config.js' 'build/rod-ast-iife.mjs' 'build/rod-ast-cli.mjs' 'tests/fixtures/rod-ast.legacy.user.js' 'src/runtime/dom-engine.ts' 'src/runtime/gm-bridge.ts' 'src/runtime/modular/features/dom.ts' 'src/runtime/modular/features/gm.ts' 'src/runtime/modular/features/storage.ts' 'src/runtime/vendor/storage.ts' '.github/workflows/validate.yml'; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   ast-tests:
-    if: github.event_name == 'workflow_dispatch' && (inputs.block == 'tests' || inputs.block == 'all')
+    needs: ast-impact
+    if: always() && !cancelled() && ((github.event_name == 'workflow_dispatch' && (inputs.block == 'tests' || inputs.block == 'all')) || needs.ast-impact.outputs.changed == 'true' || needs.ast-impact.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
