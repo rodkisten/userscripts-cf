@@ -834,7 +834,7 @@ function startGitHub(ctx: any): void {
     });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, {
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, exportSelected, {
       appendFile: (href, path) => appendFile(href, path, repo),
       reset: resetClipboardSelection,
     });
