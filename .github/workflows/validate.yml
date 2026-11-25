@@ -11,8 +11,17 @@ on:
       block:
         description: "Pipeline block"
         type: choice
-        options: [all, validate, audits, diagnostics, tests]
+        options: [all, validate, audits, diagnostics, tests, bundle]
         default: all
+      bundle-mode:
+        description: Bundle operation
+        type: choice
+        options: [report, baseline]
+        default: report
+      baseline-reason:
+        description: Baseline replacement reason
+        type: string
+        default: Manual baseline update
       scope:
         description: "Validation scope"
         type: choice
@@ -222,6 +231,19 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
           node scripts/cloudflare-pr-preview.mjs --mode=publish
+
+      - name: Measure published distribution
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: npm run bundle:metrics
+      - name: 💬 Update Bundle Diet PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: npm run bundle:report
 
       - name: Authenticate preview comment publisher
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -481,3 +503,82 @@ jobs:
             exit 1
           fi
           echo "All Rod AST checks passed."
+
+  measure:
+    if: github.event_name == 'workflow_dispatch' && inputs.block == 'bundle'
+    name: "⚖️ Measure & report bundles"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 🤖 Generate GitHub App token
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: 📥 Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🏗️ Build and measure distribution
+        uses: rodkisten/github/execute@main
+        env:
+          BUILD_REASON: Bundle Diet needs a complete comparable distribution.
+        with:
+          node-version: "24"
+          package-manager: npm
+          install-args: --legacy-peer-deps
+          script: |
+            npm run build
+            npm run bundle:metrics
+
+      - name: 💬 Update Bundle Diet PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: npm run bundle:report
+
+      - name: 📌 Write versioned baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.bundle-mode == 'baseline'
+        env:
+          BASELINE_REASON: ${{ inputs.baseline-reason }}
+        run: npm run bundle:baseline
+
+      - name: 🤖 Commit baseline with Rod GitHub App
+        if: github.event_name == 'workflow_dispatch' && inputs.bundle-mode == 'baseline'
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/bundle-baseline.json; then
+            echo "Baseline already matches the current build." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "Rod GitHub App"
+          git config user.email "rod-github-app@users.noreply.github.com"
+          git add .github/bundle-baseline.json
+          git commit -m "chore(bundle): establish size baseline"
+          git push origin "HEAD:$BRANCH"
+          echo "### 📌 Bundle baseline updated" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$(git rev-parse --short HEAD)\` now stores the reference metrics." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📤 Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-metrics-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            dist/bundle-metrics.json
+            dist/runtime-feature-audit.json
+            dist/css-class-audit.json
+          retention-days: 30
