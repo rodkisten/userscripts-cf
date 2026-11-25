@@ -4,6 +4,7 @@ import githubColorStudio from "../github-color-studio/index.tsx";
 import { EditorDrafts } from "./editor/drafts.js";
 import focusZoomCss from "./focus-zoom.css?inline";
 import { disableEditorAutocapitalization } from "./editor/autocapitalization.js";
+import { GitHubCiPanel } from "./ci-panel.js";
 
 /**
  * Single GitHub entrypoint. Feature modules remain isolated in their folders,
@@ -22,5 +23,6 @@ export default {
     githubColorStudio.init(ctx);
     const mount = ctx.ui.mountReact(<EditorDrafts />);
     ctx.onDispose(mount);
+    ctx.onDispose(ctx.ui.mountReact(<GitHubCiPanel ctx={ctx} />));
   },
 };

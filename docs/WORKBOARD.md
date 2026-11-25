@@ -700,6 +700,7 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] TODO/FIXME no início de comentários do visualizador GitHub abre o formulário de issue com título e referência ao arquivo.
 - [ ] Confirmar no Safari iPhone que os campos de edição do GitHub usam pelo menos 16 px e que o foco não amplia a página. O zoom por gesto permanece disponível.
 - [ ] Confirmar no teclado do iPhone que inputs, textareas e editores sem rich text no GitHub respeitam `autocapitalize="off"`, inclusive após navegação Turbo.
+- [ ] Validar o painel de CI em um PR real com a sessão do Orb e o Worker implantado. A URL HTTPS do Orb é configurada no painel.
 - [ ] Próximo bloco: adicionar grafo de imports/conteúdo, editor persistente e handlers Orb para GitHub GraphQL/cache.
 
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
