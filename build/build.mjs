@@ -22,6 +22,7 @@ import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 import { auditReactRootOwnership } from "./react-root-audit.mjs";
+import { bundleInventory, loadVersionRegistry, versionForTarget } from "./version-registry.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -293,7 +294,7 @@ export async function resolveTargetIcon(root, iconSourceDir, target, log) {
 // // @TODO: Mover para build/target-bundler.mjs
 // ============================================================================
 export async function compileTarget(target, context) {
-  const { root, out, iconSource, baseURL, version, catalog, runtimeFeatureAudit, log } = context;
+  const { root, out, iconSource, baseURL, registry, catalog, runtimeFeatureAudit, log } = context;
   const targetStart = performance.now();
 
   const worldInstallers = await Promise.all(
@@ -331,7 +332,7 @@ export async function compileTarget(target, context) {
   const [icon, formattedBody] = await Promise.all([
     resolveTargetIcon(root, iconSource, target, log),
     (async () => {
-      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
+      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
       const rawCode = stripBuildComments([diagnosticSource, ...installers].join("\n\n"));
       return format(rawCode, { parser: "babel", printWidth: 110 });
     })(),
@@ -373,8 +374,14 @@ export async function compileTarget(target, context) {
     throw new Error(`Minification did not produce JavaScript for ${target.id}`);
   }
 
-  const finalSource = `${metadata}\n\n${result.code}\n`;
-  const metaSource = `${metadata}\n`;
+  const inventory = bundleInventory(
+    target,
+    registry,
+    process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA,
+  );
+  const postManifest = inventory ? `\n\n${inventory}` : "";
+  const finalSource = `${metadata}${postManifest}\n\n${result.code}\n`;
+  const metaSource = `${metadata}${postManifest}\n`;
 
   const bodyBuffer = Buffer.from(formattedBody, "utf8");
   const sourceBuffer = Buffer.from(finalSource, "utf8");
@@ -426,6 +433,11 @@ export async function compileTarget(target, context) {
       debugFile,
       metaFile,
       metaSha256,
+      version: target.version,
+      includes:
+        target.id === "standalone"
+          ? target.definitions.map(({ id }) => ({ id, version: registry.scripts[id].version }))
+          : undefined,
       matches: patterns,
       sha256,
     },
@@ -629,6 +641,7 @@ const isMerge = process.argv.includes("--merge");
 
 const pkgRaw = await fs.readFile(path.join(root, "package.json"), "utf8");
 const { version } = JSON.parse(pkgRaw);
+const versionRegistry = await loadVersionRegistry(root, definitions);
 
 const allTargets = [
   {
@@ -636,21 +649,21 @@ const allTargets = [
     definitions,
     name: "🌻 Userscripts CF · Standalone (todos os módulos)",
     namespace: "https://rod.migos.club/userscripts-cf/standalone",
-    version,
+    version: versionForTarget("standalone", version, versionRegistry),
   },
   ...definitions.map((item) => ({
     id: item.id,
     definitions: [item],
     name: item.name,
     namespace: item.namespace,
-    version,
+    version: versionForTarget(item.id, version, versionRegistry),
   })),
   {
     id: "unified",
     definitions: definitions.filter((item) => item.unified !== false),
     name: distribution.unified?.name || "Userscripts CF · Unificado",
     namespace: distribution.unified?.namespace,
-    version,
+    version: versionForTarget("unified", version, versionRegistry),
   },
 ];
 
@@ -803,7 +816,7 @@ if (!isMerge) {
           out,
           iconSource,
           baseURL,
-          version,
+          registry: versionRegistry,
           catalog,
           runtimeFeatureAudit,
           log,
@@ -945,6 +958,29 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
 
   await Promise.all([
     fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
+    fs.writeFile(
+      path.join(out, "versions.json"),
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          packageVersion: version,
+          commit: process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA || "local",
+          scripts: Object.fromEntries(
+            manifest.scripts.map((item) => [
+              item.id,
+              {
+                version: item.version,
+                file: item.file,
+                sha256: item.sha256,
+                includes: item.includes || [],
+              },
+            ]),
+          ),
+        },
+        null,
+        2,
+      ) + "\n",
+    ),
     fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n"),
     fs.writeFile(
       path.join(out, "runtime-feature-audit.json"),

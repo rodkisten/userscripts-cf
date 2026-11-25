@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 import { format } from "prettier";
 import { execFileSync } from "node:child_process";
 import { build as viteBuild } from "vite";
+import { materializeVersionedArtifacts } from "./versioned-artifacts.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
+await materializeVersionedArtifacts(dist, manifest);
 const isPreview = process.env.USERSCRIPTS_PREVIEW === "1";
 // A matching workflow cache already contains the compiled Studio. Do not
 // rebuild it for changes limited to the playground or hosting templates.
@@ -48,8 +50,10 @@ assets["playground/form-controls.html"] = redirectToStudio;
 assets["playground/instagram-bookmark.html"] = redirectToStudio;
 // Inject a single early collector into every HTML entrypoint, including redirects.
 // Inline before application scripts so startup errors are captured without a second UI mount.
-const captureSource = (await fs.readFile(path.join(root, "playground/capture.js"), "utf8"))
-  .replaceAll("</script", "<" + String.fromCharCode(92) + "/script");
+const captureSource = (await fs.readFile(path.join(root, "playground/capture.js"), "utf8")).replaceAll(
+  "</script",
+  "<" + String.fromCharCode(92) + "/script",
+);
 for (const [name, content] of Object.entries(assets)) {
   if (!name.endsWith(".html")) continue;
   if (!content.includes("<head>") && !content.includes("<html")) continue;
@@ -100,11 +104,28 @@ if (isPreview) {
     .replace("Userscripts CF · Instale seus scripts", "[PRE] Userscripts CF · Preview");
 }
 for (const file of await fs.readdir(dist)) {
-  if (!/^(?:[a-z][a-z0-9-]*\.(?:(?:preview\.)?(?:user|meta))\.js|manifest\.json|SHA256SUMS)$/.test(file))
+  if (
+    !/^(?:[a-z][a-z0-9-]*\.(?:(?:preview\.)?(?:user|meta))\.js|manifest\.json|versions\.json|SHA256SUMS)$/.test(
+      file,
+    )
+  )
     continue;
   if (isPreview && file === "manifest.json") continue; // Keep the preview catalog, not the production manifest.
   if (isPreview && /\.(?:user|meta)\.js$/.test(file) && !file.includes(".preview.")) continue;
   assets[file] = await fs.readFile(path.join(dist, file), "utf8");
+}
+const releasesDir = path.join(dist, "releases");
+const pendingReleaseDirs = [releasesDir];
+while (pendingReleaseDirs.length) {
+  const directory = pendingReleaseDirs.pop();
+  if (!(await fs.stat(directory).catch(() => null))) continue;
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+    const filename = path.join(directory, entry.name);
+    if (entry.isDirectory()) pendingReleaseDirs.push(filename);
+    else if (/^[a-z][a-z0-9-]*\.(?:user|meta)\.js$/.test(entry.name)) {
+      assets[path.relative(dist, filename).split(path.sep).join("/")] = await fs.readFile(filename, "utf8");
+    }
+  }
 }
 for (const file of await fs.readdir(path.join(dist, "icons"))) {
   if (!/^[a-z][a-z0-9-]*\.svg$/.test(file)) continue;

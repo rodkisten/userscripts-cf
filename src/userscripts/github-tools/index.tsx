@@ -1,6 +1,6 @@
 import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
-import { mountDirectoryTree } from "./directory-tree.tsx";
+import { mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { useSyncExternalStore, type ReactElement } from "react";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
@@ -32,8 +32,8 @@ function mountReactPoint(
       host,
       dispose: () => {
         if (disposed) {
-return;
-}
+          return;
+        }
         disposed = true;
         mount.dispose();
         host.remove();
@@ -164,18 +164,18 @@ function normalizeUserPreferences(stored: unknown): GitHubPreferences {
 function extractRepositoryFromLocation(): RepositoryInfo | null {
   const parts = location.pathname.split("/").filter(Boolean);
   if (parts.length < 2) {
-return null;
-}
+    return null;
+  }
   const [owner, repo, segment] = parts;
   if (IGNORED_OWNER_SETTINGS.includes(owner)) {
-return null;
-}
+    return null;
+  }
   if (segment && !ALLOWED_REPO_SEGMENTS.includes(segment)) {
-return null;
-}
+    return null;
+  }
   if (segment === BLOB_SEGMENT) {
-return null;
-}
+    return null;
+  }
   return { owner, repo };
 }
 
@@ -189,15 +189,15 @@ function extractFileLinkFromRow(row: Element, repo: RepositoryInfo): FileLinkRes
       continue;
     }
     if (url.origin !== location.origin) {
-continue;
-}
+      continue;
+    }
     const parts = url.pathname.split("/").filter(Boolean);
     if (parts[0] !== repo.owner || parts[1] !== repo.repo) {
-continue;
-}
+      continue;
+    }
     if (!ALLOWED_REPO_SEGMENTS.includes(parts[2]) || parts.length < 5) {
-continue;
-}
+      continue;
+    }
     return { anchor: anchor as HTMLAnchorElement, url, type: parts[2] === TREE_SEGMENT ? "folder" : "file" };
   }
   return null;
@@ -210,15 +210,15 @@ function extractRowLastModifiedTimestamp(row: Element): number | null {
       element.getAttribute("data-time") ||
       element.getAttribute("data-timestamp");
     if (!raw) {
-continue;
-}
+      continue;
+    }
     let timestamp = /^\d{10,13}$/.test(raw) ? Number(raw) : Date.parse(raw);
     if (timestamp > 0 && timestamp < TIMESTAMP_LOWER_BOUND) {
-timestamp *= 1000;
-}
+      timestamp *= 1000;
+    }
     if (Number.isFinite(timestamp) && timestamp > 0) {
-return timestamp;
-}
+      return timestamp;
+    }
   }
   return null;
 }
@@ -226,12 +226,12 @@ return timestamp;
 function extractRowFileInfo(row: Element, repo: RepositoryInfo): FileItemInfo | null {
   const link = extractFileLinkFromRow(row, repo);
   if (!link) {
-return null;
-}
+    return null;
+  }
   const name = link.anchor.textContent.trim() || decodeURIComponent(link.url.pathname.split("/").pop() || "");
   if (!name || name === "..") {
-return null;
-}
+    return null;
+  }
   const tail = link.url.pathname.slice(
     `/${repo.owner}/${repo.repo}/${link.type === "file" ? BLOB_SEGMENT : TREE_SEGMENT}/`.length,
   );
@@ -254,29 +254,28 @@ function collectRepositoryDirectoryGroups(repo: RepositoryInfo): DirectoryGroup[
       anchor.closest(
         'aside, nav, [role="tree"], [data-ghft-toolbar], .PRIVATE_TreeView, [data-testid="file-tree"]',
       )
-    )
-      {
-continue;
-}
+    ) {
+      continue;
+    }
     const row = anchor.closest(DIRECTORY_ROW_SELECTOR);
     if (!row || !row.parentElement || !main.contains(row)) {
-continue;
-}
+      continue;
+    }
     const info = extractRowFileInfo(row, repo);
     if (!info || info.href !== anchor.href) {
-continue;
-}
+      continue;
+    }
     const parent = row.parentElement;
     const known =
       parent.matches('tbody, [role="rowgroup"], .react-directory-list, .Box') ||
       row.matches(".react-directory-row, .js-navigation-item") ||
       !!row.closest('table, [role="table"]');
     if (!known) {
-continue;
-}
+      continue;
+    }
     if (!groups.has(parent)) {
-groups.set(parent, new Map());
-}
+      groups.set(parent, new Map());
+    }
     groups.get(parent)!.set(row, info);
   }
 
@@ -290,8 +289,8 @@ function resolveCurrentRepositoryReference(): string {
     const element = document.querySelector(selector);
     const value = element?.textContent?.trim();
     if (value && value.length < MAX_STRING_SLICE_LIMIT) {
-return value.replace(/^Branch:\s*/i, "");
-}
+      return value.replace(/^Branch:\s*/i, "");
+    }
   }
   return "";
 }
@@ -306,8 +305,8 @@ function buildRawFileUrl(item: FileItemInfo, repo: RepositoryInfo): string {
   const path = new URL(item.href).pathname;
   const needle = `/${repo.owner}/${repo.repo}/${BLOB_SEGMENT}/`;
   if (!path.startsWith(needle)) {
-throw new Error(`Link não reconhecido: ${item.name}`);
-}
+    throw new Error(`Link não reconhecido: ${item.name}`);
+  }
   return `${location.origin}/${repo.owner}/${repo.repo}/raw/${path.slice(needle.length)}`;
 }
 
@@ -353,8 +352,8 @@ function downloadRawTextContent(url: string): Promise<{ text: string; type: stri
     fetch(url, { credentials: "include", redirect: "follow" })
       .then(async (response) => {
         if (!response.ok) {
-throw new Error(`HTTP ${response.status}`);
-}
+          throw new Error(`HTTP ${response.status}`);
+        }
         resolve({ text: await response.text(), type: response.headers.get("content-type") || "" });
       })
       .catch(reject);
@@ -363,18 +362,17 @@ throw new Error(`HTTP ${response.status}`);
 
 function isContentBinaryOrGitHubErrorPage(text: string, mime: string): boolean {
   if (/^(image\/|audio\/|video\/|application\/(pdf|zip|octet-stream|wasm))/.test(mime)) {
-return true;
-}
+    return true;
+  }
   if (text.includes("\u0000")) {
-return true;
-}
+    return true;
+  }
   if (
     /^\s*<!doctype html|^\s*<html[\s>]/i.test(text.slice(0, BINARY_CHECK_SLICE_SIZE)) &&
     /<title>[^<]*(?:GitHub · Sign in|Sign in to GitHub|404 · GitHub|Rate limit)[^<]*<\/title>/i.test(text)
-  )
-    {
-return true;
-}
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -397,16 +395,16 @@ async function fetchMultipleFileContents(
         try {
           const { text, type } = await downloadRawTextContent(buildRawFileUrl(item, repo));
           if (isContentBinaryOrGitHubErrorPage(text, type)) {
-throw new Error(ERROR_BINARY_OR_HTML);
-}
+            throw new Error(ERROR_BINARY_OR_HTML);
+          }
           const bytes = new Blob([text]).size;
           if (bytes > SINGLE_FILE_LIMIT_BYTES) {
-throw new Error(ERROR_EXCEEDED_SINGLE_LIMIT);
-}
+            throw new Error(ERROR_EXCEEDED_SINGLE_LIMIT);
+          }
           totalBytes += bytes;
           if (totalBytes > CONTENT_LIMIT_BYTES) {
-throw new Error(ERROR_EXCEEDED_TOTAL_LIMIT);
-}
+            throw new Error(ERROR_EXCEEDED_TOTAL_LIMIT);
+          }
           results[index] = { item, text };
         } catch (error: any) {
           results[index] = { item, error: error?.message || String(error) };
@@ -474,15 +472,14 @@ async function buildCombinedClipboardText(
   const files = items.filter((item) => item.type === "file");
   const results = await fetchMultipleFileContents(files, repo, progress);
   const successful = results.filter((item) => !item.error);
-  if (!successful.length)
-    {
-throw new Error("Não consegui ler nenhum arquivo. Verifique o acesso ao repositório.");
-}
+  if (!successful.length) {
+    throw new Error("Não consegui ler nenhum arquivo. Verifique o acesso ao repositório.");
+  }
   const sections = results.map((result) => {
     const path = formatDisplayPathForItem(result.item);
     if (result.error) {
-return `## ${path}\n[Não copiado: ${result.error}]`;
-}
+      return `## ${path}\n[Não copiado: ${result.error}]`;
+    }
     const fence = calculateMarkdownCodeFence(result.text!);
     return `## ${path}\n${fence}${detectCodeLanguageForFilename(path)}\n${result.text!.replace(/\n*$/, "")}\n${fence}`;
   });
@@ -509,8 +506,8 @@ async function writeTextToSystemClipboard(text: string): Promise<void> {
   fallback.select();
   try {
     if (!document.execCommand("copy")) {
-throw Error("Clipboard indisponível");
-}
+      throw Error("Clipboard indisponível");
+    }
   } finally {
     fallback.remove();
   }
@@ -543,8 +540,8 @@ function copyDirectoryItemsToClipboard(
   progress: (done: number, total: number) => void,
 ): Promise<void> {
   if (!items.length) {
-return Promise.resolve();
-}
+    return Promise.resolve();
+  }
   const mode = prefs.mode;
   return handleClipboardWriteGesture(buildCombinedClipboardText(items, repo, mode, progress));
 }
@@ -587,6 +584,40 @@ function startGitHub(ctx: any): void {
   const mounts = new Map<HTMLElement, () => void>();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastUrl = location.href;
+  let restoreScrollAfterHistoryNavigation = false;
+
+  // Keep GitHub's scroll position before the custom tree follows a file or folder.
+  // The key is the source route, so Back restores that exact listing position.
+  ctx.listen(
+    document,
+    "click",
+    (event: Event) => {
+      const path = event.composedPath();
+      const inTree = path.some((node) => node instanceof Element && node.matches("[data-ghft-tree-host]"));
+      if (!inTree) {
+        return;
+      }
+      const anchor = path.find(
+        (node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement && node.matches("a[href]"),
+      );
+      if (!anchor) {
+        return;
+      }
+      try {
+        const target = new URL(anchor.href, location.href);
+        if (target.origin !== location.origin || !/^\/(?:[^/]+\/){2}(?:tree|blob)\//.test(target.pathname)) {
+          return;
+        }
+        sessionStorage.setItem(
+          `ghft:scroll:${location.pathname}`,
+          String(window.scrollY || document.documentElement.scrollTop || 0),
+        );
+      } catch {
+        // Scroll restoration is an enhancement; storage may be blocked in private mode.
+      }
+    },
+    true,
+  );
 
   function savePrefs(changes: Partial<GitHubPreferences>) {
     preferencesChanged = true;
@@ -601,20 +632,20 @@ function startGitHub(ctx: any): void {
   function sortDirectoryGroup(group: DirectoryGroup) {
     const items = group.items.filter((item) => item.row.parentElement === group.parent);
     if (!items.length) {
-return;
-}
+      return;
+    }
     const direction = prefs.direction === DEFAULT_DIRECTION_MODE ? 1 : -1;
     const sorted = [...items].sort((a, b) => {
       if (a.type !== b.type) {
-return a.type === "folder" ? -1 : 1;
-}
+        return a.type === "folder" ? -1 : 1;
+      }
       if (prefs.sort === MODIFIED_SORT_VALUE) {
         if (a.date === null && b.date !== null) {
-return 1;
-}
+          return 1;
+        }
         if (b.date === null && a.date !== null) {
-return -1;
-}
+          return -1;
+        }
         if (a.date !== null && b.date !== null && a.date !== b.date) {
           return (a.date - b.date) * direction;
         }
@@ -622,26 +653,28 @@ return -1;
       return collator.compare(a.name, b.name) * direction;
     });
     if (items.every((item, i) => item.row === sorted[i].row)) {
-return;
-}
+      return;
+    }
 
     const original = [...group.parent.children].filter((el) => items.some((item) => item.row === el));
     const followingSibling = original.at(-1)?.nextSibling;
     for (const item of sorted) {
-group.parent.insertBefore(item.row, followingSibling || null);
-}
+      group.parent.insertBefore(item.row, followingSibling || null);
+    }
   }
 
-  function attachGroupToolbar(group: DirectoryGroup, repo: RepositoryInfo) {
+  function attachGroupToolbar(group: DirectoryGroup, repo: RepositoryInfo, restoreScroll = false) {
     const previous = panels.get(group.parent);
     if (previous?.host.isConnected) {
-return previous;
-}
+      if (restoreScroll) {
+        restoreGitHubTreeScroll();
+      }
+      return previous;
+    }
     let listContainer = group.parent;
-    if (listContainer.matches('tbody, [role="rowgroup"], .react-directory-list'))
-      {
-listContainer = listContainer.closest('table, [role="table"]') || listContainer;
-}
+    if (listContainer.matches('tbody, [role="rowgroup"], .react-directory-list')) {
+      listContainer = listContainer.closest('table, [role="table"]') || listContainer;
+    }
     let info = { hint: "", title: "" };
     const infoListeners = new Set<() => void>();
     const subscribeInfo = (notify: () => void) => {
@@ -654,28 +687,30 @@ listContainer = listContainer.closest('table, [role="table"]') || listContainer;
       const items =
         collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)?.items || [];
       const files = items.filter((item) => item.type === "file");
-      if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length)
-        {
-return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
-}
+      if (prefs.mode === DEFAULT_CONTENT_MODE && !files.length) {
+        return Promise.reject(Error("Esta pasta só contém subpastas. Escolha Caminhos."));
+      }
       if (
         prefs.mode === DEFAULT_CONTENT_MODE &&
         files.length > 100 &&
         !confirm(`Copiar ${files.length} arquivos?`)
-      )
-        {
-return Promise.resolve();
-}
+      ) {
+        return Promise.resolve();
+      }
       return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
     };
     function ToolbarView() {
       const currentInfo = useSyncExternalStore(subscribeInfo, () => info);
       return <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />;
     }
-    const mount = mountReactPoint(ctx, listContainer.parentNode!, <ToolbarView />, { before: listContainer });
+    const mount = mountReactPoint(ctx, listContainer.parentNode!, <ToolbarView />, {
+      before: listContainer,
+      shadow: true,
+      styles: [css],
+    });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(ctx, listContainer, repo);
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll);
     mounts.set(listContainer as HTMLElement, disposeTree);
     const record = {
       host: mount.host,
@@ -695,6 +730,8 @@ return Promise.resolve();
 
   function scan() {
     fitNavigation();
+    const restoreScroll = restoreScrollAfterHistoryNavigation;
+    restoreScrollAfterHistoryNavigation = false;
     for (const [node, dispose] of mounts) {
       if (!node.isConnected) {
         dispose();
@@ -712,15 +749,15 @@ return Promise.resolve();
     for (const group of groups) {
       for (const item of group.items) {
         if (favoriteHosts.has(item.row)) {
-continue;
-}
+          continue;
+        }
         favoriteHosts.add(item.row);
         const anchor =
           item.row.querySelector('a[href="' + CSS.escape(new URL(item.href).pathname) + '"]') ||
           item.row.querySelector("a[href]");
         if (!anchor) {
-continue;
-}
+          continue;
+        }
         const mount = mountReactPoint(
           ctx,
           anchor.parentNode!,
@@ -751,7 +788,7 @@ continue;
           mounts.set(commitMount.host, commitMount.dispose);
         }
       }
-      const toolbar = attachGroupToolbar(group, repo);
+      const toolbar = attachGroupToolbar(group, repo, restoreScroll);
       const missingDates = group.items.filter((item) => item.date === null).length;
       toolbar.update(
         prefs.sort === MODIFIED_SORT_VALUE && missingDates
@@ -777,8 +814,8 @@ continue;
       const request = ++tokenRequest;
       const token = await ctx.storage.get("actionsToken", "");
       if (ctx.signal.aborted || request !== tokenRequest) {
-return;
-}
+        return;
+      }
       tokenDialog?.dispose();
       tokenDialog = mountReactPoint(
         ctx,
@@ -798,8 +835,8 @@ return;
       tokenRequest++;
       tokenDialog?.dispose();
       if (typeof GM_unregisterMenuCommand === "function") {
-GM_unregisterMenuCommand(id);
-}
+        GM_unregisterMenuCommand(id);
+      }
     });
   }
 
@@ -810,13 +847,12 @@ GM_unregisterMenuCommand(id);
           record.target.nodeType === 1 &&
           (record.target as Element).closest?.("[data-ghft-toolbar], [data-ghft-step-host], #ghft-toast"),
       )
-    )
-      {
-return;
-}
+    ) {
+      return;
+    }
     if (lastUrl !== location.href) {
-lastUrl = location.href;
-}
+      lastUrl = location.href;
+    }
     scheduleScan();
   });
   observer.observe(document.body, {
@@ -826,9 +862,13 @@ lastUrl = location.href;
     attributeFilter: ["datetime", "data-time"],
   });
 
-  for (const event of NAVIGATION_RETRY_EVENTS) {
-ctx.listen(window, event, scheduleScan);
-}
+  for (const event of NAVIGATION_RETRY_EVENTS.filter((name) => name !== "popstate")) {
+    ctx.listen(window, event, scheduleScan);
+  }
+  ctx.listen(window, "popstate", () => {
+    restoreScrollAfterHistoryNavigation = true;
+    scheduleScan();
+  });
   const interval = setInterval(() => {
     if (lastUrl !== location.href) {
       lastUrl = location.href;

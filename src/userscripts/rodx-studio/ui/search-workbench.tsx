@@ -46,6 +46,7 @@ import { closePanel } from "./preferences.tsx";
 import { onClick, onFieldChange, onFileChange, onGroupToggle } from "./events.tsx";
 
 const cx = (value: string) => classNames(componentClasses, value);
+const rootShadow = (): ShadowRoot | null => state.rootShadow as ShadowRoot | null;
 
 // ============================================================================
 // 1. EXTRAÇÃO: theme-and-styles.ts (Tema dinâmico do X e cache de Shadow DOM)
@@ -54,7 +55,9 @@ const cx = (value: string) => classNames(componentClasses, value);
 const shadowStyleCache = new WeakMap<ShadowRoot, Map<string, HTMLStyleElement>>();
 
 export function applyXTheme(host: HTMLElement | null | undefined): void {
-  if (!host) return;
+  if (!host) {
+    return;
+  }
 
   const element =
     document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
@@ -62,7 +65,11 @@ export function applyXTheme(host: HTMLElement | null | undefined): void {
     document.body;
 
   const color = getComputedStyle(element).color || getComputedStyle(document.body).color;
-  const rgb = color.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number) ?? [];
+  const rgb =
+    color
+      .match(/\d+(?:\.\d+)?/g)
+      ?.slice(0, 3)
+      .map(Number) ?? [];
 
   const isDarkTheme =
     rgb.length === 3
@@ -83,10 +90,7 @@ export function applyXTheme(host: HTMLElement | null | undefined): void {
   host.style.setProperty("--rx-accent-weak", "rgba(29,155,240,.11)", "important");
 }
 
-function ensureShadowStyles(
-  root: ShadowRoot,
-  styles: ReadonlyArray<readonly [string, string]>,
-): void {
+function ensureShadowStyles(root: ShadowRoot, styles: ReadonlyArray<readonly [string, string]>): void {
   let registered = shadowStyleCache.get(root);
   if (!registered) {
     registered = new Map();
@@ -94,9 +98,13 @@ function ensureShadowStyles(
   }
 
   for (const [key, css] of styles) {
-    if (!css) continue;
+    if (!css) {
+      continue;
+    }
     const existing = registered.get(key);
-    if (existing?.isConnected && existing.textContent === css) continue;
+    if (existing?.isConnected && existing.textContent === css) {
+      continue;
+    }
 
     existing?.remove();
     const sheet = root.ownerDocument.createElement("style");
@@ -159,11 +167,15 @@ export function inspectNativeQuery(query: unknown) {
 }
 
 export function displayPreview(): void {
-  const root = state.rootShadow;
-  if (!root || !state.draft) return;
+  const root = rootShadow();
+  if (!root || !state.draft) {
+    return;
+  }
 
   const el = root.querySelector<HTMLElement>(RODX_SELECTORS.queryPreview);
-  if (!el) return;
+  if (!el) {
+    return;
+  }
 
   const issues = analyzeDraft(state.draft);
   const PLACEHOLDER = "Adicione hashtags, palavras, mídia ou filtros…";
@@ -229,7 +241,7 @@ export function displayPreview(): void {
 }
 
 export function validateRawWorkbench(text: string) {
-  const root = state.rootShadow;
+  const root = rootShadow();
   const target = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawStatus);
   const colored = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawHighlight);
   const list = root?.querySelector<HTMLElement>(RODX_SELECTORS.rawIssues);
@@ -329,7 +341,9 @@ export function addChips(value: string, focus = true): void {
           .map((x) => x.trim())
           .filter(Boolean);
 
-  if (!parts.length) return;
+  if (!parts.length) {
+    return;
+  }
 
   const t = tray();
   if (pasted.length > 1) {
@@ -358,12 +372,14 @@ export function addChips(value: string, focus = true): void {
   renderBlockEditor();
 
   if (focus) {
-    state.rootShadow?.querySelector<HTMLInputElement>(RODX_SELECTORS.chipInput)?.focus();
+    rootShadow()?.querySelector<HTMLInputElement>(RODX_SELECTORS.chipInput)?.focus();
   }
 }
 
 export function modifyBlocks(action: string, id = ""): void {
-  if (!state.draft) return;
+  if (!state.draft) {
+    return;
+  }
 
   // Snapshot para restauração atômica caso o limite de nós seja ultrapassado
   const snapshot = structuredClone(state.draft.blocks);
@@ -384,9 +400,13 @@ export function modifyBlocks(action: string, id = ""): void {
         newBlockGroup("OR", [newBlock("media", "images"), newBlock("media", "videos")]),
     };
     const group = templates[action]?.();
-    if (group) root.children.push(group);
+    if (group) {
+      root.children.push(group);
+    }
   } else if (action.startsWith("block-add-")) {
-    if (!match || match.node.kind !== "group") return;
+    if (!match || match.node.kind !== "group") {
+      return;
+    }
 
     const type = action.slice("block-add-".length);
     const depth = depthOfNode(root, id);
@@ -427,8 +447,7 @@ export function modifyBlocks(action: string, id = ""): void {
 
 export function editNativeSearch(): void {
   captureCurrent();
-  state.message =
-    "Busca convertida em blocos editáveis. Operadores desconhecidos ficam como blocos livres.";
+  state.message = "Busca convertida em blocos editáveis. Operadores desconhecidos ficam como blocos livres.";
   renderRoot();
 }
 
@@ -492,8 +511,8 @@ export function TagTray() {
       </div>
 
       <p className={cx("hero-sub")}>
-        Digite normalmente e separe por <strong>vírgula</strong> ou Enter. Toque num chip para
-        alternar entre hashtag → palavra → frase exata. ✎ edita.
+        Digite normalmente e separe por <strong>vírgula</strong> ou Enter. Toque num chip para alternar entre
+        hashtag → palavra → frase exata. ✎ edita.
       </p>
 
       <div className={cx("chip-entry")} data-chip-entry="">
@@ -504,12 +523,7 @@ export function TagTray() {
             data-kind={block.type}
             data-chip-node={block.id}
           >
-            <button
-              className={cx("chip-main")}
-              title="Trocar tipo"
-              data-act="chip-cycle"
-              data-id={block.id}
-            >
+            <button className={cx("chip-main")} title="Trocar tipo" data-act="chip-cycle" data-id={block.id}>
               {icons[block.type] || "⌕"}{" "}
               {block.type === "hashtag"
                 ? `#${block.value.replace(/^#/, "")}`
@@ -544,7 +558,7 @@ export function TagTray() {
 }
 
 export function renderTags(): void {
-  const container = state.rootShadow?.querySelector<HTMLElement>(RODX_SELECTORS.tagTray);
+  const container = rootShadow()?.querySelector<HTMLElement>(RODX_SELECTORS.tagTray);
   if (container && state.draft) {
     mountView(container, () => <TagTray />);
   }
@@ -559,9 +573,7 @@ export function SelectionList() {
     <section className={cx("rodx-selection-list rx-search-workbench-rodx-selection-list")}>
       <div className={cx("row rx-search-workbench-row-align-items")}>
         <strong>Seleções guardadas</strong>
-        <span className={cx("muted rx-search-workbench-muted")}>
-          ({state.selectionList.length})
-        </span>
+        <span className={cx("muted rx-search-workbench-muted")}>({state.selectionList.length})</span>
       </div>
 
       <p className={cx("muted")}>
@@ -614,8 +626,8 @@ export function Presets() {
       <section className={cx("preset-shelf")} aria-label="Biblioteca de presets">
         <h3>Presets e baselines ({state.presets.length})</h3>
         <p className={cx("muted")}>
-          Salve uma query como receita reutilizável. Combine várias com E/OU e acrescente novas
-          hashtags sem alterar a receita original.
+          Salve uma query como receita reutilizável. Combine várias com E/OU e acrescente novas hashtags sem
+          alterar a receita original.
         </p>
 
         {state.presets.length ? (
@@ -693,8 +705,8 @@ export function PresetShelf() {
       </div>
 
       <p className={cx("inline-label")}>
-        Cada base salva a expressão completa atual. Inserir uma base cria novos blocos
-        independentes para você personalizar.
+        Cada base salva a expressão completa atual. Inserir uma base cria novos blocos independentes para você
+        personalizar.
       </p>
     </section>
   );
@@ -760,13 +772,28 @@ export function blockHTML(block: any, depth = 0, isRoot = false): ReactNode {
           <input type="checkbox" data-block-not={block.id} checked={Boolean(block.not)} /> NÃO
         </label>
 
-        <button className={cx("btn mini ghost")} data-act="block-up" data-id={block.id} title="Mover para cima">
+        <button
+          className={cx("btn mini ghost")}
+          data-act="block-up"
+          data-id={block.id}
+          title="Mover para cima"
+        >
           ↑
         </button>
-        <button className={cx("btn mini ghost")} data-act="block-down" data-id={block.id} title="Mover para baixo">
+        <button
+          className={cx("btn mini ghost")}
+          data-act="block-down"
+          data-id={block.id}
+          title="Mover para baixo"
+        >
           ↓
         </button>
-        <button className={cx("btn mini danger")} data-act="block-remove" data-id={block.id} title="Remover bloco">
+        <button
+          className={cx("btn mini danger")}
+          data-act="block-remove"
+          data-id={block.id}
+          title="Remover bloco"
+        >
           ×
         </button>
       </div>
@@ -895,16 +922,15 @@ export function BlockBuilder() {
 
       <p className={cx("block-help")}>
         <strong>E</strong> exige as duas condições. <strong>OU</strong> aceita qualquer uma.{" "}
-        <strong>NÃO</strong> exclui um termo. Grupos produzem <code>(... OR ...)</code>. Os filtros
-        destacados acima e os filtros avançados entram como <strong>E</strong> com a expressão dos
-        blocos.
+        <strong>NÃO</strong> exclui um termo. Grupos produzem <code>(... OR ...)</code>. Os filtros destacados
+        acima e os filtros avançados entram como <strong>E</strong> com a expressão dos blocos.
       </p>
     </section>
   );
 }
 
 export function renderBlockEditor(): void {
-  const container = state.rootShadow?.querySelector<HTMLElement>(RODX_SELECTORS.blocksContainer);
+  const container = rootShadow()?.querySelector<HTMLElement>(RODX_SELECTORS.blocksContainer);
   if (container && state.draft) {
     mountView(container, () => blockHTML(state.draft.blocks, 0, true));
   }
@@ -969,8 +995,8 @@ export function SearchEditor() {
         </div>
 
         <label className={cx("tog")}>
-          <input type="checkbox" data-meta="pinned" checked={Boolean(draft.pinned)} /> Mostrar como
-          aba na Home
+          <input type="checkbox" data-meta="pinned" checked={Boolean(draft.pinned)} /> Mostrar como aba na
+          Home
         </label>
       </div>
 
@@ -981,8 +1007,7 @@ export function SearchEditor() {
       <section className={cx("priority")} aria-label="Filtros de mídia">
         <h2 className={cx("hero-title")}>▣ Tipo de mídia</h2>
         <p className={cx("hero-sub")}>
-          Filtro global aplicado à query inteira. Para mídias alternativas, use um grupo OU no
-          builder.
+          Filtro global aplicado à query inteira. Para mídias alternativas, use um grupo OU no builder.
         </p>
         <div className={cx("priority-grid")}>
           {renderField(["media", "Tipo de mídia", "select", [["any", "Qualquer postagem"], ...BLOCK_MEDIA]])}
@@ -1009,10 +1034,10 @@ export function SearchEditor() {
         <summary>⌘ Laboratório de parser · editar query manual</summary>
         <div className={cx("section-body workbench")}>
           <p className={cx("muted")}>
-            Cole ou escreva uma query com <strong>AND, OR, NOT e parênteses</strong>. O diagnóstico
-            sublinha o trecho incorreto e sugere a correção. <strong>links:domínio/**</strong>,{" "}
-            <strong>linksre:/expressão/i</strong> e <strong>textre:/expressão/i</strong> são filtros
-            locais que só atuam sobre posts carregados pelo X. Aplicar converte em blocos.
+            Cole ou escreva uma query com <strong>AND, OR, NOT e parênteses</strong>. O diagnóstico sublinha o
+            trecho incorreto e sugere a correção. <strong>links:domínio/**</strong>,{" "}
+            <strong>linksre:/expressão/i</strong> e <strong>textre:/expressão/i</strong> são filtros locais
+            que só atuam sobre posts carregados pelo X. Aplicar converte em blocos.
           </p>
           <textarea
             className={cx("ctrl raw-code")}
@@ -1057,8 +1082,8 @@ export function SearchEditor() {
       ))}
 
       <p className={cx("muted hint")}>
-        O campo livre aceita qualquer operador do buscador web do X. Alguns filtros experimentais
-        podem depender de alterações da plataforma. A data final é tratada como inclusiva.
+        O campo livre aceita qualquer operador do buscador web do X. Alguns filtros experimentais podem
+        depender de alterações da plataforma. A data final é tratada como inclusiva.
       </p>
 
       <button className={cx("btn rx-search-workbench-btn")} data-act="block-fix">
@@ -1104,9 +1129,7 @@ export function SavedSearches() {
               {s.icon} {s.name}
             </div>
             {s.pinned && <span className={cx("chip")}>Na Home</span>}
-            <span className={cx("chip")}>
-              {SORTS.find(([key]) => key === s.sort)?.[1] || "Recentes"}
-            </span>
+            <span className={cx("chip")}>{SORTS.find(([key]) => key === s.sort)?.[1] || "Recentes"}</span>
           </div>
 
           <div className={cx("query-sm")}>{s.query}</div>
@@ -1166,16 +1189,16 @@ export function DataSettings() {
         <div className={cx("section-body")}>
           <strong>☁ Sincronização pessoal no D1</strong>
           <p className={cx("muted")}>
-            Pesquisas, presets, configurações visuais, histórico e vistos ficam separados por pessoa
-            e por conta do X. A chave pessoal é diferente do token compartilhado de envio ao
-            Telegram. O modo local continua funcionando sem ela.
+            Pesquisas, presets, configurações visuais, histórico e vistos ficam separados por pessoa e por
+            conta do X. A chave pessoal é diferente do token compartilhado de envio ao Telegram. O modo local
+            continua funcionando sem ela.
           </p>
           <button className={cx("btn primary")} data-act="cloud-configure">
             Configurar chave pessoal
           </button>
           <p className={cx("muted")}>
-            Peça uma chave <code>rodx_...</code> criada pelo provisionamento do relay. Nunca coloque
-            o token do Telegram aqui.
+            Peça uma chave <code>rodx_...</code> criada pelo provisionamento do relay. Nunca coloque o token
+            do Telegram aqui.
           </p>
         </div>
       </section>
@@ -1184,8 +1207,8 @@ export function DataSettings() {
 
       <strong>Backup das suas pesquisas</strong>
       <p className={cx("muted")}>
-        Exporte um JSON de todas as pesquisas desta conta e importe no outro navegador ou
-        dispositivo. A importação nunca modifica pesquisas de outra conta.
+        Exporte um JSON de todas as pesquisas desta conta e importe no outro navegador ou dispositivo. A
+        importação nunca modifica pesquisas de outra conta.
       </p>
       <button className={cx("btn")} data-act="export" disabled={!state.account}>
         ↓ Exportar JSON
@@ -1207,8 +1230,8 @@ export function DataSettings() {
       </div>
 
       <p className={cx("muted")}>
-        Se IDs coincidirem, a pesquisa importada substituirá a existente na opção Mesclar. Faça um
-        backup antes de substituir tudo.
+        Se IDs coincidirem, a pesquisa importada substituirá a existente na opção Mesclar. Faça um backup
+        antes de substituir tudo.
       </p>
 
       <div className={cx("line")} />
@@ -1221,9 +1244,9 @@ export function DataSettings() {
             ? "GM storage (compartilhado entre x.com e twitter.com)"
             : "localStorage (separado por domínio)"}
         </strong>
-        . Identidade: <strong>{state.accountSource || "não detectada"}</strong>. Identificação de
-        conta é feita pelo perfil do usuário logado visível na interface. Se o identificador de
-        sessão não estiver acessível, o script usa o perfil conectado.
+        . Identidade: <strong>{state.accountSource || "não detectada"}</strong>. Identificação de conta é
+        feita pelo perfil do usuário logado visível na interface. Se o identificador de sessão não estiver
+        acessível, o script usa o perfil conectado.
       </p>
 
       <div className={cx("field")}>
@@ -1240,14 +1263,12 @@ export function DataSettings() {
           </button>
         </div>
         <p className={cx("muted")}>
-          Use apenas se a detecção automática falhar. Ao trocar de conta, selecione a conta correta.
-          Nenhum token de sessão é salvo.
+          Use apenas se a detecção automática falhar. Ao trocar de conta, selecione a conta correta. Nenhum
+          token de sessão é salvo.
         </p>
       </div>
 
-      <p className={cx("muted")}>
-        RodX Search Deck v{VERSION} · Atalho: Alt + Shift + S
-      </p>
+      <p className={cx("muted")}>RodX Search Deck v{VERSION} · Atalho: Alt + Shift + S</p>
     </div>
   );
 }
@@ -1277,11 +1298,7 @@ export function VisualSettings() {
       <div className={cx("grp")}>
         {Object.entries(studioModules).map(([key, label]) => (
           <label key={key} className={cx("tog")}>
-            <input
-              type="checkbox"
-              data-studio-module={key}
-              checked={Boolean(Studio.config.modules[key])}
-            />
+            <input type="checkbox" data-studio-module={key} checked={Boolean(Studio.config.modules[key])} />
             {label}
           </label>
         ))}
@@ -1294,13 +1311,7 @@ export function VisualSettings() {
 
       <div className={cx("field")}>
         <label>Agrupar atualizações do DOM (ms)</label>
-        <input
-          type="number"
-          min="60"
-          max="500"
-          data-studio-delay=""
-          value={Studio.config.scanDelayMs}
-        />
+        <input type="number" min="60" max="500" data-studio-delay="" value={Studio.config.scanDelayMs} />
       </div>
 
       <div className={cx("field")}>
@@ -1319,8 +1330,8 @@ export function VisualSettings() {
 
       <h2 className={cx("hero-title")}>Aparência da timeline</h2>
       <p className={cx("muted")}>
-        Tamanho de fonte, densidade e hashtags acompanham Home, buscas, perfis, bookmarks e threads.
-        O input nativo do X permanece sem alterações de layout.
+        Tamanho de fonte, densidade e hashtags acompanham Home, buscas, perfis, bookmarks e threads. O input
+        nativo do X permanece sem alterações de layout.
       </p>
 
       <div className={cx("field")}>
@@ -1338,37 +1349,32 @@ export function VisualSettings() {
       </div>
 
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="snap" checked={Boolean(v.snap)} /> Encaixe suave ao
-        rolar (global)
+        <input type="checkbox" data-visual="snap" checked={Boolean(v.snap)} /> Encaixe suave ao rolar (global)
       </label>
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="compact" checked={Boolean(v.compact)} /> Usar densidade
-        compacta (tweets começam expandidos)
+        <input type="checkbox" data-visual="compact" checked={Boolean(v.compact)} /> Usar densidade compacta
+        (tweets começam expandidos)
       </label>
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="colorfulTags" checked={Boolean(v.colorfulTags)} />{" "}
-        Hashtags com fundo colorido
+        <input type="checkbox" data-visual="colorfulTags" checked={Boolean(v.colorfulTags)} /> Hashtags com
+        fundo colorido
       </label>
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="blockTweetOpen" checked={Boolean(v.blockTweetOpen)} />{" "}
-        Bloquear abertura do tweet ao tocar no conteúdo (desmarcar restaura o clique nativo)
+        <input type="checkbox" data-visual="blockTweetOpen" checked={Boolean(v.blockTweetOpen)} /> Bloquear
+        abertura do tweet ao tocar no conteúdo (desmarcar restaura o clique nativo)
       </label>
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="translatePosts" checked={Boolean(v.translatePosts)} />{" "}
-        Traduzir automaticamente quando o X oferecer tradução
+        <input type="checkbox" data-visual="translatePosts" checked={Boolean(v.translatePosts)} /> Traduzir
+        automaticamente quando o X oferecer tradução
       </label>
       <label className={cx("tog")}>
-        <input
-          type="checkbox"
-          data-visual="translateForeignTags"
-          checked={Boolean(v.translateForeignTags)}
-        />{" "}
+        <input type="checkbox" data-visual="translateForeignTags" checked={Boolean(v.translateForeignTags)} />{" "}
         Traduzir hashtags em outros idiomas (PT/ES/EN não recebem tradução)
       </label>
 
       <p className={cx("muted")}>
-        A tradução das hashtags usa o serviço público do Google Translate, quando disponível. As
-        hashtags originais no post não são alteradas. No Safari, pode haver bloqueio de rede.
+        A tradução das hashtags usa o serviço público do Google Translate, quando disponível. As hashtags
+        originais no post não são alteradas. No Safari, pode haver bloqueio de rede.
       </p>
 
       <div className={cx("field")}>
@@ -1387,8 +1393,8 @@ export function VisualSettings() {
       </div>
 
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="videoMute" checked={Boolean(v.videoMute)} /> Vídeos sempre
-        mudos, exceto ao tocar no volume
+        <input type="checkbox" data-visual="videoMute" checked={Boolean(v.videoMute)} /> Vídeos sempre mudos,
+        exceto ao tocar no volume
       </label>
 
       <p className={cx("muted")}>
@@ -1398,8 +1404,7 @@ export function VisualSettings() {
       <div className={cx("field")}>
         <label>
           Iniciar vídeo com{" "}
-          <strong data-visual-value="autoPlayEnterPercent">{v.autoPlayEnterPercent}%</strong> da
-          mídia visível
+          <strong data-visual-value="autoPlayEnterPercent">{v.autoPlayEnterPercent}%</strong> da mídia visível
         </label>
         <input
           type="range"
@@ -1414,8 +1419,7 @@ export function VisualSettings() {
       <div className={cx("field")}>
         <label>
           Pausar depois que{" "}
-          <strong data-visual-value="autoPauseExitPercent">{v.autoPauseExitPercent}%</strong> sair da
-          tela
+          <strong data-visual-value="autoPauseExitPercent">{v.autoPauseExitPercent}%</strong> sair da tela
         </label>
         <input
           type="range"
@@ -1428,30 +1432,24 @@ export function VisualSettings() {
       </div>
 
       <label className={cx("tog")}>
-        <input
-          type="checkbox"
-          data-visual="swipeToCloseVideo"
-          checked={Boolean(v.swipeToCloseVideo)}
-        />{" "}
+        <input type="checkbox" data-visual="swipeToCloseVideo" checked={Boolean(v.swipeToCloseVideo)} />{" "}
         Deslizar para baixo para sair do vídeo imersivo
       </label>
 
       <p className={cx("muted")}>
-        O início e a pausa usam limiares separados para não ficar oscilando ao rolar. A reprodução
-        automática ainda depende das permissões do Safari e do player do X.
+        O início e a pausa usam limiares separados para não ficar oscilando ao rolar. A reprodução automática
+        ainda depende das permissões do Safari e do player do X.
       </p>
 
       <label className={cx("tog")}>
-        <input type="checkbox" data-visual="hideSeen" checked={Boolean(v.hideSeen)} /> Ocultar tweets
-        já vistos nesta conta
+        <input type="checkbox" data-visual="hideSeen" checked={Boolean(v.hideSeen)} /> Ocultar tweets já
+        vistos nesta conta
       </label>
 
       <div className={cx("field")}>
         <label>
           Quanto do tweet deve estar na tela para marcar visto{" "}
-          <strong data-visual-value="viewedThreshold">
-            {Math.round(v.viewedThreshold * 100)}%
-          </strong>
+          <strong data-visual-value="viewedThreshold">{Math.round(v.viewedThreshold * 100)}%</strong>
         </label>
         <input
           type="range"
@@ -1480,8 +1478,8 @@ export function VisualSettings() {
 
       <p className={cx("muted")}>
         O tweet só é marcado como visto depois de cumprir esse tempo visível e sair{" "}
-        <strong>completamente</strong> da tela. Sair antes do tempo, trocar de aba ou ocultar o
-        navegador não conta.
+        <strong>completamente</strong> da tela. Sair antes do tempo, trocar de aba ou ocultar o navegador não
+        conta.
       </p>
     </section>
   );
@@ -1609,13 +1607,11 @@ export function Workspace() {
 
         <div className={cx("body")} data-scroll-area="">
           {state.message && <div className={cx("message")}>{state.message}</div>}
-          {state.storageWarning && (
-            <div className={cx("storage-warning")}>⚠ {state.storageWarning}</div>
-          )}
+          {state.storageWarning && <div className={cx("storage-warning")}>⚠ {state.storageWarning}</div>}
           {disabled && (
             <div className={cx("banner")}>
-              Conta não detectada. Abra a aba Backup para definir manualmente o @usuário, caso o X
-              esconda os dados da sessão.
+              Conta não detectada. Abra a aba Backup para definir manualmente o @usuário, caso o X esconda os
+              dados da sessão.
             </div>
           )}
           {renderBody()}
@@ -1646,8 +1642,10 @@ export function Workspace() {
 const boundDockShadows = new WeakSet<ShadowRoot>();
 
 export function renderRoot(): void {
-  const root = state.rootShadow;
-  if (!root) return;
+  const root = rootShadow();
+  if (!root) {
+    return;
+  }
 
   applyXTheme(state.rootHost);
 
@@ -1668,7 +1666,9 @@ export function renderRoot(): void {
 
   if (restoreScroll) {
     const body = root.querySelector<HTMLElement>(RODX_SELECTORS.workspaceScrollArea);
-    if (body) body.scrollTop = scrollTop;
+    if (body) {
+      body.scrollTop = scrollTop;
+    }
   }
 
   if (state.open && state.view === "editor") {
@@ -1678,8 +1678,10 @@ export function renderRoot(): void {
 }
 
 export function renderDock(): void {
-  const dock = state.dockShadow;
-  if (!dock) return;
+  const dock = state.dockShadow as ShadowRoot | null;
+  if (!dock) {
+    return;
+  }
 
   // Delegação única para listas do Studio (evita reatribuir onclick a cada render)
   if (!boundDockShadows.has(dock)) {
@@ -1732,11 +1734,7 @@ export function renderDock(): void {
       ))}
 
       {(Studio.services.lists?.quickLists() || []).map((list: any) => (
-        <button
-          key={list.id}
-          data-studio-list={list.id}
-          title={Studio.services.lists.displayName(list)}
-        >
+        <button key={list.id} data-studio-list={list.id} title={Studio.services.lists.displayName(list)}>
           ☷ {Studio.services.lists.displayName(list)}
         </button>
       ))}
@@ -1754,7 +1752,9 @@ export function renderDock(): void {
   ensureWorkbenchStyles(dock, "dock");
 
   const nav = dock.querySelector<HTMLElement>(RODX_SELECTORS.searchDock);
-  if (nav) nav.scrollLeft = horizontalScroll;
+  if (nav) {
+    nav.scrollLeft = horizontalScroll;
+  }
 }
 
 export function initializeRoot(): void {
@@ -1774,8 +1774,12 @@ export function initializeRoot(): void {
   shadow.addEventListener("toggle", onGroupToggle, true);
 
   shadow.addEventListener("keydown", (event) => {
-    const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput) as HTMLInputElement | null;
-    if (!input) return;
+    const input = (event.target as HTMLElement).closest?.(
+      RODX_SELECTORS.chipInput,
+    ) as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
 
     const key = (event as KeyboardEvent).key;
     if ((key === "Enter" || key === "Tab") && input.value.trim()) {
@@ -1797,7 +1801,9 @@ export function initializeRoot(): void {
   });
 
   shadow.addEventListener("focusout", (event) => {
-    const input = (event.target as HTMLElement).closest?.(RODX_SELECTORS.chipInput) as HTMLInputElement | null;
+    const input = (event.target as HTMLElement).closest?.(
+      RODX_SELECTORS.chipInput,
+    ) as HTMLInputElement | null;
     if (input?.value.trim()) {
       try {
         addChips(input.value, false);
@@ -1814,7 +1820,7 @@ export function initializeRoot(): void {
     "touchstart",
     (event) => {
       yStart = (event.target as HTMLElement).closest?.(RODX_SELECTORS.workspaceHeadRow)
-        ? (event as TouchEvent).touches[0]?.clientY ?? null
+        ? ((event as TouchEvent).touches[0]?.clientY ?? null)
         : null;
     },
     { passive: true },
@@ -1823,7 +1829,9 @@ export function initializeRoot(): void {
   shadow.addEventListener(
     "touchend",
     (event) => {
-      if (yStart == null || !state.open) return;
+      if (yStart == null || !state.open) {
+        return;
+      }
       const delta = ((event as TouchEvent).changedTouches[0]?.clientY ?? yStart) - yStart;
       yStart = null;
       if (delta > 110) {

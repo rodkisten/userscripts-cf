@@ -34,7 +34,7 @@ const css = `
 *{box-sizing:border-box}\n.rod-dock-root{position:fixed;inset:0;pointer-events:none}\n.rod-dock-root>*{pointer-events:auto}
 .launcher{pointer-events:auto;position:fixed;right:0;top:46%;border:0;border-radius:12px 0 0 12px;padding:13px 10px;background:#7c3aed;color:white;box-shadow:0 4px 22px #0006;cursor:pointer}
 .overlay{position:fixed;inset:0;background:#0009;z-index:2147483646;pointer-events:auto}
-.panel{pointer-events:auto;position:fixed;top:0;right:0;bottom:0;width:min(420px,94vw);background:#09090b;color:#fafafa;border-left:1px solid #3f3f46;padding:18px;overflow:auto;z-index:2147483647;box-shadow:-12px 0 48px #0007}
+.panel{pointer-events:auto;position:fixed;top:0;right:0;width:min(420px,94vw);height:100dvh;max-height:100dvh;min-height:0;background:#09090b;color:#fafafa;border-left:1px solid #3f3f46;padding:18px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;z-index:2147483647;box-shadow:-12px 0 48px #0007}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 button{font:inherit;cursor:pointer}
 .close,.action{border:1px solid #3f3f46;background:#27272a;color:#fafafa;border-radius:8px;padding:8px 10px}
@@ -48,6 +48,7 @@ button{font:inherit;cursor:pointer}
 .script{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #27272a}
 .script small{display:block;color:#a1a1aa;margin-top:3px}
 input[type=checkbox]{accent-color:#a78bfa;width:18px;height:18px}
+@media(max-width:600px){.panel input:not([type=checkbox]),.panel textarea,.panel select{font-size:16px}}
 `;
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
@@ -88,7 +89,6 @@ function DockView({ controller }: { controller: DockController }) {
   };
   return (
     <>
-      <style>{css}</style>
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal container={portal}>
           <Dialog.Overlay className="overlay" />
@@ -334,11 +334,14 @@ export function installRodDock({
   host.dataset.rodDock = "";
   host.style.cssText = "position:fixed;inset:0;z-index:2147483646;pointer-events:none";
   const shadow = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.dataset.rodDockStyles = "";
+  style.textContent = css;
   const mountPoint = document.createElement("div");
   const portalPoint = document.createElement("div");
   mountPoint.className = "rod-dock-root";
   portalPoint.className = "rod-dock-root";
-  shadow.append(mountPoint, portalPoint);
+  shadow.append(style, mountPoint, portalPoint);
   const launcher = document.createElement("button");
   launcher.className = "launcher";
   launcher.type = "button";

@@ -77,7 +77,21 @@ for (const item of manifest.scripts) {
     `document.addEventListener("userscripts-cf:probe", report);`,
     `report();`,
     `} else {`,
-    original.slice(end + marker.length),
+    (() => {
+      let body = original.slice(end + marker.length);
+      if (item.id === "standalone") {
+        const inventory = [
+          "\n// ==RodBundle==",
+          `// @rod-commit   ${shortSha}`,
+          ...manifest.scripts
+            .filter((script) => !["standalone", "unified"].includes(script.id))
+            .map((script) => `// @rod-includes ${script.id}@${previewVersion}`),
+          "// ==/RodBundle==",
+        ].join("\n");
+        body = body.replace(/\n\/\/ ==RodBundle==[\s\S]*?\/\/ ==\/RodBundle==/, inventory);
+      }
+      return body;
+    })(),
     `}`,
   ].join("\n");
   const source = metadata + "\n" + probe;

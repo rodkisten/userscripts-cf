@@ -12,6 +12,7 @@ for (const entry of manifest.scripts) {
   const source = await readFile(new URL(entry.file, dist), "utf8");
   assert.match(source, /^\/\/ ==UserScript==/);
   assert.match(source, /@run-at\s+document-start/);
+  assert.match(source, new RegExp(`@version\\s+${entry.version.replaceAll(".", "\\.")}`));
   assert.equal(createHash("sha256").update(source).digest("hex"), entry.sha256, entry.file);
   console.log(`Verified ${entry.id}: ${Buffer.byteLength(source)} bytes`);
 }
