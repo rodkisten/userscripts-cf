@@ -145,17 +145,14 @@ export async function publishComment({ github, context, options = {} }) {
     step.status('Identificando bot e listando comentários existentes...');
     const botLogin = await resolveBotLogin(github);
 
-    const { data: comments } = await github.rest.issues.listComments({
-      owner,
-      repo,
-      issue_number,
-      per_page: 100,
-    });
-
-    const existingComment = comments.find(
-      (c) => c.user?.login === botLogin && c.body?.includes(mainMarker),
-    );
-
+    const comments = [];
+    for (let page = 1; ; page++) {
+      const { data } = await github.rest.issues.listComments({owner, repo, issue_number, per_page: 100, page});
+      comments.push(...data);
+      if (data.length < 100) break;
+    }
+    const matches = comments.filter(c => c.user?.login === (process.env.APP_SLUG ? process.env.APP_SLUG + '[bot]' : 'ploocky[bot]') && c.body?.includes(mainMarker));
+    const existingComment = matches[0];
     let previousHistory = '';
     if (existingComment) {
       const historyRegex = new RegExp(`${historyStart}([\\s\\S]*?)${historyEnd}`);
@@ -165,30 +162,20 @@ export async function publishComment({ github, context, options = {} }) {
       }
     }
 
-    const updatedHistory = [newDiffEntry, previousHistory].filter(Boolean).join('\n');
+    const updatedHistory = [...new Set([newDiffEntry, previousHistory].filter(Boolean))].join('\n').slice(0, 24000);
     const deployCount = updatedHistory.split('\n').filter((line) => line.startsWith('- [')).length;
 
     const body = [
       mainMarker,
-      '# 🚀✨ PREVIEW NO AR! AMBIENTE PRONTO PARA TESTES ✨🚀',
+      '### 🚀 Preview disponível',
       '',
-      '> [!TIP]',
-      '> 🎉 **Deploy concluído com sucesso!** Sua versão de homologação deste Pull Request já está publicada, ativa e pronta para ser testada em tempo real.',
+      '**[Abrir ambiente de testes](' + previewUrl + ')** · [Commit ' + shortSha + '](' + commitUrl + ')',
       '',
-      '### 🔗 Acesso Rápido ao Ambiente',
+      '> [!NOTE]',
+      '> INFO: Abra o preview para testar a revisão publicada. Expanda o histórico para consultar os diffs de cada deploy.',
       '',
-      '| 🌐 Status | 🚀 URL do Preview | 🌿 Branch | 📦 Commit Atual | 🕒 Última Atualização |',
-      '| :---: | :--- | :--- | :---: | :---: |',
-      `| ![Online](https://img.shields.io/badge/STATUS-ONLINE-brightgreen?style=for-the-badge&logo=cloudflare) | **[👉 ABRIR PREVIEW AO VIVO](${previewUrl})**<br><sub>\`${previewUrl}\`</sub> | \`${branchName}\` | [\`${shortSha}\`](${commitUrl}) | \`${nowBr}\` |`,
-      '',
-      '---',
-      '',
-      `### 📜 Histórico de Deploys & Diffs deste PR (${deployCount} atualização(ões))`,
-      '',
-      '<details open>',
-      '<summary>🔎 <b>Clique para expandir/recolher o que foi modificado a cada push</b></summary>',
-      '',
-      '<br>',
+      '<details>',
+      '<summary>📜 Histórico de deploys (' + deployCount + ')</summary>',
       '',
       historyStart,
       updatedHistory,
@@ -219,6 +206,8 @@ export async function publishComment({ github, context, options = {} }) {
       });
       step.pass('Comentário criado', `ID #${created.id}`);
     }
+
+    for (const duplicate of matches.slice(1)) await github.rest.issues.deleteComment({owner, repo, comment_id: duplicate.id});
 
     log.summary('success', {
       Preview: previewUrl,
