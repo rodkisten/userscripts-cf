@@ -649,7 +649,11 @@ jobs:
             const keep = new Set();
             for (const report of reports) {
               const tag = report.key === 'summary' ? marker : '<!-- rod-dependency-graph:' + report.key + ' -->';
-              const content = report.key === 'summary' ? report.body : tag + '\n' + report.body;
+              const raw = report.body.replace(marker, '').trim();
+              const heading = raw.split('\n').find(line => line.startsWith('## '));
+              const title = heading ? heading.slice(3) : 'Architecture report';
+              const detail = heading ? raw.replace(heading, '').trim() : raw;
+              const content = tag + '\n<details>\n<summary>' + title + '</summary>\n\n' + detail + '\n\n</details>';
               const existing = comments.find(c => c.user?.login === bot && c.body?.includes(tag));
               if (existing) {
                 await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: content });
