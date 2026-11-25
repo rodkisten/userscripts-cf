@@ -1,4 +1,4 @@
-name: "▲ PR userscript previews"
+name: "🧩 US · ▲ PR userscript previews"
 
 on:
   pull_request:
@@ -27,13 +27,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - name: Setup and install dependencies
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+          package-manager: npm
+          install: "true"
+          install-args: |
+            --legacy-peer-deps
+          script: ":"
 
       - name: Build, package & publish PR preview to Cloudflare R2
         id: publish
@@ -47,10 +48,13 @@ jobs:
 
       - name: Authenticate preview comment publisher
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
       - name: Verify preview and source revision
         env:
           PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}

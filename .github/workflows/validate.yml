@@ -1,4 +1,4 @@
-name: Validate changed userscripts
+name: 🧩 US · Validate changed userscripts
 run-name: "🧪 Validate changed · ${{ github.ref_name }}"
 
 on:
@@ -46,16 +46,16 @@ jobs:
           ref: ${{ github.head_ref || github.ref }}
           token: ${{ steps.app_token.outputs.token || github.token }}
 
-      - name: 🟢 Setup Node.js 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: 📦 Install dependencies
+      - name: 📦 Setup and install dependencies
         id: install
         continue-on-error: true
-        run: npm ci --legacy-peer-deps
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        with:
+          node-version: "24"
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: ":"
       - name: 🛡️ Check build and release JavaScript syntax
         shell: bash
         run: |
@@ -98,7 +98,7 @@ jobs:
           GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
-          gh workflow run repair-lockfile.yml --ref "$BRANCH"
+          gh workflow run repair-lockfile.yml --ref "$BRANCH" -f selected_branch="$BRANCH"
           echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
 
       - name: ❌ Fail current validation on installation error
@@ -222,17 +222,14 @@ jobs:
           ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
 
-      - name: 🟢 Setup Node.js 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --legacy-peer-deps
-
       - name: 🚀 Build selected userscript
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         env:
           TARGET: ${{ matrix.target }}
           BUILD_REASON: PR validation matrix selected this target.
-        run: node build/build.mjs "--targets=$TARGET"
+        with:
+          node-version: "24"
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: node build/build.mjs "--targets=$TARGET"

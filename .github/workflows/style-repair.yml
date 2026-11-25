@@ -1,4 +1,4 @@
-name: AST style repair
+name: 🧩 US · AST style repair
 on:
   workflow_dispatch:
 permissions:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/create-github-app-token@v2
+      - uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         id: app
         with:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
@@ -20,11 +20,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           token: ${{ steps.app.outputs.token }}
-      - uses: actions/setup-node@v4
+      - name: Setup and install dependencies
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --legacy-peer-deps
+          package-manager: npm
+          install: "true"
+          install-args: |
+            --legacy-peer-deps
+          script: ":"
       - run: npm run lint:fix
       - run: npm run lint
       - run: npm run typecheck
