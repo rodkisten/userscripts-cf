@@ -78,7 +78,13 @@ export function createHttpClient({
   const stats: HttpClientStats = { hits: 0, misses: 0, requests: 0 };
 
   const hostGM = (host as Window & { GM?: { xmlHttpRequest?: GMXhrFn } }).GM;
+  const sandbox = globalThis as typeof globalThis & {
+    GM?: { xmlHttpRequest?: GMXhrFn };
+    GM_xmlhttpRequest?: GMXhrFn;
+  };
   const gm: GMXhrFn | undefined =
+    sandbox.GM?.xmlHttpRequest?.bind(sandbox.GM) ??
+    sandbox.GM_xmlhttpRequest ??
     hostGM?.xmlHttpRequest?.bind(hostGM) ??
     (host as Window & { GM_xmlhttpRequest?: GMXhrFn }).GM_xmlhttpRequest;
 
@@ -120,7 +126,10 @@ export function createHttpClient({
           method: options.method ?? "GET",
           headers: Object.fromEntries(new Headers(options.headers ?? {})),
           data: options.body,
-          anonymous: options.credentials === "omit",
+          anonymous:
+            options.credentials === "omit" ||
+            ((options.credentials ?? "same-origin") === "same-origin" &&
+              new URL(url).origin !== host.location.origin),
           responseType: "arraybuffer",
           timeout: options.timeoutMs,
           onload: (response) => {
@@ -227,7 +236,7 @@ export function createHttpClient({
 
   return Object.freeze({
     request,
-    fetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+    async fetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
       // Keep the native RequestInfo/URL + RequestInit contract, including
       // inherited headers, credentials, body and AbortSignal from Request.
       const isRequest = typeof Request !== "undefined" && input instanceof Request;
@@ -237,7 +246,7 @@ export function createHttpClient({
       return request(merged.url, {
         method: merged.method,
         headers: merged.headers,
-        body: /^(GET|HEAD)$/i.test(merged.method) ? undefined : merged.body,
+        body: /^(GET|HEAD)$/i.test(merged.method) || !merged.body ? undefined : await merged.arrayBuffer(),
         credentials: merged.credentials,
         signal: merged.signal,
         redirect: merged.redirect,
