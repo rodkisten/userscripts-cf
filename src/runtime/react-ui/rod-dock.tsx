@@ -54,6 +54,11 @@ const css = `
     --rd-bg-control-hover: #323238;
     --rd-bg-overlay: rgba(0, 0, 0, 0.6);
 
+    --rd-glass-bg: rgba(24, 24, 27, 0.58);
+    --rd-glass-bg-hover: rgba(39, 39, 42, 0.78);
+    --rd-glass-border: rgba(255, 255, 255, 0.16);
+    --rd-glass-highlight: rgba(255, 255, 255, 0.22);
+
     --rd-border-subtle: #27272a;
     --rd-border-strong: #3f3f46;
 
@@ -75,13 +80,15 @@ const css = `
     --rd-radius-sm: 6px;
     --rd-radius-md: 8px;
     --rd-radius-lg: 10px;
-    --rd-radius-launcher: 10px 0 0 10px;
+    --rd-radius-launcher: 11px 0 0 11px;
 
     --rd-z-base: 2147483646;
     --rd-z-top: 2147483647;
 
     --rd-shadow-panel: -12px 0 40px rgba(0, 0, 0, 0.55);
-    --rd-shadow-launcher: 0 4px 18px rgba(0, 0, 0, 0.45);
+    --rd-shadow-launcher:
+      0 6px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 var(--rd-glass-highlight);
 
     all: initial;
     color-scheme: dark;
@@ -129,19 +136,43 @@ const css = `
     top: 46%;
     z-index: var(--rd-z-top);
     touch-action: none;
-    border: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 30px;
+    padding: 0 2px 0 4px;
+    border: 1px solid var(--rd-glass-border);
+    border-right: 0;
     border-radius: var(--rd-radius-launcher);
-    padding: 10px 8px;
-    background: var(--rd-accent);
-    color: #ffffff;
-    font-size: 15px;
+    background: var(--rd-glass-bg);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    color: rgba(250, 250, 250, 0.9);
+    font-size: 11px;
     line-height: 1;
     box-shadow: var(--rd-shadow-launcher);
-    transition: background-color 0.15s ease;
+    opacity: 0.92;
+    transform: translateX(0);
+    transition:
+      opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.18s ease,
+      border-color 0.18s ease;
   }
 
-  .launcher:hover {
-    background: var(--rd-accent-hover);
+  .launcher.launcher--scrolling {
+    opacity: 0.14;
+    transform: translateX(4px);
+  }
+
+  .launcher:hover,
+  .launcher:focus-visible,
+  .launcher:active {
+    opacity: 1;
+    transform: translateX(0);
+    background: var(--rd-glass-bg-hover);
+    border-color: rgba(167, 139, 250, 0.45);
   }
 
   .overlay {
@@ -386,8 +417,12 @@ function getElementFromPoint(root: Node, x: number, y: number): Element | null {
 
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
-  const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
-  const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
+  const [preferences, setPreferences] = useState<ScriptRulesRecord>(() =>
+    readScriptRules(localStorage),
+  );
+  const [diagnostics, setDiagnostics] = useState(() => [
+    ...(getDiagnostics()?.history ?? []),
+  ]);
   const [search, setSearch] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSearch, setSettingsSearch] = useState("");
@@ -425,7 +460,9 @@ function DockView({ controller }: { controller: DockController }) {
   const filteredScripts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
     if (!term) return scripts;
-    return scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(term));
+    return scripts.filter((script) =>
+      `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(term),
+    );
   }, [scripts, search]);
 
   const toggleScript = (id: string, enabled: boolean) => {
@@ -435,7 +472,6 @@ function DockView({ controller }: { controller: DockController }) {
     document.dispatchEvent(new CustomEvent("rod-script-manager:change"));
   };
 
-  // Impede que o react-remove-scroll do Radix bloqueie eventos de roda/toque dentro do Shadow DOM
   const allowShadowScroll = (event: React.SyntheticEvent) => {
     event.stopPropagation();
   };
@@ -445,7 +481,11 @@ function DockView({ controller }: { controller: DockController }) {
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal container={portal}>
           <Dialog.Overlay className="overlay" />
-          <Dialog.Content className="panel" onWheel={allowShadowScroll} onTouchMove={allowShadowScroll}>
+          <Dialog.Content
+            className="panel"
+            onWheel={allowShadowScroll}
+            onTouchMove={allowShadowScroll}
+          >
             <header className="panel-header">
               <Dialog.Title className="panel-title">Rod Dock</Dialog.Title>
               <Dialog.Close className="btn btn--icon" aria-label="Fechar">
@@ -525,7 +565,10 @@ function DockView({ controller }: { controller: DockController }) {
                           action.run();
                         }}
                         onPointerDown={(event) => {
-                          if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
+                          if (
+                            !action.reorder ||
+                            (event.pointerType === "mouse" && event.button !== 0)
+                          ) {
                             return;
                           }
 
@@ -544,14 +587,19 @@ function DockView({ controller }: { controller: DockController }) {
                           };
 
                           const onMove = (next: PointerEvent) => {
-                            if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
+                            if (
+                              !moved &&
+                              Math.hypot(next.clientX - startX, next.clientY - startY) < 10
+                            ) {
                               return;
                             }
                             moved = true;
                             setDragging(action.id);
                             const target = getElementFromPoint(root, next.clientX, next.clientY);
                             setDropTarget(
-                              target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
+                              target
+                                ?.closest?.("[data-reorder-id]")
+                                ?.getAttribute("data-reorder-id") ?? null,
                             );
                           };
 
@@ -697,7 +745,6 @@ export function installRodDock({
     container: HTMLElement,
   ) => { update: (component: ReactElement) => void; dispose: () => void };
 }) {
-  // Garante limpeza completa de instância anterior (listeners, React root e menu)
   gmMenu.__rodDockCleanup?.();
   document.querySelector<HTMLElement>("[data-rod-dock]")?.remove();
 
@@ -724,15 +771,33 @@ export function installRodDock({
 
   const savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
   const initialTop =
-    Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88 ? savedPosition : 46;
+    Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88
+      ? savedPosition
+      : 46;
   launcher.style.top = `${initialTop}%`;
 
   shadow.append(style, mountPoint, portalPoint, launcher);
 
+  let scrollFadeTimer: number | null = null;
   let dragStart: { x: number; y: number; top: number; moved: boolean } | null = null;
+
+  const onPageScroll = () => {
+    if (launcher.hidden || dragStart) return;
+    launcher.classList.add("launcher--scrolling");
+    if (scrollFadeTimer !== null) {
+      window.clearTimeout(scrollFadeTimer);
+    }
+    scrollFadeTimer = window.setTimeout(() => {
+      launcher.classList.remove("launcher--scrolling");
+      scrollFadeTimer = null;
+    }, 650);
+  };
+
+  window.addEventListener("scroll", onPageScroll, { capture: true, passive: true });
 
   launcher.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    launcher.classList.remove("launcher--scrolling");
     dragStart = {
       x: event.clientX,
       y: event.clientY,
@@ -802,6 +867,9 @@ export function installRodDock({
   const setOpen = (next: boolean) => {
     isOpen = next;
     launcher.hidden = next;
+    if (next) {
+      launcher.classList.remove("launcher--scrolling");
+    }
     render();
   };
 
@@ -813,7 +881,10 @@ export function installRodDock({
   const onRegistration = (event: Event) => {
     const detail = (event as CustomEvent<{ type: string; module?: DockModule; id?: string }>).detail;
     if (detail?.type === "register" && detail.module) {
-      setModules([...currentModules.filter((item) => item.id !== detail.module?.id), detail.module]);
+      setModules([
+        ...currentModules.filter((item) => item.id !== detail.module?.id),
+        detail.module,
+      ]);
     }
     if (detail?.type === "unregister" && detail.id) {
       setModules(currentModules.filter((item) => item.id !== detail.id));
@@ -861,6 +932,10 @@ export function installRodDock({
   const dispose = () => {
     if (disposed) return;
     disposed = true;
+    if (scrollFadeTimer !== null) {
+      window.clearTimeout(scrollFadeTimer);
+    }
+    window.removeEventListener("scroll", onPageScroll, { capture: true });
     document.removeEventListener("rod-dock:registry", onRegistration);
     document.removeEventListener("rod-dock:menu", onMenu);
     sharedMount?.dispose();
