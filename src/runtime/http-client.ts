@@ -120,6 +120,7 @@ export function createHttpClient({
           method: options.method ?? "GET",
           headers: Object.fromEntries(new Headers(options.headers ?? {})),
           data: options.body,
+          anonymous: options.credentials === "omit",
           responseType: "arraybuffer",
           timeout: options.timeoutMs,
           onload: (response) => {
@@ -150,7 +151,7 @@ export function createHttpClient({
 
   async function request(url: RequestInfo | URL, options: HttpRequestOptions = {}): Promise<Response> {
     const method = (options.method ?? "GET").toUpperCase();
-    const urlString = String(url);
+    const urlString = new URL(String(url), host.location?.href ?? "https://localhost/").href;
     const key = keyFor(urlString, options);
 
     const useCache =
@@ -188,18 +189,9 @@ export function createHttpClient({
       if (options.timeoutMs) timer = setTimeout(cancel, options.timeoutMs);
 
       try {
-        if (controller.signal.aborted) throw abortError();
-        const transport = options.transport ?? "auto";
+        if (signal?.aborted || options.signal?.aborted || controller.signal.aborted) throw abortError();
         const opts: HttpRequestOptions = { ...options, signal: controller.signal };
-
-        const response =
-          transport === "gm" ||
-          (transport === "auto" &&
-            gm &&
-            new URL(urlString, host.location?.href ?? "https://localhost/").origin !==
-              (host.location?.origin ?? "https://localhost"))
-            ? await gmFetch(urlString, opts)
-            : await host.fetch(urlString, opts);
+        const response = await gmFetch(urlString, opts);
 
         if (
           useCache &&
