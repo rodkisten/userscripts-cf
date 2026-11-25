@@ -20,6 +20,7 @@ concurrency:
 env:
   SOURCE_DIR: ${{ inputs.source || 'src' }}
   MADGE_VERSION: '8.0.0'
+  ROD_COMMENT_KIT: ${{ github.workspace }}/.rod-shared/packages/comment-kit/index.mjs
 
 jobs:
   graph:
@@ -37,6 +38,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: 🎨 Checkout shared Comment Kit
+        uses: actions/checkout@v4
+        with:
+          repository: rodkisten/github
+          ref: a2c930218dd1ad68720326c0557e7da55b6f55e8
+          path: .rod-shared
+          sparse-checkout: packages/comment-kit
           persist-credentials: false
 
       - name: 🟩 Setup Node
