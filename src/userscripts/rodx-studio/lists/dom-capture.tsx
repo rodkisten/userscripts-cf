@@ -214,9 +214,11 @@ export function quickButton(user) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = "xls-inline-list-picker";
-  b.textContent = "☷ Listas ▾";
+  b.textContent = "☷";
+  b.title = "Listas";
   b.setAttribute("aria-label", `Adicionar @${user.username} a uma lista`);
   applyComponentStyle(b, "rx-list-shortcut", false);
+  Object.assign(b.style, { width: "32px", height: "32px", minWidth: "32px", minHeight: "32px", padding: "0", borderRadius: "9999px", fontSize: "18px", lineHeight: "1", background: "transparent", color: "inherit", border: "1px solid currentColor", flex: "0 0 auto" });
   b.dataset.username = user.username;
   b.addEventListener("pointerdown", (e) => e.stopPropagation());
   b.addEventListener("mousedown", (e) => e.stopPropagation());
