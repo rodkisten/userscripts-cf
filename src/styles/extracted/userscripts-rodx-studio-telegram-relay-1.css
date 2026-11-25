@@ -92,3 +92,8 @@ button.rodx-tg-video-overlay[data-relay-state="partial"] {
     gap: var(--rodx-ds-space-4);
   }
 }
+
+button.rodx-tg-action:not(.rodx-tg-immersive):not(.rodx-tg-video-overlay) { flex: 0 0 auto; width: 30px; height: 30px; min-width: 30px; min-height: 30px; padding: 5px; color: #71767b; }
+button.rodx-tg-action svg { width: 18px; height: 18px; max-width: 100%; max-height: 100%; fill: currentColor; }
+button.rodx-tg-action[data-relay-state="sent"]:not(.rodx-tg-immersive):not(.rodx-tg-video-overlay) { color: #00ba7c; }
+button.rodx-tg-action[data-relay-state="error"] { color: #f4212e; }
