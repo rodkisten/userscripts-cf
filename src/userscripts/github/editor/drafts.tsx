@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Dexie, { type Table } from "dexie";
 import { findCodeMirror, replaceCodeMirrorDocument } from "../../github-color-studio/index.js";
+import { YamlActions } from "./yaml.js";
 
 type Draft = { key: string; base: string; entries: string[]; cursor: number; savedAt: number };
 const db = new Dexie("rod-github-editor");
@@ -141,6 +142,8 @@ function DraftControls({ fileKey }: { fileKey: string }) {
           bottom: 60,
           left: 16,
           maxWidth: "calc(100vw - 32px)",
+          maxHeight: "calc(100dvh - 96px)",
+          overflowY: "auto",
           zIndex: 1000,
           background: "Canvas",
           color: "CanvasText",
@@ -189,6 +192,7 @@ function DraftControls({ fileKey }: { fileKey: string }) {
         >
           Refazer
         </button>
+        {/\.ya?ml$/i.test(new URL(fileKey, location.origin).pathname) && <YamlActions fileKey={fileKey} />}
         <Dialog.Close>Fechar</Dialog.Close>
       </Dialog.Content>
     </Dialog.Root>
