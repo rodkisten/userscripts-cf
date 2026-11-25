@@ -334,8 +334,12 @@ export function mountDirectoryTree(
     const select = (path: string) =>
       setSelected((previous) => {
         const next = new Set(previous);
-        if (next.has(path)) next.delete(path);
-        else next.add(path);
+        if (next.has(path)) {
+          next.delete(path);
+        }
+        else {
+          next.add(path);
+        }
         return next;
       });
     const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
@@ -384,8 +388,12 @@ export function mountDirectoryTree(
                 const paths: string[] = [];
                 const visit = (entries: Node[]) =>
                   entries.forEach((node) => {
-                    if (node.folder) visit(node.children);
-                    else paths.push(node.path);
+                    if (node.folder) {
+                      visit(node.children);
+                    }
+                    else {
+                      paths.push(node.path);
+                    }
                   });
                 visit(filterTree(nodes, query));
                 setSelected((previous) => new Set([...previous, ...paths]));
