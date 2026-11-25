@@ -8,6 +8,11 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, closed]
   workflow_dispatch:
     inputs:
+      block:
+        description: "Pipeline block"
+        type: choice
+        options: [all, validate, audits, diagnostics, tests]
+        default: all
       scope:
         description: "Validation scope"
         type: choice
@@ -18,6 +23,7 @@ permissions:
   contents: write
   actions: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
@@ -25,7 +31,7 @@ concurrency:
 
 jobs:
   validate:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
     name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -33,7 +39,7 @@ jobs:
       - name: 🤖 Generate GitHub App token
         id: app_token
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -48,7 +54,7 @@ jobs:
       - name: 📦 Setup and install dependencies
         id: install
         continue-on-error: true
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/execute@main
         with:
           node-version: "24"
           package-manager: npm
@@ -217,7 +223,7 @@ jobs:
       - name: Authenticate preview comment publisher
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         id: app-token
-        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -277,3 +283,198 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
         run: node scripts/cloudflare-pr-preview.mjs --mode=cleanup
+
+  audits:
+    name: "🔎 Audit · ${{ matrix.block }}"
+    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'audits')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        block: [workflow-paths, ast-debt]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: rodkisten/github/execute@main
+        with:
+          node-version: "24"
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: ":"
+      - name: Run AST Function & Diff Audit
+        if: matrix.block == 'ast-debt' && github.event_name == 'pull_request'
+        id: ast_audit
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          node scripts/find-fns.mjs --json --base "origin/$GITHUB_BASE_REF" > ast-audit-report.json
+
+      - name: Publish Step Summary, Annotations & Upsert PR Comment
+        if: matrix.block == 'ast-debt' && github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: ast-audit-report.json
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          node --experimental-strip-types scripts/publish-ast-audit.ts
+
+      - name: Scan Workflows for Invalid Script Paths
+        if: matrix.block == 'workflow-paths'
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          node scripts/workflows-validate.mjs --json > workflow-audit-report.json
+
+      - name: Publish Summary, Annotations, Labels & Issue/PR Comment
+        if: matrix.block == 'workflow-paths'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: workflow-audit-report.json
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --experimental-strip-types scripts/workflow-audit-publish.ts
+
+
+  diagnostics:
+    if: github.event_name == 'workflow_dispatch' && (inputs.block == 'diagnostics' || inputs.block == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Collect TypeScript diagnostics
+        uses: rodkisten/github/execute@main
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: node scripts/typescript-diagnostics.mjs
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-errors
+          path: artifacts/typescript-diagnostics/
+          retention-days: 3
+          if-no-files-found: warn
+
+  ast-tests:
+    if: github.event_name == 'workflow_dispatch' && (inputs.block == 'tests' || inputs.block == 'all')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup and install dependencies
+        uses: rodkisten/github/execute@main
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: |
+            --legacy-peer-deps
+            --no-audit
+            --no-fund
+          script: ":"
+      - name: "🔍 Validate AST tool syntax"
+        id: syntax
+        continue-on-error: true
+        run: |
+          node --check build/rod-ast.mjs
+          node --check build/rod-ast-iife.mjs
+          node --check build/rod-ast-cli.mjs
+          node --check build/rod-ast-summary.mjs
+      - name: "🧬 Transform fixture"
+        id: transform
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          node build/rod-ast-cli.mjs tests/fixtures/rod-ast.input.tsx --out=tests/fixtures/rod-ast.output.tsx
+          cp tests/fixtures/rod-ast.output.tsx artifacts/rod-ast.output.tsx
+      - name: "📦 Migrate complete Tampermonkey fixture"
+        id: legacy
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          node build/rod-ast-cli.mjs tests/fixtures/rod-ast.legacy.user.js --iife --out=artifacts/rod-ast.legacy.output.js --report=artifacts/rod-ast.legacy.report.json
+          node --check artifacts/rod-ast.legacy.output.js
+      - name: "🔎 Show full diff"
+        id: diff
+        continue-on-error: true
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          diff -u --label fixture/input.tsx tests/fixtures/rod-ast.input.tsx --label fixture/output.tsx artifacts/rod-ast.output.tsx > artifacts/rod-ast.diff || test "$?" -eq 1
+          cat artifacts/rod-ast.diff
+      - name: "🧪 AST unit tests"
+        id: unit
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          npx vitest run tests/rod-ast.test.mjs --reporter=default --reporter=json --outputFile.json=artifacts/rod-ast-vitest.json
+      - name: "🧪 Typecheck transformed fixture against real ScriptContext"
+        id: fixture_types
+        if: always()
+        continue-on-error: true
+        run: |
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
+          npx tsc --project tsconfig.rod-ast.generated.json --noEmit
+      - name: "🧪 Typecheck React"
+        id: react_types
+        if: always()
+        continue-on-error: true
+        run: npm run typecheck:react
+      - name: "🧪 Verify summary report rendering"
+        id: summary_tests
+        if: always()
+        continue-on-error: true
+        run: node --test tests/rod-ast-summary.test.mjs
+      - name: "🎨 Highlighted test report"
+        if: always()
+        run: node build/rod-ast-summary.mjs
+      - name: "📊 Validation matrix"
+        if: always()
+        run: |
+          {
+            echo "### 🧪 Validation matrix"
+            echo ""
+            echo "| Check | Result |"
+            echo "| :-- | :-- |"
+            echo "| syntax | ${{ steps.syntax.outcome }} |"
+            echo "| transform | ${{ steps.transform.outcome }} |"
+            echo "| legacy IIFE migration | ${{ steps.legacy.outcome }} |"
+            echo "| diff | ${{ steps.diff.outcome }} |"
+            echo "| unit | ${{ steps.unit.outcome }} |"
+            echo "| fixture_types | ${{ steps.fixture_types.outcome }} |"
+            echo "| react_types | ${{ steps.react_types.outcome }} |"
+            echo "| summary_tests | ${{ steps.summary_tests.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: "📦 Reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rod-ast-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+      - name: "🚦 Final validation gate"
+        if: always()
+        shell: bash
+        run: |
+          failed=0
+          for outcome in "${{ steps.syntax.outcome }}" "${{ steps.legacy.outcome }}" "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}" "${{ steps.summary_tests.outcome }}"; do
+            if [[ "$outcome" != "success" ]]; then failed=1; fi
+          done
+          if (( failed )); then
+            echo "::error::Rod AST validation failed; inspect the validation matrix and logs."
+            exit 1
+          fi
+          echo "All Rod AST checks passed."
