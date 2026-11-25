@@ -1,11 +1,11 @@
-name: 🧩 US · Validate changed userscripts
-run-name: "🧪 Validate changed · ${{ github.ref_name }}"
+name: "🧩 US · Validate & Preview"
+run-name: "🧪 US · Validate & Preview · ${{ github.event.pull_request.number || github.ref_name }}"
 
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+    types: [opened, synchronize, reopened, ready_for_review, closed]
   workflow_dispatch:
     inputs:
       scope:
@@ -25,16 +25,15 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event.action != 'closed'
     name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    outputs:
-      scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
+    timeout-minutes: 60
     steps:
       - name: 🤖 Generate GitHub App token
         id: app_token
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/create-github-app-token@v2
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -142,7 +141,7 @@ jobs:
           key: userscripts-validation-v4-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', 'tsconfig.react.json') }}
 
       - name: Typecheck
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         run: npm run typecheck
         timeout-minutes: 5
 
@@ -176,7 +175,7 @@ jobs:
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
-          SCOPED_BUILDS_MATRIX: ${{ github.event_name == 'pull_request' }}
+          SCOPED_BUILDS_MATRIX: "true"
           EVENT_NAME: ${{ github.event_name }}
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -204,32 +203,77 @@ jobs:
         if: steps.validation_cache.outputs.cache-hit == 'true'
         run: echo "Reused successful validation for identical source, tests and configuration fingerprint." >> "$GITHUB_STEP_SUMMARY"
 
-  scoped-builds:
-    name: "🏗️ Scoped build · ${{ matrix.target }}"
-    needs: validate
-    if: ${{ github.event_name == 'pull_request' && needs.validate.result == 'success' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ${{ fromJSON(needs.validate.outputs.scoped_matrix) }}
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          # Build the live PR branch, not a stale historical merge ref when a
-          # failed workflow attempt is re-run after additional fixes.
-          ref: ${{ github.head_ref || github.ref }}
-          fetch-depth: 0
-
-      - name: 🚀 Build selected userscript
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+      - name: Build, package & publish PR preview to Cloudflare R2
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: publish
         env:
-          TARGET: ${{ matrix.target }}
-          BUILD_REASON: PR validation matrix selected this target.
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          node scripts/cloudflare-pr-preview.mjs --mode=publish
+
+      - name: Authenticate preview comment publisher
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: app-token
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          node-version: "24"
-          package-manager: npm
-          install: "true"
-          install-args: --legacy-peer-deps
-          script: node build/build.mjs "--targets=$TARGET"
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
+      - name: Verify preview and source revision
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 6); do
+            manifest="$(curl -fsSL --max-time 15 "${PREVIEW_URL}manifest.json" || true)"
+            source_sha="$(printf '%s' "$manifest" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).sourceSha||"")}catch{}})')"
+            if [ "$source_sha" = "$PR_HEAD_SHA" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Published preview manifest does not match PR head $PR_HEAD_SHA"
+          exit 1
+      - name: Collect preview metadata
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: diff-info
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/github-actions.mjs collect
+      - name: Publish preview comment
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
+          COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
+          DIFF_ENTRY: ${{ steps.diff-info.outputs.diff_entry }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: node scripts/github-actions.mjs publish
+
+  cleanup:
+    name: "🧹 Cleanup PR #${{ github.event.pull_request.number }} preview"
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Remove closed PR preview from Cloudflare
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
+        run: node scripts/cloudflare-pr-preview.mjs --mode=cleanup
