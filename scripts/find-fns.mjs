@@ -1,33 +1,33 @@
 #!/usr/bin/env node
 
-import { execFileSync } from 'node:child_process';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
-import { styleText } from 'node:util';
-import ts from 'typescript';
+import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { styleText } from "node:util";
+import ts from "typescript";
 
 // ============================================================================
 // 1. CLI & Parse de Argumentos
 // ============================================================================
 const rawArgs = process.argv.slice(2);
 
-if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
   console.log(`
-${styleText(['bold', 'cyan'], 'find-fn')} — Inspetor AST de funções, marcadores de refatoração e auditoria de PR/Commit
+${styleText(["bold", "cyan"], "find-fn")} — Inspetor AST de funções, marcadores de refatoração e auditoria de PR/Commit
 
-${styleText('bold', 'USO:')}
+${styleText("bold", "USO:")}
   node find-fn.mjs [alvo] [diretorio] [flags]
 
-${styleText('bold', 'EXEMPLOS:')}
-  node find-fn.mjs                          ${styleText('dim', '# Lista funções, TODO/FIXME e audita o PR/commit atual')}
-  node find-fn.mjs calcularFrete            ${styleText('dim', '# Busca a função "calcularFrete" e exibe o bloco completo')}
-  node find-fn.mjs src/api.ts --watch       ${styleText('dim', '# Monitora um arquivo específico em tempo real')}
-  node find-fn.mjs --tasks                  ${styleText('dim', '# Exibe apenas TODO, EXTRACT, REFACTOR e diagnósticos FIXME')}
-  node find-fn.mjs --base origin/main       ${styleText('dim', '# Audita comentários novos e funções repetidas contra origin/main')}
-  node find-fn.mjs --json                   ${styleText('dim', '# Saída estruturada em JSON puro (inclui "code" e "gitAudit")')}
+${styleText("bold", "EXEMPLOS:")}
+  node find-fn.mjs                          ${styleText("dim", "# Lista funções, TODO/FIXME e audita o PR/commit atual")}
+  node find-fn.mjs calcularFrete            ${styleText("dim", '# Busca a função "calcularFrete" e exibe o bloco completo')}
+  node find-fn.mjs src/api.ts --watch       ${styleText("dim", "# Monitora um arquivo específico em tempo real")}
+  node find-fn.mjs --tasks                  ${styleText("dim", "# Exibe apenas TODO, EXTRACT, REFACTOR e diagnósticos FIXME")}
+  node find-fn.mjs --base origin/main       ${styleText("dim", "# Audita comentários novos e funções repetidas contra origin/main")}
+  node find-fn.mjs --json                   ${styleText("dim", '# Saída estruturada em JSON puro (inclui "code" e "gitAudit")')}
 
-${styleText('bold', 'FLAGS:')}
+${styleText("bold", "FLAGS:")}
   -w, --watch       Monitora alterações no arquivo ou diretório alvo
   --tasks           Mostra apenas comentários de refatoração e diagnósticos FIXME
   --no-code         Oculta o bloco de código completo na saída visual do terminal
@@ -40,23 +40,23 @@ ${styleText('bold', 'FLAGS:')}
   process.exit(0);
 }
 
-const isJson = rawArgs.includes('--json');
-const isWatch = rawArgs.includes('--watch') || rawArgs.includes('-w');
-const onlyTasks = rawArgs.includes('--tasks') || rawArgs.includes('--todos');
-const hideCode = rawArgs.includes('--no-code');
-const noCache = rawArgs.includes('--no-cache');
-const noGit = rawArgs.includes('--no-git');
+const isJson = rawArgs.includes("--json");
+const isWatch = rawArgs.includes("--watch") || rawArgs.includes("-w");
+const onlyTasks = rawArgs.includes("--tasks") || rawArgs.includes("--todos");
+const hideCode = rawArgs.includes("--no-code");
+const noCache = rawArgs.includes("--no-cache");
+const noGit = rawArgs.includes("--no-git");
 
 let explicitGitBase = null;
 const positionalArgs = [];
 
 for (let i = 0; i < rawArgs.length; i++) {
   const arg = rawArgs[i];
-  if (arg === '--base' && rawArgs[i + 1]) {
+  if (arg === "--base" && rawArgs[i + 1]) {
     explicitGitBase = rawArgs[++i];
-  } else if (arg.startsWith('--base=')) {
-    explicitGitBase = arg.slice('--base='.length);
-  } else if (!arg.startsWith('-')) {
+  } else if (arg.startsWith("--base=")) {
+    explicitGitBase = arg.slice("--base=".length);
+  } else if (!arg.startsWith("-")) {
     positionalArgs.push(arg);
   }
 }
@@ -79,7 +79,7 @@ if (!fs.existsSync(targetPath)) {
   if (isJson) {
     console.error(JSON.stringify({ error: `Caminho não encontrado: ${targetPath}` }));
   } else {
-    console.error(styleText('red', `✖ Erro: Caminho não encontrado -> ${targetPath}`));
+    console.error(styleText("red", `✖ Erro: Caminho não encontrado -> ${targetPath}`));
   }
   process.exit(1);
 }
@@ -91,10 +91,7 @@ function findProjectRoot(startPath) {
   const { root } = path.parse(current);
 
   while (current !== root) {
-    if (
-      fs.existsSync(path.join(current, 'package.json')) ||
-      fs.existsSync(path.join(current, '.git'))
-    ) {
+    if (fs.existsSync(path.join(current, "package.json")) || fs.existsSync(path.join(current, ".git"))) {
       return current;
     }
     current = path.dirname(current);
@@ -108,39 +105,39 @@ const projectRoot = findProjectRoot(targetPath);
 // 2. Configurações, Logs & Sistema de Cache (RAM + Disco)
 // ============================================================================
 const CACHE_VERSION = 3; // Inclui code + normalizedBodyHash
-const CACHE_DIR = path.join(projectRoot, 'node_modules', '.cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'find-fn-ast.json');
+const CACHE_DIR = path.join(projectRoot, "node_modules", ".cache");
+const CACHE_FILE = path.join(CACHE_DIR, "find-fn-ast.json");
 
-const EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx']);
+const EXTENSIONS = new Set([".js", ".mjs", ".cjs", ".ts", ".tsx"]);
 const IGNORE_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  'build',
-  '.next',
-  '.nuxt',
-  '.output',
-  'coverage',
-  '.turbo',
-  '.cache'
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  ".next",
+  ".nuxt",
+  ".output",
+  "coverage",
+  ".turbo",
+  ".cache",
 ]);
 
 const log = {
   step: (msg) => {
-    if (!isJson) console.log(`${styleText('blue', 'ℹ')} ${msg}`);
+    if (!isJson) console.log(`${styleText("blue", "ℹ")} ${msg}`);
   },
   success: (msg) => {
-    if (!isJson) console.log(`${styleText('green', '✔')} ${msg}`);
+    if (!isJson) console.log(`${styleText("green", "✔")} ${msg}`);
   },
   warn: (msg) => {
-    if (!isJson) console.log(`${styleText('yellow', '⚠')} ${msg}`);
+    if (!isJson) console.log(`${styleText("yellow", "⚠")} ${msg}`);
   },
   watch: (msg) => {
     if (!isJson) {
-      const time = styleText('dim', `[${new Date().toLocaleTimeString()}]`);
-      console.log(`${styleText('magenta', '👀')} ${time} ${msg}`);
+      const time = styleText("dim", `[${new Date().toLocaleTimeString()}]`);
+      console.log(`${styleText("magenta", "👀")} ${time} ${msg}`);
     }
-  }
+  },
 };
 
 const memoryCache = new Map();
@@ -150,7 +147,7 @@ function loadDiskCache() {
   if (noCache) return;
   try {
     if (!fs.existsSync(CACHE_FILE)) return;
-    const raw = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
+    const raw = JSON.parse(fs.readFileSync(CACHE_FILE, "utf-8"));
     if (raw.version !== CACHE_VERSION || !raw.entries) return;
 
     for (const [absFile, entry] of Object.entries(raw.entries)) {
@@ -167,9 +164,9 @@ function saveDiskCache() {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     const serialized = {
       version: CACHE_VERSION,
-      entries: Object.fromEntries(memoryCache)
+      entries: Object.fromEntries(memoryCache),
     };
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(serialized), 'utf-8');
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(serialized), "utf-8");
     cacheDirty = false;
   } catch {
     // Falha silenciosa
@@ -210,7 +207,7 @@ function levenshtein(a, b) {
       const del = levBufferA[j] + 1;
       const ins = levBufferB[j - 1] + 1;
       const sub = levBufferA[j - 1] + cost;
-      levBufferB[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+      levBufferB[j] = del < ins ? (del < sub ? del : sub) : ins < sub ? ins : sub;
     }
 
     const tmp = levBufferA;
@@ -227,7 +224,7 @@ function tokenizeIdentifier(str) {
   if (cached) return cached;
 
   cached = str
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
@@ -317,9 +314,9 @@ function getFilesToScan(entryPath) {
 
 function getScriptKind(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.tsx') return ts.ScriptKind.TSX;
-  if (ext === '.ts') return ts.ScriptKind.TS;
-  if (ext === '.jsx') return ts.ScriptKind.JSX;
+  if (ext === ".tsx") return ts.ScriptKind.TSX;
+  if (ext === ".ts") return ts.ScriptKind.TS;
+  if (ext === ".jsx") return ts.ScriptKind.JSX;
   return ts.ScriptKind.JS;
 }
 
@@ -328,14 +325,14 @@ function extractSignature(node, sourceFile, fullText) {
   const end = node.body ? node.body.getStart(sourceFile) : node.getEnd();
 
   let signature = fullText.slice(start, end).trim();
-  if (signature.endsWith('=>')) {
+  if (signature.endsWith("=>")) {
     signature = signature.slice(0, -2).trim();
   }
-  return signature.replace(/\s+/g, ' ');
+  return signature.replace(/\s+/g, " ");
 }
 
 function dedentCode(rawCode) {
-  const lines = rawCode.split('\n');
+  const lines = rawCode.split("\n");
   let minIndent = Infinity;
 
   for (let i = 0; i < lines.length; i++) {
@@ -351,9 +348,7 @@ function dedentCode(rawCode) {
     return rawCode;
   }
 
-  return lines
-    .map((line) => (line.trim().length === 0 ? '' : line.slice(minIndent)))
-    .join('\n');
+  return lines.map((line) => (line.trim().length === 0 ? "" : line.slice(minIndent))).join("\n");
 }
 
 /**
@@ -361,12 +356,12 @@ function dedentCode(rawCode) {
  * para detectar funções copiadas/repetidas mesmo com nomes diferentes.
  */
 function computeBodyFingerprint(bodyNode, fullText) {
-  if (!bodyNode) return { hash: null, normalized: '' };
+  if (!bodyNode) return { hash: null, normalized: "" };
 
   const rawBody = fullText.slice(bodyNode.getStart(), bodyNode.getEnd());
   const normalized = rawBody
-    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '') // remove comentários internos
-    .replace(/\s+/g, '')                      // remove espaços e quebras de linha
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "") // remove comentários internos
+    .replace(/\s+/g, "") // remove espaços e quebras de linha
     .trim();
 
   if (normalized.length < 15) {
@@ -374,7 +369,7 @@ function computeBodyFingerprint(bodyNode, fullText) {
     return { hash: null, normalized };
   }
 
-  const hash = crypto.createHash('sha1').update(normalized).digest('hex').slice(0, 12);
+  const hash = crypto.createHash("sha1").update(normalized).digest("hex").slice(0, 12);
   return { hash, normalized };
 }
 
@@ -387,19 +382,11 @@ function extractCommentsFast(sourceFile, fullText) {
   }
 
   const comments = [];
-  const scanner = ts.createScanner(
-    ts.ScriptTarget.Latest,
-    false,
-    ts.LanguageVariant.Standard,
-    fullText
-  );
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, fullText);
 
   let token = scanner.scan();
   while (token !== ts.SyntaxKind.EndOfFileToken) {
-    if (
-      token === ts.SyntaxKind.SingleLineCommentTrivia ||
-      token === ts.SyntaxKind.MultiLineCommentTrivia
-    ) {
+    if (token === ts.SyntaxKind.SingleLineCommentTrivia || token === ts.SyntaxKind.MultiLineCommentTrivia) {
       const rawText = scanner.getTokenText();
       if (KEYWORD_REGEX.test(rawText)) {
         const startPos = scanner.getTokenPos();
@@ -409,22 +396,22 @@ function extractCommentsFast(sourceFile, fullText) {
         const endLine = sourceFile.getLineAndCharacterOfPosition(endPos).line + 1;
 
         const cleanText = rawText
-          .replace(/^\/\*+|\*+\/$/g, '')
-          .split('\n')
-          .map((line) => line.replace(/^\s*(\/\/|\*)\s?/, '').trim())
+          .replace(/^\/\*+|\*+\/$/g, "")
+          .split("\n")
+          .map((line) => line.replace(/^\s*(\/\/|\*)\s?/, "").trim())
           .filter(Boolean)
-          .join(' ');
+          .join(" ");
 
         const fixmeMatch = cleanText.match(FIXME_EXTRACT_REGEX);
         const keywordMatch = cleanText.match(KEYWORD_REGEX);
 
         comments.push({
-          type: fixmeMatch ? 'FIXME_EXTRACT' : keywordMatch[1].toUpperCase(),
+          type: fixmeMatch ? "FIXME_EXTRACT" : keywordMatch[1].toUpperCase(),
           text: cleanText,
           startLine,
           endLine,
           fixmeTargetFn: fixmeMatch ? fixmeMatch[1] : null,
-          fixmeTargetPath: fixmeMatch ? fixmeMatch[2].replace(/['"`]/g, '') : null
+          fixmeTargetPath: fixmeMatch ? fixmeMatch[2].replace(/['"`]/g, "") : null,
         });
       }
     }
@@ -450,7 +437,7 @@ function analyzeFileCached(filePath) {
 
   let content;
   try {
-    content = fs.readFileSync(filePath, 'utf-8');
+    content = fs.readFileSync(filePath, "utf-8");
   } catch {
     return { data: { functions: [], allSymbols: [], comments: [] }, fromCache: false };
   }
@@ -460,7 +447,7 @@ function analyzeFileCached(filePath) {
     content,
     ts.ScriptTarget.Latest,
     true,
-    getScriptKind(filePath)
+    getScriptKind(filePath),
   );
 
   const functions = [];
@@ -485,7 +472,7 @@ function analyzeFileCached(filePath) {
     }
 
     if (ts.isFunctionDeclaration(node)) {
-      fnName = node.name ? node.name.text : 'default';
+      fnName = node.name ? node.name.text : "default";
     } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
       fnName = node.name.text;
       allSymbols.add(fnName);
@@ -525,18 +512,12 @@ function analyzeFileCached(filePath) {
       const signature = extractSignature(fnImplNode, sourceFile, content);
 
       const prefix = ts.isVariableStatement(targetNode)
-        ? content
-            .slice(nodeStart, node.initializer.getStart(sourceFile))
-            .replace(/\s+/g, ' ')
-            .trim() + ' '
-        : '';
+        ? content.slice(nodeStart, node.initializer.getStart(sourceFile)).replace(/\s+/g, " ").trim() + " "
+        : "";
 
       const rawCode = content.slice(nodeStart, nodeEnd);
       const cleanCode = dedentCode(rawCode);
-      const { hash: bodyHash, normalized: normalizedBody } = computeBodyFingerprint(
-        fnImplNode.body,
-        content
-      );
+      const { hash: bodyHash, normalized: normalizedBody } = computeBodyFingerprint(fnImplNode.body, content);
 
       functions.push({
         name: fnName,
@@ -545,7 +526,7 @@ function analyzeFileCached(filePath) {
         signature: `${prefix}${signature}`.trim(),
         code: cleanCode,
         bodyHash,
-        normalizedBody
+        normalizedBody,
       });
     }
 
@@ -558,13 +539,13 @@ function analyzeFileCached(filePath) {
   const parsedData = {
     functions,
     allSymbols: Array.from(allSymbols),
-    comments
+    comments,
   };
 
   memoryCache.set(filePath, {
     mtimeMs: stats.mtimeMs,
     size: stats.size,
-    data: parsedData
+    data: parsedData,
   });
   cacheDirty = true;
 
@@ -576,10 +557,10 @@ function analyzeFileCached(filePath) {
 // ============================================================================
 function runGit(args) {
   try {
-    return execFileSync('git', args, {
+    return execFileSync("git", args, {
       cwd: projectRoot,
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore']
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
     return null;
@@ -593,34 +574,34 @@ function runGit(args) {
 function getGitAddedLines() {
   if (noGit) return null;
 
-  const isGitRepo = runGit(['rev-parse', '--is-inside-work-tree']);
-  if (isGitRepo !== 'true') return null;
+  const isGitRepo = runGit(["rev-parse", "--is-inside-work-tree"]);
+  if (isGitRepo !== "true") return null;
 
-  let diffMode = '';
-  let diffOutput = '';
+  let diffMode = "";
+  let diffOutput = "";
 
   if (explicitGitBase) {
     diffMode = `base (${explicitGitBase}...HEAD)`;
-    diffOutput = runGit(['diff', '-U0', `${explicitGitBase}...HEAD`]) ?? '';
+    diffOutput = runGit(["diff", "-U0", `${explicitGitBase}...HEAD`]) ?? "";
   } else if (process.env.GITHUB_BASE_REF) {
     const baseRef = `origin/${process.env.GITHUB_BASE_REF}`;
     diffMode = `PR (${baseRef}...HEAD)`;
-    diffOutput = runGit(['diff', '-U0', `${baseRef}...HEAD`]) ?? '';
+    diffOutput = runGit(["diff", "-U0", `${baseRef}...HEAD`]) ?? "";
   } else {
     // Tenta staged -> unstaged -> último commit (HEAD~1..HEAD)
-    const staged = runGit(['diff', '-U0', '--cached']);
-    const unstaged = runGit(['diff', '-U0']);
+    const staged = runGit(["diff", "-U0", "--cached"]);
+    const unstaged = runGit(["diff", "-U0"]);
 
     if (staged) {
-      diffMode = 'staged changes';
+      diffMode = "staged changes";
       diffOutput = staged;
     } else if (unstaged) {
-      diffMode = 'working tree changes';
+      diffMode = "working tree changes";
       diffOutput = unstaged;
     } else {
-      const lastCommit = runGit(['diff', '-U0', 'HEAD~1..HEAD']);
+      const lastCommit = runGit(["diff", "-U0", "HEAD~1..HEAD"]);
       if (lastCommit) {
-        diffMode = 'último commit (HEAD~1..HEAD)';
+        diffMode = "último commit (HEAD~1..HEAD)";
         diffOutput = lastCommit;
       }
     }
@@ -631,18 +612,18 @@ function getGitAddedLines() {
   const addedLinesByFile = new Map();
   let currentAbsFile = null;
 
-  const lines = diffOutput.split('\n');
+  const lines = diffOutput.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Cabeçalho de arquivo destino no unified diff: +++ b/src/arquivo.ts
-    if (line.startsWith('+++ b/')) {
+    if (line.startsWith("+++ b/")) {
       const relPath = line.slice(6).trim();
       currentAbsFile = path.resolve(projectRoot, relPath);
       if (!addedLinesByFile.has(currentAbsFile)) {
         addedLinesByFile.set(currentAbsFile, new Set());
       }
-    } else if (line.startsWith('@@ ') && currentAbsFile) {
+    } else if (line.startsWith("@@ ") && currentAbsFile) {
       // Formato: @@ -oldStart,oldCount +newStart,newCount @@
       const match = line.match(/\+(\d+)(?:,(\d+))?/);
       if (match) {
@@ -675,7 +656,7 @@ function auditGitChanges(repoFilesData, gitDiff) {
       allRepoFunctions.push({
         absFile: fileData.absFile,
         relFile: path.relative(process.cwd(), fileData.absFile) || path.basename(fileData.absFile),
-        ...fn
+        ...fn,
       });
     }
   }
@@ -684,8 +665,7 @@ function auditGitChanges(repoFilesData, gitDiff) {
     const addedLines = gitDiff.addedLinesByFile.get(fileData.absFile);
     if (!addedLines || addedLines.size === 0) continue;
 
-    const currentRelFile =
-      path.relative(process.cwd(), fileData.absFile) || path.basename(fileData.absFile);
+    const currentRelFile = path.relative(process.cwd(), fileData.absFile) || path.basename(fileData.absFile);
 
     // 1. Verifica comentários introduzidos nas linhas adicionadas pelo PR/commit
     for (const task of fileData.tasks) {
@@ -701,7 +681,7 @@ function auditGitChanges(repoFilesData, gitDiff) {
         task.introducedInDiff = true;
         introducedComments.push({
           file: currentRelFile,
-          githubRange: `${currentRelFile.replace(/\\/g, '/')}#L${task.startLine}-L${task.endLine}`,
+          githubRange: `${currentRelFile.replace(/\\/g, "/")}#L${task.startLine}-L${task.endLine}`,
           type: task.type,
           text: task.text,
           startLine: task.startLine,
@@ -711,10 +691,10 @@ function auditGitChanges(repoFilesData, gitDiff) {
                 name: task.nearbyFunction.name,
                 startLine: task.nearbyFunction.startLine,
                 endLine: task.nearbyFunction.endLine,
-                signature: task.nearbyFunction.signature
+                signature: task.nearbyFunction.signature,
               }
             : null,
-          diagnostics: task.diagnostics
+          diagnostics: task.diagnostics,
         });
       }
     }
@@ -741,43 +721,36 @@ function auditGitChanges(repoFilesData, gitDiff) {
         // Critério A: Corpo exatamente igual (mesmo hash AST normalizado)
         if (fn.bodyHash && existing.bodyHash && fn.bodyHash === existing.bodyHash) {
           matches.push({
-            reason: 'IDENTICAL_BODY',
+            reason: "IDENTICAL_BODY",
             similarity: 100,
             file: existing.relFile,
             name: existing.name,
             startLine: existing.startLine,
             endLine: existing.endLine,
             signature: existing.signature,
-            githubRange: `${existing.relFile.replace(/\\/g, '/')}#L${existing.startLine}-L${existing.endLine}`
+            githubRange: `${existing.relFile.replace(/\\/g, "/")}#L${existing.startLine}-L${existing.endLine}`,
           });
           continue;
         }
 
         // Critério B: Mesmo nome de função já existente em outro arquivo (ou duplicado no mesmo)
         // Ignora nomes genéricos muito comuns de lifecycle/componentes como "default" ou "render"
-        if (
-          fn.name === existing.name &&
-          fn.name !== 'default' &&
-          fn.name.length > 3
-        ) {
+        if (fn.name === existing.name && fn.name !== "default" && fn.name.length > 3) {
           matches.push({
-            reason: 'DUPLICATE_NAME',
+            reason: "DUPLICATE_NAME",
             similarity: 100,
             file: existing.relFile,
             name: existing.name,
             startLine: existing.startLine,
             endLine: existing.endLine,
             signature: existing.signature,
-            githubRange: `${existing.relFile.replace(/\\/g, '/')}#L${existing.startLine}-L${existing.endLine}`
+            githubRange: `${existing.relFile.replace(/\\/g, "/")}#L${existing.startLine}-L${existing.endLine}`,
           });
           continue;
         }
 
         // Critério C: Corpo muito semelhante (>85% de similaridade estrutural)
-        if (
-          fn.normalizedBody.length >= 40 &&
-          existing.normalizedBody.length >= 40
-        ) {
+        if (fn.normalizedBody.length >= 40 && existing.normalizedBody.length >= 40) {
           const maxLen = Math.max(fn.normalizedBody.length, existing.normalizedBody.length);
           const minLen = Math.min(fn.normalizedBody.length, existing.normalizedBody.length);
           if (minLen / maxLen >= 0.85) {
@@ -785,14 +758,14 @@ function auditGitChanges(repoFilesData, gitDiff) {
             const sim = Math.round((1 - dist / maxLen) * 100);
             if (sim >= 85) {
               matches.push({
-                reason: 'SIMILAR_BODY',
+                reason: "SIMILAR_BODY",
                 similarity: sim,
                 file: existing.relFile,
                 name: existing.name,
                 startLine: existing.startLine,
                 endLine: existing.endLine,
                 signature: existing.signature,
-                githubRange: `${existing.relFile.replace(/\\/g, '/')}#L${existing.startLine}-L${existing.endLine}`
+                githubRange: `${existing.relFile.replace(/\\/g, "/")}#L${existing.startLine}-L${existing.endLine}`,
               });
             }
           }
@@ -806,9 +779,9 @@ function auditGitChanges(repoFilesData, gitDiff) {
           startLine: fn.startLine,
           endLine: fn.endLine,
           signature: fn.signature,
-          githubRange: `${currentRelFile.replace(/\\/g, '/')}#L${fn.startLine}-L${fn.endLine}`,
+          githubRange: `${currentRelFile.replace(/\\/g, "/")}#L${fn.startLine}-L${fn.endLine}`,
           code: fn.code,
-          existingMatches: matches
+          existingMatches: matches,
         });
       }
     }
@@ -819,7 +792,7 @@ function auditGitChanges(repoFilesData, gitDiff) {
     introducedCommentsCount: introducedComments.length,
     duplicateFunctionsCount: duplicateFunctions.length,
     introducedComments,
-    duplicateFunctions
+    duplicateFunctions,
   };
 }
 
@@ -834,7 +807,7 @@ function resolveTasksAndDiagnostics(repoFilesData) {
     repoIndex.set(data.relFile, {
       absFile: data.absFile,
       symbols: new Set(data.allSymbols),
-      functions: data.functions
+      functions: data.functions,
     });
     for (const fn of data.functions) {
       allGlobalFunctionNames.add(fn.name);
@@ -852,7 +825,7 @@ function resolveTasksAndDiagnostics(repoFilesData) {
 
     data.tasks = data.comments.map((comment) => {
       const nearbyFn = data.functions.find(
-        (fn) => fn.startLine >= comment.endLine && fn.startLine - comment.endLine <= 15
+        (fn) => fn.startLine >= comment.endLine && fn.startLine - comment.endLine <= 15,
       );
 
       const task = {
@@ -867,13 +840,13 @@ function resolveTasksAndDiagnostics(repoFilesData) {
               startLine: nearbyFn.startLine,
               endLine: nearbyFn.endLine,
               signature: nearbyFn.signature,
-              code: nearbyFn.code
+              code: nearbyFn.code,
             }
           : null,
-        diagnostics: null
+        diagnostics: null,
       };
 
-      if (comment.type === 'FIXME_EXTRACT') {
+      if (comment.type === "FIXME_EXTRACT") {
         const targetFn = comment.fixmeTargetFn;
         const rawTargetPath = comment.fixmeTargetPath;
 
@@ -886,32 +859,24 @@ function resolveTasksAndDiagnostics(repoFilesData) {
             ? candidateFromRoot
             : null;
 
-        const destRelPath = actualDestAbsPath
-          ? path.relative(projectRoot, actualDestAbsPath)
-          : rawTargetPath;
+        const destRelPath = actualDestAbsPath ? path.relative(projectRoot, actualDestAbsPath) : rawTargetPath;
 
         const fnExistsLocally = data.functions.some((f) => f.name === targetFn);
         const localSuggestions = fnExistsLocally
           ? []
           : findBestMatches(
               targetFn,
-              data.functions.map((f) => f.name)
+              data.functions.map((f) => f.name),
             );
         const globalSuggestions =
-          fnExistsLocally || localSuggestions.length > 0
-            ? []
-            : findBestMatches(targetFn, allGlobalFnsArray);
+          fnExistsLocally || localSuggestions.length > 0 ? [] : findBestMatches(targetFn, allGlobalFnsArray);
 
         const destEntry = actualDestAbsPath ? repoIndex.get(destRelPath) : null;
         const symbolAlreadyInDest = destEntry ? destEntry.symbols.has(targetFn) : false;
         const similarSymbolsInDest =
-          destEntry && !symbolAlreadyInDest
-            ? findBestMatches(targetFn, Array.from(destEntry.symbols))
-            : [];
+          destEntry && !symbolAlreadyInDest ? findBestMatches(targetFn, Array.from(destEntry.symbols)) : [];
 
-        const similarFiles = actualDestAbsPath
-          ? []
-          : findBestMatches(rawTargetPath, allRepoRelFiles);
+        const similarFiles = actualDestAbsPath ? [] : findBestMatches(rawTargetPath, allRepoRelFiles);
 
         task.diagnostics = {
           targetFunction: targetFn,
@@ -922,7 +887,7 @@ function resolveTasksAndDiagnostics(repoFilesData) {
           targetFileExists: Boolean(actualDestAbsPath),
           similarFiles,
           symbolConflictInTargetFile: symbolAlreadyInDest,
-          similarSymbolsInTargetFile: similarSymbolsInDest
+          similarSymbolsInTargetFile: similarSymbolsInDest,
         };
       }
 
@@ -935,18 +900,18 @@ function resolveTasksAndDiagnostics(repoFilesData) {
 // 7. Helpers de Renderização Visual
 // ============================================================================
 function renderPrettyCodeBlock(fn) {
-  const codeLines = fn.code.split('\n');
+  const codeLines = fn.code.split("\n");
   const maxLineNumWidth = String(fn.endLine).length;
   const borderWidth = 64;
 
-  const topBorder = `   ${styleText('dim', '┌' + '─'.repeat(borderWidth))}`;
-  const bottomBorder = `   ${styleText('dim', '└' + '─'.repeat(borderWidth))}`;
+  const topBorder = `   ${styleText("dim", "┌" + "─".repeat(borderWidth))}`;
+  const bottomBorder = `   ${styleText("dim", "└" + "─".repeat(borderWidth))}`;
 
   console.log(topBorder);
   for (let i = 0; i < codeLines.length; i++) {
-    const currentLineNum = String(fn.startLine + i).padStart(maxLineNumWidth, ' ');
-    const gutter = styleText('dim', `   │ ${currentLineNum} │ `);
-    console.log(`${gutter}${styleText('white', codeLines[i])}`);
+    const currentLineNum = String(fn.startLine + i).padStart(maxLineNumWidth, " ");
+    const gutter = styleText("dim", `   │ ${currentLineNum} │ `);
+    console.log(`${gutter}${styleText("white", codeLines[i])}`);
   }
   console.log(bottomBorder);
 }
@@ -956,16 +921,16 @@ function renderPrettyCodeBlock(fn) {
 // ============================================================================
 function runAnalysis() {
   const startTime = performance.now();
-  const relTarget = path.relative(process.cwd(), targetPath) || '.';
+  const relTarget = path.relative(process.cwd(), targetPath) || ".";
 
   if (!isJson) {
-    console.log('');
+    console.log("");
     if (targetFunctionName) {
       log.step(
-        `Buscando ${styleText(['bold', 'cyan'], targetFunctionName)} e marcadores em ${styleText('dim', relTarget)}...`
+        `Buscando ${styleText(["bold", "cyan"], targetFunctionName)} e marcadores em ${styleText("dim", relTarget)}...`,
       );
     } else {
-      log.step(`Analisando funções e marcadores em ${styleText('dim', relTarget)}...`);
+      log.step(`Analisando funções e marcadores em ${styleText("dim", relTarget)}...`);
     }
   }
 
@@ -991,7 +956,7 @@ function runAnalysis() {
     return {
       absFile,
       relFile: path.relative(projectRoot, absFile) || path.basename(absFile),
-      ...data
+      ...data,
     };
   });
 
@@ -1017,10 +982,10 @@ function runAnalysis() {
           startLine: fn.startLine,
           endLine: fn.endLine,
           signature: fn.signature,
-          githubRange: `${relFile.replace(/\\/g, '/')}#L${fn.startLine}-L${fn.endLine}`,
-          code: fn.code
+          githubRange: `${relFile.replace(/\\/g, "/")}#L${fn.startLine}-L${fn.endLine}`,
+          code: fn.code,
         })),
-        tasks: d.tasks
+        tasks: d.tasks,
       };
     })
     .filter((d) => (onlyTasks ? d.tasks.length > 0 : d.functions.length > 0 || d.tasks.length > 0));
@@ -1033,36 +998,39 @@ function runAnalysis() {
       JSON.stringify(
         {
           files: displayFiles,
-          gitAudit
+          gitAudit,
         },
         null,
-        2
-      )
+        2,
+      ),
     );
     return;
   }
 
   const totalFns = displayFiles.reduce((acc, item) => acc + item.functions.length, 0);
   const totalTasks = displayFiles.reduce((acc, item) => acc + item.tasks.length, 0);
-  const cacheInfo = styleText('dim', `[AST: ${parsedCount} parsed, ${cacheHits} cached]`);
+  const cacheInfo = styleText("dim", `[AST: ${parsedCount} parsed, ${cacheHits} cached]`);
 
-  if (displayFiles.length === 0 && (!gitAudit || (gitAudit.introducedCommentsCount === 0 && gitAudit.duplicateFunctionsCount === 0))) {
-    log.warn(`Nenhum resultado encontrado ${styleText('dim', `(${elapsed}ms)`)} ${cacheInfo}\n`);
+  if (
+    displayFiles.length === 0 &&
+    (!gitAudit || (gitAudit.introducedCommentsCount === 0 && gitAudit.duplicateFunctionsCount === 0))
+  ) {
+    log.warn(`Nenhum resultado encontrado ${styleText("dim", `(${elapsed}ms)`)} ${cacheInfo}\n`);
     return;
   }
 
   log.success(
-    `Encontrada(s) ${styleText(['bold', 'green'], String(totalFns))} função(ões) e ${styleText(['bold', 'yellow'], String(totalTasks))} marcador(es) em ${styleText('dim', `${elapsed}ms`)} ${cacheInfo}\n`
+    `Encontrada(s) ${styleText(["bold", "green"], String(totalFns))} função(ões) e ${styleText(["bold", "yellow"], String(totalTasks))} marcador(es) em ${styleText("dim", `${elapsed}ms`)} ${cacheInfo}\n`,
   );
 
   for (const item of displayFiles) {
-    console.log(`📄 ${styleText(['bold', 'yellow'], item.file)}`);
+    console.log(`📄 ${styleText(["bold", "yellow"], item.file)}`);
 
     if (!onlyTasks && item.functions.length > 0) {
       for (const fn of item.functions) {
-        const lineBadge = styleText('cyan', `L${fn.startLine}-${fn.endLine}`);
-        const ghLink = styleText('dim', `(${fn.githubRange})`);
-        console.log(`\n   ${lineBadge} ${styleText(['bold', 'white'], fn.signature)} ${ghLink}`);
+        const lineBadge = styleText("cyan", `L${fn.startLine}-${fn.endLine}`);
+        const ghLink = styleText("dim", `(${fn.githubRange})`);
+        console.log(`\n   ${lineBadge} ${styleText(["bold", "white"], fn.signature)} ${ghLink}`);
 
         if (!hideCode) {
           renderPrettyCodeBlock(fn);
@@ -1071,24 +1039,24 @@ function runAnalysis() {
     }
 
     if (item.tasks.length > 0) {
-      console.log('');
+      console.log("");
       for (const task of item.tasks) {
-        const badgeColor = task.type === 'FIXME_EXTRACT' ? 'red' : 'magenta';
-        const lineTag = styleText('dim', `L${task.startLine}`);
+        const badgeColor = task.type === "FIXME_EXTRACT" ? "red" : "magenta";
+        const lineTag = styleText("dim", `L${task.startLine}`);
         const newBadge = task.introducedInDiff
-          ? ` ${styleText(['bold', 'bgYellow', 'black'], ' NOVO NO DIFF ')}`
-          : '';
+          ? ` ${styleText(["bold", "bgYellow", "black"], " NOVO NO DIFF ")}`
+          : "";
 
         console.log(
-          `   ${styleText(['bold', badgeColor], `[${task.type}]`)}${newBadge} ${lineTag} ${styleText('white', task.text)}`
+          `   ${styleText(["bold", badgeColor], `[${task.type}]`)}${newBadge} ${lineTag} ${styleText("white", task.text)}`,
         );
 
         if (task.nearbyFunction) {
           console.log(
-            `      ${styleText('dim', '↳ Função logo abaixo:')} ${styleText('cyan', task.nearbyFunction.name)} ${styleText('dim', `(L${task.nearbyFunction.startLine}-${task.nearbyFunction.endLine})`)}`
+            `      ${styleText("dim", "↳ Função logo abaixo:")} ${styleText("cyan", task.nearbyFunction.name)} ${styleText("dim", `(L${task.nearbyFunction.startLine}-${task.nearbyFunction.endLine})`)}`,
           );
         } else {
-          console.log(`      ${styleText('dim', '↳ Nenhuma função declarada logo abaixo')}`);
+          console.log(`      ${styleText("dim", "↳ Nenhuma função declarada logo abaixo")}`);
         }
 
         if (task.diagnostics) {
@@ -1096,86 +1064,80 @@ function runAnalysis() {
 
           if (d.functionExistsInCurrentFile) {
             console.log(
-              `      ${styleText('green', '✔')} Função origem ${styleText('bold', d.targetFunction)} existe neste arquivo.`
+              `      ${styleText("green", "✔")} Função origem ${styleText("bold", d.targetFunction)} existe neste arquivo.`,
             );
           } else {
             console.log(
-              `      ${styleText('red', '✖')} Função origem ${styleText('bold', d.targetFunction)} NÃO existe neste arquivo.`
+              `      ${styleText("red", "✖")} Função origem ${styleText("bold", d.targetFunction)} NÃO existe neste arquivo.`,
             );
             if (d.similarLocalFunctions.length > 0) {
-              const formatted = d.similarLocalFunctions
-                .map((s) => `${s.name} (${s.similarity}%)`)
-                .join(', ');
-              console.log(`        ${styleText('yellow', '💡 Sugestões no arquivo:')} ${formatted}`);
+              const formatted = d.similarLocalFunctions.map((s) => `${s.name} (${s.similarity}%)`).join(", ");
+              console.log(`        ${styleText("yellow", "💡 Sugestões no arquivo:")} ${formatted}`);
             } else if (d.similarGlobalFunctions.length > 0) {
               const formatted = d.similarGlobalFunctions
                 .map((s) => `${s.name} (${s.similarity}%)`)
-                .join(', ');
-              console.log(`        ${styleText('yellow', '💡 Sugestões no repositório:')} ${formatted}`);
+                .join(", ");
+              console.log(`        ${styleText("yellow", "💡 Sugestões no repositório:")} ${formatted}`);
             }
           }
 
           if (d.targetFileExists) {
             console.log(
-              `      ${styleText('green', '✔')} Arquivo destino existe: ${styleText('cyan', d.targetPath)}`
+              `      ${styleText("green", "✔")} Arquivo destino existe: ${styleText("cyan", d.targetPath)}`,
             );
             if (d.symbolConflictInTargetFile) {
               console.log(
-                `      ${styleText('yellow', '⚠ Conflito:')} Símbolo ${styleText('bold', d.targetFunction)} JÁ está definido em ${d.targetPath}!`
+                `      ${styleText("yellow", "⚠ Conflito:")} Símbolo ${styleText("bold", d.targetFunction)} JÁ está definido em ${d.targetPath}!`,
               );
             } else {
               console.log(
-                `      ${styleText('green', '✔')} Nome livre em ${d.targetPath} (sem conflito de símbolo).`
+                `      ${styleText("green", "✔")} Nome livre em ${d.targetPath} (sem conflito de símbolo).`,
               );
               if (d.similarSymbolsInTargetFile.length > 0) {
                 const formatted = d.similarSymbolsInTargetFile
                   .map((s) => `${s.name} (${s.similarity}%)`)
-                  .join(', ');
-                console.log(
-                  `        ${styleText('dim', 'ℹ Símbolos parecidos no destino:')} ${formatted}`
-                );
+                  .join(", ");
+                console.log(`        ${styleText("dim", "ℹ Símbolos parecidos no destino:")} ${formatted}`);
               }
             }
           } else {
             console.log(
-              `      ${styleText('yellow', '⚠')} Arquivo destino não existe: ${styleText('dim', d.targetPath)}`
+              `      ${styleText("yellow", "⚠")} Arquivo destino não existe: ${styleText("dim", d.targetPath)}`,
             );
             if (d.similarFiles.length > 0) {
-              const formatted = d.similarFiles
-                .map((s) => `${s.name} (${s.similarity}%)`)
-                .join(', ');
-              console.log(`        ${styleText('yellow', '💡 Arquivos semelhantes:')} ${formatted}`);
+              const formatted = d.similarFiles.map((s) => `${s.name} (${s.similarity}%)`).join(", ");
+              console.log(`        ${styleText("yellow", "💡 Arquivos semelhantes:")} ${formatted}`);
             }
           }
         }
       }
     }
 
-    console.log('');
+    console.log("");
   }
 
   // ==========================================================================
   // Seção Dedicada de Auditoria de PR / Commit
   // ==========================================================================
   if (gitAudit && (gitAudit.introducedCommentsCount > 0 || gitAudit.duplicateFunctionsCount > 0)) {
-    console.log(styleText('dim', '═'.repeat(72)));
+    console.log(styleText("dim", "═".repeat(72)));
     console.log(
-      `🔍 ${styleText(['bold', 'cyan'], 'AUDITORIA DE PR / COMMIT')} ${styleText('dim', `(${gitAudit.diffMode})`)}`
+      `🔍 ${styleText(["bold", "cyan"], "AUDITORIA DE PR / COMMIT")} ${styleText("dim", `(${gitAudit.diffMode})`)}`,
     );
-    console.log(styleText('dim', '═'.repeat(72)));
+    console.log(styleText("dim", "═".repeat(72)));
 
     if (gitAudit.introducedCommentsCount > 0) {
       console.log(
-        `\n📝 ${styleText(['bold', 'yellow'], `${gitAudit.introducedCommentsCount} comentário(s) técnico(s) introduzido(s):`)}`
+        `\n📝 ${styleText(["bold", "yellow"], `${gitAudit.introducedCommentsCount} comentário(s) técnico(s) introduzido(s):`)}`,
       );
       for (const c of gitAudit.introducedComments) {
         console.log(
-          `   • ${styleText(['bold', 'magenta'], `[${c.type}]`)} ${styleText('yellow', c.githubRange)}`
+          `   • ${styleText(["bold", "magenta"], `[${c.type}]`)} ${styleText("yellow", c.githubRange)}`,
         );
-        console.log(`     ${styleText('white', c.text)}`);
+        console.log(`     ${styleText("white", c.text)}`);
         if (c.nearbyFunction) {
           console.log(
-            `     ${styleText('dim', '↳ Associado à função:')} ${styleText('cyan', c.nearbyFunction.name)} (L${c.nearbyFunction.startLine}-${c.nearbyFunction.endLine})`
+            `     ${styleText("dim", "↳ Associado à função:")} ${styleText("cyan", c.nearbyFunction.name)} (L${c.nearbyFunction.startLine}-${c.nearbyFunction.endLine})`,
           );
         }
       }
@@ -1183,27 +1145,27 @@ function runAnalysis() {
 
     if (gitAudit.duplicateFunctionsCount > 0) {
       console.log(
-        `\n👯 ${styleText(['bold', 'red'], `${gitAudit.duplicateFunctionsCount} função(ões) repetida(s) ou semelhante(s) detectada(s) no diff:`)}`
+        `\n👯 ${styleText(["bold", "red"], `${gitAudit.duplicateFunctionsCount} função(ões) repetida(s) ou semelhante(s) detectada(s) no diff:`)}`,
       );
       for (const dup of gitAudit.duplicateFunctions) {
         console.log(
-          `   • ${styleText(['bold', 'cyan'], dup.name)} em ${styleText('yellow', dup.githubRange)}`
+          `   • ${styleText(["bold", "cyan"], dup.name)} em ${styleText("yellow", dup.githubRange)}`,
         );
         for (const match of dup.existingMatches) {
           const reasonLabel =
-            match.reason === 'IDENTICAL_BODY'
-              ? styleText('red', 'Corpo 100% idêntico')
-              : match.reason === 'DUPLICATE_NAME'
-                ? styleText('yellow', 'Mesmo nome já existente')
-                : styleText('yellow', `Corpo ${match.similarity}% semelhante`);
+            match.reason === "IDENTICAL_BODY"
+              ? styleText("red", "Corpo 100% idêntico")
+              : match.reason === "DUPLICATE_NAME"
+                ? styleText("yellow", "Mesmo nome já existente")
+                : styleText("yellow", `Corpo ${match.similarity}% semelhante`);
 
           console.log(
-            `     ${styleText('dim', '↳ Já existe em:')} ${styleText('green', match.githubRange)} (${styleText('bold', match.name)}) — ${reasonLabel}`
+            `     ${styleText("dim", "↳ Já existe em:")} ${styleText("green", match.githubRange)} (${styleText("bold", match.name)}) — ${reasonLabel}`,
           );
         }
       }
     }
-    console.log('');
+    console.log("");
   }
 }
 
@@ -1213,9 +1175,9 @@ function runAnalysis() {
 runAnalysis();
 
 if (isWatch) {
-  const relTarget = path.relative(process.cwd(), targetPath) || '.';
+  const relTarget = path.relative(process.cwd(), targetPath) || ".";
   log.watch(
-    `Monitorando alterações em ${styleText('yellow', relTarget)}... ${styleText('dim', '(Ctrl+C para sair)')}`
+    `Monitorando alterações em ${styleText("yellow", relTarget)}... ${styleText("dim", "(Ctrl+C para sair)")}`,
   );
 
   let debounceTimer = null;
@@ -1224,7 +1186,7 @@ if (isWatch) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       if (!isJson) console.clear();
-      log.watch(`Alteração detectada em ${styleText('yellow', changedFile)}`);
+      log.watch(`Alteração detectada em ${styleText("yellow", changedFile)}`);
       runAnalysis();
       log.watch(`Aguardando novas alterações...`);
     }, 100);
