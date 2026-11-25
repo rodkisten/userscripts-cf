@@ -69,15 +69,15 @@ jobs:
               "madge@$MADGE_VERSION"
 
       - name: 🧬 Prepare base revision
-        if: github.event_name == 'pull_request'
         uses: rodkisten/github/console-run@main
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: refs/remotes/origin/main
         with:
           title: Prepare base revision
           command: |
             set -euo pipefail
 
+            git rev-parse "$BASE_SHA"
             git worktree add \
               --detach \
               "$GRAPH_DIR/base" \
@@ -120,6 +120,12 @@ jobs:
                 "$MADGE_BIN" "${args[@]}" \
                   --image "$GRAPH_DIR/$label.svg" \
                   "./$SOURCE_DIR"
+
+                "$MADGE_BIN" "${args[@]}" --dot "./$SOURCE_DIR" > "$GRAPH_DIR/$label.dot"
+                "$MADGE_BIN" "${args[@]}" --json --orphans "./$SOURCE_DIR" > "$GRAPH_DIR/$label.orphans.json"
+                "$MADGE_BIN" "${args[@]}" --json --leaves "./$SOURCE_DIR" > "$GRAPH_DIR/$label.leaves.json"
+                "$MADGE_BIN" "${args[@]}" --json --circular "./$SOURCE_DIR" > "$GRAPH_DIR/$label.circular.json"
+                "$MADGE_BIN" "${args[@]}" --warning "./$SOURCE_DIR" > "$GRAPH_DIR/$label.warnings.txt" 2>&1
               )
             }
 
@@ -511,6 +517,62 @@ jobs:
 
             const markdown = lines.join('\n');
 
+            const reports = [{ key: 'summary', body: markdown }];
+            function publish(key, title, body) {
+              reports.push({ key, body: '## ' + title + '\n\n' + body + '\n\n[Full artifacts](' + runUrl + '#artifacts)' });
+            }
+
+            function mermaid(entries) {
+              const ids = new Map();
+              const out = ['flowchart LR'];
+              function id(name) {
+                if (!ids.has(name)) {
+                  const key = 'n' + ids.size;
+                  ids.set(name, key);
+                  out.push('  ' + key + '["' + name.replace(/[^a-zA-Z0-9_./@ -]/g, '_').slice(0, 120) + '"]');
+                }
+                return ids.get(name);
+              }
+              for (const [from, targets] of entries) {
+                const a = id(from);
+                for (const to of targets) out.push('  ' + a + ' --> ' + id(to));
+              }
+              return out.join('\n');
+            }
+
+            for (const [label, data] of [['base', base], ['head', head]]) {
+              const entries = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
+              fs.writeFileSync(path.join(dir, label + '.mmd'), mermaid(entries));
+              const chunks = [];
+              let chunk = [], count = 0;
+              for (const [from, targets] of entries) {
+                const parts = targets.length ? Array.from({length: Math.ceil(targets.length / 40)}, (_, i) => targets.slice(i * 40, i * 40 + 40)) : [[]];
+                for (const part of parts) {
+                  const cost = Math.max(1, part.length);
+                  if (count + cost > 60 && chunk.length) { chunks.push(chunk); chunk = []; count = 0; }
+                  chunk.push([from, part]); count += cost;
+                }
+              }
+              if (chunk.length) chunks.push(chunk);
+              // Full graphs remain in artifacts; cap inline pages to avoid API spam.
+              for (const [i, page] of chunks.slice(0, 8).entries()) {
+                publish(label + '-graph-' + i, '🕸️ ' + (label === 'base' ? 'main baseline' : 'PR HEAD') + ' · graph ' + (i + 1) + '/' + chunks.length, '\x60\x60\x60mermaid\n' + mermaid(page) + '\n\x60\x60\x60');
+              }
+            }
+            for (const [key, title, items] of [
+              ['added', '🟢 Added imports', addedEdges.map(formatEdge)],
+              ['removed', '🔴 Removed imports', removedEdges.map(formatEdge)],
+              ['cycles', '🔄 Circular groups', [...headCycles].map(x => JSON.parse(x).map(safe).join(' ↔ '))],
+              ['isolated', '🏝️ Isolated modules', [...headOrphans].map(safe)]
+            ]) {
+              for (let i = 0; i < Math.max(1, Math.ceil(items.length / 100)); i++) {
+                if (i >= 8) break;
+                publish(key + '-' + i, title + ' · ' + (i + 1), items.slice(i * 100, i * 100 + 100).map(x => '- ' + x.slice(0, 400)).join('\n') || 'None');
+              }
+            }
+            fs.writeFileSync(path.join(dir, 'comments.json'), JSON.stringify(reports));
+
+
             fs.writeFileSync(
               path.join(dir, 'report.json'),
               JSON.stringify(report, null, 2)
@@ -539,6 +601,8 @@ jobs:
         with:
           name: dependency-graph
           path: |
+            ${{ env.GRAPH_DIR }}/*.txt
+            ${{ env.GRAPH_DIR }}/*.dot
             ${{ env.GRAPH_DIR }}/*.svg
             ${{ env.GRAPH_DIR }}/*.json
             ${{ env.GRAPH_DIR }}/*.mmd
@@ -587,30 +651,26 @@ jobs:
               { owner, repo, issue_number, per_page: 100 }
             );
 
-            const existing = comments.find(
-              comment =>
-                comment.user?.login === bot &&
-                comment.body?.includes(marker)
-            );
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
-
-              core.info(`Updated comment #${existing.id}`);
-            } else {
-              const { data } = await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body
-              });
-
-              core.info(`Created comment #${data.id}`);
+            const reports = JSON.parse(fs.readFileSync(
+              path.join(process.env.GRAPH_DIR, 'comments.json'), 'utf8'
+            ));
+            const keep = new Set();
+            for (const report of reports) {
+              const tag = report.key === 'summary' ? marker : '<!-- rod-dependency-graph:' + report.key + ' -->';
+              const content = report.key === 'summary' ? report.body : tag + '\n' + report.body;
+              const existing = comments.find(c => c.user?.login === bot && c.body?.includes(tag));
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: content });
+                keep.add(existing.id);
+              } else {
+                const { data } = await github.rest.issues.createComment({ owner, repo, issue_number, body: content });
+                keep.add(data.id);
+              }
+            }
+            for (const comment of comments) {
+              if (comment.user?.login === bot && /<!-- rod-dependency-graph(?::[^>]+)? -->/.test(comment.body || '') && !keep.has(comment.id)) {
+                await github.rest.issues.deleteComment({ owner, repo, comment_id: comment.id });
+              }
             }
 
       - name: 📋 Final summary
