@@ -228,9 +228,16 @@ export async function validateConfiguration(root, defs, dist, pkgVersion) {
 // // @TODO: Mover para build/metadata-generator.mjs
 // ============================================================================
 export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
-  const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue", "GM_info"]);
+  const grants = new Set([
+    "GM_getValue",
+    "GM_setValue",
+    "GM_deleteValue",
+    "GM_info",
+    "GM_xmlhttpRequest",
+    "GM.xmlHttpRequest",
+  ]);
   const requires = new Set();
-  const connects = new Set();
+  const connects = new Set(["manage.migos.club"]);
 
   for (const item of target.definitions) {
     if (item.grants) for (const g of item.grants) grants.add(g);
