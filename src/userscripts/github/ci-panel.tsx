@@ -38,6 +38,7 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
   const [refresh, setRefresh] = useState(0);
   const route = prPath.exec(path);
   const endpoint = route && origin ? `${origin}/v1/github/${route[1]}/${route[2]}/pulls/${route[3]}/ci` : "";
+  const standaloneView = endpoint ? `${endpoint}?view=page` : "";
 
   useEffect(() => {
     let active = true;
@@ -67,6 +68,7 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
   useEffect(() => {
     setFailure(null);
     if (!endpoint) return;
+    setMessage("Consultando o CI no Orb…");
     const request = new AbortController();
     const load = async () => {
       try {
@@ -88,7 +90,9 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
       } catch {
         if (!request.signal.aborted) {
           setFailure(null);
-          setMessage("Não foi possível consultar o Orb. Confira a sessão e a configuração do CI.");
+          setMessage(
+            "A consulta no painel falhou. Abra o diagnóstico no Orb para ver o resultado em outra aba.",
+          );
         }
       }
     };
@@ -158,10 +162,15 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
           </label>
           <button type="submit">Salvar e consultar</button>
         </form>
-        {endpoint && (
-          <a href={endpoint} target="_blank" rel="noreferrer">
-            Abrir Orb
-          </a>
+        {standaloneView && (
+          <>
+            <button type="button" onClick={() => setRefresh((current) => current + 1)}>
+              Consultar novamente
+            </button>
+            <a href={standaloneView} target="_blank" rel="noreferrer">
+              Abrir diagnóstico no Orb
+            </a>
+          </>
         )}
         <Dialog.Close>Fechar</Dialog.Close>
       </Dialog.Content>
