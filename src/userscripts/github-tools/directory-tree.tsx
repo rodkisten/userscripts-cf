@@ -309,7 +309,7 @@ export function mountDirectoryTree(
       throw Error("HTTP " + response.status);
     }
     const data = await response.json();
-    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
+    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path }))).map(function prefix(child: Node): Node { return { ...child, path: node.path + "/" + child.path, children: child.children.map(prefix) }; });
   };
   function DirectoryTreeView() {
     const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -355,6 +355,7 @@ export function mountDirectoryTree(
         {state === "ready" && exportFiles && (
           <div className={styles.toolbar}>
             <span>{selected.size} selecionados</span>
+            <button className={styles.button} disabled={busy} onClick={() => { const paths: string[] = []; const visit = (entries: Node[]) => entries.forEach(node => { if (node.folder) visit(node.children); else paths.push(node.path); }); visit(filterTree(nodes, query)); setSelected(previous => new Set([...previous, ...paths])); }}>Selecionar carregados</button>
             <button className={styles.button} disabled={busy || !selected.size} onClick={() => setSelected(new Set())}>Limpar</button>
             {[false, true].map(download => <button key={String(download)} className={styles.button} disabled={busy || !selected.size} onClick={async () => { setBusy(true); try { await exportFiles([...selected], resolvedBranch, download, (done, total) => setStatus(`Lendo ${done}/${total}…`)); setStatus(download ? "Download solicitado" : "Copiado"); } catch (error) { setStatus(String(error)); } finally { setBusy(false); } }}>{download ? "Baixar TXT" : "Copiar"}</button>)}
             <span role="status">{status}</span>
