@@ -611,10 +611,13 @@ export function initializeDeckRelay() {
               ? "Conferindo"
               : "Telegram";
       // Icon-only on both timeline posts and immersive players.
-      mountView(button, () => <TelegramSendSVGIcon />);
+      if (!button.dataset.relayIconMounted) {
+        mountView(button, () => <TelegramSendSVGIcon />);
+        button.dataset.relayIconMounted = "true";
+      }
       button.setAttribute("aria-label", `${label} no Telegram`);
       button.title = allSent
-        ? "Enviado aos tópicos configurados. Toque para reenviar."
+        ? "Enviado aos tópicos configurados."
         : partial
           ? "Envio parcial. Toque para enviar apenas aos destinos pendentes."
           : entry?.error || "Enviar post e mídias ao Telegram Relay";
@@ -955,18 +958,6 @@ export function initializeDeckRelay() {
           }
           // Telegram delivery must not launch the X repost/Relay composer.
           // Reposting remains available only through an explicit user action.
-          if (!force && conflicted.length) {
-            // Verify exact destinations once more before offering a force operation.
-            const reallySent = conflicted.filter((ch) => confirmed.includes(ch));
-            if (reallySent.length) {
-              showConfirm({
-                post,
-                destinations: reallySent,
-                title: "Já enviado ao Telegram",
-                onAccept: () => deliver(post, reallySent, true),
-              });
-            }
-          }
           return result;
         } catch (error) {
           // An ambiguous timeout/502 may happen AFTER Telegram accepted delivery.
@@ -1022,12 +1013,7 @@ export function initializeDeckRelay() {
         const sent = confirmedChannels(post);
         const missing = channels().filter((ch) => !sent.includes(ch));
         if (!missing.length) {
-          showConfirm({
-            post,
-            destinations: sent,
-            title: "Este post já foi enviado",
-            onAccept: () => deliver(post, sent, true),
-          });
+          notice("✓ Já enviado e confirmado pelo relay.", "success");
           return;
         }
         await deliver(post, missing, false);
@@ -1098,7 +1084,7 @@ export function initializeDeckRelay() {
       button.type = "button";
       button.className = "rodx-tg-action";
       button.dataset.rodxRelayFor = post.id;
-      button.setAttribute("aria-label", "Enviar vídeo ao Telegram");
+      button.setAttribute("aria-label", "Enviar post ao Telegram");
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -1186,7 +1172,7 @@ export function initializeDeckRelay() {
           break;
         }
         const post = parsePost(article);
-        if (!post?.isVideo) {
+        if (!post) {
           const oldKey = article.dataset.rodxRelayId;
           const old = oldKey && cards.get(`twitter:${oldKey}`);
           if (old?.article === article) {
