@@ -298,7 +298,9 @@ function resolveCurrentRepositoryReference(): string {
 }
 
 function formatDisplayPathForItem(item: FileItemInfo): string {
-  if (item.exportPath !== undefined) return item.exportPath;
+  if (item.exportPath !== undefined) {
+    return item.exportPath;
+  }
   const decoded = decodeURIComponent(item.tail);
   const ref = resolveCurrentRepositoryReference();
   return ref && decoded.startsWith(`${ref}/`) ? decoded.slice(ref.length + 1) : decoded;
