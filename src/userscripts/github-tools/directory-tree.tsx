@@ -250,7 +250,6 @@ function TreeRow(props: {
             onChange={() => props.select(props.node.path)}
           />
         )}
-        <img src={materialIcon(props.node.name, props.node.folder)} width="16" height="16" alt="" />
         <Icon size={16} aria-hidden="true" />
         <a href={url()} title={props.node.path}>
           {props.node.name}
@@ -335,7 +334,7 @@ export function mountDirectoryTree(
   container: Element,
   repo: { owner: string; repo: string },
   restoreScroll = false,
-  exportFiles?: (
+  exportFiles: (
     paths: string[],
     branch: string,
     download: boolean,
