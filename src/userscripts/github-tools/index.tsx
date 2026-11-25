@@ -676,23 +676,42 @@ function startGitHub(ctx: any): void {
     });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, async (paths, branch, download, progress) => {
-      const items: FileItemInfo[] = paths.map(path => {
-        const tail = [...branch.split("/"), ...path.split("/")].map(encodeURIComponent).join("/");
-        return { row: listContainer, name: path.split("/").pop() || path, type: "file", href: `${location.origin}/${repo.owner}/${repo.repo}/blob/${tail}`, tail, date: null, exportPath: path };
-      });
-      const content = await buildCombinedClipboardText(items, repo, "content", progress);
-      if (!download) {
-        await handleClipboardWriteGesture(Promise.resolve(content));
-        return;
-      }
-      const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `${repo.repo}-selected-files.txt`;
-      document.body.append(anchor);
-      try { anchor.click(); } finally { anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); }
-    });
+    const disposeTree = mountDirectoryTree(
+      ctx,
+      listContainer,
+      repo,
+      restoreScroll,
+      async (paths, branch, download, progress) => {
+        const items: FileItemInfo[] = paths.map((path) => {
+          const tail = [...branch.split("/"), ...path.split("/")].map(encodeURIComponent).join("/");
+          return {
+            row: listContainer,
+            name: path.split("/").pop() || path,
+            type: "file",
+            href: `${location.origin}/${repo.owner}/${repo.repo}/blob/${tail}`,
+            tail,
+            date: null,
+            exportPath: path,
+          };
+        });
+        const content = await buildCombinedClipboardText(items, repo, "content", progress);
+        if (!download) {
+          await handleClipboardWriteGesture(Promise.resolve(content));
+          return;
+        }
+        const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${repo.repo}-selected-files.txt`;
+        document.body.append(anchor);
+        try {
+          anchor.click();
+        } finally {
+          anchor.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+      },
+    );
     mounts.set(listContainer as HTMLElement, disposeTree);
     const record = {
       host: mount.host,
