@@ -336,8 +336,7 @@ export function mountDirectoryTree(
         const next = new Set(previous);
         if (next.has(path)) {
           next.delete(path);
-        }
-        else {
+        } else {
           next.add(path);
         }
         return next;
@@ -390,8 +389,7 @@ export function mountDirectoryTree(
                   entries.forEach((node) => {
                     if (node.folder) {
                       visit(node.children);
-                    }
-                    else {
+                    } else {
                       paths.push(node.path);
                     }
                   });
