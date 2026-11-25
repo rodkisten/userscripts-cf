@@ -1,4 +1,4 @@
-name: 🧩 US · 🚀 Release Userscripts
+name: 🧩 US · Deploy
 
 run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 
@@ -7,6 +7,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      target:
+        description: Deployment target
+        type: choice
+        options: [all, production, playground]
+        default: all
       bump:
         description: "🏷️ Incremento semântico da versão"
         required: true
@@ -16,7 +21,7 @@ on:
       skip_tests:
         description: "⚡ Ignorar testes e typecheck no deploy manual (build continua obrigatório)"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -24,7 +29,7 @@ permissions:
 
 # Serialize release attempts so queued runs can recover after a failed publication.
 concurrency:
-  group: userscripts-releases-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.run_id) || 'main' }}
+  group: userscripts-production-deploy
   # A later formatting/merge commit must not cancel a deploy-triggered release.
   cancel-in-progress: false
 
@@ -33,6 +38,7 @@ jobs:
     name: 🔎 Check for unreleased deploys
     if: >-
       github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' || inputs.target != 'playground') &&
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     outputs:
@@ -79,7 +85,7 @@ jobs:
     steps:
       - name: 🔐 Authenticate GitHub App
         id: app-token
-        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -91,10 +97,11 @@ jobs:
         with:
           ref: main
           persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
-        uses: rodkisten/github/setup-node@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/setup-node@main
         with:
           node-version: "24"
           install: "false"
@@ -174,7 +181,7 @@ jobs:
 
       - name: 🧪 Typecheck, Build & Test
         if: steps.source.outputs.skip != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.skip_tests)
-        uses: rodkisten/github/console-run@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/console-run@main
         with:
           command: npm test
 
@@ -398,3 +405,190 @@ jobs:
             }
 
             await core.summary.write();
+
+  dependencies:
+    needs: [detect, release]
+    if: >-
+      always() && !cancelled() && github.ref == 'refs/heads/main' &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.target != 'production') &&
+      (github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.head_commit.message, '[deploy]') && !contains(github.event.head_commit.message, '[skip ci]')) ||
+      (startsWith(github.event.head_commit.message, 'fix(deps): regenerate npm lockfile') && !contains(github.event.head_commit.message, '[skip ci]')))
+    name: Synchronize dependencies before Pages
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sync.outputs.sha }}
+    steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+          persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Synchronize npm lockfile and capture final commit
+        id: sync
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/playground-pages.mjs --mode=sync-lockfile
+
+  changes:
+    needs: dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.detect.outputs.deploy }}
+      reason: ${{ steps.detect.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Detect preview changes and explicit triggers
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: node scripts/playground-pages.mjs --mode=detect-changes
+
+  deploy:
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    needs: [dependencies, changes]
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://userscripts-playground.migos.club/
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.dependencies.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Start build timing
+        run: echo "PAGES_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Restore installed dependencies
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: pages-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'package.json') }}
+
+      - name: Install dependencies (cache miss)
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
+
+      - name: Verify React-only dependencies
+        uses: rodkisten/github/console-run@main
+        with:
+          command: node scripts/playground-pages.mjs --mode=verify-deps
+
+      - name: Restore compiled userscripts
+        id: bundles
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist/*.user.js
+            dist/*.meta.js
+            dist/manifest.json
+            dist/SHA256SUMS
+            dist/icons/*.svg
+          key: pages-bundles-v2-${{ hashFiles('src/**', 'build/**', '!build/hosting.mjs', '!build/design-system.mjs', '!build/preview-userscripts.mjs', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
+
+      - name: Build userscripts (cache miss)
+        if: steps.bundles.outputs.cache-hit != 'true'
+        run: npm run build
+
+      - name: Verify cached distribution before preview
+        run: node scripts/playground-pages.mjs --mode=verify-dist
+
+      - name: Prepare isolated preview installers
+        env:
+          USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
+        run: node build/preview-userscripts.mjs
+
+      - name: Restore design-system build
+        id: design-system
+        uses: actions/cache@v4
+        with:
+          path: dist/design-system.js
+          key: pages-design-system-v1-${{ hashFiles('studio/**', 'src/**', 'build/design-system.mjs', 'build/css-modules.mjs', 'build/styles.mjs', 'build/runtime-helpers.mjs', 'build/svg.mjs', 'vite.config.js', 'package.json', 'package-lock.json') }}
+
+      - name: Generate static playground
+        env:
+          USERSCRIPTS_PREVIEW: "1"
+          USERSCRIPTS_REUSE_DESIGN_SYSTEM: "${{ steps.design-system.outputs.cache-hit }}"
+        run: node build/hosting.mjs
+
+      - name: Validate static Pages output
+        run: node scripts/playground-pages.mjs --mode=verify-pages
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/pages
+          name: github-pages-${{ github.run_attempt }}
+
+      - name: Wait for Pages artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
+        run: |
+          for attempt in $(seq 1 12); do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\" and .expired == false) | .id")
+            if [ -n "$count" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Pages artifact metadata did not become available"
+          exit 1
+
+      - name: Reject outdated build before publishing
+        run: node scripts/playground-pages.mjs --mode=check-latest
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
+
+      - name: Report pipeline diagnostics & summary
+        if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_ACTOR: ${{ github.actor }}
+          COMMIT_AUTHOR: ${{ github.event.head_commit.author.username }}
+          COMMIT_COMMITTER: ${{ github.event.head_commit.committer.username }}
+          DEPS_CACHE: ${{ steps.node-modules.outputs.cache-hit || 'miss' }}
+          BUNDLES_CACHE: ${{ steps.bundles.outputs.cache-hit || 'miss' }}
+          DESIGN_SYSTEM_CACHE: ${{ steps.design-system.outputs.cache-hit || 'miss' }}
+          PAGES_PUBLISHED: ${{ steps.deployment.outcome == 'success' }}
+        run: node scripts/playground-pages.mjs --mode=report
