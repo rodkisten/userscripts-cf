@@ -389,6 +389,40 @@ export default {
     }) as EventListener);
 
     ctx.dock?.register([{ id: "inspektor", label: "Inspektor", run: show }]);
+    const launcher = document.createElement("button");
+    launcher.type = "button";
+    launcher.textContent = "⌘";
+    launcher.setAttribute("aria-label", "Abrir Inspektor");
+    Object.assign(launcher.style, {
+      position: "fixed",
+      bottom: "calc(76px + env(safe-area-inset-bottom))",
+      right: "12px",
+      width: "32px",
+      height: "32px",
+      borderRadius: "50%",
+      background: "#18181b",
+      color: "#fff",
+      border: "1px solid #52525b",
+      zIndex: "2147483646",
+      fontSize: "16px",
+    });
+    const attachLauncher = () => {
+      if (!ctx.signal.aborted && !launcher.isConnected) {
+        document.body?.append(launcher);
+      }
+    };
+    ctx.listen(launcher, "click", () => {
+      if (visible) {
+        hide();
+      } else {
+        show();
+      }
+    });
+    if (document.body) {
+      attachLauncher();
+    } else {
+      ctx.listen(document, "DOMContentLoaded", attachLauncher, { once: true });
+    }
 
     ctx.onDispose(() => {
       cancelPick();
@@ -396,6 +430,7 @@ export default {
       stopXHR();
       stopConsole();
       hide();
+      launcher.remove();
       stylesOff();
       subscribers.clear();
     });

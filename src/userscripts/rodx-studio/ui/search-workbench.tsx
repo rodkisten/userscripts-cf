@@ -1573,6 +1573,12 @@ export function Workspace() {
       <div className={cx("scrim")} data-act="close" />
       <section
         className={cx("panel")}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: "calc(100dvh - 16px)",
+          overflow: "hidden",
+        }}
         role="dialog"
         aria-modal="true"
         data-view={state.view}
@@ -1592,7 +1598,7 @@ export function Workspace() {
             </div>
           </div>
 
-          <div className={cx("tabs")}>
+          <div className={cx("tabs")} style={{ overflowX: "auto", flexWrap: "nowrap", touchAction: "pan-x" }}>
             {tabs.map((tab) => (
               <button
                 key={tab.act}
@@ -1605,7 +1611,17 @@ export function Workspace() {
           </div>
         </div>
 
-        <div className={cx("body")} data-scroll-area="">
+        <div
+          className={cx("body")}
+          data-scroll-area=""
+          style={{
+            flex: "1 1 auto",
+            minHeight: 0,
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            touchAction: "pan-y",
+          }}
+        >
           {state.message && <div className={cx("message")}>{state.message}</div>}
           {state.storageWarning && <div className={cx("storage-warning")}>⚠ {state.storageWarning}</div>}
           {disabled && (

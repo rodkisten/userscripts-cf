@@ -145,14 +145,6 @@ export default [
     ],
   },
   {
-    id: "example-site",
-    unified: false,
-    name: "Example · Demonstração modular",
-    entry: "src/userscripts/example-site/index.js",
-    matches: ["https://example.com/*"],
-    exclude: ["https://example.com/disabled/*"],
-  },
-  {
     id: "page-repl",
     unified: false,
     name: "Page REPL — JavaScript execution laboratory",

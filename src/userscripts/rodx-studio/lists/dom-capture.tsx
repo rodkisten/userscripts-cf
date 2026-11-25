@@ -56,8 +56,8 @@ export function initializeListsNameRetry() {
 
 export async function captureVisibleLists() {
   if (captureRunning) {
-return;
-}
+    return;
+  }
   captureRunning = true;
   try {
     const route = location.pathname;
@@ -79,12 +79,12 @@ return;
         continue;
       }
       if (location.pathname !== route) {
-break;
-}
+        break;
+      }
       const previous = lastListCaptures.get(key);
       if (previous?.name === item.name && at - previous.at < 120000) {
-continue;
-}
+        continue;
+      }
       changed = (await upsertList(item.id, { ...item, nameObservedAt: new Date().toISOString() })) || changed;
       lastListCaptures.set(key, { name: item.name, at });
     }
@@ -95,36 +95,35 @@ continue;
         .filter(validListId),
     );
     if (validListId(routeListId())) {
-ids.add(routeListId());
-}
+      ids.add(routeListId());
+    }
     for (const id of ids) {
       const key = "id:" + id;
       if (lastListCaptures.has(key)) {
-continue;
-}
+        continue;
+      }
       changed = (await upsertList(id, {})) || changed;
       lastListCaptures.set(key, { at: Date.now() });
     }
     while (nameObservations.size > 1500) {
-nameObservations.delete(nameObservations.keys().next().value);
-}
+      nameObservations.delete(nameObservations.keys().next().value);
+    }
     while (lastListCaptures.size > 2000) {
-lastListCaptures.delete(lastListCaptures.keys().next().value);
-}
+      lastListCaptures.delete(lastListCaptures.keys().next().value);
+    }
     if (changed) {
       state.lastPassiveSync = timeText(now());
       scheduleRefresh();
     }
-    if (needsRetry && !nameRetry)
-      {
-nameRetry = setTimeout(() => {
+    if (needsRetry && !nameRetry) {
+      nameRetry = setTimeout(() => {
         nameRetry = null;
         Studio.queue("lists.repository");
       }, RUNTIME_LIMITS.listsDomCapture.captureVisibleListsDelayMs);
-}
+    }
     if (ids.size) {
-scheduleNameRefresh();
-}
+      scheduleNameRefresh();
+    }
   } finally {
     captureRunning = false;
   }
@@ -150,12 +149,12 @@ export function extractUser(cell) {
     );
   });
   if (!anchor) {
-return null;
-}
+    return null;
+  }
   const username = anchor.pathname.split("/")[1] || "";
   if (!validHandle(username)) {
-return null;
-}
+    return null;
+  }
   const name = (
     qs(NATIVE_X_SELECTORS.authorNameSpans, cell)?.textContent ||
     qs(DOM_SELECTORS.leftToRightSpans, cell)?.textContent ||
@@ -171,8 +170,8 @@ return null;
 
 export function getMemberScope() {
   if (!routeListId()) {
-return null;
-}
+    return null;
+  }
   // Safari mobile often opens the members modal even with a /members URL.
   // Prefer the visible dialog over an unrelated background column.
   const dialogs = qsa(DOM_SELECTORS.dialogs).filter((dialog) => dialog.getClientRects().length);
@@ -187,26 +186,24 @@ return null;
     if (
       /(?:list\s+members|members\s+of|membros\s+da\s+lista|membros\s+de|membros|members)/i.test(title) &&
       findUserCells(dialog).length
-    )
-      {
-return dialog;
-}
+    ) {
+      return dialog;
+    }
   }
   const candidate = dialogs.find((d) =>
     /lista de membros|list members|membros da lista/i.test(d.textContent?.slice(0, 160) || ""),
   );
   if (candidate) {
-return candidate;
-}
-  if (isListMembersPage())
-    {
-return (
+    return candidate;
+  }
+  if (isListMembersPage()) {
+    return (
       qs(NATIVE_X_SELECTORS.primaryColumn) ||
       qs(DOM_SELECTORS.mainRoleElement) ||
       qs(DOM_SELECTORS.mainElement) ||
       document
     );
-}
+  }
   return null;
 }
 
@@ -214,9 +211,24 @@ export function quickButton(user) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = "xls-inline-list-picker";
-  b.textContent = "☷ Listas ▾";
+  b.textContent = "☷";
+  b.title = "Listas";
   b.setAttribute("aria-label", `Adicionar @${user.username} a uma lista`);
   applyComponentStyle(b, "rx-list-shortcut", false);
+  Object.assign(b.style, {
+    width: "32px",
+    height: "32px",
+    minWidth: "32px",
+    minHeight: "32px",
+    padding: "0",
+    borderRadius: "9999px",
+    fontSize: "18px",
+    lineHeight: "1",
+    background: "transparent",
+    color: "inherit",
+    border: "1px solid currentColor",
+    flex: "0 0 auto",
+  });
   b.dataset.username = user.username;
   b.addEventListener("pointerdown", (e) => e.stopPropagation());
   b.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -231,19 +243,19 @@ export function quickButton(user) {
 export function attachMemberPickers() {
   const scope = getMemberScope();
   if (!scope) {
-return;
-}
+    return;
+  }
   const sourceId = routeListId();
   for (const cell of findUserCells(scope).slice(0, 250)) {
     const user = extractUser(cell);
     if (!user) {
-continue;
-}
+      continue;
+    }
     const existing = cell.querySelector(RODX_SELECTORS.inlineListPicker);
     if (existing) {
       if (existing.dataset.username === user.username) {
-continue;
-}
+        continue;
+      }
       existing.remove();
     }
     const follow = cell.querySelector(NATIVE_X_SELECTORS.nativeFollowButtons);
@@ -306,8 +318,8 @@ export function initializeListsMemberCaptureRunning() {
 export async function captureMembers() {
   const scope = getMemberScope();
   if (memberCaptureRunning || !scope) {
-return 0;
-}
+    return 0;
+  }
   memberCaptureRunning = true;
   const id = routeListId();
   let count = 0;
@@ -316,8 +328,8 @@ return 0;
     findUserCells(scope).forEach((cell) => {
       const user = extractUser(cell);
       if (user) {
-users.set(user.username.toLowerCase(), user);
-}
+        users.set(user.username.toLowerCase(), user);
+      }
     });
     const existing = await membersFor(id);
     const oldMap = new Map<any, any>(existing.map((m) => [m.username.toLowerCase(), m]));
@@ -325,8 +337,8 @@ users.set(user.username.toLowerCase(), user);
     for (const user of users.values()) {
       const old = oldMap.get(user.username.toLowerCase());
       if (!old) {
-count++;
-}
+        count++;
+      }
       if (!old || (user.name && user.name !== old.name)) {
         updates.push({
           key: `${id}:${user.username.toLowerCase()}`,
@@ -356,11 +368,11 @@ count++;
 export async function startScan() {
   const id = state.listId || routeListId();
   if (!validListId(id)) {
-return notice("Escolha uma lista.", "error");
-}
+    return notice("Escolha uma lista.", "error");
+  }
   if (state.scan) {
-return;
-}
+    return;
+  }
   state.scan = true;
   state.scanStopped = false;
   state.scanCount = (await membersFor(id)).length;

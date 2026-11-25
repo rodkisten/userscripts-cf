@@ -272,6 +272,12 @@ export function buildStudioPreferences(Studio, deck) {
           },
         },
         {
+          id: "relay-settings",
+          label: "Configurar Telegram Relay",
+          validate: false,
+          handler: () => openPanel("relay"),
+        },
+        {
           id: "sync",
           label: "Sincronizar relay agora",
           validate: false,
