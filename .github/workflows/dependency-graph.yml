@@ -90,52 +90,44 @@ jobs:
           command: |
             set -euo pipefail
 
-            export MADGE_BIN="$GRAPH_DIR/tools/node_modules/.bin/madge"
-
-            generate() {
-              local root="$1"
-              local label="$2"
-
-              if [[ ! -d "$root/$SOURCE_DIR" ]]; then
-                echo '{}' > "$GRAPH_DIR/$label.json"
-                return
-              fi
-
-              (
-                cd "$root"
-
-                args=(
-                  --extensions ts,tsx,js,jsx,mjs,cjs,mts,cts
-                  --exclude 'node_modules|dist|coverage'
-                )
-
-                if [[ -f tsconfig.json ]]; then
-                  args+=(--ts-config tsconfig.json)
-                fi
-
-                "$MADGE_BIN" "${args[@]}" \
-                  --json "./$SOURCE_DIR" \
-                  > "$GRAPH_DIR/$label.json"
-
-                "$MADGE_BIN" "${args[@]}" \
-                  --image "$GRAPH_DIR/$label.svg" \
-                  "./$SOURCE_DIR"
-
-                "$MADGE_BIN" "${args[@]}" --dot "./$SOURCE_DIR" > "$GRAPH_DIR/$label.dot"
-                "$MADGE_BIN" "${args[@]}" --json --orphans "./$SOURCE_DIR" > "$GRAPH_DIR/$label.orphans.json"
-                "$MADGE_BIN" "${args[@]}" --json --leaves "./$SOURCE_DIR" > "$GRAPH_DIR/$label.leaves.json"
-                "$MADGE_BIN" "${args[@]}" --json --circular "./$SOURCE_DIR" > "$GRAPH_DIR/$label.circular.json"
-                "$MADGE_BIN" "${args[@]}" --warning "./$SOURCE_DIR" > "$GRAPH_DIR/$label.warnings.txt" 2>&1
-              )
+            node --input-type=commonjs <<'JS'
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const dir = process.env.GRAPH_DIR;
+            const madge = require(path.join(dir, 'tools/node_modules/madge'));
+            async function generate(root, label) {
+              const source = path.resolve(root, process.env.SOURCE_DIR);
+              const write = (suffix, value) => fs.writeFileSync(
+                path.join(dir, label + suffix), JSON.stringify(value, null, 2)
+              );
+              if (!fs.existsSync(source)) {
+                write('.json', {});
+                for (const suffix of ['.orphans.json', '.leaves.json', '.circular.json']) write(suffix, []);
+                return;
+              }
+              const config = {
+                baseDir: source,
+                fileExtensions: ['ts','tsx','js','jsx','mjs','cjs','mts','cts'],
+                excludeRegExp: [/node_modules|dist|coverage/]
+              };
+              const tsconfig = path.join(root, 'tsconfig.json');
+              if (fs.existsSync(tsconfig)) config.tsConfig = tsconfig;
+              console.log('Analyzing ' + label + ': ' + source);
+              const result = await madge(source, config);
+              write('.json', result.obj());
+              write('.orphans.json', result.orphans());
+              write('.leaves.json', result.leaves());
+              write('.circular.json', result.circular());
+              write('.warnings.json', result.warnings());
+              fs.writeFileSync(path.join(dir, label + '.dot'), await result.dot());
+              await result.image(path.join(dir, label + '.svg'));
+              console.log(label + ': ' + Object.keys(result.obj()).length + ' modules, ' + result.circular().length + ' cycles');
             }
-
-            generate "$GITHUB_WORKSPACE" head
-
-            if [[ -d "$GRAPH_DIR/base" ]]; then
-              generate "$GRAPH_DIR/base" base
-            else
-              cp "$GRAPH_DIR/head.json" "$GRAPH_DIR/base.json"
-            fi
+            (async () => {
+              await generate(process.env.GITHUB_WORKSPACE, 'head');
+              await generate(path.join(dir, 'base'), 'base');
+            })().catch(error => { console.error(error); process.exitCode = 1; });
+            JS
 
       - name: 🔬 Analyze architectural changes
         id: analyze
