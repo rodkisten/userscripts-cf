@@ -5,7 +5,6 @@ import { decorateGitHubFiles } from "./material-icons.ts";
 import {
   fileSelection,
   mountDirectoryTree,
-  mountDirectoryTree,
   restoreGitHubTreeScroll,
 } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
