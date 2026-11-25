@@ -301,7 +301,12 @@ export function createNativeGithubClient(token) {
         compareCommits: ({ owner, repo, base, head }) =>
           request('GET', `/repos/${owner}/${repo}/compare/${base}...${head}`),
       },
+      pulls: {
+        get: ({owner, repo, pull_number}) => request('GET', `/repos/${owner}/${repo}/pulls/${pull_number}`),
+        update: ({owner, repo, pull_number, body}) => request('PATCH', `/repos/${owner}/${repo}/pulls/${pull_number}`, {body}),
+      },
       issues: {
+        deleteComment: ({owner, repo, comment_id}) => request('DELETE', `/repos/${owner}/${repo}/issues/comments/${comment_id}`),
         listComments: ({ owner, repo, issue_number, per_page = 100, page = 1 }) =>
           request(
             'GET',
