@@ -115,7 +115,7 @@ jobs:
           GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
-          gh workflow run repair-lockfile.yml --ref "$BRANCH" -f selected_branch="$BRANCH"
+          gh workflow run maintenance.yml --ref "$BRANCH" -f block=lockfile -f target_branch="$BRANCH"
           echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
 
       - name: ❌ Fail current validation on installation error
