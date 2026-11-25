@@ -52,3 +52,7 @@
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .accessibleTitle { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 600px) { .fieldGroup input:not([type="range"]), .fieldGroup select, .fieldGroup textarea { font-size: 16px; } .actions .btn { flex: 1; } }
+
+.body { flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.body > * { flex-shrink: 0; }
+@media (max-width: 600px) { .header { padding: 12px; } .body { padding: 4px 12px 12px; gap: 10px; } .actions { padding: 8px 12px; } .btn { min-height: 32px; padding: 6px 10px; } }
