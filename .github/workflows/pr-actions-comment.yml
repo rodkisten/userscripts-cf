@@ -1,4 +1,4 @@
-name: 💬 PR Interactive Menu
+name: 🧩 US · 💬 PR Interactive Menu
 
 on:
   pull_request:
@@ -15,10 +15,13 @@ jobs:
     steps:
       - name: 🔑 Gerar Token do GitHub App
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
 
       - name: ✨ Postar ou Atualizar Comentário no PR
         uses: actions/github-script@v7

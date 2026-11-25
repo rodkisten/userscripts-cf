@@ -1,4 +1,4 @@
-name: TypeScript diagnostics
+name: 🧩 US · TypeScript diagnostics
 run-name: "🔍 TypeScript diagnostics · ${{ github.ref_name }}"
 on:
   workflow_dispatch:
@@ -13,13 +13,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --legacy-peer-deps
       - name: Collect TypeScript diagnostics
-        run: node scripts/typescript-diagnostics.mjs
+        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: node scripts/typescript-diagnostics.mjs
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
