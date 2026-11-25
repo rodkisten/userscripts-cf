@@ -1,0 +1,89 @@
+name: 🕸️ Dependency Graph
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-graph-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  graph:
+    name: 🕸️ Generate & Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: 🟩 Setup Node
+        uses: rodkisten/github/setup-node@main
+
+      - name: 🌈 Setup rodlog
+        uses: rodkisten/github/setup-rodlog@main
+
+      - name: 📦 Install Graphviz
+        uses: rodkisten/github/console-run@main
+        with:
+          title: Install Graphviz
+          command: |
+            sudo apt-get update -qq
+            sudo apt-get install -y graphviz
+
+      - name: 🕸️ Generate dependency graph
+        uses: rodkisten/github/console-run@main
+        with:
+          title: Generate dependency graph
+          command: |
+            mkdir -p docs
+            npx --no-install madge \
+              --image docs/dependency-graph.svg \
+              --extensions ts,tsx,js,jsx \
+              ./src
+
+      - name: 🔍 Collect changes
+        id: changes
+        uses: rodkisten/github/collect-changes@main
+        with:
+          pathspecs: docs/dependency-graph.svg
+
+      - name: 🤖 Publish graph
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        uses: rodkisten/github/commit@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          branch: main
+          message: 'docs: 🕸️ update dependency graph [skip ci]'
+          files-path: ${{ steps.changes.outputs.files-path }}
+
+      - name: 📋 Summary
+        if: always()
+        uses: rodkisten/github/ci-summary@main
+        with:
+          title: '🕸️ Dependency Graph'
+          status: ${{ job.status }}
+          details: |
+            | Property | Result |
+            | --- | --- |
+            | Repository | `${{ github.repository }}` |
+            | Changed | `${{ steps.changes.outputs.changed }}` |
+            | Files | `${{ steps.changes.outputs.count }}` |
+            | Commit | `${{ steps.commit.outputs.sha || 'No commit' }}` |
+
+            [🕸️ View dependency graph](${{ github.server_url }}/${{ github.repository }}/blob/main/docs/dependency-graph.svg)
