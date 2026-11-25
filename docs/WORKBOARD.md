@@ -714,3 +714,12 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [ ] 2026-11-20 PR #126: restrict Prettier and ESLint diagnostics to changed PR files in `.github/workflows/diagnostics.yml`, preserving scoped autofix; validate the workflow run before merging.
 
 - [ ] PR #126 follow-up: `NetworkInterceptors` now preserves `HttpRequestOptions` (GM transport, cacheMode, timeoutMs) in its public and registry signatures; addresses TypeScript TS2353 errors in Instagram Saved without changing the transport behavior. Validate typecheck and runtime/AST synchronization gates before merge.
+
+## P0 · Standalone bootstrap, network transport and React video player
+
+- [ ] Remove global Video.js `@require`; inspect React Video.js dependency already added on main and migrate RodX player to its React integration, with lazy initialization and disposal.
+- [ ] Make `ctx.fetch` the mandatory Fetch-compatible network API backed exclusively by GM_xmlhttpRequest / GM.xmlHttpRequest, including page-world bridge; no silent native fetch fallback.
+- [ ] Extend AST codemod and audit to rewrite unshadowed fetch/window.fetch/globalThis.fetch calls in first-party modules, preserving intentional page interception and native media semantics.
+- [ ] Share low-level GM transport with pre-runtime diagnostics; verify HTTP status, bounded retry and visible delivery failures, without recursive capture.
+- [ ] Install minimal global error/rejection capture before storage or runtime initialization; isolate bootstrap stages and modules.
+- [ ] Validate generated standalone artifact in browser smoke test and Safari, including diagnostics, Dock, Inspektor and RodX.

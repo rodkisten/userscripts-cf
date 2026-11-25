@@ -1,25 +1,20 @@
-import fs from "node:fs";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { createRequire } from "node:module";
-import { AgentReporter } from "./utils/ci-logger.mjs";
-import {
-  parseCliArgs,
-  appendStepSummary,
-  buildCliContext,
-  createNativeGithubClient,
-} from "./utils/ci-utils.mjs";
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+import { AgentReporter } from './utils/ci-logger.mjs';
+import { parseCliArgs, appendStepSummary, buildCliContext, createNativeGithubClient } from './utils/ci-utils.mjs';
 const args = parseCliArgs(process.argv.slice(2));
-const dir = path.resolve(String(args.output || process.env.GRAPH_DIR || ".dependency-graph"));
-process.env.SOURCE_DIR = String(args.source || process.env.SOURCE_DIR || "src");
-const log = new AgentReporter("DEPENDENCY GRAPH", args._[0] || "analyze");
+const dir = path.resolve(String(args.output || process.env.GRAPH_DIR || '.dependency-graph'));
+process.env.SOURCE_DIR = String(args.source || process.env.SOURCE_DIR || 'src');
+const log = new AgentReporter('DEPENDENCY GRAPH', args._[0] || 'analyze');
 const kitPath = process.env.ROD_COMMENT_KIT;
 async function commentKit() {
-  if (!kitPath) throw new Error("Set ROD_COMMENT_KIT to the shared comment-kit index.mjs");
+  if (!kitPath) throw new Error('Set ROD_COMMENT_KIT to the shared comment-kit index.mjs');
   return import(pathToFileURL(path.resolve(kitPath)).href);
 }
-const start = "<!-- rod-architecture-start -->";
-const end = "<!-- rod-architecture-end -->";
+const start = '<!-- rod-architecture-start -->';
+const end = '<!-- rod-architecture-end -->';
 async function generateGraphs() {
   const madge = createRequire(import.meta.url)(path.join(dir, "tools/node_modules/madge"));
   async function generate(root, label) {
@@ -340,13 +335,51 @@ async function analyze() {
   const { bannerMarkdown } = await commentKit();
   const markdown = bannerMarkdown("architecture") + "\n\n" + lines.join("\n");
 
-  const reports = [{ key: "summary", body: markdown }];
-  function publish(key, title, body) {
-    reports.push({
-      key,
-      body: "## " + title + "\n\n" + body + "\n\n[Full artifacts](" + runUrl + "#artifacts)",
-    });
-  }
+const runUrl =
+  `${process.env.GITHUB_SERVER_URL}/` +
+  `${process.env.GITHUB_REPOSITORY}/actions/runs/` +
+  process.env.GITHUB_RUN_ID;
+
+lines.push(
+  '### 📦 Full dependency graphs',
+  '',
+  `[Download SVG, JSON and Mermaid artifacts](${runUrl}#artifacts)`,
+  '',
+  `[🔍 View workflow logs](${runUrl})`,
+  '',
+  '---',
+  '<sub>🦾 Rod Actions · Architecture Intelligence</sub>'
+);
+
+const report = {
+  base: {
+    modules: baseModules.size,
+    dependencies: baseEdges.size,
+    circularGroups: baseCycles.size,
+    isolatedModules: baseOrphans.size
+  },
+  head: {
+    modules: headModules.size,
+    dependencies: headEdges.size,
+    circularGroups: headCycles.size,
+    isolatedModules: headOrphans.size
+  },
+  addedModules,
+  removedModules,
+  addedEdges: addedEdges.map(value => JSON.parse(value)),
+  removedEdges: removedEdges.map(value => JSON.parse(value)),
+  newCycles: newCycles.map(value => JSON.parse(value)),
+  resolvedCycles: resolvedCycles.map(value => JSON.parse(value)),
+  affected
+};
+
+const { bannerMarkdown } = await commentKit();
+const markdown = bannerMarkdown('architecture') + '\n\n' + lines.join('\n');
+
+const reports = [{ key: 'summary', body: markdown }];
+function publish(key, title, body) {
+  reports.push({ key, body: '## ' + title + '\n\n' + body + '\n\n[Full artifacts](' + runUrl + '#artifacts)' });
+}
 
   function mermaid(entries) {
     const ids = new Map();
@@ -524,6 +557,39 @@ async function publishReport() {
   for (const comment of comments)
     if (comment.user?.login === bot && /<!-- rod-dependency-graph(?::[^>]+)? -->/.test(comment.body || ""))
       await github.rest.issues.deleteComment({ owner, repo, comment_id: comment.id });
+ const context = buildCliContext();
+ const {owner, repo} = context.repo;
+ const number = context.issue.number;
+ const github = createNativeGithubClient(process.env.GITHUB_TOKEN);
+ const params = {owner, repo, pull_number:number};
+ const pr = (await github.rest.pulls.get(params)).data;
+ if (pr.state !== 'open' || pr.head.sha !== context.payload.pull_request.head.sha) { log.skip('Stale revision'); return; }
+ const reports = JSON.parse(fs.readFileSync(path.join(dir,'comments.json'),'utf8'));
+ const { Comment } = await commentKit();
+ const details = (title, body) => new Comment().details(title,body).render().replace(/^<!--[^\n]+-->\n\n/,'');
+ const url = context.serverUrl+'/'+owner+'/'+repo+'/actions/runs/'+context.runId;
+ const summary = reports[0].body.replace('<!-- rod-dependency-graph -->','').replace(/^\s*## .*\n/,'').trim();
+ let section = new Comment().banner('architecture').info('Compare main with PR HEAD. Expand the sections to inspect dependency changes, cycles and isolated modules. Full graphs and raw reports are in the artifacts.').link('Workflow logs',url).link('All artifacts',url+'#artifacts').details('📊 Overview and changes',summary.replace(/^!\[[^\n]+\n\n/, '')).render();
+ for (const [prefix,title] of [['base-graph-','🕸️ Main baseline'],['head-graph-','🕸️ PR HEAD'],['added-','🟢 Added imports'],['removed-','🔴 Removed imports'],['cycles-','🔄 Circular groups'],['isolated-','🏝️ Isolated modules']]) {
+   const pages = reports.filter(r=>r.key.startsWith(prefix));
+   if (!pages.length) continue;
+   const body = pages.map(r=>details(r.body.split('\n')[0].replace(/^## /,''),r.body.split('\n').slice(1).join('\n').trim())).join('\n\n');
+   const block = details(title,body);
+   if (section.length + block.length < 48000) section += '\n\n'+block;
+ }
+ const previous = pr.body || '';
+ const a = previous.indexOf(start), b = previous.indexOf(end);
+ if ((a >= 0) !== (b >= 0) || (a >= 0 && b < a)) throw new Error('Invalid managed section markers');
+ const managed = start+'\n'+section+'\n'+end;
+ const body = a < 0 ? previous+'\n\n'+managed : previous.slice(0,a)+managed+previous.slice(b+end.length);
+ if (body.length > 65000) throw new Error('PR description exceeds safe size; artifacts preserved');
+ const latest = (await github.rest.pulls.get(params)).data;
+ if (latest.state !== 'open' || latest.head.sha !== pr.head.sha || latest.body !== pr.body) { log.skip('PR changed during report generation'); return; }
+ await github.rest.pulls.update({...params,body});
+ const bot = process.env.APP_SLUG+'[bot]';
+ const comments = [];
+ for(let page=1;;page++){const {data}=await github.rest.issues.listComments({owner,repo,issue_number:number,page,per_page:100});comments.push(...data);if(data.length<100)break;}
+ for(const comment of comments) if(comment.user?.login===bot && /<!-- rod-dependency-graph(?::[^>]+)? -->/.test(comment.body||'')) await github.rest.issues.deleteComment({owner,repo,comment_id:comment.id});
 }
 log.banner();
 try {
