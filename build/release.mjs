@@ -55,7 +55,7 @@ export async function release(tag) {
   if (pending) throw Error(`Commit tracked source changes before releasing:\\n${pending}`);
   const commit = run("git", "rev-parse", "HEAD");
   run("gh", "auth", "status");
-  const files = ["manifest.json", "SHA256SUMS"];
+  const files = ["manifest.json", "versions.json", "SHA256SUMS"];
   for (const item of manifest.scripts) {
     for (const [file, expected] of [
       [item.file, item.sha256],

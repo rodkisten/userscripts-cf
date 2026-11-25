@@ -74,7 +74,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else {
     const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const manifest = JSON.parse(await fs.readFile(path.join(root, "dist/manifest.json"), "utf8"));
-    const names = ["manifest.json", ...manifest.scripts.flatMap((s) => [s.file, s.metaFile])].sort();
+    const names = [
+      "manifest.json",
+      "versions.json",
+      ...manifest.scripts.flatMap((s) => [s.file, s.metaFile]),
+    ].sort();
     const files = [];
     for (const name of names) {
       if (!/^[a-z][a-z0-9.-]*$/.test(name)) throw Error("Invalid asset filename");
