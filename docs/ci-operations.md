@@ -2,11 +2,11 @@
 
 The three consolidated entrypoints are Validate & Preview, Deploy and Maintenance. The machine-readable catalog is [blocks.json](../.github/pipeline/blocks.json).
 
-| Workflow | Selector | Values |
-| --- | --- | --- |
-| validate.yml | block | all, validate, audits, diagnostics, tests, bundle |
-| release.yml | target | all, production, playground |
-| maintenance.yml | block | format, lockfile, npm, style |
+| Workflow        | Selector | Values                                            |
+| --------------- | -------- | ------------------------------------------------- |
+| validate.yml    | block    | all, validate, audits, diagnostics, tests, bundle |
+| release.yml     | target   | all, production, playground                       |
+| maintenance.yml | block    | format, lockfile, npm, style                      |
 
 ## Examples
 
