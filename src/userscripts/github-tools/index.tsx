@@ -1,3 +1,4 @@
+import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
 import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
 import { mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
@@ -487,50 +488,13 @@ async function buildCombinedClipboardText(
   return `${header}\n${sections.join("\n\n")}\n\n${ignored ? `> ${ignored} subpasta(s) não incluídas. Use “Caminhos” para copiá-las.\n` : ""}`;
 }
 
-async function writeTextToSystemClipboard(text: string): Promise<void> {
-  if (typeof GM_setClipboard === "function") {
-    await GM_setClipboard(text, "text");
-    return;
+async function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
+  const clipboard = gmClipboard();
+  if (!clipboard) {
+    await textPromise.catch(() => undefined);
+    throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
   }
-  try {
-    await navigator.clipboard.writeText(text);
-    return;
-  } catch {
-    /* fallback para Safari/gerenciadores sem permissão */
-  }
-  const fallback = document.createElement("textarea");
-  fallback.value = text;
-  fallback.style.position = "fixed";
-  fallback.style.opacity = "0";
-  document.body.append(fallback);
-  fallback.select();
-  try {
-    if (!document.execCommand("copy")) {
-      throw Error("Clipboard indisponível");
-    }
-  } finally {
-    fallback.remove();
-  }
-}
-
-function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
-  if (
-    typeof GM_setClipboard !== "function" &&
-    typeof ClipboardItem !== "undefined" &&
-    navigator.clipboard?.write
-  ) {
-    try {
-      const item = new ClipboardItem({
-        "text/plain": textPromise.then((text) => new Blob([text], { type: "text/plain" })),
-      });
-      return navigator.clipboard
-        .write([item])
-        .catch(async () => writeTextToSystemClipboard(await textPromise));
-    } catch {
-      /* cair para o método alternativo */
-    }
-  }
-  return textPromise.then(writeTextToSystemClipboard);
+  await clipboard(await textPromise, "text");
 }
 
 function copyDirectoryItemsToClipboard(
