@@ -333,7 +333,11 @@ export async function compileTarget(target, context) {
     resolveTargetIcon(root, iconSource, target, log),
     (async () => {
       const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
-      const rawCode = stripBuildComments([diagnosticSource, ...installers].join("\n\n"));
+      const guarded = [diagnosticSource, ...installers].map((source, index) => {
+        const stage = index === 0 ? "diagnostics" : `installer-${index}`;
+        return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
+      });
+      const rawCode = stripBuildComments(guarded.join("\n\n"));
       return format(rawCode, { parser: "babel", printWidth: 110 });
     })(),
   ]);
