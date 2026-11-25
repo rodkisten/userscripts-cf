@@ -715,7 +715,6 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 
 - [ ] PR #126 follow-up: `NetworkInterceptors` now preserves `HttpRequestOptions` (GM transport, cacheMode, timeoutMs) in its public and registry signatures; addresses TypeScript TS2353 errors in Instagram Saved without changing the transport behavior. Validate typecheck and runtime/AST synchronization gates before merge.
 
-
 ## P0 · Standalone bootstrap, network transport and React video player
 
 - [ ] Remove global Video.js `@require`; inspect React Video.js dependency already added on main and migrate RodX player to its React integration, with lazy initialization and disposal.
