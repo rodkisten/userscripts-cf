@@ -3,6 +3,7 @@ import githubTools from "../github-tools/index.tsx";
 import githubColorStudio from "../github-color-studio/index.tsx";
 import { EditorDrafts } from "./editor/drafts.js";
 import focusZoomCss from "./focus-zoom.css?inline";
+import { disableEditorAutocapitalization } from "./editor/autocapitalization.js";
 
 /**
  * Single GitHub entrypoint. Feature modules remain isolated in their folders,
@@ -10,6 +11,7 @@ import focusZoomCss from "./focus-zoom.css?inline";
  */
 export default {
   init(ctx: ScriptContext): void {
+    disableEditorAutocapitalization(ctx);
     const pageStyle = ctx.ui.pageStyle(focusZoomCss, { id: "rod-github-focus-zoom" });
     const shadowStyle = ctx.ui.style(focusZoomCss);
     ctx.onDispose(() => {
