@@ -65,7 +65,7 @@ export function splitTreeLocation(
   }
   return { branch: ref, current: segments.slice(refParts.length).join("/") };
 }
-function selectedGitHubRef(): string {
+export function selectedGitHubRef(): string {
   const selectors = [
     "#branch-picker-repos-header-ref-selector",
     '[data-testid="branch-selector"]',
@@ -79,6 +79,46 @@ function selectedGitHubRef(): string {
     }
   }
   return "";
+}
+
+const selectionStores = new Map<string, { paths: Set<string>; listeners: Set<() => void> }>();
+const emptySelection = new Set<string>();
+export function fileSelection(repo: { owner: string; repo: string }, branch: string) {
+  const key = "ghft:selection:" + JSON.stringify([repo.owner, repo.repo, branch]);
+  let store = selectionStores.get(key);
+  if (!store) {
+    let paths = new Set<string>();
+    try {
+      const saved: unknown = JSON.parse(sessionStorage.getItem(key) || "[]");
+      if (Array.isArray(saved)) {
+        paths = new Set(saved.filter((path): path is string => typeof path === "string"));
+      }
+    } catch {
+      // Selection remains available in memory.
+    }
+    store = { paths, listeners: new Set() };
+    selectionStores.set(key, store);
+  }
+  const current = store;
+  return {
+    get: () => branch ? current.paths : emptySelection,
+    subscribe: (notify: () => void) => {
+      current.listeners.add(notify);
+      return () => { current.listeners.delete(notify); };
+    },
+    set: (update: (previous: Set<string>) => Set<string>) => {
+      if (!branch) {
+        return;
+      }
+      current.paths = update(current.paths);
+      try {
+        sessionStorage.setItem(key, JSON.stringify([...current.paths]));
+      } catch {
+        // Selection remains available in memory.
+      }
+      current.listeners.forEach(notify => notify());
+    },
+  };
 }
 
 const treeCache = new Map<string, { expires: number; nodes: Node[] }>();
@@ -328,7 +368,10 @@ export function mountDirectoryTree(
     );
   };
   function DirectoryTreeView() {
-    const [selected, setSelected] = useState<Set<string>>(() => new Set());
+    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(subscribe, () => snapshot);
+    const selection = fileSelection(repo, resolvedBranch);
+    const selected = useSyncExternalStore(selection.subscribe, selection.get);
+    const setSelected = selection.set;
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState("");
     const select = (path: string) =>
@@ -341,10 +384,7 @@ export function mountDirectoryTree(
         }
         return next;
       });
-    const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
-      subscribe,
-      () => snapshot,
-    );
+
     return (
       <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
         <div className={styles.treeHeader}>
@@ -402,7 +442,7 @@ export function mountDirectoryTree(
             <button
               className={styles.button}
               disabled={busy || !selected.size}
-              onClick={() => setSelected(new Set())}
+              onClick={() => setSelected(() => new Set())}
             >
               Limpar
             </button>
