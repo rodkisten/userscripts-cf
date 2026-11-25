@@ -407,14 +407,22 @@ export default {
       fontSize: "16px",
     });
     const attachLauncher = () => {
-      if (!ctx.signal.aborted && !launcher.isConnected) document.body?.append(launcher);
+      if (!ctx.signal.aborted && !launcher.isConnected) {
+        document.body?.append(launcher);
+      }
     };
     ctx.listen(launcher, "click", () => {
-      if (visible) hide();
-      else show();
+      if (visible) {
+        hide();
+      } else {
+        show();
+      }
     });
-    if (document.body) attachLauncher();
-    else ctx.listen(document, "DOMContentLoaded", attachLauncher, { once: true });
+    if (document.body) {
+      attachLauncher();
+    } else {
+      ctx.listen(document, "DOMContentLoaded", attachLauncher, { once: true });
+    }
 
     ctx.onDispose(() => {
       cancelPick();
