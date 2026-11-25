@@ -348,8 +348,9 @@ export function diagnosticPrelude(target, version, scripts) {
     };
 
     // Hidratação assíncrona do IndexedDB
-    if (root.indexedDB) {
+    {
       try {
+        if (!root.indexedDB) throw new Error("IndexedDB unavailable");
         const request = root.indexedDB.open("rod-script-diagnostics", 2);
         request.onupgradeneeded = () => {
           const db = request.result;
@@ -529,6 +530,8 @@ export function diagnosticPrelude(target, version, scripts) {
       (event) => {
         if (event.error) {
           state.capture(event.error, "window.error");
+        } else if (event.message) {
+          state.capture(event.message, "window.error");
         } else if (event.target !== root) {
           state.capture("Resource failed: " + (event.target?.tagName || "unknown"), "resource.error");
         }
