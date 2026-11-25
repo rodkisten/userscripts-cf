@@ -689,6 +689,22 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] `tests/release-individual.test.js` cobre tags e seleção de assets.
 - [ ] Próximo bloco: separar completamente o bump/tag do standalone global e adicionar URLs de update pinadas no catálogo.
 
+### GitHub como pacote único de features (2026-11-24 · sexto bloco implementado)
+
+- [x] Criado `src/userscripts/github/index.tsx` como único `init` para GitHub.
+- [x] `github-tools` e `github-color-studio` continuam em pastas separadas, mas são montados pelo mesmo runtime/contexto.
+- [x] Configuração consolidada em `github`, com tags e features: arquivos, workflows, imports, conteúdo, editor e color studio.
+- [x] O bundle seletivo `github.user.js` compilou com sucesso e o manifesto agora expõe `tags`/`features`.
+- [x] O editor GitHub oferece validação de sintaxe e formatação YAML com o Prettier. A aplicação verifica se o arquivo ou texto mudou durante a formatação. Configuração do repositório e formatação parcial seguem pendentes.
+- [ ] Validar no Safari iPhone a árvore GitHub única por rota, a troca pela árvore durante a carga, os SVGs Lucide, os metadados de tamanho e a cópia acumulada na ordem dos cliques.
+- [x] TODO/FIXME no início de comentários do visualizador GitHub abre o formulário de issue com título e referência ao arquivo.
+- [ ] Confirmar no Safari iPhone que os campos de edição do GitHub usam pelo menos 16 px e que o foco não amplia a página. O zoom por gesto permanece disponível.
+- [ ] Confirmar no teclado do iPhone que inputs, textareas e editores sem rich text no GitHub respeitam `autocapitalize="off"`, inclusive após navegação Turbo.
+- [ ] Validar o painel de CI em um PR real com a sessão do Orb e o Worker implantado. A URL HTTPS do Orb é configurada no painel.
+- [ ] Verificar no Safari o link “Abrir diagnóstico no Orb”, que abre a versão HTML na origem da sessão do Orb.
+- [ ] Validar com um job real o botão “Carregar trecho do log”, que consulta novamente a execução atual antes de carregar a etapa que falhou.
+- [ ] Próximo bloco: adicionar grafo de imports/conteúdo, editor persistente e handlers Orb para GitHub GraphQL/cache.
+
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
 
 - [ ] GitHub Color Studio PR #122 (2026-11-19): corrected literal newline extraction, viewer availability updates, React portal self-scanning, removed DOM canvas creation from color normalization, and added variable collision guard. Main synchronization is **not completed**: last comparison showed 7 commits behind main. No CI/typecheck/build confirmation; keep draft. CSS color equivalence and conversions are currently limited, not semantically canonical.

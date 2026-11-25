@@ -46,9 +46,9 @@ describe("inspectable build artifacts", () => {
       }
     }
     expect(editors.bundles["dom-inspector:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
-    expect(editors.bundles["github-color-studio:sandbox"].families.codemirror.renderedBytes).toBe(0);
-    expect(editors.bundles["github-color-studio:sandbox"].families.lezer.renderedBytes).toBe(0);
-    expect(editors.bundles["github-color-studio:sandbox"].families.acorn.renderedBytes).toBe(0);
+    expect(editors.bundles["github:sandbox"].families.codemirror.renderedBytes).toBe(0);
+    expect(editors.bundles["github:sandbox"].families.lezer.renderedBytes).toBe(0);
+    expect(editors.bundles["github:sandbox"].families.acorn.renderedBytes).toBe(0);
     expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
     expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBe(0);
     expect(

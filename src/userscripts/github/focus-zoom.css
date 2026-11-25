@@ -1,0 +1,24 @@
+/* Safari can zoom when focusing a text control whose font is smaller than 16px. */
+@supports (-webkit-touch-callout: none) {
+  @media (pointer: coarse) {
+    :is(
+      textarea,
+      select,
+      input:not([type]),
+      input:is(
+        [type="text"],
+        [type="search"],
+        [type="email"],
+        [type="password"],
+        [type="tel"],
+        [type="url"],
+        [type="number"]
+      ),
+      [contenteditable="true"],
+      [contenteditable="plaintext-only"],
+      [contenteditable=""]
+    ) {
+      font-size: max(16px, 1em) !important;
+    }
+  }
+}

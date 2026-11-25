@@ -8,11 +8,11 @@ describe("PR title CI scope", () => {
   it("parses test and build selectors without splitting glob paths", () => {
     expect(
       parsePrCiScope(
-        "feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,github-tools)",
+        "feat: update (test: tests/runtime-helpers.test.js,tests/*.test.js | build: standalone,github)",
       ),
     ).toEqual({
       test: ["tests/runtime-helpers.test.js", "tests/*.test.js"],
-      build: ["standalone", "github-tools"],
+      build: ["standalone", "github"],
     });
   });
   it("rejects unsafe test paths and unknown targets", () => {
@@ -21,7 +21,7 @@ describe("PR title CI scope", () => {
   });
   it("rejects duplicate categories and mixed none", () => {
     expect(() => parsePrCiScope("fix: x (test: none | test: all)")).toThrow();
-    expect(() => parsePrCiScope("fix: x (build: none,github-tools)")).toThrow();
+    expect(() => parsePrCiScope("fix: x (build: none,github)")).toThrow();
   });
   it("expands explicit glob selectors into real tests", async () => {
     expect(await resolveTestSelectors(["tests/pr-ci-scope.test.js"])).toContain("tests/pr-ci-scope.test.js");

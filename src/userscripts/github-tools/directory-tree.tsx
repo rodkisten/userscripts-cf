@@ -1,9 +1,11 @@
 import { useState, useSyncExternalStore } from "react";
-import { materialIcon } from "./material-icons.ts";
+import { CopyPlus, File, FileCode, FileJson, Folder, FolderOpen } from "lucide-react";
 import styles, { css } from "./GitHub.module.css";
 
-type Entry = { path: string; type: "blob" | "tree"; sha?: string };
-type Node = { name: string; path: string; folder: boolean; children: Node[]; sha?: string };
+type Entry = { path: string; type: "blob" | "tree"; sha?: string; size?: number };
+type Node = { name: string; path: string; folder: boolean; children: Node[]; sha?: string; size?: number };
+type CopyActions = { appendFile: (href: string, path: string) => Promise<void>; reset: () => void };
+const kilobytes = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 const compare = (a: Node, b: Node) =>
   Number(b.folder) - Number(a.folder) || a.name.localeCompare(b.name, undefined, { numeric: true });
 export function buildTree(entries: Entry[]): Node[] {
@@ -29,6 +31,7 @@ export function buildTree(entries: Entry[]): Node[] {
         folder: i < parts.length || entry.type === "tree",
         children: [],
         sha: i === parts.length ? entry.sha : undefined,
+        size: i === parts.length ? entry.size : undefined,
       };
       parent.children.push(node);
       known.set(path, node);
@@ -130,10 +133,12 @@ function TreeRow(props: {
   branch: string;
   current: string;
   loadFolder: (node: Node) => Promise<Node[]>;
+  copyFile: CopyActions["appendFile"];
 }) {
   const [children, setChildren] = useState(props.node.children);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
   const toggle = async (retry = false) => {
     if (expanded && !retry) {
       setExpanded(false);
@@ -156,6 +161,15 @@ function TreeRow(props: {
   const [expanded, setExpanded] = useState(
     props.current === props.node.path || props.current.startsWith(props.node.path + "/"),
   );
+  const Icon = props.node.folder
+    ? expanded
+      ? FolderOpen
+      : Folder
+    : /\.json$/i.test(props.node.name)
+      ? FileJson
+      : /\.(tsx?|jsx?|css|ya?ml|py|sh|go|rs)$/i.test(props.node.name)
+        ? FileCode
+        : File;
   const url = () =>
     props.base +
     "/" +
@@ -184,10 +198,39 @@ function TreeRow(props: {
         ) : (
           <span className={styles.treeSpacer} />
         )}
-        <img src={materialIcon(props.node.name, props.node.folder)} width="16" height="16" alt="" />
+        <Icon size={16} aria-hidden="true" />
         <a href={url()} title={props.node.path}>
           {props.node.name}
         </a>
+        <span className={styles.treeCount}>
+          {props.node.folder
+            ? children.length || !props.node.sha
+              ? `${children.filter((child) => !child.folder).length} arquivos`
+              : "—"
+            : typeof props.node.size === "number" && `${kilobytes.format(props.node.size / 1024)} KB`}
+        </span>
+        {!props.node.folder && (
+          <button
+            type="button"
+            className={styles.button}
+            title="Adicionar conteúdo ao clipboard"
+            aria-label={`Adicionar ${props.node.name} ao clipboard`}
+            onClick={() => {
+              setCopyStatus("Copiando…");
+              void props.copyFile(new URL(url(), location.origin).href, props.node.path).then(
+                () => setCopyStatus("Adicionado ao clipboard"),
+                (error: unknown) => setCopyStatus(String(error)),
+              );
+            }}
+          >
+            <CopyPlus size={16} aria-hidden="true" />
+          </button>
+        )}
+        {copyStatus && (
+          <span role="status" className={styles.treeCount}>
+            {copyStatus}
+          </span>
+        )}
       </div>
       {props.node.folder && expanded && (
         <div role="group">
@@ -223,6 +266,7 @@ function TreeRow(props: {
               branch={props.branch}
               current={props.current}
               loadFolder={props.loadFolder}
+              copyFile={props.copyFile}
             />
           ))}
         </div>
@@ -235,7 +279,8 @@ export function mountDirectoryTree(
   ctx: any,
   container: Element,
   repo: { owner: string; repo: string },
-  restoreScroll = false,
+  restoreScroll: boolean,
+  copy: CopyActions,
 ) {
   type ViewState = {
     state: "loading" | "ready" | "error";
@@ -317,6 +362,9 @@ export function mountDirectoryTree(
           <span className={styles.treeCount}>
             {state === "loading" ? "Carregando…" : nodes.length + " itens na raiz"}
           </span>
+          <button type="button" className={styles.button} onClick={copy.reset}>
+            Nova seleção de cópia
+          </button>
         </div>
         {state === "ready" && (
           <label className={styles.treeSearch}>
@@ -353,6 +401,7 @@ export function mountDirectoryTree(
                 branch={resolvedBranch}
                 current={current}
                 loadFolder={loadFolder}
+                copyFile={copy.appendFile}
               />
             ))}
           </div>
@@ -368,7 +417,9 @@ export function mountDirectoryTree(
   container.parentNode!.insertBefore(host, container);
   const disposePortal = ctx.ui.mountReact(<DirectoryTreeView />, shadow);
   host.dataset.ghftTreeHost = "";
-  let originalDisplay = (container as HTMLElement).style.display;
+  const nativeList = container as HTMLElement;
+  const originalDisplay = nativeList.style.display;
+  nativeList.style.display = "none";
   const load = async () => {
     try {
       const token = await ctx.storage.get("actionsToken", "");
@@ -407,7 +458,6 @@ export function mountDirectoryTree(
           setNodes(nodes);
           setState("ready");
           restorePageScroll();
-          (container as HTMLElement).style.display = "none";
           return;
         }
       }
@@ -458,19 +508,19 @@ export function mountDirectoryTree(
       setNodes(tree);
       setState("ready");
       restorePageScroll();
-      (container as HTMLElement).style.display = "none";
     } catch (error) {
       if (controller.signal.aborted) {
         return;
       }
       setMessage(error instanceof Error ? error.message : String(error));
       setState("error");
+      nativeList.style.display = originalDisplay;
     }
   };
   void load();
   return () => {
     controller.abort();
-    (container as HTMLElement).style.display = originalDisplay;
+    nativeList.style.display = originalDisplay;
     disposePortal();
     host.remove();
   };

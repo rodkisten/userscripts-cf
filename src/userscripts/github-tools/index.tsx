@@ -1,5 +1,4 @@
 import { fitGitHubNavigation } from "./navigation.ts";
-import { decorateGitHubFiles } from "./material-icons.ts";
 import { mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { useSyncExternalStore, type ReactElement } from "react";
@@ -88,7 +87,19 @@ const ERROR_EXCEEDED_TOTAL_LIMIT = "limite total de 12 MB excedido";
 const ERROR_FETCH_FAILED = "Falha na requisição ao GitHub";
 const ERROR_TIMEOUT = "Tempo esgotado";
 
-const NAVIGATION_RETRY_EVENTS = ["turbo:load", "turbo:render", "pjax:end", "popstate"];
+const NAVIGATION_RETRY_EVENTS = [
+  "turbo:load",
+  "turbo:visit",
+  "turbo:before-render",
+  "turbo:render",
+  "turbo:frame-load",
+  "turbo:frame-render",
+  "turbo:before-frame-render",
+  "turbo:morph",
+  "turbo:morph-element",
+  "turbo:submit-end",
+  "pjax:end",
+];
 
 // ============================================================================
 // Tipos e Interfaces Auxiliares
@@ -280,7 +291,10 @@ function collectRepositoryDirectoryGroups(repo: RepositoryInfo): DirectoryGroup[
   }
 
   return [...groups.entries()]
-    .map(([parent, infoMap]) => ({ parent, items: [...infoMap.values()] }))
+    .map(([parent, infoMap]) => ({
+      parent,
+      items: [...new Map([...infoMap.values()].map((item) => [item.href, item])).values()],
+    }))
     .filter((group) => group.items.length > 0);
 }
 
@@ -551,7 +565,45 @@ function copyDirectoryItemsToClipboard(
 // ============================================================================
 function startGitHub(ctx: any): void {
   const collator = new Intl.Collator(GITHUB_DATE_LOCALE, { numeric: true, sensitivity: "base" });
-  const panels = new WeakMap<Element, any>();
+  let panel:
+    | {
+        container: Element;
+        path: string;
+        host: HTMLElement;
+        update: (hint: string, title: string) => void;
+      }
+    | undefined;
+  let clipboardQueue = Promise.resolve();
+  let copiedText = "";
+  function appendFile(href: string, path: string, repo: RepositoryInfo) {
+    const item: FileItemInfo = {
+      row: document.body,
+      href,
+      name: path,
+      tail: encodeURIComponent(path),
+      type: "file",
+      date: null,
+    };
+    let next = "";
+    const text = clipboardQueue.then(async () => {
+      const section = await buildCombinedClipboardText([item], repo, "content", () => {});
+      next = copiedText ? copiedText + "\n\n" + section : section;
+      if (new Blob([next]).size > CONTENT_LIMIT_BYTES) {
+        throw Error("Limite do clipboard atingido. Limpe a seleção para começar outra.");
+      }
+      return next;
+    });
+    const write = handleClipboardWriteGesture(text).then(() => {
+      copiedText = next;
+    });
+    clipboardQueue = write.catch(() => {});
+    return write;
+  }
+  function resetClipboardSelection() {
+    clipboardQueue = clipboardQueue.then(() => {
+      copiedText = "";
+    });
+  }
   // Preferences are owned by this userscript instance, not by a React hook.
   // React components receive the latest snapshot when the toolbar is rendered.
   let prefs = normalizeUserPreferences(null);
@@ -664,17 +716,17 @@ function startGitHub(ctx: any): void {
   }
 
   function attachGroupToolbar(group: DirectoryGroup, repo: RepositoryInfo, restoreScroll = false) {
-    const previous = panels.get(group.parent);
-    if (previous?.host.isConnected) {
-      if (restoreScroll) {
-        restoreGitHubTreeScroll();
-      }
-      return previous;
-    }
     let listContainer = group.parent;
     if (listContainer.matches('tbody, [role="rowgroup"], .react-directory-list')) {
       listContainer = listContainer.closest('table, [role="table"]') || listContainer;
     }
+    if (panel?.container === listContainer && panel.path === location.pathname && panel.host.isConnected) {
+      if (restoreScroll) {
+        restoreGitHubTreeScroll();
+      }
+      return panel;
+    }
+    disposePanel();
     let info = { hint: "", title: "" };
     const infoListeners = new Set<() => void>();
     const subscribeInfo = (notify: () => void) => {
@@ -710,21 +762,35 @@ function startGitHub(ctx: any): void {
     });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll);
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, {
+      appendFile: (href, path) => appendFile(href, path, repo),
+      reset: resetClipboardSelection,
+    });
     mounts.set(listContainer as HTMLElement, disposeTree);
-    const record = {
+    panel = {
+      container: listContainer,
+      path: location.pathname,
       host: mount.host,
       update(hint: string, title: string) {
         info = { hint, title };
         infoListeners.forEach((notify) => notify());
       },
     };
-    panels.set(group.parent, record);
-    return record;
+    return panel;
+  }
+
+  function disposePanel() {
+    if (!panel) {
+      return;
+    }
+    for (const node of [panel.host, panel.container as HTMLElement]) {
+      mounts.get(node)?.();
+      mounts.delete(node);
+    }
+    panel = undefined;
   }
 
   const dashboard = mountGitHubDashboard(ctx);
-  decorateGitHubFiles(ctx);
   const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
 
@@ -742,10 +808,15 @@ function startGitHub(ctx: any): void {
 
     const repo = extractRepositoryFromLocation();
     if (!repo) {
-      document.querySelectorAll("[data-ghft-toolbar]").forEach((node) => node.remove());
+      disposePanel();
       return;
     }
-    const groups = collectRepositoryDirectoryGroups(repo);
+    const group = collectRepositoryDirectoryGroups(repo).sort((a, b) => b.items.length - a.items.length)[0];
+    if (!group) {
+      disposePanel();
+      return;
+    }
+    const groups = [group];
     for (const group of groups) {
       for (const item of group.items) {
         if (favoriteHosts.has(item.row)) {
@@ -862,9 +933,10 @@ function startGitHub(ctx: any): void {
     attributeFilter: ["datetime", "data-time"],
   });
 
-  for (const event of NAVIGATION_RETRY_EVENTS.filter((name) => name !== "popstate")) {
-    ctx.listen(window, event, scheduleScan);
+  for (const event of NAVIGATION_RETRY_EVENTS) {
+    ctx.listen(document, event, scheduleScan);
   }
+  ctx.listen(document, "turbo:before-cache", disposePanel);
   ctx.listen(window, "popstate", () => {
     restoreScrollAfterHistoryNavigation = true;
     scheduleScan();
@@ -875,7 +947,7 @@ function startGitHub(ctx: any): void {
       scheduleScan();
     }
   }, URL_POLL_INTERVAL_MS);
-  scheduleScan();
+  scan();
 
   ctx.onDispose(() => {
     observer.disconnect();
