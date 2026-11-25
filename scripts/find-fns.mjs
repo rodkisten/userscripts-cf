@@ -105,8 +105,8 @@ const projectRoot = findProjectRoot(targetPath);
 // 2. Configurações, Logs & Sistema de Cache (RAM + Disco)
 // ============================================================================
 const CACHE_VERSION = 4; // Inclui isClassMember e ignora closures/funções aninhadas
-const CACHE_DIR = path.join(projectRoot, 'node_modules', '.cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'find-fn-ast.json');
+const CACHE_DIR = path.join(projectRoot, "node_modules", ".cache");
+const CACHE_FILE = path.join(CACHE_DIR, "find-fn-ast.json");
 
 const EXTENSIONS = new Set([".js", ".mjs", ".cjs", ".ts", ".tsx"]);
 const IGNORE_DIRS = new Set([
@@ -123,31 +123,31 @@ const IGNORE_DIRS = new Set([
 ]);
 
 const GENERIC_FUNCTION_NAMES = new Set([
-  'default',
-  'main',
-  'run',
-  'init',
-  'setup',
-  'teardown',
-  'start',
-  'stop',
-  'close',
-  'dispose',
-  'destroy',
-  'execute',
-  'handler',
-  'handle',
-  'render',
-  'update',
-  'reset',
-  'clear',
-  'parse',
-  'format',
-  'validate',
-  'build',
-  'create',
-  'get',
-  'set'
+  "default",
+  "main",
+  "run",
+  "init",
+  "setup",
+  "teardown",
+  "start",
+  "stop",
+  "close",
+  "dispose",
+  "destroy",
+  "execute",
+  "handler",
+  "handle",
+  "render",
+  "update",
+  "reset",
+  "clear",
+  "parse",
+  "format",
+  "validate",
+  "build",
+  "create",
+  "get",
+  "set",
 ]);
 
 const log = {
@@ -518,7 +518,7 @@ function analyzeFileCached(filePath) {
     // Extrai apenas funções top-level do módulo ou membros diretos de classe
     if (!insideFunctionScope) {
       if (ts.isFunctionDeclaration(node)) {
-        fnName = node.name ? node.name.text : 'default';
+        fnName = node.name ? node.name.text : "default";
       } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
         fnName = node.name.text;
         isClassMember = true;
