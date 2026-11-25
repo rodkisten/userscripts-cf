@@ -2,11 +2,7 @@ import { useState } from "react";
 import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
 import { fitGitHubNavigation } from "./navigation.ts";
 import { decorateGitHubFiles } from "./material-icons.ts";
-import {
-  fileSelection,
-  mountDirectoryTree,
-  restoreGitHubTreeScroll,
-} from "./directory-tree.tsx";
+import { fileSelection, mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { useSyncExternalStore, type ReactElement } from "react";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
