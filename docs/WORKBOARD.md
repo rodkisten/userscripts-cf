@@ -696,6 +696,7 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [x] Configuração consolidada em `github`, com tags e features: arquivos, workflows, imports, conteúdo, editor e color studio.
 - [x] O bundle seletivo `github.user.js` compilou com sucesso e o manifesto agora expõe `tags`/`features`.
 - [x] O editor GitHub oferece validação de sintaxe e formatação YAML com o Prettier. A aplicação verifica se o arquivo ou texto mudou durante a formatação. Configuração do repositório e formatação parcial seguem pendentes.
+- [ ] Validar no Safari iPhone a árvore GitHub única por rota, a troca pela árvore durante a carga, os SVGs Lucide, os metadados de tamanho e a cópia acumulada na ordem dos cliques.
 - [ ] Próximo bloco: adicionar grafo de imports/conteúdo, editor persistente e handlers Orb para GitHub GraphQL/cache.
 
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.

@@ -677,7 +677,7 @@
 .treeRow:hover {
   background: var(--bgColor-muted, #161b22);
 }
-.treeRow img {
+.treeRow svg {
   flex: none;
   object-fit: contain;
 }
