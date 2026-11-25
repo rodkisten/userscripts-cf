@@ -386,12 +386,8 @@ function getElementFromPoint(root: Node, x: number, y: number): Element | null {
 
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
-  const [preferences, setPreferences] = useState<ScriptRulesRecord>(() =>
-    readScriptRules(localStorage),
-  );
-  const [diagnostics, setDiagnostics] = useState(() => [
-    ...(getDiagnostics()?.history ?? []),
-  ]);
+  const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
+  const [diagnostics, setDiagnostics] = useState(() => [...(getDiagnostics()?.history ?? [])]);
   const [search, setSearch] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSearch, setSettingsSearch] = useState("");
@@ -429,9 +425,7 @@ function DockView({ controller }: { controller: DockController }) {
   const filteredScripts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
     if (!term) return scripts;
-    return scripts.filter((script) =>
-      `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(term),
-    );
+    return scripts.filter((script) => `${script.name ?? ""} ${script.id}`.toLocaleLowerCase().includes(term));
   }, [scripts, search]);
 
   const toggleScript = (id: string, enabled: boolean) => {
@@ -451,11 +445,7 @@ function DockView({ controller }: { controller: DockController }) {
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal container={portal}>
           <Dialog.Overlay className="overlay" />
-          <Dialog.Content
-            className="panel"
-            onWheel={allowShadowScroll}
-            onTouchMove={allowShadowScroll}
-          >
+          <Dialog.Content className="panel" onWheel={allowShadowScroll} onTouchMove={allowShadowScroll}>
             <header className="panel-header">
               <Dialog.Title className="panel-title">Rod Dock</Dialog.Title>
               <Dialog.Close className="btn btn--icon" aria-label="Fechar">
@@ -535,10 +525,7 @@ function DockView({ controller }: { controller: DockController }) {
                           action.run();
                         }}
                         onPointerDown={(event) => {
-                          if (
-                            !action.reorder ||
-                            (event.pointerType === "mouse" && event.button !== 0)
-                          ) {
+                          if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
                             return;
                           }
 
@@ -557,19 +544,14 @@ function DockView({ controller }: { controller: DockController }) {
                           };
 
                           const onMove = (next: PointerEvent) => {
-                            if (
-                              !moved &&
-                              Math.hypot(next.clientX - startX, next.clientY - startY) < 10
-                            ) {
+                            if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
                               return;
                             }
                             moved = true;
                             setDragging(action.id);
                             const target = getElementFromPoint(root, next.clientX, next.clientY);
                             setDropTarget(
-                              target
-                                ?.closest?.("[data-reorder-id]")
-                                ?.getAttribute("data-reorder-id") ?? null,
+                              target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
                             );
                           };
 
@@ -742,9 +724,7 @@ export function installRodDock({
 
   const savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
   const initialTop =
-    Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88
-      ? savedPosition
-      : 46;
+    Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88 ? savedPosition : 46;
   launcher.style.top = `${initialTop}%`;
 
   shadow.append(style, mountPoint, portalPoint, launcher);
@@ -833,10 +813,7 @@ export function installRodDock({
   const onRegistration = (event: Event) => {
     const detail = (event as CustomEvent<{ type: string; module?: DockModule; id?: string }>).detail;
     if (detail?.type === "register" && detail.module) {
-      setModules([
-        ...currentModules.filter((item) => item.id !== detail.module?.id),
-        detail.module,
-      ]);
+      setModules([...currentModules.filter((item) => item.id !== detail.module?.id), detail.module]);
     }
     if (detail?.type === "unregister" && detail.id) {
       setModules(currentModules.filter((item) => item.id !== detail.id));
