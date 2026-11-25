@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { AgentReporter } from './utils/ci-logger.mjs';
 import { parseCliArgs, appendStepSummary, buildCliContext, createNativeGithubClient } from './utils/ci-utils.mjs';
@@ -7,6 +8,11 @@ const args = parseCliArgs(process.argv.slice(2));
 const dir = path.resolve(String(args.output || process.env.GRAPH_DIR || '.dependency-graph'));
 process.env.SOURCE_DIR = String(args.source || process.env.SOURCE_DIR || 'src');
 const log = new AgentReporter('DEPENDENCY GRAPH', args._[0] || 'analyze');
+const kitPath = process.env.ROD_COMMENT_KIT;
+async function commentKit() {
+  if (!kitPath) throw new Error('Set ROD_COMMENT_KIT to the shared comment-kit index.mjs');
+  return import(pathToFileURL(path.resolve(kitPath)).href);
+}
 const start = '<!-- rod-architecture-start -->';
 const end = '<!-- rod-architecture-end -->';
 async function generateGraphs() {
@@ -413,7 +419,8 @@ const report = {
   affected
 };
 
-const markdown = lines.join('\n');
+const { bannerMarkdown } = await commentKit();
+const markdown = bannerMarkdown('architecture') + '\n\n' + lines.join('\n');
 
 const reports = [{ key: 'summary', body: markdown }];
 function publish(key, title, body) {
@@ -497,13 +504,13 @@ async function publishReport() {
  const github = createNativeGithubClient(process.env.GITHUB_TOKEN);
  const params = {owner, repo, pull_number:number};
  const pr = (await github.rest.pulls.get(params)).data;
- if (pr.head.sha !== context.payload.pull_request.head.sha) { log.skip('Stale revision'); return; }
+ if (pr.state !== 'open' || pr.head.sha !== context.payload.pull_request.head.sha) { log.skip('Stale revision'); return; }
  const reports = JSON.parse(fs.readFileSync(path.join(dir,'comments.json'),'utf8'));
- const details = (title, body) => '<details>\n<summary><b>'+title+'</b></summary>\n\n'+body+'\n\n</details>';
+ const { Comment } = await commentKit();
+ const details = (title, body) => new Comment().details(title,body).render().replace(/^<!--[^\n]+-->\n\n/,'');
  const url = context.serverUrl+'/'+owner+'/'+repo+'/actions/runs/'+context.runId;
- const info = '> [!NOTE]\n> **INFO:** Compare main with PR HEAD. Expand the sections to inspect changes, cycles and isolated modules. Mermaid supports zoom and pan. Full graphs, leaves, warnings, SVG, DOT and JSON are available in the artifacts.';
  const summary = reports[0].body.replace('<!-- rod-dependency-graph -->','').replace(/^\s*## .*\n/,'').trim();
- let section = '## 🕸️ Architecture Intelligence\n\n'+info+'\n\n[Workflow logs]('+url+') · [All artifacts]('+url+'#artifacts)\n\n'+details('📊 Overview and changes',summary);
+ let section = new Comment().banner('architecture').info('Compare main with PR HEAD. Expand the sections to inspect dependency changes, cycles and isolated modules. Full graphs and raw reports are in the artifacts.').link('Workflow logs',url).link('All artifacts',url+'#artifacts').details('📊 Overview and changes',summary.replace(/^!\[[^\n]+\n\n/, '')).render();
  for (const [prefix,title] of [['base-graph-','🕸️ Main baseline'],['head-graph-','🕸️ PR HEAD'],['added-','🟢 Added imports'],['removed-','🔴 Removed imports'],['cycles-','🔄 Circular groups'],['isolated-','🏝️ Isolated modules']]) {
    const pages = reports.filter(r=>r.key.startsWith(prefix));
    if (!pages.length) continue;
@@ -517,6 +524,8 @@ async function publishReport() {
  const managed = start+'\n'+section+'\n'+end;
  const body = a < 0 ? previous+'\n\n'+managed : previous.slice(0,a)+managed+previous.slice(b+end.length);
  if (body.length > 65000) throw new Error('PR description exceeds safe size; artifacts preserved');
+ const latest = (await github.rest.pulls.get(params)).data;
+ if (latest.state !== 'open' || latest.head.sha !== pr.head.sha || latest.body !== pr.body) { log.skip('PR changed during report generation'); return; }
  await github.rest.pulls.update({...params,body});
  const bot = process.env.APP_SLUG+'[bot]';
  const comments = [];
