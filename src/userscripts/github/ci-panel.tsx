@@ -36,6 +36,13 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [logRequest, setLogRequest] = useState<{ endpoint: string; refresh: number }>();
+  const [logResult, setLogResult] = useState<{
+    url: string;
+    excerpt: { text: string; truncated: boolean } | null;
+  }>();
+  const excerpt = failure && logResult?.url === failure.logUrl ? logResult?.excerpt : undefined;
+  const [loadingLog, setLoadingLog] = useState(false);
   const route = prPath.exec(path);
   const endpoint = route && origin ? `${origin}/v1/github/${route[1]}/${route[2]}/pulls/${route[3]}/ci` : "";
   const standaloneView = endpoint ? `${endpoint}?view=page` : "";
@@ -67,12 +74,17 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
 
   useEffect(() => {
     setFailure(null);
+    setLogResult(undefined);
     if (!endpoint) return;
-    setMessage("Consultando o CI no Orb…");
+    const wantsLog = logRequest?.endpoint === endpoint && logRequest.refresh === refresh;
+    setMessage(wantsLog ? "Carregando o trecho do log…" : "Consultando o CI no Orb…");
     const request = new AbortController();
-    const load = async () => {
+    const load = async (includeLog = false) => {
+      if (includeLog) {
+        setLoadingLog(true);
+      }
       try {
-        const response = await ctx.http.request(endpoint, {
+        const response = await ctx.http.request(includeLog ? endpoint + "?log=1" : endpoint, {
           credentials: "include",
           transport: "fetch",
           timeoutMs: 25000,
@@ -82,10 +94,18 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
         if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
           throw new Error("Abra o Orb para iniciar a sessão e tente novamente.");
         }
-        const result = (await response.json()) as { failure: Failure | null };
+        const result = (await response.json()) as {
+          failure: Failure | null;
+          excerpt?: { text: string; truncated: boolean } | null;
+        };
         if (request.signal.aborted) return;
         const log = result.failure?.logUrl;
         setFailure(log?.startsWith("https://github.com/") ? result.failure : null);
+        if (includeLog && log) {
+          setLogResult({ url: log, excerpt: result.excerpt ?? null });
+        } else {
+          setLogResult((previous) => (previous?.url === log ? previous : undefined));
+        }
         setMessage("");
       } catch {
         if (!request.signal.aborted) {
@@ -94,15 +114,20 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
             "A consulta no painel falhou. Abra o diagnóstico no Orb para ver o resultado em outra aba.",
           );
         }
+      } finally {
+        if (!request.signal.aborted && includeLog) {
+          setLoadingLog(false);
+        }
       }
     };
-    void load();
+    setLoadingLog(false);
+    void load(wantsLog);
     const timer = window.setInterval(() => void load(), 30000);
     return () => {
       request.abort();
       window.clearInterval(timer);
     };
-  }, [ctx, endpoint, refresh]);
+  }, [ctx, endpoint, logRequest, refresh]);
 
   if (!route) return null;
 
@@ -140,6 +165,25 @@ export function GitHubCiPanel({ ctx }: { ctx: ScriptContext }) {
           <a href={failure.logUrl} target="_blank" rel="noreferrer">
             Abrir log no GitHub
           </a>
+        )}
+        {failure && (
+          <>
+            <button
+              type="button"
+              disabled={loadingLog}
+              onClick={() => {
+                setLogRequest({ endpoint, refresh: refresh + 1 });
+                setRefresh(refresh + 1);
+              }}
+            >
+              Carregar trecho do log
+            </button>
+            {excerpt && (
+              <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{excerpt.text}</pre>
+            )}
+            {excerpt?.truncated && <p>Trecho limitado. Veja o log completo para mais contexto.</p>}
+            {excerpt === null && <p>Trecho indisponível. Abra o log no GitHub.</p>}
+          </>
         )}
         <form
           onSubmit={(event) => {

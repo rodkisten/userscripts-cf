@@ -702,6 +702,7 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [ ] Confirmar no teclado do iPhone que inputs, textareas e editores sem rich text no GitHub respeitam `autocapitalize="off"`, inclusive após navegação Turbo.
 - [ ] Validar o painel de CI em um PR real com a sessão do Orb e o Worker implantado. A URL HTTPS do Orb é configurada no painel.
 - [ ] Verificar no Safari o link “Abrir diagnóstico no Orb”, que abre a versão HTML na origem da sessão do Orb.
+- [ ] Validar com um job real o botão “Carregar trecho do log”, que consulta novamente a execução atual antes de carregar a etapa que falhou.
 - [ ] Próximo bloco: adicionar grafo de imports/conteúdo, editor persistente e handlers Orb para GitHub GraphQL/cache.
 
 - [x] GitHub Color Studio React portal cleanup: removed feature-owned createElement and direct MutationObserver, typed init with ScriptContext, rendered FAB and line swatches as React portals within the existing runtime root (commit 23b610d). Build/typecheck/Safari validation remains pending; inline editor integration and semantic refactoring are not complete.
