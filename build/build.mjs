@@ -439,6 +439,8 @@ export async function compileTarget(target, context) {
           ? target.definitions.map(({ id }) => ({ id, version: registry.scripts[id].version }))
           : undefined,
       matches: patterns,
+      tags: [...new Set(target.definitions.flatMap(({ tags = [] }) => tags))].sort(),
+      features: [...new Set(target.definitions.flatMap(({ features = [] }) => features))].sort(),
       sha256,
     },
   };

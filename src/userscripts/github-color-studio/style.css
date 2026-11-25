@@ -122,6 +122,14 @@
   margin-inline-end: 6px;
   align-items: center;
 }
+.rcs-inline-swatches .rcs-todo-issue {
+  color: var(--fgColor-attention, #9a6700);
+  background: var(--bgColor-attention-muted, #fff8c5);
+  border-radius: 4px;
+  padding-inline: 5px;
+  font-size: 12px;
+}
+
 .rcs-swatch {
   width: 13px;
   height: 13px;
