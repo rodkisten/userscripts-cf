@@ -126,16 +126,52 @@ export function diagnosticPrelude(target, version, scripts) {
           request: safeDetails(record.request),
           response: safeDetails(record.response),
         };
-        void root
-          .fetch(REMOTE_ENDPOINT, {
-            method: "POST",
-            mode: "cors",
-            credentials: "omit",
-            keepalive: true,
-            headers: { "Content-Type": "text/plain;charset=UTF-8" },
-            body: JSON.stringify(payload),
-          })
-          .catch(() => {});
+        const gmRequest =
+          typeof GM_xmlhttpRequest === "function"
+            ? GM_xmlhttpRequest
+            : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
+              ? GM.xmlHttpRequest.bind(GM)
+              : null;
+        const failed = (reason) => {
+          state.remoteDelivery = { status: "failed", reason: String(reason), at: Date.now() };
+          remoteLastSent.delete(record.fingerprint);
+        };
+        if (!gmRequest) {
+          failed("GM transport unavailable");
+          return;
+        }
+        const deliver = (attempt) => {
+          try {
+            const retry = (reason) => {
+              failed(reason);
+              if (attempt < 2) root.setTimeout(() => deliver(attempt + 1), 1000 * (attempt + 1));
+            };
+            gmRequest({
+              url: REMOTE_ENDPOINT,
+              method: "POST",
+              anonymous: true,
+              timeout: 15000,
+              headers: { "Content-Type": "text/plain;charset=UTF-8" },
+              data: JSON.stringify(payload),
+              onload: (response) => {
+                if (response.status >= 200 && response.status < 300) {
+                  state.remoteDelivery = { status: "sent", at: Date.now() };
+                  remoteLastSent.set(record.fingerprint, Date.now());
+                } else if (response.status >= 500 || response.status === 429) {
+                  retry("HTTP " + response.status);
+                } else {
+                  failed("HTTP " + response.status);
+                }
+              },
+              onerror: () => retry("Network error"),
+              ontimeout: () => retry("Timeout"),
+              onabort: () => failed("Aborted"),
+            });
+          } catch (error) {
+            failed(error);
+          }
+        };
+        deliver(0);
       } catch {}
     };
 
