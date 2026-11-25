@@ -85,7 +85,9 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
       .then((token: string) => loadStepOutput(props.address, token, props.ctx.signal));
     const writing = output.then((text: string) => {
       const clipboard = gmClipboard();
-      if (!clipboard) throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
+      if (!clipboard) {
+        throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
+      }
       return clipboard(text, "text");
     });
     void writing
