@@ -50,7 +50,7 @@ function viewFromCarrier(element: HTMLElement): HostCodeMirrorView | null {
   return isHostCodeMirrorView(carrier.view) ? carrier.view : null;
 }
 
-function findCodeMirror(): HostCodeMirrorView | null {
+export function findCodeMirror(): HostCodeMirrorView | null {
   for (const editor of document.querySelectorAll<HTMLElement>(".cm-editor")) {
     const content = editor.querySelector<HTMLElement>(".cm-content");
     const candidates = content ? [content, editor] : [editor];
@@ -64,7 +64,7 @@ function findCodeMirror(): HostCodeMirrorView | null {
   return null;
 }
 
-function replaceCodeMirrorDocument(view: HostCodeMirrorView, next: string): void {
+export function replaceCodeMirrorDocument(view: HostCodeMirrorView, next: string): void {
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: next },
   });
