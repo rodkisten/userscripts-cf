@@ -49,9 +49,13 @@ export function initializeDeckVideoExperience(): VideoExperienceController {
   function resolveVolumeControl(event: Event): HTMLElement | null {
     const path = event.composedPath();
     for (const node of path) {
-      if (!(node instanceof Element)) continue;
+      if (!(node instanceof Element)) {
+        continue;
+      }
       const candidate = node.closest<HTMLElement>(NATIVE_X_SELECTORS.volumeControlCandidates);
-      if (candidate) return candidate;
+      if (candidate) {
+        return candidate;
+      }
     }
     return null;
   }
@@ -96,7 +100,9 @@ export function initializeDeckVideoExperience(): VideoExperienceController {
   document.addEventListener("click", allowNativeVolume, { capture: true, signal });
 
   function bindVideoListeners(video: HTMLVideoElement): void {
-    if (initialized.has(video)) return;
+    if (initialized.has(video)) {
+      return;
+    }
     initialized.add(video);
 
     video.addEventListener("play", () => enforceMutePolicy(video));

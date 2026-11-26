@@ -627,10 +627,12 @@ export function initializeDeckQuickUI() {
         position();
         Studio.ctx?.ui?.pageStyle(extractedCSS2, { id: "rodx-quick-actions-floating-css" });
         Studio.ctx?.listen(window, "resize", position, { passive: true });
-        if (window.visualViewport)
+        if (window.visualViewport) {
           Studio.ctx?.listen(window.visualViewport, "resize", position, { passive: true });
-        if (window.visualViewport)
+        }
+        if (window.visualViewport) {
           Studio.ctx?.listen(window.visualViewport, "scroll", position, { passive: true });
+        }
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);

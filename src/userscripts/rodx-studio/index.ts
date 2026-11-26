@@ -80,7 +80,9 @@ export function startRodX(ctx: ScriptContext): void {
     return;
   }
   markRodXAsStarted(window);
-  if (!ctx.ui) throw new Error("RodX requires the shared UI runtime");
+  if (!ctx.ui) {
+    throw new Error("RodX requires the shared UI runtime");
+  }
   const ui = ctx.ui;
   ui.pageStyle(tokens, { id: "rodx-design-tokens" });
   configureSharedMount((component, target) => ui.mountReact(component, target));

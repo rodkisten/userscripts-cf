@@ -510,7 +510,9 @@ export function createStudioRuntime(): StudioRuntime {
       jobs.clear();
       listeners.clear();
       stats.clear();
-      for (const key of Object.keys(runtime.services)) delete runtime.services[key];
+      for (const key of Object.keys(runtime.services)) {
+        delete runtime.services[key];
+      }
     });
     invalidate("dom");
   }

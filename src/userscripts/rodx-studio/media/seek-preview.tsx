@@ -295,7 +295,9 @@ export function createSeekPreviews(Studio, getOptions) {
     }
   });
   Studio.ctx?.onDispose(() => {
-    for (const video of entries.keys()) cleanup(video);
+    for (const video of entries.keys()) {
+      cleanup(video);
+    }
     release();
     frameOrder.length = 0;
   });
