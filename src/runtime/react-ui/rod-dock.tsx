@@ -424,6 +424,16 @@ function getElementFromPoint(root: Node, x: number, y: number): Element | null {
   return document.elementFromPoint(x, y);
 }
 
+/** Presentation-only primitive; independent of userscript runtime state. */
+function DockHeader({ title, closeLabel }: { title: string; closeLabel: string }) {
+  return (
+    <header className="panel-header">
+      <Dialog.Title className="panel-title">{title}</Dialog.Title>
+      <Dialog.Close className="btn btn--icon" aria-label={closeLabel}>✕</Dialog.Close>
+    </header>
+  );
+}
+
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
@@ -484,12 +494,7 @@ function DockView({ controller }: { controller: DockController }) {
         <Dialog.Portal container={portal}>
           {open && <div className="overlay" aria-hidden="true" onClick={() => { setSettingsOpen(false); setOpen(false); }} />}
           <Dialog.Content className="panel">
-            <header className="panel-header">
-              <Dialog.Title className="panel-title">Rod Dock</Dialog.Title>
-              <Dialog.Close className="btn btn--icon" aria-label="Fechar">
-                ✕
-              </Dialog.Close>
-            </header>
+            <DockHeader title="Rod Dock" closeLabel="Fechar" />
 
             <div className="panel-body">
               <Dialog.Description className="panel-description">
@@ -677,12 +682,7 @@ function DockView({ controller }: { controller: DockController }) {
             className="panel"
             aria-describedby={undefined}
           >
-            <header className="panel-header">
-              <Dialog.Title className="panel-title">Preferências do Rod Dock</Dialog.Title>
-              <Dialog.Close className="btn btn--icon" aria-label="Fechar preferências">
-                ✕
-              </Dialog.Close>
-            </header>
+            <DockHeader title="Preferências do Rod Dock" closeLabel="Fechar preferências" />
 
             <div className="panel-body">
               <label className="field-label" htmlFor="rod-dock-filter">
