@@ -13,6 +13,8 @@ export type StudioConfig = DefaultStudioConfig & {
   scanDelayMs: number;
   maintenanceMs: number;
   homeListLimit: number;
+  searchButton?: { size?: number; x?: number; y?: number };
+  frecencyHalfLifeDays?: number;
   [key: string]: unknown;
 };
 
@@ -26,6 +28,7 @@ export interface StudioState {
   config: StudioConfig;
   network: NetworkState;
   route: string;
+  listSearch?: { query: string; [key: string]: unknown };
   [key: string]: unknown;
 }
 
@@ -71,6 +74,7 @@ export interface DiagnosticInfo {
 export interface StudioServices extends Record<string, unknown> {
   lists?: ReturnType<typeof import("../lists/render.tsx").createListsService>;
   listAccess?: ReturnType<typeof import("../lists/access.tsx").createListAccess>;
+  networkInspector?: { open(): void; close(): void; stats(): { entries: number; bytes: number; dropped: number } };
   deck?: {
     open: typeof import("../ui/preferences.tsx").openPanel;
     close: typeof import("../ui/preferences.tsx").closePanel;
@@ -565,10 +569,10 @@ export function createStudioRuntime(): StudioRuntime {
     configure,
     diagnostics,
     services: {},
-    get menu() {
+    get menu(): StudioRuntime["menu"] {
       throw new Error("Studio menu not initialized");
     },
-    set menu(value) {
+    set menu(value: StudioRuntime["menu"]) {
       Object.defineProperty(runtime, "menu", { value, writable: true, configurable: true });
     },
     navigate(href) {

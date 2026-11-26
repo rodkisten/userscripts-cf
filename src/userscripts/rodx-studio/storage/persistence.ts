@@ -12,6 +12,10 @@ import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
 import { repaint } from "../ui/dock.tsx";
 
+type ChangeListener = (key: string, previous: unknown, value: unknown, remote: boolean) => void;
+declare const GM_addValueChangeListener: undefined | ((key: string, listener: ChangeListener) => number);
+declare const GM_removeValueChangeListener: undefined | ((id: number) => void);
+
 const gmStorage = createGMStorage();
 
 export const modernGM = typeof GM !== "undefined" ? GM : null;
@@ -180,7 +184,7 @@ export async function loadAccount(identity) {
   state.readTimers.clear();
   state.readProgress = new WeakMap();
   document
-    .querySelectorAll(RODX_SELECTORS.observedElements)
+    .querySelectorAll<HTMLElement>(RODX_SELECTORS.observedElements)
     .forEach((article) => delete article.dataset.rodxObserved);
   state.presetEditingId = null;
   state.editingId = null;

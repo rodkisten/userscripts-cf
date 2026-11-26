@@ -77,7 +77,7 @@ export function initializeDeckProfileLists() {
     function listLink(item) {
       const a = document.createElement("a");
       a.href = studioListIndex(Studio) + "/" + item.id;
-      const record = Studio.state.lists?.lists?.find((x) => x.id === item.id) || item;
+      const record = Studio.services.lists?.all().find((x) => x.id === item.id) || item;
       const name = Studio.services.lists?.displayName(record) || item.name;
       a.textContent = name;
       a.title = name;
@@ -231,7 +231,7 @@ export function initializeDeckProfileLists() {
           ...item,
           name:
             Studio.services.lists?.displayName(
-              Studio.state.lists?.lists?.find((x) => x.id === item.id) || item,
+              Studio.services.lists?.all().find((x) => x.id === item.id) || item,
             ) || item.name,
         }));
         remember();

@@ -625,19 +625,17 @@ export function initializeDeckQuickUI() {
         };
         document.body.append(floating);
         position();
-        const style = document.createElement("style");
-        style.textContent = extractedCSS2;
-        document.head.append(style);
-        window.addEventListener("resize", position, { passive: true });
-        window.visualViewport?.addEventListener("resize", position, { passive: true });
-        window.visualViewport?.addEventListener("scroll", position, { passive: true });
+        Studio.ctx?.ui?.pageStyle(extractedCSS2, { id: "rodx-quick-actions-floating-css" });
+        Studio.ctx?.listen(window, "resize", position, { passive: true });
+        if (window.visualViewport) Studio.ctx?.listen(window.visualViewport, "resize", position, { passive: true });
+        if (window.visualViewport) Studio.ctx?.listen(window.visualViewport, "scroll", position, { passive: true });
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);
         if (!bar) {
           continue;
         }
-        let button = bar.querySelector(RODX_SELECTORS.addToListAction);
+        let button = bar.querySelector<HTMLButtonElement>(RODX_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
