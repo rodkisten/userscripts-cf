@@ -45,8 +45,8 @@
   border-radius: var(--rodx-ds-radius-12);
   background: var(--rodx-ds-toast-background);
   color: var(--rodx-ds-color-white);
-  font:
-    var(--rodx-ds-font-weight-medium) var(--rodx-ds-text-14)/var(--rodx-ds-toast-line-height) var(--rodx-ds-font-sans);
+  font: var(--rodx-ds-font-weight-medium) var(--rodx-ds-text-14)/var(--rodx-ds-toast-line-height)
+    var(--rodx-ds-font-sans);
   box-shadow: var(--rodx-ds-toast-shadow);
   pointer-events: none;
   overflow-wrap: anywhere;
