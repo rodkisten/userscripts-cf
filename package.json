@@ -25,7 +25,7 @@
     "ci:cloudflare": "npm run build:hosting",
     "deploy:cloudflare": "node build/deploy-cloudflare.mjs",
     "publish:github": "node build/publish-github.mjs",
-    "typecheck": "npm run check:react-only && npm run check:react-roots && tsc --noEmit -p tsconfig.json",
+    "typecheck": "node build/typecheck.mjs",
     "lint": "node build/check-style.mjs",
     "lint:fix": "node build/check-style.mjs --fix",
     "check:design-system": "node build/check-design-system-changes.mjs",
