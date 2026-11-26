@@ -1,9 +1,9 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { scheduleNameRefresh, syncListMembersApi } from "./graphql.js";
-import { discoverListNames } from "./name-discovery.js";
+import { discoverListNames } from "./client.js";
 import { notice, openQuickPicker, quickToast } from "./quick-picker.tsx";
 import {
   LIST_URL_RE,
@@ -24,7 +24,7 @@ import {
   validHandle,
   validListId,
 } from "./render.tsx";
-import { host, scheduleRefresh } from "./view.tsx";
+import { host, scheduleRefresh } from "./client.js";
 
 export function drawHomeBar() {
   Studio.emit("lists:dock");

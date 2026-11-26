@@ -8,8 +8,8 @@ import {
   RODX_SELECTORS,
 } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css?inline";
-import { Studio } from "../core/studio.js";
-import { XDOM } from "../platform/selectors.js";
+import { Studio } from "../core/studio-runtime.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { showRodxToast } from "../ui/runtime.tsx";
 
 // ============================================================================

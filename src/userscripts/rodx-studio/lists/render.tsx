@@ -1,12 +1,12 @@
-import { componentClasses } from "./view.tsx";
-import { classNames } from "../ui/class-names.ts";
+import { componentClasses } from "./client.js";
+import { classNames } from "../ui/primitives.js";
 const cx = (value: string) => classNames(componentClasses, value);
 import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { attachMemberPickers, captureMembers, captureVisibleLists, drawHomeBar } from "./dom-capture.tsx";
 import { refreshListName, scheduleNameRefresh, showListNameDialog, tryAutoRead } from "./graphql.js";
 import {
@@ -41,7 +41,7 @@ import {
   renderTimelineCards,
   timeline,
 } from "./timeline.tsx";
-import { host, scheduleRefresh, shadow } from "./view.tsx";
+import { host, scheduleRefresh, shadow } from "./client.js";
 
 export let APP;
 

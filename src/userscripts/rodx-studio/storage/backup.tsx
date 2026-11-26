@@ -2,8 +2,8 @@ import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { IDENT } from "../config/search.js";
 import { identityLabel } from "../identity/account.js";
 import { state } from "../state/deck.js";
-import { saveState } from "./account.js";
-import { normalizedPreset, normalizedSearch } from "./normalize.js";
+import { saveState } from "./persistence.js";
+import { normalizedPreset, normalizedSearch } from "./persistence.js";
 import { repaint } from "../ui/dock.tsx";
 
 export function exportJSON() {

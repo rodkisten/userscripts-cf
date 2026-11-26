@@ -1,8 +1,8 @@
 import { applyComponentStyle } from "../../../core/css.js";
 import { RODX_SELECTORS, NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline";
-import { Studio } from "../core/studio.js";
-import { XDOM } from "../platform/selectors.js";
+import { Studio } from "../core/studio-runtime.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens

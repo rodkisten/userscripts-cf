@@ -1,6 +1,6 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { requestInternal, requestTemplates, templateRequest } from "./graphql.js";
 import { currentList, notice, toggle } from "./quick-picker.tsx";
 import {
@@ -25,7 +25,7 @@ import {
   validHandle,
   validListId,
 } from "./render.tsx";
-import { scheduleRefresh } from "./view.tsx";
+import { scheduleRefresh } from "./client.js";
 
 export function applyRepostFilter() {
   Studio.emit("lists:settings", {

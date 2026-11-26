@@ -2,8 +2,8 @@ import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
-import { XDOM } from "../platform/selectors.js";
+import { Studio } from "../core/studio-runtime.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
 // ============================================================================

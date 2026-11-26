@@ -1,5 +1,5 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { queueRunning } from "./queue.tsx";
 import {
   API_TEMPLATES_KEY,
@@ -27,7 +27,7 @@ import {
   validListId,
 } from "./render.tsx";
 import { ingestObservedTimeline } from "./timeline.tsx";
-import { scheduleRefresh } from "./view.tsx";
+import { scheduleRefresh } from "./client.js";
 
 export function listOperation(url) {
   if (!/\/(?:i\/api\/)?(?:graphql|2\/lists|1\.1\/lists)/i.test(url)) {

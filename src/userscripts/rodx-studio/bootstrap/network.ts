@@ -1,6 +1,5 @@
-import { initializeOuterXDOM } from "../platform/selectors.js";
-import { initializeOuterStudio, Studio } from "../core/studio.js";
-import { connectStudioNetwork } from "../network/bridge.js";
+import { initializeOuterStudio, Studio } from "../core/studio-runtime.js";
+import { connectStudioNetwork } from "../network/page-bridge.js";
 import { createNetworkInspector } from "../network/inspector.tsx";
 
 function createStudioMenus(Studio) {
@@ -101,8 +100,7 @@ function createStudioMenus(Studio) {
 }
 
 export function initializeNetwork() {
-  initializeOuterXDOM();
-  initializeOuterStudio();
+    initializeOuterStudio();
   Studio.menu = createStudioMenus(Studio);
 
   try {

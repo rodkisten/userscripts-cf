@@ -1,10 +1,10 @@
-import { componentClasses } from "./view.tsx";
-import { classNames } from "../ui/class-names.ts";
+import { componentClasses } from "./client.js";
+import { classNames } from "../ui/primitives.js";
 const cx = (value: string) => classNames(componentClasses, value);
 import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import {
   cleanHandle,
   displayListName,
@@ -20,7 +20,7 @@ import {
   usageStat,
   validHandle,
 } from "./render.tsx";
-import { host, shadow, style } from "./view.tsx";
+import { host, shadow, style } from "./client.js";
 
 export function initializeRodX_lists_78() {
   shadow.appendChild(style);

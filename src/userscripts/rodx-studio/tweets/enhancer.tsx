@@ -8,10 +8,10 @@ import {
   COMPOSITE_SELECTORS,
 } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { currentFullQuery, nativeSearch } from "../feeds/local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "../feeds/local-rules.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { NativeQueryTags } from "../search/native-tags.js";
 import { state } from "../state/deck.js";
 import { ForeignTags } from "../translation/foreign-tags.tsx";

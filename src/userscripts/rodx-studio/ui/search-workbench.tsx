@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { componentClasses, searchCSS } from "./styles.js";
-import { classNames } from "../ui/class-names.ts";
+import { componentClasses, searchCSS } from "./primitives.js";
+import { classNames } from "./primitives.js";
 import { mountView } from "./runtime.tsx";
 import workbenchOverrides2 from "../../../styles/workbench-overrides-2.css?inline";
 import workbenchOverrides1 from "../../../styles/workbench-overrides-1.css?inline";
@@ -17,7 +17,7 @@ import {
   SORTS,
   VERSION,
 } from "../config/search.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { nativeSearch } from "../feeds/local-limits.js";
 import { parseLocalDirectives } from "../feeds/local-rules.js";
 import { identityLabel } from "../identity/account.js";
@@ -39,7 +39,7 @@ import { QueryEngine, compileQuery } from "../search/query-compiler.js";
 import { parseQueryBlocks } from "../search/query-parser.js";
 import { analyzeDraft } from "../search/validation.js";
 import { state } from "../state/deck.js";
-import { gmAvailable } from "../storage/gm.js";
+import { gmAvailable } from "../storage/persistence.js";
 import { Relay } from "../telegram/relay.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
 import { closePanel } from "./preferences.tsx";

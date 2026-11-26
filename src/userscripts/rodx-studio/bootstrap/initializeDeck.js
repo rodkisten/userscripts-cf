@@ -30,7 +30,7 @@ import {
   initializeDeckGmAvailable,
   initializeDeckStorage,
   initializeDeckRecoveryKey,
-} from "../storage/gm.js";
+} from "../storage/persistence.js";
 import { initializeDeckCloudSync } from "../sync/cloud.js";
 import { initializeDeckImmersiveDownload } from "../media/download.tsx";
 import { initializeDeckRelay } from "../telegram/relay.tsx";
@@ -48,17 +48,17 @@ import { initializeDeckQuickRepost } from "../tweets/quick-repost.js";
 import { initializeDeckSeen } from "../tweets/seen.js";
 import { initializeDeckNativeTranslation } from "../translation/native.js";
 import { initializeDeckForeignTags } from "../translation/foreign-tags.tsx";
-import { initializeDeckVideoExperience } from "../media/experience.js";
+import { initializeDeckVideoExperience } from "../media/playback.js";
 import { initializeDeckSeekPreviews } from "../media/seek-preview.tsx";
-import { initializeDeckPlayerPreference } from "../media/player.js";
+import { initializeDeckPlayerPreference } from "../media/player.tsx";
 import { initializeDeckSearchAnchors } from "../search/anchors.tsx";
 import { initializeDeckVideoTransport } from "../media/transport.tsx";
-import { initializeDeckViewportPlayback } from "../media/viewport.js";
-import { initializeDeckImmersiveSwipe } from "../media/immersive.js";
+import { initializeDeckViewportPlayback } from "../media/playback.js";
+import { initializeDeckImmersiveSwipe } from "../media/gestures.tsx";
 import { initializeDeckNativeQueryTags } from "../search/native-tags.js";
 import { initializeDeckResultEnhancer } from "../tweets/enhancer.tsx";
 import { initializeDeckRodxToastTimer } from "../ui/runtime.tsx";
-import { initializeDeckDragDock } from "../ui/draggable-dock.tsx";
+import { initializeDeckDragDock } from "../ui/dock.tsx";
 import {
   initializeRodX_deck_164,
   initializeRodX_deck_169,

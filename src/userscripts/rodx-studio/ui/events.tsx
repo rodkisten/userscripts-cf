@@ -1,9 +1,9 @@
 import { applyComponentStyle } from "../../../core/css.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { FeedFilters } from "../feeds/filters.tsx";
 import { extractIdentity } from "../identity/account.js";
-import { PlayerPreference } from "../media/player.js";
+import { PlayerPreference } from "../media/player.tsx";
 import { VideoTransport } from "../media/transport.tsx";
 import { actionForSearch, captureCurrent, getPreviewQuery, newDraft, saveDraft } from "../search/actions.js";
 import { compactBlockTree } from "../search/block-editing.js";
@@ -20,8 +20,8 @@ import {
 } from "../search/presets.js";
 import { QueryEngine, hrefFor } from "../search/query-compiler.js";
 import { state } from "../state/deck.js";
-import { normalizeVisual } from "../state/visual.js";
-import { loadAccount, saveState } from "../storage/account.js";
+import { normalizeVisual } from "../state/deck.js";
+import { loadAccount, saveState } from "../storage/persistence.js";
 import { exportJSON, importJSON } from "../storage/backup.tsx";
 import { CloudSync } from "../sync/cloud.js";
 import { Relay } from "../telegram/relay.tsx";

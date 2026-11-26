@@ -1,5 +1,5 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { state } from "../state/deck.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, NATIVE_X_SELECTORS, MEDIA_COMPONENT_SELECTORS } from "../../../selectors.js";

@@ -1,4 +1,4 @@
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import {
   initializeListsAPP,
   initializeListsDB_NAME,
@@ -73,7 +73,7 @@ import {
   initializeListsShadow,
   initializeListsStyle,
   initializeRodX_lists_77,
-} from "../lists/view.tsx";
+} from "../lists/client.js";
 import {
   initializeRodX_lists_78,
   initializeListsShell,

@@ -3,7 +3,7 @@ import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline";
 import { VERSION } from "../config/search.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { XClientLists } from "./client.js";
 import { studioListIndex } from "./access.tsx";
 import { state } from "../state/deck.js";
