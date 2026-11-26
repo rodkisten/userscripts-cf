@@ -1,26 +1,5 @@
-import {
-  initializeDeckVERSION,
-  initializeDeckPREFIX,
-  initializeDeckIDENT,
-  initializeDeckMAX_VISIBLE,
-  initializeDeckEMPTY_FIELDS,
-  initializeDeckLANGUAGE_OPTIONS,
-  initializeDeckANY_ONLY_EXCLUDE,
-  initializeDeckBLOCK_MEDIA,
-  initializeDeckBLOCK_TYPES,
-  initializeDeckMAX_BLOCK_NODES,
-  initializeDeckMAX_BLOCK_DEPTH,
-  initializeDeckSORTS,
-  initializeDeckGROUPS,
-} from "../config/search.js";
 import { initializeDeckState } from "../state/deck.js";
 import { initializeDeckCopyFields } from "../search/blocks.js";
-import {
-  initializeDeckHtml,
-  initializeDeckUid,
-  initializeDeckTokens,
-  initializeDeckSplitAccounts,
-} from "../shared/text.js";
 import { initializeDeckQueryEngine } from "../search/query-compiler.js";
 import { initializeDeckSignature } from "../search/block-editing.js";
 import { initializeDeckCloudSync } from "../sync/cloud.js";
@@ -99,25 +78,8 @@ export function initializeDeck() {
   // Cada fase mantém a ordem histórica de inicialização do Deck.
   runInitializers(
     // Configuração, estado e compilação.
-    initializeDeckVERSION,
-    initializeDeckPREFIX,
-    initializeDeckIDENT,
-    initializeDeckMAX_VISIBLE,
-    initializeDeckEMPTY_FIELDS,
-    initializeDeckLANGUAGE_OPTIONS,
-    initializeDeckANY_ONLY_EXCLUDE,
-    initializeDeckBLOCK_MEDIA,
-    initializeDeckBLOCK_TYPES,
-    initializeDeckMAX_BLOCK_NODES,
-    initializeDeckMAX_BLOCK_DEPTH,
-    initializeDeckSORTS,
-    initializeDeckGROUPS,
     initializeDeckState,
     initializeDeckCopyFields,
-    initializeDeckHtml,
-    initializeDeckUid,
-    initializeDeckTokens,
-    initializeDeckSplitAccounts,
     initializeDeckQueryEngine,
     initializeDeckSignature,
 

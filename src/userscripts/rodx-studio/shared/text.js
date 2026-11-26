@@ -1,38 +1,22 @@
-export let html;
+export const html = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
-export function initializeDeckHtml() {
-  html = (value) =>
-    String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-}
+export const uid = () =>
+  globalThis.crypto?.randomUUID?.() ??
+  `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
-export let uid;
+export const tokens = (value) => (String(value).match(/"[^"\n]+"|[^\s,]+/g) ?? []).filter(Boolean);
 
-export function initializeDeckUid() {
-  uid = () =>
-    globalThis.crypto?.randomUUID?.() ??
-    `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
-export let tokens;
-
-export function initializeDeckTokens() {
-  tokens = (value) => (String(value).match(/"[^"\n]+"|[^\s,]+/g) ?? []).filter(Boolean);
-}
-
-export let splitAccounts;
-
-export function initializeDeckSplitAccounts() {
-  splitAccounts = (value) =>
-    String(value)
-      .split(/[\s,;]+/)
-      .map((x) => x.replace(/^@/, "").trim())
-      .filter(Boolean);
-}
+export const splitAccounts = (value) =>
+  String(value)
+    .split(/[\s,;]+/)
+    .map((x) => x.replace(/^@/, "").trim())
+    .filter(Boolean);
 
 export function requireAccountTokens(value, operator) {
   const accounts = splitAccounts(value);
