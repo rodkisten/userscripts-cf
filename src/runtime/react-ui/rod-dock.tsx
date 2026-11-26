@@ -434,6 +434,25 @@ function DockHeader({ title, closeLabel }: { title: string; closeLabel: string }
   );
 }
 
+function DockSearch({ id, label, variant, value, onChange }: {
+  id?: string;
+  label?: string;
+  variant: "spaced" | "block";
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <input id={id} aria-label={label} className={`input input--${variant}`}
+      type="search" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+      placeholder="Buscar script..." value={value}
+      onChange={(event) => onChange(event.target.value)} />
+  );
+}
+
+function DockOverlay({ secondary = false, onClose }: { secondary?: boolean; onClose: () => void }) {
+  return <div className={secondary ? "overlay overlay--secondary" : "overlay"} aria-hidden="true" onClick={onClose} />;
+}
+
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
@@ -492,7 +511,7 @@ function DockView({ controller }: { controller: DockController }) {
         setOpen(next);
       }}>
         <Dialog.Portal container={portal}>
-          {open && <div className="overlay" aria-hidden="true" onClick={() => { setSettingsOpen(false); setOpen(false); }} />}
+          {open && <DockOverlay onClose={() => { setSettingsOpen(false); setOpen(false); }} />}
           <Dialog.Content className="panel">
             <DockHeader title="Rod Dock" closeLabel="Fechar" />
 
@@ -514,17 +533,7 @@ function DockView({ controller }: { controller: DockController }) {
 
               <details className="module" open>
                 <summary>Scripts ({scripts.length})</summary>
-                <input
-                  className="input input--spaced"
-                  type="search"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  aria-label="Filtrar scripts"
-                  placeholder="Buscar script..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
+                <DockSearch variant="spaced" label="Filtrar scripts" value={search} onChange={setSearch} />
                 <div>
                   {filteredScripts.map((script) => {
                     const enabled = preferences[script.id]?.enabled !== false;
@@ -677,7 +686,7 @@ function DockView({ controller }: { controller: DockController }) {
 
       <Dialog.Root modal={false} open={open && settingsOpen} onOpenChange={setSettingsOpen}>
         <Dialog.Portal container={portal}>
-          {open && settingsOpen && <div className="overlay overlay--secondary" aria-hidden="true" onClick={() => setSettingsOpen(false)} />}
+          {open && settingsOpen && <DockOverlay secondary onClose={() => setSettingsOpen(false)} />}
           <Dialog.Content
             className="panel"
             aria-describedby={undefined}
@@ -688,17 +697,7 @@ function DockView({ controller }: { controller: DockController }) {
               <label className="field-label" htmlFor="rod-dock-filter">
                 Filtrar scripts
               </label>
-              <input
-                id="rod-dock-filter"
-                className="input input--block"
-                type="search"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                value={settingsSearch}
-                onChange={(event) => setSettingsSearch(event.target.value)}
-                placeholder="Buscar script..."
-              />
+              <DockSearch id="rod-dock-filter" variant="block" value={settingsSearch} onChange={setSettingsSearch} />
               <div className="actions">
                 <button
                   type="button"
