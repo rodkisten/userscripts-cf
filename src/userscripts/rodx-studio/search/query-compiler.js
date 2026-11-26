@@ -344,8 +344,7 @@ next = change(next, item, mode);
       isTag,
       tagId,
     });
-  })();
-}
+})();
 
 export function compileQuery(source, blocks = null) {
   const f = copyFields(source);
