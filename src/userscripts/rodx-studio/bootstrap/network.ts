@@ -100,7 +100,7 @@ export function createStudioMenus(Studio) {
 }
 
 export function initializeNetwork() {
-    initializeOuterStudio();
+  initializeOuterStudio();
   Studio.menu = createStudioMenus(Studio);
 
   try {

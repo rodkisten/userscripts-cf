@@ -127,8 +127,8 @@ export function initializeDeckCompactLayout(): void {
 
     function style(): void {
       if (document.getElementById(ELEMENT_IDS.compactLayoutStyle)) {
-return;
-}
+        return;
+      }
       const node = document.createElement("style");
       node.id = ELEMENT_IDS.compactLayoutStyle;
       node.textContent = extractedCSS1;
@@ -159,20 +159,20 @@ return;
         profileKey = handle;
       }
       if (!handle) {
-return;
-}
+        return;
+      }
 
       const primary =
         document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
         document.querySelector<HTMLElement>(DOM_SELECTORS.mainContent);
       if (!primary) {
-return;
-}
+        return;
+      }
 
       const name = primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.profileUserName);
       if (!name || name.closest(DOM_SELECTORS.articles)) {
-return;
-}
+        return;
+      }
       add(name, CSS_CLASSES.profileName);
 
       let identity = primary.querySelector<HTMLElement>(RODX_SELECTORS.profileIdentity);
@@ -232,18 +232,18 @@ return;
 
       for (const link of primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.mutualFollowerLinks)) {
         if (!link.closest(DOM_SELECTORS.articles)) {
-details.push(link);
-}
+          details.push(link);
+        }
       }
       for (const link of primary.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.profileFollowLinks)) {
         if (!link.closest(DOM_SELECTORS.articles)) {
-details.push(link);
-}
+          details.push(link);
+        }
       }
       for (const el of primary.querySelectorAll<HTMLElement>(DOM_SELECTORS.textDivsAndSpans)) {
         if (el.closest(DOM_SELECTORS.articles) || el.childElementCount > 2) {
-continue;
-}
+          continue;
+        }
         if (REGEX_PATTERNS.unfollowedRegex.test((el.textContent || "").trim())) {
           details.push(el);
         }
@@ -293,8 +293,8 @@ continue;
       }
 
       if (toggle) {
-applyComponentStyle(toggle, CSS_CLASSES.rxTweetsToggle, false);
-}
+        applyComponentStyle(toggle, CSS_CLASSES.rxTweetsToggle, false);
+      }
 
       const isOpen = toggle?.getAttribute(DATA_ATTRS.expanded) === "true";
       details.forEach((el) => el.classList.toggle(CSS_CLASSES.detailOpen, isOpen));
@@ -306,8 +306,8 @@ applyComponentStyle(toggle, CSS_CLASSES.rxTweetsToggle, false);
         primary.querySelector<HTMLElement>(NATIVE_X_SELECTORS.followToggleButtons);
 
       if (!avatar || !cover || !action) {
-return;
-}
+        return;
+      }
 
       let rowNode = avatar.parentElement;
       while (rowNode && rowNode !== primary && !rowNode.contains(action)) {
@@ -315,15 +315,15 @@ return;
       }
 
       if (!rowNode || rowNode === primary || rowNode.contains(name) || rowNode.contains(cover)) {
-return;
-}
+        return;
+      }
 
       const avatarSlot = childOf(avatar, rowNode);
       const actionSlot = childOf(action, rowNode);
 
       if (!avatarSlot || !actionSlot || avatarSlot === actionSlot) {
-return;
-}
+        return;
+      }
 
       add(rowNode, CSS_CLASSES.profileOverlayRow);
       add(avatarSlot, CSS_CLASSES.profileAvatarSlot);
@@ -350,10 +350,9 @@ return;
           article.parentElement?.closest(DOM_SELECTORS.articles) ||
           article.hidden ||
           getComputedStyle(article).display === "none"
-        )
-          {
-continue;
-}
+        ) {
+          continue;
+        }
 
         const { user, link, key } = author(article);
         const context =
@@ -402,8 +401,8 @@ continue;
         const like = (article as ParentNode).querySelector<HTMLElement>(NATIVE_X_SELECTORS.likeToggleButtons);
         const bar = like?.closest<HTMLElement>(DOM_SELECTORS.actionGroups);
         if (!bar || bar.closest(DOM_SELECTORS.articles) !== article) {
-continue;
-}
+          continue;
+        }
 
         bar.classList.remove(CSS_CLASSES.glassActions);
         bar.querySelectorAll(RODX_SELECTORS.miniAvatar).forEach((el) => el.remove());
@@ -413,8 +412,8 @@ continue;
           column = column.parentElement;
         }
         if (!column || column === article) {
-continue;
-}
+          continue;
+        }
 
         let top = (article as ParentNode).querySelector<HTMLElement>(RODX_SELECTORS.tweetTopbar);
         if (!top) {
@@ -449,11 +448,10 @@ continue;
               ),
             ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
             if (native) {
-native.click();
-}
-            else {
-location.assign(mini!.href);
-}
+              native.click();
+            } else {
+              location.assign(mini!.href);
+            }
           });
           if (image) {
             const img = document.createElement("img");
@@ -509,11 +507,10 @@ location.assign(mini!.href);
               ),
             ).find((a) => a.getAttribute("href")?.toLowerCase() === key);
             if (native) {
-native.click();
-}
-            else {
-location.assign(authorLink!.href);
-}
+              native.click();
+            } else {
+              location.assign(authorLink!.href);
+            }
           };
         }
 
@@ -552,11 +549,10 @@ location.assign(authorLink!.href);
               /unlike|unretweet|removeBookmark/.test(native.dataset.testid || "");
 
             if (typeof markup === "string") {
-proxy.textContent = markup;
-}
-            else {
-proxy.replaceChildren(markup);
-}
+              proxy.textContent = markup;
+            } else {
+              proxy.replaceChildren(markup);
+            }
             proxy.setAttribute(DATA_ATTRS.pressed, String(pressed));
           }
         }
@@ -566,16 +562,16 @@ proxy.replaceChildren(markup);
     function scan(): void {
       const now = Date.now();
       if (now - last < 500) {
-return;
-}
+        return;
+      }
       last = now;
       style();
       profile();
       tweets();
       for (const el of marked) {
         if (!el.isConnected) {
-marked.delete(el);
-}
+          marked.delete(el);
+        }
       }
     }
 

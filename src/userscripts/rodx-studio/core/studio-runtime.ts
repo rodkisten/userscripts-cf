@@ -71,7 +71,10 @@ export interface DiagnosticInfo {
 export interface StudioServices extends Record<string, unknown> {
   lists?: ReturnType<typeof import("../lists/render.tsx").createListsService>;
   listAccess?: ReturnType<typeof import("../lists/access.tsx").createListAccess>;
-  deck?: { open: typeof import("../ui/preferences.tsx").openPanel; close: typeof import("../ui/preferences.tsx").closePanel };
+  deck?: {
+    open: typeof import("../ui/preferences.tsx").openPanel;
+    close: typeof import("../ui/preferences.tsx").closePanel;
+  };
 }
 
 export interface StudioRuntime {
@@ -562,9 +565,15 @@ export function createStudioRuntime(): StudioRuntime {
     configure,
     diagnostics,
     services: {},
-    get menu() { throw new Error("Studio menu not initialized"); },
-    set menu(value) { Object.defineProperty(runtime, "menu", { value, writable: true, configurable: true }); },
-    navigate(href) { location.assign(href); },
+    get menu() {
+      throw new Error("Studio menu not initialized");
+    },
+    set menu(value) {
+      Object.defineProperty(runtime, "menu", { value, writable: true, configurable: true });
+    },
+    navigate(href) {
+      location.assign(href);
+    },
   };
   return runtime;
 }
