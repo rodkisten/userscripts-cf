@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { DockHeader, DockSearch, DockOverlay } from "./dock-primitives.js";
+import { DockPanel, DockSearch } from "./dock-primitives.js";
 import {
   matches,
   readScriptRules,
@@ -478,19 +478,9 @@ function DockView({ controller }: { controller: DockController }) {
 
   return (
     <>
-      <Dialog.Root modal={false} open={open} onOpenChange={(next) => {
-        if (!next) setSettingsOpen(false);
-        setOpen(next);
-      }}>
-        <Dialog.Portal container={portal}>
-          {open && <DockOverlay onClose={() => { setSettingsOpen(false); setOpen(false); }} />}
-          <Dialog.Content className="panel">
-            <DockHeader title="Rod Dock" closeLabel="Fechar" />
-
-            <div className="panel-body">
-              <Dialog.Description className="panel-description">
-                Gerencie scripts, ações e diagnósticos desta página.
-              </Dialog.Description>
+      <DockPanel open={open} portal={portal} title="Rod Dock" closeLabel="Fechar"
+        description="Gerencie scripts, ações e diagnósticos desta página."
+        onOpenChange={(next) => { if (!next) setSettingsOpen(false); setOpen(next); }}>
 
               <button
                 type="button"
@@ -651,21 +641,10 @@ function DockView({ controller }: { controller: DockController }) {
                   </details>
                 ))}
               </details>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+            </DockPanel>
 
-      <Dialog.Root modal={false} open={open && settingsOpen} onOpenChange={setSettingsOpen}>
-        <Dialog.Portal container={portal}>
-          {open && settingsOpen && <DockOverlay secondary onClose={() => setSettingsOpen(false)} />}
-          <Dialog.Content
-            className="panel"
-            aria-describedby={undefined}
-          >
-            <DockHeader title="Preferências do Rod Dock" closeLabel="Fechar preferências" />
-
-            <div className="panel-body">
+      <DockPanel secondary open={open && settingsOpen} portal={portal}
+        title="Preferências do Rod Dock" closeLabel="Fechar preferências" onOpenChange={setSettingsOpen}>
               <label className="field-label" htmlFor="rod-dock-filter">
                 Filtrar scripts
               </label>
@@ -683,10 +662,7 @@ function DockView({ controller }: { controller: DockController }) {
                 </button>
                 <Dialog.Close className="btn">Cancelar</Dialog.Close>
               </div>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+            </DockPanel>
     </>
   );
 }
