@@ -3,13 +3,26 @@ import assert from "node:assert/strict";
 import { createHttpClient } from "../src/runtime/http-client.js";
 import { createDomEngine } from "../src/runtime/dom-engine.js";
 
+// Runtime HTTP intentionally uses GM, including same-origin requests.
+function gmResponse(body, headers = "") {
+  return (options) => {
+    queueMicrotask(() => options.onload({
+      status: 200,
+      statusText: "OK",
+      response: new TextEncoder().encode(body).buffer,
+      responseHeaders: headers,
+    }));
+    return { abort() {} };
+  };
+}
+
 test("HTTP caches GET responses and clones bodies", async () => {
   let count = 0;
   const host = {
     location: { href: "https://example.com/", origin: "https://example.com" },
-    fetch: async () => {
+    GM_xmlhttpRequest: (options) => {
       count++;
-      return new Response('{"ok":true}', { headers: { "Content-Type": "application/json" } });
+      return gmResponse('{"ok":true}', "Content-Type: application/json")(options);
     },
   };
   const client = createHttpClient({ host });
@@ -24,9 +37,9 @@ test("HTTP does not cache authorization or POST", async () => {
   let count = 0;
   const host = {
     location: { href: "https://example.com/", origin: "https://example.com" },
-    fetch: async () => {
+    GM_xmlhttpRequest: (options) => {
       count++;
-      return new Response("ok");
+      return gmResponse("ok")(options);
     },
   };
   const client = createHttpClient({ host });

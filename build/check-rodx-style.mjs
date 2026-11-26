@@ -7,6 +7,7 @@ const extracted = "src/styles/extracted";
 const files = [
   path.join(root, "ui/components.module.css"),
   path.join(root, "ui/search.module.css"),
+  path.join(extracted, "userscripts-rodx-studio-lists-view-1.module.css"),
   path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-2.css"),
   path.join(extracted, "userscripts-rodx-studio-media-transport-1.css"),
   path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-1.css"),
