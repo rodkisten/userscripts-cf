@@ -1,11 +1,11 @@
 .rodx-video-transport {
   & {
     position: absolute;
-    bottom: 4px;
-    left: 5px;
-    right: 5px;
-    z-index: 15;
-    height: 35px;
+    bottom: var(--rodx-ds-space-4);
+    left: var(--rodx-ds-media-inset);
+    right: var(--rodx-ds-media-inset);
+    z-index: var(--rodx-ds-media-layer);
+    height: 3var(--rodx-ds-media-inset);
     display: flex;
     align-items: center;
     gap: var(--rodx-ds-space-6);
@@ -14,8 +14,8 @@
     border-radius: var(--rodx-ds-radius-8);
     font: var(--rodx-ds-text-11) var(--rodx-ds-font-ui);
     color: var(--rodx-ds-color-white);
-    background: rgba(15, 20, 25, 0.78);
-    backdrop-filter: blur(6px);
+    background: var(--rodx-ds-media-surface);
+    backdrop-filter: var(--rodx-ds-media-blur);
     pointer-events: auto;
     touch-action: pan-y;
   }
@@ -24,18 +24,17 @@
     border: 0;
     background: none;
     color: var(--rodx-ds-color-white);
-    min-width: 29px;
-    min-height: 29px;
+    min-width: var(--rodx-ds-media-button-size);
+    min-height: var(--rodx-ds-media-button-size);
     padding: 0 var(--rodx-ds-space-4);
     cursor: pointer;
     font:
-      17px TwitterChirp,
-      system-ui;
+      var(--rodx-ds-text-17) var(--rodx-ds-font-ui);
     touch-action: manipulation;
   }
   & .rodx-transport-seek {
     flex: 1;
-    min-width: 28px;
+    min-width: var(--rodx-ds-media-seek-min);
     width: 100%;
     margin: 0;
     accent-color: var(--rodx-ds-color-accent);
@@ -44,13 +43,12 @@
   }
   & time {
     font:
-      10px TwitterChirp,
-      system-ui;
+      var(--rodx-ds-text-10) var(--rodx-ds-font-ui);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    min-width: 36px;
+    min-width: var(--rodx-ds-media-clock-min);
   }
   &:focus-within {
-    outline: 1px solid rgba(29, 155, 240, 0.7);
+    outline: var(--rodx-ds-border-width) solid var(--rodx-ds-media-focus);
   }
 }

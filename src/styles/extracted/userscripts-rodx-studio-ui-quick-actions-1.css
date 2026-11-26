@@ -20,7 +20,7 @@
 }
 .rxq-editor:focus-within {
   border-color: var(--rodx-ds-color-accent);
-  outline: 1px solid var(--rodx-ds-color-accent) 66;
+  outline: 1px solid color-mix(in srgb, var(--rodx-ds-color-accent) 40%, transparent);
 }
 .rxq-syntax,
 .rxq-input {

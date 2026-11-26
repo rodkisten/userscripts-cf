@@ -1,3 +1,4 @@
+import tokens from "../../styles/tokens.css?inline";
 import { Studio } from "./core/studio-runtime.js";
 import { ScriptContext } from "../../core/runtime";
 import { initializeNetwork } from "./bootstrap/network.js";
@@ -81,6 +82,7 @@ export function startRodX(ctx: ScriptContext): void {
   markRodXAsStarted(window);
   if (!ctx.ui) throw new Error("RodX requires the shared UI runtime");
   const ui = ctx.ui;
+  ui.pageStyle(tokens, { id: "rodx-design-tokens" });
   configureSharedMount((component, target) => ui.mountReact(component, target));
 
   initializeNetwork();
