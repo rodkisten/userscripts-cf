@@ -23,14 +23,6 @@ import {
 } from "../shared/text.js";
 import { initializeDeckQueryEngine } from "../search/query-compiler.js";
 import { initializeDeckSignature } from "../search/block-editing.js";
-import {
-  initializeDeckModernGM,
-  initializeDeckGmGet,
-  initializeDeckGmSet,
-  initializeDeckGmAvailable,
-  initializeDeckStorage,
-  initializeDeckRecoveryKey,
-} from "../storage/persistence.js";
 import { initializeDeckCloudSync } from "../sync/cloud.js";
 import { initializeDeckImmersiveDownload } from "../media/download.tsx";
 import { initializeDeckRelay } from "../telegram/relay.tsx";
@@ -130,12 +122,6 @@ export function initializeDeck() {
     initializeDeckSignature,
 
     // GM, storage e sincronização.
-    initializeDeckModernGM,
-    initializeDeckGmGet,
-    initializeDeckGmSet,
-    initializeDeckGmAvailable,
-    initializeDeckStorage,
-    initializeDeckRecoveryKey,
     initializeDeckCloudSync,
 
     // Integrações e superfície do Deck.

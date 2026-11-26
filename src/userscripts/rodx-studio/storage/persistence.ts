@@ -15,29 +15,10 @@ import { repaint } from "../ui/dock.tsx";
 
 const gmStorage = createGMStorage();
 
-export let modernGM;
-
-export function initializeDeckModernGM() {
-  modernGM = typeof GM !== "undefined" ? GM : null;
-}
-
-export let gmGet;
-
-export function initializeDeckGmGet() {
-  gmGet = (key, fallback) => gmStorage.get(key, fallback);
-}
-
-export let gmSet;
-
-export function initializeDeckGmSet() {
-  gmSet = (key, value) => gmStorage.set(key, value);
-}
-
-export let gmAvailable;
-
-export function initializeDeckGmAvailable() {
-  gmAvailable = gmStorage.available;
-}
+export const modernGM = typeof GM !== "undefined" ? GM : null;
+export const gmGet = (key, fallback) => gmStorage.get(key, fallback);
+export const gmSet = (key, value) => gmStorage.set(key, value);
+export const gmAvailable = gmStorage.available;
 
 export function decodeStore(value) {
   if (typeof value !== "string") {
@@ -50,10 +31,7 @@ return value ?? null;
   }
 }
 
-export let storage;
-
-export function initializeDeckStorage() {
-  storage = {
+export const storage = {
     async get(key) {
       if (gmAvailable) {
 return decodeStore(await gmGet(key, null));
@@ -68,14 +46,9 @@ return await gmSet(key, serialized);
 }
       localStorage.setItem(key, serialized);
     },
-  };
-}
+};
 
-export let recoveryKey;
-
-export function initializeDeckRecoveryKey() {
-  recoveryKey = (accountKey) => `${PREFIX}recovery:${accountKey}`;
-}
+export const recoveryKey = (accountKey) => `${PREFIX}recovery:${accountKey}`;
 
 export function recoveryRead(accountKey) {
   try {
@@ -294,14 +267,15 @@ return;
       if (!remote || state.account !== keyId) {
 return;
 }
-      state.searches = Array.isArray(value?.searches)
-        ? value.searches.map(normalizedSearch).filter(Boolean)
+      const decoded = decodeStore(value);
+      state.searches = Array.isArray(decoded?.searches)
+        ? decoded.searches.map(normalizedSearch).filter(Boolean)
         : [];
-      state.presets = Array.isArray(value?.presets)
-        ? value.presets.map(normalizedPreset).filter(Boolean)
+      state.presets = Array.isArray(decoded?.presets)
+        ? decoded.presets.map(normalizedPreset).filter(Boolean)
         : [];
-      state.selectionList = Array.isArray(value?.selectionList)
-        ? value.selectionList.filter((v) => typeof v === "string").slice(0, 150)
+      state.selectionList = Array.isArray(decoded?.selectionList)
+        ? decoded.selectionList.filter((v) => typeof v === "string").slice(0, 150)
         : [];
       repaint();
     });
