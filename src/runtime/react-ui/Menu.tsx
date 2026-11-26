@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import * as Switch from "@radix-ui/react-switch";
-import * as Checkbox from "@radix-ui/react-checkbox";
+import { DynamicForm } from "./DynamicForm";
 import type { RodMenuProps } from "./types";
 import { createInitialValues, loadPersistence, savePersistence } from "./core";
 import styles, { css as menuCss } from "./Menu.module.css";
@@ -94,82 +93,7 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
           )}
 
           <div className={styles.body}>
-            {schema.fields?.map((field, index) => {
-              const fieldId = `${schema.id}-${field.id ?? field.name ?? `field-${index}`}`;
-              const valueKey = field.id ?? field.name ?? `field-${index}`;
-              const isCheckbox =
-                field.type === "checkbox" || field.type === "toggle" || field.type === "switch";
-              return (
-                <div
-                  key={fieldId}
-                  className={`${styles.fieldGroup} ${isCheckbox ? styles.checkboxGroup : ""}`}
-                >
-                  <label htmlFor={fieldId}>{field.label}</label>
-                  {field.type === "select" ? (
-                    <select
-                      id={fieldId}
-                      value={values[valueKey] ?? ""}
-                      onChange={(e) => handleChange(valueKey, e.target.value)}
-                    >
-                      <option value="" disabled>
-                        {field.placeholder || "Select option..."}
-                      </option>
-                      {field.options?.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : field.type === "slider" || field.type === "range" ? (
-                    <input
-                      id={fieldId}
-                      type="range"
-                      min={field.min}
-                      max={field.max}
-                      step={field.step}
-                      value={values[valueKey] ?? field.min ?? 0}
-                      onChange={(e) => handleChange(valueKey, Number(e.target.value))}
-                    />
-                  ) : field.type === "textarea" ? (
-                    <textarea
-                      id={fieldId}
-                      placeholder={field.placeholder}
-                      value={String(values[valueKey] ?? "")}
-                      onChange={(e) => handleChange(valueKey, e.target.value)}
-                    />
-                  ) : isCheckbox ? (
-                    field.type === "checkbox" ? (
-                    <Checkbox.Root id={fieldId} className={styles.checkbox} checked={!!values[valueKey]} onCheckedChange={(checked) => handleChange(valueKey, checked === true)}>
-                      <Checkbox.Indicator>✓</Checkbox.Indicator>
-                    </Checkbox.Root>
-                  ) : (
-                    <Switch.Root id={fieldId} className={styles.switch} checked={!!values[valueKey]} onCheckedChange={(checked) => handleChange(valueKey, checked)}>
-                      <Switch.Thumb className={styles.switchThumb} />
-                    </Switch.Root>
-                  )
-                  ) : (
-                    <input
-                      id={fieldId}
-                      type={
-                        ["number", "email", "password", "search", "url", "tel"].includes(field.type)
-                          ? field.type
-                          : "text"
-                      }
-                      placeholder={field.placeholder}
-                      value={values[valueKey] ?? ""}
-                      onChange={(e) =>
-                        handleChange(
-                          valueKey,
-                          field.type === "number" && e.target.value !== ""
-                            ? Number(e.target.value)
-                            : e.target.value,
-                        )
-                      }
-                    />
-                  )}
-                </div>
-              );
-            })}
+            <DynamicForm schema={schema} values={values} onChange={handleChange} />
           </div>
 
           {schema.actions && schema.actions.length > 0 && (
