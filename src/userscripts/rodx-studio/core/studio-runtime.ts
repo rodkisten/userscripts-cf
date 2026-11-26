@@ -74,7 +74,11 @@ export interface DiagnosticInfo {
 export interface StudioServices extends Record<string, unknown> {
   lists?: ReturnType<typeof import("../lists/render.tsx").createListsService>;
   listAccess?: ReturnType<typeof import("../lists/access.tsx").createListAccess>;
-  networkInspector?: { open(): void; close(): void; stats(): { entries: number; bytes: number; dropped: number } };
+  networkInspector?: {
+    open(): void;
+    close(): void;
+    stats(): { entries: number; bytes: number; dropped: number };
+  };
   deck?: {
     open: typeof import("../ui/preferences.tsx").openPanel;
     close: typeof import("../ui/preferences.tsx").closePanel;
