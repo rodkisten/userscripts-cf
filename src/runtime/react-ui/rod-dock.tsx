@@ -478,191 +478,215 @@ function DockView({ controller }: { controller: DockController }) {
 
   return (
     <>
-      <DockPanel open={open} portal={portal} title="Rod Dock" closeLabel="Fechar"
+      <DockPanel
+        open={open}
+        portal={portal}
+        title="Rod Dock"
+        closeLabel="Fechar"
         description="Gerencie scripts, ações e diagnósticos desta página."
-        onOpenChange={(next) => { if (!next) setSettingsOpen(false); setOpen(next); }}>
+        onOpenChange={(next) => {
+          if (!next) setSettingsOpen(false);
+          setOpen(next);
+        }}
+      >
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            setSettingsSearch(search);
+            setSettingsOpen(true);
+          }}
+        >
+          Preferências
+        </button>
 
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setSettingsSearch(search);
-                  setSettingsOpen(true);
-                }}
-              >
-                Preferências
-              </button>
+        <details className="module" open>
+          <summary>Scripts ({scripts.length})</summary>
+          <DockSearch
+            placeholder="Buscar script..."
+            variant="spaced"
+            label="Filtrar scripts"
+            value={search}
+            onChange={setSearch}
+          />
+          <div>
+            {filteredScripts.map((script) => {
+              const enabled = preferences[script.id]?.enabled !== false;
+              const permitted = matches(
+                { ...script, name: script.name ?? script.id },
+                location.href,
+                preferences[script.id],
+              );
 
-              <details className="module" open>
-                <summary>Scripts ({scripts.length})</summary>
-                <DockSearch placeholder="Buscar script..." variant="spaced" label="Filtrar scripts" value={search} onChange={setSearch} />
-                <div>
-                  {filteredScripts.map((script) => {
-                    const enabled = preferences[script.id]?.enabled !== false;
-                    const permitted = matches(
-                      { ...script, name: script.name ?? script.id },
-                      location.href,
-                      preferences[script.id],
-                    );
+              return (
+                <label className="script-row" key={script.id}>
+                  <span className="script-info">
+                    {script.name ?? script.id}
+                    <small className="script-status">
+                      {!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}
+                    </small>
+                  </span>
+                  <input
+                    className="checkbox"
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={(event) => toggleScript(script.id, event.target.checked)}
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </details>
 
-                    return (
-                      <label className="script-row" key={script.id}>
-                        <span className="script-info">
-                          {script.name ?? script.id}
-                          <small className="script-status">
-                            {!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}
-                          </small>
-                        </span>
-                        <input
-                          className="checkbox"
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={(event) => toggleScript(script.id, event.target.checked)}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-              </details>
-
-              {visibleModules.map((module) => (
-                <details className="module" key={module.id}>
-                  <summary>{module.name}</summary>
-                  <div className="actions">
-                    {module.actions.map((action) => (
-                      <button
-                        type="button"
-                        className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
-                        key={action.id}
-                        onClick={(event) => {
-                          if (suppressClick === action.id) {
-                            event.preventDefault();
-                            setSuppressClick(null);
-                            return;
-                          }
-                          action.run();
-                        }}
-                        onPointerDown={(event) => {
-                          if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
-                            return;
-                          }
-
-                          const source = event.currentTarget;
-                          const root = source.getRootNode();
-                          const startX = event.clientX;
-                          const startY = event.clientY;
-                          let moved = false;
-
-                          source.setPointerCapture(event.pointerId);
-
-                          const cleanup = () => {
-                            source.removeEventListener("pointermove", onMove);
-                            source.removeEventListener("pointerup", onFinish);
-                            source.removeEventListener("pointercancel", onCancel);
-                          };
-
-                          const onMove = (next: PointerEvent) => {
-                            if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
-                              return;
-                            }
-                            moved = true;
-                            setDragging(action.id);
-                            const target = getElementFromPoint(root, next.clientX, next.clientY);
-                            setDropTarget(
-                              target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
-                            );
-                          };
-
-                          const onFinish = (next: PointerEvent) => {
-                            cleanup();
-                            const target = getElementFromPoint(root, next.clientX, next.clientY);
-                            const targetId = target
-                              ?.closest?.("[data-reorder-id]")
-                              ?.getAttribute("data-reorder-id");
-
-                            setDragging(null);
-                            setDropTarget(null);
-
-                            if (moved) {
-                              setSuppressClick(action.id);
-                              if (targetId && targetId !== action.id) {
-                                action.reorder?.(targetId);
-                              }
-                            }
-                          };
-
-                          const onCancel = () => {
-                            cleanup();
-                            setDragging(null);
-                            setDropTarget(null);
-                          };
-
-                          source.addEventListener("pointermove", onMove);
-                          source.addEventListener("pointerup", onFinish);
-                          source.addEventListener("pointercancel", onCancel, { once: true });
-                        }}
-                        data-reorder-id={action.reorder ? action.id : undefined}
-                        aria-grabbed={action.reorder ? dragging === action.id : undefined}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                </details>
-              ))}
-
-              <details className="module">
-                <summary>Diagnósticos ({diagnostics.length})</summary>
-                <div className="actions">
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      const blob = new Blob(
-                        [getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)],
-                        { type: "application/json" },
-                      );
-                      const url = URL.createObjectURL(blob);
-                      const anchor = document.createElement("a");
-                      anchor.href = url;
-                      anchor.download = "rod-script-diagnostics.json";
-                      anchor.click();
-                      queueMicrotask(() => URL.revokeObjectURL(url));
-                    }}
-                  >
-                    Exportar JSON
-                  </button>
-                </div>
-
-                {diagnostics.slice(0, 30).map((item, index) => (
-                  <details className="diagnostic-item" key={index}>
-                    <summary>{item.message}</summary>
-                    <pre className="diagnostic-stack">{item.stack ?? item.message}</pre>
-                  </details>
-                ))}
-              </details>
-            </DockPanel>
-
-      <DockPanel secondary open={open && settingsOpen} portal={portal}
-        title="Preferências do Rod Dock" closeLabel="Fechar preferências" onOpenChange={setSettingsOpen}>
-              <label className="field-label" htmlFor="rod-dock-filter">
-                Filtrar scripts
-              </label>
-              <DockSearch placeholder="Buscar script..." id="rod-dock-filter" variant="block" value={settingsSearch} onChange={setSettingsSearch} />
-              <div className="actions">
+        {visibleModules.map((module) => (
+          <details className="module" key={module.id}>
+            <summary>{module.name}</summary>
+            <div className="actions">
+              {module.actions.map((action) => (
                 <button
                   type="button"
-                  className="btn"
-                  onClick={() => {
-                    setSearch(settingsSearch);
-                    setSettingsOpen(false);
+                  className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
+                  key={action.id}
+                  onClick={(event) => {
+                    if (suppressClick === action.id) {
+                      event.preventDefault();
+                      setSuppressClick(null);
+                      return;
+                    }
+                    action.run();
                   }}
+                  onPointerDown={(event) => {
+                    if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
+                      return;
+                    }
+
+                    const source = event.currentTarget;
+                    const root = source.getRootNode();
+                    const startX = event.clientX;
+                    const startY = event.clientY;
+                    let moved = false;
+
+                    source.setPointerCapture(event.pointerId);
+
+                    const cleanup = () => {
+                      source.removeEventListener("pointermove", onMove);
+                      source.removeEventListener("pointerup", onFinish);
+                      source.removeEventListener("pointercancel", onCancel);
+                    };
+
+                    const onMove = (next: PointerEvent) => {
+                      if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
+                        return;
+                      }
+                      moved = true;
+                      setDragging(action.id);
+                      const target = getElementFromPoint(root, next.clientX, next.clientY);
+                      setDropTarget(
+                        target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
+                      );
+                    };
+
+                    const onFinish = (next: PointerEvent) => {
+                      cleanup();
+                      const target = getElementFromPoint(root, next.clientX, next.clientY);
+                      const targetId = target
+                        ?.closest?.("[data-reorder-id]")
+                        ?.getAttribute("data-reorder-id");
+
+                      setDragging(null);
+                      setDropTarget(null);
+
+                      if (moved) {
+                        setSuppressClick(action.id);
+                        if (targetId && targetId !== action.id) {
+                          action.reorder?.(targetId);
+                        }
+                      }
+                    };
+
+                    const onCancel = () => {
+                      cleanup();
+                      setDragging(null);
+                      setDropTarget(null);
+                    };
+
+                    source.addEventListener("pointermove", onMove);
+                    source.addEventListener("pointerup", onFinish);
+                    source.addEventListener("pointercancel", onCancel, { once: true });
+                  }}
+                  data-reorder-id={action.reorder ? action.id : undefined}
+                  aria-grabbed={action.reorder ? dragging === action.id : undefined}
                 >
-                  Aplicar
+                  {action.label}
                 </button>
-                <Dialog.Close className="btn">Cancelar</Dialog.Close>
-              </div>
-            </DockPanel>
+              ))}
+            </div>
+          </details>
+        ))}
+
+        <details className="module">
+          <summary>Diagnósticos ({diagnostics.length})</summary>
+          <div className="actions">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                const blob = new Blob([getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = "rod-script-diagnostics.json";
+                anchor.click();
+                queueMicrotask(() => URL.revokeObjectURL(url));
+              }}
+            >
+              Exportar JSON
+            </button>
+          </div>
+
+          {diagnostics.slice(0, 30).map((item, index) => (
+            <details className="diagnostic-item" key={index}>
+              <summary>{item.message}</summary>
+              <pre className="diagnostic-stack">{item.stack ?? item.message}</pre>
+            </details>
+          ))}
+        </details>
+      </DockPanel>
+
+      <DockPanel
+        secondary
+        open={open && settingsOpen}
+        portal={portal}
+        title="Preferências do Rod Dock"
+        closeLabel="Fechar preferências"
+        onOpenChange={setSettingsOpen}
+      >
+        <label className="field-label" htmlFor="rod-dock-filter">
+          Filtrar scripts
+        </label>
+        <DockSearch
+          placeholder="Buscar script..."
+          id="rod-dock-filter"
+          variant="block"
+          value={settingsSearch}
+          onChange={setSettingsSearch}
+        />
+        <div className="actions">
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setSearch(settingsSearch);
+              setSettingsOpen(false);
+            }}
+          >
+            Aplicar
+          </button>
+          <Dialog.Close className="btn">Cancelar</Dialog.Close>
+        </div>
+      </DockPanel>
     </>
   );
 }

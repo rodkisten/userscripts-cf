@@ -7,12 +7,21 @@ export function DockHeader({ title, closeLabel }: { title: string; closeLabel: s
   return (
     <header className="panel-header">
       <Dialog.Title className="panel-title">{title}</Dialog.Title>
-      <Dialog.Close className="btn btn--icon" aria-label={closeLabel}>✕</Dialog.Close>
+      <Dialog.Close className="btn btn--icon" aria-label={closeLabel}>
+        ✕
+      </Dialog.Close>
     </header>
   );
 }
 
-export function DockSearch({ id, label, variant, placeholder, value, onChange }: {
+export function DockSearch({
+  id,
+  label,
+  variant,
+  placeholder,
+  value,
+  onChange,
+}: {
   id?: string;
   label?: string;
   variant: "spaced" | "block";
@@ -21,19 +30,42 @@ export function DockSearch({ id, label, variant, placeholder, value, onChange }:
   onChange: (value: string) => void;
 }) {
   return (
-    <input id={id} aria-label={label} className={`input input--${variant}`}
-      type="search" autoCapitalize="none" autoCorrect="off" spellCheck={false}
-      placeholder={placeholder} value={value}
-      onChange={(event) => onChange(event.target.value)} />
+    <input
+      id={id}
+      aria-label={label}
+      className={`input input--${variant}`}
+      type="search"
+      autoCapitalize="none"
+      autoCorrect="off"
+      spellCheck={false}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
   );
 }
 
 export function DockOverlay({ secondary = false, onClose }: { secondary?: boolean; onClose: () => void }) {
-  return <div className={secondary ? "overlay overlay--secondary" : "overlay"} aria-hidden="true" onClick={onClose} />;
+  return (
+    <div
+      className={secondary ? "overlay overlay--secondary" : "overlay"}
+      aria-hidden="true"
+      onClick={onClose}
+    />
+  );
 }
 
 /** Non-modal Radix composition avoids document-level scroll locking in shadow roots. */
-export function DockPanel({ open, onOpenChange, portal, title, closeLabel, secondary = false, description, children }: {
+export function DockPanel({
+  open,
+  onOpenChange,
+  portal,
+  title,
+  closeLabel,
+  secondary = false,
+  description,
+  children,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   portal: HTMLElement;
@@ -50,7 +82,9 @@ export function DockPanel({ open, onOpenChange, portal, title, closeLabel, secon
         <Dialog.Content className="panel" {...(!description ? { "aria-describedby": undefined } : {})}>
           <DockHeader title={title} closeLabel={closeLabel} />
           <div className="panel-body">
-            {description && <Dialog.Description className="panel-description">{description}</Dialog.Description>}
+            {description && (
+              <Dialog.Description className="panel-description">{description}</Dialog.Description>
+            )}
             {children}
           </div>
         </Dialog.Content>

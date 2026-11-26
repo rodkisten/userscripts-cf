@@ -77,7 +77,6 @@ export const RodMenu: React.FC<RodMenuProps> = ({ schema, isOpen, onClose, initi
           aria-label={schema.title || "Rod Menu"}
           aria-describedby={undefined}
           className={`bg-background text-foreground border-border ${styles.surface} ${surfaceClass} ${className || ""}`}
-
         >
           <Dialog.Title className={styles.accessibleTitle}>{schema.title || "Rod Menu"}</Dialog.Title>
           {(schema.title || schema.subtitle || schema.description) && (

@@ -19,7 +19,11 @@ for (const file of files.sort()) {
     // PostCSS parses declarations without validating CSS value grammar.
     // Catch malformed token substitutions before the literal-color audit.
     if (/\bvar\s+\(|[\w-]var\(--/i.test(decl.value)) {
-      findings.push({ file, line: decl.source.start.line, key: "invalid token: " + decl.prop + ": " + decl.value });
+      findings.push({
+        file,
+        line: decl.source.start.line,
+        key: "invalid token: " + decl.prop + ": " + decl.value,
+      });
       return;
     }
     if (decl.prop.startsWith("--")) return;
@@ -49,7 +53,5 @@ const violations = findings.filter(({ file, key }) => {
   return seen[id] > (baseline[id] || 0);
 });
 for (const { file, line, key } of violations) console.error(file + ":" + line + " " + key);
-console.log(
-  "[rodx-style] " + findings.length + " style findings; " + violations.length + " new violations.",
-);
+console.log("[rodx-style] " + findings.length + " style findings; " + violations.length + " new violations.");
 process.exitCode = violations.length ? 1 : 0;
