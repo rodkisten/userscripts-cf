@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { DockHeader, DockSearch, DockOverlay } from "./dock-primitives.js";
 import {
   matches,
   readScriptRules,
@@ -424,35 +425,6 @@ function getElementFromPoint(root: Node, x: number, y: number): Element | null {
   return document.elementFromPoint(x, y);
 }
 
-/** Presentation-only primitive; independent of userscript runtime state. */
-function DockHeader({ title, closeLabel }: { title: string; closeLabel: string }) {
-  return (
-    <header className="panel-header">
-      <Dialog.Title className="panel-title">{title}</Dialog.Title>
-      <Dialog.Close className="btn btn--icon" aria-label={closeLabel}>✕</Dialog.Close>
-    </header>
-  );
-}
-
-function DockSearch({ id, label, variant, value, onChange }: {
-  id?: string;
-  label?: string;
-  variant: "spaced" | "block";
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <input id={id} aria-label={label} className={`input input--${variant}`}
-      type="search" autoCapitalize="none" autoCorrect="off" spellCheck={false}
-      placeholder="Buscar script..." value={value}
-      onChange={(event) => onChange(event.target.value)} />
-  );
-}
-
-function DockOverlay({ secondary = false, onClose }: { secondary?: boolean; onClose: () => void }) {
-  return <div className={secondary ? "overlay overlay--secondary" : "overlay"} aria-hidden="true" onClick={onClose} />;
-}
-
 function DockView({ controller }: { controller: DockController }) {
   const { scripts, modules, open, setOpen, portal } = controller;
   const [preferences, setPreferences] = useState<ScriptRulesRecord>(() => readScriptRules(localStorage));
@@ -533,7 +505,7 @@ function DockView({ controller }: { controller: DockController }) {
 
               <details className="module" open>
                 <summary>Scripts ({scripts.length})</summary>
-                <DockSearch variant="spaced" label="Filtrar scripts" value={search} onChange={setSearch} />
+                <DockSearch placeholder="Buscar script..." variant="spaced" label="Filtrar scripts" value={search} onChange={setSearch} />
                 <div>
                   {filteredScripts.map((script) => {
                     const enabled = preferences[script.id]?.enabled !== false;
@@ -697,7 +669,7 @@ function DockView({ controller }: { controller: DockController }) {
               <label className="field-label" htmlFor="rod-dock-filter">
                 Filtrar scripts
               </label>
-              <DockSearch id="rod-dock-filter" variant="block" value={settingsSearch} onChange={setSettingsSearch} />
+              <DockSearch placeholder="Buscar script..." id="rod-dock-filter" variant="block" value={settingsSearch} onChange={setSettingsSearch} />
               <div className="actions">
                 <button
                   type="button"
