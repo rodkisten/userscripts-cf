@@ -193,6 +193,8 @@ const css = `
     top: 0;
     right: 0;
     width: min(390px, 94vw);
+    height: 100vh;
+    max-height: 100vh;
     height: 100dvh;
     max-height: 100dvh;
     display: flex;
@@ -211,7 +213,7 @@ const css = `
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    padding: 14px 16px 10px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 10px 16px;
     border-bottom: 1px solid var(--rd-border-subtle);
   }
 
@@ -236,7 +238,7 @@ const css = `
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    padding: 14px 16px 24px;
+    padding: 14px calc(16px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
   .panel-body::-webkit-scrollbar {
@@ -298,6 +300,13 @@ const css = `
     font-size: var(--rd-font-sm);
     outline: none;
   }
+
+  @media (pointer: coarse) {
+    .input { font-size: 16px; }
+    .launcher { min-width: 32px; min-height: 44px; }
+  }
+
+  .launcher[hidden] { display: none; }
 
   .input:focus {
     border-color: var(--rd-accent-soft);
@@ -682,6 +691,9 @@ function DockView({ controller }: { controller: DockController }) {
                 id="rod-dock-filter"
                 className="input input--block"
                 type="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={settingsSearch}
                 onChange={(event) => setSettingsSearch(event.target.value)}
                 placeholder="Buscar script..."
@@ -751,7 +763,12 @@ export function installRodDock({
   launcher.textContent = "☰";
   launcher.setAttribute("aria-label", "Abrir Rod Dock");
 
-  const savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  let savedPosition = NaN;
+  try {
+    savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
   const initialTop =
     Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88 ? savedPosition : 46;
   launcher.style.top = `${initialTop}%`;
@@ -805,7 +822,11 @@ export function installRodDock({
     const { moved } = dragStart;
     dragStart = null;
     if (moved) {
-      localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+      try {
+        localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+      } catch {
+        // Keep the current position even when persistence is unavailable.
+      }
     } else {
       setOpen(true);
     }
@@ -845,6 +866,7 @@ export function installRodDock({
   };
 
   const setOpen = (next: boolean) => {
+    if (disposed) return;
     isOpen = next;
     launcher.hidden = next;
     if (next) {
