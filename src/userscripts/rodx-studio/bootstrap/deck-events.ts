@@ -20,20 +20,16 @@ import { SocialAppLinks } from "../links/social.tsx";
 import { createListAccess } from "../lists/access.tsx";
 import { ProfileLists } from "../lists/profile.tsx";
 import { ImmersiveDownload } from "../media/download.tsx";
-import { VideoExperience } from "../media/playback.js";
+import { VideoExperience, ViewportPlayback } from "../media/playback.js";
 import { ImmersiveSwipe } from "../media/gestures.tsx";
 import { PlayerPreference } from "../media/player.tsx";
 import { SeekPreviews } from "../media/seek-preview.tsx";
 import { VideoTransport } from "../media/transport.tsx";
-import { ViewportPlayback } from "../media/playback.js";
-import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { newDraft } from "../search/actions.js";
 import { SearchAnchors } from "../search/anchors.tsx";
 import { installListTypeahead } from "../search/list-typeahead.tsx";
 import { state } from "../state/deck.js";
-import { saveState } from "../storage/persistence.js";
-import { gmAvailable } from "../storage/persistence.js";
-import { normalizedPreset, normalizedSearch } from "../storage/persistence.js";
+import { saveState, gmAvailable, normalizedPreset, normalizedSearch } from "../storage/persistence.js";
 import { CloudSync } from "../sync/cloud.js";
 import { Relay } from "../telegram/relay.tsx";
 import { NativeTranslation } from "../translation/native.js";
@@ -46,13 +42,6 @@ import { renderDock } from "../ui/search-workbench.tsx";
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
-const EVENT_TYPES = {
-  click: "click",
-  storage: "storage",
-  keydown: "keydown",
-  visibilityChange: "visibilitychange",
-} as const;
-
 const HOTKEYS = {
   keyS: "KeyS",
   escape: "Escape",
@@ -124,7 +113,7 @@ export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
   ) {
     return;
   }
-  const article = el.closest<HTMLElement>(XDOM.tweet);
+  const article = el.closest<HTMLElement>(NATIVE_X_SELECTORS.tweet);
   if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) {
     return;
   }
@@ -280,11 +269,13 @@ export function setupInterfaceHygieneModule(): void {
 }
 
 export function resetDatabaseState(): void {
+  clearTimeout(databaseSaveTimer);
   databaseSaveTimer = undefined;
   refreshingCloud = false;
 }
 
 export function setupDatabaseDirtyAutoSaveWatcher(): void {
+  Studio.ctx?.onDispose(resetDatabaseState);
   Studio.on("database:dirty", () => {
     if (refreshingCloud) {
       return;
@@ -317,7 +308,7 @@ export function registerCloudBackgroundSyncJob(): void {
 }
 
 export function setupVisibilityChangeCloudSyncTrigger(): void {
-  document.addEventListener(EVENT_TYPES.visibilityChange, () => {
+  Studio.ctx?.listen(document, "visibilitychange", () => {
     if (!document.hidden) {
       Studio.queue(STUDIO_JOBS.cloudRefresh);
     }
@@ -414,6 +405,7 @@ export function registerMediaExperienceSetupJob(): void {
     },
     {
       group: STUDIO_GROUPS.media,
+      events: ["dom", "route", "state", "maintenance", "media"],
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
@@ -445,126 +437,14 @@ export function startStudioRuntimeEngine(): void {
 // Funções de Inicialização (Referências Limpas)
 // ============================================================================
 
-export function initializeRodX_deck_164(): void {
-  document.addEventListener(EVENT_TYPES.click, blockNativeTweetOpenOnClicks, true);
+export function bindTweetOpenGuard(): void {
+  Studio.ctx?.listen(document, "click", blockNativeTweetOpenOnClicks as EventListener, true);
 }
 
-export function initializeRodX_deck_169(): void {
-  window.addEventListener(EVENT_TYPES.storage, handleCrossTabStorageSynchronization);
+export function bindCrossTabStorage(): void {
+  Studio.ctx?.listen(window, "storage", handleCrossTabStorageSynchronization as EventListener);
 }
 
-export function initializeRodX_deck_170(): void {
-  window.addEventListener(EVENT_TYPES.keydown, handleGlobalKeyboardShortcuts);
-}
-
-export function initializeRodX_deck_171(): void {
-  registerTampermonkeyMenuCommands();
-}
-
-export function initializeRodX_deck_172(): void {
-  registerStudioListAccessService();
-}
-
-export function initializeRodX_deck_173(): void {
-  registerStudioCloudSyncService();
-}
-
-export function initializeRodX_deck_175(): void {
-  registerStudioDeckPanelService();
-}
-
-export function initializeRodX_deck_176(): void {
-  configureStudioSpaNavigation();
-}
-
-export function initializeRodX_deck_177(): void {
-  initializeStudioListsModule();
-}
-
-export function initializeRodX_deck_178(): void {
-  setupStudioListTypeahead();
-}
-
-export function initializeRodX_deck_179(): void {
-  setupStudioRecommendationCleanup();
-}
-
-export function initializeRodX_deck_180(): void {
-  bindListsDockEventEmitter();
-}
-
-export function initializeRodX_deck_181(): void {
-  bindListsChangeEventEmitter();
-}
-
-export function initializeRodX_deck_182(): void {
-  bindListsSettingsEventEmitter();
-}
-
-export function initializeRodX_deck_183(): void {
-  setupInterfaceHygieneModule();
-}
-
-export function initializeDeckDatabaseSaveTimerAndRefreshingCloud(): void {
-  resetDatabaseState();
-}
-
-export function initializeRodX_deck_185(): void {
-  setupDatabaseDirtyAutoSaveWatcher();
-}
-
-export function initializeRodX_deck_186(): void {
-  registerCloudBackgroundSyncJob();
-}
-
-export function initializeRodX_deck_187(): void {
-  setupVisibilityChangeCloudSyncTrigger();
-}
-
-export function initializeRodX_deck_188(): void {
-  registerIdentityNavigationJob();
-}
-
-export function initializeRodX_deck_189(): void {
-  registerDockRenderJob();
-}
-
-export function initializeRodX_deck_190(): void {
-  registerFeedFiltersScanJob();
-}
-
-export function initializeRodX_deck_191(): void {
-  registerSearchNavigationScanJob();
-}
-
-export function initializeRodX_deck_192(): void {
-  registerProfileListsScanJob();
-}
-
-export function initializeRodX_deck_193(): void {
-  registerTweetEnhancementScanJob();
-}
-
-export function initializeRodX_deck_194(): void {
-  registerLinksAndTelegramScanJob();
-}
-
-export function initializeRodX_deck_195(): void {
-  registerNativeTranslationScanJob();
-}
-
-export function initializeRodX_deck_196(): void {
-  registerMediaExperienceSetupJob();
-}
-
-export function initializeRodX_deck_197(): void {
-  registerLayoutTweetsAndChromeScanJob();
-}
-
-export function initializeRodX_deck_198(): void {
-  executeInitialIdentityTick();
-}
-
-export function initializeRodX_deck_199(): void {
-  startStudioRuntimeEngine();
+export function bindKeyboardShortcuts(): void {
+  Studio.ctx?.listen(window, "keydown", handleGlobalKeyboardShortcuts as EventListener);
 }

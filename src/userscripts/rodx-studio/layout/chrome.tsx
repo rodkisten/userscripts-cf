@@ -210,6 +210,9 @@ export function initializeDeckScrollChrome(): void {
     function pin(top: number): void {
       let candidate: HTMLElement | undefined;
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
+        if (!(article instanceof HTMLElement)) {
+          continue;
+        }
         if (article.hidden || getComputedStyle(article).display === "none") {
           continue;
         }
@@ -360,6 +363,9 @@ export function initializeDeckScrollChrome(): void {
       let distance: number = Number(CHROME_METRICS.snapMaxDistance);
 
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
+        if (!(article instanceof HTMLElement)) {
+          continue;
+        }
         if (article.hidden || getComputedStyle(article).display === "none") {
           continue;
         }

@@ -8,8 +8,8 @@ export function cloneTree(node) {
   const assign = (item) => {
     item.id = uid();
     if (item.kind === "group") {
-item.children.forEach(assign);
-}
+      item.children.forEach(assign);
+    }
   };
   assign(cloned);
   return cloned;
@@ -17,8 +17,8 @@ item.children.forEach(assign);
 
 export function tray(draft = state.draft, create = true) {
   if (!draft) {
-return null;
-}
+    return null;
+  }
   const root = draft.blocks;
   let found = root.children.find((c) => c.kind === "group" && c.tagTray);
   if (!found && create) {
@@ -31,8 +31,8 @@ return null;
 
 export function adoptTagGroup(draft = state.draft) {
   if (!draft?.blocks || tray(draft, false)) {
-return;
-}
+    return;
+  }
   const root = draft.blocks;
   const chipKind = (t) => t.kind === "term" && ["hashtag", "keyword", "phrase"].includes(t.type) && !t.not;
   const eligible = (g) => g.kind === "group" && !g.not && g.children.length > 0 && g.children.every(chipKind);
@@ -63,66 +63,60 @@ return;
 
 export function migrateLegacyTags(draft) {
   if (!draft) {
-return;
-}
+    return;
+  }
   adoptTagGroup(draft);
   const old = tokens(draft.fields.hashtags);
   if (!old.length) {
-return;
-}
+    return;
+  }
   const target = tray(draft);
   for (const tag of old) {
-target.children.push(newBlock("hashtag", tag.replace(/^#/, "")));
-}
+    target.children.push(newBlock("hashtag", tag.replace(/^#/, "")));
+  }
   draft.fields.hashtags = "";
 }
 
-export let signature;
-
-export function initializeDeckSignature() {
-  signature = (node) => {
-    if (node.kind === "term") {
-      try {
-        return compileBlockTerm(node).toLocaleLowerCase();
-      } catch (_) {
-        return `${node.type}:${node.value}:${node.not}`.toLocaleLowerCase();
-      }
+export const signature = (node) => {
+  if (node.kind === "term") {
+    try {
+      return compileBlockTerm(node).toLocaleLowerCase();
+    } catch (_) {
+      return `${node.type}:${node.value}:${node.not}`.toLocaleLowerCase();
     }
-    return `${node.not ? "NOT:" : ""}${node.op}(${node.children.map(signature).join("|")})`;
-  };
-}
+  }
+  return `${node.not ? "NOT:" : ""}${node.op}(${node.children.map(signature).join("|")})`;
+};
 
 export function compactBlockTree(root) {
   let removed = 0;
   const canonicalSignature = (node) => {
     if (node.kind === "term") {
-return signature(node).normalize("NFKC").toLocaleLowerCase();
-}
+      return signature(node).normalize("NFKC").toLocaleLowerCase();
+    }
     const children = node.children.map(canonicalSignature).sort();
     return `${node.not ? "NOT:" : ""}${node.op}(${children.join("|")})`;
   };
   const visit = (group) => {
     if (group.kind !== "group") {
-return;
-}
+      return;
+    }
     group.children.forEach(visit);
     // AND(AND(a,b),c) = AND(a,b,c), likewise for OR. Never flatten negated
     // groups, preserve tag trays and never cross AND/OR boundaries.
     const flattened = [];
     for (const child of group.children) {
-      if (child.kind === "group" && child.op === group.op && !child.not && !child.tagTray && !group.tagTray)
-        {
-flattened.push(...child.children);
-}
-      else {
-flattened.push(child);
-}
+      if (child.kind === "group" && child.op === group.op && !child.not && !child.tagTray && !group.tagTray) {
+        flattened.push(...child.children);
+      } else {
+        flattened.push(child);
+      }
     }
     const signatures = new Set();
     group.children = flattened.filter((node) => {
       if (node.kind === "term" && !String(node.value || "").trim()) {
-return true;
-}
+        return true;
+      }
       const sig = canonicalSignature(node);
       if (signatures.has(sig)) {
         removed++;
@@ -142,8 +136,8 @@ return true;
           const redundant =
             child.kind === "term" && !child.not && child.type === "media" && child.value === "media";
           if (redundant) {
-removed++;
-}
+            removed++;
+          }
           return !redundant;
         });
       }

@@ -3,7 +3,6 @@ import { NATIVE_X_SELECTORS, DOM_SELECTORS, RODX_SELECTORS } from "../../../sele
 import { Studio } from "../core/studio-runtime.js";
 import { state } from "../state/deck.js";
 
-
 // TODO: extract to types/video-experience.ts
 export interface VideoExperienceController {
   scan: () => void;
@@ -50,19 +49,19 @@ export function initializeDeckVideoExperience(): VideoExperienceController {
   function resolveVolumeControl(event: Event): HTMLElement | null {
     const path = event.composedPath();
     for (const node of path) {
-      if (!(node instanceof Element)) continue;
+      if (!(node instanceof Element)) {
+        continue;
+      }
       const candidate = node.closest<HTMLElement>(NATIVE_X_SELECTORS.volumeControlCandidates);
-      if (candidate) return candidate;
+      if (candidate) {
+        return candidate;
+      }
     }
     return null;
   }
 
   function hasAudioLabel(control: HTMLElement): boolean {
-    const label = [
-      control.getAttribute("aria-label"),
-      control.getAttribute("title"),
-      control.dataset.testid,
-    ]
+    const label = [control.getAttribute("aria-label"), control.getAttribute("title"), control.dataset.testid]
       .filter(Boolean)
       .join(" ");
 
@@ -101,7 +100,9 @@ export function initializeDeckVideoExperience(): VideoExperienceController {
   document.addEventListener("click", allowNativeVolume, { capture: true, signal });
 
   function bindVideoListeners(video: HTMLVideoElement): void {
-    if (initialized.has(video)) return;
+    if (initialized.has(video)) {
+      return;
+    }
     initialized.add(video);
 
     video.addEventListener("play", () => enforceMutePolicy(video));
@@ -165,8 +166,8 @@ export function initializeDeckViewportPlayback() {
       const height = window.visualViewport?.height || innerHeight;
       const top = document.getElementById("rodx-active-tweetbar")?.hidden === false ? 40 : 0;
       if (rect.width < 1 || rect.height < 1) {
-return 0;
-}
+        return 0;
+      }
       const x = Math.max(0, Math.min(rect.right, width) - Math.max(rect.left, 0));
       const y = Math.max(0, Math.min(rect.bottom, height) - Math.max(rect.top, top));
       const possible = Math.min(rect.width, width) * Math.min(rect.height, height - top);
@@ -181,15 +182,15 @@ return 0;
     function update() {
       raf = 0;
       if (document.visibilityState !== "visible") {
-return;
-}
+        return;
+      }
       const start = state.visual.autoPlayEnterPercent / 100;
       const exit = Math.min(start - 0.05, Math.max(0, 1 - state.visual.autoPauseExitPercent / 100));
       const now = performance.now();
       for (const video of Studio.dom.nodes('main :is(article,[role="article"])[data-testid="tweet"] video')) {
-        if (!isFeed(video) || !video.isConnected) {
-continue;
-}
+        if (!(video instanceof HTMLVideoElement) || !isFeed(video) || !video.isConnected) {
+          continue;
+        }
         let item = info.get(video);
         if (!item) {
           item = {
@@ -210,8 +211,8 @@ continue;
         if (visible >= start) {
           item.lowSince = null;
           if (state.visual.videoMute && !video.dataset.rodxUserUnmuted) {
-video.muted = true;
-}
+            video.muted = true;
+          }
           if (
             video.paused &&
             !video.dataset.rodxGesturePaused &&
@@ -240,8 +241,8 @@ video.muted = true;
           continue;
         }
         if (item.lowSince === null) {
-item.lowSince = now;
-}
+          item.lowSince = now;
+        }
         if (now - item.lowSince >= EXIT_GRACE_MS && !video.paused) {
           try {
             video.pause();
@@ -253,8 +254,8 @@ item.lowSince = now;
     }
     function request() {
       if (!raf) {
-raf = requestAnimationFrame(update);
-}
+        raf = requestAnimationFrame(update);
+      }
     }
     function scan() {
       if (!installed) {
@@ -277,24 +278,23 @@ raf = requestAnimationFrame(update);
         document.addEventListener(
           "click",
           (event) => {
-            const button = event.target.closest?.(DOM_SELECTORS.interactiveButtons);
+            const button =
+              event.target instanceof Element ? event.target.closest(DOM_SELECTORS.interactiveButtons) : null;
             if (
               !button ||
               !/^(?:play|pause|reproduzir|pausar)$/i.test(
                 String(button.getAttribute("aria-label") || "").trim(),
               )
-            )
-              {
-return;
-}
+            ) {
+              return;
+            }
             const card = button.closest(NATIVE_X_SELECTORS.nativeTweets);
             const video = card?.querySelector(DOM_SELECTORS.videos);
             const item = video && info.get(video);
-            if (item && !video.paused)
-              {
-item.manuallyPausedUntil =
+            if (item && !video.paused) {
+              item.manuallyPausedUntil =
                 performance.now() + RUNTIME_LIMITS.videoPlayback.manualPauseDurationMs;
-}
+            }
           },
           true,
         );
@@ -302,8 +302,8 @@ item.manuallyPausedUntil =
           // Safari and X decide whether background video can play. Do not
           // issue extra pause() calls as the app enters the background.
           if (document.visibilityState === "visible") {
-request();
-}
+            request();
+          }
         });
       }
       request();

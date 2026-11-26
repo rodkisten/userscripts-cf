@@ -12,37 +12,21 @@ import { Relay } from "../telegram/relay.tsx";
 import { Seen } from "../tweets/seen.js";
 import { repaint } from "../ui/dock.tsx";
 
+type ChangeListener = (key: string, previous: unknown, value: unknown, remote: boolean) => void;
+declare const GM_addValueChangeListener: undefined | ((key: string, listener: ChangeListener) => number);
+declare const GM_removeValueChangeListener: undefined | ((id: number) => void);
 
 const gmStorage = createGMStorage();
 
-export let modernGM;
-
-export function initializeDeckModernGM() {
-  modernGM = typeof GM !== "undefined" ? GM : null;
-}
-
-export let gmGet;
-
-export function initializeDeckGmGet() {
-  gmGet = (key, fallback) => gmStorage.get(key, fallback);
-}
-
-export let gmSet;
-
-export function initializeDeckGmSet() {
-  gmSet = (key, value) => gmStorage.set(key, value);
-}
-
-export let gmAvailable;
-
-export function initializeDeckGmAvailable() {
-  gmAvailable = gmStorage.available;
-}
+export const modernGM = typeof GM !== "undefined" ? GM : null;
+export const gmGet = (key, fallback) => gmStorage.get(key, fallback);
+export const gmSet = (key, value) => gmStorage.set(key, value);
+export const gmAvailable = gmStorage.available;
 
 export function decodeStore(value) {
   if (typeof value !== "string") {
-return value ?? null;
-}
+    return value ?? null;
+  }
   try {
     return JSON.parse(value);
   } catch (_) {
@@ -50,32 +34,24 @@ return value ?? null;
   }
 }
 
-export let storage;
+export const storage = {
+  async get(key) {
+    if (gmAvailable) {
+      return decodeStore(await gmGet(key, null));
+    }
+    const raw = localStorage.getItem(key);
+    return decodeStore(raw);
+  },
+  async set(key, value) {
+    const serialized = JSON.stringify(value);
+    if (gmAvailable) {
+      return await gmSet(key, serialized);
+    }
+    localStorage.setItem(key, serialized);
+  },
+};
 
-export function initializeDeckStorage() {
-  storage = {
-    async get(key) {
-      if (gmAvailable) {
-return decodeStore(await gmGet(key, null));
-}
-      const raw = localStorage.getItem(key);
-      return decodeStore(raw);
-    },
-    async set(key, value) {
-      const serialized = JSON.stringify(value);
-      if (gmAvailable) {
-return await gmSet(key, serialized);
-}
-      localStorage.setItem(key, serialized);
-    },
-  };
-}
-
-export let recoveryKey;
-
-export function initializeDeckRecoveryKey() {
-  recoveryKey = (accountKey) => `${PREFIX}recovery:${accountKey}`;
-}
+export const recoveryKey = (accountKey) => `${PREFIX}recovery:${accountKey}`;
 
 export function recoveryRead(accountKey) {
   try {
@@ -95,11 +71,10 @@ export function recoveryWrite(accountKey, value) {
   }
 }
 
-
 export function normalizedSearch(value) {
   if (!value || typeof value !== "object") {
-return null;
-}
+    return null;
+  }
   const id = typeof value.id === "string" && /^[a-zA-Z0-9_-]{1,110}$/.test(value.id) ? value.id : uid();
   const fields = copyFields(value.fields);
   const blocks = normalizeBlockTree(value.blocks);
@@ -110,8 +85,8 @@ return null;
     fields.extra = query; // Preserve raw queries from older backups only.
   }
   if (!query || query.length > 8000) {
-return null;
-}
+    return null;
+  }
   const sort = SORTS.some(([key]) => key === value.sort) ? value.sort : "live";
   return {
     id,
@@ -130,20 +105,20 @@ return null;
 
 export function normalizedPreset(value) {
   if (!value || typeof value !== "object") {
-return null;
-}
+    return null;
+  }
   const query = String(value.query || "")
     .trim()
     .slice(0, 8001);
   if (!query || query.length > 8000) {
-return null;
-}
+    return null;
+  }
   const name = String(value.name || "")
     .trim()
     .slice(0, 100);
   if (!name) {
-return null;
-}
+    return null;
+  }
   return {
     id: typeof value.id === "string" && /^[a-zA-Z0-9_-]{1,110}$/.test(value.id) ? value.id : uid(),
     name,
@@ -154,14 +129,13 @@ return null;
   };
 }
 
-
 export function freshAccountState(main, recovery) {
   if (!recovery) {
-return main;
-}
+    return main;
+  }
   if (!main || !Array.isArray(main.searches)) {
-return recovery;
-}
+    return recovery;
+  }
   const m = Date.parse(main.updatedAt || "") || 0;
   const r = Date.parse(recovery.updatedAt || "") || 0;
   return r > m ? recovery : main;
@@ -193,8 +167,8 @@ export async function loadAccount(identity) {
   state.account = keyId || null;
   Studio.state.account = state.account;
   if (keyId) {
-state.lastIdentifiedAccount = keyId;
-}
+    state.lastIdentifiedAccount = keyId;
+  }
   void Relay.switchAccount(keyId || "");
   state.accountLabel = identity.label;
   state.accountSource = identity.source;
@@ -210,7 +184,7 @@ state.lastIdentifiedAccount = keyId;
   state.readTimers.clear();
   state.readProgress = new WeakMap();
   document
-    .querySelectorAll(RODX_SELECTORS.observedElements)
+    .querySelectorAll<HTMLElement>(RODX_SELECTORS.observedElements)
     .forEach((article) => delete article.dataset.rodxObserved);
   state.presetEditingId = null;
   state.editingId = null;
@@ -225,8 +199,8 @@ state.lastIdentifiedAccount = keyId;
   }
   repaint();
   if (!keyId) {
-return;
-}
+    return;
+  }
   const key = PREFIX + keyId;
   try {
     let primary = null;
@@ -241,21 +215,21 @@ return;
       state.storageWarning = "Pesquisas recuperadas do backup local deste navegador.";
     }
     if (state.accountGeneration !== generation) {
-return;
-}
+      return;
+    }
     if (!value && identity.id && identity.handle) {
       // One-way migration from v1 (@handle) to v2 (stable account ID).
       // Skip if this handle was already bound to another numeric ID.
       const bindingKey = PREFIX + "binding:" + identity.handle;
       const binding = await storage.get(bindingKey);
       if (state.accountGeneration !== generation) {
-return;
-}
+        return;
+      }
       if ((!binding || binding === identity.id) && (!previousId || previousId === keyId)) {
         const old = await storage.get(PREFIX + identity.handle);
         if (state.accountGeneration !== generation) {
-return;
-}
+          return;
+        }
         if (old?.searches && Array.isArray(old.searches)) {
           value = {
             ...old,
@@ -269,8 +243,8 @@ return;
       }
     }
     if (state.accountGeneration !== generation) {
-return;
-}
+      return;
+    }
     state.searches = Array.isArray(value?.searches)
       ? value.searches.map(normalizedSearch).filter(Boolean)
       : [];
@@ -283,25 +257,26 @@ return;
       : [];
   } catch (err) {
     if (state.accountGeneration === generation) {
-state.message = `Erro ao ler dados: ${err.message}`;
-}
+      state.message = `Erro ao ler dados: ${err.message}`;
+    }
   }
   if (state.accountGeneration !== generation) {
-return;
-}
+    return;
+  }
   if (gmAvailable && typeof GM_addValueChangeListener === "function") {
     state.valueListenerId = GM_addValueChangeListener(key, (_key, _old, value, remote) => {
       if (!remote || state.account !== keyId) {
-return;
-}
-      state.searches = Array.isArray(value?.searches)
-        ? value.searches.map(normalizedSearch).filter(Boolean)
+        return;
+      }
+      const decoded = decodeStore(value);
+      state.searches = Array.isArray(decoded?.searches)
+        ? decoded.searches.map(normalizedSearch).filter(Boolean)
         : [];
-      state.presets = Array.isArray(value?.presets)
-        ? value.presets.map(normalizedPreset).filter(Boolean)
+      state.presets = Array.isArray(decoded?.presets)
+        ? decoded.presets.map(normalizedPreset).filter(Boolean)
         : [];
-      state.selectionList = Array.isArray(value?.selectionList)
-        ? value.selectionList.filter((v) => typeof v === "string").slice(0, 150)
+      state.selectionList = Array.isArray(decoded?.selectionList)
+        ? decoded.selectionList.filter((v) => typeof v === "string").slice(0, 150)
         : [];
       repaint();
     });
@@ -313,8 +288,8 @@ return;
 
 export async function saveState() {
   if (!state.account) {
-throw new Error("Conta não identificada. Use o botão Definir conta.");
-}
+    throw new Error("Conta não identificada. Use o botão Definir conta.");
+  }
   const handle = state.account;
   const key = PREFIX + handle;
   const payload = {
@@ -352,8 +327,8 @@ throw new Error("Conta não identificada. Use o botão Definir conta.");
         state.storageWarning = "";
       } catch (error) {
         if (!backedUp) {
-throw new Error(`Falha ao salvar: ${error.message}. Faça um backup JSON.`);
-}
+          throw new Error(`Falha ao salvar: ${error.message}. Faça um backup JSON.`);
+        }
         state.storageWarning = `GM Storage indisponível: dados preservados neste navegador. ${error.message}`;
         console.warn("[RodX] Salvamento recuperável, sem confirmação GM:", error);
       }
