@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { mountView, disposeView } from "../ui/runtime.tsx";
 // TODO: verify exact subpaths/exports against installed @videojs/react v10+ package
 import {
   VideoPlayer,
@@ -30,7 +30,6 @@ export interface PlayerPreferenceController {
 interface MountedVideoEntry {
   video: HTMLVideoElement;
   host: HTMLDivElement;
-  reactRoot: Root;
   controls: boolean;
   style: string;
   cleanupGestures?: () => void;
@@ -344,7 +343,7 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
         entry.host.before(video);
       }
 
-      entry.reactRoot.unmount();
+      disposeView(entry.host);
       entry.host.remove();
 
       video.controls = entry.controls;
@@ -396,26 +395,24 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
         host.style.display = "contents";
         video.before(host);
 
-        const reactRoot = createRoot(host);
         const entry: MountedVideoEntry = {
           video,
           host,
-          reactRoot,
           controls: video.controls,
           style: video.style.cssText,
         };
 
         mounted.set(video, entry);
 
-        reactRoot.render(
+        mountView(host, () => (
           <RodXVideoPlayerShell
             video={video}
             entry={entry}
             onCleanupReady={(cleanup) => {
               entry.cleanupGestures = cleanup;
             }}
-          />,
-        );
+          />
+        ));
       }
     }
 
