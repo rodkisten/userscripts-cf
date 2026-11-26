@@ -16,6 +16,12 @@ const findings = [];
 for (const file of files.sort()) {
   const ast = postcss.parse(fs.readFileSync(file, "utf8"), { from: file });
   ast.walkDecls((decl) => {
+    // PostCSS parses declarations without validating CSS value grammar.
+    // Catch malformed token substitutions before the literal-color audit.
+    if (/\bvar\s+\(|[\w-]var\(--/i.test(decl.value)) {
+      findings.push({ file, line: decl.source.start.line, key: "invalid token: " + decl.prop + ": " + decl.value });
+      return;
+    }
     if (decl.prop.startsWith("--")) return;
     const value = decl.value.replace(/var\([^)]*\)/g, "");
     if (
@@ -44,6 +50,6 @@ const violations = findings.filter(({ file, key }) => {
 });
 for (const { file, line, key } of violations) console.error(file + ":" + line + " " + key);
 console.log(
-  "[rodx-style] " + findings.length + " literal declarations; " + violations.length + " new violations.",
+  "[rodx-style] " + findings.length + " style findings; " + violations.length + " new violations.",
 );
 process.exitCode = violations.length ? 1 : 0;
