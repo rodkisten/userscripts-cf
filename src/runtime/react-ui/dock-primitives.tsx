@@ -1,4 +1,5 @@
 /** @jsxImportSource react */
+import type { ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 /** Presentation-only primitive; independent of userscript runtime state. */
@@ -31,3 +32,29 @@ export function DockOverlay({ secondary = false, onClose }: { secondary?: boolea
   return <div className={secondary ? "overlay overlay--secondary" : "overlay"} aria-hidden="true" onClick={onClose} />;
 }
 
+/** Non-modal Radix composition avoids document-level scroll locking in shadow roots. */
+export function DockPanel({ open, onOpenChange, portal, title, closeLabel, secondary = false, description, children }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  portal: HTMLElement;
+  title: string;
+  closeLabel: string;
+  secondary?: boolean;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Dialog.Root modal={false} open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal container={portal}>
+        {open && <DockOverlay secondary={secondary} onClose={() => onOpenChange(false)} />}
+        <Dialog.Content className="panel" {...(!description ? { "aria-describedby": undefined } : {})}>
+          <DockHeader title={title} closeLabel={closeLabel} />
+          <div className="panel-body">
+            {description && <Dialog.Description className="panel-description">{description}</Dialog.Description>}
+            {children}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
