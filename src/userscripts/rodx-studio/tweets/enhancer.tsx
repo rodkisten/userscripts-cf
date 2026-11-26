@@ -680,6 +680,7 @@ export function initializeDeckResultEnhancer(): void {
 
       if (!current || ![SORT_MODES.live, SORT_MODES.top].includes(current.sort as any)) {
         for (const article of Studio.dom.nodes(XDOM.tweet)) {
+        if (!(article instanceof HTMLElement)) continue;
           article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
           article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
           article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";

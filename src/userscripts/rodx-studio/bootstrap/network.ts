@@ -2,7 +2,7 @@ import { initializeOuterStudio, Studio } from "../core/studio-runtime.js";
 import { connectStudioNetwork } from "../network/page-bridge.js";
 import { createNetworkInspector } from "../network/inspector.tsx";
 
-function createStudioMenus(Studio) {
+export function createStudioMenus(Studio) {
   let api;
   const panels = new Map();
   function library() {

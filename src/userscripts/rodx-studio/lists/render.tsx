@@ -1929,8 +1929,8 @@ export function initializeRodX_lists_235() {
   );
 }
 
-export function initializeRodX_lists_236() {
-  Studio.services.lists = {
+export function createListsService() {
+  return {
     open(tab = "listas") {
       state.tab = tab;
       toggle(true);
@@ -2063,6 +2063,10 @@ export function initializeRodX_lists_236() {
     rank: orderedQuickLists,
     frecency: (id, clock = Date.now()) => scoreAt(id, clock),
   };
+}
+
+export function initializeRodX_lists_236() {
+  Studio.services.lists = createListsService();
 }
 
 export function initializeRodX_lists_237() {

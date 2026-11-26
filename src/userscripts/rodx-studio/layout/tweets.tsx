@@ -345,6 +345,7 @@ return;
     function tweets(): void {
       let previous = "";
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
+        if (!(article instanceof HTMLElement)) continue;
         if (
           article.parentElement?.closest(DOM_SELECTORS.articles) ||
           article.hidden ||

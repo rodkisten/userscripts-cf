@@ -68,6 +68,12 @@ export interface DiagnosticInfo {
   domGeneration: number;
 }
 
+export interface StudioServices extends Record<string, unknown> {
+  lists?: ReturnType<typeof import("../lists/render.tsx").createListsService>;
+  listAccess?: ReturnType<typeof import("../lists/access.tsx").createListAccess>;
+  deck?: { open: typeof import("../ui/preferences.tsx").openPanel; close: typeof import("../ui/preferences.tsx").closePanel };
+}
+
 export interface StudioRuntime {
   state: StudioState;
   config: StudioConfig;
@@ -84,7 +90,9 @@ export interface StudioRuntime {
   start(): void;
   configure(patch: Partial<StudioConfig>): void;
   diagnostics(): DiagnosticInfo;
-  services: Record<string, unknown>;
+  services: StudioServices;
+  menu: ReturnType<typeof import("../bootstrap/network.ts").createStudioMenus>;
+  navigate(href: string): void;
   ctx?: ScriptContext;
 }
 
@@ -554,6 +562,9 @@ export function createStudioRuntime(): StudioRuntime {
     configure,
     diagnostics,
     services: {},
+    get menu() { throw new Error("Studio menu not initialized"); },
+    set menu(value) { Object.defineProperty(runtime, "menu", { value, writable: true, configurable: true }); },
+    navigate(href) { location.assign(href); },
   };
   return runtime;
 }

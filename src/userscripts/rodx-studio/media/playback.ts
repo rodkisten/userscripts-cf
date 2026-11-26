@@ -187,7 +187,7 @@ return;
       const exit = Math.min(start - 0.05, Math.max(0, 1 - state.visual.autoPauseExitPercent / 100));
       const now = performance.now();
       for (const video of Studio.dom.nodes('main :is(article,[role="article"])[data-testid="tweet"] video')) {
-        if (!isFeed(video) || !video.isConnected) {
+        if (!(video instanceof HTMLVideoElement) || !isFeed(video) || !video.isConnected) {
 continue;
 }
         let item = info.get(video);
@@ -277,7 +277,7 @@ raf = requestAnimationFrame(update);
         document.addEventListener(
           "click",
           (event) => {
-            const button = event.target.closest?.(DOM_SELECTORS.interactiveButtons);
+            const button = event.target instanceof Element ? event.target.closest(DOM_SELECTORS.interactiveButtons) : null;
             if (
               !button ||
               !/^(?:play|pause|reproduzir|pausar)$/i.test(
