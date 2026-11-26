@@ -119,7 +119,9 @@ export async function lintFixAndGate() {
 
     const changedFiles = getChangedFiles(baseSha, headSha, "ACMRT");
     const jsTsFiles = changedFiles.filter((f) => JS_TS_REGEX.test(f));
-    const prettierTargets = changedFiles.filter((f) => PRETTIER_REGEX.test(f));
+    const prettierTargets = changedFiles.filter(
+      (f) => PRETTIER_REGEX.test(f) && !f.startsWith(".github/workflows/"),
+    );
 
     const toolsUsed = [];
     const diagnostics = [];

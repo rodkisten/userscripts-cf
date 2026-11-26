@@ -1,38 +1,41 @@
-name: 🧩 US · ✨ Prettier · Format All Files
-
-run-name: >-
-  ✨ Prettier · ${{ inputs.target_branch || github.ref_name }} ·
-  ${{ inputs.create_pr && '🔀 Create PR' || '🚀 Push Changes' }}
-
+name: 🧩 US · Maintenance
+run-name: "🛠️ Maintenance · ${{ inputs.block }} · ${{ inputs.target_branch || github.ref_name }}"
 on:
   workflow_dispatch:
     inputs:
+      block:
+        type: choice
+        options: [format, lockfile, npm, style]
+        default: format
       target_branch:
-        description: 🌿 Branch to format (defaults to the selected workflow branch)
-        required: false
         type: string
+        description: Target branch (defaults to selected ref)
       create_pr:
-        description: 🔀 Open a pull request instead of pushing to the target branch
-        required: true
-        default: false
         type: boolean
-
+        default: false
+      operation:
+        type: choice
+        options: [install, add, update, uninstall, custom]
+        default: install
+      packages:
+        type: string
+      custom-command:
+        type: string
 permissions:
   contents: write
   pull-requests: write
-
 concurrency:
-  group: prettier-full-${{ inputs.target_branch || github.ref_name }}
+  group: maintenance-${{ inputs.target_branch || github.ref_name }}
   cancel-in-progress: false
-
 jobs:
-  prettier:
+  format:
+    if: inputs.block == 'format'
     name: 🎨 Format Repository
     runs-on: ubuntu-latest
     steps:
       - name: 🔐 Authenticate GitHub App
         id: app-token
-        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -47,7 +50,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: 📦 Setup and install dependencies
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/execute@main
         with:
           node-version: "22"
           package-manager: npm
@@ -56,7 +59,7 @@ jobs:
 
       - name: 🎨 Format and lint with Rod Actions
         id: format
-        uses: rodkisten/github/format@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/format@main
         with:
           mode: fix
           scope: all
@@ -273,3 +276,148 @@ jobs:
 
               core.info(`💬 Posted summary comment on PR #${prNumber}`);
             }
+
+  lockfile:
+    if: inputs.block == 'lockfile'
+    name: Regenerate and verify package-lock.json
+    outputs:
+      changed: ${{ steps.generated_output.outputs.changed }}
+      branch: ${{ steps.generated_output.outputs.branch }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ inputs.target_branch || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify branch and synchronize
+        shell: bash
+        env:
+          BRANCH: ${{ inputs.target_branch || github.ref_name }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git pull --ff-only origin "$BRANCH"
+
+      - name: Regenerate and validate lockfile
+        uses: rodkisten/github/execute@main
+        with:
+          node-version: "24"
+          package-manager: npm
+          install: "false"
+          script: |
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+            npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Commit regenerated lockfile
+        id: generated_output
+        shell: bash
+        env:
+          BRANCH: ${{ inputs.target_branch || github.ref_name }}
+        run: |
+          set -euo pipefail
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Lockfile already synchronized." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix(deps): regenerate npm lockfile"
+          git push origin "HEAD:$BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "Regenerated package-lock.json and pushed to $BRANCH." >> "$GITHUB_STEP_SUMMARY"
+
+  npm:
+    if: inputs.block == 'npm'
+    name: 🥊 ${{ inputs.operation }} (${{ inputs.target_branch || github.ref_name }})
+    outputs:
+      changed: ${{ steps.run_op.outputs.changed }}
+      branch: ${{ steps.run_op.outputs.branch }}
+      commit_sha: ${{ steps.run_op.outputs.commit_sha }}
+      pr_number: ${{ steps.run_op.outputs.pr_number }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔑 Authenticate Rod GitHub App
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ inputs.target_branch || github.ref_name }}
+
+      - name: 🟢 Setup Node.js
+        uses: rodkisten/github/setup-node@main
+        with:
+          node-version: "24"
+          install: "false"
+          cache: "false"
+
+      - name: 🥊 Run operation
+        id: run_op
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          INPUT_BRANCH: ${{ inputs.target_branch || github.ref_name }}
+          INPUT_OPERATION: ${{ inputs.operation }}
+          INPUT_PACKAGES: ${{ inputs.packages }}
+          INPUT_CUSTOM_CMD: ${{ inputs.custom-command }}
+        run: node scripts/operation.mjs
+
+  style:
+    if: inputs.block == 'style'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: rodkisten/github/app-token@main
+        id: app
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app.outputs.token }}
+          ref: ${{ inputs.target_branch || github.ref_name }}
+      - name: Setup and install dependencies
+        uses: rodkisten/github/execute@main
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: |
+            --legacy-peer-deps
+          script: ":"
+      - run: npm run lint:fix
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Publish verified source repairs
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch || github.ref_name }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+        run: |
+          git add -- src/userscripts
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "$APP_SLUG[bot]"
+          git config user.email "$APP_SLUG[bot]@users.noreply.github.com"
+          git commit -m "style: normalize userscript control blocks and spacing"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+

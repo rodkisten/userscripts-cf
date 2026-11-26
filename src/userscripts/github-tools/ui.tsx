@@ -83,29 +83,13 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
     const output = props.ctx.storage
       .get("actionsToken", "")
       .then((token: string) => loadStepOutput(props.address, token, props.ctx.signal));
-    // Initiate Safari's clipboard write inside the gesture, before the fetch.
-    let writing: Promise<unknown>;
-    const clipboard = gmClipboard();
-    if (clipboard) {
-      writing = output.then((text: string) => clipboard(text, "text"));
-    } else if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-      writing = navigator.clipboard.write([
-        new ClipboardItem({
-          "text/plain": output.then((text: string) => new Blob([text], { type: "text/plain" })),
-        }),
-      ]);
-      // Always consume the request even if Safari rejects the clipboard early.
-      writing = Promise.all([writing, output]);
-    } else {
-      writing = output.then(async (text: string) => {
-        const gm = globalThis as any;
-        if (gm.GM_setClipboard) {
-          await gm.GM_setClipboard(text, "text");
-        } else {
-          await navigator.clipboard.writeText(text);
-        }
-      });
-    }
+    const writing = output.then((text: string) => {
+      const clipboard = gmClipboard();
+      if (!clipboard) {
+        throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
+      }
+      return clipboard(text, "text");
+    });
     void writing
       .then(() => setState((previous) => ({ ...previous, message: "Log completo do job copiado" })))
       .catch((error) =>

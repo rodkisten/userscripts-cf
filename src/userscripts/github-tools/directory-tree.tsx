@@ -68,7 +68,7 @@ export function splitTreeLocation(
   }
   return { branch: ref, current: segments.slice(refParts.length).join("/") };
 }
-function selectedGitHubRef(): string {
+export function selectedGitHubRef(): string {
   const selectors = [
     "#branch-picker-repos-header-ref-selector",
     '[data-testid="branch-selector"]',
@@ -82,6 +82,48 @@ function selectedGitHubRef(): string {
     }
   }
   return "";
+}
+
+const selectionStores = new Map<string, { paths: Set<string>; listeners: Set<() => void> }>();
+const emptySelection = new Set<string>();
+export function fileSelection(repo: { owner: string; repo: string }, branch: string) {
+  const key = "ghft:selection:" + JSON.stringify([repo.owner, repo.repo, branch]);
+  let store = selectionStores.get(key);
+  if (!store) {
+    let paths = new Set<string>();
+    try {
+      const saved: unknown = JSON.parse(sessionStorage.getItem(key) || "[]");
+      if (Array.isArray(saved)) {
+        paths = new Set(saved.filter((path): path is string => typeof path === "string"));
+      }
+    } catch {
+      // Selection remains available in memory.
+    }
+    store = { paths, listeners: new Set() };
+    selectionStores.set(key, store);
+  }
+  const current = store;
+  return {
+    get: () => (branch ? current.paths : emptySelection),
+    subscribe: (notify: () => void) => {
+      current.listeners.add(notify);
+      return () => {
+        current.listeners.delete(notify);
+      };
+    },
+    set: (update: (previous: Set<string>) => Set<string>) => {
+      if (!branch) {
+        return;
+      }
+      current.paths = update(current.paths);
+      try {
+        sessionStorage.setItem(key, JSON.stringify([...current.paths]));
+      } catch {
+        // Selection remains available in memory.
+      }
+      current.listeners.forEach((notify) => notify());
+    },
+  };
 }
 
 const treeCache = new Map<string, { expires: number; nodes: Node[] }>();
@@ -133,6 +175,8 @@ function TreeRow(props: {
   branch: string;
   current: string;
   loadFolder: (node: Node) => Promise<Node[]>;
+  selected: ReadonlySet<string>;
+  select: (path: string) => void;
   copyFile: CopyActions["appendFile"];
 }) {
   const [children, setChildren] = useState(props.node.children);
@@ -197,6 +241,14 @@ function TreeRow(props: {
           </button>
         ) : (
           <span className={styles.treeSpacer} />
+        )}
+        {!props.node.folder && (
+          <input
+            type="checkbox"
+            aria-label={`Selecionar ${props.node.path}`}
+            checked={props.selected.has(props.node.path)}
+            onChange={() => props.select(props.node.path)}
+          />
         )}
         <Icon size={16} aria-hidden="true" />
         <a href={url()} title={props.node.path}>
@@ -266,6 +318,8 @@ function TreeRow(props: {
               branch={props.branch}
               current={props.current}
               loadFolder={props.loadFolder}
+              selected={props.selected}
+              select={props.select}
               copyFile={props.copyFile}
             />
           ))}
@@ -279,7 +333,13 @@ export function mountDirectoryTree(
   ctx: any,
   container: Element,
   repo: { owner: string; repo: string },
-  restoreScroll: boolean,
+  restoreScroll = false,
+  exportFiles: (
+    paths: string[],
+    branch: string,
+    download: boolean,
+    progress: (done: number, total: number) => void,
+  ) => Promise<void>,
   copy: CopyActions,
 ) {
   type ViewState = {
@@ -348,13 +408,33 @@ export function mountDirectoryTree(
       throw Error("HTTP " + response.status);
     }
     const data = await response.json();
-    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
+    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path }))).map(
+      function prefix(child: Node): Node {
+        return { ...child, path: node.path + "/" + child.path, children: child.children.map(prefix) };
+      },
+    );
   };
   function DirectoryTreeView() {
     const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
       subscribe,
       () => snapshot,
     );
+    const selection = fileSelection(repo, resolvedBranch);
+    const selected = useSyncExternalStore(selection.subscribe, selection.get);
+    const setSelected = selection.set;
+    const [busy, setBusy] = useState(false);
+    const [status, setStatus] = useState("");
+    const select = (path: string) =>
+      setSelected((previous) => {
+        const next = new Set(previous);
+        if (next.has(path)) {
+          next.delete(path);
+        } else {
+          next.add(path);
+        }
+        return next;
+      });
+
     return (
       <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
         <div className={styles.treeHeader}>
@@ -390,6 +470,60 @@ export function mountDirectoryTree(
             {message} <button onClick={() => location.reload()}>Tentar novamente</button>
           </div>
         )}
+        {state === "ready" && exportFiles && (
+          <div className={styles.toolbar}>
+            <span>{selected.size} selecionados</span>
+            <button
+              className={styles.button}
+              disabled={busy}
+              onClick={() => {
+                const paths: string[] = [];
+                const visit = (entries: Node[]) =>
+                  entries.forEach((node) => {
+                    if (node.folder) {
+                      visit(node.children);
+                    } else {
+                      paths.push(node.path);
+                    }
+                  });
+                visit(filterTree(nodes, query));
+                setSelected((previous) => new Set([...previous, ...paths]));
+              }}
+            >
+              Selecionar carregados
+            </button>
+            <button
+              className={styles.button}
+              disabled={busy || !selected.size}
+              onClick={() => setSelected(() => new Set())}
+            >
+              Limpar
+            </button>
+            {[false, true].map((download) => (
+              <button
+                key={String(download)}
+                className={styles.button}
+                disabled={busy || !selected.size}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await exportFiles([...selected], resolvedBranch, download, (done, total) =>
+                      setStatus(`Lendo ${done}/${total}…`),
+                    );
+                    setStatus(download ? "Download solicitado" : "Copiado");
+                  } catch (error) {
+                    setStatus(String(error));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {download ? "Baixar TXT" : "Copiar"}
+              </button>
+            ))}
+            <span role="status">{status}</span>
+          </div>
+        )}
         {state === "ready" && (
           <div role="tree">
             {filterTree(nodes, query).map((node) => (
@@ -401,6 +535,8 @@ export function mountDirectoryTree(
                 branch={resolvedBranch}
                 current={current}
                 loadFolder={loadFolder}
+                selected={selected}
+                select={select}
                 copyFile={copy.appendFile}
               />
             ))}

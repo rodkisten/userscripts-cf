@@ -1,13 +1,27 @@
-name: 🧩 US · Validate changed userscripts
-run-name: "🧪 Validate changed · ${{ github.ref_name }}"
+name: "🧩 US · Validate & Preview"
+run-name: "🧪 US · Validate & Preview · ${{ github.event.pull_request.number || github.ref_name }}"
 
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+    types: [opened, synchronize, reopened, ready_for_review, closed]
   workflow_dispatch:
     inputs:
+      block:
+        description: "Pipeline block"
+        type: choice
+        options: [all, validate, audits, diagnostics, tests, bundle]
+        default: all
+      bundle-mode:
+        description: Bundle operation
+        type: choice
+        options: [report, baseline]
+        default: report
+      baseline-reason:
+        description: Baseline replacement reason
+        type: string
+        default: Manual baseline update
       scope:
         description: "Validation scope"
         type: choice
@@ -18,6 +32,7 @@ permissions:
   contents: write
   actions: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: userscripts-validate-${{ github.event.pull_request.number || github.ref }}
@@ -25,19 +40,21 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
     name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    outputs:
-      scoped_matrix: ${{ steps.plan.outputs.matrix || '[]' }}
+    timeout-minutes: 60
     steps:
       - name: 🤖 Generate GitHub App token
         id: app_token
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/create-github-app-token@v2
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
 
       - name: 📥 Checkout repository
         uses: actions/checkout@v6
@@ -49,7 +66,7 @@ jobs:
       - name: 📦 Setup and install dependencies
         id: install
         continue-on-error: true
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/execute@main
         with:
           node-version: "24"
           package-manager: npm
@@ -98,7 +115,7 @@ jobs:
           GH_TOKEN: ${{ steps.app_token.outputs.token || github.token }}
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
-          gh workflow run repair-lockfile.yml --ref "$BRANCH" -f selected_branch="$BRANCH"
+          gh workflow run maintenance.yml --ref "$BRANCH" -f block=lockfile -f target_branch="$BRANCH"
           echo "Lockfile repair requested for $BRANCH. Its commit will trigger a new validation." >> "$GITHUB_STEP_SUMMARY"
 
       - name: ❌ Fail current validation on installation error
@@ -142,7 +159,7 @@ jobs:
           key: userscripts-validation-v4-${{ runner.os }}-node24-${{ hashFiles('src/**', 'tests/**', 'build/**', 'scripts/**', '.github/workflows/validate.yml', 'userscripts.config.js', 'labs/**', 'playground/**', 'public/**', 'migration/**', 'userscripts.config.js', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.js', 'tsconfig.react.json') }}
 
       - name: Typecheck
-        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
+        if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success'
         run: npm run typecheck
         timeout-minutes: 5
 
@@ -176,7 +193,7 @@ jobs:
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
-          SCOPED_BUILDS_MATRIX: ${{ github.event_name == 'pull_request' }}
+          SCOPED_BUILDS_MATRIX: "true"
           EVENT_NAME: ${{ github.event_name }}
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -204,32 +221,467 @@ jobs:
         if: steps.validation_cache.outputs.cache-hit == 'true'
         run: echo "Reused successful validation for identical source, tests and configuration fingerprint." >> "$GITHUB_STEP_SUMMARY"
 
-  scoped-builds:
-    name: "🏗️ Scoped build · ${{ matrix.target }}"
-    needs: validate
-    if: ${{ github.event_name == 'pull_request' && needs.validate.result == 'success' && needs.validate.outputs.scoped_matrix != '[]' && needs.validate.outputs.scoped_matrix != '' }}
+      - name: Build, package & publish PR preview to Cloudflare R2
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: publish
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+          node scripts/cloudflare-pr-preview.mjs --mode=publish
+
+      - name: Measure published distribution
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: npm run bundle:metrics
+      - name: 💬 Update Bundle Diet PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: npm run bundle:report
+
+      - name: Authenticate preview comment publisher
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
+      - name: Verify preview and source revision
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 6); do
+            manifest="$(curl -fsSL --max-time 15 "${PREVIEW_URL}manifest.json" || true)"
+            source_sha="$(printf '%s' "$manifest" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).sourceSha||"")}catch{}})')"
+            if [ "$source_sha" = "$PR_HEAD_SHA" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Published preview manifest does not match PR head $PR_HEAD_SHA"
+          exit 1
+      - name: Collect preview metadata
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: diff-info
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/github-actions.mjs collect
+      - name: Publish preview comment
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
+          COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
+          DIFF_ENTRY: ${{ steps.diff-info.outputs.diff_entry }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: node scripts/github-actions.mjs publish
+
+  cleanup:
+    name: "🧹 Cleanup PR #${{ github.event.pull_request.number }} preview"
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Remove closed PR preview from Cloudflare
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
+        run: node scripts/cloudflare-pr-preview.mjs --mode=cleanup
+
+  audits:
+    name: "🔎 Audit · ${{ matrix.block }}"
+    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'audits')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJSON(needs.validate.outputs.scoped_matrix) }}
+        block: [workflow-paths, ast-debt]
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          # Build the live PR branch, not a stale historical merge ref when a
-          # failed workflow attempt is re-run after additional fixes.
-          ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
-
-      - name: 🚀 Build selected userscript
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
-        env:
-          TARGET: ${{ matrix.target }}
-          BUILD_REASON: PR validation matrix selected this target.
+      - uses: rodkisten/github/execute@main
         with:
           node-version: "24"
           package-manager: npm
           install: "true"
           install-args: --legacy-peer-deps
-          script: node build/build.mjs "--targets=$TARGET"
+          script: ":"
+      - name: Run AST Function & Diff Audit
+        if: matrix.block == 'ast-debt' && github.event_name == 'pull_request'
+        id: ast_audit
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          node scripts/find-fns.mjs --json --base "origin/$GITHUB_BASE_REF" > ast-audit-report.json
+
+      - name: Publish Step Summary, Annotations & Upsert PR Comment
+        if: matrix.block == 'ast-debt' && github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: ast-audit-report.json
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          node --experimental-strip-types scripts/publish-ast-audit.ts
+
+      - name: Scan Workflows for Invalid Script Paths
+        if: matrix.block == 'workflow-paths'
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          node scripts/workflows-validate.mjs --json > workflow-audit-report.json
+
+      - name: Publish Summary, Annotations, Labels & Issue/PR Comment
+        if: matrix.block == 'workflow-paths'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: workflow-audit-report.json
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --experimental-strip-types scripts/workflow-audit-publish.ts
+
+
+  diagnostics:
+    if: github.event_name == 'workflow_dispatch' && (inputs.block == 'diagnostics' || inputs.block == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Collect TypeScript diagnostics
+        uses: rodkisten/github/execute@main
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: --legacy-peer-deps
+          script: node scripts/typescript-diagnostics.mjs
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-errors
+          path: artifacts/typescript-diagnostics/
+          retention-days: 3
+          if-no-files-found: warn
+
+  ast-impact:
+    if: github.event.action != 'closed' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.paths.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$BASE" "$HEAD" -- 'build/rod-ast.mjs' 'build/rod-ast-summary.mjs' 'build/styles.mjs' 'docs/rod-ast.md' 'tests/fixtures/rod-ast.matrix.json' 'tests/fixtures/rod-ast.input.tsx' 'tests/rod-ast.test.mjs' 'tests/rod-ast-summary.test.mjs' 'src/core/runtime.ts' 'src/core/runtime-context-react.tsx' 'src/core/react-context-contract.ts' 'vite.config.js' 'build/rod-ast-iife.mjs' 'build/rod-ast-cli.mjs' 'tests/fixtures/rod-ast.legacy.user.js' 'src/runtime/dom-engine.ts' 'src/runtime/gm-bridge.ts' 'src/runtime/modular/features/dom.ts' 'src/runtime/modular/features/gm.ts' 'src/runtime/modular/features/storage.ts' 'src/runtime/vendor/storage.ts' '.github/workflows/validate.yml'; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  ast-tests:
+    needs: ast-impact
+    if: always() && !cancelled() && ((github.event_name == 'workflow_dispatch' && (inputs.block == 'tests' || inputs.block == 'all')) || needs.ast-impact.outputs.changed == 'true' || needs.ast-impact.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup and install dependencies
+        uses: rodkisten/github/execute@main
+        with:
+          package-manager: npm
+          install: "true"
+          install-args: |
+            --legacy-peer-deps
+            --no-audit
+            --no-fund
+          script: ":"
+      - name: "🔍 Validate AST tool syntax"
+        id: syntax
+        continue-on-error: true
+        run: |
+          node --check build/rod-ast.mjs
+          node --check build/rod-ast-iife.mjs
+          node --check build/rod-ast-cli.mjs
+          node --check build/rod-ast-summary.mjs
+      - name: "🧬 Transform fixture"
+        id: transform
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          node build/rod-ast-cli.mjs tests/fixtures/rod-ast.input.tsx --out=tests/fixtures/rod-ast.output.tsx
+          cp tests/fixtures/rod-ast.output.tsx artifacts/rod-ast.output.tsx
+      - name: "📦 Migrate complete Tampermonkey fixture"
+        id: legacy
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          node build/rod-ast-cli.mjs tests/fixtures/rod-ast.legacy.user.js --iife --out=artifacts/rod-ast.legacy.output.js --report=artifacts/rod-ast.legacy.report.json
+          node --check artifacts/rod-ast.legacy.output.js
+      - name: "🔎 Show full diff"
+        id: diff
+        continue-on-error: true
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          diff -u --label fixture/input.tsx tests/fixtures/rod-ast.input.tsx --label fixture/output.tsx artifacts/rod-ast.output.tsx > artifacts/rod-ast.diff || test "$?" -eq 1
+          cat artifacts/rod-ast.diff
+      - name: "🧪 AST unit tests"
+        id: unit
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          npx vitest run tests/rod-ast.test.mjs --reporter=default --reporter=json --outputFile.json=artifacts/rod-ast-vitest.json
+      - name: "🧪 Typecheck transformed fixture against real ScriptContext"
+        id: fixture_types
+        if: always()
+        continue-on-error: true
+        run: |
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
+          npx tsc --project tsconfig.rod-ast.generated.json --noEmit
+      - name: "🧪 Typecheck React"
+        id: react_types
+        if: always()
+        continue-on-error: true
+        run: npm run typecheck:react
+      - name: "🧪 Verify summary report rendering"
+        id: summary_tests
+        if: always()
+        continue-on-error: true
+        run: node --test tests/rod-ast-summary.test.mjs
+      - name: "🎨 Highlighted test report"
+        if: always()
+        run: node build/rod-ast-summary.mjs
+      - name: "📊 Validation matrix"
+        if: always()
+        run: |
+          {
+            echo "### 🧪 Validation matrix"
+            echo ""
+            echo "| Check | Result |"
+            echo "| :-- | :-- |"
+            echo "| syntax | ${{ steps.syntax.outcome }} |"
+            echo "| transform | ${{ steps.transform.outcome }} |"
+            echo "| legacy IIFE migration | ${{ steps.legacy.outcome }} |"
+            echo "| diff | ${{ steps.diff.outcome }} |"
+            echo "| unit | ${{ steps.unit.outcome }} |"
+            echo "| fixture_types | ${{ steps.fixture_types.outcome }} |"
+            echo "| react_types | ${{ steps.react_types.outcome }} |"
+            echo "| summary_tests | ${{ steps.summary_tests.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: "📦 Reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rod-ast-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+      - name: "🚦 Final validation gate"
+        if: always()
+        shell: bash
+        run: |
+          failed=0
+          for outcome in "${{ steps.syntax.outcome }}" "${{ steps.legacy.outcome }}" "${{ steps.transform.outcome }}" "${{ steps.diff.outcome }}" "${{ steps.unit.outcome }}" "${{ steps.fixture_types.outcome }}" "${{ steps.react_types.outcome }}" "${{ steps.summary_tests.outcome }}"; do
+            if [[ "$outcome" != "success" ]]; then failed=1; fi
+          done
+          if (( failed )); then
+            echo "::error::Rod AST validation failed; inspect the validation matrix and logs."
+            exit 1
+          fi
+          echo "All Rod AST checks passed."
+
+  measure:
+    if: github.event_name == 'workflow_dispatch' && inputs.block == 'bundle'
+    name: "⚖️ Measure & report bundles"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 🤖 Generate GitHub App token
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: 📥 Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🏗️ Build and measure distribution
+        uses: rodkisten/github/execute@main
+        env:
+          BUILD_REASON: Bundle Diet needs a complete comparable distribution.
+        with:
+          node-version: "24"
+          package-manager: npm
+          install-args: --legacy-peer-deps
+          script: |
+            npm run build
+            npm run bundle:metrics
+
+      - name: 💬 Update Bundle Diet PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
+        run: npm run bundle:report
+
+      - name: 📌 Write versioned baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.bundle-mode == 'baseline'
+        env:
+          BASELINE_REASON: ${{ inputs.baseline-reason }}
+        run: npm run bundle:baseline
+
+      - name: 🤖 Commit baseline with Rod GitHub App
+        if: github.event_name == 'workflow_dispatch' && inputs.bundle-mode == 'baseline'
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/bundle-baseline.json; then
+            echo "Baseline already matches the current build." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "Rod GitHub App"
+          git config user.email "rod-github-app@users.noreply.github.com"
+          git add .github/bundle-baseline.json
+          git commit -m "chore(bundle): establish size baseline"
+          git push origin "HEAD:$BRANCH"
+          echo "### 📌 Bundle baseline updated" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$(git rev-parse --short HEAD)\` now stores the reference metrics." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📤 Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-metrics-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            dist/bundle-metrics.json
+            dist/runtime-feature-audit.json
+            dist/css-class-audit.json
+          retention-days: 30
+
+  post-comment:
+    name: 💬 PR Interactive Menu
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔑 Gerar Token do GitHub App
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
+
+      - name: ✨ Postar ou Atualizar Comentário no PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const marker = '<!-- pr-interactive-actions -->';
+            const baseBranch = context.payload.pull_request.base.ref;
+            const headBranch = context.payload.pull_request.head.ref;
+
+            const menuBody = `${marker}
+            ## 🤖 Painel de Ações Rápidas do PR
+
+            Olá **@${context.payload.pull_request.user.login}**! 👋  
+            Marque uma das opções abaixo para executar tarefas automáticas diretamente na branch \`${headBranch}\`:
+
+            - [ ] 🔄 **Sincronizar Branch** — *Atualiza com \`${baseBranch}\` (faz rebase automático se houver conflito)*
+            - [ ] 🎨 **Rodar Prettier** — *Formata automaticamente todo o código e faz commit*
+            - [ ] 📦 **Atualizar Lockfile** — *Executa \`npm install\` / \`yarn\` e atualiza as dependências*
+
+            ---
+            > 💡 *Assim que você marcar uma caixa, o robô iniciará a execução, fará o commit na branch e desmarcará a opção.*`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const botComment = comments.find(c => c.body.includes(marker));
+
+            if (botComment) {
+              // Preserva relatórios anteriores (Sync / Prettier) anexados após o menu
+              const reportStart = botComment.body.indexOf('<!-- sync-report-start -->');
+              const prettierStart = botComment.body.indexOf('<!-- prettier-report-start -->');
+              
+              const indices = [reportStart, prettierStart].filter(i => i !== -1);
+              const firstReportIndex = indices.length > 0 ? Math.min(...indices) : -1;
+
+              const existingReports = firstReportIndex !== -1 
+                ? '\n\n' + botComment.body.slice(firstReportIndex).trim() 
+                : '';
+
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: menuBody + existingReports,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: menuBody,
+              });
+            }

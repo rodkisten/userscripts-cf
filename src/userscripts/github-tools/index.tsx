@@ -1,5 +1,8 @@
+import { useState } from "react";
+import { gmClipboard } from "../../runtime/userscript-capabilities.ts";
 import { fitGitHubNavigation } from "./navigation.ts";
-import { mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
+import { decorateGitHubFiles } from "./material-icons.ts";
+import { fileSelection, mountDirectoryTree, restoreGitHubTreeScroll } from "./directory-tree.tsx";
 import { mountGitHubDashboard, FileCommit } from "./dashboard.tsx";
 import { useSyncExternalStore, type ReactElement } from "react";
 import { FileToolbar, scanWorkflowSteps, GitHubTokenSettings } from "./ui.tsx";
@@ -122,6 +125,7 @@ export interface FileItemInfo {
   href: string;
   tail: string;
   date: number | null;
+  exportPath?: string;
 }
 
 export interface DirectoryGroup {
@@ -310,6 +314,9 @@ function resolveCurrentRepositoryReference(): string {
 }
 
 function formatDisplayPathForItem(item: FileItemInfo): string {
+  if (item.exportPath !== undefined) {
+    return item.exportPath;
+  }
   const decoded = decodeURIComponent(item.tail);
   const ref = resolveCurrentRepositoryReference();
   return ref && decoded.startsWith(`${ref}/`) ? decoded.slice(ref.length + 1) : decoded;
@@ -501,50 +508,13 @@ async function buildCombinedClipboardText(
   return `${header}\n${sections.join("\n\n")}\n\n${ignored ? `> ${ignored} subpasta(s) não incluídas. Use “Caminhos” para copiá-las.\n` : ""}`;
 }
 
-async function writeTextToSystemClipboard(text: string): Promise<void> {
-  if (typeof GM_setClipboard === "function") {
-    await GM_setClipboard(text, "text");
-    return;
+async function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
+  const clipboard = gmClipboard();
+  if (!clipboard) {
+    await textPromise.catch(() => undefined);
+    throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
   }
-  try {
-    await navigator.clipboard.writeText(text);
-    return;
-  } catch {
-    /* fallback para Safari/gerenciadores sem permissão */
-  }
-  const fallback = document.createElement("textarea");
-  fallback.value = text;
-  fallback.style.position = "fixed";
-  fallback.style.opacity = "0";
-  document.body.append(fallback);
-  fallback.select();
-  try {
-    if (!document.execCommand("copy")) {
-      throw Error("Clipboard indisponível");
-    }
-  } finally {
-    fallback.remove();
-  }
-}
-
-function handleClipboardWriteGesture(textPromise: Promise<string>): Promise<void> {
-  if (
-    typeof GM_setClipboard !== "function" &&
-    typeof ClipboardItem !== "undefined" &&
-    navigator.clipboard?.write
-  ) {
-    try {
-      const item = new ClipboardItem({
-        "text/plain": textPromise.then((text) => new Blob([text], { type: "text/plain" })),
-      });
-      return navigator.clipboard
-        .write([item])
-        .catch(async () => writeTextToSystemClipboard(await textPromise));
-    } catch {
-      /* cair para o método alternativo */
-    }
-  }
-  return textPromise.then(writeTextToSystemClipboard);
+  await clipboard(await textPromise, "text");
 }
 
 function copyDirectoryItemsToClipboard(
@@ -751,9 +721,111 @@ function startGitHub(ctx: any): void {
       }
       return copyDirectoryItemsToClipboard(items, repo, prefs, progress);
     };
+    async function exportSelected(
+      paths: string[],
+      branch: string,
+      download: boolean,
+      progress: (done: number, total: number) => void,
+    ) {
+      const items: FileItemInfo[] = paths.map((path) => {
+        const tail = [...branch.split("/"), ...path.split("/")].map(encodeURIComponent).join("/");
+        return {
+          row: listContainer,
+          name: path.split("/").pop() || path,
+          type: "file",
+          href: `${location.origin}/${repo.owner}/${repo.repo}/blob/${tail}`,
+          tail,
+          date: null,
+          exportPath: path,
+        };
+      });
+      const content = await buildCombinedClipboardText(items, repo, "content", progress);
+      if (!download) {
+        await handleClipboardWriteGesture(Promise.resolve(content));
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${repo.repo}-selected-files.txt`;
+      document.body.append(anchor);
+      try {
+        anchor.click();
+      } finally {
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
+    }
     function ToolbarView() {
       const currentInfo = useSyncExternalStore(subscribeInfo, () => info);
-      return <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />;
+      const branch = resolveCurrentRepositoryReference();
+      const selection = fileSelection(repo, branch);
+      const selected = useSyncExternalStore(selection.subscribe, selection.get);
+      const [busy, setBusy] = useState(false);
+      const [status, setStatus] = useState("");
+      const run = async (download: boolean) => {
+        setBusy(true);
+        try {
+          await exportSelected([...selected], branch, download, (done, total) =>
+            setStatus(`Lendo ${done}/${total}…`),
+          );
+          setStatus(download ? "Download solicitado" : "Copiado");
+        } catch (error) {
+          setStatus(String(error));
+        } finally {
+          setBusy(false);
+        }
+      };
+      return (
+        <>
+          <FileToolbar preferences={prefs} info={currentInfo} save={savePrefs} copy={copyFiles} />
+          <div className={styles.toolbar}>
+            <span>{selected.size} selecionados</span>
+            <button
+              className={styles.button}
+              disabled={!branch || busy}
+              onClick={() =>
+                selection.set(
+                  (previous) =>
+                    new Set([
+                      ...previous,
+                      ...(
+                        collectRepositoryDirectoryGroups(repo).find((entry) => entry.parent === group.parent)
+                          ?.items || []
+                      )
+                        .filter((item) => item.type === "file")
+                        .map(formatDisplayPathForItem),
+                    ]),
+                )
+              }
+            >
+              Selecionar pasta
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => selection.set(() => new Set())}
+            >
+              Limpar
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => void run(false)}
+            >
+              Copiar selecionados
+            </button>
+            <button
+              className={styles.button}
+              disabled={!selected.size || busy}
+              onClick={() => void run(true)}
+            >
+              Baixar TXT
+            </button>
+            <span role="status">{status}</span>
+          </div>
+        </>
+      );
     }
     const mount = mountReactPoint(ctx, listContainer.parentNode!, <ToolbarView />, {
       before: listContainer,
@@ -762,7 +834,7 @@ function startGitHub(ctx: any): void {
     });
     mount.host.dataset.ghftToolbar = "";
     mounts.set(mount.host, mount.dispose);
-    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, {
+    const disposeTree = mountDirectoryTree(ctx, listContainer, repo, restoreScroll, exportSelected, {
       appendFile: (href, path) => appendFile(href, path, repo),
       reset: resetClipboardSelection,
     });
@@ -791,6 +863,34 @@ function startGitHub(ctx: any): void {
   }
 
   const dashboard = mountGitHubDashboard(ctx);
+  decorateGitHubFiles(ctx);
+  function NativeSelection({ item, repo }: { item: FileItemInfo; repo: RepositoryInfo }) {
+    const branch = resolveCurrentRepositoryReference();
+    const selection = fileSelection(repo, branch);
+    const selected = useSyncExternalStore(selection.subscribe, selection.get);
+    const path = formatDisplayPathForItem(item);
+    return (
+      <input
+        type="checkbox"
+        disabled={!branch}
+        aria-label={`Selecionar ${path}`}
+        checked={selected.has(path)}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => {
+          const checked = event.currentTarget.checked;
+          selection.set((previous) => {
+            const next = new Set(previous);
+            if (checked) {
+              next.add(path);
+            } else {
+              next.delete(path);
+            }
+            return next;
+          });
+        }}
+      />
+    );
+  }
   const favoriteHosts = new WeakSet<Element>();
   const fitNavigation = fitGitHubNavigation(ctx);
 
@@ -832,19 +932,22 @@ function startGitHub(ctx: any): void {
         const mount = mountReactPoint(
           ctx,
           anchor.parentNode!,
-          <button
-            type="button"
-            className={styles.button}
-            title={"Favoritar " + item.name}
-            aria-label={"Favoritar " + item.name}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              dashboard.toggleFile(item.name, item.href);
-            }}
-          >
-            ☆
-          </button>,
+          <>
+            {item.type === "file" && <NativeSelection item={item} repo={repo} />}
+            <button
+              type="button"
+              className={styles.button}
+              title={"Favoritar " + item.name}
+              aria-label={"Favoritar " + item.name}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                dashboard.toggleFile(item.name, item.href);
+              }}
+            >
+              ☆
+            </button>
+          </>,
           { tag: "span", before: anchor, shadow: true, styles: [css] },
         );
         mounts.set(mount.host, mount.dispose);
