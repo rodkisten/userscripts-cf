@@ -6,12 +6,14 @@ import { createDomEngine } from "../src/runtime/dom-engine.js";
 // Runtime HTTP intentionally uses GM, including same-origin requests.
 function gmResponse(body, headers = "") {
   return (options) => {
-    queueMicrotask(() => options.onload({
-      status: 200,
-      statusText: "OK",
-      response: new TextEncoder().encode(body).buffer,
-      responseHeaders: headers,
-    }));
+    queueMicrotask(() =>
+      options.onload({
+        status: 200,
+        statusText: "OK",
+        response: new TextEncoder().encode(body).buffer,
+        responseHeaders: headers,
+      }),
+    );
     return { abort() {} };
   };
 }

@@ -400,7 +400,7 @@ p {
 }
 .xls-post .xls-media {
   width: 100%;
-  max-height: 4var(--rodx-ds-radius-20);
+  max-height: 4var (--rodx-ds-radius-20);
   object-fit: contain;
   border-radius: var(--rodx-ds-radius-8);
   background: var(--rodx-ds-lists-code-surface);
