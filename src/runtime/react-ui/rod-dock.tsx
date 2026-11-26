@@ -741,7 +741,11 @@ export function installRodDock({
   ) => { update: (component: ReactElement) => void; dispose: () => void };
 }) {
   gmMenu.__rodDockCleanup?.();
-  document.querySelector<HTMLElement>("[data-rod-dock]")?.remove();
+  // Coordinate replacement across isolated userscript execution worlds.
+  for (const previous of document.querySelectorAll<HTMLElement>("[data-rod-dock]")) {
+    previous.dispatchEvent(new Event("rod-dock:dispose"));
+    previous.remove();
+  }
 
   const host = document.createElement("div");
   host.dataset.rodDock = "";
@@ -938,6 +942,7 @@ export function installRodDock({
     window.removeEventListener("scroll", onPageScroll, { capture: true });
     document.removeEventListener("rod-dock:registry", onRegistration);
     document.removeEventListener("rod-dock:menu", onMenu);
+    host.removeEventListener("rod-dock:dispose", dispose);
     sharedMount?.dispose();
     host.remove();
     if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function") {
@@ -948,6 +953,7 @@ export function installRodDock({
     }
   };
 
+  host.addEventListener("rod-dock:dispose", dispose, { once: true });
   gmMenu.__rodDockCleanup = dispose;
 
   return {
