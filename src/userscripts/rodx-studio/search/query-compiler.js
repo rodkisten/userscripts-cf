@@ -5,25 +5,21 @@ import { parseQueryBlocks } from "./query-parser.js";
 import { dateUTCPlusOne, numberFilter, requireAccountTokens, tokens } from "../shared/text.js";
 import { state } from "../state/deck.js";
 
-export let QueryEngine;
-
-export function initializeDeckQueryEngine() {
-  QueryEngine = (() => {
-    const tagId = (value) =>
-      String(value || "")
-        .normalize("NFKC")
-        .replace(/^#/, "")
-        .toLocaleLowerCase();
-    const isTag = (value) => /^#[\p{L}\p{M}\p{N}_]+$/u.test(String(value || ""));
-    const isFilter = (term) =>
-      /^(?:filter:|lang:|from:|to:|list:|since:|until:|since_time:|until_time:|within_time:|min_|max_|url:|place:|conversation_id:|in_reply_to_tweet_id:|quoted_tweet_id:|quoted_user_id:|since_id:|max_id:|include:|@|\$|links:|linksre:|textre:)/i.test(
-        term,
-      );
-    const termText = (node) => {
-      const val = String(node.value || "").trim();
-      if (!val) {
+export const QueryEngine = (() => {
+  const tagId = (value) =>
+    String(value || "")
+      .normalize("NFKC")
+      .replace(/^#/, "")
+      .toLocaleLowerCase();
+  const isTag = (value) => /^#[\p{L}\p{M}\p{N}_]+$/u.test(String(value || ""));
+  const isFilter = (term) =>
+    /^(?:filter:|lang:|from:|to:|list:|since:|until:|since_time:|until_time:|within_time:|min_|max_|url:|place:|conversation_id:|in_reply_to_tweet_id:|quoted_tweet_id:|quoted_user_id:|since_id:|max_id:|include:|@|\$|links:|linksre:|textre:)/i.test(
+      term,
+    );
+  const termText = (node) => {
+    const val = String(node.value || "").trim();
+    if (!val) {
 return "";
-}
       if (node.type === "hashtag") {
 return "#" + val.replace(/^#/, "");
 }

@@ -1,7 +1,4 @@
 import { initializeDeckState } from "../state/deck.js";
-import { initializeDeckCopyFields } from "../search/blocks.js";
-import { initializeDeckQueryEngine } from "../search/query-compiler.js";
-import { initializeDeckSignature } from "../search/block-editing.js";
 import { initializeDeckCloudSync } from "../sync/cloud.js";
 import { initializeDeckImmersiveDownload } from "../media/download.tsx";
 import { initializeDeckRelay } from "../telegram/relay.tsx";
@@ -79,9 +76,6 @@ export function initializeDeck() {
   runInitializers(
     // Configuração, estado e compilação.
     initializeDeckState,
-    initializeDeckCopyFields,
-    initializeDeckQueryEngine,
-    initializeDeckSignature,
 
     // GM, storage e sincronização.
     initializeDeckCloudSync,

@@ -77,20 +77,16 @@ target.children.push(newBlock("hashtag", tag.replace(/^#/, "")));
   draft.fields.hashtags = "";
 }
 
-export let signature;
-
-export function initializeDeckSignature() {
-  signature = (node) => {
-    if (node.kind === "term") {
-      try {
-        return compileBlockTerm(node).toLocaleLowerCase();
-      } catch (_) {
-        return `${node.type}:${node.value}:${node.not}`.toLocaleLowerCase();
-      }
+export const signature = (node) => {
+  if (node.kind === "term") {
+    try {
+      return compileBlockTerm(node).toLocaleLowerCase();
+    } catch (_) {
+      return `${node.type}:${node.value}:${node.not}`.toLocaleLowerCase();
     }
-    return `${node.not ? "NOT:" : ""}${node.op}(${node.children.map(signature).join("|")})`;
-  };
-}
+  }
+  return `${node.not ? "NOT:" : ""}${node.op}(${node.children.map(signature).join("|")})`;
+};
 
 export function compactBlockTree(root) {
   let removed = 0;

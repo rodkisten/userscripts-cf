@@ -7,16 +7,12 @@ import {
 } from "../config/search.js";
 import { uid } from "../shared/text.js";
 
-export let copyFields;
-
-export function initializeDeckCopyFields() {
-  copyFields = (value) => {
-    const result = {
-      ...EMPTY_FIELDS,
-    };
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+export const copyFields = (value) => {
+  const result = {
+    ...EMPTY_FIELDS,
+  };
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
 return result;
-}
     for (const key of Object.keys(result)) {
       if (typeof value[key] === "string") {
 result[key] = value[key].slice(0, 8000);

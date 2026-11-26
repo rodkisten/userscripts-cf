@@ -20,20 +20,16 @@ import { SocialAppLinks } from "../links/social.tsx";
 import { createListAccess } from "../lists/access.tsx";
 import { ProfileLists } from "../lists/profile.tsx";
 import { ImmersiveDownload } from "../media/download.tsx";
-import { VideoExperience } from "../media/playback.js";
+import { VideoExperience, ViewportPlayback } from "../media/playback.js";
 import { ImmersiveSwipe } from "../media/gestures.tsx";
 import { PlayerPreference } from "../media/player.tsx";
 import { SeekPreviews } from "../media/seek-preview.tsx";
 import { VideoTransport } from "../media/transport.tsx";
-import { ViewportPlayback } from "../media/playback.js";
-import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { newDraft } from "../search/actions.js";
 import { SearchAnchors } from "../search/anchors.tsx";
 import { installListTypeahead } from "../search/list-typeahead.tsx";
 import { state } from "../state/deck.js";
-import { saveState } from "../storage/persistence.js";
-import { gmAvailable } from "../storage/persistence.js";
-import { normalizedPreset, normalizedSearch } from "../storage/persistence.js";
+import { saveState, gmAvailable, normalizedPreset, normalizedSearch } from "../storage/persistence.js";
 import { CloudSync } from "../sync/cloud.js";
 import { Relay } from "../telegram/relay.tsx";
 import { NativeTranslation } from "../translation/native.js";
@@ -46,13 +42,6 @@ import { renderDock } from "../ui/search-workbench.tsx";
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
-const EVENT_TYPES = {
-  click: "click",
-  storage: "storage",
-  keydown: "keydown",
-  visibilityChange: "visibilitychange",
-} as const;
-
 const HOTKEYS = {
   keyS: "KeyS",
   escape: "Escape",
@@ -124,7 +113,7 @@ export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
   ) {
     return;
   }
-  const article = el.closest<HTMLElement>(XDOM.tweet);
+  const article = el.closest<HTMLElement>(NATIVE_X_SELECTORS.tweet);
   if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) {
     return;
   }
@@ -280,11 +269,13 @@ export function setupInterfaceHygieneModule(): void {
 }
 
 export function resetDatabaseState(): void {
+  clearTimeout(databaseSaveTimer);
   databaseSaveTimer = undefined;
   refreshingCloud = false;
 }
 
 export function setupDatabaseDirtyAutoSaveWatcher(): void {
+  Studio.ctx?.onDispose(resetDatabaseState);
   Studio.on("database:dirty", () => {
     if (refreshingCloud) {
       return;
@@ -414,6 +405,7 @@ export function registerMediaExperienceSetupJob(): void {
     },
     {
       group: STUDIO_GROUPS.media,
+      events: ["dom", "route", "state", "maintenance", "media"],
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
@@ -456,31 +448,3 @@ export function bindCrossTabStorage(): void {
 export function bindKeyboardShortcuts(): void {
   Studio.ctx?.listen(window, "keydown", handleGlobalKeyboardShortcuts as EventListener);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
