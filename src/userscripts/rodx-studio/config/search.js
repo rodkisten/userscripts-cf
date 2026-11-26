@@ -197,12 +197,7 @@ export const GROUPS = [
       ["quotedUserId", "ID da conta citada", "text", "11348282"],
       ["sinceId", "Posts depois deste ID", "text", "2109320622882873464"],
       ["maxId", "Posts até este ID", "text", "2109320622882873464"],
-      [
-        "extra",
-        "Query livre / outros operadores",
-        "textarea",
-        "(from:NASA OR from:SpaceX) -filter:replies",
-      ],
+      ["extra", "Query livre / outros operadores", "textarea", "(from:NASA OR from:SpaceX) -filter:replies"],
     ],
   },
 ];

@@ -1,12 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { mountView, disposeView } from "../ui/runtime.tsx";
 // TODO: verify exact subpaths/exports against installed @videojs/react v10+ package
-import {
-  VideoPlayer,
-  VideoSkin,
-  MediaGesture,
-  type MediaGestureProps,
-} from "@videojs/react";
+import { VideoPlayer, VideoSkin, MediaGesture, type MediaGestureProps } from "@videojs/react";
 
 import { applyComponentStyle, clearComponentStyle } from "../../../core/css.js";
 import {
@@ -62,10 +57,7 @@ const GESTURE_SPECS: ReadonlyArray<
   },
 ];
 
-function attachRespectGesturePause(
-  video: HTMLVideoElement,
-  root: HTMLElement,
-): () => void {
+function attachRespectGesturePause(video: HTMLVideoElement, root: HTMLElement): () => void {
   let armedUntil = 0;
   let intent: "play" | "pause" | "" = "";
   let press: { id: number; x: number; y: number; at: number } | null = null;
@@ -84,12 +76,8 @@ function attachRespectGesturePause(
     }
 
     const path = event.composedPath() as Element[];
-    const play = path.some((el) =>
-      el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaPlayButton),
-    );
-    const interactive = path.some((el) =>
-      el?.matches?.(DOM_SELECTORS.playerInteractiveControls),
-    );
+    const play = path.some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaPlayButton));
+    const interactive = path.some((el) => el?.matches?.(DOM_SELECTORS.playerInteractiveControls));
 
     if (!play) {
       if (interactive || event.pointerType !== "mouse") {
@@ -180,11 +168,7 @@ interface RodXVideoPlayerShellProps {
   onCleanupReady: (cleanup: () => void) => void;
 }
 
-const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
-  video,
-  entry,
-  onCleanupReady,
-}) => {
+const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({ video, entry, onCleanupReady }) => {
   const playerRef = useRef<HTMLElement | null>(null);
   const skinRef = useRef<HTMLElement | null>(null);
   const requestedAudioRef = useRef<boolean | undefined>(undefined);
@@ -251,11 +235,7 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
 
     const handlePointerDownCapture = (event: PointerEvent) => {
       const path = event.composedPath() as Element[];
-      if (
-        path.some((el) =>
-          el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls),
-        )
-      ) {
+      if (path.some((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls))) {
         requestedAudioRef.current = video.muted || video.volume === 0;
         if (requestedAudioRef.current) {
           VideoExperience.enableAudio(video, true);
@@ -271,12 +251,9 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     const path = event.nativeEvent.composedPath() as Element[];
-    const control = path.find((el) =>
-      el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls),
-    );
+    const control = path.find((el) => el?.matches?.(MEDIA_COMPONENT_SELECTORS.mediaAudioControls));
     if (control) {
-      const audible =
-        requestedAudioRef.current ?? (video.muted || video.volume === 0);
+      const audible = requestedAudioRef.current ?? (video.muted || video.volume === 0);
       requestedAudioRef.current = undefined;
       VideoExperience.enableAudio(video, audible);
       queueMicrotask(() => VideoExperience.enableAudio(video, audible));
@@ -286,10 +263,7 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
 
   return (
     <VideoPlayer ref={playerRef as React.Ref<any>} onClick={handleClick}>
-      <VideoSkin
-        ref={skinRef as React.Ref<any>}
-        style={{ aspectRatio }}
-      >
+      <VideoSkin ref={skinRef as React.Ref<any>} style={{ aspectRatio }}>
         {/* TODO: verify if @videojs/react slots <MediaGesture> inside <VideoSkin> or <MediaContainer> */}
         {GESTURE_SPECS.map((spec) => (
           <MediaGesture
@@ -334,7 +308,6 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
     function scan(): void {
       const mode = state.visual.playerMode;
 
-
       for (const [video, entry] of mounted) {
         if (!video.isConnected || mode !== "videojs") {
           restore(video, entry);
@@ -344,23 +317,17 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
         }
       }
 
-      const videos = document.querySelectorAll<HTMLVideoElement>(
-        NATIVE_X_SELECTORS.visiblePageVideos,
-      );
+      const videos = document.querySelectorAll<HTMLVideoElement>(NATIVE_X_SELECTORS.visiblePageVideos);
 
       for (const video of videos) {
-        const wrapper =
-          video.closest(NATIVE_X_SELECTORS.videoComponentWrappers) ||
-          video.parentElement;
+        const wrapper = video.closest(NATIVE_X_SELECTORS.videoComponentWrappers) || video.parentElement;
         if (!wrapper) {
           continue;
         }
 
-        wrapper
-          .querySelectorAll<HTMLElement>(RODX_SELECTORS.videoTransport)
-          .forEach((bar) => {
-            bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
-          });
+        wrapper.querySelectorAll<HTMLElement>(RODX_SELECTORS.videoTransport).forEach((bar) => {
+          bar.hidden = mode !== "rodx" && !(mode === "videojs" && failed);
+        });
 
         if (mode !== "videojs" || failed || mounted.has(video)) {
           continue;
@@ -398,8 +365,7 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
     return {
       scan,
       needsRodX: () =>
-        state.visual.playerMode === "rodx" ||
-        (state.visual.playerMode === "videojs" && failed),
+        state.visual.playerMode === "rodx" || (state.visual.playerMode === "videojs" && failed),
     };
   })();
 

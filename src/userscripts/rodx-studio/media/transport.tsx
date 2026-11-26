@@ -182,9 +182,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({ video }) => {
     event.stopPropagation();
   }, []);
 
-  const displayedTime = scrubbing
-    ? (playback.duration * position) / SEEK_RESOLUTION
-    : playback.time;
+  const displayedTime = scrubbing ? (playback.duration * position) / SEEK_RESOLUTION : playback.time;
 
   return (
     <div
@@ -248,7 +246,10 @@ export function initializeDeckVideoTransport(): VideoTransportController {
   const installed = new Map<HTMLVideoElement, HTMLElement>();
 
   Studio.ctx?.onDispose(() => {
-    for (const host of installed.values()) { disposeView(host); host.remove(); }
+    for (const host of installed.values()) {
+      disposeView(host);
+      host.remove();
+    }
     installed.clear();
   });
   VideoTransport = Object.freeze({
@@ -262,31 +263,22 @@ export function initializeDeckVideoTransport(): VideoTransportController {
         }
       }
 
-      const videos = document.querySelectorAll<HTMLVideoElement>(
-        NATIVE_X_SELECTORS.visiblePageVideos,
-      );
+      const videos = document.querySelectorAll<HTMLVideoElement>(NATIVE_X_SELECTORS.visiblePageVideos);
 
       for (const video of videos) {
-        if (
-          installed.get(video)?.isConnected ||
-          video.closest(RODX_SELECTORS.videoTransport)
-        ) {
+        if (installed.get(video)?.isConnected || video.closest(RODX_SELECTORS.videoTransport)) {
           continue;
         }
 
         const wrapper =
-          video.closest<HTMLElement>(NATIVE_X_SELECTORS.legacyVideoPlayerWrappers) ||
-          video.parentElement;
+          video.closest<HTMLElement>(NATIVE_X_SELECTORS.legacyVideoPlayerWrappers) || video.parentElement;
 
         if (!wrapper || wrapper.querySelector(RODX_SELECTORS.directVideoTransport)) {
           continue;
         }
 
         const rect = wrapper.getBoundingClientRect();
-        if (
-          rect.width > 0 &&
-          (rect.width < MIN_WRAPPER_WIDTH || rect.height < MIN_WRAPPER_HEIGHT)
-        ) {
+        if (rect.width > 0 && (rect.width < MIN_WRAPPER_WIDTH || rect.height < MIN_WRAPPER_HEIGHT)) {
           continue;
         }
 

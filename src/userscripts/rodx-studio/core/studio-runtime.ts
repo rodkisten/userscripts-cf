@@ -171,8 +171,8 @@ export function createStudioRuntime(): StudioRuntime {
 
   function on(type: string, fn: EventCallback): () => void {
     if (!listeners.has(type)) {
-listeners.set(type, new Set());
-}
+      listeners.set(type, new Set());
+    }
     listeners.get(type)!.add(fn);
     return () => {
       listeners.get(type)?.delete(fn);
@@ -191,8 +191,8 @@ listeners.set(type, new Set());
 
   function slice<T>(name: string, value: T): T {
     if (state[name] !== undefined) {
-return state[name] as T;
-}
+      return state[name] as T;
+    }
     state[name] = value;
     return value;
   }
@@ -203,8 +203,8 @@ return state[name] as T;
 
   function queue(id: string): void {
     if (runtime.ctx?.signal.aborted || !jobs.has(id)) {
-return;
-}
+      return;
+    }
     pending.add(id);
     if (!drainTimer && !document.hidden) {
       drainTimer = window.setTimeout(drain, config.scanDelayMs);
@@ -218,8 +218,8 @@ return;
     }
     for (const [id, job] of jobs) {
       if (job.events.includes(reason)) {
-queue(id);
-}
+        queue(id);
+      }
     }
     emit(reason, state.route);
   }
@@ -230,8 +230,8 @@ queue(id);
     { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 }: RegisterOptions = {},
   ): () => void {
     if (jobs.has(id)) {
-throw Error("Duplicate module: " + id);
-}
+      throw Error("Duplicate module: " + id);
+    }
 
     jobs.set(id, {
       fn,
@@ -260,8 +260,8 @@ throw Error("Duplicate module: " + id);
   function drain(): void {
     drainTimer = 0;
     if (document.hidden) {
-return;
-}
+      return;
+    }
 
     const begin = performance.now();
     let remainingDelay = Infinity;
@@ -326,8 +326,8 @@ return;
       }
 
       if (performance.now() - begin >= config.budgetMs) {
-break;
-}
+        break;
+      }
     }
 
     if (pending.size && !drainTimer) {
@@ -343,8 +343,8 @@ break;
   function nodes(selector: string): Element[] {
     const hit = cache.get(selector);
     if (hit?.generation === generation) {
-return hit.nodes;
-}
+      return hit.nodes;
+    }
 
     const elementNodes = Array.from(document.querySelectorAll(selector));
     cache.set(selector, {
@@ -359,8 +359,8 @@ return hit.nodes;
 
   function start(): void {
     if (started || !document.body) {
-return;
-}
+      return;
+    }
     started = true;
 
     const context = runtime.ctx;
@@ -383,22 +383,20 @@ return;
           !value ||
           typeof value !== "object" ||
           Array.isArray(value)
-        )
-          {
-return;
-}
+        ) {
+          return;
+        }
         const loaded = value as Partial<StudioConfig>;
         Object.assign(config, loaded, {
           feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
           modules: { ...defaults.modules, ...loaded.modules },
         });
-        if (legacy !== undefined && !configEdited)
-          {
-await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
-}
+        if (legacy !== undefined && !configEdited) {
+          await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
+        }
         if (!context.signal.aborted && !configEdited) {
-invalidate("state");
-}
+          invalidate("state");
+        }
       })
       .catch((error: unknown) => {
         console.warn("[RodX] Could not hydrate runtime configuration", error);
@@ -417,10 +415,9 @@ invalidate("state");
                 Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
               ),
           )
-        )
-          {
-return;
-}
+        ) {
+          return;
+        }
 
         if (!domTimer) {
           domTimer = window.setTimeout(() => {
@@ -442,8 +439,8 @@ return;
     const route = () => {
       const next = location.pathname + location.search;
       if (next === lastRoute) {
-return;
-}
+        return;
+      }
       lastRoute = next;
       state.route = next;
       invalidate("route");
@@ -467,20 +464,20 @@ return;
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
     context.interval(() => {
       if (!document.hidden) {
-route();
-}
+        route();
+      }
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
     context.interval(() => {
       if (!document.hidden) {
-invalidate("maintenance");
-}
+        invalidate("maintenance");
+      }
     }, config.maintenanceMs);
 
     context.interval(() => {
       if (!document.hidden && enabled("media") && nodes("video").length) {
-invalidate("media");
-}
+        invalidate("media");
+      }
     }, 500);
 
     context.onDispose(() => {
@@ -560,7 +557,6 @@ invalidate("media");
   };
   return runtime;
 }
-
 
 // ============================================================================
 // Singleton & Outer Studio Initializer (Consolidated from core/studio.js)
