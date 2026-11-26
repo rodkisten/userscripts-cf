@@ -20,22 +20,20 @@ import { VideoExperience } from "./playback.js";
 import { SeekPreviews } from "./seek-preview.tsx";
 import { state } from "../state/deck.js";
 
-// TODO: extract to types/player-preference.ts
 export interface PlayerPreferenceController {
   scan: () => void;
   needsRodX: () => boolean;
 }
 
-// TODO: extract to types/player-preference.ts
 interface MountedVideoEntry {
   video: HTMLVideoElement;
   host: HTMLDivElement;
+  skin?: HTMLElement;
   controls: boolean;
   style: string;
   cleanupGestures?: () => void;
 }
 
-// TODO: extract to config/gestures.ts
 const GESTURE_SPECS: ReadonlyArray<
   Pick<MediaGestureProps, "type" | "action" | "value" | "pointer" | "region">
 > = [
@@ -64,7 +62,6 @@ const GESTURE_SPECS: ReadonlyArray<
   },
 ];
 
-// TODO: extract to hooks/useRespectGesturePause.ts
 function attachRespectGesturePause(
   video: HTMLVideoElement,
   root: HTMLElement,
@@ -177,7 +174,6 @@ function attachRespectGesturePause(
   return () => lifecycle.abort();
 }
 
-// TODO: extract to components/RodXVideoPlayerShell.tsx
 interface RodXVideoPlayerShellProps {
   video: HTMLVideoElement;
   entry: MountedVideoEntry;
@@ -221,6 +217,7 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
 
     video.controls = false;
     applyComponentStyle(video, "rx-player-video", true);
+    entry.skin = skinEl;
     SeekPreviews.attach(video, entry);
 
     const cleanup = attachRespectGesturePause(video, rootEl);
@@ -229,7 +226,7 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
     return () => {
       cleanup();
     };
-  }, [video, entry, aspectRatio, onCleanupReady]);
+  }, [video, entry]);
 
   // Update aspect-ratio dynamically on metadata load
   useEffect(() => {
@@ -309,31 +306,12 @@ const RodXVideoPlayerShell: React.FC<RodXVideoPlayerShellProps> = ({
   );
 };
 
-// TODO: extract to state/player-preference-singleton.ts
 export let PlayerPreference: PlayerPreferenceController;
 
 export function initializeDeckPlayerPreference(): PlayerPreferenceController {
   PlayerPreference = (() => {
     const mounted = new Map<HTMLVideoElement, MountedVideoEntry>();
-    let loading = false;
-    let failed = false;
-
-    function load(): void {
-      if (loading || !failed) {
-        if (loading) return;
-      }
-      loading = true;
-      try {
-        // @videojs/react registers custom elements upon module evaluation
-        failed = !VideoPlayer || !VideoSkin;
-      } catch (error) {
-        failed = true;
-        console.error("[RodX] Falha ao inicializar @videojs/react:", error);
-      }
-      if (failed) {
-        console.warn("[RodX] Video.js indisponível; controles RodX ativos.");
-      }
-    }
+    let failed = !VideoPlayer || !VideoSkin;
 
     function restore(video: HTMLVideoElement, entry: MountedVideoEntry): void {
       SeekPreviews.cleanup(video);
@@ -356,9 +334,6 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
     function scan(): void {
       const mode = state.visual.playerMode;
 
-      if (mode === "videojs" && Studio.dom.nodes("video").length) {
-        load();
-      }
 
       for (const [video, entry] of mounted) {
         if (!video.isConnected || mode !== "videojs") {
@@ -415,6 +390,10 @@ export function initializeDeckPlayerPreference(): PlayerPreferenceController {
         ));
       }
     }
+
+    Studio.ctx?.onDispose(() => {
+      for (const [video, entry] of mounted) restore(video, entry);
+    });
 
     return {
       scan,

@@ -41,6 +41,7 @@ export function createSeekPreviews(Studio, getOptions) {
       return;
     }
     item.abort.abort();
+    item.style.remove();
     for (const frame of item.frames.values()) {
       URL.revokeObjectURL(frame.url);
     }
@@ -223,6 +224,7 @@ export function createSeekPreviews(Studio, getOptions) {
       video,
       skin,
       thumbnail,
+      style,
       frames: new Map(),
       abort,
       failed: false,
@@ -287,10 +289,15 @@ export function createSeekPreviews(Studio, getOptions) {
       }
     }
   }
-  document.addEventListener("visibilitychange", () => {
+  Studio.ctx?.listen(document, "visibilitychange", () => {
     if (document.hidden) {
       release();
     }
+  });
+  Studio.ctx?.onDispose(() => {
+    for (const video of entries.keys()) cleanup(video);
+    release();
+    frameOrder.length = 0;
   });
   return {
     attach,

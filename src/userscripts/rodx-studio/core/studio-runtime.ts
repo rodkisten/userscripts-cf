@@ -202,7 +202,7 @@ return state[name] as T;
   }
 
   function queue(id: string): void {
-    if (!jobs.has(id)) {
+    if (runtime.ctx?.signal.aborted || !jobs.has(id)) {
 return;
 }
     pending.add(id);
@@ -491,6 +491,10 @@ invalidate("media");
       drainTimer = 0;
       pending.clear();
       cache.clear();
+      jobs.clear();
+      listeners.clear();
+      stats.clear();
+      for (const key of Object.keys(runtime.services)) delete runtime.services[key];
     });
     invalidate("dom");
   }
