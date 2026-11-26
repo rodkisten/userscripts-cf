@@ -1,7 +1,7 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import { Studio } from "../core/studio-runtime.js";
-import { extractIdentity } from "../storage/persistence.js";
+import { extractIdentity } from "./account.js";
 import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
 import { loadAccount } from "../storage/persistence.js";
