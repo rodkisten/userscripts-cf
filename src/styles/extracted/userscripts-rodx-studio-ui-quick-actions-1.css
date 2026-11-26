@@ -2,8 +2,7 @@
   display: grid;
   gap: var(--rodx-ds-space-12);
   min-width: 0;
-  font:
-    var(--rodx-ds-text-13)/1.5 var(--rodx-ds-font-ui);
+  font: var(--rodx-ds-text-13)/1.5 var(--rodx-ds-font-ui);
 }
 .rodx-quick-search * {
   box-sizing: border-box;

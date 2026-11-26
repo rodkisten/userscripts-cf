@@ -10,14 +10,21 @@ function walk(dir) {
     return entry.isDirectory() ? walk(file) : [file];
   });
 }
-const files = [path.join(root, "ui/components.module.css"), path.join(extracted, "userscripts-rodx-studio-media-transport-1.css"), path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-1.css")];
+const files = [
+  path.join(root, "ui/components.module.css"),
+  path.join(extracted, "userscripts-rodx-studio-media-transport-1.css"),
+  path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-1.css"),
+];
 const findings = [];
 for (const file of files.sort()) {
   const ast = postcss.parse(fs.readFileSync(file, "utf8"), { from: file });
   ast.walkDecls((decl) => {
     if (decl.prop.startsWith("--")) return;
     const value = decl.value.replace(/var\([^)]*\)/g, "");
-    if (/#(?:[\da-f]{3,8})\b|\b(?:rgba?|hsla?)\(/i.test(value) || /\bvar\(--[^)]+\)\s+[\da-f]{2}\s*$/i.test(decl.value)) {
+    if (
+      /#(?:[\da-f]{3,8})\b|\b(?:rgba?|hsla?)\(/i.test(value) ||
+      /\bvar\(--[^)]+\)\s+[\da-f]{2}\s*$/i.test(decl.value)
+    ) {
       findings.push({ file, line: decl.source.start.line, key: decl.prop + ": " + decl.value });
     }
   });
@@ -39,5 +46,7 @@ const violations = findings.filter(({ file, key }) => {
   return seen[id] > (baseline[id] || 0);
 });
 for (const { file, line, key } of violations) console.error(file + ":" + line + " " + key);
-console.log("[rodx-style] " + findings.length + " literal declarations; " + violations.length + " new violations.");
+console.log(
+  "[rodx-style] " + findings.length + " literal declarations; " + violations.length + " new violations.",
+);
 process.exitCode = violations.length ? 1 : 0;

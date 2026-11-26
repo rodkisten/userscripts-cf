@@ -246,7 +246,11 @@ textarea.ctrl {
   border: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-border);
   border-radius: var(--rodx-ds-radius-12);
   padding: var(--rodx-ds-space-16);
-  background: linear-gradient(150deg, var(--rodx-ds-workspace-section) 0%, var(--rodx-ds-workspace-section) 67%);
+  background: linear-gradient(
+    150deg,
+    var(--rodx-ds-workspace-section) 0%,
+    var(--rodx-ds-workspace-section) 67%
+  );
   margin-bottom: var(--rodx-ds-space-16);
 }
 .priority-grid {
