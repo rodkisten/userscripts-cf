@@ -1,5 +1,5 @@
 import { RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { captureVisibleLists, drawHomeBar, startScan } from "./dom-capture.tsx";
 import { refreshPendingListNames, showListNameDialog, tryAutoRead } from "./graphql.js";
 import { applyRepostFilter, downloadBlob, exportJSON, makeQueue, runQueue } from "./queue.tsx";
@@ -40,7 +40,7 @@ import {
 } from "./render.tsx";
 import { studioListIndex } from "./access.tsx";
 import { loadTimeline, reportTimelineError, timeline } from "./timeline.tsx";
-import { shadow } from "./view.tsx";
+import { shadow } from "./client.js";
 
 export function csvEncode(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;

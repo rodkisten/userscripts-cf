@@ -3,7 +3,7 @@ import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-sto
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import type { StudioConfig as DefaultStudioConfig } from "../../../config/defaults.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 
 // ============================================================================
 // Tipos e Interfaces
@@ -555,4 +555,15 @@ invalidate("media");
     services: {},
   };
   return runtime;
+}
+
+
+// ============================================================================
+// Singleton & Outer Studio Initializer (Consolidated from core/studio.js)
+// ============================================================================
+export let Studio: StudioRuntime;
+
+export function initializeOuterStudio(): StudioRuntime {
+  Studio = createStudioRuntime();
+  return Studio;
 }

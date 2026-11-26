@@ -1,7 +1,7 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { PREFIX } from "../config/search.js";
 import { state } from "../state/deck.js";
-import { storage } from "../storage/gm.js";
+import { storage } from "../storage/persistence.js";
 import { CloudSync } from "../sync/cloud.js";
 
 export let Seen;

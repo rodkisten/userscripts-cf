@@ -1,10 +1,10 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS } from "../../../selectors.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { NativeQueryTags } from "../search/native-tags.js";
 import { QueryEngine } from "../search/query-compiler.js";
 import { state } from "../state/deck.js";
-import { saveState } from "../storage/account.js";
+import { saveState } from "../storage/persistence.js";
 import { showRodxToast } from "./runtime.tsx";
 
 export let SelectionPopover;

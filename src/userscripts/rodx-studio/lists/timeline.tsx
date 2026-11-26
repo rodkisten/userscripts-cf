@@ -2,7 +2,7 @@ import { mountView } from "../ui/runtime.tsx";
 import { RODX_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-1.css?inline";
 import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-lists-timeline-2.css?inline";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import {
   bottomCursor,
   csrfCookie,
@@ -34,7 +34,7 @@ import {
   validHandle,
   validListId,
 } from "./render.tsx";
-import { shadow } from "./view.tsx";
+import { shadow } from "./client.js";
 
 export let timeline;
 

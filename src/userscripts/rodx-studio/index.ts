@@ -1,4 +1,4 @@
-import { Studio } from "./core/studio.js";
+import { Studio } from "./core/studio-runtime.js";
 import { ScriptContext } from "../../core/runtime";
 import { initializeNetwork } from "./bootstrap/network.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";

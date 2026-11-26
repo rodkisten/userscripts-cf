@@ -5,7 +5,7 @@ import VolumeOnIcon from "../../../assets/icons/volume-on.svg?component";
 import { NATIVE_X_SELECTORS, RODX_SELECTORS } from "../../../selectors.js";
 import transportCSS from "../../../styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline";
 import styles, { css } from "../ui/components.module.css";
-import { VideoExperience } from "./experience.js";
+import { VideoExperience } from "./playback.js";
 
 // TODO: extract to types/video-transport.ts
 export interface VideoControlsProps {
