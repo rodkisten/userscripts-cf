@@ -102,4 +102,22 @@
   --rodx-ds-workspace-disabled-opacity: 0.43;
   --rodx-ds-workspace-scrim-layer: 2147483002;
   --rodx-ds-workspace-panel-layer: 2147483003;
+  /* Query editor and syntax roles. */
+  --rodx-ds-syntax-negative: #f04458;
+  --rodx-ds-syntax-filter: #169de4;
+  --rodx-ds-syntax-tag: #a47bff;
+  --rodx-ds-syntax-boolean: #e8a33d;
+  --rodx-ds-syntax-phrase: #22af80;
+  --rodx-ds-quick-editor-border: #71767b77;
+  --rodx-ds-quick-suggestions-border: #71767b44;
+  --rodx-ds-quick-editor-min-height: 112px;
+  --rodx-ds-quick-editor-max-height: 330px;
+  --rodx-ds-quick-suggestions-max-height: 300px;
+  --rodx-ds-text-15: 15px;
+  --rodx-ds-quick-editor-line-height: 1.55;
+  --rodx-ds-quick-editor-selection: color-mix(in srgb, var(--rodx-ds-color-accent) 33%, transparent);
+  --rodx-ds-quick-editor-focus: color-mix(in srgb, var(--rodx-ds-color-accent) 40%, transparent);
+  --rodx-ds-quick-editor-surface: color-mix(in srgb, Canvas 94%, var(--rodx-ds-color-accent) 6%);
+  --rodx-ds-quick-option-opacity: 0.75;
+  --rodx-ds-quick-disabled-opacity: 0.45;
 }

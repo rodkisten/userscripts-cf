@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 
 const checks = [
+  ["RodX CSS tokens", ["build/check-rodx-style.mjs"]],
   ["React only", ["build/check-react-only.mjs"]],
   ["React root ownership", ["build/check-react-root-ownership.mjs"]],
   ["TypeScript", ["node_modules/typescript/bin/tsc", "--noEmit", "--pretty", "false", "-p", "tsconfig.json"]],
