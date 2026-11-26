@@ -475,16 +475,15 @@ function DockView({ controller }: { controller: DockController }) {
     document.dispatchEvent(new CustomEvent("rod-script-manager:change"));
   };
 
-  const allowShadowScroll = (event: React.SyntheticEvent) => {
-    event.stopPropagation();
-  };
-
   return (
     <>
-      <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Root modal={false} open={open} onOpenChange={(next) => {
+        if (!next) setSettingsOpen(false);
+        setOpen(next);
+      }}>
         <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="overlay" />
-          <Dialog.Content className="panel" onWheel={allowShadowScroll} onTouchMove={allowShadowScroll}>
+          {open && <div className="overlay" aria-hidden="true" onClick={() => { setSettingsOpen(false); setOpen(false); }} />}
+          <Dialog.Content className="panel">
             <header className="panel-header">
               <Dialog.Title className="panel-title">Rod Dock</Dialog.Title>
               <Dialog.Close className="btn btn--icon" aria-label="Fechar">
@@ -512,6 +511,10 @@ function DockView({ controller }: { controller: DockController }) {
                 <summary>Scripts ({scripts.length})</summary>
                 <input
                   className="input input--spaced"
+                  type="search"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   aria-label="Filtrar scripts"
                   placeholder="Buscar script..."
                   value={search}
@@ -667,14 +670,12 @@ function DockView({ controller }: { controller: DockController }) {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog.Root modal={false} open={open && settingsOpen} onOpenChange={setSettingsOpen}>
         <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="overlay overlay--secondary" />
+          {open && settingsOpen && <div className="overlay overlay--secondary" aria-hidden="true" onClick={() => setSettingsOpen(false)} />}
           <Dialog.Content
             className="panel"
             aria-describedby={undefined}
-            onWheel={allowShadowScroll}
-            onTouchMove={allowShadowScroll}
           >
             <header className="panel-header">
               <Dialog.Title className="panel-title">Preferências do Rod Dock</Dialog.Title>
