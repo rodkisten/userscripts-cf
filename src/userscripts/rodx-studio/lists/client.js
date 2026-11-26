@@ -1,57 +1,56 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS } from "../../../selectors.js";
-import scope0, { css as extractedCSS1 } from "../../../styles/extracted/userscripts-rodx-studio-lists-view-1.module.css";
-import { refresh } from "./render.tsx";
+import scope0, {
+  css as extractedCSS1,
+} from "../../../styles/extracted/userscripts-rodx-studio-lists-view-1.module.css";
 import { Studio } from "../core/studio-runtime.js";
+import { gmRequest } from "../shared/gm-http.js";
+import { refresh } from "./render.tsx";
 
 export let XClientLists;
 
 export function initializeDeckXClientLists() {
   XClientLists = (() => {
     let clientPromise;
+
     async function source(url) {
-      const gm =
-        typeof GM_xmlhttpRequest === "function"
-          ? GM_xmlhttpRequest
-          : typeof GM !== "undefined"
-            ? GM.xmlHttpRequest?.bind(GM)
-            : null;
-      if (!gm) {
-        const response = await fetch(url);
-        if (!response.ok) {
-throw Error("Bundle do X: HTTP " + response.status);
-}
-        return response.text();
-      }
-      return new Promise((resolve, reject) =>
-        gm({
+      try {
+        const res = await gmRequest({
           method: "GET",
           url,
           timeout: RUNTIME_LIMITS.listsClient.sourceTimeout,
-          onload: (r) =>
-            r.status === 200 ? resolve(r.responseText) : reject(Error("Bundle do X: HTTP " + r.status)),
-          onerror: () => reject(Error("Não foi possível ler o cliente do X")),
-          ontimeout: () => reject(Error("Tempo esgotado ao ler o cliente do X")),
-        }),
-      );
+          responseType: "text",
+        });
+        return res.responseText ?? String(res.response ?? "");
+      } catch {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw Error("Bundle do X: HTTP " + response.status);
+        }
+        return response.text();
+      }
     }
+
     async function client() {
       if (clientPromise) {
-return clientPromise;
-}
+        return clientPromise;
+      }
       clientPromise = (async () => {
         const urls = [...document.scripts]
           .map((s) => s.src)
           .filter(
             (src) =>
-              /^https:\/\/abs\.twimg\.com\/responsive-web\//.test(src) && /\/main\.[^/]+\.js/.test(src),
+              /^https:\/\/abs\.twimg\.com\/responsive-web\//.test(src) &&
+              /\/main\.[^/]+\.js/.test(src),
           );
         if (!urls.length) {
-throw Error("Bundle principal do X não encontrado.");
-}
+          throw Error("Bundle principal do X não encontrado.");
+        }
         const text = await source(urls[0]);
         const operations = new Map();
-        for (const match of text.matchAll(/queryId:["']([^"']+)["'],operationName:["']([^"']+)["']/g)) {
+        for (const match of text.matchAll(
+          /queryId:["']([^"']+)["'],operationName:["']([^"']+)["']/g,
+        )) {
           const context = text.slice(match.index, match.index + 5000);
           const featureText = context.match(/featureSwitches:\[([^\]]*)\]/)?.[1] || "";
           const features = Object.fromEntries(
@@ -62,35 +61,34 @@ throw Error("Bundle principal do X não encontrado.");
             features,
           });
         }
-        return {
-          operations,
-        };
+        return { operations };
       })().catch((error) => {
         clientPromise = null;
         throw error;
       });
       return clientPromise;
     }
+
     async function api(path, params, signal) {
       const result = await Studio.net.request(path, {
         params,
         signal,
       });
-      if (result.status < 200 || result.status >= 300)
-        {
-throw Error(result.error || "Listas: HTTP " + result.status);
-}
+      if (result.status < 200 || result.status >= 300) {
+        throw Error(result.error || "Listas: HTTP " + result.status);
+      }
       if (result.data?.errors?.length) {
-throw Error(result.data.errors.map((e) => e.message).join("; "));
-}
+        throw Error(result.data.errors.map((e) => e.message).join("; "));
+      }
       return result.data;
     }
+
     async function query(name, variables, signal) {
-      const c = await client(),
-        op = c.operations.get(name);
+      const c = await client();
+      const op = c.operations.get(name);
       if (!op) {
-throw Error("Operação " + name + " não encontrada no cliente atual do X.");
-}
+        throw Error("Operação " + name + " não encontrada no cliente atual do X.");
+      }
       return api(
         "/i/api/graphql/" + op.id + "/" + name,
         {
@@ -100,6 +98,7 @@ throw Error("Operação " + name + " não encontrada no cliente atual do X.");
         signal,
       );
     }
+
     async function memberships(handle, signal) {
       const user = await query(
         "UserByScreenName",
@@ -111,55 +110,55 @@ throw Error("Operação " + name + " não encontrada no cliente atual do X.");
       );
       const id = user.data?.user?.result?.rest_id;
       if (!id) {
-throw Error("ID do perfil não encontrado.");
-}
+        throw Error("ID do perfil não encontrado.");
+      }
       const lists = new Map();
-      let cursor,
-        pages = 0;
+      let cursor;
+      let pages = 0;
+
       do {
         const response = await query(
           "ListMemberships",
           {
             userId: id,
             count: 50,
-            ...(cursor
-              ? {
-                  cursor,
-                }
-              : {}),
+            ...(cursor ? { cursor } : {}),
           },
           signal,
         );
         let next;
         function walk(node) {
           if (!node || typeof node !== "object") {
-return;
-}
+            return;
+          }
           if (node.__typename === "List" || node.list?.__typename === "List") {
             const value = node.list || node;
-            const id = value.id_str || value.rest_id;
+            const listId = value.id_str || value.rest_id;
             const name = value.name;
-            if (id && name)
-              {
-lists.set(String(id), {
-                id: String(id),
+            if (listId && name) {
+              lists.set(String(listId), {
+                id: String(listId),
                 name: String(name),
               });
-}
+            }
           }
           if (node.cursorType === "Bottom") {
-next = node.value;
-}
-          Object.values(node).forEach((value) => (Array.isArray(value) ? value.forEach(walk) : walk(value)));
+            next = node.value;
+          }
+          Object.values(node).forEach((value) =>
+            Array.isArray(value) ? value.forEach(walk) : walk(value),
+          );
         }
         walk(response);
         if (!next || next === cursor) {
-break;
-}
+          break;
+        }
         cursor = next;
       } while (++pages < 10);
+
       return [...lists.values()];
     }
+
     async function legacyMemberships(handle, signal) {
       let cursor = "-1";
       const lists = new Map();
@@ -171,35 +170,34 @@ break;
           cursor,
         }).toString();
         const data = await api(url.pathname, Object.fromEntries(url.searchParams), signal);
-        if (!Array.isArray(data.lists))
-          {
-throw Error(data.errors?.[0]?.message || "Resposta de listas inesperada.");
-}
+        if (!Array.isArray(data.lists)) {
+          throw Error(data.errors?.[0]?.message || "Resposta de listas inesperada.");
+        }
         for (const list of data.lists) {
           const id = String(list.id_str || "");
-          if (id && list.name)
-            {
-lists.set(id, {
+          if (id && list.name) {
+            lists.set(id, {
               id,
               name: list.name,
             });
-}
+          }
         }
         const next = String(data.next_cursor_str || "0");
         if (next === cursor) {
-break;
-}
+          break;
+        }
         cursor = next;
       }
       return [...lists.values()];
     }
+
     async function read(handle, signal) {
       try {
         return await memberships(handle, signal);
       } catch (first) {
         if (signal?.aborted) {
-throw first;
-}
+          throw first;
+        }
         try {
           return await legacyMemberships(handle, signal);
         } catch (second) {
@@ -207,17 +205,16 @@ throw first;
         }
       }
     }
+
     return {
       memberships: read,
     };
   })();
 }
 
-
-// Consolidated Lists View Shadow Host
-  css as extractedCSS1,
-} from "../../../styles/extracted/userscripts-rodx-studio-lists-view-1.module.css";
-
+// ============================================================================
+// Consolidated Lists View Shadow Host (from lists/view.tsx)
+// ============================================================================
 export let refreshScheduled;
 
 export function initializeListsRefreshScheduled() {
@@ -226,8 +223,8 @@ export function initializeListsRefreshScheduled() {
 
 export function scheduleRefresh() {
   if (refreshScheduled) {
-return;
-}
+    return;
+  }
   refreshScheduled = true;
   setTimeout(() => {
     refreshScheduled = false;
@@ -265,10 +262,12 @@ export function initializeRodX_lists_77() {
 
 export const componentClasses = Object.assign({}, scope0);
 
-// Consolidated Lists Name Discovery
+// ============================================================================
+// Consolidated Lists Name Discovery (from lists/name-discovery.js)
+// ============================================================================
 export function discoverListNames(document, href, clean) {
-  const result = new Map(),
-    url = new URL(href);
+  const result = new Map();
+  const url = new URL(href);
   const idOf = (value) => {
     try {
       const u = new URL(value, url);
@@ -280,19 +279,21 @@ export function discoverListNames(document, href, clean) {
     }
   };
   const own = '[id^="rodx-"],#x-lists-studio-root,#xls-homebar,#xls-list-toolbar';
+
   function name(value, title = false) {
     let text = String(value || "")
       .replace(/\s+/g, " ")
       .trim();
     if (title) {
-      text = text.replace(/^\(\d+\)\s*/, "").replace(/\s*(?:\/|\||[-–—])\s*(?:X|Twitter)\s*$/i, "");
+      text = text
+        .replace(/^\(\d+\)\s*/, "")
+        .replace(/\s*(?:\/|\||[-–—])\s*(?:X|Twitter)\s*$/i, "");
       const quoted = text.match(/[“"]([^”"]+)[”"]/);
       if (quoted) {
-text = quoted[1];
-}
-      else if (text.includes(" / ")) {
-text = text.split(" / ").at(-1);
-}
+        text = quoted[1];
+      } else if (text.includes(" / ")) {
+        text = text.split(" / ").at(-1);
+      }
       text = text.replace(/\s*\(@[A-Za-z0-9_]+\)\s*$/, "");
     }
     text = text.replace(/^(?:view list|open list|ver lista|abrir lista)\s*:?\s*/i, "");
@@ -300,27 +301,27 @@ text = text.split(" / ").at(-1);
       /^@|https?:|^(?:X|Twitter|Lists?|Listas?|For you|Para você|Home|Início|Members|Membros|Pinned|Fixadas|Suggested Lists|Listas sugeridas)$/i.test(
         text,
       )
-    )
-      {
-return "";
-}
+    ) {
+      return "";
+    }
     return clean(text);
   }
+
   function add(id, value, source, evidence) {
     const label = name(value, source !== "card");
-    if (id && label && !result.has(id))
-      {
-result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
-}
+    if (id && label && !result.has(id)) {
+      result.set(id, { id, name: label, nameSource: source, nameEvidence: evidence });
+    }
   }
+
   for (const anchor of document.querySelectorAll(NATIVE_X_SELECTORS.listLinks)) {
     if (anchor.closest(NATIVE_X_SELECTORS.articleUserCellsOrOwnedRoot(own))) {
-continue;
-}
+      continue;
+    }
     const id = idOf(anchor.getAttribute("href"));
     if (!id) {
-continue;
-}
+      continue;
+    }
     const heading = anchor.querySelector(NATIVE_X_SELECTORS.listCardHeadings);
     const leaves = [...anchor.querySelectorAll(DOM_SELECTORS.autoDirectionText)].filter(
       (el) => !el.children.length,
@@ -332,22 +333,27 @@ continue;
       ...leaves.map((el) => el.textContent),
     ];
     if (!anchor.children.length) {
-candidates.push(anchor.textContent);
-}
+      candidates.push(anchor.textContent);
+    }
     const combined = anchor.textContent || "";
     const firstLine = combined.match(/^(.*?)\s*[·•]\s*[\d.,]+\s*(?:membros?|members?)/i)?.[1];
     const label = name(firstLine) || candidates.map((v) => name(v)).find(Boolean);
     if (label) {
-add(id, label, "card", new URL(anchor.getAttribute("href"), url).pathname);
-}
+      add(id, label, "card", new URL(anchor.getAttribute("href"), url).pathname);
+    }
   }
+
   const routeId = idOf(url.href);
   if (routeId && !/\/(members|followers)\/?$/.test(url.pathname)) {
     const primary =
       document.querySelector(NATIVE_X_SELECTORS.primaryColumn) ||
       document.querySelector(DOM_SELECTORS.mainElement);
-    const headings = [...(primary?.querySelectorAll(NATIVE_X_SELECTORS.listPageHeadings) || [])].filter(
-      (el) => !el.closest(DOM_SELECTORS.articleOrOwnedRoot(own)) && !el.closest(NATIVE_X_SELECTORS.listLinks),
+    const headings = [
+      ...(primary?.querySelectorAll(NATIVE_X_SELECTORS.listPageHeadings) || []),
+    ].filter(
+      (el) =>
+        !el.closest(DOM_SELECTORS.articleOrOwnedRoot(own)) &&
+        !el.closest(NATIVE_X_SELECTORS.listLinks),
     );
     const heading = headings.map((el) => name(el.textContent)).find(Boolean) || "";
     const canonical = document.querySelector(DOM_SELECTORS.canonicalLink)?.href;
@@ -380,5 +386,6 @@ add(id, label, "card", new URL(anchor.getAttribute("href"), url).pathname);
       });
     }
   }
+
   return [...result.values()];
 }
