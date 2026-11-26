@@ -24,7 +24,9 @@ const summary = [
   "",
   "| Check | Result | Duration |",
   "| --- | --- | --- |",
-  ...results.map(({ name, passed, ms }) => "| " + name + " | " + (passed ? "PASS" : "FAIL") + " | " + ms + " ms |"),
+  ...results.map(
+    ({ name, passed, ms }) => "| " + name + " | " + (passed ? "PASS" : "FAIL") + " | " + ms + " ms |",
+  ),
 ].join("\n");
 console.log("\n" + summary);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
