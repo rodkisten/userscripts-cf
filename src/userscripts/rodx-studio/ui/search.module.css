@@ -500,7 +500,7 @@ input[type="checkbox"] {
   padding: var(--rodx-ds-space-12) var(--rodx-ds-space-12);
   border: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-border);
   background: var(--rodx-ds-workspace-section);
-  color: #e8dfe8;
+  color: var(--rodx-ds-workspace-text);
   border-radius: var(--rodx-ds-radius-8);
   margin-bottom: var(--rodx-ds-space-16);
   font-size: var(--rodx-ds-text-12);
@@ -509,7 +509,7 @@ input[type="checkbox"] {
 .message {
   padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
   color: var(--rodx-ds-color-white);
-  background: #434c58;
+  background: var(--rodx-ds-workspace-button);
   border-radius: var(--rodx-ds-radius-8);
   font-size: var(--rodx-ds-text-12);
   margin-bottom: var(--rodx-ds-space-12);
@@ -532,7 +532,7 @@ input[type="checkbox"] {
 }
 .line {
   height: var(--rodx-ds-border-width);
-  background: #383e45;
+  background: var(--rodx-ds-workspace-button);
   margin: var(--rodx-ds-space-20) 0;
 }
 .dock {
@@ -542,15 +542,15 @@ input[type="checkbox"] {
   overflow: auto hidden;
   scrollbar-width: thin;
   padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
-  border-bottom: var(--rodx-ds-border-width) solid #424850;
-  background: #191c20;
+  border-bottom: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-border);
+  background: var(--rodx-ds-workspace-section);
   max-width: 100%;
-  color: #f7f7f8;
+  color: var(--rodx-ds-workspace-text);
 }
 .dock button {
   background: transparent;
   border: var(--rodx-ds-border-width) solid transparent;
-  color: #aeb4be;
+  color: var(--rodx-ds-workspace-muted);
   padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
   border-radius: var(--rodx-ds-radius-8);
   font-size: var(--rodx-ds-text-13);
@@ -558,23 +558,23 @@ input[type="checkbox"] {
   font-weight: 700;
 }
 .dock button:hover {
-  background: #2f343c;
+  background: var(--rodx-ds-workspace-button);
   color: var(--rodx-ds-color-white);
 }
 .dock button.active {
-  background: #343b45;
-  border-color: #56606d;
+  background: var(--rodx-ds-workspace-button);
+  border-color: var(--rodx-ds-workspace-border);
   color: var(--rodx-ds-color-white);
 }
 .dock button.plus {
   margin-left: auto;
-  background: #353b43;
+  background: var(--rodx-ds-workspace-button);
   color: var(--rodx-ds-color-white);
 }
 .dock-caption {
   font-size: var(--rodx-ds-text-11);
   font-weight: 800;
-  color: #8e9ba8;
+  color: var(--rodx-ds-workspace-muted);
   padding-left: var(--rodx-ds-space-4);
   white-space: nowrap;
   text-transform: uppercase;
@@ -601,11 +601,11 @@ input[type="checkbox"] {
   text-align: center;
   max-width: min(390px, calc(100vw - var(--rodx-ds-control-size)));
   padding: var(--rodx-ds-space-12) var(--rodx-ds-space-16);
-  background: #20252a;
-  border: var(--rodx-ds-border-width) solid #52606c;
-  color: #f8fafb;
+  background: var(--rodx-ds-workspace-section);
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-border);
+  color: var(--rodx-ds-workspace-text);
   border-radius: var(--rodx-ds-radius-24);
-  box-shadow: 0 4px 16px #0008;
+  box-shadow: var(--rodx-ds-workspace-shadow-small);
   font:
     600 var(--rodx-ds-text-13)/1.45 TwitterChirp,
     -apple-system,
@@ -613,10 +613,10 @@ input[type="checkbox"] {
   z-index: 2147483020;
 }
 .relay-toast[data-kind="success"] {
-  border-color: #2f3336;
+  border-color: var(--rodx-ds-workspace-border);
 }
 .relay-toast[data-kind="error"] {
-  border-color: #f4212e;
+  border-color: var(--rodx-ds-syntax-negative);
 }
 #rodx-relay-confirm {
   position: fixed;
@@ -629,17 +629,17 @@ input[type="checkbox"] {
 .relay-scrim {
   position: absolute;
   inset: 0;
-  background: #000b;
+  background: var(--rodx-ds-workspace-scrim);
 }
 .relay-dialog {
   position: relative;
   width: min(450px, calc(100vw - 24px));
   padding: var(--rodx-ds-space-20);
-  background: #191c20;
-  border: var(--rodx-ds-border-width) solid #56616a;
+  background: var(--rodx-ds-workspace-section);
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-border);
   border-radius: var(--rodx-ds-radius-16);
-  box-shadow: 0 15px 50px #000b;
-  color: #f5f6f7;
+  box-shadow: var(--rodx-ds-workspace-shadow-modal);
+  color: var(--rodx-ds-workspace-text);
   font: var(--rodx-ds-text-13)/1.5 system-ui;
   overflow-wrap: anywhere;
 }
@@ -734,15 +734,15 @@ input[type="checkbox"] {
 /* X-native theme: inherit the current X light/dark palette and typography. */
 :host {
   font-family: TwitterChirp, var(--rodx-ds-font-sans);
-  --rx-bg: #000;
-  --rx-surface: #000;
-  --rx-hover: #16181c;
-  --rx-raised: #202327;
-  --rx-text: #e7e9ea;
-  --rx-muted: #71767b;
-  --rx-border: #2f3336;
+  --rx-bg: var(--rodx-ds-deck-bg);
+  --rx-surface: var(--rodx-ds-deck-bg);
+  --rx-hover: var(--rodx-ds-deck-hover);
+  --rx-raised: var(--rodx-ds-deck-raised);
+  --rx-text: var(--rodx-ds-deck-text);
+  --rx-muted: var(--rodx-ds-deck-muted);
+  --rx-border: var(--rodx-ds-deck-border);
   --rx-accent: var(--rodx-ds-color-accent);
-  --rx-accent-weak: rgba(29, 155, 240, 0.11);
+  --rx-accent-weak: var(--rodx-ds-deck-accent-weak);
 }
 .panel,
 .panel-head,
@@ -754,7 +754,7 @@ input[type="checkbox"] {
 .panel {
   border-color: var(--rx-border);
   border-radius: var(--rodx-ds-radius-16);
-  box-shadow: 0 12px 65px #0007;
+  box-shadow: var(--rodx-ds-workspace-shadow-deck);
 }
 .panel-head,
 .foot {
@@ -823,11 +823,11 @@ input[type="checkbox"] {
   border-color: var(--rx-accent);
 }
 .btn.primary:hover {
-  background: #1a8cd8;
-  border-color: #1a8cd8;
+  background: var(--rodx-ds-color-accent);
+  border-color: var(--rodx-ds-color-accent);
 }
 .btn.danger {
-  color: #f4212e;
+  color: var(--rodx-ds-syntax-negative);
   border-color: var(--rx-border);
 }
 .ctrl,
@@ -1034,7 +1034,7 @@ input[type="checkbox"] {
   gap: var(--rodx-ds-space-2);
   align-items: center;
   background: var(--rx-accent-weak);
-  border: var(--rodx-ds-border-width) solid rgba(29, 155, 240, 0.3);
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-accent-outline);
   border-radius: var(--rodx-ds-radius-24);
   padding: var(--rodx-ds-space-4) var(--rodx-ds-space-4) var(--rodx-ds-space-4) var(--rodx-ds-space-8);
   max-width: 100%;
@@ -1067,9 +1067,9 @@ input[type="checkbox"] {
   background: var(--rx-hover);
 }
 .term-chip.bad {
-  border-color: #f4212e;
-  background: rgba(244, 33, 46, 0.1);
-  color: #f4212e;
+  border-color: var(--rodx-ds-syntax-negative);
+  background: var(--rodx-ds-workspace-danger-soft);
+  color: var(--rodx-ds-syntax-negative);
 }
 .term-chip[data-kind="phrase"] {
   border-style: dashed;
@@ -1088,8 +1088,8 @@ input[type="checkbox"] {
   border-color: var(--rx-accent);
 }
 .block-node-bad {
-  border-color: #f4212e;
-  outline: var(--rodx-ds-border-width) solid rgba(244, 33, 46, 0.3);
+  border-color: var(--rodx-ds-syntax-negative);
+  outline: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-danger-outline);
 }
 .query-lab {
   position: sticky;
@@ -1099,7 +1099,7 @@ input[type="checkbox"] {
   border-radius: var(--rodx-ds-radius-12);
   background: var(--rx-bg);
   padding: var(--rodx-ds-space-12);
-  box-shadow: 0 5px 18px #0002;
+  box-shadow: var(--rodx-ds-workspace-shadow-subtle);
 }
 .query-lab-top {
   display: flex;
@@ -1125,18 +1125,18 @@ input[type="checkbox"] {
   font-weight: 800;
 }
 .syn-tag {
-  color: #3cbf91;
+  color: var(--rodx-ds-syntax-phrase);
   font-weight: 650;
 }
 .syn-filter {
-  color: #a882f7;
+  color: var(--rodx-ds-syntax-tag);
 }
 .syn-paren {
-  color: #f4a340;
+  color: var(--rodx-ds-syntax-boolean);
   font-weight: 700;
 }
 .syn-phrase {
-  color: #e1af69;
+  color: var(--rodx-ds-syntax-boolean);
 }
 .issues {
   display: grid;
@@ -1154,16 +1154,16 @@ input[type="checkbox"] {
   overflow-wrap: anywhere;
 }
 .issue[data-level="error"] {
-  color: #f4212e;
-  border-color: rgba(244, 33, 46, 0.5);
-  background: rgba(244, 33, 46, 0.08);
+  color: var(--rodx-ds-syntax-negative);
+  border-color: var(--rodx-ds-workspace-danger-border-strong);
+  background: var(--rodx-ds-workspace-danger-tint);
 }
 .issue[data-level="warning"] {
-  color: #e69c44;
-  border-color: rgba(230, 156, 68, 0.45);
+  color: var(--rodx-ds-syntax-boolean);
+  border-color: var(--rodx-ds-workspace-warning-outline);
 }
 .issue[data-level="ok"] {
-  color: #3cbf91;
+  color: var(--rodx-ds-syntax-phrase);
 }
 .lab-status {
   color: var(--rx-muted);
@@ -1191,20 +1191,20 @@ input[type="checkbox"] {
 }
 /* Compact native search companion: normally two rows, not a full toolbar. */
 .syn-negative {
-  color: #f4212e;
+  color: var(--rodx-ds-syntax-negative);
   font-weight: 700;
 }
 .storage-warning {
-  color: #e69c44;
+  color: var(--rodx-ds-syntax-boolean);
   font-size: var(--rodx-ds-text-11);
 }
 .save-feedback {
   flex: none;
   padding: var(--rodx-ds-space-8) var(--rodx-ds-space-16);
   font: 600 var(--rodx-ds-text-12)/1.35 system-ui;
-  color: #f4212e;
-  background: rgba(244, 33, 46, 0.07);
-  border-top: var(--rodx-ds-border-width) solid rgba(244, 33, 46, 0.35);
+  color: var(--rodx-ds-syntax-negative);
+  background: var(--rodx-ds-workspace-danger-faint);
+  border-top: var(--rodx-ds-border-width) solid var(--rodx-ds-workspace-danger-divider);
 }
 @media (max-width: 640px) {
   .panel {
@@ -1248,7 +1248,7 @@ input[type="checkbox"] {
 .query .syn-tag,
 .raw-preview .syn-tag {
   border-radius: var(--rodx-ds-radius-4);
-  background: rgba(0, 186, 124, 0.13);
+  background: var(--rodx-ds-workspace-success-soft);
   padding: 0 var(--rodx-ds-space-2);
 }
 .raw-code {
@@ -1307,19 +1307,19 @@ details[data-raw-workbench] > summary {
   cursor: pointer;
 }
 .rodx-issue-line[data-level="error"] {
-  border-left: 3px solid #f4212e;
+  border-left: 3px solid var(--rodx-ds-syntax-negative);
 }
 .rodx-issue-line small {
   font-size: var(--rodx-ds-text-11);
   color: var(--rx-muted);
 }
 .rodx-syntax-error {
-  text-decoration: underline wavy #f4212e 2px;
+  text-decoration: underline wavy var(--rodx-ds-syntax-negative) 2px;
   text-underline-offset: 3px;
-  background: #f4212e18;
+  background: var(--rodx-ds-workspace-danger-highlight);
 }
 .rodx-syntax-warning {
-  text-decoration: underline dotted #e6a64b 2px;
+  text-decoration: underline dotted var(--rodx-ds-syntax-boolean) 2px;
   text-underline-offset: 3px;
 }
 .rodx-visual {

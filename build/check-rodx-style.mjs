@@ -4,14 +4,10 @@ import postcss from "postcss";
 
 const root = "src/userscripts/rodx-studio";
 const extracted = "src/styles/extracted";
-function walk(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const file = path.join(dir, entry.name);
-    return entry.isDirectory() ? walk(file) : [file];
-  });
-}
 const files = [
   path.join(root, "ui/components.module.css"),
+  path.join(root, "ui/search.module.css"),
+  path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-2.css"),
   path.join(extracted, "userscripts-rodx-studio-media-transport-1.css"),
   path.join(extracted, "userscripts-rodx-studio-ui-quick-actions-1.css"),
 ];
