@@ -1,8 +1,8 @@
-import { brotoDebugState } from "@rodkisten/broto/debug";
-import { batch, computed } from "@rodkisten/broto/reactivity";
-import { signal } from "@rodkisten/broto/reactivity";
-import { isSignal, SIGNAL_SYMBOL } from "@rodkisten/broto/signal";
-import type { Signal } from "@rodkisten/broto/types";
+import { brotoDebugState } from "./debug.js";
+import { batch, computed } from "./reactivity.js";
+import { signal } from "./reactivity.js";
+import { isSignal, SIGNAL_SYMBOL } from "./signal.js";
+import type { Signal } from "./types.js";
 
 /** Primitive values that stay as writable signals inside a Broto store. */
 type Primitive = string | number | boolean | bigint | symbol | null | undefined | Function | Date | RegExp;

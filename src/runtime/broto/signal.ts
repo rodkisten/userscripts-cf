@@ -1,4 +1,4 @@
-import type { Signal } from "@rodkisten/broto/types";
+import type { Signal } from "./types.js";
 
 /** Stable runtime brand shared by Broto signals across bundles and realms. */
 export const SIGNAL_SYMBOL: unique symbol = Symbol.for("@rodkisten/broto.signal") as never;

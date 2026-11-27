@@ -1,7 +1,7 @@
-import { brotoDebugState } from "@rodkisten/broto/debug";
-import { getOwner, handleOwnerError, onOwnerCleanup, runWithOwner } from "@rodkisten/broto/owner";
-import { effect, signal } from "@rodkisten/broto/reactivity";
-import type { Resource, ResourceLoader, ResourceOptions, ResourceState } from "@rodkisten/broto/types";
+import { brotoDebugState } from "./debug.js";
+import { getOwner, handleOwnerError, onOwnerCleanup, runWithOwner } from "./owner.js";
+import { effect, signal } from "./reactivity.js";
+import type { Resource, ResourceLoader, ResourceOptions, ResourceState } from "./types.js";
 
 const resourceCache = new Map<string, unknown>();
 

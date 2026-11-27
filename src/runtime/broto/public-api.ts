@@ -28,10 +28,10 @@ export type {
   EffectDebugSnapshot,
   SchedulerDebugSnapshot,
   BrotoRuntimeSnapshot,
-} from "@rodkisten/broto/types";
+} from "./types.js";
 
-export { configureDebug, debug, setDebug } from "@rodkisten/broto/debug";
-export { isSignal, SIGNAL_SYMBOL, unwrapSignal } from "@rodkisten/broto/signal";
+export { configureDebug, debug, setDebug } from "./debug.js";
+export { isSignal, SIGNAL_SYMBOL, unwrapSignal } from "./signal.js";
 export {
   batch,
   computed,
@@ -49,7 +49,7 @@ export {
   scheduleTask,
   signal,
   untrack,
-} from "@rodkisten/broto/reactivity";
+} from "./reactivity.js";
 export {
   captureOwner,
   cleanupOwner,
@@ -75,15 +75,15 @@ export {
   runWithOwner,
   useContext,
   useRequiredContext,
-} from "@rodkisten/broto/owner";
+} from "./owner.js";
 export {
   createReactiveContext,
   provideReactiveContext,
   requireReactiveContext,
   useReactiveContext,
-} from "@rodkisten/broto/context";
-export { graph, Graph } from "@rodkisten/broto/graph";
-export { resource } from "@rodkisten/broto/resources";
+} from "./context.js";
+export { graph, Graph } from "./graph.js";
+export { resource } from "./resources.js";
 export {
   createDeepStore,
   store,
@@ -96,6 +96,6 @@ export {
   type StorePathInput,
   type StoreSubscriber,
   type StoreUnsubscribe,
-} from "@rodkisten/broto/store";
+} from "./store.js";
 
-export { flattenOwnerGraph, inspectLeaks, inspectRuntime } from "@rodkisten/broto/devtools";
+export { flattenOwnerGraph, inspectLeaks, inspectRuntime } from "./devtools.js";
