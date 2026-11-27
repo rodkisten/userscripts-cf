@@ -9,7 +9,7 @@ import * as Select from "@radix-ui/react-select";
 import * as Switch from "@radix-ui/react-switch";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import * as Tabs from "@radix-ui/react-tabs";
-import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
+import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu-types.js";
 import menuViewStyles, { css as menuViewCss } from "./menu-view.module.css";
 
 const EMPTY_SELECT_VALUE = "__rod_empty_option__";
@@ -119,8 +119,8 @@ function CustomField({ field }: { field: MenuField }) {
     const container = containerRef.current;
     if (!container) return;
     const rendered = field.render?.();
-    if (rendered instanceof HTMLElement) {
-      container.replaceChildren(rendered);
+    if (rendered && typeof rendered === "object" && "nodeType" in rendered && rendered.nodeType === 1) {
+      container.replaceChildren(rendered as HTMLElement);
     }
     return () => {
       container.replaceChildren();
@@ -548,8 +548,8 @@ function mount(
       style.remove();
     });
   };
-  const element = view(close, portal);
   try {
+    const element = view(close, portal);
     shared = mountSharedReact(element as ReactElement, host);
   } catch (error) {
     host.remove();
