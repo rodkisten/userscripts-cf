@@ -1,15 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import definitions from "../userscripts.config.js";
 import { analyzeRuntimeGraph } from "../build/runtime-graph.mjs";
 import { AgentReporter, ansi } from "./utils/ci-logger.mjs";
 import {
-  appendStepSummary,
+  createSummaryWriter,
+  hasPackageTool,
   parseCliArgs,
   resolveInputs,
+  runAsync,
   runCmd,
   setActionOutput,
 } from "./utils/ci-utils.mjs";
@@ -22,8 +23,9 @@ const AFFECTED_REPORT_PATH = "affected-userscripts.json";
 const ALL_BUILD_TARGETS = [...definitions.map((definition) => definition.id), "standalone", "unified"];
 
 const BIN_DIR = path.join(ROOT_DIR, "node_modules", ".bin");
-const VITEST_BIN = path.join(BIN_DIR, process.platform === "win32" ? "vitest.cmd" : "vitest");
-const TSC_BIN = path.join(BIN_DIR, process.platform === "win32" ? "tsc.cmd" : "tsc");
+const BIN_EXT = process.platform === "win32" ? ".cmd" : "";
+const VITEST_BIN = hasPackageTool(ROOT_DIR, "vitest") ? path.join(BIN_DIR, `vitest${BIN_EXT}`) : "npx";
+const TSC_BIN = hasPackageTool(ROOT_DIR, "tsc") ? path.join(BIN_DIR, `tsc${BIN_EXT}`) : "npx";
 
 // Regexes de classificação de arquivos
 const RELEVANT_CHANGE_RE =
@@ -39,12 +41,8 @@ const TEST_FILE_RE = /^tests\/.*\.test\.[cm]?[jt]sx?$/;
 const INTEGRATION_TEST_RE = /(integration|integrated|boot|standalone|page-repl).*\.test\./;
 
 // ============================================================================
-// Helpers Internos & Execução Instrumentada
+// Helpers Internos
 // ============================================================================
-function formatDuration(ms) {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`;
-}
-
 function readChangedFilesList() {
   if (!fs.existsSync(CHANGED_FILES_PATH)) {
     return [];
@@ -56,64 +54,34 @@ function readChangedFilesList() {
     .filter(Boolean);
 }
 
-/**
- * Executa um comando de forma assíncrona com logs de início, duração e erro detalhado.
- */
-function execAsync(cmd, args, { step, label, env = process.env, silent = false } = {}) {
+async function execOrFailAsync(cmd, args, { logger, step, label, env = process.env } = {}) {
   const start = performance.now();
-  const displayCmd = `${path.basename(cmd)} ${args.join(" ")}`;
-  const tag = label || displayCmd;
+  const tag = label || `${path.basename(cmd)} ${args.join(" ")}`;
 
   if (step) {
-    step.status(`[Iniciando] ${tag}`);
-  } else {
-    process.stdout.write(`  ${ansi.dim("→")} [Iniciando] ${tag}\n`);
+    step.status(tag);
   }
 
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, {
-      stdio: silent ? "pipe" : "inherit",
-      env,
-      shell: process.platform === "win32" && cmd.endsWith(".cmd"),
-    });
+  const res = await runAsync(cmd, args, { logger, env });
+  const elapsedMs = Math.round(performance.now() - start);
+  const elapsedLabel = elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(2)}s` : `${elapsedMs}ms`;
 
-    let stderr = "";
-    if (silent && child.stderr) {
-      child.stderr.on("data", (chunk) => {
-        stderr += chunk.toString();
-      });
-    }
+  if (!res.ok) {
+    throw new Error(`Comando falhou (código ${res.status} após ${elapsedLabel}): ${cmd} ${args.join(" ")}`);
+  }
 
-    child.on("error", (err) => {
-      reject(new Error(`Erro ao iniciar "${displayCmd}": ${err.message}`));
-    });
-
-    child.on("close", (code) => {
-      const elapsed = formatDuration(performance.now() - start);
-      if (code === 0) {
-        if (step) {
-          step.info(`[Concluído · ${elapsed}]`, tag);
-        } else {
-          process.stdout.write(`  ${ansi.dim("✓")} [Concluído · ${elapsed}] ${tag}\n`);
-        }
-        resolve();
-      } else {
-        const extra = stderr ? `\n${stderr.trim()}` : "";
-        reject(new Error(`Comando falhou (código ${code} após ${elapsed}): ${displayCmd}${extra}`));
-      }
-    });
-  });
+  if (step) {
+    step.info(tag, `ok em ${elapsedLabel}`);
+  }
 }
 
 function readPrCiScope(logger, step) {
-  const start = performance.now();
   step?.status("Lendo diretivas de escopo do PR (build/pr-ci-scope.mjs)...");
   const res = runCmd(process.execPath, ["build/pr-ci-scope.mjs"], { logger });
   if (!res.ok || !res.stdout) {
     throw new Error(`Falha ao executar build/pr-ci-scope.mjs: ${res.stderr}`);
   }
-  const elapsed = formatDuration(performance.now() - start);
-  step?.info("Escopo do PR resolvido", elapsed);
+  step?.info("Escopo do PR carregado");
   return JSON.parse(res.stdout);
 }
 
@@ -134,10 +102,8 @@ function collectTestFilesRecursively(dir) {
 }
 
 async function resolveAffectedTargets(changedFiles, step) {
-  const start = performance.now();
   const changedSrc = changedFiles.filter((f) => f.startsWith("src/"));
-
-  step?.status(`Analisando grafo de runtime em paralelo (${definitions.length} entrypoints)...`);
+  step?.status(`Analisando grafo de runtime (${definitions.length} entrypoints em paralelo)...`);
 
   const graphs = await Promise.all(
     definitions.map(async (definition) => {
@@ -166,13 +132,20 @@ async function resolveAffectedTargets(changedFiles, step) {
     ),
   ];
 
-  const elapsed = formatDuration(performance.now() - start);
   step?.info(
-    `Grafo resolvido (${elapsed})`,
+    "Grafo de runtime resolvido",
     affected.length > 0 ? `${affected.length} userscript(s) afetado(s)` : "nenhum userscript afetado",
   );
 
   return { changed: changedSrc, affected, reasons, targets };
+}
+
+function getTscCommand() {
+  return TSC_BIN === "npx" ? ["npx", ["tsc", "--noEmit"]] : [TSC_BIN, ["--noEmit"]];
+}
+
+function getVitestCommand(extraArgs) {
+  return VITEST_BIN === "npx" ? ["npx", ["vitest", ...extraArgs]] : [VITEST_BIN, extraArgs];
 }
 
 // ============================================================================
@@ -192,7 +165,7 @@ export async function planValidation() {
       prTitle: [process.env.PR_TITLE],
     });
 
-    step.info("Contexto recebido", `event=${eventName} · scope=${scope}`);
+    step.info("Contexto", `event=${eventName} · scope=${scope}`);
 
     // 1. Escopo explícito via título do PR
     if (eventName === "pull_request" && prTitle) {
@@ -246,7 +219,7 @@ export async function planValidation() {
 
     // 4. Listar arquivos alterados
     const headRef = prHeadSha || "HEAD";
-    step.status(`Executando git diff (${base.slice(0, 7)}..${headRef.slice(0, 7)})...`);
+    step.status(`Listando diff entre ${base.slice(0, 7)} e ${headRef.slice(0, 7)}...`);
     const diffRes = runCmd("git", ["diff", "--name-only", "--diff-filter=ACMRT", base, headRef], {
       logger: log,
     });
@@ -263,22 +236,22 @@ export async function planValidation() {
 
     if (changedFiles.length === 0) {
       setActionOutput("run", "false");
-      step.info("Nenhum arquivo alterado detectado", "Validação ignorada");
+      step.skip("Nenhum arquivo alterado detectado", "validação ignorada");
       log.summary({ Run: "false", Changed: "0" });
       return;
     }
 
     step.info(`${changedFiles.length} arquivo(s) alterado(s) detectado(s)`);
     for (const file of changedFiles.slice(0, 15)) {
-      process.stdout.write(`    ${ansi.dim("•")} ${file}\n`);
+      log._writeLine(`    ${ansi.dim("•")} ${file}`);
     }
     if (changedFiles.length > 15) {
-      process.stdout.write(`    ${ansi.dim(`... e mais ${changedFiles.length - 15} arquivo(s)`)}\n`);
+      log._writeLine(`    ${ansi.dim(`... e mais ${changedFiles.length - 15} arquivo(s)`)}`);
     }
 
     if (!changedFiles.some((f) => RELEVANT_CHANGE_RE.test(f))) {
       setActionOutput("run", "false");
-      step.info("Apenas arquivos não-executáveis/docs alterados", "Validação ignorada");
+      step.skip("Apenas arquivos não-executáveis/docs alterados", "validação ignorada");
       log.summary({ Run: "false", Changed: String(changedFiles.length) });
       return;
     }
@@ -302,7 +275,6 @@ export async function planValidation() {
 // MODO 2: RUN (Execução da validação seletiva ou completa)
 // ============================================================================
 export async function runValidation() {
-  const totalStart = performance.now();
   const isFull = process.env.FULL === "true";
   const prTitle = process.env.PR_TITLE || "";
   const scopedBuildsMatrix =
@@ -322,7 +294,7 @@ export async function runValidation() {
     await log.step("Verificar diretivas explícitas no título do PR", async (step) => {
       const scopeData = readPrCiScope(log, step);
       if (scopeData.explicit !== true) {
-        step.pass("Nenhuma diretiva explícita ativa", "Prosseguindo com fluxo padrão");
+        step.pass("Nenhuma diretiva explícita ativa", "seguindo fluxo padrão");
         return;
       }
 
@@ -335,50 +307,49 @@ export async function runValidation() {
       if (scopedBuilds.length > 0 && scopedBuilds[0] !== "none") {
         childEnv.BUILD_REASON = "Explicit PR-title build directive";
         if (scopedBuilds[0] === "all") {
-          await execAsync("npm", ["run", "build"], {
+          await execOrFailAsync("npm", ["run", "build"], {
+            logger: log,
             step,
-            label: "Build completo (npm run build)",
+            label: "Build completo",
             env: childEnv,
           });
           delete childEnv.RUNTIME_TEST_SKIP_DIST;
         } else if (!scopedBuildsMatrix) {
-          await execAsync(process.execPath, ["build/build.mjs", `--targets=${scopedBuilds.join(",")}`], {
+          await execOrFailAsync(process.execPath, ["build/build.mjs", `--targets=${scopedBuilds.join(",")}`], {
+            logger: log,
             step,
             label: `Build targets (${scopedBuilds.join(",")})`,
             env: childEnv,
           });
         } else {
-          step.info("Builds", "Delegados para matriz paralela");
+          step.skip("Builds", "delegados para matriz paralela");
         }
       } else {
-        step.info("Builds", "Ignorados pela diretiva explícita");
+        step.skip("Builds", "ignorados pela diretiva explícita");
       }
 
       if (scopedTests.length > 0 && scopedTests[0] !== "none") {
-        await execAsync("npm", ["run", "test:unit"], {
+        await execOrFailAsync("npm", ["run", "test:unit"], {
+          logger: log,
           step,
-          label: "Testes unitários (npm run test:unit)",
+          label: "Testes unitários",
           env: childEnv,
         });
       } else {
-        step.info("Testes", "Ignorados pela diretiva explícita");
+        step.skip("Testes unitários", "ignorados pela diretiva explícita");
       }
 
-      appendStepSummary(
-        [
-          "### Explicit PR-title validation",
-          "```json",
-          JSON.stringify(scopeData, null, 2),
-          "```",
-          "Other required checks remain independently enforced.",
-        ].join("\n"),
-      );
+      await createSummaryWriter()
+        .addHeading("Explicit PR-title validation", 3)
+        .addCodeBlock(JSON.stringify(scopeData, null, 2), "json")
+        .addRaw("Other required checks remain independently enforced.", true)
+        .write();
 
-      step.pass("Validação explícita concluída", formatDuration(performance.now() - totalStart));
+      step.pass("Validação explícita concluída");
     });
 
     if (handledExplicit) {
-      log.summary({ Mode: "explicit-pr-title", Duração: formatDuration(performance.now() - totalStart) });
+      log.summary({ Mode: "explicit-pr-title" });
       return;
     }
   }
@@ -401,23 +372,26 @@ export async function runValidation() {
 
     let report = null;
 
-    // B.1 Análise estática e resolução de grafo em paralelo
+    // B.1 Análise estática e grafo em paralelo
     await log.step("Análise estática (Typecheck + Style) e grafo em paralelo", async (step) => {
+      const [tscCmd, tscArgs] = getTscCommand();
       const tasks = [
-        execAsync(TSC_BIN, ["--noEmit"], {
+        execOrFailAsync(tscCmd, tscArgs, {
+          logger: log,
           step,
-          label: "Typecheck (tsc --noEmit)",
+          label: "Typecheck (tsc)",
           env: childEnv,
         }),
         hasChangedManifest
-          ? execAsync(
+          ? execOrFailAsync(
               process.execPath,
               ["build/check-style.mjs", "--changed", `--files-from=${CHANGED_FILES_PATH}`],
-              { step, label: "Check style (arquivos alterados)", env: childEnv },
+              { logger: log, step, label: "Check style (changed)", env: childEnv },
             )
-          : execAsync("npm", ["run", "lint"], {
+          : execOrFailAsync("npm", ["run", "lint"], {
+              logger: log,
               step,
-              label: "Lint completo (npm run lint)",
+              label: "Lint completo",
               env: childEnv,
             }),
       ];
@@ -439,11 +413,15 @@ export async function runValidation() {
       childEnv.RUNTIME_TEST_SKIP_DIST = "true";
 
       if (scopedBuildsMatrix && !hostingChanged) {
-        step.pass(
-          "Builds delegados para matrix",
-          `${ALL_BUILD_TARGETS.length} targets serão compilados em jobs paralelos`,
+        step.skip(
+          "Builds locais",
+          `${ALL_BUILD_TARGETS.length} targets delegados para matrix paralela`,
         );
-      } else if (!bundlerChanged && report) {
+        step.pass("Configuração de build concluída");
+        return;
+      }
+
+      if (!bundlerChanged && report) {
         step.info("Targets afetados no grafo", report.targets.join(", ") || "(nenhum)");
 
         if (report.targets.length > 0) {
@@ -458,57 +436,63 @@ export async function runValidation() {
               ]),
             ),
           );
-          await execAsync(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
+          await execOrFailAsync(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
+            logger: log,
             step,
             label: `Build seletivo (${report.targets.join(",")})`,
             env: childEnv,
           });
         }
         step.pass("Build seletivo concluído");
-      } else {
-        step.info(
-          "Build completo necessário no job principal",
-          hostingChanged ? "Hosting depende da distribuição completa" : "Bundler/Config alterado ou matrix indisponível",
-        );
-        childEnv.BUILD_REASON = hostingChanged
-          ? "Hosting requires the complete distribution"
-          : "Full build required by validation plan";
-        await execAsync("npm", ["run", "build"], {
-          step,
-          label: "Build completo (npm run build)",
-          env: childEnv,
-        });
-        delete childEnv.RUNTIME_TEST_SKIP_DIST;
-        step.pass("Build completo concluído");
+        return;
       }
+
+      step.info(
+        "Build completo necessário",
+        hostingChanged ? "hosting depende da distribuição completa" : "bundler/config alterado ou matrix indisponível",
+      );
+      childEnv.BUILD_REASON = hostingChanged
+        ? "Hosting requires the complete distribution"
+        : "Full build required by validation plan";
+      await execOrFailAsync("npm", ["run", "build"], {
+        logger: log,
+        step,
+        label: "Build completo",
+        env: childEnv,
+      });
+      delete childEnv.RUNTIME_TEST_SKIP_DIST;
+      step.pass("Build completo concluído");
     });
 
-    // B.3 Suíte de testes e hosting
+    // B.3 Suíte completa de testes e hosting
     await log.step("Executar suíte completa de testes e hosting", async (step) => {
-      await execAsync("npm", ["run", "test:unit"], {
+      await execOrFailAsync("npm", ["run", "test:unit"], {
+        logger: log,
         step,
-        label: "Testes unitários completos (npm run test:unit)",
+        label: "Testes unitários completos",
         env: childEnv,
       });
 
       if (labChanged) {
-        await execAsync("npm", ["run", "test:lab"], {
+        await execOrFailAsync("npm", ["run", "test:lab"], {
+          logger: log,
           step,
-          label: "Testes de laboratório (npm run test:lab)",
+          label: "Testes de laboratório",
           env: childEnv,
         });
       } else {
-        step.info("Lab", "Sem alterações em labs/; testes de laboratório ignorados");
+        step.skip("Testes de laboratório", "sem alterações em labs/");
       }
 
       if (hostingChanged) {
-        await execAsync(process.execPath, ["build/hosting.mjs"], {
+        await execOrFailAsync(process.execPath, ["build/hosting.mjs"], {
+          logger: log,
           step,
-          label: "Gerar artefatos de hosting (build/hosting.mjs)",
+          label: "Artefatos de hosting",
           env: childEnv,
         });
       } else {
-        step.info("Hosting", "Sem alterações em playground/public/hosting; geração ignorada");
+        step.skip("Artefatos de hosting", "sem alterações em playground/public/hosting");
       }
 
       step.pass("Validação completa finalizada");
@@ -517,7 +501,6 @@ export async function runValidation() {
     log.summary({
       Mode: "full",
       Arquivos: String(changedFiles.length),
-      Duração: formatDuration(performance.now() - totalStart),
     });
     return;
   }
@@ -553,22 +536,25 @@ export async function runValidation() {
   // C.1 + C.2: Typecheck, Style e Grafo Transitivo em PARALELO
   if (sourceChanged) {
     await log.step("Typecheck, análise de estilo e grafo de runtime (paralelo)", async (step) => {
+      const [tscCmd, tscArgs] = getTscCommand();
       const lintTask = hasChangedManifest
-        ? execAsync(
+        ? execOrFailAsync(
             process.execPath,
             ["build/check-style.mjs", "--changed", `--files-from=${CHANGED_FILES_PATH}`],
-            { step, label: "Check style (arquivos alterados)", env: childEnv },
+            { logger: log, step, label: "Check style (changed)", env: childEnv },
           )
-        : execAsync("npm", ["run", "lint"], {
+        : execOrFailAsync("npm", ["run", "lint"], {
+            logger: log,
             step,
-            label: "Lint (npm run lint)",
+            label: "Lint completo",
             env: childEnv,
           });
 
       const [, , report] = await Promise.all([
-        execAsync(TSC_BIN, ["--noEmit"], {
+        execOrFailAsync(tscCmd, tscArgs, {
+          logger: log,
           step,
-          label: "Typecheck (tsc --noEmit)",
+          label: "Typecheck (tsc)",
           env: childEnv,
         }),
         lintTask,
@@ -578,13 +564,16 @@ export async function runValidation() {
       affectedReport = report;
       fs.writeFileSync(AFFECTED_REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 
-      const summaryLines = [
-        "#### Dependency graph",
-        ...report.affected.map(
-          (id) => `- \`${id}\` ← ${report.reasons[id].map((f) => `\`${f}\``).join(", ")}`,
-        ),
-      ];
-      appendStepSummary(summaryLines.join("\n"));
+      if (report.affected.length > 0) {
+        await createSummaryWriter()
+          .addHeading("Dependency graph", 4)
+          .addList(
+            report.affected.map(
+              (id) => `<code>${id}</code> ← ${report.reasons[id].map((f) => `<code>${f}</code>`).join(", ")}`,
+            ),
+          )
+          .write();
+      }
 
       step.pass(
         "Análise estática e grafo concluídos",
@@ -612,26 +601,28 @@ export async function runValidation() {
             ),
           );
           step.info("Targets selecionados", affectedReport.targets.join(", "));
-          await execAsync(
+          await execOrFailAsync(
             process.execPath,
             ["build/build.mjs", `--targets=${affectedReport.targets.join(",")}`],
             {
+              logger: log,
               step,
               label: `Build seletivo (${affectedReport.targets.join(",")})`,
               env: childEnv,
             },
           );
         } else {
-          step.info("Nenhum entrypoint afetado", "Build de bundles ignorado");
+          step.skip("Build de bundles", "nenhum entrypoint afetado");
         }
       } else {
         step.info(
           "Build completo necessário",
-          hasIntegrationTest ? "Testes de integração detectados" : "Hosting/Assets alterados",
+          hasIntegrationTest ? "testes de integração detectados" : "hosting/assets alterados",
         );
-        await execAsync("npm", ["run", "build"], {
+        await execOrFailAsync("npm", ["run", "build"], {
+          logger: log,
           step,
-          label: "Build completo (npm run build)",
+          label: "Build completo",
           env: childEnv,
         });
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
@@ -663,36 +654,35 @@ export async function runValidation() {
     }
 
     if (changedSources.length === 0 && explicitTests.length === 0) {
-      step.pass("Nenhum teste relacionado encontrado", "Etapa ignorada");
+      step.skip("Testes relacionados", "nenhum arquivo src/ ou teste alterado");
+      step.pass("Etapa de testes finalizada");
       return;
     }
 
     step.info(
       "Alvos de teste",
-      `${changedSources.length} arquivo(s) src/ · ${explicitTests.length} teste(s) explícito(s)`,
+      `${changedSources.length} src/ · ${explicitTests.length} teste(s) explícito(s)`,
     );
-    if (explicitTests.length > 0) {
-      for (const t of explicitTests.slice(0, 15)) {
-        process.stdout.write(`    ${ansi.dim("•")} ${t}\n`);
-      }
-      if (explicitTests.length > 15) {
-        process.stdout.write(`    ${ansi.dim(`... e mais ${explicitTests.length - 15} arquivo(s)`)}\n`);
-      }
+    for (const t of explicitTests.slice(0, 15)) {
+      log._writeLine(`    ${ansi.dim("•")} ${t}`);
+    }
+    if (explicitTests.length > 15) {
+      log._writeLine(`    ${ansi.dim(`... e mais ${explicitTests.length - 15} arquivo(s)`)}`);
     }
 
-    // Um único processo Vitest executando apenas os testes relacionados aos arquivos src/ + testes explícitos
-    const vitestArgs = [
+    const [vitestCmd, vitestArgs] = getVitestCommand([
       "run",
       "--passWithNoTests",
       "--exclude",
       "**/runtime-startup-benchmark.test.js",
       ...(changedSources.length > 0 ? ["--related", ...changedSources] : []),
       ...explicitTests,
-    ];
+    ]);
 
-    await execAsync(VITEST_BIN, vitestArgs, {
+    await execOrFailAsync(vitestCmd, vitestArgs, {
+      logger: log,
       step,
-      label: "Vitest (apenas testes relacionados)",
+      label: "Vitest (testes relacionados)",
       env: childEnv,
     });
 
@@ -701,9 +691,10 @@ export async function runValidation() {
 
   if (labChanged) {
     await log.step("Executar testes de laboratório (test:lab)", async (step) => {
-      await execAsync("npm", ["run", "test:lab"], {
+      await execOrFailAsync("npm", ["run", "test:lab"], {
+        logger: log,
         step,
-        label: "Testes de lab (npm run test:lab)",
+        label: "Testes de laboratório",
         env: childEnv,
       });
       step.pass("Testes de lab aprovados");
@@ -712,38 +703,44 @@ export async function runValidation() {
 
   if (hostingChanged) {
     await log.step("Atualizar artefatos de hosting", async (step) => {
-      await execAsync(process.execPath, ["build/hosting.mjs"], {
+      await execOrFailAsync(process.execPath, ["build/hosting.mjs"], {
+        logger: log,
         step,
-        label: "Hosting (build/hosting.mjs)",
+        label: "Hosting",
         env: childEnv,
       });
       step.pass("Hosting atualizado");
     });
   }
 
-  // Step Summary final
-  appendStepSummary(
-    [
-      "### Selective validation",
-      "| Check | Enabled |",
-      "|---|---|",
-      `| Typecheck and lint | ${sourceChanged} |`,
-      `| Build | ${buildNeeded} |`,
-      `| Selective Vitest | ${sourceChanged || changedTests.length > 0} |`,
-      `| Lab | ${labChanged} |`,
-      `| Hosting | ${hostingChanged} |`,
-      "",
-      "Changed files:",
-      ...changedFiles.map((f) => `- \`${f}\``),
-    ].join("\n"),
-  );
+  // Step Summary final com createSummaryWriter
+  const summary = createSummaryWriter()
+    .addHeading("Selective validation", 3)
+    .addTable([
+      [
+        { data: "Check", header: true },
+        { data: "Enabled", header: true },
+      ],
+      ["Typecheck and lint", String(sourceChanged)],
+      ["Build", String(buildNeeded)],
+      ["Selective Vitest", String(sourceChanged || changedTests.length > 0)],
+      ["Lab", String(labChanged)],
+      ["Hosting", String(hostingChanged)],
+    ]);
+
+  if (changedFiles.length > 0) {
+    summary
+      .addHeading("Changed files", 4)
+      .addList(changedFiles.map((f) => `<code>${f}</code>`));
+  }
+
+  await summary.write();
 
   log.summary({
     "Typecheck/Lint": String(sourceChanged),
     Build: String(buildNeeded),
     Lab: String(labChanged),
     Hosting: String(hostingChanged),
-    Duração: formatDuration(performance.now() - totalStart),
   });
 }
 
