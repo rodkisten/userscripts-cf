@@ -9,7 +9,9 @@ import * as Select from "@radix-ui/react-select";
 import * as Switch from "@radix-ui/react-switch";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import * as Tabs from "@radix-ui/react-tabs";
-import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu.js";
+import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu-types.js";
+import { Button } from "../../react-ui/uai/button.js";
+import { Input } from "../../react-ui/uai/input.js";
 import menuViewStyles, { css as menuViewCss } from "./menu-view.module.css";
 
 const EMPTY_SELECT_VALUE = "__rod_empty_option__";
@@ -21,7 +23,10 @@ function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLE
         const key = item.id ?? `${item.type ?? "item"}-${item.label ?? index}`;
         if (item.type === "separator") {
           return (
-            <DropdownMenu.Separator key={key} style={{ height: 1, margin: "4px 0", background: "#3f3f46" }} />
+            <DropdownMenu.Separator
+              key={key}
+              style={{ height: 1, margin: "4px 0", background: "var(--border, #3f3f46)" }}
+            />
           );
         }
         if (item.children?.length) {
@@ -119,8 +124,8 @@ function CustomField({ field }: { field: MenuField }) {
     const container = containerRef.current;
     if (!container) return;
     const rendered = field.render?.();
-    if (rendered instanceof HTMLElement) {
-      container.replaceChildren(rendered);
+    if (rendered && typeof rendered === "object" && "nodeType" in rendered && rendered.nodeType === 1) {
+      container.replaceChildren(rendered as HTMLElement);
     }
     return () => {
       container.replaceChildren();
@@ -207,7 +212,7 @@ function RadixSwitchField({
         borderRadius: 999,
         border: "none",
         padding: 2,
-        background: checked ? "#6d28d9" : "#3f3f46",
+        background: checked ? "var(--primary, #6d28d9)" : "var(--muted, #3f3f46)",
         cursor: field.disabled ? "not-allowed" : "pointer",
         display: "inline-flex",
         alignItems: "center",
@@ -220,7 +225,7 @@ function RadixSwitchField({
           width: 18,
           height: 18,
           borderRadius: "50%",
-          background: "#fafafa",
+          background: "var(--primary-foreground, #fafafa)",
           transform: checked ? "translateX(18px)" : "translateX(0px)",
           transition: "transform 150ms ease",
         }}
@@ -256,9 +261,9 @@ function RadixCheckboxField({
         width: 20,
         height: 20,
         borderRadius: 6,
-        border: "1px solid #52525b",
-        background: checked ? "#6d28d9" : "#27272a",
-        color: "#fafafa",
+        border: "1px solid var(--border, #52525b)",
+        background: checked ? "var(--primary, #6d28d9)" : "var(--secondary, #27272a)",
+        color: "var(--primary-foreground, #fafafa)",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
@@ -341,7 +346,7 @@ function DialogField({
           }}
         />
       ) : (
-        <input
+        <Input
           id={fieldId}
           disabled={field.disabled}
           type={
@@ -349,7 +354,7 @@ function DialogField({
           }
           placeholder={field.placeholder}
           defaultValue={String(value ?? "")}
-          className={menuViewStyles.control}
+          className="min-h-[42px] text-base"
           onChange={(event) => {
             values[name] =
               field.type === "number" && event.target.value !== ""
@@ -483,7 +488,8 @@ function DialogView({
 
             <div className={menuViewStyles.actions}>
               {(schema.actions ?? []).map((action) => (
-                <button
+                <Button
+                  variant={action === primaryAction ? "default" : "outline"}
                   key={action.id}
                   type={action === primaryAction ? "submit" : "button"}
                   disabled={pending || action.disabled}
@@ -494,12 +500,12 @@ function DialogView({
                   }}
                 >
                   {action.label}
-                </button>
+                </Button>
               ))}
               <Dialog.Close asChild>
-                <button type="button" className={menuViewStyles.action}>
+                <Button type="button" variant="outline" className={menuViewStyles.action}>
                   Fechar
-                </button>
+                </Button>
               </Dialog.Close>
             </div>
           </form>
@@ -548,8 +554,8 @@ function mount(
       style.remove();
     });
   };
-  const element = view(close, portal);
   try {
+    const element = view(close, portal);
     shared = mountSharedReact(element as ReactElement, host);
   } catch (error) {
     host.remove();

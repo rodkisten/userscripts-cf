@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { brotliCompressSync, constants as zlibConstants, gzipSync } from "node:zlib";
+import { brotliCompress, constants as zlibConstants, gzip } from "node:zlib";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
@@ -25,6 +25,8 @@ import { auditReactRootOwnership } from "./react-root-audit.mjs";
 import { bundleInventory, loadVersionRegistry, versionForTarget } from "./version-registry.mjs";
 
 const execFileAsync = promisify(execFile);
+const gzipAsync = promisify(gzip);
+const brotliAsync = promisify(brotliCompress);
 
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
@@ -336,48 +338,54 @@ export async function compileTarget(target, context) {
   const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
 
-  const [icon, formattedBody] = await Promise.all([
-    resolveTargetIcon(root, iconSource, target, log),
-    (async () => {
-      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
-      const guarded = [diagnosticSource, ...installers].map((source, index) => {
-        const stage = index === 0 ? "diagnostics" : `installer-${index}`;
-        return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
-      });
-      const rawCode = stripBuildComments(guarded.join("\n\n"));
-      return format(rawCode, { parser: "babel", printWidth: 110 });
-    })(),
-  ]);
+  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
+  const guarded = [diagnosticSource, ...installers].map((source, index) => {
+    const stage = index === 0 ? "diagnostics" : `installer-${index}`;
+    return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
+  });
+  const rawCode = stripBuildComments(guarded.join("\n\n"));
+  const iconPromise = resolveTargetIcon(root, iconSource, target, log);
+  const formatStart = performance.now();
+  const debugPromise = format(rawCode, { parser: "babel", printWidth: 110 }).then((body) => {
+    log.info("Debug formatting " + target.id, fmt.duration(performance.now() - formatStart));
+    return body;
+  });
 
   const metadata = buildUserscriptMetadata(target, baseURL, patterns, exclusions);
   const debugFile = `${target.id}.js`;
-  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
-  const chunks = await viteBuild({
-    configFile: false,
-    logLevel: "error",
-    plugins: [
-      {
-        name: "userscript-runtime-minify",
-        resolveId(id) {
-          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+  const finalBuildStart = performance.now();
+  const [chunks, icon, formattedBody] = await Promise.all([
+    viteBuild({
+      configFile: false,
+      logLevel: "error",
+      plugins: [
+        {
+          name: "userscript-runtime-minify",
+          resolveId(id) {
+            if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+          },
+          load(id) {
+            if (id === "\0virtual:userscript-runtime") return rawCode;
+          },
         },
-        load(id) {
-          if (id === "\0virtual:userscript-runtime") return formattedBody;
+      ],
+      build: {
+        write: false,
+        minify: false,
+        sourcemap: false,
+        rolldownOptions: {
+          input: "virtual:userscript-runtime",
+          output: { format: "iife", name: "UserscriptsCFBundle" },
         },
       },
-    ],
-    build: {
-      write: false,
-      minify: false,
-      sourcemap: false,
-      rolldownOptions: {
-        input: "virtual:userscript-runtime",
-        output: { format: "iife", name: "UserscriptsCFBundle" },
-      },
-    },
-  });
+    }),
+    iconPromise,
+    debugPromise,
+  ]);
+  log.info("Final build and debug " + target.id, fmt.duration(performance.now() - finalBuildStart));
+  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
   const result = output.find((entry) => entry.type === "chunk");
@@ -399,16 +407,22 @@ export async function compileTarget(target, context) {
   const metaBuffer = Buffer.from(metaSource, "utf8");
 
   const references = analyzeClassReferences(finalSource.slice(metadata.length));
+  const compressionStart = performance.now();
+  const [debugGzip, sourceGzip, sourceBrotli] = await Promise.all([
+    gzipAsync(bodyBuffer, { level: 9 }),
+    gzipAsync(sourceBuffer, { level: 9 }),
+    brotliAsync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
+  ]);
+  log.info("Compression metrics " + target.id, fmt.duration(performance.now() - compressionStart));
   const auditEntry = {
     debugBytes: bodyBuffer.byteLength,
-    debugGzipBytes: gzipSync(bodyBuffer, { level: 9 }).byteLength,
+    debugGzipBytes: debugGzip.byteLength,
     staticClasses: references.classes.length,
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
-    gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
-    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } })
-      .byteLength,
+    gzipBytes: sourceGzip.byteLength,
+    brotliBytes: sourceBrotli.byteLength,
   };
 
   const file = `${target.id}.user.js`;
@@ -822,20 +836,61 @@ if (!isMerge) {
       includes,
     }));
 
-    const buildResults = await Promise.all(
-      activeTargets.map((target) =>
-        compileTarget(target, {
-          root,
-          out,
-          iconSource,
-          baseURL,
-          registry: versionRegistry,
-          catalog,
-          runtimeFeatureAudit,
-          log,
-        }),
-      ),
+    const requestedConcurrency = Number(
+      process.env.ROD_BUILD_CONCURRENCY ?? Math.max(1, activeTargets.length),
     );
+    if (!Number.isSafeInteger(requestedConcurrency) || requestedConcurrency < 1) {
+      throw new Error("ROD_BUILD_CONCURRENCY must be a positive integer");
+    }
+    const concurrency = Math.min(requestedConcurrency, activeTargets.length);
+    const buildResults = new Array(activeTargets.length);
+    const timings = [];
+    const startedAt = performance.now();
+    let cursor = 0;
+    await Promise.all(
+      Array.from({ length: concurrency }, async () => {
+        while (cursor < activeTargets.length) {
+          const index = cursor++;
+          const target = activeTargets[index];
+          const started = performance.now();
+          try {
+            buildResults[index] = await compileTarget(target, {
+              root,
+              out,
+              iconSource,
+              baseURL,
+              registry: versionRegistry,
+              catalog,
+              runtimeFeatureAudit,
+              log,
+            });
+          } finally {
+            timings.push({ target: target.id, ms: Math.round(performance.now() - started) });
+          }
+        }
+      }),
+    );
+    timings.sort((a, b) => b.ms - a.ms);
+    const wallMs = Math.round(performance.now() - startedAt);
+    log.table("Build duration by target", timings);
+    await fs.writeFile(
+      path.join(out, "build-timings.json"),
+      JSON.stringify({ concurrency, wallMs, targets: timings }, null, 2) + "\n",
+    );
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      await fs.appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        [
+          "\n### Bundle build timings",
+          `Wall time: ${wallMs} ms · concurrency: ${concurrency}`,
+          "",
+          "| Target | Duration (ms) |",
+          "|---|---:|",
+          ...timings.map(({ target, ms }) => `| ${target} | ${ms} |`),
+          "",
+        ].join("\n"),
+      );
+    }
 
     // Salva fragmentos individuais para serem unificados no job de merge
     if (isFragment) {

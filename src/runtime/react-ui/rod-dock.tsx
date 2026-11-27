@@ -1,7 +1,10 @@
 /** @jsxImportSource react */
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
+import * as Checkbox from "@radix-ui/react-checkbox";
+import { Button } from "./uai/button.js";
 import * as Dialog from "@radix-ui/react-dialog";
+import { DockPanel, DockSearch } from "./dock-primitives.js";
 import {
   matches,
   readScriptRules,
@@ -48,10 +51,10 @@ const DOCK_POSITION_KEY = "rod-dock:position";
 
 const css = `
   :host {
-    --rd-bg-panel: #09090b;
-    --rd-bg-surface: #18181b;
-    --rd-bg-control: #27272a;
-    --rd-bg-control-hover: #323238;
+    --rd-bg-panel: var(--background, #09090b);
+    --rd-bg-surface: var(--card, #18181b);
+    --rd-bg-control: var(--secondary, #27272a);
+    --rd-bg-control-hover: var(--muted, #323238);
     --rd-bg-overlay: rgba(0, 0, 0, 0.6);
 
     --rd-glass-bg: rgba(24, 24, 27, 0.58);
@@ -59,16 +62,16 @@ const css = `
     --rd-glass-border: rgba(255, 255, 255, 0.16);
     --rd-glass-highlight: rgba(255, 255, 255, 0.22);
 
-    --rd-border-subtle: #27272a;
-    --rd-border-strong: #3f3f46;
+    --rd-border-subtle: var(--border, #27272a);
+    --rd-border-strong: var(--border, #3f3f46);
 
-    --rd-text-primary: #fafafa;
-    --rd-text-secondary: #a1a1aa;
-    --rd-text-muted: #71717a;
+    --rd-text-primary: var(--foreground, #fafafa);
+    --rd-text-secondary: var(--muted-foreground, #a1a1aa);
+    --rd-text-muted: var(--muted-foreground, #71717a);
 
-    --rd-accent: #7c3aed;
-    --rd-accent-hover: #6d28d9;
-    --rd-accent-soft: #a78bfa;
+    --rd-accent: var(--primary, #7c3aed);
+    --rd-accent-hover: var(--primary, #6d28d9);
+    --rd-accent-soft: var(--ring, #a78bfa);
 
     --rd-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --rd-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -193,6 +196,8 @@ const css = `
     top: 0;
     right: 0;
     width: min(390px, 94vw);
+    height: 100vh;
+    max-height: 100vh;
     height: 100dvh;
     max-height: 100dvh;
     display: flex;
@@ -211,7 +216,7 @@ const css = `
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    padding: 14px 16px 10px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 10px 16px;
     border-bottom: 1px solid var(--rd-border-subtle);
   }
 
@@ -236,7 +241,7 @@ const css = `
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    padding: 14px 16px 24px;
+    padding: 14px calc(16px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
   .panel-body::-webkit-scrollbar {
@@ -250,27 +255,6 @@ const css = `
   .panel-body::-webkit-scrollbar-thumb {
     background: var(--rd-border-strong);
     border-radius: 999px;
-  }
-
-  .btn {
-    border: 1px solid var(--rd-border-strong);
-    background: var(--rd-bg-control);
-    color: var(--rd-text-primary);
-    border-radius: var(--rd-radius-md);
-    padding: 6px 10px;
-    font-size: var(--rd-font-sm);
-    line-height: 1.3;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .btn:hover {
-    background: var(--rd-bg-control-hover);
-  }
-
-  .btn--icon {
-    padding: 5px 8px;
-    font-size: var(--rd-font-base);
-    line-height: 1;
   }
 
   .btn[data-reorder-id] {
@@ -288,21 +272,12 @@ const css = `
     outline-offset: 2px;
   }
 
-  .input {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: var(--rd-radius-md);
-    background: var(--rd-bg-control);
-    color: var(--rd-text-primary);
-    border: 1px solid var(--rd-border-strong);
-    font-size: var(--rd-font-sm);
-    outline: none;
+  .dock-search { min-height: 36px; }
+  @media (pointer: coarse) {
+    .dock-search { font-size: 16px; }
+    .launcher { min-width: 32px; min-height: 44px; }
   }
-
-  .input:focus {
-    border-color: var(--rd-accent-soft);
-  }
-
+  .launcher[hidden] { display: none; }
   .input--spaced {
     margin-top: 10px;
   }
@@ -363,11 +338,24 @@ const css = `
 
   .checkbox {
     flex-shrink: 0;
-    accent-color: var(--rd-accent-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--rd-border-strong);
+    border-radius: 4px;
+    background: var(--rd-bg-control);
+    color: var(--rd-text-primary);
     width: 16px;
     height: 16px;
     cursor: pointer;
   }
+
+  .checkbox[data-state="checked"] {
+    background: var(--rd-accent);
+    color: var(--primary-foreground, #fff);
+  }
+  .checkbox:focus-visible { outline: 2px solid var(--rd-accent-soft); }
 
   .diagnostic-item {
     margin: 8px 0 0;
@@ -466,243 +454,227 @@ function DockView({ controller }: { controller: DockController }) {
     document.dispatchEvent(new CustomEvent("rod-script-manager:change"));
   };
 
-  const allowShadowScroll = (event: React.SyntheticEvent) => {
-    event.stopPropagation();
-  };
-
   return (
     <>
-      <Dialog.Root open={open} onOpenChange={setOpen}>
-        <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="overlay" />
-          <Dialog.Content className="panel" onWheel={allowShadowScroll} onTouchMove={allowShadowScroll}>
-            <header className="panel-header">
-              <Dialog.Title className="panel-title">Rod Dock</Dialog.Title>
-              <Dialog.Close className="btn btn--icon" aria-label="Fechar">
-                ✕
-              </Dialog.Close>
-            </header>
+      <DockPanel
+        open={open}
+        portal={portal}
+        title="Rod Dock"
+        closeLabel="Fechar"
+        description="Gerencie scripts, ações e diagnósticos desta página."
+        onOpenChange={(next) => {
+          if (!next) setSettingsOpen(false);
+          setOpen(next);
+        }}
+      >
+        <Button
+          variant="outline"
+          type="button"
+          className="btn"
+          onClick={() => {
+            setSettingsSearch(search);
+            setSettingsOpen(true);
+          }}
+        >
+          Preferências
+        </Button>
 
-            <div className="panel-body">
-              <Dialog.Description className="panel-description">
-                Gerencie scripts, ações e diagnósticos desta página.
-              </Dialog.Description>
+        <details className="module" open>
+          <summary>Scripts ({scripts.length})</summary>
+          <DockSearch
+            placeholder="Buscar script..."
+            variant="spaced"
+            label="Filtrar scripts"
+            value={search}
+            onChange={setSearch}
+          />
+          <div>
+            {filteredScripts.map((script) => {
+              const enabled = preferences[script.id]?.enabled !== false;
+              const permitted = matches(
+                { ...script, name: script.name ?? script.id },
+                location.href,
+                preferences[script.id],
+              );
 
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setSettingsSearch(search);
-                  setSettingsOpen(true);
-                }}
-              >
-                Preferências
-              </button>
-
-              <details className="module" open>
-                <summary>Scripts ({scripts.length})</summary>
-                <input
-                  className="input input--spaced"
-                  aria-label="Filtrar scripts"
-                  placeholder="Buscar script..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-                <div>
-                  {filteredScripts.map((script) => {
-                    const enabled = preferences[script.id]?.enabled !== false;
-                    const permitted = matches(
-                      { ...script, name: script.name ?? script.id },
-                      location.href,
-                      preferences[script.id],
-                    );
-
-                    return (
-                      <label className="script-row" key={script.id}>
-                        <span className="script-info">
-                          {script.name ?? script.id}
-                          <small className="script-status">
-                            {!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}
-                          </small>
-                        </span>
-                        <input
-                          className="checkbox"
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={(event) => toggleScript(script.id, event.target.checked)}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-              </details>
-
-              {visibleModules.map((module) => (
-                <details className="module" key={module.id}>
-                  <summary>{module.name}</summary>
-                  <div className="actions">
-                    {module.actions.map((action) => (
-                      <button
-                        type="button"
-                        className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
-                        key={action.id}
-                        onClick={(event) => {
-                          if (suppressClick === action.id) {
-                            event.preventDefault();
-                            setSuppressClick(null);
-                            return;
-                          }
-                          action.run();
-                        }}
-                        onPointerDown={(event) => {
-                          if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
-                            return;
-                          }
-
-                          const source = event.currentTarget;
-                          const root = source.getRootNode();
-                          const startX = event.clientX;
-                          const startY = event.clientY;
-                          let moved = false;
-
-                          source.setPointerCapture(event.pointerId);
-
-                          const cleanup = () => {
-                            source.removeEventListener("pointermove", onMove);
-                            source.removeEventListener("pointerup", onFinish);
-                            source.removeEventListener("pointercancel", onCancel);
-                          };
-
-                          const onMove = (next: PointerEvent) => {
-                            if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
-                              return;
-                            }
-                            moved = true;
-                            setDragging(action.id);
-                            const target = getElementFromPoint(root, next.clientX, next.clientY);
-                            setDropTarget(
-                              target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
-                            );
-                          };
-
-                          const onFinish = (next: PointerEvent) => {
-                            cleanup();
-                            const target = getElementFromPoint(root, next.clientX, next.clientY);
-                            const targetId = target
-                              ?.closest?.("[data-reorder-id]")
-                              ?.getAttribute("data-reorder-id");
-
-                            setDragging(null);
-                            setDropTarget(null);
-
-                            if (moved) {
-                              setSuppressClick(action.id);
-                              if (targetId && targetId !== action.id) {
-                                action.reorder?.(targetId);
-                              }
-                            }
-                          };
-
-                          const onCancel = () => {
-                            cleanup();
-                            setDragging(null);
-                            setDropTarget(null);
-                          };
-
-                          source.addEventListener("pointermove", onMove);
-                          source.addEventListener("pointerup", onFinish);
-                          source.addEventListener("pointercancel", onCancel, { once: true });
-                        }}
-                        data-reorder-id={action.reorder ? action.id : undefined}
-                        aria-grabbed={action.reorder ? dragging === action.id : undefined}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                </details>
-              ))}
-
-              <details className="module">
-                <summary>Diagnósticos ({diagnostics.length})</summary>
-                <div className="actions">
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      const blob = new Blob(
-                        [getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)],
-                        { type: "application/json" },
-                      );
-                      const url = URL.createObjectURL(blob);
-                      const anchor = document.createElement("a");
-                      anchor.href = url;
-                      anchor.download = "rod-script-diagnostics.json";
-                      anchor.click();
-                      queueMicrotask(() => URL.revokeObjectURL(url));
-                    }}
+              return (
+                <label className="script-row" key={script.id}>
+                  <span className="script-info">
+                    {script.name ?? script.id}
+                    <small className="script-status">
+                      {!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}
+                    </small>
+                  </span>
+                  <Checkbox.Root
+                    className="checkbox"
+                    aria-label={`Ativar ${script.name ?? script.id}`}
+                    checked={enabled}
+                    onCheckedChange={(checked) => toggleScript(script.id, checked === true)}
                   >
-                    Exportar JSON
-                  </button>
-                </div>
+                    <Checkbox.Indicator>✓</Checkbox.Indicator>
+                  </Checkbox.Root>
+                </label>
+              );
+            })}
+          </div>
+        </details>
 
-                {diagnostics.slice(0, 30).map((item, index) => (
-                  <details className="diagnostic-item" key={index}>
-                    <summary>{item.message}</summary>
-                    <pre className="diagnostic-stack">{item.stack ?? item.message}</pre>
-                  </details>
-                ))}
-              </details>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-
-      <Dialog.Root open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="overlay overlay--secondary" />
-          <Dialog.Content
-            className="panel"
-            aria-describedby={undefined}
-            onWheel={allowShadowScroll}
-            onTouchMove={allowShadowScroll}
-          >
-            <header className="panel-header">
-              <Dialog.Title className="panel-title">Preferências do Rod Dock</Dialog.Title>
-              <Dialog.Close className="btn btn--icon" aria-label="Fechar preferências">
-                ✕
-              </Dialog.Close>
-            </header>
-
-            <div className="panel-body">
-              <label className="field-label" htmlFor="rod-dock-filter">
-                Filtrar scripts
-              </label>
-              <input
-                id="rod-dock-filter"
-                className="input input--block"
-                type="search"
-                value={settingsSearch}
-                onChange={(event) => setSettingsSearch(event.target.value)}
-                placeholder="Buscar script..."
-              />
-              <div className="actions">
-                <button
+        {visibleModules.map((module) => (
+          <details className="module" key={module.id}>
+            <summary>{module.name}</summary>
+            <div className="actions">
+              {module.actions.map((action) => (
+                <Button
+                  variant="outline"
                   type="button"
-                  className="btn"
-                  onClick={() => {
-                    setSearch(settingsSearch);
-                    setSettingsOpen(false);
+                  className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
+                  key={action.id}
+                  onClick={(event) => {
+                    if (suppressClick === action.id) {
+                      event.preventDefault();
+                      setSuppressClick(null);
+                      return;
+                    }
+                    action.run();
                   }}
+                  onPointerDown={(event) => {
+                    if (!action.reorder || (event.pointerType === "mouse" && event.button !== 0)) {
+                      return;
+                    }
+
+                    const source = event.currentTarget;
+                    const root = source.getRootNode();
+                    const startX = event.clientX;
+                    const startY = event.clientY;
+                    let moved = false;
+
+                    source.setPointerCapture(event.pointerId);
+
+                    const cleanup = () => {
+                      source.removeEventListener("pointermove", onMove);
+                      source.removeEventListener("pointerup", onFinish);
+                      source.removeEventListener("pointercancel", onCancel);
+                    };
+
+                    const onMove = (next: PointerEvent) => {
+                      if (!moved && Math.hypot(next.clientX - startX, next.clientY - startY) < 10) {
+                        return;
+                      }
+                      moved = true;
+                      setDragging(action.id);
+                      const target = getElementFromPoint(root, next.clientX, next.clientY);
+                      setDropTarget(
+                        target?.closest?.("[data-reorder-id]")?.getAttribute("data-reorder-id") ?? null,
+                      );
+                    };
+
+                    const onFinish = (next: PointerEvent) => {
+                      cleanup();
+                      const target = getElementFromPoint(root, next.clientX, next.clientY);
+                      const targetId = target
+                        ?.closest?.("[data-reorder-id]")
+                        ?.getAttribute("data-reorder-id");
+
+                      setDragging(null);
+                      setDropTarget(null);
+
+                      if (moved) {
+                        setSuppressClick(action.id);
+                        if (targetId && targetId !== action.id) {
+                          action.reorder?.(targetId);
+                        }
+                      }
+                    };
+
+                    const onCancel = () => {
+                      cleanup();
+                      setDragging(null);
+                      setDropTarget(null);
+                    };
+
+                    source.addEventListener("pointermove", onMove);
+                    source.addEventListener("pointerup", onFinish);
+                    source.addEventListener("pointercancel", onCancel, { once: true });
+                  }}
+                  data-reorder-id={action.reorder ? action.id : undefined}
+                  aria-grabbed={action.reorder ? dragging === action.id : undefined}
                 >
-                  Aplicar
-                </button>
-                <Dialog.Close className="btn">Cancelar</Dialog.Close>
-              </div>
+                  {action.label}
+                </Button>
+              ))}
             </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          </details>
+        ))}
+
+        <details className="module">
+          <summary>Diagnósticos ({diagnostics.length})</summary>
+          <div className="actions">
+            <Button
+              variant="outline"
+              type="button"
+              className="btn"
+              onClick={() => {
+                const blob = new Blob([getDiagnostics()?.export() ?? JSON.stringify(diagnostics, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = "rod-script-diagnostics.json";
+                anchor.click();
+                queueMicrotask(() => URL.revokeObjectURL(url));
+              }}
+            >
+              Exportar JSON
+            </Button>
+          </div>
+
+          {diagnostics.slice(0, 30).map((item, index) => (
+            <details className="diagnostic-item" key={index}>
+              <summary>{item.message}</summary>
+              <pre className="diagnostic-stack">{item.stack ?? item.message}</pre>
+            </details>
+          ))}
+        </details>
+      </DockPanel>
+
+      <DockPanel
+        secondary
+        open={open && settingsOpen}
+        portal={portal}
+        title="Preferências do Rod Dock"
+        closeLabel="Fechar preferências"
+        onOpenChange={setSettingsOpen}
+      >
+        <label className="field-label" htmlFor="rod-dock-filter">
+          Filtrar scripts
+        </label>
+        <DockSearch
+          placeholder="Buscar script..."
+          id="rod-dock-filter"
+          variant="block"
+          value={settingsSearch}
+          onChange={setSettingsSearch}
+        />
+        <div className="actions">
+          <Button
+            variant="outline"
+            type="button"
+            className="btn"
+            onClick={() => {
+              setSearch(settingsSearch);
+              setSettingsOpen(false);
+            }}
+          >
+            Aplicar
+          </Button>
+          <Dialog.Close asChild>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
+          </Dialog.Close>
+        </div>
+      </DockPanel>
     </>
   );
 }
@@ -728,7 +700,11 @@ export function installRodDock({
   ) => { update: (component: ReactElement) => void; dispose: () => void };
 }) {
   gmMenu.__rodDockCleanup?.();
-  document.querySelector<HTMLElement>("[data-rod-dock]")?.remove();
+  // Coordinate replacement across isolated userscript execution worlds.
+  for (const previous of document.querySelectorAll<HTMLElement>("[data-rod-dock]")) {
+    previous.dispatchEvent(new Event("rod-dock:dispose"));
+    previous.remove();
+  }
 
   const host = document.createElement("div");
   host.dataset.rodDock = "";
@@ -751,7 +727,12 @@ export function installRodDock({
   launcher.textContent = "☰";
   launcher.setAttribute("aria-label", "Abrir Rod Dock");
 
-  const savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  let savedPosition = NaN;
+  try {
+    savedPosition = Number(localStorage.getItem(DOCK_POSITION_KEY));
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
   const initialTop =
     Number.isFinite(savedPosition) && savedPosition >= 12 && savedPosition <= 88 ? savedPosition : 46;
   launcher.style.top = `${initialTop}%`;
@@ -805,7 +786,11 @@ export function installRodDock({
     const { moved } = dragStart;
     dragStart = null;
     if (moved) {
-      localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+      try {
+        localStorage.setItem(DOCK_POSITION_KEY, String(parseFloat(launcher.style.top)));
+      } catch {
+        // Keep the current position even when persistence is unavailable.
+      }
     } else {
       setOpen(true);
     }
@@ -845,6 +830,7 @@ export function installRodDock({
   };
 
   const setOpen = (next: boolean) => {
+    if (disposed) return;
     isOpen = next;
     launcher.hidden = next;
     if (next) {
@@ -915,6 +901,7 @@ export function installRodDock({
     window.removeEventListener("scroll", onPageScroll, { capture: true });
     document.removeEventListener("rod-dock:registry", onRegistration);
     document.removeEventListener("rod-dock:menu", onMenu);
+    host.removeEventListener("rod-dock:dispose", dispose);
     sharedMount?.dispose();
     host.remove();
     if (command != null && typeof gmMenu.GM_unregisterMenuCommand === "function") {
@@ -925,6 +912,7 @@ export function installRodDock({
     }
   };
 
+  host.addEventListener("rod-dock:dispose", dispose, { once: true });
   gmMenu.__rodDockCleanup = dispose;
 
   return {

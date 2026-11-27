@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 23114)
-Total output lines: 728
-
 ## PR preview deployment
 
 PR preview workflow now builds numbered installers and deploys each PR to an isolated Cloudflare Pages branch (`pr-<number>`). It requires repository variable `USERSCRIPTS_PREVIEW_PAGES_PROJECT` and secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The PR comment receives the actual Cloudflare `*.pages.dev` URL only after a successful HTTP verification. The custom `userscripts.preview.migos.club/<number>/` path remains a separate routing task; preview cleanup after merge is not yet implemented.
@@ -723,3 +720,5 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [ ] Share low-level GM transport with pre-runtime diagnostics; verify HTTP status, bounded retry and visible delivery failures, without recursive capture.
 - [ ] Install minimal global error/rejection capture before storage or runtime initialization; isolate bootstrap stages and modules.
 - [ ] Validate generated standalone artifact in browser smoke test and Safari, including diagnostics, Dock, Inspektor and RodX.
+
+> **PR #151 · AST fixture typecheck (2026-11-27):** Run [45924857563](https://github.com/rodkisten/userscripts-cf/actions/runs/45924857563) passed 181 AST tests and React typecheck but failed fixture compilation (TS2614). The generated tsconfig now includes the same ambient declarations under `src/types` as the React config. No runtime or AST transform contract changes. Revalidation pending.

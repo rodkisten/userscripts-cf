@@ -36,7 +36,11 @@
     "check:react-only": "node build/check-react-only.mjs",
     "bundle:metrics": "node scripts/bundle-diet.mjs snapshot",
     "bundle:report": "node scripts/bundle-diet.mjs report",
-    "bundle:baseline": "node scripts/bundle-diet.mjs baseline"
+    "bundle:baseline": "node scripts/bundle-diet.mjs baseline",
+    "test:compiler": "vitest run --project compiler",
+    "test:tooling": "vitest run --project tooling",
+    "test:integration": "vitest run --project runtime-integration",
+    "test:userscripts": "vitest run --project 'userscripts:*' --passWithNoTests"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
@@ -95,7 +99,9 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.7.1",
     "tailwindcss": "^4.3.5",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "codemirror": "^6.0.2",
+    "@codemirror/lang-yaml": "^6.1.2"
   },
   "version": "8.0.0"
 }

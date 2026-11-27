@@ -1,15 +1,12 @@
 /** @jsxImportSource react */
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { EditorState } from "@codemirror/state";
-import { EditorView, lineNumbers } from "@codemirror/view";
-import { javascript } from "@codemirror/lang-javascript";
-import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { CodeEditor } from "../src/runtime/react-ui/uai/code-editor";
 import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
 import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
 import studioCss from "./studio.css?inline";
+import uaiTheme from "../src/runtime/react-ui/theme.css?inline";
 
 const STYLE_ATTR = "data-rod-studio-style";
 let studioStyle = document.querySelector<HTMLStyleElement>(`style[${STYLE_ATTR}]`);
@@ -18,7 +15,8 @@ if (!studioStyle) {
   studioStyle.setAttribute(STYLE_ATTR, "");
   document.head.append(studioStyle);
 }
-studioStyle.textContent = studioCss;
+studioStyle.textContent = uaiTheme + "\n" + studioCss;
+document.documentElement.classList.add("rod-theme", "dark");
 
 type Demo = {
   id: string;
@@ -122,48 +120,20 @@ function serialize(value: unknown): string {
   );
 }
 
+const ignoreSourceChange = () => {};
 function CodeMirrorSource({ code }: { code: string }) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const viewRef = useRef<EditorView | null>(null);
-
-  // Cria a instância do CodeMirror apenas uma vez
-  useEffect(() => {
-    if (!hostRef.current) return;
-    const view = new EditorView({
-      parent: hostRef.current,
-      state: EditorState.create({
-        doc: code,
-        extensions: [
-          lineNumbers(),
-          EditorView.lineWrapping,
-          EditorView.editable.of(false),
-          javascript({ typescript: true }),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-          oneDark,
-        ],
-      }),
-    });
-    viewRef.current = view;
-    return () => {
-      view.destroy();
-      viewRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Atualiza apenas o documento quando `code` muda, preservando scroll e instância
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-    const currentDoc = view.state.doc.toString();
-    if (currentDoc !== code) {
-      view.dispatch({
-        changes: { from: 0, to: currentDoc.length, insert: code },
-      });
-    }
-  }, [code]);
-
-  return <div className="studio-code" ref={hostRef} aria-label="Código de exemplo no CodeMirror 6" />;
+  return (
+    <div className="studio-code">
+      <CodeEditor
+        value={code}
+        onChange={ignoreSourceChange}
+        disabled
+        script
+        language="typescript"
+        ariaLabel="Código de exemplo no CodeMirror 6"
+      />
+    </div>
+  );
 }
 
 const MemoizedRodMenuHost = memo(RodMenuHost);

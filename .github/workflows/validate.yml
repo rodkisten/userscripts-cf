@@ -40,10 +40,13 @@ concurrency:
 
 jobs:
   validate:
-    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
+    needs: ast-impact
+    if: always() && !cancelled() && github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
     name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      AST_UNIT_DELEGATED: ${{ (github.event_name == 'workflow_dispatch' && inputs.block == 'all') || needs.ast-impact.outputs.changed == 'true' || needs.ast-impact.result == 'failure' }}
     steps:
       - name: 🤖 Generate GitHub App token
         id: app_token
@@ -88,6 +91,7 @@ jobs:
 
       - name: "[EXP] Mapear grafo de dependências e testes"
         id: graph
+        if: github.event_name == 'pull_request' && steps.install.outcome == 'success'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -168,6 +172,27 @@ jobs:
         run: npm run lint
         timeout-minutes: 5
 
+      - name: ⏳ Wait for stable revision
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          DEBOUNCE_SECONDS: ${{ vars.CI_DEBOUNCE_SECONDS || '60' }}
+          FORCE_DEPLOY: ${{ vars.CI_DEPLOY_BYPASS_DEBOUNCE || 'true' }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEBOUNCE_SECONDS" =~ ^[0-9]{1,4}$ ]] || { echo "::error::Invalid CI_DEBOUNCE_SECONDS"; exit 1; }
+          if [[ "$FORCE_DEPLOY" == true ]] && git log -1 --format=%B "$EXPECTED_SHA" | grep -Fq '[deploy]'; then
+            echo "Explicit deploy: bypassing debounce"
+          else
+            echo "Waiting ${DEBOUNCE_SECONDS}s for a stable revision; newer runs cancel this run."
+            sleep "$DEBOUNCE_SECONDS"
+          fi
+          if [[ "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Checkout changed; waiting for validation of the new revision."
+            exit 1
+          fi
+
       - name: Build all userscripts
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
         run: npm run build
@@ -193,7 +218,8 @@ jobs:
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
-          SCOPED_BUILDS_MATRIX: "true"
+          SCOPED_BUILDS_MATRIX: "false"
+          TYPECHECK_ALREADY_PASSED: "true"
           EVENT_NAME: ${{ github.event_name }}
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -201,7 +227,7 @@ jobs:
         timeout-minutes: 15
 
       - name: 🎨 Build visual playground (independent of typecheck)
-        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
+        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure' && (github.event_name != 'pull_request' || failure() || github.event.pull_request.head.repo.full_name != github.repository)
         run: node build/design-system.mjs
 
       - name: 📝 Record successful exact-source validation
@@ -230,13 +256,17 @@ jobs:
           PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
         run: |
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
-          node scripts/cloudflare-pr-preview.mjs --mode=publish
+          if [[ -f .ci-full-build-sha ]] && [[ "$(cat .ci-full-build-sha)" == "$PR_HEAD_SHA" ]]; then
+            node scripts/cloudflare-pr-preview.mjs --mode=publish --skip-build=true
+          else
+            node scripts/cloudflare-pr-preview.mjs --mode=publish
+          fi
 
       - name: Measure published distribution
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: npm run bundle:metrics
       - name: 💬 Update Bundle Diet PR comment
-        if: github.event_name == 'pull_request'
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -245,16 +275,6 @@ jobs:
           USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
         run: npm run bundle:report
 
-      - name: Authenticate preview comment publisher
-        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: app-token
-        uses: rodkisten/github/app-token@main
-        with:
-          app-id: ${{ secrets.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
-          permission-contents: read
-          permission-pull-requests: write
-          permission-issues: write
       - name: Verify preview and source revision
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -273,12 +293,12 @@ jobs:
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         id: diff-info
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
         run: node scripts/github-actions.mjs collect
       - name: Publish preview comment
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
           SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
           COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
@@ -316,7 +336,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        block: [workflow-paths, ast-debt]
+        block: ${{ fromJSON(github.event_name == 'pull_request' && '["workflow-paths","ast-debt"]' || '["workflow-paths"]') }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -358,9 +378,10 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           node scripts/workflows-validate.mjs --json > workflow-audit-report.json
+          cat workflow-audit-report.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish Summary, Annotations, Labels & Issue/PR Comment
-        if: matrix.block == 'workflow-paths'
+        if: matrix.block == 'workflow-paths' && github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPORT_PATH: workflow-audit-report.json
@@ -400,6 +421,7 @@ jobs:
       contents: read
     outputs:
       changed: ${{ steps.paths.outputs.changed }}
+      source_changed: ${{ steps.paths.outputs.source_changed }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -412,7 +434,13 @@ jobs:
           set -euo pipefail
           if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "source_changed=true" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          if git diff --quiet "$BASE...$HEAD" -- src/; then
+            echo "source_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "source_changed=true" >> "$GITHUB_OUTPUT"
           fi
           if git diff --quiet "$BASE" "$HEAD" -- 'build/rod-ast.mjs' 'build/rod-ast-summary.mjs' 'build/styles.mjs' 'docs/rod-ast.md' 'tests/fixtures/rod-ast.matrix.json' 'tests/fixtures/rod-ast.input.tsx' 'tests/rod-ast.test.mjs' 'tests/rod-ast-summary.test.mjs' 'src/core/runtime.ts' 'src/core/runtime-context-react.tsx' 'src/core/react-context-contract.ts' 'vite.config.js' 'build/rod-ast-iife.mjs' 'build/rod-ast-cli.mjs' 'tests/fixtures/rod-ast.legacy.user.js' 'src/runtime/dom-engine.ts' 'src/runtime/gm-bridge.ts' 'src/runtime/modular/features/dom.ts' 'src/runtime/modular/features/gm.ts' 'src/runtime/modular/features/storage.ts' 'src/runtime/vendor/storage.ts' '.github/workflows/validate.yml'; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -479,7 +507,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx","src/types/**/*.d.ts"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
           npx tsc --project tsconfig.rod-ast.generated.json --noEmit
       - name: "🧪 Typecheck React"
         id: react_types
@@ -539,7 +567,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🤖 Generate GitHub App token
-        id: app-token
+        id: app_token
         uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
@@ -552,7 +580,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - name: 🏗️ Build and measure distribution
         uses: rodkisten/github/execute@main
@@ -569,7 +597,7 @@ jobs:
       - name: 💬 Update Bundle Diet PR comment
         if: github.event_name == 'pull_request'
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -685,3 +713,151 @@ jobs:
                 body: menuBody,
               });
             }
+
+  dependency-graph:
+    needs: ast-impact
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && needs.ast-impact.outputs.source_changed == 'true'
+    permissions:
+      contents: read
+    env:
+      SOURCE_DIR: src
+      MADGE_VERSION: '8.0.0'
+      ROD_COMMENT_KIT: ${{ github.workspace }}/.rod-shared/packages/comment-kit/index.mjs
+    name: 🕸️ Architecture Intelligence
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 🗂️ Initialize graph directory
+        shell: bash
+        run: echo "GRAPH_DIR=$RUNNER_TEMP/dependency-graph" >> "$GITHUB_ENV"
+
+      - name: 📥 Checkout HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 🎨 Checkout shared Comment Kit
+        uses: actions/checkout@v4
+        with:
+          repository: rodkisten/github
+          ref: a2c930218dd1ad68720326c0557e7da55b6f55e8
+          path: .rod-shared
+          sparse-checkout: packages/comment-kit
+          persist-credentials: false
+
+      - name: 🟩 Setup Node
+        uses: rodkisten/github/setup-node@main
+        with:
+          node-version: '24'
+          install: 'false'
+          cache: 'false'
+
+      - name: 🌈 Setup rodlog
+        uses: rodkisten/github/setup-rodlog@main
+
+      - name: 📦 Prepare graph tools
+        uses: rodkisten/github/console-run@main
+        with:
+          title: Prepare graph tools
+          command: |
+            set -euo pipefail
+
+            mkdir -p "$GRAPH_DIR"
+
+            sudo apt-get update -qq
+            sudo apt-get install -y graphviz
+
+            npm install \
+              --prefix "$GRAPH_DIR/tools" \
+              --no-audit \
+              --no-fund \
+              --ignore-scripts \
+              "madge@$MADGE_VERSION"
+
+      - name: 🧬 Prepare base revision
+        uses: rodkisten/github/console-run@main
+        env:
+          BASE_SHA: refs/remotes/origin/main
+        with:
+          title: Prepare base revision
+          command: |
+            set -euo pipefail
+
+            git rev-parse "$BASE_SHA"
+            git worktree add \
+              --detach \
+              "$GRAPH_DIR/base" \
+              "$BASE_SHA"
+
+      - name: 🕸️ Generate dependency graphs
+        uses: rodkisten/github/console-run@main
+        with:
+          title: Generate dependency graphs
+          command: |
+            set -euo pipefail
+
+            node scripts/dependency-graph.mjs generate
+
+      - name: 🔬 Analyze architectural changes
+        id: analyze
+        uses: rodkisten/github/console-run@main
+        with:
+          title: Analyze architectural changes
+          command: |
+            set -euo pipefail
+
+            node scripts/dependency-graph.mjs analyze
+
+      - name: 📦 Upload graph artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: |
+            ${{ env.GRAPH_DIR }}/*.txt
+            ${{ env.GRAPH_DIR }}/*.dot
+            ${{ env.GRAPH_DIR }}/*.svg
+            ${{ env.GRAPH_DIR }}/*.json
+            ${{ env.GRAPH_DIR }}/*.mmd
+            ${{ env.GRAPH_DIR }}/*.md
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: 🤖 Authenticate Rod App
+        id: app
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+          permission-issues: write
+
+      - name: 📝 Publish architecture in PR description
+        if: steps.app.outputs.token != ''
+        env:
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
+        run: node scripts/dependency-graph.mjs publish
+
+      - name: 📋 Final summary
+        if: always()
+        uses: rodkisten/github/ci-summary@main
+        with:
+          title: '🕸️ Dependency Graph'
+          status: ${{ job.status }}
+          details: |
+            | Property | Value |
+            | --- | --- |
+            | Repository | `${{ github.repository }}` |
+            | Source | `${{ env.SOURCE_DIR }}` |
+            | Madge | `${{ env.MADGE_VERSION }}` |
+            | Revision | `${{ github.event.pull_request.head.sha || github.sha }}` |
+            | PR | `${{ github.event.pull_request.number || 'Manual execution' }}` |
+
+            🦾 Powered by Rod Actions
