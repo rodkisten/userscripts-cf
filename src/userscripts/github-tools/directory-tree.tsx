@@ -1,6 +1,12 @@
 import { useState, useSyncExternalStore } from "react";
 import { CopyPlus } from "lucide-react";
-import { FileTree, buildTree, filterTree, type FileTreeEntry as Entry, type FileTreeNode as Node } from "../../runtime/react-ui/uai/file-tree";
+import {
+  FileTree,
+  buildTree,
+  filterTree,
+  type FileTreeEntry as Entry,
+  type FileTreeNode as Node,
+} from "../../runtime/react-ui/uai/file-tree";
 import themeCss from "../../runtime/react-ui/theme.css?inline";
 import styles, { css } from "./GitHub.module.css";
 
@@ -116,10 +122,32 @@ export function restoreGitHubTreeScroll(path = location.pathname): boolean {
     return false;
   }
 }
-function CopyFileAction({node,href,copy}:{node:Node;href:string;copy:CopyActions["appendFile"]}) {
- const [status,setStatus]=useState("");
- if(node.folder)return null;
- return <><button type="button" className={styles.button} aria-label={`Adicionar ${node.name} ao clipboard`} onClick={()=>{setStatus("Copiando…");void copy(new URL(href,location.origin).href,node.path).then(()=>setStatus("Adicionado ao clipboard"),error=>setStatus(String(error)));}}><CopyPlus size={16}/></button>{status&&<span role="status" className={styles.treeCount}>{status}</span>}</>;
+function CopyFileAction({ node, href, copy }: { node: Node; href: string; copy: CopyActions["appendFile"] }) {
+  const [status, setStatus] = useState("");
+  if (node.folder) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.button}
+        aria-label={`Adicionar ${node.name} ao clipboard`}
+        onClick={() => {
+          setStatus("Copiando…");
+          void copy(new URL(href, location.origin).href, node.path).then(
+            () => setStatus("Adicionado ao clipboard"),
+            (error) => setStatus(String(error)),
+          );
+        }}
+      >
+        <CopyPlus size={16} />
+      </button>
+      {status && (
+        <span role="status" className={styles.treeCount}>
+          {status}
+        </span>
+      )}
+    </>
+  );
 }
 export function mountDirectoryTree(
   ctx: any,
@@ -317,8 +345,37 @@ export function mountDirectoryTree(
           </div>
         )}
         {state === "ready" && (
-          <FileTree key={resolvedBranch} nodes={nodes} query={query} current={current} selected={selected} onSelect={select} loadFolder={loadFolder} href={node=>base+"/"+(node.folder?"tree":"blob")+"/"+resolvedBranch.split("/").map(encodeURIComponent).join("/")+"/"+node.path.split("/").map(encodeURIComponent).join("/")} renderActions={node=><CopyFileAction node={node} href={base+"/blob/"+resolvedBranch.split("/").map(encodeURIComponent).join("/")+"/"+node.path.split("/").map(encodeURIComponent).join("/")} copy={copy.appendFile}/>}/>
-
+          <FileTree
+            key={resolvedBranch}
+            nodes={nodes}
+            query={query}
+            current={current}
+            selected={selected}
+            onSelect={select}
+            loadFolder={loadFolder}
+            href={(node) =>
+              base +
+              "/" +
+              (node.folder ? "tree" : "blob") +
+              "/" +
+              resolvedBranch.split("/").map(encodeURIComponent).join("/") +
+              "/" +
+              node.path.split("/").map(encodeURIComponent).join("/")
+            }
+            renderActions={(node) => (
+              <CopyFileAction
+                node={node}
+                href={
+                  base +
+                  "/blob/" +
+                  resolvedBranch.split("/").map(encodeURIComponent).join("/") +
+                  "/" +
+                  node.path.split("/").map(encodeURIComponent).join("/")
+                }
+                copy={copy.appendFile}
+              />
+            )}
+          />
         )}
       </section>
     );

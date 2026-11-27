@@ -1,5 +1,12 @@
 export type FileTreeEntry = { path: string; type: "blob" | "tree"; sha?: string; size?: number };
-export type FileTreeNode = { name: string; path: string; folder: boolean; children: FileTreeNode[]; sha?: string; size?: number };
+export type FileTreeNode = {
+  name: string;
+  path: string;
+  folder: boolean;
+  children: FileTreeNode[];
+  sha?: string;
+  size?: number;
+};
 const compare = (a: FileTreeNode, b: FileTreeNode) =>
   Number(b.folder) - Number(a.folder) || a.name.localeCompare(b.name, undefined, { numeric: true });
 export function buildTree(entries: FileTreeEntry[]): FileTreeNode[] {
