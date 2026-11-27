@@ -822,20 +822,42 @@ if (!isMerge) {
       includes,
     }));
 
-    const buildResults = await Promise.all(
-      activeTargets.map((target) =>
-        compileTarget(target, {
-          root,
-          out,
-          iconSource,
-          baseURL,
-          registry: versionRegistry,
-          catalog,
-          runtimeFeatureAudit,
-          log,
-        }),
-      ),
-    );
+    const requestedConcurrency = Number(process.env.ROD_BUILD_CONCURRENCY ?? Math.max(1, activeTargets.length));
+    if (!Number.isSafeInteger(requestedConcurrency) || requestedConcurrency < 1) {
+      throw new Error("ROD_BUILD_CONCURRENCY must be a positive integer");
+    }
+    const concurrency = Math.min(requestedConcurrency, activeTargets.length);
+    const buildResults = new Array(activeTargets.length);
+    const timings = [];
+    const startedAt = performance.now();
+    let cursor = 0;
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (cursor < activeTargets.length) {
+        const index = cursor++;
+        const target = activeTargets[index];
+        const started = performance.now();
+        try {
+          buildResults[index] = await compileTarget(target, {
+            root, out, iconSource, baseURL, registry: versionRegistry,
+            catalog, runtimeFeatureAudit, log,
+          });
+        } finally {
+          timings.push({ target: target.id, ms: Math.round(performance.now() - started) });
+        }
+      }
+    }));
+    timings.sort((a, b) => b.ms - a.ms);
+    const wallMs = Math.round(performance.now() - startedAt);
+    log.table("Build duration by target", timings);
+    await fs.writeFile(path.join(out, "build-timings.json"), JSON.stringify({ concurrency, wallMs, targets: timings }, null, 2) + "\n");
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, [
+        "\n### Bundle build timings",
+        `Wall time: ${wallMs} ms · concurrency: ${concurrency}`,
+        "", "| Target | Duration (ms) |", "|---|---:|",
+        ...timings.map(({ target, ms }) => `| ${target} | ${ms} |`), "",
+      ].join("\n"));
+    }
 
     // Salva fragmentos individuais para serem unificados no job de merge
     if (isFragment) {
