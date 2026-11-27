@@ -3,7 +3,7 @@ name: "🧩 US · 📦 Import ZIPs → PR"
 on:
   push:
     paths:
-      - "*.zip"
+      - "**/*.zip"
   workflow_dispatch:
     inputs:
       output_path:
@@ -32,83 +32,291 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install yauzl for safe streaming ZIP extraction
+        run: npm install --no-save --prefix /tmp/zip-tools yauzl@3.2.0
+
       - name: Extract tracked ZIP archives safely
         id: extract
         shell: bash
         env:
-          OUTPUT_PATH: ${{ inputs.output_path }}
+          NODE_PATH: /tmp/zip-tools/node_modules
+          OUTPUT_PATH: ${{ inputs.output_path || 'imported-zips' }}
         run: |
-          python3 - <<'PY'
-          import os
-          import pathlib
-          import stat
-          import subprocess
-          import zipfile
+          node --input-type=module <<'JS'
+          import { execFileSync } from "node:child_process";
+          import fs from "node:fs";
+          import path from "node:path";
+          import { Transform } from "node:stream";
+          import { pipeline } from "node:stream/promises";
+          import { createRequire } from "node:module";
 
-          root = pathlib.Path.cwd().resolve()
-          raw = os.environ["OUTPUT_PATH"].strip().replace("\\", "/")
-          relative = pathlib.PurePosixPath(raw)
-          if not raw or raw.startswith("/") or any(part in ("..", ".") for part in raw.split("/")) or relative == pathlib.PurePosixPath("."):
-              raise SystemExit("Invalid output_path: choose a relative directory inside the repository")
-          target = (root / relative).resolve()
-          if not target.is_relative_to(root) or target == root or target.is_relative_to(root / ".git"):
-              raise SystemExit("Destination must be a directory inside the repository")
-          tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
-          archives = sorted(root / os.fsdecode(path) for path in tracked if path and path.lower().endswith(b".zip"))
-          if not archives:
-              print("No tracked ZIP archives found. Nothing to import.")
-              with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-                  output.write("archives=0\n")
-              raise SystemExit(0)
-          print(f"Found {len(archives)} tracked ZIP(s)")
-          seen = set()
-          extracted = 0
-          max_total = 500 * 1024 * 1024
-          max_files = 20000
-          total_size = 0
-          for archive in archives:
-              print(f"::group::Extract {archive.relative_to(root)}")
-              with zipfile.ZipFile(archive) as zf:
-                  for entry in zf.infolist():
-                      name = entry.filename.replace("\\", "/")
-                      parts = pathlib.PurePosixPath(name)
-                      if not name or name.startswith("/") or any(p in ("", ".", "..") for p in name.split("/")):
-                          raise SystemExit(f"Unsafe ZIP path: {archive.name}: {name}")
-                      if parts.parts[0] == ".git" or any(p == ".git" for p in parts.parts):
-                          raise SystemExit(f"Git metadata is not allowed: {name}")
-                      if (entry.external_attr >> 16) & 0o170000 == stat.S_IFLNK:
-                          raise SystemExit(f"ZIP symlink not allowed: {name}")
-                      destination = (target / parts).resolve()
-                      if not destination.is_relative_to(target):
-                          raise SystemExit(f"ZIP entry escapes output_path: {name}")
-                      if entry.is_dir():
-                          continue
-                      if destination in seen:
-                          raise SystemExit(f"Duplicate destination across ZIPs: {destination.relative_to(root)}")
-                      seen.add(destination)
-                      extracted += 1
-                      total_size += entry.file_size
-                      if extracted > max_files or total_size > max_total:
-                          raise SystemExit("ZIP extraction safety limit exceeded")
-                      destination.parent.mkdir(parents=True, exist_ok=True)
-                      with zf.open(entry) as source, destination.open("wb") as output:
-                          import shutil
-                          shutil.copyfileobj(source, output)
-              print("::endgroup::")
-          for archive in archives:
-              archive.unlink()
-              print(f"Removed ZIP: {archive.relative_to(root)}")
-          print(f"Extracted {extracted} files into {relative}; removed {len(archives)} ZIP archives")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"archives={len(archives)}\n")
-              output.write(f"files={extracted}\n")
-          PY
+          const require = createRequire(import.meta.url);
+          const yauzl = require("yauzl");
+
+          const MAX_TOTAL_BYTES = 500 * 1024 * 1024; // 500 MB reais descompactados
+          const MAX_FILES = 20_000;
+          const S_IFMT = 0o170000;
+          const S_IFLNK = 0o120000;
+
+          function fail(message) {
+            console.error(`::error::${message}`);
+            process.exit(1);
+          }
+
+          function setOutput(key, value) {
+            const outFile = process.env.GITHUB_OUTPUT;
+            if (outFile) {
+              fs.appendFileSync(outFile, `${key}=${value}\n`, "utf8");
+            }
+          }
+
+          function isSubPath(parent, child) {
+            const rel = path.relative(parent, child);
+            return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+          }
+
+          function assertNoSymlinkInHierarchy(baseDir, targetPath) {
+            const rel = path.relative(baseDir, targetPath);
+            if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) {
+              fail(`Path escapes base directory: ${targetPath}`);
+            }
+            let current = baseDir;
+            for (const segment of rel.split(path.sep)) {
+              current = path.join(current, segment);
+              if (fs.existsSync(current)) {
+                const stat = fs.lstatSync(current);
+                if (stat.isSymbolicLink()) {
+                  fail(`Symlink detected in destination path: ${path.relative(baseDir, current)}`);
+                }
+              }
+            }
+          }
+
+          function validateRelativePosixPath(rawPath, { allowTrailingSlash = false } = {}) {
+            if (typeof rawPath !== "string" || rawPath.length === 0) {
+              fail("Empty path is not allowed");
+            }
+            if (rawPath.includes("\0")) {
+              fail(`Null byte in path: ${JSON.stringify(rawPath)}`);
+            }
+
+            const normalized = rawPath.replace(/\\/g, "/");
+            if (normalized.startsWith("/") || /^[a-zA-Z]:/.test(normalized)) {
+              fail(`Absolute or drive-prefixed path is not allowed: ${rawPath}`);
+            }
+
+            const isDirEntry = allowTrailingSlash && normalized.endsWith("/");
+            const trimmed = isDirEntry ? normalized.slice(0, -1) : normalized;
+            if (!trimmed) {
+              fail(`Invalid root-only path: ${rawPath}`);
+            }
+
+            const segments = trimmed.split("/");
+            for (const seg of segments) {
+              if (seg === "" || seg === "." || seg === "..") {
+                fail(`Unsafe path segment "${seg}" in: ${rawPath}`);
+              }
+              if (seg.toLowerCase() === ".git") {
+                fail(`Git metadata path is not allowed: ${rawPath}`);
+              }
+            }
+
+            return {
+              cleanPosix: segments.join("/"),
+              segments,
+              isDirEntry,
+            };
+          }
+
+          // 1. Validar repositório e output_path
+          const root = fs.realpathSync(process.cwd());
+          const rawOutput = (process.env.OUTPUT_PATH ?? "").trim();
+          const { cleanPosix: relativeOutput } = validateRelativePosixPath(rawOutput, {
+            allowTrailingSlash: true,
+          });
+
+          const target = path.resolve(root, relativeOutput);
+          if (!isSubPath(root, target)) {
+            fail("Destination must be a subdirectory inside the repository");
+          }
+          assertNoSymlinkInHierarchy(root, target);
+
+          // 2. Listar ZIPs rastreados pelo Git (suporta espaços e caracteres especiais via -z)
+          const trackedRaw = execFileSync("git", ["ls-files", "-z"], { cwd: root });
+          const archives = trackedRaw
+            .toString("utf8")
+            .split("\0")
+            .filter((p) => p.length > 0 && p.toLowerCase().endsWith(".zip"))
+            .sort()
+            .map((relPath) => path.resolve(root, relPath));
+
+          if (archives.length === 0) {
+            console.log("No tracked ZIP archives found. Nothing to import.");
+            setOutput("archives", 0);
+            setOutput("files", 0);
+            setOutput("resolved_output_path", relativeOutput);
+            process.exit(0);
+          }
+
+          console.log(`Found ${archives.length} tracked ZIP(s)`);
+
+          const seenDestinations = new Set();
+          const seenCaseInsensitive = new Set();
+          const seenDirectories = new Set();
+          let extractedFiles = 0;
+          let totalExtractedBytes = 0;
+
+          function openZip(zipPath) {
+            return new Promise((resolve, reject) => {
+              yauzl.open(
+                zipPath,
+                {
+                  lazyEntries: true,
+                  autoClose: true,
+                  decodeStrings: true,
+                  strictFileNames: false,
+                },
+                (err, zipfile) => (err ? reject(err) : resolve(zipfile))
+              );
+            });
+          }
+
+          async function processArchive(archivePath) {
+            const relArchive = path.relative(root, archivePath);
+            console.log(`::group::Extract ${relArchive}`);
+
+            const zipfile = await openZip(archivePath);
+
+            await new Promise((resolve, reject) => {
+              zipfile.on("error", reject);
+              zipfile.on("end", resolve);
+
+              zipfile.on("entry", async (entry) => {
+                try {
+                  const { cleanPosix, segments, isDirEntry } = validateRelativePosixPath(
+                    entry.fileName,
+                    { allowTrailingSlash: true }
+                  );
+
+                  // Verificar symlink Unix (externalFileAttributes bits superiores)
+                  const unixMode = (entry.externalFileAttributes >>> 16) & S_IFMT;
+                  if (unixMode === S_IFLNK) {
+                    fail(`ZIP symlink not allowed: ${entry.fileName}`);
+                  }
+
+                  const destination = path.resolve(target, ...segments);
+                  if (!isSubPath(target, destination)) {
+                    fail(`ZIP entry escapes output_path: ${entry.fileName}`);
+                  }
+
+                  // Registrar todos os diretórios ancestrais para detectar colisão arquivo <-> diretório
+                  for (let i = 1; i < segments.length; i++) {
+                    const dirKey = segments.slice(0, i).join("/").toLowerCase();
+                    if (seenCaseInsensitive.has(dirKey)) {
+                      fail(`Path collision between file and directory: ${cleanPosix}`);
+                    }
+                    seenDirectories.add(dirKey);
+                  }
+
+                  if (isDirEntry) {
+                    const dirKey = cleanPosix.toLowerCase();
+                    if (seenCaseInsensitive.has(dirKey)) {
+                      fail(`Path collision between file and directory: ${cleanPosix}`);
+                    }
+                    seenDirectories.add(dirKey);
+                    zipfile.readEntry();
+                    return;
+                  }
+
+                  const lowerKey = cleanPosix.toLowerCase();
+                  if (seenDirectories.has(lowerKey)) {
+                    fail(`Path collision between directory and file: ${cleanPosix}`);
+                  }
+                  if (seenDestinations.has(destination) || seenCaseInsensitive.has(lowerKey)) {
+                    fail(`Duplicate or case-colliding destination across ZIPs: ${path.relative(root, destination)}`);
+                  }
+
+                  seenDestinations.add(destination);
+                  seenCaseInsensitive.add(lowerKey);
+
+                  extractedFiles += 1;
+                  if (extractedFiles > MAX_FILES) {
+                    fail(`ZIP extraction safety limit exceeded (max ${MAX_FILES} files)`);
+                  }
+
+                  // Verificar tamanho declarado antes mesmo de abrir o stream
+                  if (totalExtractedBytes + entry.uncompressedSize > MAX_TOTAL_BYTES) {
+                    fail(`ZIP extraction safety limit exceeded (max ${MAX_TOTAL_BYTES} bytes)`);
+                  }
+
+                  assertNoSymlinkInHierarchy(root, path.dirname(destination));
+                  fs.mkdirSync(path.dirname(destination), { recursive: true });
+
+                  // Se já existe um diretório no repo com o mesmo nome do arquivo destino
+                  if (fs.existsSync(destination) && fs.lstatSync(destination).isDirectory()) {
+                    fail(`Cannot overwrite existing directory with file: ${path.relative(root, destination)}`);
+                  }
+
+                  const readStream = await new Promise((res, rej) => {
+                    zipfile.openReadStream(entry, (err, stream) => (err ? rej(err) : res(stream)));
+                  });
+
+                  // Contador real de bytes gravados (proteção contra Zip Bomb com header forjado)
+                  const byteLimiter = new Transform({
+                    transform(chunk, _enc, cb) {
+                      totalExtractedBytes += chunk.length;
+                      if (totalExtractedBytes > MAX_TOTAL_BYTES) {
+                        cb(new Error(`ZIP extraction safety limit exceeded (actual bytes > ${MAX_TOTAL_BYTES})`));
+                        return;
+                      }
+                      cb(null, chunk);
+                    },
+                  });
+
+                  const writeStream = fs.createWriteStream(destination, { flags: "w" });
+                  await pipeline(readStream, byteLimiter, writeStream);
+
+                  zipfile.readEntry();
+                } catch (err) {
+                  reject(err);
+                }
+              });
+
+              zipfile.readEntry();
+            });
+
+            console.log("::endgroup::");
+          }
+
+          for (const archive of archives) {
+            await processArchive(archive);
+          }
+
+          for (const archive of archives) {
+            fs.unlinkSync(archive);
+            console.log(`Removed ZIP: ${path.relative(root, archive)}`);
+          }
+
+          console.log(
+            `Extracted ${extractedFiles} files (${totalExtractedBytes} bytes) into ${relativeOutput}; removed ${archives.length} ZIP archives`
+          );
+
+          setOutput("archives", archives.length);
+          setOutput("files", extractedFiles);
+          setOutput("resolved_output_path", relativeOutput);
+          JS
 
       - name: Open pull request
         if: steps.extract.outputs.archives != '0'
@@ -118,13 +326,15 @@ jobs:
           commit-message: "chore(import): extract repository ZIP archives"
           branch: automation/import-zips
           delete-branch: true
-          title: "📦 Importar arquivos ZIP para ${{ inputs.output_path }}"
+          title: "📦 Importar arquivos ZIP para ${{ steps.extract.outputs.resolved_output_path }}"
           body: |
             Importação automática dos arquivos ZIP versionados no repositório.
 
-            - **Destino:** \`${{ inputs.output_path }}\`
+            - **Destino:** `${{ steps.extract.outputs.resolved_output_path }}`
             - **Arquivos ZIP:** ${{ steps.extract.outputs.archives }}
             - **Arquivos extraídos:** ${{ steps.extract.outputs.files }}
-            - **Origem:** execução manual ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Origem:** ${{ github.event_name }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-            Os ZIPs originais foram removidos neste PR após a extração.\n\n            Confira os arquivos extraídos e os checks antes de fazer merge.
+            Os ZIPs originais foram removidos neste PR após a extração.
+
+            Confira os arquivos extraídos e os checks antes de fazer merge.
