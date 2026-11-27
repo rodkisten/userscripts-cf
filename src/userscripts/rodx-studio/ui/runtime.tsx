@@ -42,20 +42,39 @@ function releaseDetachedViews() {
     if (target.isConnected) {
       record.connected = true;
     } else if (record.connected) {
-      disposeView(target);
+      try {
+        disposeView(target);
+      } catch (error) {
+        console.error("[RodX Studio] Detached view disposal failed", error);
+      }
     }
   }
+  reconcileObservers();
 }
 
-function observeMounts(target: MountTarget) {
-  if (typeof MutationObserver === "undefined") return;
+function mountRoots(target: MountTarget) {
   const roots = new Set<Document | ShadowRoot>([target.ownerDocument]);
   let node: Node = target;
   while (true) {
     const root = node.getRootNode();
-    if (!(root instanceof ShadowRoot)) break;
-    roots.add(root);
-    node = root.host;
+    if (root.nodeType !== 11 || !("host" in root)) break;
+    const shadow = root as ShadowRoot;
+    roots.add(shadow);
+    node = shadow.host;
+  }
+  return roots;
+}
+
+function reconcileObservers() {
+  if (typeof MutationObserver === "undefined") return;
+  const roots = new Set<Document | ShadowRoot>();
+  for (const target of mounts.keys()) {
+    for (const root of mountRoots(target)) roots.add(root);
+  }
+  for (const [root, observer] of observers) {
+    if (roots.has(root)) continue;
+    observer.disconnect();
+    observers.delete(root);
   }
   for (const root of roots) {
     if (observers.has(root)) continue;
@@ -69,8 +88,7 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
   if (!sharedMount) {
     throw new Error("RodX React mount adapter must be configured before mounting views");
   }
-  observeMounts(target);
-  for (const [child, record] of mounts) {
+  for (const child of mounts.keys()) {
     if (child !== target && target.contains(child)) {
       disposeView(child);
     }
@@ -90,12 +108,12 @@ export function mountView(target: MountTarget, read: () => ReactNode) {
         record.dispose = sharedMount!(<SharedView record={record} />, target);
       });
     } catch (error) {
-      record.dispose?.();
-      mounts.delete(target);
+      disposeView(target);
       throw error;
     }
   }
   releaseDetachedViews();
+  reconcileObservers();
 }
 
 export function disposeView(target: MountTarget) {
@@ -108,6 +126,7 @@ export function disposeView(target: MountTarget) {
     record.dispose?.();
   } finally {
     record.listeners?.clear();
+    reconcileObservers();
   }
 }
 
