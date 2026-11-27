@@ -24,13 +24,22 @@ async function walk(dir) {
 await walk(root.pathname);
 suites.sort();
 // Explicit paths are restricted to the runtime/utility allowlist.
-const candidates = process.argv.slice(2).includes('--candidates');
+const candidates = process.argv.slice(2).includes("--candidates");
 const requested = [
-  ...new Set(process.argv.slice(2).filter((arg) => arg !== '--candidates').map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/"))),
+  ...new Set(
+    process.argv
+      .slice(2)
+      .filter((arg) => arg !== "--candidates")
+      .map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/")),
+  ),
 ];
-const selected = candidates ? requested.filter((path) => suites.includes(path)) : requested.length ? requested : suites;
+const selected = candidates
+  ? requested.filter((path) => suites.includes(path))
+  : requested.length
+    ? requested
+    : suites;
 if (candidates && !selected.length) {
-  console.log('No eligible runtime/utility candidates.');
+  console.log("No eligible runtime/utility candidates.");
   process.exit(0);
 }
 const invalid = selected.filter((path) => !suites.includes(path));
