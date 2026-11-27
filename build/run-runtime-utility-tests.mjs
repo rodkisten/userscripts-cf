@@ -24,7 +24,9 @@ async function walk(dir) {
 await walk(root.pathname);
 suites.sort();
 // Explicit paths are restricted to the runtime/utility allowlist.
-const requested = [...new Set(process.argv.slice(2).map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/")))];
+const requested = [
+  ...new Set(process.argv.slice(2).map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/"))),
+];
 const selected = requested.length ? requested : suites;
 const invalid = selected.filter((path) => !suites.includes(path));
 if (invalid.length || !selected.length) {
