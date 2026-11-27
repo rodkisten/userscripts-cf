@@ -143,7 +143,6 @@ function getTscCommand() {
   return TSC_BIN === "npx" ? ["npx", ["tsc", "--noEmit"]] : [TSC_BIN, ["--noEmit"]];
 }
 
-
 // ============================================================================
 // MODO 1: PLAN (Detecção de mudanças e escopo)
 // ============================================================================
@@ -314,14 +313,18 @@ export async function runValidation() {
             env: childEnv,
           });
           markFullBuild();
-      delete childEnv.RUNTIME_TEST_SKIP_DIST;
+          delete childEnv.RUNTIME_TEST_SKIP_DIST;
         } else if (!scopedBuildsMatrix) {
-          await execOrFailAsync(process.execPath, ["build/build.mjs", `--targets=${scopedBuilds.join(",")}`], {
-            logger: log,
-            step,
-            label: `Build targets (${scopedBuilds.join(",")})`,
-            env: childEnv,
-          });
+          await execOrFailAsync(
+            process.execPath,
+            ["build/build.mjs", `--targets=${scopedBuilds.join(",")}`],
+            {
+              logger: log,
+              step,
+              label: `Build targets (${scopedBuilds.join(",")})`,
+              env: childEnv,
+            },
+          );
         } else {
           step.skip("Builds", "delegados para matriz paralela");
         }
@@ -330,12 +333,16 @@ export async function runValidation() {
       }
 
       if (scopedTests.length > 0 && scopedTests[0] !== "none") {
-        await execOrFailAsync("npm", ["run", "test:unit", ...(scopedTests.includes("all") ? [] : ["--", ...scopedTests])], {
-          logger: log,
-          step,
-          label: "Testes unitários",
-          env: childEnv,
-        });
+        await execOrFailAsync(
+          "npm",
+          ["run", "test:unit", ...(scopedTests.includes("all") ? [] : ["--", ...scopedTests])],
+          {
+            logger: log,
+            step,
+            label: "Testes unitários",
+            env: childEnv,
+          },
+        );
       } else {
         step.skip("Testes unitários", "ignorados pela diretiva explícita");
       }
@@ -377,12 +384,14 @@ export async function runValidation() {
     await log.step("Análise estática (Typecheck + Style) e grafo em paralelo", async (step) => {
       const [tscCmd, tscArgs] = getTscCommand();
       const tasks = [
-        (process.env.TYPECHECK_ALREADY_PASSED === "true" ? Promise.resolve() : execOrFailAsync(tscCmd, tscArgs, {
-          logger: log,
-          step,
-          label: "Typecheck (tsc)",
-          env: childEnv,
-        })),
+        process.env.TYPECHECK_ALREADY_PASSED === "true"
+          ? Promise.resolve()
+          : execOrFailAsync(tscCmd, tscArgs, {
+              logger: log,
+              step,
+              label: "Typecheck (tsc)",
+              env: childEnv,
+            }),
         hasChangedManifest
           ? execOrFailAsync(
               process.execPath,
@@ -414,10 +423,7 @@ export async function runValidation() {
       childEnv.RUNTIME_TEST_SKIP_DIST = "true";
 
       if (scopedBuildsMatrix && !hostingChanged) {
-        step.skip(
-          "Builds locais",
-          `${ALL_BUILD_TARGETS.length} targets delegados para matrix paralela`,
-        );
+        step.skip("Builds locais", `${ALL_BUILD_TARGETS.length} targets delegados para matrix paralela`);
         step.pass("Configuração de build concluída");
         return;
       }
@@ -437,12 +443,16 @@ export async function runValidation() {
               ]),
             ),
           );
-          await execOrFailAsync(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
-            logger: log,
-            step,
-            label: `Build seletivo (${report.targets.join(",")})`,
-            env: childEnv,
-          });
+          await execOrFailAsync(
+            process.execPath,
+            ["build/build.mjs", `--targets=${report.targets.join(",")}`],
+            {
+              logger: log,
+              step,
+              label: `Build seletivo (${report.targets.join(",")})`,
+              env: childEnv,
+            },
+          );
         }
         step.pass("Build seletivo concluído");
         return;
@@ -450,7 +460,9 @@ export async function runValidation() {
 
       step.info(
         "Build completo necessário",
-        hostingChanged ? "hosting depende da distribuição completa" : "bundler/config alterado ou matrix indisponível",
+        hostingChanged
+          ? "hosting depende da distribuição completa"
+          : "bundler/config alterado ou matrix indisponível",
       );
       childEnv.BUILD_REASON = hostingChanged
         ? "Hosting requires the complete distribution"
@@ -553,12 +565,14 @@ export async function runValidation() {
           });
 
       const [, , report] = await Promise.all([
-        (process.env.TYPECHECK_ALREADY_PASSED === "true" ? Promise.resolve() : execOrFailAsync(tscCmd, tscArgs, {
-          logger: log,
-          step,
-          label: "Typecheck (tsc)",
-          env: childEnv,
-        })),
+        process.env.TYPECHECK_ALREADY_PASSED === "true"
+          ? Promise.resolve()
+          : execOrFailAsync(tscCmd, tscArgs, {
+              logger: log,
+              step,
+              label: "Typecheck (tsc)",
+              env: childEnv,
+            }),
         lintTask,
         resolveAffectedTargets(changedFiles, step),
       ]);
@@ -628,7 +642,7 @@ export async function runValidation() {
           env: childEnv,
         });
         markFullBuild();
-      delete childEnv.RUNTIME_TEST_SKIP_DIST;
+        delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
       step.pass("Etapa de build concluída");
     });
@@ -648,9 +662,7 @@ export async function runValidation() {
       }
     }
 
-    let explicitTests = [...selectedTestsSet]
-      .map((t) => t.replace(/^.*(\/tests\/)/, "tests/"))
-      .sort();
+    let explicitTests = [...selectedTestsSet].map((t) => t.replace(/^.*(\/tests\/)/, "tests/")).sort();
 
     if (scriptTestsSeparate) {
       explicitTests = explicitTests.filter((t) => !/^tests\/userscripts\/[^/]+\//.test(t));
@@ -674,12 +686,16 @@ export async function runValidation() {
     }
 
     // Source changes run the approved utility suite; test-only changes use the allowlist.
-    await execOrFailAsync("npm", ["run", "test:unit", ...(changedSources.length ? [] : ["--", "--candidates", ...explicitTests])], {
-      logger: log,
-      step,
-      label: "Vitest (runtime e utilitários)",
-      env: childEnv,
-    });
+    await execOrFailAsync(
+      "npm",
+      ["run", "test:unit", ...(changedSources.length ? [] : ["--", "--candidates", ...explicitTests])],
+      {
+        logger: log,
+        step,
+        label: "Vitest (runtime e utilitários)",
+        env: childEnv,
+      },
+    );
 
     step.pass("Testes relacionados aprovados");
   });
@@ -724,9 +740,7 @@ export async function runValidation() {
     ]);
 
   if (changedFiles.length > 0) {
-    summary
-      .addHeading("Changed files", 4)
-      .addList(changedFiles.map((f) => `<code>${f}</code>`));
+    summary.addHeading("Changed files", 4).addList(changedFiles.map((f) => `<code>${f}</code>`));
   }
 
   await summary.write();
