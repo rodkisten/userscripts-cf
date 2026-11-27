@@ -226,7 +226,8 @@ export async function planValidation() {
 export async function runValidation() {
   const isFull = process.env.FULL === "true";
   const prTitle = process.env.PR_TITLE || "";
-  const scopedBuildsMatrix = process.env.SCOPED_BUILDS_MATRIX === "true" && process.env.EVENT_NAME === "pull_request";
+  const scopedBuildsMatrix =
+    process.env.SCOPED_BUILDS_MATRIX === "true" && process.env.EVENT_NAME === "pull_request";
   const scriptTestsSeparate = process.env.SCRIPT_TESTS_SEPARATE === "true";
 
   const log = new AgentReporter("VALIDATE RUN", isFull ? "Full Suite" : "Selective");
@@ -311,10 +312,12 @@ export async function runValidation() {
 
       const bundlerChanged = !hasChangedManifest || changedFiles.some((f) => BUNDLER_OR_CONFIG_RE.test(f));
       const labChanged = changedFiles.some((file) => file.startsWith("labs/"));
-      const hostingChanged = !hasChangedManifest || changedFiles.some(
-        (file) =>
-          file.startsWith("playground/") || file.startsWith("public/") || file === "build/hosting.mjs",
-      );
+      const hostingChanged =
+        !hasChangedManifest ||
+        changedFiles.some(
+          (file) =>
+            file.startsWith("playground/") || file.startsWith("public/") || file === "build/hosting.mjs",
+        );
 
       if (scopedBuildsMatrix && !hostingChanged) {
         step.info(
@@ -328,7 +331,16 @@ export async function runValidation() {
 
         if (report.targets.length > 0) {
           childEnv.BUILD_REASON = "Changed files matched the runtime dependency graph";
-          childEnv.BUILD_TARGET_REASONS = JSON.stringify(Object.fromEntries(report.targets.map((id) => [id, id === "unified" ? "Aggregate of affected unified modules" : (report.reasons[id] || []).join(", ")])));
+          childEnv.BUILD_TARGET_REASONS = JSON.stringify(
+            Object.fromEntries(
+              report.targets.map((id) => [
+                id,
+                id === "unified"
+                  ? "Aggregate of affected unified modules"
+                  : (report.reasons[id] || []).join(", "),
+              ]),
+            ),
+          );
           execOrFail(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
             logger: log,
             env: childEnv,
@@ -339,10 +351,12 @@ export async function runValidation() {
           "Build completo necessário no job principal",
           hostingChanged ? "Hosting depende da distribuição completa" : "Matrix de builds indisponível",
         );
-        childEnv.BUILD_REASON = hostingChanged ? "Hosting requires the complete distribution" : "Full build required by validation plan";
+        childEnv.BUILD_REASON = hostingChanged
+          ? "Hosting requires the complete distribution"
+          : "Full build required by validation plan";
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
-            const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
-            if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
+        const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
+        if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
 
@@ -438,7 +452,16 @@ export async function runValidation() {
         const report = JSON.parse(fs.readFileSync(AFFECTED_REPORT_PATH, "utf8"));
         if (report.targets.length > 0) {
           childEnv.BUILD_REASON = "Changed files matched the runtime dependency graph";
-          childEnv.BUILD_TARGET_REASONS = JSON.stringify(Object.fromEntries(report.targets.map((id) => [id, id === "unified" ? "Aggregate of affected unified modules" : (report.reasons[id] || []).join(", ")])));
+          childEnv.BUILD_TARGET_REASONS = JSON.stringify(
+            Object.fromEntries(
+              report.targets.map((id) => [
+                id,
+                id === "unified"
+                  ? "Aggregate of affected unified modules"
+                  : (report.reasons[id] || []).join(", "),
+              ]),
+            ),
+          );
           step.info("Targets selecionados", report.targets.join(", "));
           execOrFail(process.execPath, ["build/build.mjs", `--targets=${report.targets.join(",")}`], {
             logger: log,
@@ -453,8 +476,8 @@ export async function runValidation() {
           hasIntegrationTest ? "Testes de integração detectados" : "Hosting/Assets alterados",
         );
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
-            const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
-            if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
+        const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
+        if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
       step.pass("Etapa de build concluída");
