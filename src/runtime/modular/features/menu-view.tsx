@@ -23,7 +23,10 @@ function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLE
         const key = item.id ?? `${item.type ?? "item"}-${item.label ?? index}`;
         if (item.type === "separator") {
           return (
-            <DropdownMenu.Separator key={key} style={{ height: 1, margin: "4px 0", background: "var(--border, #3f3f46)" }} />
+            <DropdownMenu.Separator
+              key={key}
+              style={{ height: 1, margin: "4px 0", background: "var(--border, #3f3f46)" }}
+            />
           );
         }
         if (item.children?.length) {
