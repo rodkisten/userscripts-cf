@@ -55,7 +55,7 @@ if (runnable.length !== selected.length) console.log("AST unit suite delegated t
 if (!runnable.length) process.exit(0);
 console.log("Runtime and utility suites:", runnable.join(", "));
 const startedAt = Date.now();
-const result = spawnSync("npx", ["--no-install", "vitest", "run", ...runnable], {
+const result = spawnSync("npx", ["--no-install", "vitest", "run", "--project", "runtime", "--project", "compiler", "--project", "tooling", "--project", "runtime-integration", ...runnable], {
   stdio: "inherit",
   shell: process.platform === "win32",
 });

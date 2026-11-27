@@ -36,7 +36,11 @@
     "check:react-only": "node build/check-react-only.mjs",
     "bundle:metrics": "node scripts/bundle-diet.mjs snapshot",
     "bundle:report": "node scripts/bundle-diet.mjs report",
-    "bundle:baseline": "node scripts/bundle-diet.mjs baseline"
+    "bundle:baseline": "node scripts/bundle-diet.mjs baseline",
+    "test:compiler": "vitest run --project compiler",
+    "test:tooling": "vitest run --project tooling",
+    "test:integration": "vitest run --project runtime-integration",
+    "test:userscripts": "vitest run --project 'userscripts:*' --passWithNoTests"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
