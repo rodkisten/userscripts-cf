@@ -40,7 +40,10 @@
     "test:compiler": "vitest run --project compiler",
     "test:tooling": "vitest run --project tooling",
     "test:integration": "vitest run --project runtime-integration",
-    "test:userscripts": "vitest run --project 'userscripts:*' --passWithNoTests"
+    "test:userscripts": "vitest run --project 'userscripts:*' --passWithNoTests",
+    "imports:preview": "node scripts/migrate-import-aliases.mjs",
+    "imports:migrate": "node scripts/migrate-import-aliases.mjs --write",
+    "imports:check": "node scripts/migrate-import-aliases.mjs --check"
   },
   "devDependencies": {
     "@babel/parser": "8.1.2",
