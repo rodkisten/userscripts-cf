@@ -27,10 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
-    permissions:
-      contents: write
-      pull-requests: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,57 +34,90 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Preview migration
-        run: pnpm imports:preview
+        run: |
+          npm run imports:preview
+          cp .cache/import-migration.json \
+             .cache/import-preview.json
 
       - name: Apply migration
         if: inputs.mode == 'migrate'
-        run: pnpm imports:migrate
+        run: |
+          npm run imports:migrate
+          cp .cache/import-migration.json \
+             .cache/import-applied.json
 
       - name: Verify migration is idempotent
         if: inputs.mode == 'migrate'
-        run: pnpm imports:check
+        run: |
+          npm run imports:check
+          cp .cache/import-migration.json \
+             .cache/import-check.json
 
       - name: Validate diff
         run: git diff --check
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: npm run typecheck
 
       - name: Unit tests
-        run: pnpm exec vitest run
+        run: npm exec -- vitest run
 
       - name: Build userscripts
-        run: pnpm build
+        run: npm run build
 
       - name: Generate report
         if: always()
         shell: bash
+        env:
+          MIGRATION_MODE: ${{ inputs.mode }}
         run: |
+          mkdir -p .cache
+
           {
-            echo "## Import Alias Migration"
+            echo "## ♻️ Import Alias Migration"
             echo ""
-            echo "Mode: ${{ inputs.mode }}"
+            echo "**Mode:** $MIGRATION_MODE"
             echo ""
+            echo "### Changed files"
             echo '```'
             git diff --stat
             echo '```'
+            echo ""
+            echo "### Migration report"
+            echo '```json'
+
+            if [[ -f .cache/import-applied.json ]]; then
+              jq '{
+                scanned,
+                changed,
+                migrated,
+                unresolved: (.unresolved | length)
+              }' .cache/import-applied.json
+            elif [[ -f .cache/import-preview.json ]]; then
+              jq '{
+                scanned,
+                changed,
+                migrated,
+                unresolved: (.unresolved | length)
+              }' .cache/import-preview.json
+            fi
+
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-          mkdir -p .cache
-          git diff > .cache/import-migration.patch
+          git diff --binary HEAD \
+            > .cache/import-migration.patch
 
       - name: Upload migration report
         if: always()
@@ -97,29 +126,120 @@ jobs:
           name: import-migration-${{ github.run_id }}
           path: |
             .cache/import-migration.json
+            .cache/import-preview.json
+            .cache/import-applied.json
+            .cache/import-check.json
             .cache/import-migration.patch
           retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload validated patch
+        if: success() && inputs.mode == 'migrate'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-migration-patch
+          path: .cache/import-migration.patch
+          retention-days: 1
+          if-no-files-found: error
+
+  pull-request:
+    name: Create migration pull request
+    needs: migrate
+
+    if: >-
+      needs.migrate.result == 'success' &&
+      inputs.mode == 'migrate' &&
+      github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify base revision
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Main changed during migration. Run again."
+            exit 1
+          fi
+
+      - name: Download validated patch
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-migration-patch
+          path: ${{ runner.temp }}/migration
+
+      - name: Apply validated patch
+        id: patch
+        shell: bash
+        run: |
+          PATCH="$RUNNER_TEMP/migration/import-migration.patch"
+
+          if [[ ! -s "$PATCH" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No imports to migrate."
+            exit 0
+          fi
+
+          git apply --check "$PATCH"
+          git apply "$PATCH"
+          git diff --check
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create migration pull request
-        if: success() && inputs.mode == 'migrate'
+        if: steps.patch.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
           branch: refactor/import-aliases
           delete-branch: true
-          commit-message: "refactor: migrate imports to root alias [deploy]"
+
+          commit-message: >-
+            refactor: migrate imports to root alias [deploy]
+
           title: "♻️ Migrate source imports to @/ alias"
+
           body: |
-            ## Import alias migration
+            ## ♻️ Import alias migration
 
-            - AST-based source migration
-            - Static and dynamic imports
-            - Type imports and reexports
-            - Idempotency verified
-            - Typecheck, unit tests and build passed
+            Migrates relative source imports to the
+            canonical `@/` alias.
 
-            Generated automatically by the migration workflow.
+            ### Validation
+
+            - [x] AST-based migration
+            - [x] Static and dynamic imports
+            - [x] Type imports and reexports
+            - [x] Idempotency verified
+            - [x] Typecheck passed
+            - [x] Unit tests passed
+            - [x] Build passed
+            - [x] Git diff validated
+
+            ### Execution
+
+            [View workflow and migration artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
           add-paths: |
+            src/**
+            tests/**
+            studio/**
+            scripts/**
+            userscripts/**
             *.ts
             *.tsx
             *.js
