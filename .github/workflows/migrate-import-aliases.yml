@@ -1,5 +1,4 @@
-
-name: Migrate Import Aliases
+name: 🧩 US … Migrate Import Aliases
 
 run-name: Import aliases · ${{ inputs.mode }}
 
