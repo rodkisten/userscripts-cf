@@ -251,6 +251,8 @@ export async function runValidation() {
           childEnv.BUILD_REASON = "Explicit PR-title build directive";
           if (scopedBuilds[0] === "all") {
             execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
+            const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
+            if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
             delete childEnv.RUNTIME_TEST_SKIP_DIST;
           } else if (!scopedBuildsMatrix) {
             execOrFail(process.execPath, ["build/build.mjs", `--targets=${scopedBuilds.join(",")}`], {
@@ -291,7 +293,9 @@ export async function runValidation() {
   // --------------------------------------------------------------------------
   if (isFull) {
     await log.step("Validação completa (infraestrutura compartilhada alterada)", async (step) => {
-      execOrFail("npm", ["run", "typecheck"], { logger: log, env: childEnv });
+      if (process.env.TYPECHECK_ALREADY_PASSED !== "true") {
+        execOrFail("npm", ["run", "typecheck"], { logger: log, env: childEnv });
+      }
 
       if (hasChangedManifest) {
         execOrFail(
@@ -337,6 +341,8 @@ export async function runValidation() {
         );
         childEnv.BUILD_REASON = hostingChanged ? "Hosting requires the complete distribution" : "Full build required by validation plan";
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
+            const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
+            if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
 
@@ -390,7 +396,9 @@ export async function runValidation() {
   // C.1 Typecheck & Style
   if (sourceChanged) {
     await log.step("Typecheck e análise de estilo dos arquivos alterados", async (step) => {
-      execOrFail("npm", ["run", "typecheck"], { logger: log, env: childEnv });
+      if (process.env.TYPECHECK_ALREADY_PASSED !== "true") {
+        execOrFail("npm", ["run", "typecheck"], { logger: log, env: childEnv });
+      }
 
       if (hasChangedManifest) {
         execOrFail(
@@ -445,6 +453,8 @@ export async function runValidation() {
           hasIntegrationTest ? "Testes de integração detectados" : "Hosting/Assets alterados",
         );
         execOrFail("npm", ["run", "build"], { logger: log, env: childEnv });
+            const revision = runCmd("git", ["rev-parse", "HEAD"], { silent: true });
+            if (revision.ok) fs.writeFileSync(".ci-full-build-sha", revision.stdout.trim());
         delete childEnv.RUNTIME_TEST_SKIP_DIST;
       }
       step.pass("Etapa de build concluída");

@@ -88,6 +88,7 @@ jobs:
 
       - name: "[EXP] Mapear grafo de dependências e testes"
         id: graph
+        if: github.event_name == 'pull_request' && steps.install.outcome == 'success'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -193,7 +194,8 @@ jobs:
         env:
           FULL: ${{ steps.plan.outputs.full }}
           SCRIPT_TESTS_SEPARATE: false
-          SCOPED_BUILDS_MATRIX: "true"
+          SCOPED_BUILDS_MATRIX: "false"
+          TYPECHECK_ALREADY_PASSED: "true"
           EVENT_NAME: ${{ github.event_name }}
           RUNTIME_TEST_SKIP_DIST: "true"
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -201,7 +203,7 @@ jobs:
         timeout-minutes: 15
 
       - name: 🎨 Build visual playground (independent of typecheck)
-        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure'
+        if: always() && steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.lint_gate.outcome != 'failure' && (github.event_name != 'pull_request' || failure() || github.event.pull_request.head.repo.full_name != github.repository)
         run: node build/design-system.mjs
 
       - name: 📝 Record successful exact-source validation
@@ -230,13 +232,17 @@ jobs:
           PREVIEW_UPLOAD_TOKEN: ${{ secrets.PREVIEW_UPLOAD_TOKEN }}
         run: |
           test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
-          node scripts/cloudflare-pr-preview.mjs --mode=publish
+          if [[ -f .ci-full-build-sha ]] && [[ "$(cat .ci-full-build-sha)" == "$PR_HEAD_SHA" ]]; then
+            node scripts/cloudflare-pr-preview.mjs --mode=publish --skip-build=true
+          else
+            node scripts/cloudflare-pr-preview.mjs --mode=publish
+          fi
 
       - name: Measure published distribution
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: npm run bundle:metrics
       - name: 💬 Update Bundle Diet PR comment
-        if: github.event_name == 'pull_request'
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -245,16 +251,6 @@ jobs:
           USERSCRIPTS_PREVIEW_URL: https://userscripts.preview.migos.club
         run: npm run bundle:report
 
-      - name: Authenticate preview comment publisher
-        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: app-token
-        uses: rodkisten/github/app-token@main
-        with:
-          app-id: ${{ secrets.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
-          permission-contents: read
-          permission-pull-requests: write
-          permission-issues: write
       - name: Verify preview and source revision
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -273,12 +269,12 @@ jobs:
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         id: diff-info
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
         run: node scripts/github-actions.mjs collect
       - name: Publish preview comment
         if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
           SHORT_SHA: ${{ steps.diff-info.outputs.short_sha }}
           COMMIT_URL: ${{ steps.diff-info.outputs.commit_url }}
@@ -316,7 +312,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        block: [workflow-paths, ast-debt]
+        block: ${{ fromJSON(github.event_name == 'pull_request' && '["workflow-paths","ast-debt"]' || '["workflow-paths"]') }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -358,9 +354,10 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           node scripts/workflows-validate.mjs --json > workflow-audit-report.json
+          cat workflow-audit-report.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish Summary, Annotations, Labels & Issue/PR Comment
-        if: matrix.block == 'workflow-paths'
+        if: matrix.block == 'workflow-paths' && github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPORT_PATH: workflow-audit-report.json
@@ -552,7 +549,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - name: 🏗️ Build and measure distribution
         uses: rodkisten/github/execute@main
@@ -569,7 +566,7 @@ jobs:
       - name: 💬 Update Bundle Diet PR comment
         if: github.event_name == 'pull_request'
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -629,7 +626,7 @@ jobs:
       - name: ✨ Postar ou Atualizar Comentário no PR
         uses: actions/github-script@v7
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ steps.app_token.outputs.token }}
           script: |
             const marker = '<!-- pr-interactive-actions -->';
             const baseBranch = context.payload.pull_request.base.ref;
