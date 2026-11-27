@@ -1,11 +1,5 @@
 import { signal } from "./reactivity.js";
-import {
-  createContext,
-  createRequiredContext,
-  provide,
-  requireContext,
-  useContext,
-} from "./owner.js";
+import { createContext, createRequiredContext, provide, requireContext, useContext } from "./owner.js";
 import type { ContextToken, ReactiveContextToken, Signal } from "./types.js";
 
 /** Creates a context whose provided value is a writable Broto signal. */
