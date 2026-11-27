@@ -10,7 +10,9 @@ export function DockHeader({ title, closeLabel }: { title: string; closeLabel: s
     <header className="panel-header">
       <Dialog.Title className="panel-title">{title}</Dialog.Title>
       <Dialog.Close asChild>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={closeLabel}>✕</Button>
+        <Button type="button" variant="ghost" size="icon-sm" aria-label={closeLabel}>
+          ✕
+        </Button>
       </Dialog.Close>
     </header>
   );

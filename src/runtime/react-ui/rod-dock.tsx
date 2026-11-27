@@ -467,7 +467,8 @@ function DockView({ controller }: { controller: DockController }) {
           setOpen(next);
         }}
       >
-        <Button variant="outline"
+        <Button
+          variant="outline"
           type="button"
           className="btn"
           onClick={() => {
@@ -523,7 +524,8 @@ function DockView({ controller }: { controller: DockController }) {
             <summary>{module.name}</summary>
             <div className="actions">
               {module.actions.map((action) => (
-                <Button variant="outline"
+                <Button
+                  variant="outline"
                   type="button"
                   className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
                   key={action.id}
@@ -607,7 +609,8 @@ function DockView({ controller }: { controller: DockController }) {
         <details className="module">
           <summary>Diagnósticos ({diagnostics.length})</summary>
           <div className="actions">
-            <Button variant="outline"
+            <Button
+              variant="outline"
               type="button"
               className="btn"
               onClick={() => {
@@ -654,7 +657,8 @@ function DockView({ controller }: { controller: DockController }) {
           onChange={setSettingsSearch}
         />
         <div className="actions">
-          <Button variant="outline"
+          <Button
+            variant="outline"
             type="button"
             className="btn"
             onClick={() => {
@@ -664,7 +668,11 @@ function DockView({ controller }: { controller: DockController }) {
           >
             Aplicar
           </Button>
-          <Dialog.Close asChild><Button type="button" variant="outline">Cancelar</Button></Dialog.Close>
+          <Dialog.Close asChild>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
+          </Dialog.Close>
         </div>
       </DockPanel>
     </>
