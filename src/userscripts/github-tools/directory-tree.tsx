@@ -1,63 +1,11 @@
 import { useState, useSyncExternalStore } from "react";
-import { CopyPlus, File, FileCode, FileJson, Folder, FolderOpen } from "lucide-react";
+import { CopyPlus } from "lucide-react";
+import { FileTree, buildTree, filterTree, type FileTreeEntry as Entry, type FileTreeNode as Node } from "../../runtime/react-ui/uai/file-tree";
+import themeCss from "../../runtime/react-ui/theme.css?inline";
 import styles, { css } from "./GitHub.module.css";
 
-type Entry = { path: string; type: "blob" | "tree"; sha?: string; size?: number };
-type Node = { name: string; path: string; folder: boolean; children: Node[]; sha?: string; size?: number };
 type CopyActions = { appendFile: (href: string, path: string) => Promise<void>; reset: () => void };
-const kilobytes = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
-const compare = (a: Node, b: Node) =>
-  Number(b.folder) - Number(a.folder) || a.name.localeCompare(b.name, undefined, { numeric: true });
-export function buildTree(entries: Entry[]): Node[] {
-  const root: Node = { name: "", path: "", folder: true, children: [] };
-  const known = new Map<string, Node>([["", root]]);
-  for (const entry of entries) {
-    if (!["blob", "tree"].includes(entry.type) || !entry.path || entry.path.startsWith("/")) {
-      continue;
-    }
-    const parts = entry.path.split("/");
-    for (let i = 1; i <= parts.length; i++) {
-      const path = parts.slice(0, i).join("/");
-      if (known.has(path)) {
-        continue;
-      }
-      const parent = known.get(parts.slice(0, i - 1).join("/"));
-      if (!parent) {
-        break;
-      }
-      const node: Node = {
-        name: parts[i - 1],
-        path,
-        folder: i < parts.length || entry.type === "tree",
-        children: [],
-        sha: i === parts.length ? entry.sha : undefined,
-        size: i === parts.length ? entry.size : undefined,
-      };
-      parent.children.push(node);
-      known.set(path, node);
-    }
-  }
-  const sort = (nodes: Node[]) => {
-    nodes.sort(compare);
-    nodes.forEach((node) => sort(node.children));
-  };
-  sort(root.children);
-  return root.children;
-}
-export function filterTree(nodes: Node[], term: string): Node[] {
-  const needle = term.trim().toLocaleLowerCase();
-  if (!needle) {
-    return nodes;
-  }
-  const visit = (node: Node): Node | null => {
-    if (node.name.toLocaleLowerCase().includes(needle)) {
-      return node;
-    }
-    const children = node.children.map(visit).filter((value): value is Node => value !== null);
-    return children.length ? { ...node, children } : null;
-  };
-  return nodes.map(visit).filter((value): value is Node => value !== null);
-}
+export { buildTree, filterTree };
 export function splitTreeLocation(
   segments: string[],
   ref: string,
@@ -168,167 +116,11 @@ export function restoreGitHubTreeScroll(path = location.pathname): boolean {
     return false;
   }
 }
-function TreeRow(props: {
-  node: Node;
-  depth: number;
-  base: string;
-  branch: string;
-  current: string;
-  loadFolder: (node: Node) => Promise<Node[]>;
-  selected: ReadonlySet<string>;
-  select: (path: string) => void;
-  copyFile: CopyActions["appendFile"];
-}) {
-  const [children, setChildren] = useState(props.node.children);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [copyStatus, setCopyStatus] = useState("");
-  const toggle = async (retry = false) => {
-    if (expanded && !retry) {
-      setExpanded(false);
-      return;
-    }
-    setExpanded(true);
-    if (!props.node.sha || children.length) {
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      setChildren(await props.loadFolder(props.node));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setLoading(false);
-    }
-  };
-  const [expanded, setExpanded] = useState(
-    props.current === props.node.path || props.current.startsWith(props.node.path + "/"),
-  );
-  const Icon = props.node.folder
-    ? expanded
-      ? FolderOpen
-      : Folder
-    : /\.json$/i.test(props.node.name)
-      ? FileJson
-      : /\.(tsx?|jsx?|css|ya?ml|py|sh|go|rs)$/i.test(props.node.name)
-        ? FileCode
-        : File;
-  const url = () =>
-    props.base +
-    "/" +
-    (props.node.folder ? "tree" : "blob") +
-    "/" +
-    props.branch.split("/").map(encodeURIComponent).join("/") +
-    "/" +
-    props.node.path.split("/").map(encodeURIComponent).join("/");
-  return (
-    <>
-      <div
-        className={styles.treeRow}
-        role="treeitem"
-        aria-level={props.depth + 1}
-        aria-expanded={props.node.folder ? (expanded ? "true" : "false") : undefined}
-        style={{ paddingLeft: 10 + props.depth * 17 }}
-      >
-        {props.node.folder ? (
-          <button
-            className={styles.treeChevron}
-            aria-label={(expanded ? "Recolher " : "Expandir ") + props.node.name}
-            onClick={() => void toggle()}
-          >
-            {expanded ? "⌄" : "›"}
-          </button>
-        ) : (
-          <span className={styles.treeSpacer} />
-        )}
-        {!props.node.folder && (
-          <input
-            type="checkbox"
-            aria-label={`Selecionar ${props.node.path}`}
-            checked={props.selected.has(props.node.path)}
-            onChange={() => props.select(props.node.path)}
-          />
-        )}
-        <Icon size={16} aria-hidden="true" />
-        <a href={url()} title={props.node.path}>
-          {props.node.name}
-        </a>
-        <span className={styles.treeCount}>
-          {props.node.folder
-            ? children.length || !props.node.sha
-              ? `${children.filter((child) => !child.folder).length} arquivos`
-              : "—"
-            : typeof props.node.size === "number" && `${kilobytes.format(props.node.size / 1024)} KB`}
-        </span>
-        {!props.node.folder && (
-          <button
-            type="button"
-            className={styles.button}
-            title="Adicionar conteúdo ao clipboard"
-            aria-label={`Adicionar ${props.node.name} ao clipboard`}
-            onClick={() => {
-              setCopyStatus("Copiando…");
-              void props.copyFile(new URL(url(), location.origin).href, props.node.path).then(
-                () => setCopyStatus("Adicionado ao clipboard"),
-                (error: unknown) => setCopyStatus(String(error)),
-              );
-            }}
-          >
-            <CopyPlus size={16} aria-hidden="true" />
-          </button>
-        )}
-        {copyStatus && (
-          <span role="status" className={styles.treeCount}>
-            {copyStatus}
-          </span>
-        )}
-      </div>
-      {props.node.folder && expanded && (
-        <div role="group">
-          {loading && (
-            <>
-              <div
-                className={styles.treeSkeleton}
-                role="status"
-                aria-label="Carregando pasta"
-                style={{ width: "55%" }}
-              />
-              <div className={styles.treeSkeleton} style={{ width: "35%" }} />
-            </>
-          )}
-          {error && (
-            <div className={styles.treeError}>
-              {error}{" "}
-              <button
-                onClick={() => {
-                  void toggle(true);
-                }}
-              >
-                Tentar novamente
-              </button>
-            </div>
-          )}
-          {children.map((node) => (
-            <TreeRow
-              key={node.path}
-              node={node}
-              depth={props.depth + 1}
-              base={props.base}
-              branch={props.branch}
-              current={props.current}
-              loadFolder={props.loadFolder}
-              selected={props.selected}
-              select={props.select}
-              copyFile={props.copyFile}
-            />
-          ))}
-        </div>
-      )}
-    </>
-  );
+function CopyFileAction({node,href,copy}:{node:Node;href:string;copy:CopyActions["appendFile"]}) {
+ const [status,setStatus]=useState("");
+ if(node.folder)return null;
+ return <><button type="button" className={styles.button} aria-label={`Adicionar ${node.name} ao clipboard`} onClick={()=>{setStatus("Copiando…");void copy(new URL(href,location.origin).href,node.path).then(()=>setStatus("Adicionado ao clipboard"),error=>setStatus(String(error)));}}><CopyPlus size={16}/></button>{status&&<span role="status" className={styles.treeCount}>{status}</span>}</>;
 }
-
 export function mountDirectoryTree(
   ctx: any,
   container: Element,
@@ -525,22 +317,8 @@ export function mountDirectoryTree(
           </div>
         )}
         {state === "ready" && (
-          <div role="tree">
-            {filterTree(nodes, query).map((node) => (
-              <TreeRow
-                key={node.path}
-                node={node}
-                depth={0}
-                base={base}
-                branch={resolvedBranch}
-                current={current}
-                loadFolder={loadFolder}
-                selected={selected}
-                select={select}
-                copyFile={copy.appendFile}
-              />
-            ))}
-          </div>
+          <FileTree key={resolvedBranch} nodes={nodes} query={query} current={current} selected={selected} onSelect={select} loadFolder={loadFolder} href={node=>base+"/"+(node.folder?"tree":"blob")+"/"+resolvedBranch.split("/").map(encodeURIComponent).join("/")+"/"+node.path.split("/").map(encodeURIComponent).join("/")} renderActions={node=><CopyFileAction node={node} href={base+"/blob/"+resolvedBranch.split("/").map(encodeURIComponent).join("/")+"/"+node.path.split("/").map(encodeURIComponent).join("/")} copy={copy.appendFile}/>}/>
+
         )}
       </section>
     );
@@ -548,7 +326,8 @@ export function mountDirectoryTree(
   const host = document.createElement("div");
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
-  style.textContent = css;
+  style.textContent = themeCss + "\n" + css;
+  host.classList.add("rod-theme", "dark");
   shadow.append(style);
   container.parentNode!.insertBefore(host, container);
   const disposePortal = ctx.ui.mountReact(<DirectoryTreeView />, shadow);
