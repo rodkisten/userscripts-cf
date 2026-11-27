@@ -176,10 +176,13 @@ describe("Broto kitchen sink", () => {
     const count = signal(0);
     const spy = vi.fn();
 
-    const [value, dispose] = createRoot(() => {
-      effect(() => spy(count()));
-      return "ready";
-    }, { name: "root-test" });
+    const [value, dispose] = createRoot(
+      () => {
+        effect(() => spy(count()));
+        return "ready";
+      },
+      { name: "root-test" },
+    );
 
     expect(value).toBe("ready");
     expect(spy).toHaveBeenCalledWith(0);
@@ -197,10 +200,13 @@ describe("Broto kitchen sink", () => {
   it("runs owner cleanup", () => {
     const cleanup = vi.fn();
 
-    const [, dispose] = createRoot(() => {
-      onOwnerCleanup(cleanup);
-      return null;
-    }, { name: "cleanup-root" });
+    const [, dispose] = createRoot(
+      () => {
+        onOwnerCleanup(cleanup);
+        return null;
+      },
+      { name: "cleanup-root" },
+    );
 
     dispose();
 
@@ -230,14 +236,17 @@ describe("Broto kitchen sink", () => {
   });
 
   it("exposes current owner inside roots", () => {
-    const [ownerName] = createRoot(() => {
-      return getOwner()?.name;
-    }, { name: "owner-root" });
+    const [ownerName] = createRoot(
+      () => {
+        return getOwner()?.name;
+      },
+      { name: "owner-root" },
+    );
 
     expect(ownerName).toBe("owner-root");
   });
 
-      it("loads resources immediately", async () => {
+  it("loads resources immediately", async () => {
     const data = resource(async () => "loaded");
 
     await data.reload();
@@ -297,9 +306,12 @@ describe("Broto kitchen sink", () => {
 
   it("captures resource errors", async () => {
     const error = new Error("boom");
-    const data = resource(async () => {
-      throw error;
-    }, { immediate: false });
+    const data = resource(
+      async () => {
+        throw error;
+      },
+      { immediate: false },
+    );
 
     await data.reload();
 

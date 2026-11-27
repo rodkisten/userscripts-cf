@@ -138,7 +138,7 @@ export type BrotoDebugOptions = {
 export type BrotoLeakRecord = {
   id: string;
   name?: string;
-  kind: 'owner' | 'effect' | 'signal';
+  kind: "owner" | "effect" | "signal";
   reason: string;
   count?: number;
 };

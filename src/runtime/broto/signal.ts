@@ -4,10 +4,8 @@ import type { Signal } from "@rodkisten/broto/types";
 export const SIGNAL_SYMBOL: unique symbol = Symbol.for("@rodkisten/broto.signal") as never;
 
 /** Brands a callable as a Broto signal without exposing enumerable metadata. */
-type SignalImplementation<Value> = (() => Value) & Pick<
-  Signal<Value>,
-  "set" | "update" | "peek" | "subscribe"
->;
+type SignalImplementation<Value> = (() => Value) &
+  Pick<Signal<Value>, "set" | "update" | "peek" | "subscribe">;
 
 export function markSignal<Value>(value: SignalImplementation<Value>): Signal<Value> {
   Object.defineProperty(value, SIGNAL_SYMBOL, {

@@ -1,7 +1,27 @@
 import { brotoDebugState } from "@rodkisten/broto/debug";
-import { cleanupOwner, createOwner, createRoot, getOwner, handleOwnerError, onOwnerCleanup, runWithOwner } from "@rodkisten/broto/owner";
+import {
+  cleanupOwner,
+  createOwner,
+  createRoot,
+  getOwner,
+  handleOwnerError,
+  onOwnerCleanup,
+  runWithOwner,
+} from "@rodkisten/broto/owner";
 import { isSignal, markSignal } from "@rodkisten/broto/signal";
-import type { Cleanup, CleanupRegistrar, EffectDebugSnapshot, EffectOptions, EffectRunner, SchedulerDebugSnapshot, SchedulerPriority, Signal, SignalDebugSnapshot, SignalOptions, SchedulerMode } from "@rodkisten/broto/types";
+import type {
+  Cleanup,
+  CleanupRegistrar,
+  EffectDebugSnapshot,
+  EffectOptions,
+  EffectRunner,
+  SchedulerDebugSnapshot,
+  SchedulerPriority,
+  Signal,
+  SignalDebugSnapshot,
+  SignalOptions,
+  SchedulerMode,
+} from "@rodkisten/broto/types";
 
 /** Queued async effects waiting for the next scheduler flush. */
 const effectQueue = new Set<EffectRunner>();
@@ -17,7 +37,14 @@ let schedulerMode: SchedulerMode = "microtask";
 let maxFlushIterations = DEFAULT_MAX_FLUSH_ITERATIONS;
 let signalId = 0;
 let effectId = 0;
-const signalDebugEntries = new Set<{ id: string; name?: string; reads: number; writes: number; subscribers: Set<EffectRunner>; disposed: boolean }>();
+const signalDebugEntries = new Set<{
+  id: string;
+  name?: string;
+  reads: number;
+  writes: number;
+  subscribers: Set<EffectRunner>;
+  disposed: boolean;
+}>();
 const effectDebugEntries = new Set<EffectRunner & { debugId?: string; runs?: number }>();
 
 /** Priority queues used by scheduleTask(). */
@@ -28,8 +55,6 @@ const taskQueues = {
 } satisfies Record<SchedulerPriority, Set<() => void>>;
 
 let taskFlushQueued = false;
-
-
 
 /**
  * Creates an owned effect scope and returns its value plus disposer.
@@ -67,7 +92,9 @@ export function effectScope<Value>(callback: () => Value, name = "effectScope"):
  * configureScheduler({ mode: "raf", maxFlushIterations: 500 });
  * ```
  */
-export function configureScheduler(options: { mode?: SchedulerMode; maxFlushIterations?: number } = {}): void {
+export function configureScheduler(
+  options: { mode?: SchedulerMode; maxFlushIterations?: number } = {},
+): void {
   if (options.mode) {
     schedulerMode = options.mode;
   }
@@ -110,7 +137,14 @@ export function signal<Value>(initialValue: Value, options: SignalOptions<Value>
   let value = initialValue;
   const subscribers = new Set<EffectRunner>();
   const equals = options.equals ?? Object.is;
-  const debugEntry = { id: `signal-${++signalId}`, name: options.name, reads: 0, writes: 0, subscribers, disposed: false };
+  const debugEntry = {
+    id: `signal-${++signalId}`,
+    name: options.name,
+    reads: 0,
+    writes: 0,
+    subscribers,
+    disposed: false,
+  };
   signalDebugEntries.add(debugEntry);
 
   function didNotChange(previousValue: Value, nextValue: Value): boolean {
@@ -225,7 +259,8 @@ export function effect(callback: (cleanup: CleanupRegistrar) => void, options: E
     activeEffect = runner;
 
     try {
-      (runner as EffectRunner & { runs?: number }).runs = ((runner as EffectRunner & { runs?: number }).runs ?? 0) + 1;
+      (runner as EffectRunner & { runs?: number }).runs =
+        ((runner as EffectRunner & { runs?: number }).runs ?? 0) + 1;
       runWithOwner(owner, () => callback(onCleanup));
     } catch (error) {
       if (!handleOwnerError(error, owner)) {
@@ -296,7 +331,14 @@ export function computed<Value>(getter: () => Value, options: SignalOptions<Valu
   const owner = createOwner({ parent: parentOwner, name: "computed" });
   const subscribers = new Set<EffectRunner>();
   const equals = options.equals ?? Object.is;
-  const debugEntry = { id: `signal-${++signalId}`, name: options.name, reads: 0, writes: 0, subscribers, disposed: false };
+  const debugEntry = {
+    id: `signal-${++signalId}`,
+    name: options.name,
+    reads: 0,
+    writes: 0,
+    subscribers,
+    disposed: false,
+  };
   signalDebugEntries.add(debugEntry);
 
   let dirty = true;
@@ -627,7 +669,9 @@ function queueFlush(mode: SchedulerMode | undefined = undefined): void {
   }
 
   if (queuedFlushMode === "idle" && "requestIdleCallback" in globalThis) {
-    (globalThis as typeof globalThis & { requestIdleCallback(callback: () => void): number }).requestIdleCallback(flushEffects);
+    (
+      globalThis as typeof globalThis & { requestIdleCallback(callback: () => void): number }
+    ).requestIdleCallback(flushEffects);
     return;
   }
 
@@ -645,7 +689,9 @@ function flushEffects(): void {
   while (effectQueue.size > 0) {
     if (iterations >= maxFlushIterations) {
       effectQueue.clear();
-      throw new Error(`[Broto] Effect flush exceeded ${maxFlushIterations} iterations. Check for a signal write loop inside an effect.`);
+      throw new Error(
+        `[Broto] Effect flush exceeded ${maxFlushIterations} iterations. Check for a signal write loop inside an effect.`,
+      );
     }
 
     iterations += 1;
@@ -677,7 +723,6 @@ function flushEffects(): void {
   }
 }
 
-
 function hasPendingTasks(): boolean {
   return taskQueues["user-blocking"].size > 0 || taskQueues.normal.size > 0 || taskQueues.background.size > 0;
 }
@@ -695,7 +740,9 @@ function queueTaskFlush(): void {
   }
 
   if (schedulerMode === "idle" && "requestIdleCallback" in globalThis) {
-    (globalThis as typeof globalThis & { requestIdleCallback(callback: () => void): number }).requestIdleCallback(flushTasks);
+    (
+      globalThis as typeof globalThis & { requestIdleCallback(callback: () => void): number }
+    ).requestIdleCallback(flushTasks);
     return;
   }
 
@@ -740,7 +787,8 @@ export function pruneDebugEntries(): void {
   let effectCount = 0;
   for (const runner of effectDebugEntries) {
     effectCount += 1;
-    if (runner.disposed || runner.owner.disposed || effectCount > maxEntries) effectDebugEntries.delete(runner);
+    if (runner.disposed || runner.owner.disposed || effectCount > maxEntries)
+      effectDebugEntries.delete(runner);
   }
 }
 
@@ -780,7 +828,7 @@ export function inspectEffects(): EffectDebugSnapshot[] {
   const rows: EffectDebugSnapshot[] = [];
   for (const runner of effectDebugEntries) {
     rows[rows.length] = {
-      id: runner.debugId ?? 'effect',
+      id: runner.debugId ?? "effect",
       name: runner.debugName,
       ownerId: runner.owner.id,
       ownerName: runner.owner.name,
@@ -805,7 +853,7 @@ export function inspectScheduler(): SchedulerDebugSnapshot {
     mode: schedulerMode,
     queuedEffects: effectQueue.size,
     queuedTasks: {
-      'user-blocking': taskQueues['user-blocking'].size,
+      "user-blocking": taskQueues["user-blocking"].size,
       normal: taskQueues.normal.size,
       background: taskQueues.background.size,
     },

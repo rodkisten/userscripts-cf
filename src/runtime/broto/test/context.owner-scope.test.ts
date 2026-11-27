@@ -18,14 +18,17 @@ describe("Broto persistent owner scopes", () => {
   it("restores nested owners through a stack", () => {
     const seen: Array<string | undefined> = [];
 
-    const [, dispose] = createRoot((_dispose, root) => {
-      seen.push(captureOwner()?.name);
+    const [, dispose] = createRoot(
+      (_dispose, root) => {
+        seen.push(captureOwner()?.name);
 
-      const child = createOwnerScope({ name: "child", parent: root });
-      child.run(() => seen.push(captureOwner()?.name));
-      seen.push(captureOwner()?.name);
-      child.dispose();
-    }, { name: "root" });
+        const child = createOwnerScope({ name: "child", parent: root });
+        child.run(() => seen.push(captureOwner()?.name));
+        seen.push(captureOwner()?.name);
+        child.dispose();
+      },
+      { name: "root" },
+    );
 
     expect(seen).toEqual(["root", "child", "root"]);
     dispose();

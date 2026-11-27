@@ -16,21 +16,21 @@ import {
   createContext,
   provide,
   useContext,
-} from './broto'
+} from "./broto";
 ```
 
 ## Signals
 
 ```ts
-const count = signal(0)
-const doubled = computed(() => count() * 2)
+const count = signal(0);
+const doubled = computed(() => count() * 2);
 
 const stop = effect(() => {
-  console.log(doubled())
-})
+  console.log(doubled());
+});
 
-count.update((value) => value + 1)
-stop()
+count.update((value) => value + 1);
+stop();
 ```
 
 ## Ownership
@@ -39,37 +39,40 @@ Ownership is the lifecycle graph. Effects, resources and UI components attach cl
 work to the current owner.
 
 ```ts
-const [value, dispose] = createRoot(() => {
-  const count = signal(0)
+const [value, dispose] = createRoot(
+  () => {
+    const count = signal(0);
 
-  effect(() => {
-    console.log(count())
-  })
+    effect(() => {
+      console.log(count());
+    });
 
-  return count
-}, { name: 'CounterRoot' })
+    return count;
+  },
+  { name: "CounterRoot" },
+);
 
-dispose()
+dispose();
 ```
 
 ## Cleanup stack
 
 ```ts
 createRoot(() => {
-  const id = setInterval(() => console.log('tick'), 1000)
-  onOwnerCleanup(() => clearInterval(id))
-})
+  const id = setInterval(() => console.log("tick"), 1000);
+  onOwnerCleanup(() => clearInterval(id));
+});
 ```
 
 ## Context
 
 ```ts
-const ThemeContext = createContext('dark', 'Theme')
+const ThemeContext = createContext("dark", "Theme");
 
 createRoot(() => {
-  provide(ThemeContext, 'forest')
-  console.log(useContext(ThemeContext))
-})
+  provide(ThemeContext, "forest");
+  console.log(useContext(ThemeContext));
+});
 ```
 
 ## Resources
@@ -79,26 +82,26 @@ disposed.
 
 ```ts
 const profile = resource((signal) => {
-  return fetch('/me', { signal }).then((response) => response.json())
-})
+  return fetch("/me", { signal }).then((response) => response.json());
+});
 
-profile.reload()
-profile.abort()
+profile.reload();
+profile.abort();
 ```
 
 ## Scheduler
 
 ```ts
-configureScheduler({ mode: 'microtask', maxFlushIterations: 500 })
+configureScheduler({ mode: "microtask", maxFlushIterations: 500 });
 
-scheduleTask(() => expensiveWork(), 'background')
-flushSync()
+scheduleTask(() => expensiveWork(), "background");
+flushSync();
 ```
 
 ## Debugging
 
 ```ts
-console.log(inspectOwnerGraph())
+console.log(inspectOwnerGraph());
 ```
 
 ## Owner error propagation
@@ -162,12 +165,15 @@ const state = store({
   user: { name: "Rod" },
 });
 
-state.patch({
-  panel: {
-    open: true,
-    rect: { width: 640 },
+state.patch(
+  {
+    panel: {
+      open: true,
+      rect: { width: 640 },
+    },
   },
-}, { cause: "panel:resize" });
+  { cause: "panel:resize" },
+);
 ```
 
 Output:
@@ -198,28 +204,37 @@ state.snapshot();
 `patch()` also accepts a draft updater. The updater may mutate the draft or return a partial object:
 
 ```ts
-state.patch((draft) => {
-  draft.panel.open = false;
-  draft.panel.rect.width = 320;
-}, { cause: "draft:patch" });
+state.patch(
+  (draft) => {
+    draft.panel.open = false;
+    draft.panel.rect.width = 320;
+  },
+  { cause: "draft:patch" },
+);
 ```
 
 Use `draft()` when you want the intent to be a draft mutation of the current snapshot. `update()` remains available as the same operation:
 
 ```ts
-state.draft((draft) => {
-  draft.panel.rect.width = 700;
-  draft.user.name = "Rodolfo";
-}, { cause: "settings:import" });
+state.draft(
+  (draft) => {
+    draft.panel.rect.width = 700;
+    draft.user.name = "Rodolfo";
+  },
+  { cause: "settings:import" },
+);
 ```
 
 Use `set()` to replace the whole root state. Missing keys are removed, including missing nested keys:
 
 ```ts
-state.set({
-  panel: { open: false, rect: { width: 520 } },
-  user: { name: "Rod" },
-}, { cause: "reset" });
+state.set(
+  {
+    panel: { open: false, rect: { width: 520 } },
+    user: { name: "Rod" },
+  },
+  { cause: "reset" },
+);
 ```
 
 Path writes remain available for dynamic UI state:
@@ -248,8 +263,8 @@ All public store mutations are wrapped in `batch()`, so dependent effects rerun 
 Effects can override the global scheduler:
 
 ```ts
-effect(() => expensiveLayoutRead(), { scheduler: 'raf' });
-effect(() => tinySynchronousMirror(), { scheduler: 'sync' });
+effect(() => expensiveLayoutRead(), { scheduler: "raf" });
+effect(() => tinySynchronousMirror(), { scheduler: "sync" });
 ```
 
 ## Diagnostics and resource controls
@@ -257,22 +272,25 @@ effect(() => tinySynchronousMirror(), { scheduler: 'sync' });
 Broto exposes lightweight devtools helpers without changing the signal/effect API:
 
 ```ts
-const [snapshot, dispose] = createRoot(() => {
-  const child = createOwner({ name: 'Panel' })
-  return inspectGraph(getOwner())
-}, { name: 'App' })
+const [snapshot, dispose] = createRoot(
+  () => {
+    const child = createOwner({ name: "Panel" });
+    return inspectGraph(getOwner());
+  },
+  { name: "App" },
+);
 
-console.log(snapshot?.descendants)
-dispose()
+console.log(snapshot?.descendants);
+dispose();
 ```
 
 Resources can now be retried and scheduled for refresh using the same resource object:
 
 ```ts
-const profile = resource(fetchProfile, { immediate: false })
-await profile.retry()
-const stop = profile.refreshInterval(30_000)
-stop()
+const profile = resource(fetchProfile, { immediate: false });
+await profile.retry();
+const stop = profile.refreshInterval(30_000);
+stop();
 ```
 
 ## Runtime diagnostics
@@ -280,16 +298,16 @@ stop()
 Broto exposes read-only inspection helpers for devtools and userscript debug panels:
 
 ```ts
-const snapshot = inspectRuntime()
-inspectSignals()
-inspectEffects()
-inspectScheduler()
+const snapshot = inspectRuntime();
+inspectSignals();
+inspectEffects();
+inspectScheduler();
 ```
 
 Signals can be named without changing their behavior:
 
 ```ts
-const count = signal(0, { name: 'counter.count' })
+const count = signal(0, { name: "counter.count" });
 ```
 
 ## Staff-level diagnostics and scoped runtime helpers
@@ -297,17 +315,17 @@ const count = signal(0, { name: 'counter.count' })
 Broto now exposes focused diagnostics and lifecycle APIs:
 
 ```ts
-configureDebug({ enabled: true, retainDisposed: false, maxEntries: 500 })
-const [value, dispose] = effectScope(() => setupPlugin(), 'plugin')
-const leaks = inspectLeaks()
+configureDebug({ enabled: true, retainDisposed: false, maxEntries: 500 });
+const [value, dispose] = effectScope(() => setupPlugin(), "plugin");
+const leaks = inspectLeaks();
 ```
 
 Resources can be updated optimistically and polled without recreating them:
 
 ```ts
-const profile = resource(loadProfile)
-profile.mutate((current) => ({ ...current, name: 'Rod' }))
-const stop = profile.poll(30_000)
+const profile = resource(loadProfile);
+profile.mutate((current) => ({ ...current, name: "Rod" }));
+const stop = profile.poll(30_000);
 ```
 
 Deep stores also support path reads with `select(path)` for small, focused bindings.
@@ -317,25 +335,25 @@ Deep stores also support path reads with `select(path)` for small, focused bindi
 Broto stores keep the existing signal-leaf API, so primitive leaves can still be read or rendered as signals:
 
 ```ts
-const state = store({ user: { name: 'Rod' } })
+const state = store({ user: { name: "Rod" } });
 
-state.user.name()
+state.user.name();
 // 'Rod'
 
-html`<span>${state.user.name}</span>`
+html`<span>${state.user.name}</span>`;
 // updates when state.user.name.set(...) runs
 ```
 
 For deeply nested reads where you want property-chain ergonomics without wrapping a template interpolation in a function, use `state.view`. Every path is a computed signal backed by the original store path:
 
 ```ts
-const state = store({ user: { profile: { name: 'Rod' } } })
+const state = store({ user: { profile: { name: "Rod" } } });
 
-html`<strong>${state.view.user.profile.name}</strong>`
+html`<strong>${state.view.user.profile.name}</strong>`;
 // updates when state.user.profile.name.set(...) or state.setPath(...) runs
 
-state.view.user.profile.name.set('Fabrica')
-state.view.user.profile.name.update((name) => name.toUpperCase())
+state.view.user.profile.name.set("Fabrica");
+state.view.user.profile.name.update((name) => name.toUpperCase());
 ```
 
 Store-view computed signals are safe to consume from synchronous effects.
@@ -346,10 +364,10 @@ iteration loop.
 `state.$()` creates computed selector signals for path strings, path arrays or snapshot selectors:
 
 ```ts
-const name = state.$('user.profile.name')
-const label = state.$((snapshot) => `${snapshot.user.profile.name}`)
+const name = state.$("user.profile.name");
+const label = state.$((snapshot) => `${snapshot.user.profile.name}`);
 
-html`<span>${label}</span>`
+html`<span>${label}</span>`;
 ```
 
 JavaScript evaluates `${state.user.profile.name()}` before the tagged template can see the expression, so that exact form is a plain value. Prefer `${state.user.profile.name}`, `${state.view.user.profile.name}` or `${() => state.user.profile.name()}` for live DOM bindings.
@@ -359,32 +377,34 @@ JavaScript evaluates `${state.user.profile.name()}` before the tagged template c
 Broto stores now support middleware at creation time and after creation:
 
 ```ts
-const state = store({ count: 0 }, {
-  middleware: [
-    (event, api, next) => {
-      console.log(event.type, api.snapshot())
-      next(event)
-    },
-  ],
-  devtools: {
-    listener(event) {
-      window.dispatchEvent(new CustomEvent('broto:mutation', { detail: event }))
+const state = store(
+  { count: 0 },
+  {
+    middleware: [
+      (event, api, next) => {
+        console.log(event.type, api.snapshot());
+        next(event);
+      },
+    ],
+    devtools: {
+      listener(event) {
+        window.dispatchEvent(new CustomEvent("broto:mutation", { detail: event }));
+      },
     },
   },
-})
+);
 
 state.use((event, api, next) => {
-  performance.mark(`broto:${event.type}`)
-  next(event)
-})
+  performance.mark(`broto:${event.type}`);
+  next(event);
+});
 
 state.subscribeDevtools((event) => {
-  console.table({ type: event.type, cause: event.cause })
-})
+  console.table({ type: event.type, cause: event.cause });
+});
 ```
 
 Middleware runs after the state mutation and before subscribers/devtools listeners. It can annotate or drop events by deciding whether to call `next(event)`. Devtools listeners receive the final post-middleware event shape, making Alerta or any external panel integration straightforward.
-
 
 ## Required and reactive contexts
 

@@ -17,30 +17,29 @@ describe("Broto context architecture", () => {
   it("throws a descriptive error for missing required contexts", () => {
     const Session = createRequiredContext<{ userId: string }>("Session");
 
-    expect(() => requireContext(Session)).toThrow(
-      'Missing provider for required context "Session"',
-    );
+    expect(() => requireContext(Session)).toThrow('Missing provider for required context "Session"');
   });
 
   it("resolves the nearest provider and exposes context diagnostics", () => {
     const Theme = createRequiredContext<string>("Theme");
 
-    const [result, dispose] = createRoot((_dispose, root) => {
-      provide(Theme, "dark");
-      const child = createOwner({ name: "Child" });
+    const [result, dispose] = createRoot(
+      (_dispose, root) => {
+        provide(Theme, "dark");
+        const child = createOwner({ name: "Child" });
 
-      const value = runWithOwner(child, () => {
-        expect(hasContext(Theme)).toBe(true);
-        return requireContext(Theme);
-      });
+        const value = runWithOwner(child, () => {
+          expect(hasContext(Theme)).toBe(true);
+          return requireContext(Theme);
+        });
 
-      return { value, snapshot: inspectOwnerGraph(root) };
-    }, { name: "Root" });
+        return { value, snapshot: inspectOwnerGraph(root) };
+      },
+      { name: "Root" },
+    );
 
     expect(result.value).toBe("dark");
-    expect(result.snapshot?.contexts).toEqual([
-      { description: "Theme", required: true, kind: "context" },
-    ]);
+    expect(result.snapshot?.contexts).toEqual([{ description: "Theme", required: true, kind: "context" }]);
 
     dispose();
   });

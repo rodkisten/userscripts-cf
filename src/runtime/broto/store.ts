@@ -49,7 +49,9 @@ export type StoreMiddleware<State extends Record<string, unknown> = Record<strin
 ) => void;
 
 /** Devtools adapter event emitted after middleware processing. */
-export type StoreDevtoolsListener<State extends Record<string, unknown> = Record<string, unknown>> = (event: StorePatchEvent<State>) => void;
+export type StoreDevtoolsListener<State extends Record<string, unknown> = Record<string, unknown>> = (
+  event: StorePatchEvent<State>,
+) => void;
 
 /** Optional store creation hooks for middleware and external devtools panels. */
 export interface StoreOptions<State extends Record<string, unknown>> {
@@ -119,7 +121,6 @@ export type DeepPartial<Value> = [Value] extends [Primitive]
       ? { [Key in keyof Value]?: DeepPartial<Value[Key]> }
       : Value;
 
-
 /** Selector used by store.$() for computed reads over a plain tracked snapshot. */
 export type StoreSelector<State extends Record<string, unknown>> = (state: State) => unknown;
 
@@ -141,10 +142,14 @@ export type StoreView<Value> = [Value] extends [Primitive]
       : StorePathSignal<Value>;
 
 /** Patch updater can mutate the draft or return a partial object. */
-export type StorePatchUpdater<State extends Record<string, unknown>> = (draft: State) => DeepPartial<State> | void;
+export type StorePatchUpdater<State extends Record<string, unknown>> = (
+  draft: State,
+) => DeepPartial<State> | void;
 
 /** Update mutator receives a full plain draft snapshot. */
-export type StorePatchMutator<State extends Record<string, unknown>> = (draft: State) => void | State | DeepPartial<State>;
+export type StorePatchMutator<State extends Record<string, unknown>> = (
+  draft: State,
+) => void | State | DeepPartial<State>;
 
 /** Internal store marker. */
 const STORE_MARKER = Symbol("broto.store");
@@ -188,7 +193,10 @@ const STORE_VERSION = new WeakMap<object, Signal<number>>();
  * });
  * ```
  */
-export function store<State extends Record<string, unknown>>(initialState: State, options: StoreOptions<State> = {}): Store<State> {
+export function store<State extends Record<string, unknown>>(
+  initialState: State,
+  options: StoreOptions<State> = {},
+): Store<State> {
   brotoDebugState.stores += 1;
   const subscribers = new Set<StoreSubscriber<State>>();
   const middleware = Array.isArray(options.middleware) ? options.middleware.slice() : [];
@@ -274,11 +282,20 @@ function createStoreObject(
     },
     patch: {
       enumerable: false,
-      value(nextState: Record<string, unknown> | StorePatchUpdater<Record<string, unknown>>, meta: StorePatchMeta = {}) {
+      value(
+        nextState: Record<string, unknown> | StorePatchUpdater<Record<string, unknown>>,
+        meta: StorePatchMeta = {},
+      ) {
         const patch = resolvePatchInput(output, nextState);
         if (!isPlainObject(patch)) return;
         batch(() => patchStoreObject(output, keys, patch, basePath, meta, notify));
-        notify({ type: "patch", cause: meta.cause, path: meta.path, patch, state: snapshotStoreObject(output, keys) });
+        notify({
+          type: "patch",
+          cause: meta.cause,
+          path: meta.path,
+          patch,
+          state: snapshotStoreObject(output, keys),
+        });
       },
     },
     update: {
@@ -289,7 +306,13 @@ function createStoreObject(
         const returned = mutator(draft as never);
         const patch = isPlainObject(returned) ? returned : draft;
         batch(() => patchStoreObject(output, keys, patch, basePath, meta, notify));
-        notify({ type: "update", cause: meta.cause, path: meta.path, patch, state: snapshotStoreObject(output, keys) });
+        notify({
+          type: "update",
+          cause: meta.cause,
+          path: meta.path,
+          patch,
+          state: snapshotStoreObject(output, keys),
+        });
       },
     },
     draft: {
@@ -300,7 +323,13 @@ function createStoreObject(
         const returned = mutator(draft as never);
         const patch = isPlainObject(returned) ? returned : draft;
         batch(() => patchStoreObject(output, keys, patch, basePath, meta, notify));
-        notify({ type: "update", cause: meta.cause, path: meta.path, patch, state: snapshotStoreObject(output, keys) });
+        notify({
+          type: "update",
+          cause: meta.cause,
+          path: meta.path,
+          patch,
+          state: snapshotStoreObject(output, keys),
+        });
       },
     },
     get: {
@@ -340,19 +369,35 @@ function createStoreObject(
     },
     set: {
       enumerable: false,
-      value(nextStateOrPath: Record<string, unknown> | StorePathInput, valueOrMeta?: unknown, maybeMeta: StorePatchMeta = {}) {
+      value(
+        nextStateOrPath: Record<string, unknown> | StorePathInput,
+        valueOrMeta?: unknown,
+        maybeMeta: StorePatchMeta = {},
+      ) {
         if (typeof nextStateOrPath === "string" || Array.isArray(nextStateOrPath)) {
           const meta = maybeMeta;
           const path = normalizeStorePath(nextStateOrPath);
           batch(() => setStorePath(output, keys, path, valueOrMeta, { ...meta, path }, notify));
-          notify({ type: "path:set", cause: meta.cause, path, patch: valueOrMeta, state: snapshotStoreObject(output, keys) });
+          notify({
+            type: "path:set",
+            cause: meta.cause,
+            path,
+            patch: valueOrMeta,
+            state: snapshotStoreObject(output, keys),
+          });
           return;
         }
 
         if (!isPlainObject(nextStateOrPath)) return;
         const meta = isPlainObject(valueOrMeta) ? (valueOrMeta as StorePatchMeta) : {};
         batch(() => replaceStoreObject(output, keys, nextStateOrPath, basePath, notify));
-        notify({ type: "set", cause: meta.cause, path: meta.path, patch: nextStateOrPath, state: snapshotStoreObject(output, keys) });
+        notify({
+          type: "set",
+          cause: meta.cause,
+          path: meta.path,
+          patch: nextStateOrPath,
+          state: snapshotStoreObject(output, keys),
+        });
       },
     },
     setPath: {
@@ -360,7 +405,13 @@ function createStoreObject(
       value(pathInput: StorePathInput, value: unknown, meta: StorePatchMeta = {}) {
         const path = normalizeStorePath(pathInput);
         batch(() => setStorePath(output, keys, path, value, { ...meta, path }, notify));
-        notify({ type: "path:set", cause: meta.cause, path, patch: value, state: snapshotStoreObject(output, keys) });
+        notify({
+          type: "path:set",
+          cause: meta.cause,
+          path,
+          patch: value,
+          state: snapshotStoreObject(output, keys),
+        });
       },
     },
   });
@@ -383,7 +434,9 @@ function installRootStoreApi<State extends Record<string, unknown>>(
       value(listener: StoreSubscriber<State>): StoreUnsubscribe {
         if (typeof listener !== "function") return () => {};
         subscribers.add(listener);
-        return () => { subscribers.delete(listener); };
+        return () => {
+          subscribers.delete(listener);
+        };
       },
     },
     use: {
@@ -402,26 +455,37 @@ function installRootStoreApi<State extends Record<string, unknown>>(
       value(listener: StoreDevtoolsListener<State>): StoreUnsubscribe {
         if (typeof listener !== "function") return () => {};
         devtoolsListeners.add(listener);
-        return () => { devtoolsListeners.delete(listener); };
+        return () => {
+          devtoolsListeners.delete(listener);
+        };
       },
     },
   });
 }
 
-function createStoreValue(value: unknown, path: StorePath, notify: (event: StorePatchEvent) => void): unknown {
+function createStoreValue(
+  value: unknown,
+  path: StorePath,
+  notify: (event: StorePatchEvent) => void,
+): unknown {
   if (isPlainObject(value)) return createStoreObject(value as Record<string, unknown>, path, notify);
   if (Array.isArray(value)) return createArraySignal(value, path, notify);
   return signal(value);
 }
 
-function createArraySignal(value: unknown[], path: StorePath, notify: (event: StorePatchEvent) => void): Signal<unknown[]> & { atSignal(index: number): unknown } {
+function createArraySignal(
+  value: unknown[],
+  path: StorePath,
+  notify: (event: StorePatchEvent) => void,
+): Signal<unknown[]> & { atSignal(index: number): unknown } {
   const source = signal(value.slice()) as Signal<unknown[]> & { atSignal(index: number): unknown };
   const itemStores = new Map<number, unknown>();
 
   source.atSignal = (index: number): unknown => {
     const list = source.peek();
     if (index < 0 || index >= list.length) return undefined;
-    if (!itemStores.has(index)) itemStores.set(index, createStoreValue(list[index], appendPath(path, index), notify));
+    if (!itemStores.has(index))
+      itemStores.set(index, createStoreValue(list[index], appendPath(path, index), notify));
     return itemStores.get(index);
   };
 
@@ -494,7 +558,13 @@ function replaceStoreKey(
   }
 
   if (isStoreObject(current) && isPlainObject(value)) {
-    replaceStoreObject(current as Record<string, unknown>, collectStoreKeys(current as Record<string, unknown>), value as Record<string, unknown>, path, notify);
+    replaceStoreObject(
+      current as Record<string, unknown>,
+      collectStoreKeys(current as Record<string, unknown>),
+      value as Record<string, unknown>,
+      path,
+      notify,
+    );
     return;
   }
 
@@ -525,7 +595,14 @@ function applyStoreKey(
 
   if (isStoreObject(current) && isPlainObject(value)) {
     const currentKeys = collectStoreKeys(current as Record<string, unknown>);
-    patchStoreObject(current as Record<string, unknown>, currentKeys, value as Record<string, unknown>, meta.path ?? [key], meta, notify);
+    patchStoreObject(
+      current as Record<string, unknown>,
+      currentKeys,
+      value as Record<string, unknown>,
+      meta.path ?? [key],
+      meta,
+      notify,
+    );
     return;
   }
 
@@ -548,8 +625,6 @@ function getStorePath(root: Record<string, unknown>, path: StorePathInput): unkn
   }
   return current;
 }
-
-
 
 function readStoreSelection(root: Record<string, unknown>, path: StorePath): unknown {
   const value = getStorePath(root, path);
@@ -635,14 +710,16 @@ function snapshotValue(value: unknown): unknown {
   return value;
 }
 
-function resolvePatchInput(target: Record<string, unknown>, input: Record<string, unknown> | StorePatchUpdater<Record<string, unknown>>): unknown {
+function resolvePatchInput(
+  target: Record<string, unknown>,
+  input: Record<string, unknown> | StorePatchUpdater<Record<string, unknown>>,
+): unknown {
   if (typeof input !== "function") return input;
   const keys = collectStoreKeys(target);
   const draft = snapshotStoreObject(target, keys);
   const returned = input(draft);
   return isPlainObject(returned) ? returned : draft;
 }
-
 
 function createStorePathSignal(
   root: Record<string, unknown>,
@@ -682,7 +759,14 @@ function createStoreViewProxy(
       if (property === Symbol.toPrimitive) return () => stringifyStoreViewValue(target.peek());
       if (property === "toJSON") return () => target.peek();
       if (property === "toString") return () => stringifyStoreViewValue(target.peek());
-      if (property === "set" || property === "update" || property === "peek" || property === "subscribe" || property === "use" || property === "subscribeDevtools") {
+      if (
+        property === "set" ||
+        property === "update" ||
+        property === "peek" ||
+        property === "subscribe" ||
+        property === "use" ||
+        property === "subscribeDevtools"
+      ) {
         return Reflect.get(target, property, receiver);
       }
 
@@ -714,17 +798,42 @@ function normalizeStorePath(path: StorePathInput): StorePath {
     const char = text[index];
 
     if (quote) {
-      if (escaped) { token += char; escaped = false; continue; }
-      if (char === "\\") { escaped = true; continue; }
-      if (char === quote) { quote = ""; continue; }
+      if (escaped) {
+        token += char;
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === quote) {
+        quote = "";
+        continue;
+      }
       token += char;
       continue;
     }
 
-    if (char === "'" || char === '"') { quote = char; continue; }
-    if (char === ".") { pushPathToken(output, token); token = ""; continue; }
-    if (char === "[") { pushPathToken(output, token); token = ""; continue; }
-    if (char === "]") { pushPathToken(output, token); token = ""; continue; }
+    if (char === "'" || char === '"') {
+      quote = char;
+      continue;
+    }
+    if (char === ".") {
+      pushPathToken(output, token);
+      token = "";
+      continue;
+    }
+    if (char === "[") {
+      pushPathToken(output, token);
+      token = "";
+      continue;
+    }
+    if (char === "]") {
+      pushPathToken(output, token);
+      token = "";
+      continue;
+    }
     token += char;
   }
 
@@ -746,13 +855,11 @@ function appendPath(path: StorePath, key: PropertyKey): StorePath {
   return next;
 }
 
-
-
 function isStoreObject(value: unknown): boolean {
   return Boolean(
     value &&
-      (typeof value === "object" || typeof value === "function") &&
-      (value as Record<PropertyKey, unknown>)[STORE_MARKER],
+    (typeof value === "object" || typeof value === "function") &&
+    (value as Record<PropertyKey, unknown>)[STORE_MARKER],
   );
 }
 

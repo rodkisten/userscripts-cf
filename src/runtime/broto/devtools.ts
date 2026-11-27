@@ -1,7 +1,13 @@
 import { debug } from "@rodkisten/broto/debug";
 import { getOwnerRoots, inspectOwnerGraph } from "@rodkisten/broto/owner";
 import { inspectEffects, inspectScheduler, inspectSignals } from "@rodkisten/broto/reactivity";
-import type { BrotoLeakRecord, BrotoLeakSnapshot, BrotoRuntimeSnapshot, Owner, OwnerGraphSnapshot } from "@rodkisten/broto/types";
+import type {
+  BrotoLeakRecord,
+  BrotoLeakSnapshot,
+  BrotoRuntimeSnapshot,
+  Owner,
+  OwnerGraphSnapshot,
+} from "@rodkisten/broto/types";
 
 /**
  * Creates a complete runtime snapshot for debug panels and devtools adapters.
@@ -39,7 +45,9 @@ export function inspectRuntime(root?: Owner | null): BrotoRuntimeSnapshot {
 }
 
 /** Flattens an owner graph into rows that are easy to render in tables. */
-export function flattenOwnerGraph(graph: OwnerGraphSnapshot | null): Array<Omit<OwnerGraphSnapshot, "children"> & { depth: number; parentId: string | null }> {
+export function flattenOwnerGraph(
+  graph: OwnerGraphSnapshot | null,
+): Array<Omit<OwnerGraphSnapshot, "children"> & { depth: number; parentId: string | null }> {
   const rows: Array<Omit<OwnerGraphSnapshot, "children"> & { depth: number; parentId: string | null }> = [];
   if (!graph) return rows;
   appendOwnerRows(rows, graph, 0, null);

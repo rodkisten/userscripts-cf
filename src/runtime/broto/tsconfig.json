@@ -4,10 +4,7 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": [
-    "./**/*.ts",
-    "./**/*.tsx"
-  ],
+  "include": ["./**/*.ts", "./**/*.tsx"],
   "exclude": [
     "./test/**",
     "**/*.test.ts",

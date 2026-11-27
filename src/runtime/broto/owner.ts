@@ -15,7 +15,7 @@ const ownerRoots = new Set<Owner>();
 
 /** Returns the owner at the top of the current execution stack. */
 export function getOwner(): Owner | null {
-  return ownerStack.length > 0 ? ownerStack[ownerStack.length - 1] ?? null : null;
+  return ownerStack.length > 0 ? (ownerStack[ownerStack.length - 1] ?? null) : null;
 }
 
 /** Captures the current owner for work that will execute later. */
@@ -161,7 +161,10 @@ export function disposeOwner(owner: Owner): void {
 }
 
 /** Creates an optional context token with a default value when supplied. */
-export function createContext<Value>(defaultValue?: Value, description = "BrotoContext"): ContextToken<Value> {
+export function createContext<Value>(
+  defaultValue?: Value,
+  description = "BrotoContext",
+): ContextToken<Value> {
   const hasDefault = arguments.length > 0;
   return Object.freeze({
     id: Symbol(description),
@@ -252,7 +255,6 @@ export function requireContext<Value>(context: ContextToken<Value>): Value {
   if (resolution.found) return resolution.value;
   throw new Error(`[Broto] Missing provider for required context "${context.description}".`);
 }
-
 
 /** React-style alias for required context reads. */
 export function useRequiredContext<Value>(context: ContextToken<Value>): Value {

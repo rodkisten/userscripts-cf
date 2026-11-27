@@ -94,7 +94,10 @@ export function resource<Value, ErrorValue = unknown, Source = void>(
 
     let timeoutId: ReturnType<typeof globalThis.setTimeout> | 0 = 0;
     const timeout = new Promise<never>((_resolve, reject) => {
-      timeoutId = globalThis.setTimeout(() => reject(new Error(`[Broto] Resource timed out after ${timeoutMs}ms.`)), timeoutMs);
+      timeoutId = globalThis.setTimeout(
+        () => reject(new Error(`[Broto] Resource timed out after ${timeoutMs}ms.`)),
+        timeoutMs,
+      );
     });
 
     try {
@@ -162,7 +165,8 @@ export function resource<Value, ErrorValue = unknown, Source = void>(
 
   function mutate(value: Value | ((current: Value | undefined) => Value)): Value {
     const previous = state.peek();
-    const nextValue = typeof value === "function" ? (value as (current: Value | undefined) => Value)(previous.value) : value;
+    const nextValue =
+      typeof value === "function" ? (value as (current: Value | undefined) => Value)(previous.value) : value;
     state.set({ loading: false, value: nextValue, error: undefined, stale: false });
     return nextValue;
   }
@@ -199,13 +203,16 @@ export function resource<Value, ErrorValue = unknown, Source = void>(
   });
 
   if (options.source !== undefined) {
-    const stop = effect(() => {
-      const nextSource = readSource();
-      if (Object.is(previousSource, nextSource) && previousSource !== undefined) {
-        return;
-      }
-      void reload();
-    }, { name: "resource.source" });
+    const stop = effect(
+      () => {
+        const nextSource = readSource();
+        if (Object.is(previousSource, nextSource) && previousSource !== undefined) {
+          return;
+        }
+        void reload();
+      },
+      { name: "resource.source" },
+    );
 
     onOwnerCleanup(stop);
   } else if (options.immediate !== false) {
