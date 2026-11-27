@@ -102,9 +102,40 @@ export function createRuntime(
   let reactHost: HTMLDivElement | undefined;
   let reactRoot: Root | undefined;
   let portalObserver: MutationObserver | undefined;
+  const shadowObservers = new Map<ShadowRoot, MutationObserver>();
   let runtimeDisposed = false;
 
   const nextPortalId = (): PortalId => ++nextId as PortalId;
+
+  // Observe each shadow boundary because document observers cannot see inside it.
+  const syncShadowObservers = (): void => {
+    const roots = new Set<ShadowRoot>();
+    for (const { target } of registry.getSnapshot()) {
+      let node: Node = target;
+      while (true) {
+        const root = node.getRootNode();
+        if (root.nodeType !== 11 || !("host" in root)) break;
+        const shadow = root as ShadowRoot;
+        roots.add(shadow);
+        node = shadow.host;
+      }
+    }
+    for (const [root, observer] of shadowObservers) {
+      if (!roots.has(root)) {
+        observer.disconnect();
+        shadowObservers.delete(root);
+      }
+    }
+    for (const root of roots) {
+      if (shadowObservers.has(root)) continue;
+      const observer = new host.MutationObserver(() => {
+        for (const id of registry.pruneDisconnected()) portalDisposers.get(id)?.();
+        syncShadowObservers();
+      });
+      observer.observe(root, { childList: true, subtree: true });
+      shadowObservers.set(root, observer);
+    }
+  };
 
   const ensureReactHost = (): void => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
@@ -132,6 +163,7 @@ export function createRuntime(
       for (const id of registry.pruneDisconnected(connectedTargets)) {
         portalDisposers.get(id)?.();
       }
+      syncShadowObservers();
     });
 
     portalObserver.observe(host.document, { childList: true, subtree: true });
@@ -139,8 +171,13 @@ export function createRuntime(
     reactRoot.render(<PortalOutlet registry={registry} />);
   };
 
+  const unsubscribeShadowObservers = registry.subscribe(syncShadowObservers);
+
   const disposeReactHost = (): void => {
     runtimeDisposed = true;
+    unsubscribeShadowObservers();
+    for (const observer of shadowObservers.values()) observer.disconnect();
+    shadowObservers.clear();
     portalObserver?.disconnect();
     portalObserver = undefined;
 
