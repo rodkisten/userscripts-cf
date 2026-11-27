@@ -1,4 +1,4 @@
-import { SIGNAL_SYMBOL } from "./signal.js";
+import type { SIGNAL_SYMBOL } from "./signal.js";
 
 /**
  * Shared types for Broto, the reactive runtime used by Fábrica.
