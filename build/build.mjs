@@ -338,25 +338,25 @@ export async function compileTarget(target, context) {
   const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
 
-  const [icon, formattedBody] = await Promise.all([
-    resolveTargetIcon(root, iconSource, target, log),
-    (async () => {
-      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
-      const guarded = [diagnosticSource, ...installers].map((source, index) => {
-        const stage = index === 0 ? "diagnostics" : `installer-${index}`;
-        return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
-      });
-      const rawCode = stripBuildComments(guarded.join("\n\n"));
-      return format(rawCode, { parser: "babel", printWidth: 110 });
-    })(),
-  ]);
+  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
+  const guarded = [diagnosticSource, ...installers].map((source, index) => {
+    const stage = index === 0 ? "diagnostics" : `installer-${index}`;
+    return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
+  });
+  const rawCode = stripBuildComments(guarded.join("\n\n"));
+  const iconPromise = resolveTargetIcon(root, iconSource, target, log);
+  const formatStart = performance.now();
+  const debugPromise = format(rawCode, { parser: "babel", printWidth: 110 }).then((body) => {
+    log.info("Debug formatting " + target.id, fmt.duration(performance.now() - formatStart));
+    return body;
+  });
 
   const metadata = buildUserscriptMetadata(target, baseURL, patterns, exclusions);
   const debugFile = `${target.id}.js`;
-  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
-  const chunks = await viteBuild({
+  const finalBuildStart = performance.now();
+  const [chunks, icon, formattedBody] = await Promise.all([viteBuild({
     configFile: false,
     logLevel: "error",
     plugins: [
@@ -366,7 +366,7 @@ export async function compileTarget(target, context) {
           if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
         },
         load(id) {
-          if (id === "\0virtual:userscript-runtime") return formattedBody;
+          if (id === "\0virtual:userscript-runtime") return rawCode;
         },
       },
     ],
@@ -379,7 +379,9 @@ export async function compileTarget(target, context) {
         output: { format: "iife", name: "UserscriptsCFBundle" },
       },
     },
-  });
+  }), iconPromise, debugPromise]);
+  log.info("Final build and debug " + target.id, fmt.duration(performance.now() - finalBuildStart));
+  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
   const result = output.find((entry) => entry.type === "chunk");
