@@ -479,7 +479,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("tsconfig.rod-ast.generated.json",JSON.stringify({extends:"./tsconfig.react.json",include:["tests/fixtures/rod-ast.output.tsx","src/types/**/*.d.ts"],compilerOptions:{noEmit:true,types:["react","react-dom","vite/client"]}},null,2))'
           npx tsc --project tsconfig.rod-ast.generated.json --noEmit
       - name: "🧪 Typecheck React"
         id: react_types

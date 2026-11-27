@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 23114)
-Total output lines: 728
-
 ## PR preview deployment
 
 PR preview workflow now builds numbered installers and deploys each PR to an isolated Cloudflare Pages branch (`pr-<number>`). It requires repository variable `USERSCRIPTS_PREVIEW_PAGES_PROJECT` and secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The PR comment receives the actual Cloudflare `*.pages.dev` URL only after a successful HTTP verification. The custom `userscripts.preview.migos.club/<number>/` path remains a separate routing task; preview cleanup after merge is not yet implemented.
@@ -297,7 +294,6 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 
 - [Run 44234731037](https://github.com/rodkisten/userscripts-cf/actions/runs/44234731037), job `134568001712`: `npm ci`, legacy TypeScript and React TypeScript **passed**; production build **failed** with Vite 8/Rolldown `PARSE_ERROR Unexpected JSX expression` in `.tsx` sources including GoneWild, Instagram Saved, mobile editor FAB and DOM Inspector.
 - [`297367dc`](https://github.com/rodkisten/userscripts-cf/commit/297367dc89bceeededf42a85fab75adf49a1bc4a) adds explicit Oxc TSX pretransform in Vite config as a candidate fix. **Not verified.** Important: legacy Solid TSX still exists and uses a different JSX runtime; a React automatic transform of legacy Solid JSX can change runtime behavior. Audit imports and validate actual runtime behavior before release. Prefer migrating remaining Solid consumers instead of shipping a semantically incompatible transform.
-
 ### TSX transform compatibility follow-up (2026-11-18)
 
 - [`f0edca2a`](https://github.com/rodkisten/userscripts-cf/commit/f0edca2a89b362ad72ef8905f6a255e9708ee369) makes Oxc TSX transform select `@solidjs/web` for legacy Solid sources (`solid-ui` path or Solid import/pragma) and `react` otherwise. This avoids unconditional React JSX conversion of clearly Solid-owned source. **Unverified**: inspect build and confirm Solid runtime automatic JSX compatibility, including any Solid consumers with indirect imports; runtime/browser smoke checks remain necessary.
@@ -397,7 +393,6 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - **Verification pending:** observe fresh main push Pages change-detection job and lockfile-repair App-authenticated push. The new logic cannot detect push events GitHub suppresses for GITHUB_TOKEN-authenticated writes; explicit manual dispatch or App token is required for those cases.
 
 ### React typecheck failure 44303147382 (2026-11-18)
-
 - [Failed job](https://github.com/rodkisten/userscripts-cf/actions/runs/44303147382/job/134797758062): **806 TypeScript error lines**, many caused by leftover Solid JSX `class=` and missing `solid-js` imports. Largest files: search-workbench (248), lists/render (114), tweets/publisher (46), github-tools/dashboard (41), telegram/relay (36), page-repl/Panel (32), network/inspector (31).
 - [`763b295f`](https://github.com/rodkisten/userscripts-cf/commit/763b295f334043e9994b3aa52aa2a20f3aaa6efa) migrated 245 `class=` attributes in RodX workbench; [`c3700d6a`](https://github.com/rodkisten/userscripts-cf/commit/c3700d6ab985d7c144dc9992035ddfb48979891e) uses real `document.createElement` nodes in selection popover instead of JSX-to-DOM casts.
 - Additional `class=` to `className=` edits across 14 other TSX files: lists/render (112), tweets/publisher (41), github-tools/dashboard (35), telegram/relay (30), page-repl/Panel (29), network/inspector (20), lists/timeline (25), lists/quick-picker (26), quick-actions (6), layout/tweets (5), github-tools/ui (12), dom-inspector (13), github-tools/directory-tree (12), tweets/enhancer (6). These are syntax migration edits only, **not a complete React rewrite**.
@@ -723,3 +718,5 @@ PR preview workflow now builds numbered installers and deploys each PR to an iso
 - [ ] Share low-level GM transport with pre-runtime diagnostics; verify HTTP status, bounded retry and visible delivery failures, without recursive capture.
 - [ ] Install minimal global error/rejection capture before storage or runtime initialization; isolate bootstrap stages and modules.
 - [ ] Validate generated standalone artifact in browser smoke test and Safari, including diagnostics, Dock, Inspektor and RodX.
+
+> **PR #151 · AST fixture typecheck (2026-11-27):** Run [45924857563](https://github.com/rodkisten/userscripts-cf/actions/runs/45924857563) passed 181 AST tests and React typecheck but failed fixture compilation (TS2614). The generated tsconfig now includes the same ambient declarations under `src/types` as the React config. No runtime or AST transform contract changes. Revalidation pending.
