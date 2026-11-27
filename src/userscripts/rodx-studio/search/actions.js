@@ -6,10 +6,10 @@ import { importNativeSearch } from "./query-parser.js";
 import { synchronizeDraftForSave } from "./validation.js";
 import { uid } from "../shared/text.js";
 import { state } from "../state/deck.js";
-import { saveState } from "../storage/account.js";
-import { normalizedSearch } from "../storage/normalize.js";
+import { saveState } from "../storage/persistence.js";
+import { normalizedSearch } from "../storage/persistence.js";
 import { repaint } from "../ui/dock.tsx";
-import { openPanel } from "../ui/preferences.js";
+import { openPanel } from "../ui/preferences.tsx";
 import { blankDraft, currentSearch, inspectNativeQuery, renderRoot } from "../ui/search-workbench.tsx";
 
 export function newDraft() {
@@ -25,9 +25,13 @@ export function captureCurrent() {
   state.saveError = "";
   state.rawDirty = false;
   const current = currentSearch();
-  if (!current) return alert("Abra primeiro uma pesquisa no X.");
+  if (!current) {
+    return alert("Abra primeiro uma pesquisa no X.");
+  }
   const candidate = currentFullQuery();
-  if (!candidate) throw new Error("Digite uma pesquisa antes de salvar.");
+  if (!candidate) {
+    throw new Error("Digite uma pesquisa antes de salvar.");
+  }
   const diagnostic = inspectNativeQuery(parseLocalDirectives(candidate).native);
   if (diagnostic.level === "error") {
     throw new Error(`A pesquisa tem erros: ${diagnostic.details[0]?.message || "verifique os operadores"}`);
@@ -52,7 +56,9 @@ export function editSearch(id) {
   state.saveError = "";
   state.rawDirty = false;
   const search = state.searches.find((s) => s.id === id);
-  if (!search) return;
+  if (!search) {
+    return;
+  }
   state.presetEditingId = null;
   state.editingId = id;
   const imported = importNativeSearch(search.query);
@@ -71,19 +77,29 @@ export function editSearch(id) {
 }
 
 export function getPreviewQuery() {
-  if (!state.draft) throw new Error("Nenhuma pesquisa em edição.");
+  if (!state.draft) {
+    throw new Error("Nenhuma pesquisa em edição.");
+  }
   const query =
     state.rawDirty && state.rawQueryDraft.trim()
       ? QueryEngine.normalized(state.rawQueryDraft)
       : QueryEngine.normalized(compileQuery(state.draft.fields, state.draft.blocks));
-  if (!query) throw new Error("Preencha pelo menos um campo de pesquisa.");
-  if (query.length > 8000) throw new Error("Pesquisa muito longa (máx. 8.000 caracteres).");
+  if (!query) {
+    throw new Error("Preencha pelo menos um campo de pesquisa.");
+  }
+  if (query.length > 8000) {
+    throw new Error("Pesquisa muito longa (máx. 8.000 caracteres).");
+  }
   return query;
 }
 
 export async function saveDraft() {
-  if (!state.account) throw new Error("Conta não identificada.");
-  if (state.busy) return;
+  if (!state.account) {
+    throw new Error("Conta não identificada.");
+  }
+  if (state.busy) {
+    return;
+  }
   const name = state.draft.name.trim();
   if (
     String(state.draft.resultLimit).trim() !== "" &&
@@ -91,7 +107,9 @@ export async function saveDraft() {
   ) {
     throw new Error(`Limite inválido. Use um inteiro de 0 a ${MAX_VISIBLE}.`);
   }
-  if (!name) throw new Error("Dê um nome à timeline.");
+  if (!name) {
+    throw new Error("Dê um nome à timeline.");
+  }
   const normalized = synchronizeDraftForSave();
   const query = normalized.query;
   const existing = state.searches.find((s) => s.id === state.editingId);
@@ -109,12 +127,17 @@ export async function saveDraft() {
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   });
-  if (!record) throw new Error("A pesquisa não pôde ser salva.");
+  if (!record) {
+    throw new Error("A pesquisa não pôde ser salva.");
+  }
   state.busy = true;
   const previous = state.searches.slice();
   try {
-    if (existing) state.searches = state.searches.map((s) => (s.id === existing.id ? record : s));
-    else state.searches = [...state.searches, record];
+    if (existing) {
+      state.searches = state.searches.map((s) => (s.id === existing.id ? record : s));
+    } else {
+      state.searches = [...state.searches, record];
+    }
     await saveState();
     state.editingId = null;
     state.draft = null;
@@ -134,30 +157,44 @@ export async function saveDraft() {
 }
 
 export async function actionForSearch(action, id) {
-  if (!state.account) throw new Error("Conta não identificada.");
+  if (!state.account) {
+    throw new Error("Conta não identificada.");
+  }
   const index = state.searches.findIndex((s) => s.id === id);
-  if (index < 0) return;
+  if (index < 0) {
+    return;
+  }
   const search = state.searches[index];
   if (action === "open-search") {
     location.assign(hrefFor(search.query, search.sort));
     return;
   }
-  if (action === "open-recent") return location.assign(hrefFor(search.query, "live"));
-  if (action === "edit") return editSearch(id);
-  if (action === "delete" && !confirm(`Excluir a pesquisa “${search.name}”?`)) return;
+  if (action === "open-recent") {
+    return location.assign(hrefFor(search.query, "live"));
+  }
+  if (action === "edit") {
+    return editSearch(id);
+  }
+  if (action === "delete" && !confirm(`Excluir a pesquisa “${search.name}”?`)) {
+    return;
+  }
   const prev = state.searches.slice();
-  if (action === "delete") state.searches.splice(index, 1);
-  if (action === "pin")
+  if (action === "delete") {
+    state.searches.splice(index, 1);
+  }
+  if (action === "pin") {
     state.searches[index] = {
       ...search,
       pinned: !search.pinned,
     };
-  if (action === "duplicate")
+  }
+  if (action === "duplicate") {
     state.searches.splice(index + 1, 0, {
       ...search,
       id: uid(),
       name: `${search.name} (cópia)`,
     });
+  }
   if (action === "up" && index > 0) {
     [state.searches[index - 1], state.searches[index]] = [state.searches[index], state.searches[index - 1]];
   }

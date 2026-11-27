@@ -122,6 +122,14 @@
   margin-inline-end: 6px;
   align-items: center;
 }
+.rcs-inline-swatches .rcs-todo-issue {
+  color: var(--fgColor-attention, #9a6700);
+  background: var(--bgColor-attention-muted, #fff8c5);
+  border-radius: 4px;
+  padding-inline: 5px;
+  font-size: 12px;
+}
+
 .rcs-swatch {
   width: 13px;
   height: 13px;
@@ -138,20 +146,4 @@
     height: 22px;
     min-width: 22px;
   }
-}
-
-/* CodeMirror inline color controls are installed through a view plugin. */
-.cm-editor .rcs-cm-swatch {
-  display: inline-block;
-  vertical-align: middle;
-  inline-size: 14px;
-  block-size: 14px;
-  margin-inline: 3px;
-  padding: 0;
-  border: 1px solid var(--fgColor-muted, #8b949e);
-  border-radius: 4px;
-  cursor: pointer;
-}
-@media (pointer: coarse) {
-  .cm-editor .rcs-cm-swatch { inline-size: 22px; block-size: 22px; }
 }

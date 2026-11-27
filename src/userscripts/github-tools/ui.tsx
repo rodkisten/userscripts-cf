@@ -11,7 +11,9 @@ export function FileToolbar(props: {
 }) {
   const [copy, setCopy] = useState({ busy: false, label: "⧉ Copiar tudo", message: "" });
   const run = () => {
-    if (copy.busy) return;
+    if (copy.busy) {
+      return;
+    }
     setCopy((previous) => ({ ...previous, busy: true, label: "Preparando…", message: "" }));
     let result: Promise<unknown>;
     try {
@@ -27,7 +29,7 @@ export function FileToolbar(props: {
       .finally(() => setCopy((previous) => ({ ...previous, busy: false, label: "⧉ Copiar tudo" })));
   };
   return (
-    <>
+    <div className={styles.toolbar}>
       <button className={styles.button} data-ghft-copy="" disabled={copy.busy} onClick={run}>
         {copy.label}
       </button>
@@ -65,7 +67,7 @@ export function FileToolbar(props: {
       <span className={styles.message} role="status">
         {copy.message}
       </span>
-    </>
+    </div>
   );
 }
 
@@ -74,31 +76,20 @@ function CopyStep(props: { address: Parameters<typeof loadStepOutput>[0]; ctx: a
   const copy = (event: import("react").MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     event.preventDefault();
-    if (state.busy) return;
+    if (state.busy) {
+      return;
+    }
     setState((previous) => ({ ...previous, busy: true, message: "" }));
     const output = props.ctx.storage
       .get("actionsToken", "")
       .then((token: string) => loadStepOutput(props.address, token, props.ctx.signal));
-    // Initiate Safari's clipboard write inside the gesture, before the fetch.
-    let writing: Promise<unknown>;
-    const clipboard = gmClipboard();
-    if (clipboard) {
-      writing = output.then((text: string) => clipboard(text, "text"));
-    } else if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-      writing = navigator.clipboard.write([
-        new ClipboardItem({
-          "text/plain": output.then((text: string) => new Blob([text], { type: "text/plain" })),
-        }),
-      ]);
-      // Always consume the request even if Safari rejects the clipboard early.
-      writing = Promise.all([writing, output]);
-    } else {
-      writing = output.then(async (text: string) => {
-        const gm = globalThis as any;
-        if (gm.GM_setClipboard) await gm.GM_setClipboard(text, "text");
-        else await navigator.clipboard.writeText(text);
-      });
-    }
+    const writing = output.then((text: string) => {
+      const clipboard = gmClipboard();
+      if (!clipboard) {
+        throw new Error("Clipboard indisponível: verifique o grant GM_setClipboard.");
+      }
+      return clipboard(text, "text");
+    });
     void writing
       .then(() => setState((previous) => ({ ...previous, message: "Log completo do job copiado" })))
       .catch((error) =>
@@ -129,7 +120,9 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
   const match = location.pathname.match(
     /^\/([^/]+)\/([^/]+)\/(?:actions\/runs\/\d+\/job|runs\/\d+\/jobs)\/(\d+)/,
   );
-  if (!match) return;
+  if (!match) {
+    return;
+  }
   const [path, owner, repo, jobId] = match;
   const candidates = [
     ...document.querySelectorAll<HTMLElement>(
@@ -139,11 +132,15 @@ export function scanWorkflowSteps(ctx: any, mounts: Map<HTMLElement, () => void>
   const seen = new Set<number>();
   for (const step of candidates) {
     const number = stepNumber(step);
-    if (!number || seen.has(number)) continue;
+    if (!number || seen.has(number)) {
+      continue;
+    }
     seen.add(number);
     const key = `${path}:${number}`;
     const existing = step.querySelector<HTMLElement>("[data-ghft-step-host]");
-    if (existing?.dataset.ghftStepHost === key) continue;
+    if (existing?.dataset.ghftStepHost === key) {
+      continue;
+    }
     existing?.remove();
     const header = step.querySelector("summary, .js-check-step-header, [data-testid='step-header']");
     const host = document.createElement("span");
@@ -178,7 +175,9 @@ export function GitHubTokenSettings(props: {
         className={styles.tokenForm}
         onSubmit={(event) => {
           event.preventDefault();
-          if (state.busy) return;
+          if (state.busy) {
+            return;
+          }
           const token = state.token.trim();
           setState((previous) => ({ ...previous, busy: true, error: "" }));
           void props

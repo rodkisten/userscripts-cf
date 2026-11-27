@@ -1,17 +1,17 @@
-name: 🚀 Release Userscripts
+name: 🧩 US · Deploy
 
 run-name: "🚀 Release · ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} · ${{ github.ref_name }}"
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
-      - "playground/**"
-      - ".github/workflows/playground.yml"
   workflow_dispatch:
     inputs:
+      target:
+        description: Deployment target
+        type: choice
+        options: [all, production, playground]
+        default: all
       bump:
         description: "🏷️ Incremento semântico da versão"
         required: true
@@ -21,30 +21,71 @@ on:
       skip_tests:
         description: "⚡ Ignorar testes e typecheck no deploy manual (build continua obrigatório)"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:
   contents: write
 
-# Only the newest push release should continue. Manual releases use a separate group.
+# Serialize release attempts so queued runs can recover after a failed publication.
 concurrency:
-  group: userscripts-releases-${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.run_id) || 'main' }}
-  cancel-in-progress: ${{ github.event_name == 'push' }}
+  group: userscripts-production-deploy
+  # A later formatting/merge commit must not cancel a deploy-triggered release.
+  cancel-in-progress: false
 
 jobs:
+  detect:
+    name: 🔎 Check for unreleased deploys
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' || inputs.target != 'playground') &&
+      !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.source.outputs.skip == 'false' }}
+      released_version: ${{ steps.source.outputs.released_version }}
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: 🔎 Detect Unreleased Deploy Commit
+        id: source
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          latest_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n1)"
+          if [[ -z "$latest_tag" ]]; then
+            commit_range="HEAD"
+            echo "released_version=0.0.0" >> "$GITHUB_OUTPUT"
+          else
+            commit_range="$latest_tag..HEAD"
+            echo "released_version=${latest_tag#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+          if git log "$commit_range" --format=%B | grep -Fq '[deploy]'; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "🚀 Found an unreleased [deploy] commit after ${latest_tag:-the beginning of history}." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "⏭️ No unreleased [deploy] commit after ${latest_tag:-the beginning of history}; release skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   release:
     name: 📦 Build, Deploy & Publish
+    needs: detect
     environment: production
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[deploy]') && !contains(github.event.head_commit.message, '[skip ci]'))) &&
+      (github.event_name == 'workflow_dispatch' || needs.detect.outputs.should_release == 'true') &&
       !contains(fromJSON('["dependabot[bot]","renovate[bot]","renovate","dependabot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
       - name: 🔐 Authenticate GitHub App
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_CLIENT_ID || vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -56,13 +97,14 @@ jobs:
         with:
           ref: main
           persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: rodkisten/github/setup-node@main
         with:
-          node-version: 24
-          cache: npm
+          node-version: "24"
+          install: "false"
 
       # The release workflow can recover from package.json updates merged without
       # a matching lockfile. The version commit below persists the repaired lock.
@@ -82,33 +124,48 @@ jobs:
       - name: 📦 Install Locked Dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: 🤖 Check Dependency-Bot Commits
-        id: source
+      - name: 🧩 Calculate AST Version Plan
+        id: version-plan
+        env:
+          BASE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          AUTHOR="$(git log -1 --format=%an)"
-          EMAIL="$(git log -1 --format=%ae)"
-          SUBJECT="$(git log -1 --format=%s)"
-          if [[ "$AUTHOR $EMAIL $SUBJECT" =~ ([Rr]enovate|[Dd]ependabot) ]]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "🤖 Dependency bot change detected: publication skipped."
+          if [[ -n "${BASE_SHA:-}" && "${BASE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
+            node build/version-plan.mjs --from="${BASE_SHA}"
           else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            node build/version-plan.mjs --files=""
+          fi
+          node build/apply-version-plan.mjs version-plan.json
+          affected="$(node -e 'const p=require("./version-plan.json"); process.stdout.write((p.affected||[]).join(","))')"
+          echo "affected=${affected}" >> "$GITHUB_OUTPUT"
+          if [[ -n "$affected" ]]; then
+            echo "🧩 Affected userscripts: ${affected}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⏭️ No userscript source dependency changed." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 🏷️ Select Next Version
-        if: steps.source.outputs.skip != 'true'
         id: version
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          # Resume a release after a failed upload without incrementing twice.
+          # Resume a version already committed by a release that failed before tagging.
           LAST_SUBJECT="$(git log -1 --format=%s)"
           CURRENT="$(node -p 'require("./package.json").version')"
+          RELEASED="${{ needs.detect.outputs.released_version }}"
           RELEASE_STATE="$(gh release view "v$CURRENT" --json isDraft --jq '.isDraft' 2>/dev/null || echo missing)"
-          if [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" && "$RELEASE_STATE" != "false" ]]; then
+          RESUME=false
+          if [[ "$RELEASE_STATE" != "false" ]] && {
+            [[ "$LAST_SUBJECT" == "chore(release): v$CURRENT [skip ci]" ]] ||
+            [[ "$EVENT_NAME" == "push" && "$CURRENT" != "$RELEASED" ]]
+          }; then
+            RESUME=true
+          fi
+
+          if [[ "$RESUME" == "true" ]]; then
             VERSION="$CURRENT"
             echo "resume=true" >> "$GITHUB_OUTPUT"
             echo "♻️ Resuming incomplete release v$VERSION"
@@ -124,11 +181,13 @@ jobs:
 
       - name: 🧪 Typecheck, Build & Test
         if: steps.source.outputs.skip != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.skip_tests)
-        run: npm test
+        uses: rodkisten/github/console-run@main
+        with:
+          command: npm test
 
       - name: 🏗️ Build Userscripts (Tests & Typecheck Non-Blocking)
         id: manual-build
-        if: steps.source.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.skip_tests
+        if: github.event_name == 'workflow_dispatch' && inputs.skip_tests
         run: |
           set -euo pipefail
           if npm run --if-present typecheck; then
@@ -151,13 +210,12 @@ jobs:
           fi
 
       - name: 🔍 Verify Installable Userscript Metadata
-        if: steps.source.outputs.skip != 'true'
         run: |
           node --input-type=module -e 'import fs from "node:fs"; const manifest=JSON.parse(fs.readFileSync("dist/manifest.json","utf8")); if(!manifest.scripts.length) throw Error("No scripts built"); for(const script of manifest.scripts) {const source=fs.readFileSync(`dist/${script.file}`,"utf8"); if(!source.startsWith("// ==UserScript==")) throw Error(`Missing metadata: ${script.file}`)}'
 
       # Formatting is handled separately and must not block publishing.
       - name: 🛡️ Guard Against Superseded Automatic Release
-        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
@@ -168,25 +226,24 @@ jobs:
 
       - name: 📝 Commit & Push Version to Main
         id: version-commit
-        if: steps.source.outputs.skip != 'true' && steps.version.outputs.resume != 'true'
+        if: steps.version.outputs.resume != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
+          git add package.json package-lock.json userscripts.versions.json
           git commit -m "chore(release): v$VERSION [skip ci]"
           git push origin HEAD:main
           SHA=$(git rev-parse HEAD)
           echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: ⚙️ Prepare Cloudflare Worker Assets
-        if: steps.source.outputs.skip != 'true'
         run: node build/hosting.mjs
 
       - name: 🛡️ Guard Against Outdated Release Before Cloudflare Deploy
-        if: github.event_name == 'push' && steps.source.outputs.skip != 'true'
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           latest="$(git ls-remote origin refs/heads/main | cut -f1)"
@@ -198,7 +255,6 @@ jobs:
 
       - name: ☁️ Deploy Versioned Userscripts to Cloudflare
         id: cloudflare
-        if: steps.source.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -213,17 +269,22 @@ jobs:
 
       - name: 🎉 Publish GitHub Release & Checksums
         id: gh-release
-        if: steps.source.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: npm run release
 
+      - name: 🧩 Publish Independent Userscript Releases
+        if: steps.version-plan.outputs.affected != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node build/release-individual.mjs
+
       - name: 📊 Generate Rich Release Summary
         if: always()
         uses: actions/github-script@v7
         env:
-          SKIPPED: ${{ steps.source.outputs.skip }}
+          SKIPPED: "false"
           JOB_STATUS: ${{ job.status }}
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
@@ -344,3 +405,190 @@ jobs:
             }
 
             await core.summary.write();
+
+  dependencies:
+    needs: [detect, release]
+    if: >-
+      always() && !cancelled() && github.ref == 'refs/heads/main' &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.target != 'production') &&
+      (github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.head_commit.message, '[deploy]') && !contains(github.event.head_commit.message, '[skip ci]')) ||
+      (startsWith(github.event.head_commit.message, 'fix(deps): regenerate npm lockfile') && !contains(github.event.head_commit.message, '[skip ci]')))
+    name: Synchronize dependencies before Pages
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sync.outputs.sha }}
+    steps:
+      - name: Authenticate Rod GitHub App
+        id: app-token
+        uses: rodkisten/github/app-token@main
+        with:
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+          persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Synchronize npm lockfile and capture final commit
+        id: sync
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/playground-pages.mjs --mode=sync-lockfile
+
+  changes:
+    needs: dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.detect.outputs.deploy }}
+      reason: ${{ steps.detect.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Detect preview changes and explicit triggers
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: node scripts/playground-pages.mjs --mode=detect-changes
+
+  deploy:
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    needs: [dependencies, changes]
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://userscripts-playground.migos.club/
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.dependencies.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Start build timing
+        run: echo "PAGES_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Restore installed dependencies
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: pages-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'package.json') }}
+
+      - name: Install dependencies (cache miss)
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
+
+      - name: Verify React-only dependencies
+        uses: rodkisten/github/console-run@main
+        with:
+          command: node scripts/playground-pages.mjs --mode=verify-deps
+
+      - name: Restore compiled userscripts
+        id: bundles
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist/*.user.js
+            dist/*.meta.js
+            dist/manifest.json
+            dist/SHA256SUMS
+            dist/icons/*.svg
+          key: pages-bundles-v2-${{ hashFiles('src/**', 'build/**', '!build/hosting.mjs', '!build/design-system.mjs', '!build/preview-userscripts.mjs', 'userscripts.config.js', 'distribution.config.js', 'vite.config.js', 'package.json', 'package-lock.json', 'assets/**') }}
+
+      - name: Build userscripts (cache miss)
+        if: steps.bundles.outputs.cache-hit != 'true'
+        run: npm run build
+
+      - name: Verify cached distribution before preview
+        run: node scripts/playground-pages.mjs --mode=verify-dist
+
+      - name: Prepare isolated preview installers
+        env:
+          USERSCRIPTS_PREVIEW_URL: https://userscripts-playground.migos.club
+        run: node build/preview-userscripts.mjs
+
+      - name: Restore design-system build
+        id: design-system
+        uses: actions/cache@v4
+        with:
+          path: dist/design-system.js
+          key: pages-design-system-v1-${{ hashFiles('studio/**', 'src/**', 'build/design-system.mjs', 'build/css-modules.mjs', 'build/styles.mjs', 'build/runtime-helpers.mjs', 'build/svg.mjs', 'vite.config.js', 'package.json', 'package-lock.json') }}
+
+      - name: Generate static playground
+        env:
+          USERSCRIPTS_PREVIEW: "1"
+          USERSCRIPTS_REUSE_DESIGN_SYSTEM: "${{ steps.design-system.outputs.cache-hit }}"
+        run: node build/hosting.mjs
+
+      - name: Validate static Pages output
+        run: node scripts/playground-pages.mjs --mode=verify-pages
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/pages
+          name: github-pages-${{ github.run_attempt }}
+
+      - name: Wait for Pages artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
+        run: |
+          for attempt in $(seq 1 12); do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\" and .expired == false) | .id")
+            if [ -n "$count" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Pages artifact metadata did not become available"
+          exit 1
+
+      - name: Reject outdated build before publishing
+        run: node scripts/playground-pages.mjs --mode=check-latest
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
+
+      - name: Report pipeline diagnostics & summary
+        if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_ACTOR: ${{ github.actor }}
+          COMMIT_AUTHOR: ${{ github.event.head_commit.author.username }}
+          COMMIT_COMMITTER: ${{ github.event.head_commit.committer.username }}
+          DEPS_CACHE: ${{ steps.node-modules.outputs.cache-hit || 'miss' }}
+          BUNDLES_CACHE: ${{ steps.bundles.outputs.cache-hit || 'miss' }}
+          DESIGN_SYSTEM_CACHE: ${{ steps.design-system.outputs.cache-hit || 'miss' }}
+          PAGES_PUBLISHED: ${{ steps.deployment.outcome == 'success' }}
+        run: node scripts/playground-pages.mjs --mode=report

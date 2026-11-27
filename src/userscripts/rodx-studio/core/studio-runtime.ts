@@ -3,7 +3,7 @@ import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-sto
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
 import { createDefaults } from "../../../config/defaults.js";
 import type { StudioConfig as DefaultStudioConfig } from "../../../config/defaults.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 
 // ============================================================================
 // Tipos e Interfaces
@@ -13,6 +13,8 @@ export type StudioConfig = DefaultStudioConfig & {
   scanDelayMs: number;
   maintenanceMs: number;
   homeListLimit: number;
+  searchButton?: { size?: number; x?: number; y?: number };
+  frecencyHalfLifeDays?: number;
   [key: string]: unknown;
 };
 
@@ -26,6 +28,7 @@ export interface StudioState {
   config: StudioConfig;
   network: NetworkState;
   route: string;
+  listSearch?: { query: string; [key: string]: unknown };
   [key: string]: unknown;
 }
 
@@ -68,6 +71,20 @@ export interface DiagnosticInfo {
   domGeneration: number;
 }
 
+export interface StudioServices extends Record<string, unknown> {
+  lists?: ReturnType<typeof import("../lists/render.tsx").createListsService>;
+  listAccess?: ReturnType<typeof import("../lists/access.tsx").createListAccess>;
+  networkInspector?: {
+    open(): void;
+    close(): void;
+    stats(): { entries: number; bytes: number; dropped: number };
+  };
+  deck?: {
+    open: typeof import("../ui/preferences.tsx").openPanel;
+    close: typeof import("../ui/preferences.tsx").closePanel;
+  };
+}
+
 export interface StudioRuntime {
   state: StudioState;
   config: StudioConfig;
@@ -84,7 +101,9 @@ export interface StudioRuntime {
   start(): void;
   configure(patch: Partial<StudioConfig>): void;
   diagnostics(): DiagnosticInfo;
-  services: Record<string, unknown>;
+  services: StudioServices;
+  menu: ReturnType<typeof import("../bootstrap/network.ts").createStudioMenus>;
+  navigate(href: string): void;
   ctx?: ScriptContext;
 }
 
@@ -170,7 +189,9 @@ export function createStudioRuntime(): StudioRuntime {
   let generation = 0;
 
   function on(type: string, fn: EventCallback): () => void {
-    if (!listeners.has(type)) listeners.set(type, new Set());
+    if (!listeners.has(type)) {
+      listeners.set(type, new Set());
+    }
     listeners.get(type)!.add(fn);
     return () => {
       listeners.get(type)?.delete(fn);
@@ -188,7 +209,9 @@ export function createStudioRuntime(): StudioRuntime {
   }
 
   function slice<T>(name: string, value: T): T {
-    if (state[name] !== undefined) return state[name] as T;
+    if (state[name] !== undefined) {
+      return state[name] as T;
+    }
     state[name] = value;
     return value;
   }
@@ -198,7 +221,9 @@ export function createStudioRuntime(): StudioRuntime {
   }
 
   function queue(id: string): void {
-    if (!jobs.has(id)) return;
+    if (runtime.ctx?.signal.aborted || !jobs.has(id)) {
+      return;
+    }
     pending.add(id);
     if (!drainTimer && !document.hidden) {
       drainTimer = window.setTimeout(drain, config.scanDelayMs);
@@ -211,7 +236,9 @@ export function createStudioRuntime(): StudioRuntime {
       cache.clear();
     }
     for (const [id, job] of jobs) {
-      if (job.events.includes(reason)) queue(id);
+      if (job.events.includes(reason)) {
+        queue(id);
+      }
     }
     emit(reason, state.route);
   }
@@ -221,7 +248,9 @@ export function createStudioRuntime(): StudioRuntime {
     fn: JobFunction,
     { events = ["dom", "route", "state", "maintenance"], group = "", minMs = 0 }: RegisterOptions = {},
   ): () => void {
-    if (jobs.has(id)) throw Error("Duplicate module: " + id);
+    if (jobs.has(id)) {
+      throw Error("Duplicate module: " + id);
+    }
 
     jobs.set(id, {
       fn,
@@ -249,7 +278,9 @@ export function createStudioRuntime(): StudioRuntime {
 
   function drain(): void {
     drainTimer = 0;
-    if (document.hidden) return;
+    if (document.hidden) {
+      return;
+    }
 
     const begin = performance.now();
     let remainingDelay = Infinity;
@@ -313,7 +344,9 @@ export function createStudioRuntime(): StudioRuntime {
         console.warn(STUDIO_LOGGER_TAG, id, error);
       }
 
-      if (performance.now() - begin >= config.budgetMs) break;
+      if (performance.now() - begin >= config.budgetMs) {
+        break;
+      }
     }
 
     if (pending.size && !drainTimer) {
@@ -328,7 +361,9 @@ export function createStudioRuntime(): StudioRuntime {
 
   function nodes(selector: string): Element[] {
     const hit = cache.get(selector);
-    if (hit?.generation === generation) return hit.nodes;
+    if (hit?.generation === generation) {
+      return hit.nodes;
+    }
 
     const elementNodes = Array.from(document.querySelectorAll(selector));
     cache.set(selector, {
@@ -342,7 +377,9 @@ export function createStudioRuntime(): StudioRuntime {
     node?.nodeType === 1 && Boolean((node as Element).closest?.(OWN_SELECTOR));
 
   function start(): void {
-    if (started || !document.body) return;
+    if (started || !document.body) {
+      return;
+    }
     started = true;
 
     const context = runtime.ctx;
@@ -365,16 +402,20 @@ export function createStudioRuntime(): StudioRuntime {
           !value ||
           typeof value !== "object" ||
           Array.isArray(value)
-        )
+        ) {
           return;
+        }
         const loaded = value as Partial<StudioConfig>;
         Object.assign(config, loaded, {
           feedDefaults: { ...defaults.feedDefaults, ...loaded.feedDefaults },
           modules: { ...defaults.modules, ...loaded.modules },
         });
-        if (legacy !== undefined && !configEdited)
+        if (legacy !== undefined && !configEdited) {
           await context.storage.set(CONFIG_STORAGE_KEY, { ...config });
-        if (!context.signal.aborted && !configEdited) invalidate("state");
+        }
+        if (!context.signal.aborted && !configEdited) {
+          invalidate("state");
+        }
       })
       .catch((error: unknown) => {
         console.warn("[RodX] Could not hydrate runtime configuration", error);
@@ -393,8 +434,9 @@ export function createStudioRuntime(): StudioRuntime {
                 Array.from(r.addedNodes).concat(Array.from(r.removedNodes)).every(owned)
               ),
           )
-        )
+        ) {
           return;
+        }
 
         if (!domTimer) {
           domTimer = window.setTimeout(() => {
@@ -415,7 +457,9 @@ export function createStudioRuntime(): StudioRuntime {
     let lastRoute = state.route;
     const route = () => {
       const next = location.pathname + location.search;
-      if (next === lastRoute) return;
+      if (next === lastRoute) {
+        return;
+      }
       lastRoute = next;
       state.route = next;
       invalidate("route");
@@ -438,15 +482,21 @@ export function createStudioRuntime(): StudioRuntime {
 
     // One watchdog for SPA managers that isolate history. No timeline scan on it.
     context.interval(() => {
-      if (!document.hidden) route();
+      if (!document.hidden) {
+        route();
+      }
     }, RUNTIME_LIMITS.coreStudioRuntime.startIntervalMs);
 
     context.interval(() => {
-      if (!document.hidden) invalidate("maintenance");
+      if (!document.hidden) {
+        invalidate("maintenance");
+      }
     }, config.maintenanceMs);
 
     context.interval(() => {
-      if (!document.hidden && enabled("media") && nodes("video").length) invalidate("media");
+      if (!document.hidden && enabled("media") && nodes("video").length) {
+        invalidate("media");
+      }
     }, 500);
 
     context.onDispose(() => {
@@ -457,6 +507,12 @@ export function createStudioRuntime(): StudioRuntime {
       drainTimer = 0;
       pending.clear();
       cache.clear();
+      jobs.clear();
+      listeners.clear();
+      stats.clear();
+      for (const key of Object.keys(runtime.services)) {
+        delete runtime.services[key];
+      }
     });
     invalidate("dom");
   }
@@ -519,6 +575,25 @@ export function createStudioRuntime(): StudioRuntime {
     configure,
     diagnostics,
     services: {},
+    get menu(): StudioRuntime["menu"] {
+      throw new Error("Studio menu not initialized");
+    },
+    set menu(value: StudioRuntime["menu"]) {
+      Object.defineProperty(runtime, "menu", { value, writable: true, configurable: true });
+    },
+    navigate(href) {
+      location.assign(href);
+    },
   };
   return runtime;
+}
+
+// ============================================================================
+// Singleton & Outer Studio Initializer (Consolidated from core/studio.js)
+// ============================================================================
+export let Studio: StudioRuntime;
+
+export function initializeOuterStudio(): StudioRuntime {
+  Studio = createStudioRuntime();
+  return Studio;
 }

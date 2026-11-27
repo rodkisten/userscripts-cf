@@ -1,4 +1,4 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import BookmarkSVGIcon from "../../../assets/icons/bookmark.svg?component";
 import {
@@ -8,15 +8,15 @@ import {
   COMPOSITE_SELECTORS,
 } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { currentFullQuery, nativeSearch } from "../feeds/local-limits.js";
 import { compileLocalRule, parseLocalDirectives } from "../feeds/local-rules.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { NativeQueryTags } from "../search/native-tags.js";
 import { state } from "../state/deck.js";
 import { ForeignTags } from "../translation/foreign-tags.tsx";
 import { Seen } from "./seen.js";
-import { showRodxToast } from "../ui/toast.tsx";
+import { showRodxToast } from "../ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens
@@ -120,7 +120,9 @@ export function initializeDeckResultEnhancer(): void {
     }
 
     function ensureStyle(): void {
-      if (style?.isConnected) return;
+      if (style?.isConnected) {
+        return;
+      }
       style = document.createElement("style");
       style.id = SELECTORS_IDS.resultsStyle;
       style.textContent = extractedCSS1;
@@ -199,7 +201,9 @@ export function initializeDeckResultEnhancer(): void {
 
     function collectHashtags(article: HTMLElement): HashtagInfo[] {
       const text = article.querySelector(NATIVE_X_SELECTORS.nativeTweetText);
-      if (!text) return [];
+      if (!text) {
+        return [];
+      }
       const found = new Map<string, HashtagInfo>();
 
       for (const anchor of text.querySelectorAll(NATIVE_X_SELECTORS.encodedHashtagLinks)) {
@@ -234,7 +238,9 @@ export function initializeDeckResultEnhancer(): void {
       const { positive, negative } = queryHashtags();
       for (const item of document.querySelectorAll<HTMLElement>(RODX_SELECTORS.hashtagItems)) {
         const tagAttr = item.dataset.tag;
-        if (!tagAttr) continue;
+        if (!tagAttr) {
+          continue;
+        }
         const id = normalizedTag(tagAttr);
         const yes = positive.has(id);
         const no = negative.has(id);
@@ -244,22 +250,30 @@ export function initializeDeckResultEnhancer(): void {
         item.dataset.color = state.visual.colorfulTags && !yes && !no ? "1" : "0";
 
         const add = item.querySelector<HTMLElement>(RODX_SELECTORS.tagAddButton);
-        if (add) add.hidden = yes;
+        if (add) {
+          add.hidden = yes;
+        }
 
         const remove = item.querySelector<HTMLElement>(RODX_SELECTORS.tagExcludeButton);
-        if (remove) remove.hidden = no;
+        if (remove) {
+          remove.hidden = no;
+        }
       }
     }
 
     function suppressNativeHashtagList(article: HTMLElement, tags: HashtagInfo[]): void {
       const text = article.querySelector<HTMLElement>(NATIVE_X_SELECTORS.nativeTweetText);
-      if (!text) return;
+      if (!text) {
+        return;
+      }
 
       text.classList.remove(CSS_CLASSES.nativeOnlyTags);
       for (const node of text.querySelectorAll(RODX_SELECTORS.nativeTagArtifacts)) {
         node.classList.remove(CSS_CLASSES.nativeTagTail, CSS_CLASSES.nativeTagSource);
       }
-      if (tags.length < 2) return;
+      if (tags.length < 2) {
+        return;
+      }
 
       const onlyTags = REGEX_PATTERNS.hashtagOnly;
       const multi = REGEX_PATTERNS.hashtagMulti;
@@ -274,19 +288,32 @@ export function initializeDeckResultEnhancer(): void {
         text.querySelectorAll<HTMLElement>(DOM_SELECTORS.textContainers),
       ).reverse();
       for (const node of candidates) {
-        if (node.classList.contains(CSS_CLASSES.nativeTagSource)) continue;
-        if (node.closest(RODX_SELECTORS.nativeTagSource)) continue;
-        const value = (node.innerText || node.textContent || "").trim();
-        if (!value || !onlyTags.test(value) || !multi.test(value)) continue;
-        const parent = node.parentElement;
-        if (parent && parent !== text && onlyTags.test((parent.innerText || parent.textContent || "").trim()))
+        if (node.classList.contains(CSS_CLASSES.nativeTagSource)) {
           continue;
+        }
+        if (node.closest(RODX_SELECTORS.nativeTagSource)) {
+          continue;
+        }
+        const value = (node.innerText || node.textContent || "").trim();
+        if (!value || !onlyTags.test(value) || !multi.test(value)) {
+          continue;
+        }
+        const parent = node.parentElement;
+        if (
+          parent &&
+          parent !== text &&
+          onlyTags.test((parent.innerText || parent.textContent || "").trim())
+        ) {
+          continue;
+        }
         node.classList.add(CSS_CLASSES.nativeTagSource);
       }
 
       const lines = (text.innerText || text.textContent || "").split(/\n+/);
       const listLines = lines.filter((line) => onlyTags.test(line.trim()) && multi.test(line.trim()));
-      if (!listLines.length) return;
+      if (!listLines.length) {
+        return;
+      }
 
       const wanted = new Set(
         listLines
@@ -295,14 +322,19 @@ export function initializeDeckResultEnhancer(): void {
       );
 
       for (const anchor of text.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.hashtagLinks)) {
-        if (anchor.closest(RODX_SELECTORS.nativeTagSource)) continue;
+        if (anchor.closest(RODX_SELECTORS.nativeTagSource)) {
+          continue;
+        }
         const anchorText = anchor.textContent || "";
         const tag = anchorText.trim().normalize("NFKC").toLocaleLowerCase();
-        if (!wanted.has(tag)) continue;
+        if (!wanted.has(tag)) {
+          continue;
+        }
 
         const parentText = (anchor.parentElement?.textContent || "").trim();
-        if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, "")))
+        if (parentText && !onlyTags.test(parentText) && /[\p{L}\p{N}]/u.test(parentText.replace(tag, ""))) {
           continue;
+        }
         anchor.classList.add(CSS_CLASSES.nativeTagSource);
       }
 
@@ -326,7 +358,9 @@ export function initializeDeckResultEnhancer(): void {
 
       for (const br of breaks.slice(-2)) {
         const following = (br.nextSibling?.textContent || "").trim();
-        if (following && onlyTags.test(following)) br.classList.add(CSS_CLASSES.nativeTagTail);
+        if (following && onlyTags.test(following)) {
+          br.classList.add(CSS_CLASSES.nativeTagTail);
+        }
       }
     }
 
@@ -347,8 +381,9 @@ export function initializeDeckResultEnhancer(): void {
       }
 
       if (actions?.parentElement) {
-        if (tray.parentElement !== actions.parentElement || tray.nextElementSibling !== actions)
+        if (tray.parentElement !== actions.parentElement || tray.nextElementSibling !== actions) {
           actions.before(tray);
+        }
       } else if (!tray.isConnected) {
         article.append(tray);
       }
@@ -378,8 +413,11 @@ export function initializeDeckResultEnhancer(): void {
             button.addEventListener("click", (event: MouseEvent) => {
               event.preventDefault();
               event.stopImmediatePropagation();
-              if (mode === "exclude") appendToNativeSearch(tag, "exclude");
-              else appendToNativeSearch(tag);
+              if (mode === "exclude") {
+                appendToNativeSearch(tag, "exclude");
+              } else {
+                appendToNativeSearch(tag);
+              }
             });
             item.append(button);
           }
@@ -403,7 +441,9 @@ export function initializeDeckResultEnhancer(): void {
 
     function ensureBookmark(article: HTMLElement): void {
       const group = findActions(article);
-      if (!group) return;
+      if (!group) {
+        return;
+      }
       const native = group.querySelector<HTMLElement>(NATIVE_X_SELECTORS.bookmarkToggleButtons);
       const visibleNative =
         native && native.getClientRects().length && getComputedStyle(native).display !== "none";
@@ -413,7 +453,9 @@ export function initializeDeckResultEnhancer(): void {
         existing?.remove();
         return;
       }
-      if (existing) return;
+      if (existing) {
+        return;
+      }
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -438,11 +480,15 @@ export function initializeDeckResultEnhancer(): void {
 
         const finish = (): void => {
           observer?.disconnect();
-          if (timeout !== null) clearTimeout(timeout);
+          if (timeout !== null) {
+            clearTimeout(timeout);
+          }
         };
 
         const choose = (): void => {
-          if (committed) return;
+          if (committed) {
+            return;
+          }
           const options = Array.from(
             document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.bookmarkMenuItems),
           ).filter((el) => !article.contains(el) && el.getClientRects().length > 0);
@@ -451,7 +497,9 @@ export function initializeDeckResultEnhancer(): void {
             options.find((el) => REGEX_PATTERNS.bookmarkMenuMatch.test((el.textContent || "").trim())) ||
             options.find((el) => REGEX_PATTERNS.bookmarkTestIdMatch.test(el.dataset.testid || ""));
 
-          if (!target) return;
+          if (!target) {
+            return;
+          }
           committed = true;
           finish();
           target.click();
@@ -483,7 +531,9 @@ export function initializeDeckResultEnhancer(): void {
     }
 
     function setupReader(): void {
-      if (state.readObserver || document.visibilityState !== "visible") return;
+      if (state.readObserver || document.visibilityState !== "visible") {
+        return;
+      }
       const getHeight = (): number => window.innerHeight || document.documentElement.clientHeight;
 
       function fullyOutside(rect: DOMRectReadOnly): boolean {
@@ -497,7 +547,9 @@ export function initializeDeckResultEnhancer(): void {
 
       function pause(article: HTMLElement, progress: ReadProgress): void {
         const timer = state.readTimers.get(article);
-        if (timer != null) clearTimeout(timer);
+        if (timer != null) {
+          clearTimeout(timer);
+        }
         state.readTimers.delete(article);
         progress.started = 0;
       }
@@ -519,11 +571,15 @@ export function initializeDeckResultEnhancer(): void {
           for (const entry of entries) {
             const article = entry.target as HTMLElement;
             const id = postId(article);
-            if (!id) continue;
+            if (!id) {
+              continue;
+            }
 
             let progress = state.readProgress.get(article) as ReadProgress | undefined;
             if (!progress || progress.id !== id || progress.account !== state.account) {
-              if (progress) pause(article, progress);
+              if (progress) {
+                pause(article, progress);
+              }
               progress = {
                 id,
                 account: state.account,
@@ -549,7 +605,9 @@ export function initializeDeckResultEnhancer(): void {
               continue;
             }
 
-            if (progress.qualified) continue;
+            if (progress.qualified) {
+              continue;
+            }
             if (
               !entry.isIntersecting ||
               !sufficientlyVisible(rect, entry.intersectionRect.height, entry.intersectionRatio)
@@ -558,7 +616,9 @@ export function initializeDeckResultEnhancer(): void {
               continue;
             }
 
-            if (progress.started) continue;
+            if (progress.started) {
+              continue;
+            }
             progress.started = performance.now();
             const delay = state.visual.seenDelayMs;
 
@@ -593,7 +653,9 @@ export function initializeDeckResultEnhancer(): void {
       if (!state.readVisibilityHandlerInstalled) {
         state.readVisibilityHandlerInstalled = true;
         document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") return;
+          if (document.visibilityState === "visible") {
+            return;
+          }
           state.readTimers.forEach(clearTimeout);
           state.readTimers.clear();
           state.readObserver?.disconnect();
@@ -618,6 +680,9 @@ export function initializeDeckResultEnhancer(): void {
 
       if (!current || ![SORT_MODES.live, SORT_MODES.top].includes(current.sort as any)) {
         for (const article of Studio.dom.nodes(XDOM.tweet)) {
+          if (!(article instanceof HTMLElement)) {
+            continue;
+          }
           article.style.setProperty("--rodx-font", state.visual.font + "px", "important");
           article.style.setProperty("--rodx-dense", String(state.visual.density), "important");
           article.dataset.rodxTight = state.visual.density < 0.9 ? "1" : "0";
@@ -631,16 +696,21 @@ export function initializeDeckResultEnhancer(): void {
       setupReader();
       const local = currentRules();
       const main = document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn);
-      if (!main) return;
+      if (!main) {
+        return;
+      }
 
       const matches = main.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.nativeTweets);
       for (const article of matches) {
         const id = postId(article);
-        if (!id) continue;
+        if (!id) {
+          continue;
+        }
         const cell = article.closest<HTMLElement>(NATIVE_X_SELECTORS.timelineCells) || article;
 
-        if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1")
+        if (cell.dataset.rodxUnmatched === "1" || cell.dataset.rodxLimited === "1") {
           cell.style.removeProperty("display");
+        }
 
         delete cell.dataset.rodxUnmatched;
         delete cell.dataset.rodxLimited;
@@ -684,16 +754,20 @@ export function initializeDeckResultEnhancer(): void {
           read.addEventListener("click", (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            if (state.seen.has(id)) state.seen.delete(id);
-            else state.seen.set(id, Date.now());
+            if (state.seen.has(id)) {
+              state.seen.delete(id);
+            } else {
+              state.seen.set(id, Date.now());
+            }
             Seen.flushSoon?.();
             setSeen(article, id);
           });
           actions.append(expand, read);
 
           const nativeActions = findActions(article);
-          if (nativeActions) nativeActions.append(actions);
-          else {
+          if (nativeActions) {
+            nativeActions.append(actions);
+          } else {
             actions.hidden = true;
             article.append(actions);
           }

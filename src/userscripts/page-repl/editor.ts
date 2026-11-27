@@ -111,7 +111,9 @@ export function createEditor(
           { delay: 350 },
         ),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) options.onChange();
+          if (update.docChanged) {
+options.onChange();
+}
         }),
       ],
     }),

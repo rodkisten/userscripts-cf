@@ -26,7 +26,9 @@ export function escapeRegex(text) {
 
 export function compileLocalRule(rule) {
   const raw = rule.pattern;
-  if (raw.length > 180) throw new Error("Padrão local muito longo (máximo: 180 caracteres).");
+  if (raw.length > 180) {
+throw new Error("Padrão local muito longo (máximo: 180 caracteres).");
+}
   let re;
   if (rule.kind === "links") {
     // Glob: * stays inside URL path, ** crosses slash boundaries.
@@ -36,17 +38,27 @@ export function compileLocalRule(rule) {
       if (glob[i] === "*" && glob[i + 1] === "*") {
         expression += ".*";
         i++;
-      } else if (glob[i] === "*") expression += "[^/]*";
-      else if (glob[i] === "?") expression += ".";
-      else expression += escapeRegex(glob[i]);
+      } else if (glob[i] === "*") {
+expression += "[^/]*";
+}
+      else if (glob[i] === "?") {
+expression += ".";
+}
+      else {
+expression += escapeRegex(glob[i]);
+}
     }
     re = new RegExp("^(?:https?:\\/\\/)?" + expression + "$", "i");
   } else {
     const m = raw.match(/^\/(.*)\/([i]?)$/s);
-    if (!m) throw new Error(`${rule.kind}: use /expressão/i`);
+    if (!m) {
+throw new Error(`${rule.kind}: use /expressão/i`);
+}
     const pattern = m[1];
     if (/\\[1-9]|\(\?[:=!<]|\([^)]*\)[+*{]/.test(pattern))
-      throw new Error("Regex avançada/quantificadores aninhados não são aceitos por segurança.");
+      {
+throw new Error("Regex avançada/quantificadores aninhados não são aceitos por segurança.");
+}
     re = new RegExp(pattern, m[2]);
   }
   return {

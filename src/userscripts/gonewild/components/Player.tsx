@@ -48,7 +48,9 @@ export function Player(props: {
       return next;
     });
   const persist = (completed = false) => {
-    if (!restoredRef.current || !Number.isFinite(audioRef.current?.currentTime)) return;
+    if (!restoredRef.current || !Number.isFinite(audioRef.current?.currentTime)) {
+return;
+}
     const history = readJSON<Record<string, Playback & { at?: number }>>(KEYS.playback, {});
     history[key] = {
       position: audioRef.current!.currentTime,
@@ -67,7 +69,9 @@ export function Player(props: {
     );
   };
   const sync = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+return;
+}
     setState((draft) => {
       draft.time = Number.isFinite(audioRef.current!.currentTime) ? audioRef.current!.currentTime : 0;
       draft.duration = Number.isFinite(audioRef.current!.duration) ? audioRef.current!.duration : 0;
@@ -80,7 +84,9 @@ export function Player(props: {
   };
   const seek = (time: number) => {
     if (!audioRef.current || !Number.isFinite(audioRef.current.duration) || audioRef.current!.duration <= 0)
-      return;
+      {
+return;
+}
     audioRef.current!.currentTime = Math.max(0, Math.min(audioRef.current!.duration, time));
     sync();
     persist();
@@ -94,7 +100,9 @@ export function Player(props: {
     ) {
       restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed)
-        seek(Math.min(saved.position, Math.max(0, audioRef.current!.duration - 0.25)));
+        {
+seek(Math.min(saved.position, Math.max(0, audioRef.current!.duration - 0.25)));
+}
     }
     sync();
     setState((draft) => {
@@ -109,8 +117,12 @@ export function Player(props: {
       return;
     }
     try {
-      if (audioRef.current!.paused) await audioRef.current!.play();
-      else audioRef.current!.pause();
+      if (audioRef.current!.paused) {
+await audioRef.current!.play();
+}
+      else {
+audioRef.current!.pause();
+}
       sync();
     } catch (error) {
       setState((draft) => {
@@ -136,11 +148,15 @@ export function Player(props: {
   };
   const go = () => {
     const parts = jump.split(":").map(Number);
-    if (parts.every(Number.isFinite)) seek(parts.reduce((value, part) => value * 60 + part, 0));
+    if (parts.every(Number.isFinite)) {
+seek(parts.reduce((value, part) => value * 60 + part, 0));
+}
   };
   const draw = () => {
     const context = canvasRef.current?.getContext("2d");
-    if (!context) return;
+    if (!context) {
+return;
+}
     const width = Math.max(50, canvasRef.current!.getBoundingClientRect().width || 300),
       height = 118,
       dpr = Math.min(devicePixelRatio || 1, 2.5);
@@ -164,7 +180,9 @@ export function Player(props: {
     });
   };
   const analyze = async () => {
-    if (wave.loading || !props.source) return;
+    if (wave.loading || !props.source) {
+return;
+}
     if (!state.duration || state.duration > 660) {
       setWave((draft) => {
         draft.note =
@@ -183,7 +201,9 @@ export function Player(props: {
       // Transport and byte limits are a service; the component owns loading/error UI.
       const bytes = await boundedAudio(props.source, signal);
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) throw Error("Web Audio indisponível");
+      if (!AudioCtx) {
+throw Error("Web Audio indisponível");
+}
       context = new AudioCtx();
       const decoded = await context.decodeAudioData(bytes);
       signal.throwIfAborted();
@@ -207,22 +227,28 @@ export function Player(props: {
       });
     } catch (error) {
       if (!signal.aborted)
-        setWave((draft) => {
+        {
+setWave((draft) => {
           draft.note = `Não foi possível analisar: ${(error as Error).message}`;
         });
+}
     } finally {
       await context?.close().catch(() => {});
       if (!signal.aborted)
-        setWave((draft) => {
+        {
+setWave((draft) => {
           draft.loading = false;
         });
+}
     }
   };
   useEffect(() => {
     draw();
   }, [state.time, state.duration, wave.peaks]);
   useEffect(() => {
-    if (!audioRef.current || !canvasRef.current) return;
+    if (!audioRef.current || !canvasRef.current) {
+return;
+}
     const element = audioRef.current;
     element.playbackRate = state.speed;
     element.loop = state.loop;
@@ -254,7 +280,9 @@ export function Player(props: {
     if (element.readyState >= 1) {
       restoredRef.current = true;
       if (saved?.position > 0 && !saved.completed && Number.isFinite(element.duration))
-        element.currentTime = Math.min(saved.position, Math.max(0, element.duration - 0.25));
+        {
+element.currentTime = Math.min(saved.position, Math.max(0, element.duration - 0.25));
+}
     }
     return () => {
       persist();
@@ -264,7 +292,8 @@ export function Player(props: {
       document.removeEventListener("visibilitychange", hide);
       element.pause();
       if (media)
-        for (const name of [
+        {
+for (const name of [
           "play",
           "pause",
           "seekbackward",
@@ -275,19 +304,26 @@ export function Player(props: {
             media.setActionHandler(name, null);
           } catch {}
         }
+}
     };
   }, [props.source]);
   useEffect(() => {
     restoredRef.current = false;
     if (props.source)
-      setState((draft) => {
+      {
+setState((draft) => {
         draft.status = "Carregando áudio…";
       });
+}
   }, [props.source]);
   const canvasSeek = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    if (rect.width) seek(((event.clientX - rect.left) / rect.width) * state.duration);
+    if (!rect) {
+return;
+}
+    if (rect.width) {
+seek(((event.clientX - rect.left) / rect.width) * state.duration);
+}
   };
   return (
     <section className={styles["gws-sg-panel"]} aria-label="Player de áudio">
@@ -313,7 +349,9 @@ export function Player(props: {
             canvasSeek(event);
           }}
           onPointerMove={(event) => {
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) canvasSeek(event);
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+canvasSeek(event);
+}
           }}
           onKeyDown={(event) => {
             if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
@@ -396,7 +434,9 @@ export function Player(props: {
             value={jump}
             onInput={(event) => setJump(event.currentTarget.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") go();
+              if (event.key === "Enter") {
+go();
+}
             }}
           />
           <button onClick={go}>OK</button>

@@ -6,7 +6,9 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
   let active = null;
   const attribute = "data-rodx-repl-" + host.crypto.randomUUID().replaceAll("-", "");
   async function run(method, code, { signal, probe = false, raw = false } = {}) {
-    if (active) throw Error("Uma execução já está em andamento");
+    if (active) {
+throw Error("Uma execução já está em andamento");
+}
     const id = host.crypto.randomUUID(),
       started = host.performance.now();
     let cleanup,
@@ -19,7 +21,9 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
     let finish;
     const promise = new Promise((resolve) => {
       finish = (status, detail) => {
-        if (done) return;
+        if (done) {
+return;
+}
         done = true;
         clearTimeout(timer);
         observer?.disconnect();
@@ -55,25 +59,37 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
       } catch {
         return;
       }
-      if (data?.id !== id || done) return;
+      if (data?.id !== id || done) {
+return;
+}
       transports.add(transport);
-      if (seen.has(data.sequence)) return;
+      if (seen.has(data.sequence)) {
+return;
+}
       seen.add(data.sequence);
       onEvent({ type: data.type, id, method: method.id, value: data.value });
-      if (data.type === "result") finish("OK", data.value);
-      if (data.type === "error") finish("ERRO", data.value);
+      if (data.type === "result") {
+finish("OK", data.value);
+}
+      if (data.type === "error") {
+finish("ERRO", data.value);
+}
     };
     const custom = (event) => receive(event.detail, "CustomEvent");
     const message = (event) => {
-      if (event.source === host && event.data?.channel === channel) receive(event.data, "postMessage");
+      if (event.source === host && event.data?.channel === channel) {
+receive(event.data, "postMessage");
+}
     };
     const violation = (event) => {
       if (csp.length < 10)
-        csp.push({
+        {
+csp.push({
           directive: event.violatedDirective,
           blockedURI: event.blockedURI,
           disposition: event.disposition,
         });
+}
     };
     const abort = () =>
       finish("CANCELADO", "Espera cancelada. Código já iniciado pode continuar executando.");
@@ -82,7 +98,9 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
     host.document.addEventListener("securitypolicyviolation", violation);
     observer = new host.MutationObserver(() => {
       const raw = host.document.documentElement?.getAttribute(attribute);
-      if (raw) receive(raw, "atributo DOM");
+      if (raw) {
+receive(raw, "atributo DOM");
+}
     });
     observer.observe(host.document.documentElement, { attributes: true, attributeFilter: [attribute] });
     signal?.addEventListener("abort", abort, { once: true });
@@ -95,7 +113,9 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
         ),
       timeout,
     );
-    if (signal?.aborted) abort();
+    if (signal?.aborted) {
+abort();
+}
     else {
       try {
         const source =
@@ -103,12 +123,16 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
           `\n//# sourceURL=rodx-repl-${id}.js`;
         Promise.resolve()
           .then(() => {
-            if (!done) return method.run(source);
+            if (!done) {
+return method.run(source);
+}
           })
           .then((teardown) => {
             if (typeof teardown === "function") {
               cleanup = teardown;
-              if (done) cleanup();
+              if (done) {
+cleanup();
+}
             }
           })
           .catch((error) =>
@@ -139,7 +163,9 @@ export function createRunner({ host = window, onEvent = () => {}, timeout = 3000
       this.cancel();
       try {
         delete host[sessionKey];
-        if (typeof unsafeWindow !== "undefined") delete unsafeWindow[sessionKey];
+        if (typeof unsafeWindow !== "undefined") {
+delete unsafeWindow[sessionKey];
+}
       } catch {}
     },
   };

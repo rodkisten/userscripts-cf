@@ -8,6 +8,20 @@ describe("runtime feature selection", () => {
       dynamic: false,
     });
   });
+  it("tracks nested UI capability paths without changing top-level features", () => {
+    expect(
+      analyzeRuntimeUsage(
+        "ctx.ui.mount(node); ctx.ui.registerStyles(css); ctx.ui.mountReact(view);",
+        "entry.tsx",
+        { includePaths: true },
+      ),
+    ).toEqual({
+      features: ["ui"],
+      paths: ["ui.mount", "ui.mountReact", "ui.registerStyles"],
+      dynamic: false,
+    });
+  });
+
   it("recognizes destructuring", () => {
     expect(analyzeRuntimeUsage("const { menu, storage: settings } = ctx;").features).toEqual([
       "menu",
@@ -34,6 +48,17 @@ describe("runtime feature selection", () => {
       ),
     ).toEqual({ features: ["toaster"], dynamic: false });
   });
+  it("treats a ctx function parameter as a fresh runtime context binding", () => {
+    expect(analyzeRuntimeUsage("export const open = (ctx) => ctx.menu.open();")).toEqual({
+      features: ["menu"],
+      dynamic: false,
+    });
+    expect(analyzeRuntimeUsage("export const read = (ctx, key) => ctx[key];")).toEqual({
+      features: [],
+      dynamic: true,
+    });
+  });
+
   it("tracks transitive context aliases", () => {
     expect(
       analyzeRuntimeUsage("const a = ctx; const b = a; b.menu.open(); b[\`toaster\`].success('ok');"),

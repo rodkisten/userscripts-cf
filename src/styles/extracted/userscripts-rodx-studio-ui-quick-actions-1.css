@@ -2,9 +2,7 @@
   display: grid;
   gap: var(--rodx-ds-space-12);
   min-width: 0;
-  font:
-    var(--rodx-ds-text-13)/1.5 TwitterChirp,
-    var(--rodx-ds-font-sans);
+  font: var(--rodx-ds-text-13)/1.5 var(--rodx-ds-font-ui);
 }
 .rodx-quick-search * {
   box-sizing: border-box;
@@ -12,15 +10,15 @@
 .rxq-editor {
   position: relative;
   isolation: isolate;
-  min-height: 112px;
-  border: 1px solid #71767b77;
+  min-height: var(--rodx-ds-quick-editor-min-height);
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-quick-editor-border);
   border-radius: var(--rodx-ds-radius-12);
-  background: color-mix(in srgb, Canvas 94%, var(--rodx-ds-color-accent) 6%);
+  background: var(--rodx-ds-quick-editor-surface);
   overflow: hidden;
 }
 .rxq-editor:focus-within {
   border-color: var(--rodx-ds-color-accent);
-  outline: 1px solid var(--rodx-ds-color-accent) 66;
+  outline: var(--rodx-ds-border-width) solid var(--rodx-ds-quick-editor-focus);
 }
 .rxq-syntax,
 .rxq-input {
@@ -28,10 +26,10 @@
   padding: var(--rodx-ds-space-12);
   display: block;
   width: 100%;
-  min-height: 112px;
-  max-height: min(40dvh, 330px);
+  min-height: var(--rodx-ds-quick-editor-min-height);
+  max-height: min(40dvh, var(--rodx-ds-quick-editor-max-height));
   border: 0;
-  font: 15px/1.55 var(--rodx-ds-font-mono);
+  font: var(--rodx-ds-text-15)/var(--rodx-ds-quick-editor-line-height) var(--rodx-ds-font-mono);
   letter-spacing: 0;
   tab-size: 2;
   white-space: pre-wrap;
@@ -61,48 +59,48 @@
 }
 .rxq-input::placeholder {
   color: var(--rodx-ds-color-muted);
-  -webkit-text-fill-color: #71767b;
+  -webkit-text-fill-color: var(--rodx-ds-color-muted);
 }
 .rxq-input::selection {
-  background: var(--rodx-ds-color-accent) 55;
+  background: var(--rodx-ds-quick-editor-selection);
 }
 .rxq-syntax .syn-negative {
-  color: #f04458;
+  color: var(--rodx-ds-syntax-negative);
 }
 .rxq-syntax .syn-filter {
-  color: #169de4;
+  color: var(--rodx-ds-syntax-filter);
 }
 .rxq-syntax .syn-tag {
-  color: #a47bff;
+  color: var(--rodx-ds-syntax-tag);
 }
 .rxq-syntax .syn-bool,
 .rxq-syntax .syn-paren {
-  color: #e8a33d;
-  font-weight: 700;
+  color: var(--rodx-ds-syntax-boolean);
+  font-weight: var(--rodx-ds-font-weight-bold);
 }
 .rxq-syntax .syn-phrase {
-  color: #22af80;
+  color: var(--rodx-ds-syntax-phrase);
 }
 .rxq-syntax .rodx-syntax-error {
-  text-decoration: underline wavy #f04458;
+  text-decoration: underline wavy var(--rodx-ds-syntax-negative);
 }
 .rxq-syntax .rodx-syntax-warning {
-  text-decoration: underline dotted #e8a33d;
+  text-decoration: underline dotted var(--rodx-ds-syntax-boolean);
 }
 .rxq-message {
-  min-height: 16px;
+  min-height: var(--rodx-ds-space-16);
   color: var(--rodx-ds-color-muted);
 }
 .rxq-message[data-level="error"] {
-  color: #f04458;
+  color: var(--rodx-ds-syntax-negative);
 }
 .rxq-suggestions {
   display: grid;
   gap: var(--rodx-ds-space-2);
-  max-height: min(34dvh, 300px);
+  max-height: min(34dvh, var(--rodx-ds-quick-suggestions-max-height));
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid #71767b44;
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-quick-suggestions-border);
   border-radius: var(--rodx-ds-radius-12);
   padding: var(--rodx-ds-space-4);
 }
@@ -126,14 +124,14 @@
   touch-action: manipulation;
 }
 .rxq-option[aria-selected="true"] {
-  background: var(--rodx-ds-color-accent) 24;
+  background: var(--rodx-ds-color-accent-soft);
 }
 .rxq-option small {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.75;
+  opacity: var(--rodx-ds-quick-option-opacity);
   font-size: var(--rodx-ds-text-11);
   line-height: 1.4;
 }
@@ -145,7 +143,7 @@
 }
 .rxq-tools button {
   padding: var(--rodx-ds-space-8) var(--rodx-ds-space-12);
-  border: 1px solid var(--rodx-ds-color-border);
+  border: var(--rodx-ds-border-width) solid var(--rodx-ds-color-border);
   border-radius: var(--rodx-ds-radius-16);
   background: transparent;
   color: inherit;
@@ -158,8 +156,8 @@
   background: var(--rodx-ds-color-accent);
   color: var(--rodx-ds-color-white);
   border-color: var(--rodx-ds-color-accent);
-  font-weight: 700;
+  font-weight: var(--rodx-ds-font-weight-bold);
 }
 .rxq-tools [type="submit"]:disabled {
-  opacity: 0.45;
+  opacity: var(--rodx-ds-quick-disabled-opacity);
 }

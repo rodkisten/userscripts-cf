@@ -1,9 +1,9 @@
 import { applyComponentStyle } from "../../../core/css.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { FeedFilters } from "../feeds/filters.tsx";
 import { extractIdentity } from "../identity/account.js";
-import { PlayerPreference } from "../media/player.js";
+import { PlayerPreference } from "../media/player.tsx";
 import { VideoTransport } from "../media/transport.tsx";
 import { actionForSearch, captureCurrent, getPreviewQuery, newDraft, saveDraft } from "../search/actions.js";
 import { compactBlockTree } from "../search/block-editing.js";
@@ -20,15 +20,15 @@ import {
 } from "../search/presets.js";
 import { QueryEngine, hrefFor } from "../search/query-compiler.js";
 import { state } from "../state/deck.js";
-import { normalizeVisual } from "../state/visual.js";
-import { loadAccount, saveState } from "../storage/account.js";
+import { normalizeVisual } from "../state/deck.js";
+import { loadAccount, saveState } from "../storage/persistence.js";
 import { exportJSON, importJSON } from "../storage/backup.tsx";
 import { CloudSync } from "../sync/cloud.js";
 import { Relay } from "../telegram/relay.tsx";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
 import { XRepost } from "../tweets/publisher.tsx";
 import { repaint } from "./dock.tsx";
-import { openPanel } from "./preferences.js";
+import { openPanel } from "./preferences.tsx";
 import {
   addChips,
   displayPreview,
@@ -39,7 +39,7 @@ import {
   renderRoot,
   validateRawWorkbench,
 } from "./search-workbench.tsx";
-import { showRodxToast } from "./toast.tsx";
+import { showRodxToast } from "./runtime.tsx";
 
 export async function performAction(action, id = "") {
   switch (action) {
@@ -117,7 +117,9 @@ export async function performAction(action, id = "") {
       return location.assign("/home");
     case "copy-native": {
       const query = liveNativeQuery();
-      if (!query) throw new Error("Nada para copiar.");
+      if (!query) {
+        throw new Error("Nada para copiar.");
+      }
       try {
         await navigator.clipboard.writeText(query);
       } catch (_) {
@@ -125,7 +127,9 @@ export async function performAction(action, id = "") {
         ta.value = query;
         document.body.append(ta);
         ta.select();
-        if (!document.execCommand("copy")) throw new Error("Não foi possível copiar automaticamente.");
+        if (!document.execCommand("copy")) {
+          throw new Error("Não foi possível copiar automaticamente.");
+        }
         ta.remove();
       }
       return;
@@ -135,7 +139,9 @@ export async function performAction(action, id = "") {
     case "set-manual-account": {
       const raw = state.rootShadow?.querySelector(RODX_SELECTORS.manualAccountField)?.value || "";
       const handle = raw.trim().replace(/^@/, "").toLowerCase();
-      if (!/^[a-z0-9_]{1,15}$/.test(handle)) throw new Error("Informe um @usuário válido.");
+      if (!/^[a-z0-9_]{1,15}$/.test(handle)) {
+        throw new Error("Informe um @usuário válido.");
+      }
       state.manualAccount = handle;
       const identity = extractIdentity();
       if (identity.id || (identity.handle && identity.handle !== handle)) {
@@ -167,7 +173,9 @@ export async function performAction(action, id = "") {
       return toggleBlockOperator(id);
     case "block-toggle-not": {
       const found = findBlockNode(state.draft.blocks, id);
-      if (!found || found.node.kind !== "group" || !found.parent) return;
+      if (!found || found.node.kind !== "group" || !found.parent) {
+        return;
+      }
       found.node.not = !found.node.not;
       return renderBlockEditor();
     }
@@ -182,10 +190,14 @@ export async function performAction(action, id = "") {
       return applyRawBlocks();
     case "raw-sync": {
       const raw = state.rootShadow?.querySelector(RODX_SELECTORS.rawQueryField);
-      if (raw) raw.value = getPreviewQuery();
+      if (raw) {
+        raw.value = getPreviewQuery();
+      }
       state.rawDirty = false;
       state.rawQueryDraft = raw?.value || "";
-      if (raw) validateRawWorkbench(raw.value);
+      if (raw) {
+        validateRawWorkbench(raw.value);
+      }
       return;
     }
     case "focus-block": {
@@ -231,8 +243,9 @@ export async function performAction(action, id = "") {
         ta.select();
         const copied = document.execCommand("copy");
         ta.remove();
-        if (!copied)
+        if (!copied) {
           throw new Error("Permissão de copiar bloqueada. Selecione o texto no preview para copiar.");
+        }
       }
       state.message = "Query copiada.";
       return renderRoot();
@@ -264,13 +277,15 @@ export function onClick(event) {
         state.selectionList.splice(index, 1);
         void saveState().catch((e) => showRodxToast(e.message, "error"));
         renderRoot();
-      } else if (term.startsWith("#"))
+      } else if (term.startsWith("#")) {
         NativeQueryTags.modify(term, selectionButton.dataset.act === "selection-exclude" ? "exclude" : "add");
-      else {
+      } else {
         const old = NativeQueryTags.current(),
           mode = selectionButton.dataset.act === "selection-exclude";
         const updated = QueryEngine.termChange(old, term, mode ? "exclude" : "add");
-        if (!NativeQueryTags.write(updated)) showRodxToast("Abra a busca nativa do X.");
+        if (!NativeQueryTags.write(updated)) {
+          showRodxToast("Abra a busca nativa do X.");
+        }
       }
     }
     return;
@@ -321,7 +336,7 @@ export function onFieldChange(event) {
       [name]: v,
     });
     const label = state.rootShadow?.querySelector(RODX_SELECTORS.visualValueByName(name));
-    if (label)
+    if (label) {
       label.textContent =
         name === "font"
           ? `${state.visual.font}px`
@@ -332,20 +347,26 @@ export function onFieldChange(event) {
               : name === "autoPlayEnterPercent" || name === "autoPauseExitPercent"
                 ? `${state.visual[name]}%`
                 : `${state.visual.density.toFixed(1)}×`;
-    if (event.type === "change")
+    }
+    if (event.type === "change") {
       void saveState().catch((error) => {
         state.message = error.message;
         renderRoot();
       });
+    }
     if (name === "playerMode" && Studio.enabled("media")) {
       PlayerPreference.scan();
-      if (PlayerPreference.needsRodX()) VideoTransport.scan();
+      if (PlayerPreference.needsRodX()) {
+        VideoTransport.scan();
+      }
     }
     FeedFilters.publish();
     ResultEnhancer.scan(true);
     return;
   }
-  if (!state.draft) return;
+  if (!state.draft) {
+    return;
+  }
   if (target.matches?.(RODX_SELECTORS.rawQueryField)) {
     state.rawDirty = true;
     state.rawQueryDraft = target.value;
@@ -373,7 +394,9 @@ export function onFieldChange(event) {
       }
       state.rootShadow?.querySelector(RODX_SELECTORS.chipInput)?.setAttribute("data-pending", carry || "");
       const current = state.rootShadow?.querySelector(RODX_SELECTORS.chipInput);
-      if (current) current.value = carry || "";
+      if (current) {
+        current.value = carry || "";
+      }
     }
     return;
   }
@@ -384,7 +407,9 @@ export function onFieldChange(event) {
     target.getAttribute?.("data-block-not");
   if (blockId) {
     const found = findBlockNode(state.draft.blocks, blockId);
-    if (!found) return;
+    if (!found) {
+      return;
+    }
     if (target.hasAttribute("data-block-type") && found.node.kind === "term") {
       found.node.type = target.value;
       found.node.value = "";
@@ -405,7 +430,9 @@ export function onFieldChange(event) {
     displayPreview();
     return;
   }
-  if (!target.matches?.(RODX_SELECTORS.queryFieldsAndMetadata)) return;
+  if (!target.matches?.(RODX_SELECTORS.queryFieldsAndMetadata)) {
+    return;
+  }
   if (target.dataset.field) {
     state.draft.fields[target.dataset.field] = target.value;
   } else {
@@ -416,13 +443,20 @@ export function onFieldChange(event) {
 
 export function onGroupToggle(event) {
   const node = event.target;
-  if (!node.matches?.(RODX_SELECTORS.settingsGroups)) return;
-  if (node.open) state.openedGroups.add(node.dataset.group);
-  else state.openedGroups.delete(node.dataset.group);
+  if (!node.matches?.(RODX_SELECTORS.settingsGroups)) {
+    return;
+  }
+  if (node.open) {
+    state.openedGroups.add(node.dataset.group);
+  } else {
+    state.openedGroups.delete(node.dataset.group);
+  }
 }
 
 export async function onFileChange(event) {
-  if (!event.target.matches?.(RODX_SELECTORS.importFileInput)) return;
+  if (!event.target.matches?.(RODX_SELECTORS.importFileInput)) {
+    return;
+  }
   const file = event.target.files?.[0];
   const strategy = state.rootShadow.querySelector(RODX_SELECTORS.importStrategy)?.value || "merge";
   try {

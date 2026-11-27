@@ -16,6 +16,7 @@ type Context = {
   onDispose: (callback: () => void) => void;
   dock?: { register: (actions: { id: string; label: string; run: () => void }[]) => void };
 };
+
 const actions = [
   ["copy", "Copiar", "copy"],
   ["clipboard-paste", "Colar", "paste"],
@@ -69,17 +70,22 @@ function Icon(props: { name: string }) {
     />
   );
 }
+
 function editorFor(node: Element | null): Editor | null {
   return node?.closest(
     'textarea,input:not([type="hidden"]):not([type="checkbox"]),[contenteditable="true"],.monaco-editor',
   ) as Editor | null;
 }
+
 function monacoFor(target: Editor) {
   const node = target.closest(".monaco-editor");
   const api = (window as any).monaco?.editor;
-  if (!node || typeof api?.getEditors !== "function") return null;
+  if (!node || typeof api?.getEditors !== "function") {
+return null;
+}
   return api.getEditors().find((item: any) => item.getDomNode?.() === node) || null;
 }
+
 function nativeInsert(element: Editor, value: string) {
   if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
     element.setRangeText(value, element.selectionStart ?? 0, element.selectionEnd ?? 0, "end");
@@ -89,6 +95,7 @@ function nativeInsert(element: Editor, value: string) {
     document.execCommand("insertText", false, value);
   }
 }
+
 export default {
   init(ctx: Context) {
     let snapshot = {
@@ -154,7 +161,9 @@ export default {
     }
     async function run(action: string) {
       const element = target();
-      if (!element) return;
+      if (!element) {
+return;
+}
       if (action === "ctrl") {
         setCtrl((v) => !v);
         return;
@@ -185,8 +194,12 @@ export default {
           return;
         }
         if (action === "cut" && text) {
-          if (monaco && selection) monaco.executeEdits("mobile-fab", [{ range: selection, text: "" }]);
-          else nativeInsert(element, "");
+          if (monaco && selection) {
+monaco.executeEdits("mobile-fab", [{ range: selection, text: "" }]);
+}
+          else {
+nativeInsert(element, "");
+}
         }
       } else if (action === "paste") {
         let pasted: string;
@@ -195,14 +208,24 @@ export default {
         } catch {
           return;
         }
-        if (monaco && selection) monaco.executeEdits("mobile-fab", [{ range: selection, text: pasted }]);
-        else nativeInsert(element, pasted);
+        if (monaco && selection) {
+monaco.executeEdits("mobile-fab", [{ range: selection, text: pasted }]);
+}
+        else {
+nativeInsert(element, pasted);
+}
       } else if (monaco) {
         const pos = monaco.getPosition();
-        if (action === "undo" || action === "redo") monaco.trigger("mobile-fab", action, null);
-        else if (action === "selectAll") monaco.setSelection(model.getFullModelRange());
+        if (action === "undo" || action === "redo") {
+monaco.trigger("mobile-fab", action, null);
+}
+        else if (action === "selectAll") {
+monaco.setSelection(model.getFullModelRange());
+}
         else if (action === "Tab" || action === "Enter")
-          monaco.executeEdits("mobile-fab", [{ range: selection, text: action === "Tab" ? "\t" : "\n" }]);
+          {
+monaco.executeEdits("mobile-fab", [{ range: selection, text: action === "Tab" ? "\t" : "\n" }]);
+}
         else if (pos && (action.startsWith("Arrow") || action === "Home" || action === "End")) {
           const line = Math.max(
             1,
@@ -224,7 +247,8 @@ export default {
                     ),
                   );
           if (shift() && (window as any).monaco?.Selection)
-            monaco.setSelection(
+            {
+monaco.setSelection(
               new (window as any).monaco.Selection(
                 selection.selectionStartLineNumber,
                 selection.selectionStartColumn,
@@ -232,14 +256,25 @@ export default {
                 column,
               ),
             );
-          else monaco.setPosition({ lineNumber: line, column });
+}
+          else {
+monaco.setPosition({ lineNumber: line, column });
+}
           monaco.revealPositionInCenterIfOutsideViewport?.({ lineNumber: line, column });
         }
       } else if (action === "selectAll") {
-        if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) element.select();
-        else document.execCommand("selectAll");
-      } else if (action === "undo" || action === "redo") document.execCommand(action);
-      else if (action === "Tab" || action === "Enter") nativeInsert(element, action === "Tab" ? "\t" : "\n");
+        if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
+element.select();
+}
+        else {
+document.execCommand("selectAll");
+}
+      } else if (action === "undo" || action === "redo") {
+document.execCommand(action);
+}
+      else if (action === "Tab" || action === "Enter") {
+nativeInsert(element, action === "Tab" ? "\t" : "\n");
+}
       else if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
         const delta = action === "ArrowLeft" ? -1 : action === "ArrowRight" ? 1 : 0;
         const index =

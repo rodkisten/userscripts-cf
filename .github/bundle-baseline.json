@@ -1,0 +1,3486 @@
+{
+  "schema": 1,
+  "sha": "8182dfd4befc4d24a858e027bd9870f5ff9b5f1b",
+  "generatedAt": "2026-11-24T08:14:33.782Z",
+  "bundles": {
+    "standalone": {
+      "rawBytes": 5363076,
+      "gzipBytes": 1103991,
+      "brotliBytes": 672829,
+      "debugBytes": 6230090,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 925302
+        },
+        {
+          "id": "node_modules/@codemirror/view/dist/index.js",
+          "renderedBytes": 351525
+        },
+        {
+          "id": "node_modules/acorn/dist/acorn.mjs",
+          "renderedBytes": 181378
+        },
+        {
+          "id": "node_modules/@codemirror/state/dist/index.js",
+          "renderedBytes": 121117
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 108482
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 83234
+        },
+        {
+          "id": "node_modules/@lezer/javascript/dist/index.js",
+          "renderedBytes": 81524
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/search-workbench.tsx",
+          "renderedBytes": 78648
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 76236
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 65892
+        },
+        {
+          "id": "node_modules/@codemirror/commands/dist/index.js",
+          "renderedBytes": 65021
+        },
+        {
+          "id": "node_modules/@lezer/common/dist/index.js",
+          "renderedBytes": 64592
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 60254
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/render.tsx",
+          "renderedBytes": 60027
+        },
+        {
+          "id": "node_modules/@codemirror/autocomplete/dist/index.js",
+          "renderedBytes": 57883
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-deck.module.css.js",
+          "renderedBytes": 52465
+        },
+        {
+          "id": "node_modules/@lezer/lr/dist/index.js",
+          "renderedBytes": 50485
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 47872
+        },
+        {
+          "id": "node_modules/@codemirror/language/dist/index.js",
+          "renderedBytes": 47365
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 44866
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 44174
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 43703
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 41878
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 41512
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/publisher.tsx",
+          "renderedBytes": 39721
+        },
+        {
+          "id": "src/userscripts/rodx-studio/telegram/relay.tsx",
+          "renderedBytes": 39404
+        },
+        {
+          "id": "src/userscripts/github-tools/GitHub.module.css.js",
+          "renderedBytes": 37937
+        },
+        {
+          "id": "src/userscripts/gonewild/Soundgasm.module.css.js",
+          "renderedBytes": 35839
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-view-1.module.css.js",
+          "renderedBytes": 33155
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 33110
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 31516
+        },
+        {
+          "id": "src/userscripts/gonewild/Feed.module.css.js",
+          "renderedBytes": 29495
+        },
+        {
+          "id": "node_modules/astring/dist/astring.mjs",
+          "renderedBytes": 28912
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/page-bridge.js",
+          "renderedBytes": 27720
+        },
+        {
+          "id": "node_modules/@codemirror/lint/dist/index.js",
+          "renderedBytes": 26357
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 26066
+        },
+        {
+          "id": "node_modules/@lezer/highlight/dist/index.js",
+          "renderedBytes": 25517
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline",
+          "renderedBytes": 25164
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline",
+          "renderedBytes": 24890
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 24772
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/inspector.tsx",
+          "renderedBytes": 24710
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/quick-actions.tsx",
+          "renderedBytes": 24161
+        },
+        {
+          "id": "src/userscripts/page-repl/style.css?inline",
+          "renderedBytes": 23326
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/graphql.js",
+          "renderedBytes": 23219
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 23036
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/timeline.tsx",
+          "renderedBytes": 22083
+        },
+        {
+          "id": "src/userscripts/github-tools/index.tsx",
+          "renderedBytes": 22079
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/enhancer.tsx",
+          "renderedBytes": 21927
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 21926
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-custom.module.css.js",
+          "renderedBytes": 21278
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 20959
+        },
+        {
+          "id": "src/userscripts/dom-inspector/Inspector.module.css.js",
+          "renderedBytes": 20796
+        },
+        {
+          "id": "node_modules/@lezer/html/dist/index.js",
+          "renderedBytes": 20614
+        },
+        {
+          "id": "src/userscripts/instagram-saved/Settings.module.css.js",
+          "renderedBytes": 20574
+        },
+        {
+          "id": "node_modules/@lezer/css/dist/index.js",
+          "renderedBytes": 19917
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 19822
+        },
+        {
+          "id": "src/userscripts/gonewild/Shell.module.css.js",
+          "renderedBytes": 19609
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 19054
+        },
+        {
+          "id": "src/userscripts/inspektor/InspektorPanel.tsx",
+          "renderedBytes": 18760
+        },
+        {
+          "id": "src/userscripts/page-repl/index.js",
+          "renderedBytes": 18660
+        }
+      ]
+    },
+    "inspektor": {
+      "rawBytes": 1120928,
+      "gzipBytes": 215538,
+      "brotliBytes": 174280,
+      "debugBytes": 1333248,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41609
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29780
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 20202
+        },
+        {
+          "id": "src/userscripts/inspektor/InspektorPanel.tsx",
+          "renderedBytes": 18760
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9908
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 9214
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9174
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8807
+        },
+        {
+          "id": "src/userscripts/inspektor/index.ts",
+          "renderedBytes": 8654
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8446
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5593
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/UI.js",
+          "renderedBytes": 1996
+        },
+        {
+          "id": "node_modules/@radix-ui/primitive/dist/index.mjs",
+          "renderedBytes": 1955
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/subscribable.js",
+          "renderedBytes": 1846
+        },
+        {
+          "id": "node_modules/use-sidecar/dist/es2015/medium.js",
+          "renderedBytes": 1835
+        },
+        {
+          "id": "src/core/portal-registry.ts",
+          "renderedBytes": 1813
+        }
+      ]
+    },
+    "rod-dock": {
+      "rawBytes": 1137219,
+      "gzipBytes": 219025,
+      "brotliBytes": 177173,
+      "debugBytes": 1353259,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29780
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/runtime/react-ui/rod-dock.tsx",
+          "renderedBytes": 17512
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10982
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6181
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/dom-engine.ts",
+          "renderedBytes": 3880
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "\u0000userscripts-cf-entry",
+          "renderedBytes": 2927
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        },
+        {
+          "id": "src/runtime/gm-bridge.ts",
+          "renderedBytes": 2153
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/UI.js",
+          "renderedBytes": 1996
+        }
+      ]
+    },
+    "github-color-studio": {
+      "rawBytes": 1494573,
+      "gzipBytes": 303301,
+      "brotliBytes": 244243,
+      "debugBytes": 1758507,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/@codemirror/view/dist/index.js",
+          "renderedBytes": 286692
+        },
+        {
+          "id": "node_modules/@codemirror/state/dist/index.js",
+          "renderedBytes": 118572
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29780
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 20202
+        },
+        {
+          "id": "src/userscripts/github-color-studio/style.css?inline",
+          "renderedBytes": 16976
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "src/userscripts/github-color-studio/index.tsx",
+          "renderedBytes": 14699
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10982
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 9214
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/style-mod/src/style-mod.js",
+          "renderedBytes": 3861
+        },
+        {
+          "id": "node_modules/@marijn/find-cluster-break/src/index.js",
+          "renderedBytes": 3599
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "src/userscripts/github-color-studio/colors.ts",
+          "renderedBytes": 3066
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        }
+      ]
+    },
+    "tiktok-cleaner": {
+      "rawBytes": 1098256,
+      "gzipBytes": 209443,
+      "brotliBytes": 170095,
+      "debugBytes": 1368544,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 20202
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 9214
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "src/userscripts/tiktok-cleaner/index.js",
+          "renderedBytes": 6563
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/UI.js",
+          "renderedBytes": 1996
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/subscribable.js",
+          "renderedBytes": 1846
+        },
+        {
+          "id": "node_modules/@radix-ui/primitive/dist/index.mjs",
+          "renderedBytes": 1843
+        },
+        {
+          "id": "node_modules/use-sidecar/dist/es2015/medium.js",
+          "renderedBytes": 1835
+        },
+        {
+          "id": "src/core/portal-registry.ts",
+          "renderedBytes": 1813
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/removable.js",
+          "renderedBytes": 1702
+        }
+      ]
+    },
+    "dom-inspector": {
+      "rawBytes": 1814674,
+      "gzipBytes": 395913,
+      "brotliBytes": 318757,
+      "debugBytes": 2113196,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/@codemirror/view/dist/index.js",
+          "renderedBytes": 300826
+        },
+        {
+          "id": "node_modules/@codemirror/state/dist/index.js",
+          "renderedBytes": 119534
+        },
+        {
+          "id": "node_modules/@lezer/javascript/dist/index.js",
+          "renderedBytes": 81526
+        },
+        {
+          "id": "node_modules/@lezer/common/dist/index.js",
+          "renderedBytes": 64586
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@lezer/lr/dist/index.js",
+          "renderedBytes": 50483
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@codemirror/language/dist/index.js",
+          "renderedBytes": 29947
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "node_modules/@lezer/highlight/dist/index.js",
+          "renderedBytes": 25466
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23397
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "src/userscripts/dom-inspector/Inspector.module.css.js",
+          "renderedBytes": 20793
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "node_modules/@lezer/html/dist/index.js",
+          "renderedBytes": 20614
+        },
+        {
+          "id": "node_modules/@lezer/css/dist/index.js",
+          "renderedBytes": 19917
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "src/userscripts/dom-inspector/index.tsx",
+          "renderedBytes": 16040
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@codemirror/lang-html/dist/index.js",
+          "renderedBytes": 14452
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11857
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@codemirror/theme-one-dark/dist/index.js",
+          "renderedBytes": 4145
+        }
+      ]
+    },
+    "mobile-editor-fab": {
+      "rawBytes": 1120900,
+      "gzipBytes": 214576,
+      "brotliBytes": 172203,
+      "debugBytes": 1328093,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 20202
+        },
+        {
+          "id": "src/userscripts/mobile-editor-fab/MobileEditorFab.module.css.js",
+          "renderedBytes": 18136
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/userscripts/mobile-editor-fab/index.tsx",
+          "renderedBytes": 11755
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 9214
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/UI.js",
+          "renderedBytes": 1996
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/subscribable.js",
+          "renderedBytes": 1846
+        },
+        {
+          "id": "node_modules/@radix-ui/primitive/dist/index.mjs",
+          "renderedBytes": 1843
+        },
+        {
+          "id": "node_modules/use-sidecar/dist/es2015/medium.js",
+          "renderedBytes": 1835
+        },
+        {
+          "id": "src/core/portal-registry.ts",
+          "renderedBytes": 1813
+        }
+      ]
+    },
+    "github-tools": {
+      "rawBytes": 1219900,
+      "gzipBytes": 237114,
+      "brotliBytes": 190535,
+      "debugBytes": 1440449,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "src/userscripts/github-tools/GitHub.module.css.js",
+          "renderedBytes": 37998
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "src/userscripts/github-tools/index.tsx",
+          "renderedBytes": 22070
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "src/userscripts/github-tools/directory-tree.tsx",
+          "renderedBytes": 13308
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/userscripts/github-tools/dashboard.tsx",
+          "renderedBytes": 11891
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "src/userscripts/github-tools/ui.tsx",
+          "renderedBytes": 8224
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "src/userscripts/github-tools/material-icons.ts",
+          "renderedBytes": 4227
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/dom-engine.ts",
+          "renderedBytes": 3880
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        }
+      ]
+    },
+    "instagram-saved": {
+      "rawBytes": 1227680,
+      "gzipBytes": 236583,
+      "brotliBytes": 186993,
+      "debugBytes": 1451150,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 30474
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/userscripts/instagram-saved/Settings.module.css.js",
+          "renderedBytes": 20573
+        },
+        {
+          "id": "src/runtime/actions/ClipboardPanel.module.css.js",
+          "renderedBytes": 17734
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "src/runtime/actions/Launcher.module.css.js",
+          "renderedBytes": 16342
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "src/userscripts/instagram-saved/index.tsx",
+          "renderedBytes": 13262
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10982
+        },
+        {
+          "id": "src/userscripts/instagram-saved/core.ts",
+          "renderedBytes": 10244
+        },
+        {
+          "id": "src/userscripts/instagram-saved/Settings.tsx",
+          "renderedBytes": 9957
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "src/userscripts/instagram-saved/reel-bookmark.tsx",
+          "renderedBytes": 8772
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8749
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6181
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "src/runtime/actions/index.tsx",
+          "renderedBytes": 5642
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/dom-engine.ts",
+          "renderedBytes": 3880
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        }
+      ]
+    },
+    "rodx-studio": {
+      "rawBytes": 2449176,
+      "gzipBytes": 471234,
+      "brotliBytes": 336823,
+      "debugBytes": 2809492,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/search-workbench.tsx",
+          "renderedBytes": 78648
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/render.tsx",
+          "renderedBytes": 60007
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-deck.module.css.js",
+          "renderedBytes": 52464
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/publisher.tsx",
+          "renderedBytes": 39721
+        },
+        {
+          "id": "src/userscripts/rodx-studio/telegram/relay.tsx",
+          "renderedBytes": 39404
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-view-1.module.css.js",
+          "renderedBytes": 33153
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/page-bridge.js",
+          "renderedBytes": 27720
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline",
+          "renderedBytes": 25164
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline",
+          "renderedBytes": 24890
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/inspector.tsx",
+          "renderedBytes": 24710
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/quick-actions.tsx",
+          "renderedBytes": 24161
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/graphql.js",
+          "renderedBytes": 23219
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/timeline.tsx",
+          "renderedBytes": 22083
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/enhancer.tsx",
+          "renderedBytes": 21927
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-custom.module.css.js",
+          "renderedBytes": 21278
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/selectors.js",
+          "renderedBytes": 18090
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline",
+          "renderedBytes": 17987
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-search-history-1.css?inline",
+          "renderedBytes": 17380
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-network-inspector-1.css?inline",
+          "renderedBytes": 16631
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/import-export.js",
+          "renderedBytes": 16475
+        },
+        {
+          "id": "src/userscripts/rodx-studio/media/Transport.module.css.js",
+          "renderedBytes": 16448
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-telegram-relay-1.css?inline",
+          "renderedBytes": 16445
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/toast.module.css.js",
+          "renderedBytes": 16433
+        },
+        {
+          "id": "src/userscripts/rodx-studio/layout/tweets.tsx",
+          "renderedBytes": 16383
+        },
+        {
+          "id": "src/userscripts/rodx-studio/feeds/FeedFilters.module.css.js",
+          "renderedBytes": 16370
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-timeline-1.css?inline",
+          "renderedBytes": 16305
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline",
+          "renderedBytes": 15637
+        },
+        {
+          "id": "src/userscripts/rodx-studio/search/history.tsx",
+          "renderedBytes": 15229
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline",
+          "renderedBytes": 15163
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-links-social-1.css?inline",
+          "renderedBytes": 15041
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-search-anchors-1.css?inline",
+          "renderedBytes": 14968
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-tweets-publisher-2.css?inline",
+          "renderedBytes": 14946
+        },
+        {
+          "id": "src/styles/workbench-overrides-2.css?inline",
+          "renderedBytes": 14891
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-layout-hygiene-1.css?inline",
+          "renderedBytes": 14875
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-media-download-1.css?inline",
+          "renderedBytes": 14718
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-tweets-publisher-1.css?inline",
+          "renderedBytes": 14693
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-search-list-typeahead-1.css?inline",
+          "renderedBytes": 14393
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-media-seek-preview-1.css?inline",
+          "renderedBytes": 14076
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-media-gestures-1.css?inline",
+          "renderedBytes": 14017
+        },
+        {
+          "id": "src/styles/workbench-overrides-1.css?inline",
+          "renderedBytes": 13880
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css?inline",
+          "renderedBytes": 13803
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-timeline-2.css?inline",
+          "renderedBytes": 13800
+        },
+        {
+          "id": "src/userscripts/rodx-studio/search/query-compiler.js",
+          "renderedBytes": 13745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/quick-picker.tsx",
+          "renderedBytes": 12795
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        }
+      ]
+    },
+    "example-site": {
+      "rawBytes": 1108344,
+      "gzipBytes": 210914,
+      "brotliBytes": 169590,
+      "debugBytes": 1377651,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 20202
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "src/userscripts/example-site/style.module.css.js",
+          "renderedBytes": 16376
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 9214
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js",
+          "renderedBytes": 4189
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/focusManager.js",
+          "renderedBytes": 4075
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/notifyManager.js",
+          "renderedBytes": 3921
+        },
+        {
+          "id": "src/runtime/events/event-bus.js",
+          "renderedBytes": 3484
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/onlineManager.js",
+          "renderedBytes": 3473
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/handleScroll.js",
+          "renderedBytes": 3405
+        },
+        {
+          "id": "node_modules/react-remove-scroll-bar/dist/es2015/component.js",
+          "renderedBytes": 2694
+        },
+        {
+          "id": "src/runtime/modular/features/toaster.tsx",
+          "renderedBytes": 2572
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/UI.js",
+          "renderedBytes": 1996
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/subscribable.js",
+          "renderedBytes": 1846
+        },
+        {
+          "id": "node_modules/@radix-ui/primitive/dist/index.mjs",
+          "renderedBytes": 1843
+        },
+        {
+          "id": "node_modules/use-sidecar/dist/es2015/medium.js",
+          "renderedBytes": 1835
+        },
+        {
+          "id": "src/core/portal-registry.ts",
+          "renderedBytes": 1813
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/removable.js",
+          "renderedBytes": 1702
+        }
+      ]
+    },
+    "page-repl": {
+      "rawBytes": 2308659,
+      "gzipBytes": 498705,
+      "brotliBytes": 400613,
+      "debugBytes": 2668217,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/@codemirror/view/dist/index.js",
+          "renderedBytes": 351505
+        },
+        {
+          "id": "node_modules/acorn/dist/acorn.mjs",
+          "renderedBytes": 181380
+        },
+        {
+          "id": "node_modules/@codemirror/state/dist/index.js",
+          "renderedBytes": 121111
+        },
+        {
+          "id": "node_modules/@lezer/javascript/dist/index.js",
+          "renderedBytes": 81526
+        },
+        {
+          "id": "node_modules/@codemirror/commands/dist/index.js",
+          "renderedBytes": 65045
+        },
+        {
+          "id": "node_modules/@codemirror/autocomplete/dist/index.js",
+          "renderedBytes": 57867
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@lezer/common/dist/index.js",
+          "renderedBytes": 51798
+        },
+        {
+          "id": "node_modules/@lezer/lr/dist/index.js",
+          "renderedBytes": 50485
+        },
+        {
+          "id": "node_modules/@codemirror/language/dist/index.js",
+          "renderedBytes": 47365
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29786
+        },
+        {
+          "id": "node_modules/astring/dist/astring.mjs",
+          "renderedBytes": 28912
+        },
+        {
+          "id": "node_modules/@codemirror/lint/dist/index.js",
+          "renderedBytes": 26357
+        },
+        {
+          "id": "node_modules/@lezer/highlight/dist/index.js",
+          "renderedBytes": 25517
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "src/userscripts/page-repl/style.css?inline",
+          "renderedBytes": 23326
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/userscripts/page-repl/index.js",
+          "renderedBytes": 18660
+        },
+        {
+          "id": "node_modules/estraverse/estraverse.js",
+          "renderedBytes": 18518
+        },
+        {
+          "id": "src/selectors.js",
+          "renderedBytes": 18090
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "node_modules/eslint-scope/lib/scope.js",
+          "renderedBytes": 16001
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/eslint-scope/lib/referencer.js",
+          "renderedBytes": 12837
+        },
+        {
+          "id": "src/userscripts/page-repl/Panel.tsx",
+          "renderedBytes": 12755
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10960
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/userscripts/page-repl/strategies.js",
+          "renderedBytes": 7467
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6109
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/userscripts/page-repl/payload.js",
+          "renderedBytes": 5527
+        },
+        {
+          "id": "node_modules/eslint-scope/lib/scope-manager.js",
+          "renderedBytes": 5308
+        }
+      ]
+    },
+    "gonewild": {
+      "rawBytes": 1319761,
+      "gzipBytes": 255990,
+      "brotliBytes": 200431,
+      "debugBytes": 1549906,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 462651
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 54241
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 41625
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 38118
+        },
+        {
+          "id": "src/userscripts/gonewild/Soundgasm.module.css.js",
+          "renderedBytes": 35839
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 32946
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 29780
+        },
+        {
+          "id": "src/userscripts/gonewild/Feed.module.css.js",
+          "renderedBytes": 29495
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 23936
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 23501
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 22433
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 22087
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 20939
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 20756
+        },
+        {
+          "id": "src/userscripts/gonewild/Shell.module.css.js",
+          "renderedBytes": 19609
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 16555
+        },
+        {
+          "id": "src/userscripts/gonewild/components/Feed.tsx",
+          "renderedBytes": 16081
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 15758
+        },
+        {
+          "id": "src/userscripts/gonewild/components/Player.tsx",
+          "renderedBytes": 15668
+        },
+        {
+          "id": "src/userscripts/gonewild/Audiochan.module.css.js",
+          "renderedBytes": 15245
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 13033
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 12386
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 11745
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 11518
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 10982
+        },
+        {
+          "id": "src/userscripts/gonewild/components/SoundgasmApp.tsx",
+          "renderedBytes": 10196
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 9914
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 9527
+        },
+        {
+          "id": "src/userscripts/gonewild/reddit-adapter.tsx",
+          "renderedBytes": 9390
+        },
+        {
+          "id": "src/userscripts/gonewild/services.ts",
+          "renderedBytes": 9298
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 9185
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 9022
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 8793
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 8474
+        },
+        {
+          "id": "src/userscripts/gonewild/network.js",
+          "renderedBytes": 8328
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 8294
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 8029
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 7608
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 7536
+        },
+        {
+          "id": "src/core/runtime-react.tsx",
+          "renderedBytes": 6885
+        },
+        {
+          "id": "node_modules/react-remove-scroll/dist/es2015/SideEffect.js",
+          "renderedBytes": 6561
+        },
+        {
+          "id": "node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "renderedBytes": 6181
+        },
+        {
+          "id": "src/runtime/http-client.ts",
+          "renderedBytes": 6104
+        },
+        {
+          "id": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytes": 6063
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/timeoutManager.js",
+          "renderedBytes": 5847
+        },
+        {
+          "id": "src/userscripts/gonewild/soundgasm-adapter.tsx",
+          "renderedBytes": 5832
+        },
+        {
+          "id": "node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "renderedBytes": 5782
+        },
+        {
+          "id": "src/userscripts/gonewild/components/Markdown.tsx",
+          "renderedBytes": 5564
+        },
+        {
+          "id": "node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "renderedBytes": 5552
+        },
+        {
+          "id": "src/runtime/clipboard-manager.ts",
+          "renderedBytes": 5536
+        },
+        {
+          "id": "src/userscripts/gonewild/bridge.js",
+          "renderedBytes": 5186
+        },
+        {
+          "id": "src/core/css.ts",
+          "renderedBytes": 5140
+        },
+        {
+          "id": "src/runtime/events/shared-events.js",
+          "renderedBytes": 5128
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "renderedBytes": 4937
+        },
+        {
+          "id": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
+          "renderedBytes": 4874
+        },
+        {
+          "id": "node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "renderedBytes": 4632
+        },
+        {
+          "id": "src/userscripts/gonewild/domain.ts",
+          "renderedBytes": 4494
+        },
+        {
+          "id": "node_modules/aria-hidden/dist/es2015/index.js",
+          "renderedBytes": 4414
+        },
+        {
+          "id": "src/core/update-checker.ts",
+          "renderedBytes": 4408
+        },
+        {
+          "id": "node_modules/@radix-ui/react-context/dist/index.mjs",
+          "renderedBytes": 4242
+        }
+      ]
+    },
+    "unified": {
+      "rawBytes": 3533919,
+      "gzipBytes": 676689,
+      "brotliBytes": 339267,
+      "debugBytes": 4163566,
+      "modules": [
+        {
+          "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytes": 925302
+        },
+        {
+          "id": "node_modules/sonner/dist/index.mjs",
+          "renderedBytes": 108482
+        },
+        {
+          "id": "node_modules/@radix-ui/react-select/dist/index.mjs",
+          "renderedBytes": 83250
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/search-workbench.tsx",
+          "renderedBytes": 78648
+        },
+        {
+          "id": "src/runtime/vendor/storage.ts",
+          "renderedBytes": 76236
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "renderedBytes": 65892
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/render.tsx",
+          "renderedBytes": 60007
+        },
+        {
+          "id": "node_modules/@radix-ui/react-menu/dist/index.mjs",
+          "renderedBytes": 59572
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-deck.module.css.js",
+          "renderedBytes": 52464
+        },
+        {
+          "id": "src/styles/core.css?inline",
+          "renderedBytes": 47872
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "renderedBytes": 44866
+        },
+        {
+          "id": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
+          "renderedBytes": 44174
+        },
+        {
+          "id": "src/core/runtime.ts",
+          "renderedBytes": 43703
+        },
+        {
+          "id": "node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "renderedBytes": 41878
+        },
+        {
+          "id": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
+          "renderedBytes": 41512
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/publisher.tsx",
+          "renderedBytes": 39721
+        },
+        {
+          "id": "src/userscripts/rodx-studio/telegram/relay.tsx",
+          "renderedBytes": 39404
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-view-1.module.css.js",
+          "renderedBytes": 33153
+        },
+        {
+          "id": "src/runtime/modular/features/menu-view.tsx",
+          "renderedBytes": 33110
+        },
+        {
+          "id": "node_modules/react/cjs/react.production.js",
+          "renderedBytes": 31516
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/page-bridge.js",
+          "renderedBytes": 27720
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/utils.js",
+          "renderedBytes": 26066
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-layout-tweets-1.css?inline",
+          "renderedBytes": 25164
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-tweets-enhancer-1.css?inline",
+          "renderedBytes": 24890
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs",
+          "renderedBytes": 24772
+        },
+        {
+          "id": "src/userscripts/rodx-studio/network/inspector.tsx",
+          "renderedBytes": 24710
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/quick-actions.tsx",
+          "renderedBytes": 24161
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/graphql.js",
+          "renderedBytes": 23219
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutation.js",
+          "renderedBytes": 23036
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/timeline.tsx",
+          "renderedBytes": 22083
+        },
+        {
+          "id": "src/userscripts/rodx-studio/tweets/enhancer.tsx",
+          "renderedBytes": 21927
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dialog/dist/index.mjs",
+          "renderedBytes": 21920
+        },
+        {
+          "id": "src/userscripts/rodx-studio/styles/search-custom.module.css.js",
+          "renderedBytes": 21278
+        },
+        {
+          "id": "src/runtime/network-interceptors.ts",
+          "renderedBytes": 20959
+        },
+        {
+          "id": "node_modules/@radix-ui/react-focus-scope/dist/index.mjs",
+          "renderedBytes": 19828
+        },
+        {
+          "id": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytes": 19054
+        },
+        {
+          "id": "node_modules/@radix-ui/react-popper/dist/index.mjs",
+          "renderedBytes": 18370
+        },
+        {
+          "id": "src/selectors.js",
+          "renderedBytes": 18090
+        },
+        {
+          "id": "node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs",
+          "renderedBytes": 18044
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline",
+          "renderedBytes": 17987
+        },
+        {
+          "id": "node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "renderedBytes": 17586
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-search-history-1.css?inline",
+          "renderedBytes": 17380
+        },
+        {
+          "id": "node_modules/@radix-ui/react-checkbox/dist/index.mjs",
+          "renderedBytes": 16948
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-network-inspector-1.css?inline",
+          "renderedBytes": 16631
+        },
+        {
+          "id": "node_modules/@radix-ui/react-dropdown-menu/dist/index.mjs",
+          "renderedBytes": 16588
+        },
+        {
+          "id": "src/userscripts/rodx-studio/lists/import-export.js",
+          "renderedBytes": 16475
+        },
+        {
+          "id": "src/userscripts/rodx-studio/media/Transport.module.css.js",
+          "renderedBytes": 16448
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-telegram-relay-1.css?inline",
+          "renderedBytes": 16445
+        },
+        {
+          "id": "src/userscripts/rodx-studio/ui/toast.module.css.js",
+          "renderedBytes": 16433
+        },
+        {
+          "id": "src/userscripts/rodx-studio/layout/tweets.tsx",
+          "renderedBytes": 16383
+        },
+        {
+          "id": "src/userscripts/rodx-studio/feeds/FeedFilters.module.css.js",
+          "renderedBytes": 16370
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-timeline-1.css?inline",
+          "renderedBytes": 16305
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/mutationCache.js",
+          "renderedBytes": 16058
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-lists-profile-1.css?inline",
+          "renderedBytes": 15637
+        },
+        {
+          "id": "src/userscripts/rodx-studio/search/history.tsx",
+          "renderedBytes": 15229
+        },
+        {
+          "id": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "renderedBytes": 15216
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-media-transport-1.css?inline",
+          "renderedBytes": 15163
+        },
+        {
+          "id": "node_modules/@radix-ui/react-switch/dist/index.mjs",
+          "renderedBytes": 15072
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-links-social-1.css?inline",
+          "renderedBytes": 15041
+        },
+        {
+          "id": "src/styles/extracted/userscripts-rodx-studio-search-anchors-1.css?inline",
+          "renderedBytes": 14968
+        }
+      ]
+    }
+  },
+  "totals": {
+    "rawBytes": 26317065,
+    "gzipBytes": 5249016,
+    "brotliBytes": 3753832
+  },
+  "baseline": true,
+  "baselineReason": "Initial baseline before bundle optimization"
+}

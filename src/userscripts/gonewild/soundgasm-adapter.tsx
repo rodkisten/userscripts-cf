@@ -16,10 +16,13 @@ class SoundgasmBoundary extends Component<
     this.props.onFailure();
   }
   render() {
-    if (this.state.failed) return <StudioFailure retry={() => this.setState({ failed: false })} />;
+    if (this.state.failed) {
+return <StudioFailure retry={() => this.setState({ failed: false })} />;
+}
     return this.props.children;
   }
 }
+
 export async function mountSoundgasm(ctx: any, bridge: any) {
   // External bridge data is optional. Never block the Soundgasm UI indefinitely.
   // Bound the wait and continue using native page metadata on failure.
@@ -35,9 +38,13 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
       timeout = setTimeout(() => resolve(null), 1500);
     }),
   ]).finally(() => clearTimeout(timeout));
-  if (ctx.signal.aborted) return;
+  if (ctx.signal.aborted) {
+return;
+}
   const parts = location.pathname.split("/").filter(Boolean);
-  if (parts[0] !== "u") return;
+  if (parts[0] !== "u") {
+return;
+}
   if (parts.length === 2 && !readRecordings().length) {
     await new Promise<void>((resolve) => {
       const finish = () => {
@@ -47,13 +54,17 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
         resolve();
       };
       const observer = new MutationObserver(() => {
-        if (readRecordings().length) finish();
+        if (readRecordings().length) {
+finish();
+}
       });
       const timer = setTimeout(finish, 6000);
       observer.observe(document.body, { childList: true, subtree: true });
       ctx.signal.addEventListener("abort", finish, { once: true });
     });
-    if (ctx.signal.aborted) return;
+    if (ctx.signal.aborted) {
+return;
+}
   }
   const text = (selector: string) => document.querySelector(selector)?.textContent?.trim() || "";
   // Snapshot native metadata before hiding the site's layout; never query our own h1/audio.
@@ -66,11 +77,15 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   let originalLink: { path: string; href: string; at: number } | null = null;
   try {
     const saved = JSON.parse(sessionStorage.getItem(`gws:source:${author.toLowerCase()}`) || "null");
-    if (saved && Date.now() - saved.at < 86400000) originalLink = saved;
+    if (saved && Date.now() - saved.at < 86400000) {
+originalLink = saved;
+}
   } catch {}
   const recordings = readRecordings().map((recording) => {
     const url = new URL(recording.href);
-    if (context?.subreddit) url.searchParams.set("subreddit", context.subreddit);
+    if (context?.subreddit) {
+url.searchParams.set("subreddit", context.subreddit);
+}
     const saved = safeURL(originalLink?.href || "");
     return {
       ...recording,
@@ -78,12 +93,14 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     };
   });
   if (parts.length > 2)
-    try {
+    {
+try {
       sessionStorage.setItem(
         `gws:source:${author.toLowerCase()}`,
         JSON.stringify({ path: location.pathname, href: location.href, at: Date.now() }),
       );
     } catch {}
+}
   let data: SoundgasmData = {
     title,
     description,
@@ -94,7 +111,9 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
     profile: parts.length === 2,
     recordings,
   };
-  if (data.profile && !data.recordings.length) return; // Keep native empty/unknown profiles usable.
+  if (data.profile && !data.recordings.length) {
+return;
+} // Keep native empty/unknown profiles usable.
   ctx.pageStyle(css);
   // Never blank the host page while Safari hydrates jPlayer or Solid.
   // The native Soundgasm player remains available as a guaranteed fallback.
@@ -148,18 +167,28 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
   // jPlayer can set its URL after DOMContentLoaded. Detect late source/script
   // changes instead of committing a permanently empty player on first render.
   const refresh = () => {
-    if (ctx.signal.aborted) return;
+    if (ctx.signal.aborted) {
+return;
+}
     const source = readNativeMedia();
     const nextTitle = text(".jp-audio .jp-title li, .jp-audio .jp-title, .jp-title");
     const nextDescription = text(".jp-audio .jp-description, .jp-description");
     const patch: Partial<SoundgasmData> = {};
-    if (!context?.title && nextTitle && nextTitle !== data.title) patch.title = nextTitle;
+    if (!context?.title && nextTitle && nextTitle !== data.title) {
+patch.title = nextTitle;
+}
     if (!context?.description && nextDescription && nextDescription !== data.description)
-      patch.description = nextDescription;
-    if (source && source !== data.source) patch.source = source;
+      {
+patch.description = nextDescription;
+}
+    if (source && source !== data.source) {
+patch.source = source;
+}
     if (Object.keys(patch).length) {
       data = { ...data, ...patch };
-      for (const notify of subscribers) notify();
+      for (const notify of subscribers) {
+notify();
+}
     }
   };
   ctx.observe(
@@ -173,7 +202,9 @@ export async function mountSoundgasm(ctx: any, bridge: any) {
             ),
         )
       )
-        refresh();
+        {
+refresh();
+}
     },
     {
       childList: true,

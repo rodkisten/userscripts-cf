@@ -16,6 +16,9 @@ export function diagnosticPrelude(target, version, scripts) {
   const changeEvent = "rod-diagnostics:change";
   const MAX_HISTORY = 250;
   const MAX_SEEN_IDS = 1000;
+  const REMOTE_ENDPOINT = "https://manage.migos.club/error/capture";
+  const REMOTE_MIN_INTERVAL_MS = 15000;
+  const REMOTE_MAX_EVENTS_PER_HOUR = 100;
 
   const root = window;
   let state = root[key];
@@ -74,7 +77,103 @@ export function diagnosticPrelude(target, version, scripts) {
     const redact = (value) =>
       String(value ?? "")
         .replace(BEARER_RE, "$1[REDACTED]")
-        .replace(SECRET_PARAM_RE, "$1[REDACTED]");
+        .replace(SECRET_PARAM_RE, "$1[REDACTED]")
+        .replace(
+          /("?(?:password|passwd|secret|token|authorization|cookie|api[_-]?key)"?\s*:\s*")[^"]*(")/gi,
+          "$1[REDACTED]$2",
+        );
+
+    const safeDetails = (value) => {
+      if (value == null) return null;
+      try {
+        return JSON.parse(redact(JSON.stringify(value)).slice(0, 5000));
+      } catch {
+        return null;
+      }
+    };
+
+    let remoteWindowStarted = 0;
+    let remoteWindowSent = 0;
+    const remoteLastSent = new Map();
+
+    const sendRemote = (record) => {
+      try {
+        const now = Date.now();
+        if (now - remoteWindowStarted >= 3600000) {
+          remoteWindowStarted = now;
+          remoteWindowSent = 0;
+        }
+        const lastSent = remoteLastSent.get(record.fingerprint) || 0;
+        if (now - lastSent < REMOTE_MIN_INTERVAL_MS || remoteWindowSent >= REMOTE_MAX_EVENTS_PER_HOUR) return;
+        remoteLastSent.set(record.fingerprint, now);
+        remoteWindowSent++;
+        if (remoteLastSent.size > MAX_SEEN_IDS) {
+          const first = remoteLastSent.keys().next().value;
+          if (first) remoteLastSent.delete(first);
+        }
+        const activeScripts = Object.keys(state.scripts);
+        const payload = {
+          fingerprint: record.fingerprint,
+          script: record.script,
+          scripts: record.scripts || activeScripts,
+          source: record.source,
+          message: String(record.message || "").slice(0, 4000),
+          stack: String(record.stack || "").slice(0, 4000),
+          url: String(record.url || "").slice(0, 2000),
+          count: record.count || 1,
+          firstSeen: record.firstSeen,
+          lastSeen: record.lastSeen,
+          request: safeDetails(record.request),
+          response: safeDetails(record.response),
+        };
+        const gmRequest =
+          typeof GM_xmlhttpRequest === "function"
+            ? GM_xmlhttpRequest
+            : typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function"
+              ? GM.xmlHttpRequest.bind(GM)
+              : null;
+        const failed = (reason) => {
+          state.remoteDelivery = { status: "failed", reason: String(reason), at: Date.now() };
+          remoteLastSent.delete(record.fingerprint);
+        };
+        if (!gmRequest) {
+          failed("GM transport unavailable");
+          return;
+        }
+        const deliver = (attempt) => {
+          try {
+            const retry = (reason) => {
+              failed(reason);
+              if (attempt < 2) root.setTimeout(() => deliver(attempt + 1), 1000 * (attempt + 1));
+            };
+            gmRequest({
+              url: REMOTE_ENDPOINT,
+              method: "POST",
+              anonymous: true,
+              timeout: 15000,
+              headers: { "Content-Type": "text/plain;charset=UTF-8" },
+              data: JSON.stringify(payload),
+              onload: (response) => {
+                if (response.status >= 200 && response.status < 300) {
+                  state.remoteDelivery = { status: "sent", at: Date.now() };
+                  remoteLastSent.set(record.fingerprint, Date.now());
+                } else if (response.status >= 500 || response.status === 429) {
+                  retry("HTTP " + response.status);
+                } else {
+                  failed("HTTP " + response.status);
+                }
+              },
+              onerror: () => retry("Network error"),
+              ontimeout: () => retry("Timeout"),
+              onabort: () => failed("Aborted"),
+            });
+          } catch (error) {
+            failed(error);
+          }
+        };
+        deliver(0);
+      } catch {}
+    };
 
     // ========================================================================
     // // @TODO: Mover para src/core/diagnostics/persistence.ts (quando bundled)
@@ -285,8 +384,9 @@ export function diagnosticPrelude(target, version, scripts) {
     };
 
     // Hidratação assíncrona do IndexedDB
-    if (root.indexedDB) {
+    {
       try {
+        if (!root.indexedDB) throw new Error("IndexedDB unavailable");
         const request = root.indexedDB.open("rod-script-diagnostics", 2);
         request.onupgradeneeded = () => {
           const db = request.result;
@@ -405,7 +505,9 @@ export function diagnosticPrelude(target, version, scripts) {
         const nowIso = new Date(nowMs).toISOString();
         const message = redact(error?.message || error || "Unknown error");
         const stack = redact(error?.stack || "");
-        const script = owner || "unknown";
+        const activeScripts = Object.keys(state.scripts);
+        const scripts = owner ? String(owner).split(",").filter(Boolean) : activeScripts;
+        const script = scripts.length === 1 ? scripts[0] : scripts.length ? "multiple" : "page/global";
         const firstFrame = stack.split("\n", 2)[1] || "";
         const fingerprint = `${script}|${source}|${message}|${firstFrame}`;
 
@@ -415,6 +517,9 @@ export function diagnosticPrelude(target, version, scripts) {
           record.writerCounts[tabId] = (record.writerCounts[tabId] || 0) + 1;
           record.count = sumWriterCounts(record.writerCounts);
           record.lastSeen = nowIso;
+          if (error?.request) record.request = safeDetails(error.request);
+          if (error?.response) record.response = safeDetails(error.response);
+          if (scripts.length) record.scripts = scripts;
         } else {
           record = {
             fingerprint,
@@ -427,6 +532,9 @@ export function diagnosticPrelude(target, version, scripts) {
             firstSeen: nowIso,
             lastSeen: nowIso,
             url: (root.location?.origin || "") + (root.location?.pathname || ""),
+            request: safeDetails(error?.request),
+            response: safeDetails(error?.response),
+            scripts,
           };
           state.history.unshift(record);
           historyIndex.set(fingerprint, record);
@@ -438,6 +546,7 @@ export function diagnosticPrelude(target, version, scripts) {
         persist();
 
         const snapshotRecord = { ...record, writerCounts: { ...record.writerCounts } };
+        sendRemote(snapshotRecord);
         durableQueue.push({
           id: `${tabId}:${++sequence}:${nowMs}`,
           fingerprint,
@@ -457,6 +566,8 @@ export function diagnosticPrelude(target, version, scripts) {
       (event) => {
         if (event.error) {
           state.capture(event.error, "window.error");
+        } else if (event.message) {
+          state.capture(event.message, "window.error");
         } else if (event.target !== root) {
           state.capture("Resource failed: " + (event.target?.tagName || "unknown"), "resource.error");
         }

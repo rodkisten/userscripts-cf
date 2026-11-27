@@ -1,12 +1,12 @@
-import { mountView } from "./react-mount.tsx";
+import { mountView } from "./runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { applyComponentStyle } from "../../../core/css.js";
 import { DOM_SELECTORS, RODX_SELECTORS, NATIVE_X_SELECTORS } from "../../../selectors.js";
 import extractedCSS1 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-1.css?inline";
 import extractedCSS2 from "../../../styles/extracted/userscripts-rodx-studio-ui-quick-actions-2.css?inline";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { extractIdentity } from "../identity/account.js";
-import { XDOM } from "../platform/selectors.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { SearchAnchors } from "../search/anchors.tsx";
 import { diagnosticSpans, highlightWithIssues } from "../search/highlight.tsx";
 import { SearchHistory } from "../search/history.tsx";
@@ -20,7 +20,9 @@ export function initializeDeckQuickUI() {
     let floating, listInfo;
     const authorOf = (article) => {
       const identity = article.querySelector(XDOM.author);
-      if (!identity) return "";
+      if (!identity) {
+        return "";
+      }
       const link = [...identity.querySelectorAll(DOM_SELECTORS.relativeLinks)].find((anchor) =>
         /^\/[A-Za-z0-9_]{1,15}\/?$/.test(anchor.getAttribute("href") || ""),
       );
@@ -111,9 +113,13 @@ export function initializeDeckQuickUI() {
         let escaped = false;
         for (let i = 0; i < end; i++) {
           const c = value[i];
-          if (escaped) escaped = false;
-          else if (c === "\\") escaped = true;
-          else if (c === '"') open = !open;
+          if (escaped) {
+            escaped = false;
+          } else if (c === "\\") {
+            escaped = true;
+          } else if (c === '"') {
+            open = !open;
+          }
         }
         return open;
       };
@@ -133,8 +139,12 @@ export function initializeDeckQuickUI() {
         const boundary = /[\s()]/;
         let start = cursor;
         let end = cursor;
-        while (start > 0 && !boundary.test(value[start - 1])) start--;
-        while (end < value.length && !boundary.test(value[end])) end++;
+        while (start > 0 && !boundary.test(value[start - 1])) {
+          start--;
+        }
+        while (end < value.length && !boundary.test(value[end])) {
+          end++;
+        }
         return { start, end, value: value.slice(start, end) };
       };
       const insertAt = (text, start, end) => {
@@ -144,7 +154,9 @@ export function initializeDeckQuickUI() {
         input.focus();
       };
       const applySuggestion = (row) => {
-        if (!row) return;
+        if (!row) {
+          return;
+        }
         const value = input.value;
         const cursor = preservedCursor;
         const list = listTokenAtCursor(value, cursor);
@@ -166,11 +178,16 @@ export function initializeDeckQuickUI() {
           return;
         }
         const word = wordAtCursor(value, cursor);
-        if (word.value) insertAt(row.query, word.start, word.end);
-        else insertAt(`${value && !/\s$/.test(value) ? " " : ""}${row.query}`, cursor, cursor);
+        if (word.value) {
+          insertAt(row.query, word.start, word.end);
+        } else {
+          insertAt(`${value && !/\s$/.test(value) ? " " : ""}${row.query}`, cursor, cursor);
+        }
       };
       const matchesFullQuery = (label, value, query) => {
-        if (!query) return true;
+        if (!query) {
+          return true;
+        }
         const terms = query.split(/\s+/).filter(Boolean);
         const content = normalize(`${label} ${value}`);
         return content.includes(query) || terms.every((term) => content.includes(term));
@@ -185,7 +202,9 @@ export function initializeDeckQuickUI() {
         const partial = normalize(token?.partial || word);
         const candidates = [];
         const add = (item) => {
-          if (item?.query || item?.id) candidates.push(item);
+          if (item?.query || item?.id) {
+            candidates.push(item);
+          }
         };
         for (const item of state.searches || []) {
           if (matchesFullQuery(item.name, item.query, searchText)) {
@@ -276,7 +295,9 @@ export function initializeDeckQuickUI() {
           // A bounded, read-only IndexedDB query. No full-history scan on every keypress.
           const account = state.account || extractIdentity().key || "guest";
           const page = await SearchHistory.exportPage(account, 0, 60);
-          if (stamp !== sequence || closed) return;
+          if (stamp !== sequence || closed) {
+            return;
+          }
           for (const item of page.rows || []) {
             if (matchesFullQuery("", item.query, searchText)) {
               add({
@@ -291,7 +312,9 @@ export function initializeDeckQuickUI() {
         } catch {
           // Safari private browsing may block IndexedDB. Other suggestions remain usable.
         }
-        if (stamp !== sequence || closed) return;
+        if (stamp !== sequence || closed) {
+          return;
+        }
         const seen = new Set<any>();
         const quotas = token
           ? { list: 11, full: 2, history: 1, token: 2 }
@@ -301,7 +324,9 @@ export function initializeDeckQuickUI() {
           .sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label, "pt-BR"))
           .filter((item) => {
             const key = `${item.kind}:${item.query || item.id}`;
-            if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) return false;
+            if (seen.has(key) || countByKind[item.kind] >= quotas[item.kind]) {
+              return false;
+            }
             seen.add(key);
             countByKind[item.kind]++;
             return true;
@@ -326,7 +351,9 @@ export function initializeDeckQuickUI() {
           detail.textContent = row.detail;
           option.append(title, detail);
           option.addEventListener("pointerdown", (event) => {
-            if (event.pointerType !== "touch") event.preventDefault();
+            if (event.pointerType !== "touch") {
+              event.preventDefault();
+            }
           });
           option.onclick = (event) => {
             event.preventDefault();
@@ -394,9 +421,13 @@ export function initializeDeckQuickUI() {
         { passive: true },
       );
       input.addEventListener("keydown", (event) => {
-        if (event.isComposing) return;
+        if (event.isComposing) {
+          return;
+        }
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-          if (!rows.length) return;
+          if (!rows.length) {
+            return;
+          }
           event.preventDefault();
           event.stopPropagation();
           selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
@@ -422,7 +453,9 @@ export function initializeDeckQuickUI() {
         const action = (
           (event.target as HTMLElement).closest(RODX_SELECTORS.queryWorkbenchActions) as HTMLElement
         )?.dataset.rxqAction;
-        if (!action) return;
+        if (!action) {
+          return;
+        }
         event.preventDefault();
         if (action === "copy") {
           await navigator.clipboard.writeText(input.value);
@@ -473,7 +506,9 @@ export function initializeDeckQuickUI() {
       form.onsubmit = (event) => {
         event.preventDefault();
         validate();
-        if ((submit as HTMLButtonElement).disabled) return;
+        if ((submit as HTMLButtonElement).disabled) {
+          return;
+        }
         const full = input.value.trim();
         handle.close();
         void SearchHistory.record(full, "floating", "live");
@@ -512,7 +547,9 @@ export function initializeDeckQuickUI() {
       });
     }
     function position() {
-      if (!floating) return;
+      if (!floating) {
+        return;
+      }
       const c = Studio.config.searchButton || {},
         size = Math.max(36, Math.min(80, Number(c.size) || 48));
       const viewport = window.visualViewport;
@@ -542,10 +579,14 @@ export function initializeDeckQuickUI() {
           floating.setPointerCapture?.(e.pointerId);
         };
         floating.onpointermove = (e) => {
-          if (!press) return;
+          if (!press) {
+            return;
+          }
           const dx = e.clientX - press.x,
             dy = e.clientY - press.y;
-          if (Math.hypot(dx, dy) > 7) moved = true;
+          if (Math.hypot(dx, dy) > 7) {
+            moved = true;
+          }
           if (moved) {
             e.preventDefault();
             floating.style.setProperty(
@@ -561,7 +602,7 @@ export function initializeDeckQuickUI() {
           }
         };
         floating.onpointerup = () => {
-          if (moved)
+          if (moved) {
             Studio.configure({
               searchButton: {
                 ...Studio.config.searchButton,
@@ -569,6 +610,7 @@ export function initializeDeckQuickUI() {
                 y: parseFloat(floating.style.top),
               },
             });
+          }
           press = null;
         };
         floating.onpointercancel = () => {
@@ -576,22 +618,28 @@ export function initializeDeckQuickUI() {
           moved = true;
         };
         floating.onclick = () => {
-          if (!moved) search();
+          if (!moved) {
+            search();
+          }
           moved = false;
         };
         document.body.append(floating);
         position();
-        const style = document.createElement("style");
-        style.textContent = extractedCSS2;
-        document.head.append(style);
-        window.addEventListener("resize", position, { passive: true });
-        window.visualViewport?.addEventListener("resize", position, { passive: true });
-        window.visualViewport?.addEventListener("scroll", position, { passive: true });
+        Studio.ctx?.ui?.pageStyle(extractedCSS2, { id: "rodx-quick-actions-floating-css" });
+        Studio.ctx?.listen(window, "resize", position, { passive: true });
+        if (window.visualViewport) {
+          Studio.ctx?.listen(window.visualViewport, "resize", position, { passive: true });
+        }
+        if (window.visualViewport) {
+          Studio.ctx?.listen(window.visualViewport, "scroll", position, { passive: true });
+        }
       }
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const bar = article.querySelector(RODX_SELECTORS.tweetTopbar);
-        if (!bar) continue;
-        let button = bar.querySelector(RODX_SELECTORS.addToListAction);
+        if (!bar) {
+          continue;
+        }
+        let button = bar.querySelector<HTMLButtonElement>(RODX_SELECTORS.addToListAction);
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -603,7 +651,9 @@ export function initializeDeckQuickUI() {
             e.preventDefault();
             e.stopPropagation();
             const user = authorOf(article);
-            if (user) void Studio.services.lists?.picker(user, button);
+            if (user) {
+              void Studio.services.lists?.picker(user, button);
+            }
           };
           bar.append(button);
         }
@@ -661,17 +711,24 @@ export function initializeDeckQuickUI() {
         const row = Studio.services.lists?.all().find((item) => item.id === id);
         const name = row ? Studio.services.lists.displayName(row) : `lista ${id}`;
         const currentName = listInfo.querySelector(RODX_SELECTORS.liveListName);
-        if (currentName && currentName.textContent !== name) currentName.textContent = name;
+        if (currentName && currentName.textContent !== name) {
+          currentName.textContent = name;
+        }
       }
       for (const a of document.querySelectorAll<HTMLElement>(NATIVE_X_SELECTORS.listLinks)) {
-        if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) continue;
+        if (a.closest(RODX_SELECTORS.ownedTimelineContainers)) {
+          continue;
+        }
         const id = (a as HTMLAnchorElement).pathname.match(/\/lists\/(\d+)/)?.[1];
         if (
           a.nextElementSibling?.hasAttribute("data-rodx-list-video") &&
           (a.nextElementSibling as HTMLElement).dataset.rodxListVideo !== id
-        )
+        ) {
           a.nextElementSibling.remove();
-        if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) continue;
+        }
+        if (!id || (a.nextElementSibling as HTMLElement)?.dataset.rodxListVideo === id) {
+          continue;
+        }
         const b = document.createElement("button");
         b.type = "button";
         b.textContent = "▷ Vídeos";

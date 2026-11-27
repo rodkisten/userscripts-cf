@@ -16,6 +16,7 @@ export type FeedController = {
 function useStudio(store: StudioStore) {
   return useSyncExternalStore(store.subscribe, () => store.state);
 }
+
 function TagButton({ tag, controller }: { tag: string; controller: FeedController }) {
   const state = useStudio(controller.store);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -63,6 +64,7 @@ function TagButton({ tag, controller }: { tag: string; controller: FeedControlle
     </button>
   );
 }
+
 export function PostCard({
   post,
   controller,
@@ -80,7 +82,9 @@ export function PostCard({
   const loading = useRef(false);
   const checked = useRef(false);
   const load = async (force = false) => {
-    if (loading.current || (!force && checked.current)) return;
+    if (loading.current || (!force && checked.current)) {
+return;
+}
     request.current?.abort();
     const abort = new AbortController();
     request.current = abort;
@@ -88,7 +92,9 @@ export function PostCard({
     setAudio((previous) => ({ ...previous, loading: true, error: "" }));
     try {
       const result = await resolvePostAudio(post, controller.bridge, abort.signal, force);
-      if (abort.signal.aborted) return;
+      if (abort.signal.aborted) {
+return;
+}
       checked.current = true;
       setAudio({ items: result.items, checked: true, loading: false, error: "" });
       onAudio?.(result.items);
@@ -104,12 +110,16 @@ export function PostCard({
       if (request.current === abort) {
         request.current = undefined;
         loading.current = false;
-        if (!abort.signal.aborted) setAudio((previous) => ({ ...previous, loading: false }));
+        if (!abort.signal.aborted) {
+setAudio((previous) => ({ ...previous, loading: false }));
+}
       }
     }
   };
   useEffect(() => {
-    if (state.settings.audio) void load();
+    if (state.settings.audio) {
+void load();
+}
     return () => {
       request.current?.abort();
       request.current = undefined;
@@ -181,7 +191,9 @@ export function PostCard({
                   preload="none"
                   onPlay={(event) =>
                     document.querySelectorAll<HTMLAudioElement>("audio").forEach((other) => {
-                      if (other !== event.currentTarget) other.pause();
+                      if (other !== event.currentTarget) {
+other.pause();
+}
                     })
                   }
                   onError={() =>
@@ -342,7 +354,9 @@ export function SettingsShell({
       <Dialog.Root
         open={open}
         onOpenChange={(next) => {
-          if (!next) close();
+          if (!next) {
+close();
+}
         }}
       >
         <Dialog.Portal container={portalContainer}>
@@ -407,7 +421,9 @@ export function SettingsShell({
                 id="clearSeen"
                 type="button"
                 onClick={() => {
-                  if (confirm("Limpar todo o histórico local de posts vistos?")) store.actions.clearSeen();
+                  if (confirm("Limpar todo o histórico local de posts vistos?")) {
+store.actions.clearSeen();
+}
                 }}
               >
                 Limpar vistos

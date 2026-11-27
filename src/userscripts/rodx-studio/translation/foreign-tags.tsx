@@ -39,7 +39,9 @@ export function initializeDeckForeignTags() {
         !translated ||
         translated.toLocaleLowerCase() === text.toLocaleLowerCase()
       )
-        return null;
+        {
+return null;
+}
       return {
         translation: translated,
         lang,
@@ -53,7 +55,9 @@ export function initializeDeckForeignTags() {
             .replace(/^#/, "")
             .toLocaleLowerCase() !== key
         )
-          continue;
+          {
+continue;
+}
         item.querySelector<HTMLElement>(RODX_SELECTORS.tagTranslation)?.remove();
         // All hashtag actions live in OUR tray. Keep original tags visible here;
         // only add parenthesized translation for languages outside PT/ES/EN.
@@ -68,7 +72,9 @@ export function initializeDeckForeignTags() {
       }
     };
     function scan(tray) {
-      if (!state.visual.translateForeignTags) return;
+      if (!state.visual.translateForeignTags) {
+return;
+}
       for (const item of tray.querySelectorAll(RODX_SELECTORS.hashtagItems)) {
         const key = String(item.dataset.tag || "")
           .replace(/^#/, "")
@@ -83,13 +89,17 @@ export function initializeDeckForeignTags() {
         }
         // Keep both + and minus available even before optional translation resolves.
         item.hidden = false;
-        if (waiting.has(key) || active >= 2 || started >= MAX) continue;
+        if (waiting.has(key) || active >= 2 || started >= MAX) {
+continue;
+}
         active++;
         started++;
         const promise = translate(item.dataset.tag)
           .then((value) => {
             cache.set(key, value);
-            if (cache.size > 450) cache.delete(cache.keys().next().value);
+            if (cache.size > 450) {
+cache.delete(cache.keys().next().value);
+}
             apply(key);
           })
           .catch(() => {

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "scripts": {
+    "inspektor": { "version": "8.0.0" },
+    "rod-dock": { "version": "8.0.0" },
+    "github": { "version": "8.0.0" },
+    "tiktok-cleaner": { "version": "8.0.0" },
+    "dom-inspector": { "version": "8.0.0" },
+    "mobile-editor-fab": { "version": "8.0.0" },
+    "instagram-saved": { "version": "8.0.0" },
+    "rodx-studio": { "version": "8.0.0" },
+    "page-repl": { "version": "8.0.0" },
+    "gonewild": { "version": "8.0.0" }
+  }
+}

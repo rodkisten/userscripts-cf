@@ -1,7 +1,9 @@
 // The page-world boundary must remain serializable and independent of Solid.
 export function pageNetworkShim(configKey, seenKey) {
   "use strict";
-  if (window.__gwsNetworkInstalled) return;
+  if (window.__gwsNetworkInstalled) {
+return;
+}
   Object.defineProperty(window, "__gwsNetworkInstalled", { value: true, configurable: true });
   const load = (key, defaultValue) => {
     try {
@@ -15,7 +17,9 @@ export function pageNetworkShim(configKey, seenKey) {
   const idOf = (v) => {
     const source = String(v || "");
     const match = source.match(/(?:t3_|post-|\/comments\/)([a-z0-9]{5,12})\b/i);
-    if (match) return `t3_${match[1].toLowerCase()}`;
+    if (match) {
+return `t3_${match[1].toLowerCase()}`;
+}
     return /^[a-z0-9]{5,12}$/i.test(source) ? `t3_${source.toLowerCase()}` : "";
   };
   const isAd = (node) =>
@@ -32,16 +36,24 @@ export function pageNetworkShim(configKey, seenKey) {
     let removed = 0;
     const skip = (item) => {
       const itemData = item?.data || item;
-      if (cfg.removeAds && (isAd(item) || isAd(itemData))) return true;
-      if (!cfg.hideSeen || !cfg.networkFilter) return false;
+      if (cfg.removeAds && (isAd(item) || isAd(itemData))) {
+return true;
+}
+      if (!cfg.hideSeen || !cfg.networkFilter) {
+return false;
+}
       const name = itemData?.subreddit || sr;
       const id = idOf(itemData?.name || itemData?.id || itemData?.permalink);
       return enabled(cfg, name) && id && !!seen[id];
     };
     const walk = (node, depth = 0) => {
-      if (!node || typeof node !== "object" || depth > 8) return;
+      if (!node || typeof node !== "object" || depth > 8) {
+return;
+}
       if (Array.isArray(node)) {
-        for (const child of node) walk(child, depth + 1);
+        for (const child of node) {
+walk(child, depth + 1);
+}
         return;
       }
       // Limit mutation to standard Reddit Listing nodes, not arbitrary API objects.
@@ -51,16 +63,24 @@ export function pageNetworkShim(configKey, seenKey) {
         removed += prior - node.data.children.length;
       }
       for (const [key, value] of Object.entries(node)) {
-        if (key === "children" || (key === "data" && node.kind === "Listing")) continue;
-        if (typeof value === "object" && value) walk(value, depth + 1);
+        if (key === "children" || (key === "data" && node.kind === "Listing")) {
+continue;
+}
+        if (typeof value === "object" && value) {
+walk(value, depth + 1);
+}
       }
-      if (node.kind === "Listing" && node.data) walk(node.data, depth + 1);
+      if (node.kind === "Listing" && node.data) {
+walk(node.data, depth + 1);
+}
     };
     walk(data);
     return removed;
   }
   function mutateHTML(html, cfg, seen, sr) {
-    if (!html.includes("shreddit-post") && !html.includes("promoted")) return null;
+    if (!html.includes("shreddit-post") && !html.includes("promoted")) {
+return null;
+}
     const template = document.createElement("template");
     template.innerHTML = html;
     let removed = 0;
@@ -95,13 +115,17 @@ export function pageNetworkShim(configKey, seenKey) {
   const qualifies = (url, method) => {
     try {
       const u = new URL(url, location.href);
-      if (!/^(?:GET|HEAD)$/i.test(method || "GET") || u.origin !== location.origin) return null;
+      if (!/^(?:GET|HEAD)$/i.test(method || "GET") || u.origin !== location.origin) {
+return null;
+}
       if (
         !/(?:\/svc\/shreddit\/|\/search(?:\.json)?(?:\/|\?)|\/(?:hot|new|top|rising|controversial|comments)(?:\/|\.json)|\.json(?:\?|$))/i.test(
           u.pathname + u.search,
         )
       )
-        return null;
+        {
+return null;
+}
       return u;
     } catch {
       return null;
@@ -113,16 +137,22 @@ export function pageNetworkShim(configKey, seenKey) {
     const method = init?.method || request?.method || "GET";
     const response = await Reflect.apply(originalFetch, this, arguments);
     const u = qualifies(url, method);
-    if (!u || !response.ok || response.type === "opaque" || response.bodyUsed) return response;
+    if (!u || !response.ok || response.type === "opaque" || response.bodyUsed) {
+return response;
+}
     const cfg = load(configKey, {});
-    if (!cfg.removeAds && !(cfg.hideSeen && cfg.networkFilter)) return response;
+    if (!cfg.removeAds && !(cfg.hideSeen && cfg.networkFilter)) {
+return response;
+}
     const seen = load(seenKey, {});
     const sr = u.pathname.match(/\/r\/([^/]+)/)?.[1] || u.searchParams.get("name") || "";
     const type = response.headers.get("content-type") || "";
     try {
       if (/json/i.test(type)) {
         const data = await response.clone().json();
-        if (!mutateJSON(data, cfg, seen, sr)) return response;
+        if (!mutateJSON(data, cfg, seen, sr)) {
+return response;
+}
         return new Response(JSON.stringify(data), {
           status: response.status,
           statusText: response.statusText,
@@ -132,7 +162,9 @@ export function pageNetworkShim(configKey, seenKey) {
       if (/html/i.test(type) && /\/svc\/shreddit\//.test(u.pathname)) {
         const html = await response.clone().text();
         const mutated = mutateHTML(html, cfg, seen, sr);
-        if (mutated == null) return response;
+        if (mutated == null) {
+return response;
+}
         return new Response(mutated, {
           status: response.status,
           statusText: response.statusText,
@@ -156,7 +188,8 @@ export function pageNetworkShim(configKey, seenKey) {
     const xhr = this;
     const u = qualifies(xhr.__gwsURL, xhr.__gwsMethod);
     if (u)
-      xhr.addEventListener(
+      {
+xhr.addEventListener(
         "readystatechange",
         () => {
           if (
@@ -165,14 +198,20 @@ export function pageNetworkShim(configKey, seenKey) {
             xhr.status < 200 ||
             xhr.status >= 300
           )
-            return;
+            {
+return;
+}
           try {
             const cfg = load(configKey, {});
             const body = xhr.responseText;
-            if (!body || !/json/i.test(xhr.getResponseHeader("content-type") || "")) return;
+            if (!body || !/json/i.test(xhr.getResponseHeader("content-type") || "")) {
+return;
+}
             const data = JSON.parse(body);
             const sr = u.pathname.match(/\/r\/([^/]+)/)?.[1] || "";
-            if (!mutateJSON(data, cfg, load(seenKey, {}), sr)) return;
+            if (!mutateJSON(data, cfg, load(seenKey, {}), sr)) {
+return;
+}
             const rewritten = JSON.stringify(data);
             Object.defineProperty(xhr, "responseText", { configurable: true, get: () => rewritten });
             Object.defineProperty(xhr, "response", { configurable: true, get: () => rewritten });
@@ -182,6 +221,7 @@ export function pageNetworkShim(configKey, seenKey) {
         },
         true,
       );
+}
     return Reflect.apply(send, this, arguments);
   };
   const wrappedFetch = window.fetch;
@@ -191,9 +231,15 @@ export function pageNetworkShim(configKey, seenKey) {
     "gws:network-dispose",
     () => {
       // Do not overwrite another extension's wrappers installed after ours.
-      if (window.fetch === wrappedFetch) window.fetch = originalFetch;
-      if (XMLHttpRequest.prototype.open === wrappedOpen) XMLHttpRequest.prototype.open = open;
-      if (XMLHttpRequest.prototype.send === wrappedSend) XMLHttpRequest.prototype.send = send;
+      if (window.fetch === wrappedFetch) {
+window.fetch = originalFetch;
+}
+      if (XMLHttpRequest.prototype.open === wrappedOpen) {
+XMLHttpRequest.prototype.open = open;
+}
+      if (XMLHttpRequest.prototype.send === wrappedSend) {
+XMLHttpRequest.prototype.send = send;
+}
       delete window.__gwsNetworkInstalled;
     },
     { once: true },
@@ -219,10 +265,16 @@ export function installNetwork(configKey, seenKey) {
         script.remove();
         URL.revokeObjectURL(url);
       };
-    } else script.textContent = source;
+    } else {
+script.textContent = source;
+}
     document.documentElement.append(script);
-    if (!url) script.remove();
-    else pending = script;
+    if (!url) {
+script.remove();
+}
+    else {
+pending = script;
+}
   };
   try {
     inject();
@@ -242,7 +294,9 @@ export function installNetwork(configKey, seenKey) {
   return () => {
     clearTimeout(timer);
     pending?.remove();
-    if (blobURL) URL.revokeObjectURL(blobURL);
+    if (blobURL) {
+URL.revokeObjectURL(blobURL);
+}
     document.removeEventListener("gws:network-ready", markReady);
     document.dispatchEvent(new CustomEvent("gws:network-dispose"));
   };

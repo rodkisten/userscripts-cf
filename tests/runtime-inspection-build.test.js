@@ -45,6 +45,32 @@ describe("inspectable build artifacts", () => {
         ).toBe(true);
       }
     }
+    expect(editors.bundles["dom-inspector:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["github:sandbox"].families.codemirror.renderedBytes).toBe(0);
+    expect(editors.bundles["github:sandbox"].families.lezer.renderedBytes).toBe(0);
+    expect(editors.bundles["github:sandbox"].families.acorn.renderedBytes).toBe(0);
+    expect(editors.bundles["page-repl:sandbox"].families.codemirror.renderedBytes).toBeGreaterThan(0);
+    expect(editors.bundles["page-repl:sandbox"].families.acorn.renderedBytes).toBe(0);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/eslint-scope/"),
+      ),
+    ).toBe(false);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/estraverse/"),
+      ),
+    ).toBe(false);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/astring/"),
+      ),
+    ).toBe(false);
+    expect(
+      audit.bundles["page-repl:sandbox"].modules.some(
+        (item) => item.renderedBytes > 0 && item.id.includes("node_modules/acorn/"),
+      ),
+    ).toBe(false);
     for (const script of manifest.scripts) {
       const target = audit.targets[script.id];
       expect(target).toBeDefined();
@@ -60,7 +86,7 @@ describe("inspectable build artifacts", () => {
       // A disabled feature must contribute zero rendered bytes to the output.
       const optionalModules = {
         __ROD_FEATURE_MENU__: "src/runtime/modular/features/menu.ts",
-        __ROD_FEATURE_TOASTER__: "src/runtime/modular/features/toaster.ts",
+        __ROD_FEATURE_TOASTER__: "src/runtime/modular/features/toaster.tsx",
         __ROD_FEATURE_CLIPBOARD__: "src/runtime/modular/features/clipboard.ts",
         __ROD_FEATURE_GM__: "src/runtime/modular/features/gm.ts",
         __ROD_FEATURE_DOM__: "src/runtime/modular/features/dom.ts",
@@ -80,6 +106,154 @@ describe("inspectable build artifacts", () => {
           );
         }
       }
+      for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_MENU__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedRuntimeMenu = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.endsWith("src/runtime/modular/features/menu.ts") ||
+              item.id.endsWith("src/runtime/modular/features/menu-view.tsx")),
+        );
+        expect(
+          retainedRuntimeMenu,
+          `Disabled __ROD_FEATURE_MENU__ retained runtime menu modules in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_TOASTER__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedSonner = report.modules.filter(
+          (item) => item.id.includes("node_modules/sonner/") && item.renderedBytes > 0,
+        );
+        expect(
+          retainedSonner,
+          `Disabled __ROD_FEATURE_TOASTER__ retained Sonner in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_QUERY__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedQueryCore = report.modules.filter(
+          (item) => item.id.includes("node_modules/@tanstack/query-core/") && item.renderedBytes > 0,
+        );
+        expect(
+          retainedQueryCore,
+          `Disabled __ROD_FEATURE_QUERY__ retained @tanstack/query-core in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      for (const runtime of target.output.runtimes) {
+        if (runtime.featureDefines.__ROD_FEATURE_STORAGE__ !== false) continue;
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const retainedStorage = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.endsWith("src/runtime/modular/features/storage.ts") ||
+              item.id.endsWith("src/runtime/vendor/storage.ts")),
+        );
+        expect(
+          retainedStorage,
+          `Disabled __ROD_FEATURE_STORAGE__ retained RodStorage in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      if (script.id === "page-repl") {
+        expect(target.dynamic).toBe(false);
+        expect(target.dynamicFiles).toEqual([]);
+        expect(target.dynamicImports).toBe(true);
+        expect(target.dynamicImportFiles).toContain("src/userscripts/page-repl/strategies.js");
+        expect(target.treeShaken).toBe(true);
+
+        for (const runtime of target.output.runtimes) {
+          expect(runtime.featureDefines.__ROD_FEATURE_REACT__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_STORAGE__).toBe(true);
+          expect(runtime.featureDefines.__ROD_FEATURE_UI__).toBe(true);
+
+          expect(runtime.featureDefines.__ROD_FEATURE_QUERY__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_TOASTER__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_CLIPBOARD__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_GM__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_DOM__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_HTTP__).toBe(false);
+
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const leakedFullRuntime = report.modules.filter(
+            (item) =>
+              item.renderedBytes > 0 &&
+              (item.id.includes("node_modules/@tanstack/query-core/") ||
+                item.id.includes("node_modules/sonner/") ||
+                item.id.endsWith("src/runtime/modular/features/clipboard.ts") ||
+                item.id.endsWith("src/runtime/modular/features/gm.ts") ||
+                item.id.endsWith("src/runtime/modular/features/dom.ts") ||
+                item.id.endsWith("src/runtime/modular/features/http.ts")),
+          );
+          expect(
+            leakedFullRuntime,
+            `page-repl retained full-runtime-only dependencies in ${runtime.world}`,
+          ).toEqual([]);
+        }
+      }
+
+      if (script.id === "tiktok-cleaner" || script.id === "example-site") {
+        for (const runtime of target.output.runtimes) {
+          expect(runtime.featureDefines.__ROD_FEATURE_MENU__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_TOASTER__).toBe(false);
+          expect(runtime.featureDefines.__ROD_FEATURE_CSS__).toBe(false);
+
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const leakedMenuOrToastStack = report.modules.filter(
+            (item) =>
+              item.renderedBytes > 0 &&
+              (item.id.endsWith("src/runtime/modular/features/menu-view.tsx") ||
+                item.id.includes("node_modules/@radix-ui/react-select/") ||
+                item.id.includes("node_modules/@radix-ui/react-menu/") ||
+                item.id.includes("node_modules/@floating-ui/") ||
+                item.id.includes("node_modules/sonner/") ||
+                item.id === "src/styles/core.css?inline"),
+          );
+          expect(
+            leakedMenuOrToastStack,
+            `Lightweight bundle retained menu/toast stack in ${script.id}:${runtime.world}`,
+          ).toEqual([]);
+        }
+      }
+
+      for (const runtime of target.output.runtimes) {
+        const report = audit.bundles[script.id + ":" + runtime.world];
+        const expectsReact = runtime.featureDefines.__ROD_FEATURE_REACT__ !== false;
+        expect(runtime.reactRootAudit?.roots).toBe(expectsReact ? 1 : 0);
+        expect(runtime.reactRootAudit?.owner).toBe(expectsReact ? "src/core/runtime-react.tsx" : null);
+
+        if (expectsReact) continue;
+
+        const retainedReactRuntime = report.modules.filter(
+          (item) =>
+            item.renderedBytes > 0 &&
+            (item.id.includes("node_modules/react-dom/") || item.id.endsWith("src/core/runtime-react.tsx")),
+        );
+        expect(
+          retainedReactRuntime,
+          `Vanilla runtime retained React DOM in ${script.id}:${runtime.world}`,
+        ).toEqual([]);
+      }
+
+      if (script.id === "dom-inspector") {
+        for (const runtime of target.output.runtimes) {
+          const report = audit.bundles[script.id + ":" + runtime.world];
+          const retainedJavaScriptLanguage = report.modules.filter(
+            (item) => item.renderedBytes > 0 && item.id.includes("node_modules/@codemirror/lang-javascript/"),
+          );
+          expect(
+            retainedJavaScriptLanguage,
+            `DOM Inspector retained JavaScript language package in ${runtime.world}`,
+          ).toEqual([]);
+        }
+      }
+
       for (const runtime of target.output.runtimes) {
         expect(runtime.includedModuleCount).toBeGreaterThan(0);
         expect(runtime.topModules.length).toBeGreaterThan(0);

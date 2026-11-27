@@ -29,6 +29,92 @@ test("REPL preserves local shadowing, hoisted functions and loop declarations", 
   assert.throws(() => compile("const ctx = 1"), /reservado/);
 });
 
+test("REPL scope resolver keeps local bindings local while persisting globals", async () => {
+  const first = await evaluate("const saved = 5; var outer = 2; ({ saved, outer })");
+  assert.deepEqual(first.value, { saved: 5, outer: 2 });
+
+  const second = await evaluate(
+    "(() => { const saved = 9; { let outer = 7; if (outer !== 7) throw Error('shadow'); } return saved; })() + saved + outer",
+    first.ctx,
+    ["saved", "outer"],
+  );
+  assert.equal(second.value, 16);
+
+  const blockVar = await evaluate("{ var persisted = 4; } persisted");
+  assert.equal(blockVar.value, 4);
+  assert.equal(blockVar.ctx.vars.persisted, 4);
+
+  const blockLet = await evaluate("{ let privateValue = 7; } typeof privateValue");
+  assert.equal(blockLet.value, "undefined");
+  assert.equal("privateValue" in blockLet.ctx.vars, false);
+});
+
+test("REPL scope resolver preserves implicit arguments and class-local names", async () => {
+  const ctx = { vars: { arguments: 100 } };
+  const args = await evaluate("function count() { return arguments.length; } count(1, 2, 3)", ctx, [
+    "arguments",
+  ]);
+  assert.equal(args.value, 3);
+
+  const klass = await evaluate(
+    "class Box { static self() { return Box; } value() { return 4; } } Box.self() === Box && new Box().value()",
+  );
+  assert.equal(klass.value, 4);
+});
+
+test("REPL range emitter preserves source syntax while rewriting persistent bindings", async () => {
+  const result = await evaluate(
+    "const key = 'x'; const obj = {key, [key]: key, method() { return key; }}; `value:${obj.method()}:${obj.x}`",
+  );
+  assert.equal(result.value, "value:x:x");
+
+  const sequence = await evaluate("let a = 1, b = 2; for (var n of [3, 4]) a += n; a + b + n");
+  assert.equal(sequence.value, 14);
+
+  const previous = await evaluate("const a = 3; ({a})");
+  const reused = await evaluate("({a, label: a})", previous.ctx, ["a"]);
+  assert.deepEqual(reused.value, { a: 3, label: 3 });
+});
+
+test("REPL range emitter preserves function hoisting and class identity", async () => {
+  const fn = await evaluate("const n = twice(4); function twice(value) { return value * 2; } n");
+  assert.equal(fn.value, 8);
+
+  const klass = await evaluate(
+    "class Box { static self() { return Box; } constructor(value) { this.value = value; } } new Box(5).value",
+  );
+  assert.equal(klass.value, 5);
+});
+
+test("Lezer compiler preserves persistent bindings through native lexical scope", async () => {
+  const first = await evaluate("let n = 2; function inc(step = 1) { n += step; return n; } inc()");
+  assert.equal(first.value, 3);
+
+  const second = await evaluate("(() => { let n = 10; return n; })() + inc(2) + n", first.ctx, ["n", "inc"]);
+  assert.equal(second.value, 20);
+  assert.equal(second.ctx.vars.n, 5);
+});
+
+test("Lezer compiler handles destructuring, bare var and for bindings", async () => {
+  const destructured = await evaluate(
+    "const {a, nested: {b}, c = 4} = {a: 1, nested: {b: 2}}; const [x, ...rest] = [3, 4, 5]; ({a, b, c, x, rest})",
+  );
+  assert.deepEqual(destructured.value, { a: 1, b: 2, c: 4, x: 3, rest: [4, 5] });
+
+  const bare = await evaluate("var empty; empty");
+  assert.equal(bare.value, undefined);
+  assert.equal(Object.hasOwn(bare.ctx.vars, "empty"), true);
+
+  const loop = await evaluate("let total = 0; for (var item of [1, 2, 3]) total += item; total + item");
+  assert.equal(loop.value, 9);
+});
+
+test("Lezer compiler keeps reserved names out of the persistent with scope", async () => {
+  const result = await evaluate("const value = typeof console.log; value");
+  assert.equal(result.value, "function");
+  assert.throws(() => compile("const console = 1"), /reservado/);
+});
+
 test("runner receives values, console and context evidence, without duplicating transports", async () => {
   const host = new Window({
     url: "https://example.com",

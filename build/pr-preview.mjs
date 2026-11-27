@@ -18,9 +18,18 @@ if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.h
 const prefix = process.env.USERSCRIPTS_PREVIEW_ROOT === "true" ? "" : `/${number}`;
 const output = path.join(dist, "pr-preview", String(number));
 const manifest = JSON.parse(await fs.readFile(path.join(dist, "manifest.json"), "utf8"));
-const shortSha = (process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "").slice(0, 8);
-if (!/^[0-9a-f]{8}$/i.test(shortSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a commit SHA");
-const previewVersion = `${manifest.version}-preview.${number}.${shortSha}`;
+const sourceSha = process.env.PR_HEAD_SHA || process.env.GITHUB_SHA || "";
+if (!/^[0-9a-f]{40}$/i.test(sourceSha)) throw Error("PR_HEAD_SHA or GITHUB_SHA must be a full commit SHA");
+const shortSha = sourceSha.slice(0, 8);
+// Timestamp is numeric so a newer preview never sorts below an older commit hash.
+const publishedAt = new Date(process.env.PREVIEW_BUILD_TIMESTAMP || Date.now());
+if (Number.isNaN(publishedAt.getTime())) throw Error("Invalid PREVIEW_BUILD_TIMESTAMP");
+const timestamp = publishedAt
+  .toISOString()
+  .replace(/[-:T.Z]/g, "")
+  .slice(0, 14);
+const previewVersion = `${manifest.version}.${timestamp}`;
+const releaseLabel = `v${previewVersion} · ${shortSha} · ${publishedAt.toISOString()}`;
 const escapeXML = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -33,9 +42,14 @@ const catalog = {
   channel: "pr-preview",
   pr: number,
   version: previewVersion,
+  commit: shortSha,
+  sourceSha,
+  publishedAt: publishedAt.toISOString(),
+  releaseLabel,
   baseURL: origin + prefix,
   scripts: [],
 };
+const definitionById = new Map(definitions.map((item) => [item.id, item]));
 for (const item of manifest.scripts) {
   const file = `${item.id}.user.js`;
   const metaFile = `${item.id}.meta.js`;
@@ -49,18 +63,52 @@ for (const item of manifest.scripts) {
     if (line.test(metadata)) metadata = metadata.replace(line, `// @${key.padEnd(12)} ${value}`);
     else metadata = metadata.replace(marker, `// @${key.padEnd(12)} ${value}\n${marker}`);
   };
-  replace("name", `#${number} ${item.name}`);
+  replace("name", `#${number} ${item.name} · ${releaseLabel}`);
   replace("version", previewVersion);
   replace("namespace", `${origin}/pr/${number}/${item.id}`);
   replace("icon", `${origin}${prefix}/icons/pr.svg`);
   replace("updateURL", `${origin}${prefix}/${metaFile}`);
   replace("downloadURL", `${origin}${prefix}/${file}`);
-  const source = metadata + original.slice(end + marker.length);
+  // Preview installers announce their presence without booting the module on this site.
+  metadata = metadata.replace(marker, "// @match        https://userscripts.preview.migos.club/*\n" + marker);
+  const probe = [
+    `if (location.hostname === "userscripts.preview.migos.club" && location.pathname.startsWith("/${number}")) {`,
+    `const report = () => document.dispatchEvent(new CustomEvent("userscripts-cf:installed", { detail: ${JSON.stringify({ id: item.id, version: previewVersion, commit: shortSha })} }));`,
+    `document.addEventListener("userscripts-cf:probe", report);`,
+    `report();`,
+    `} else {`,
+    (() => {
+      let body = original.slice(end + marker.length);
+      if (item.id === "standalone") {
+        const inventory = [
+          "\n// ==RodBundle==",
+          `// @rod-commit   ${shortSha}`,
+          ...manifest.scripts
+            .filter((script) => !["standalone", "unified"].includes(script.id))
+            .map((script) => `// @rod-includes ${script.id}@${previewVersion}`),
+          "// ==/RodBundle==",
+        ].join("\n");
+        body = body.replace(/\n\/\/ ==RodBundle==[\s\S]*?\/\/ ==\/RodBundle==/, inventory);
+      }
+      return body;
+    })(),
+    `}`,
+  ].join("\n");
+  const source = metadata + "\n" + probe;
   await fs.writeFile(path.join(output, file), source);
   await fs.writeFile(path.join(output, metaFile), metadata + "\n");
   catalog.scripts.push({
     id: item.id,
-    name: `#${number} ${item.name}`,
+    tags:
+      definitionById.get(item.id)?.tags ??
+      (item.id === "standalone" || item.id === "unified" ? ["bundle"] : ["other"]),
+    group:
+      item.id === "standalone" || item.id === "unified"
+        ? "Bundles"
+        : (definitionById.get(item.id)?.tags?.[0] ?? "Other"),
+    name: `#${number} ${item.name} · ${releaseLabel}`,
+    commit: shortSha,
+    publishedAt: publishedAt.toISOString(),
     file,
     metaFile,
     version: previewVersion,
@@ -103,13 +151,19 @@ if (missingIds.length) {
       fs.writeFile(path.join(output, item.file), installer),
       fs.writeFile(path.join(output, item.metaFile), metadata),
     ]);
-    catalog.scripts.push(item);
+    const definition = definitionById.get(id);
+    catalog.scripts.push({
+      ...item,
+      tags: definition?.tags ?? (id === "standalone" || id === "unified" ? ["bundle"] : ["other"]),
+      group: id === "standalone" || id === "unified" ? "Bundles" : (definition?.tags?.[0] ?? "Other"),
+    });
   }
   console.log("Preserved " + missingIds.length + " unchanged installers from previous preview");
 }
 catalog.scripts.sort((a, b) => [...expectedIds].indexOf(a.id) - [...expectedIds].indexOf(b.id));
 await fs.writeFile(path.join(output, "manifest.json"), JSON.stringify(catalog, null, 2) + "\n");
 const data = JSON.stringify(catalog).replace(/</g, "\\u003c");
-const html = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>#${number} · Userscripts Preview</title><style>body{font:15px system-ui;background:#09090b;color:#fafafa;max-width:780px;margin:48px auto;padding:0 20px}h1{font-size:28px}p{color:#a1a1aa}article{border:1px solid #27272a;border-radius:12px;padding:16px;margin:12px 0;display:flex;justify-content:space-between;gap:16px;align-items:center}a{color:#d4d4d8}article a{background:#fafafa;color:#09090b;padding:10px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}@media(max-width:480px){article{align-items:flex-start;flex-direction:column}}</style><h1>▲ Preview #${number}</h1><p>Instaladores isolados deste pull request. Não substituem a versão estável.</p><main id="scripts"></main><script>const catalog=${data};document.getElementById("scripts").replaceChildren(...catalog.scripts.map(s=>{const row=document.createElement("article");const title=document.createElement("strong");title.textContent=s.name;const link=document.createElement("a");link.textContent="Instalar ↗";link.href="./"+encodeURIComponent(s.file);row.append(title,link);return row;}));</script></html>`;
+const template = await fs.readFile(path.join(root, "build", "pr-preview-page.html"), "utf8");
+const html = template.replaceAll("__PREVIEW_DATA__", data).replaceAll("__PR_NUMBER__", String(number));
 await fs.writeFile(path.join(output, "index.html"), html);
 console.log(`Generated ${catalog.scripts.length} installers for PR #${number} in ${output}`);

@@ -4,116 +4,68 @@ import type { ScriptContext } from "../../core/runtime.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { normalizeColor, renameVariable, scanColors, scanVariables } from "./colors.js";
 import css from "./style.css?inline";
-import { Decoration, EditorView, ViewPlugin, WidgetType } from "@codemirror/view";
-import { StateEffect } from "@codemirror/state";
+import { todoIssueLink } from "../github/editor/todo-issue.js";
 
 const CODE_LINE_SELECTOR =
   '[data-testid="code-viewer"] .react-code-text, .react-code-line-contents, td.blob-code-inner, .react-code-lines .react-code-text';
 const VIEW_SELECTOR = '[data-testid="code-viewer"], .react-code-lines, table.highlight';
 
-// CodeMirror keeps its document in EditorState, not in an underlying textarea.
-// Some hosts expose their view through cmView; never modify the editor's DOM text.
-type CMView = Pick<EditorView, "state" | "dispatch"> & { dom: HTMLElement };
-type ViewCarrier = HTMLElement & {
-  cmView?: { view?: CMView } | CMView;
-  view?: CMView;
+// GitHub may expose its CodeMirror instance through DOM-attached carriers.
+// Treat it as a host-owned opaque object: bundling another CodeMirror copy only
+// to call into the host is both expensive and potentially incompatible.
+type HostCodeMirrorView = {
+  state: {
+    doc: {
+      readonly length: number;
+      toString(): string;
+    };
+  };
+  dispatch(spec: { changes: { from: number; to: number; insert: string } }): void;
 };
-function isCMView(value: unknown): value is CMView {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<CMView>;
+
+type ViewCarrier = HTMLElement & {
+  cmView?: HostCodeMirrorView | { view?: HostCodeMirrorView; rootView?: { view?: HostCodeMirrorView } };
+  view?: HostCodeMirrorView;
+};
+
+function isHostCodeMirrorView(value: unknown): value is HostCodeMirrorView {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Partial<HostCodeMirrorView>;
   return !!candidate.state?.doc && typeof candidate.dispatch === "function";
 }
-function findCodeMirror(): CMView | null {
-  for (const element of document.querySelectorAll<HTMLElement>(".cm-editor")) {
-    const node = (element.querySelector(".cm-content") ?? element) as ViewCarrier;
-    const attached = node.cmView;
-    const root = attached && "rootView" in attached ? (attached as { rootView?: { view?: CMView } }).rootView?.view : undefined;
-    const view = root ?? (attached && "view" in attached ? attached.view : attached);
-    if (isCMView(view)) return view;
-    if (isCMView(node.view)) return node.view;
-    const wrapper = element as ViewCarrier;
-    if (isCMView(wrapper.view)) return wrapper.view;
-    // Only supported if the host exposes a compatible CodeMirror view.
-    const finder = EditorView;
-    try {
-      const discovered = finder.findFromDOM?.(element);
-      if (isCMView(discovered)) return discovered;
-    } catch {
-      // Different CodeMirror module copies may not share internal view metadata.
+
+function viewFromCarrier(element: HTMLElement): HostCodeMirrorView | null {
+  const carrier = element as ViewCarrier;
+  const attached = carrier.cmView;
+  if (isHostCodeMirrorView(attached)) {
+    return attached;
+  }
+  if (attached && "rootView" in attached && isHostCodeMirrorView(attached.rootView?.view)) {
+    return attached.rootView!.view!;
+  }
+  if (attached && "view" in attached && isHostCodeMirrorView(attached.view)) {
+    return attached.view;
+  }
+  return isHostCodeMirrorView(carrier.view) ? carrier.view : null;
+}
+
+export function findCodeMirror(): HostCodeMirrorView | null {
+  for (const editor of document.querySelectorAll<HTMLElement>(".cm-editor")) {
+    const content = editor.querySelector<HTMLElement>(".cm-content");
+    const candidates = content ? [content, editor] : [editor];
+    for (const candidate of candidates) {
+      const view = viewFromCarrier(candidate);
+      if (view) {
+        return view;
+      }
     }
   }
   return null;
 }
-const installedViews = new WeakSet<CMView>();
 
-class ColorWidget extends WidgetType {
-  constructor(readonly value: string, readonly from: number) { super(); }
-  eq(other: ColorWidget) { return this.value === other.value && this.from === other.from; }
-  toDOM(view: EditorView): HTMLElement {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "rcs-cm-swatch";
-    button.title = `Edit ${this.value}`;
-    button.setAttribute("aria-label", `Edit color ${this.value}`);
-    button.style.backgroundColor = this.value;
-    button.addEventListener("mousedown", event => event.preventDefault());
-    button.addEventListener("click", event => {
-      event.preventDefault();
-      const input = document.createElement("input");
-      input.type = "color";
-      input.value = normalizeColor(this.value).startsWith("#")
-        ? normalizeColor(this.value).slice(0, 7) : "#000000";
-      input.style.position = "fixed";
-      input.style.opacity = "0";
-      input.style.pointerEvents = "none";
-      document.body.append(input);
-      let currentValue = this.value;
-      input.addEventListener("input", () => {
-        const current = view.state.doc.sliceString(this.from, this.from + currentValue.length);
-        if (current !== currentValue) return;
-        view.dispatch({ changes: { from: this.from, to: this.from + currentValue.length, insert: input.value } });
-        currentValue = input.value;
-      });
-      input.addEventListener("change", () => input.remove(), { once: true });
-      input.addEventListener("blur", () => queueMicrotask(() => input.remove()), { once: true });
-      input.click();
-    });
-    return button;
-  }
-}
-const colorPlugin = ViewPlugin.fromClass(class {
-  decorations;
-  constructor(view: EditorView) { this.decorations = this.build(view); }
-  update(update: import("@codemirror/view").ViewUpdate) {
-    if (update.docChanged || update.viewportChanged) this.decorations = this.build(update.view);
-  }
-  build(view: EditorView) {
-    const ranges: { from: number; decoration: ReturnType<typeof Decoration.widget> }[] = [];
-    for (const { from, to } of view.visibleRanges) {
-      const source = view.state.doc.sliceString(from, to);
-      for (const match of scanColors(source)) {
-        const offset = from + match.from;
-        ranges.push({ from: offset, decoration: Decoration.widget({
-          widget: new ColorWidget(match.value, offset), side: -1,
-        }) });
-      }
-    }
-    return Decoration.set(ranges.sort((a,b) => a.from - b.from).map(item => item.decoration.range(item.from)));
-  }
-}, { decorations: plugin => plugin.decorations });
-
-function installColorPlugin(view: CMView): boolean {
-  if (installedViews.has(view)) return true;
-  try {
-    view.dispatch({ effects: StateEffect.appendConfig.of(colorPlugin) });
-    installedViews.add(view);
-    return true;
-  } catch (error) {
-    console.warn("[Color Studio] CodeMirror extension incompatible with host state modules", error);
-    return false;
-  }
-}
-function replaceCodeMirrorDocument(view: CMView, next: string): void {
+export function replaceCodeMirrorDocument(view: HostCodeMirrorView, next: string): void {
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: next },
   });
@@ -140,10 +92,14 @@ function ColorStudio({
   const selectedDefs = symbols.declarations.filter((r) => r.name === selected);
   function changeColor(from: string, to: string) {
     const next = source.replaceAll(from, to);
-    if (applySource(next)) setSource(next);
+    if (applySource(next)) {
+      setSource(next);
+    }
   }
   function changeName() {
-    if (!selected || !rename || selectedDefs.length !== 1) return;
+    if (!selected || !rename || selectedDefs.length !== 1) {
+      return;
+    }
     const next = renameVariable(source, selected, rename);
     if (
       window.confirm(
@@ -158,12 +114,20 @@ function ColorStudio({
   }
   function convert(value: string): string {
     const rgb = normalizeColor(value);
-    if (!rgb.startsWith("rgb")) return value;
-    if (format === "rgb") return rgb;
-    if (format === "hex") return value.startsWith("#") ? value : normalizeColor(value);
+    if (!rgb.startsWith("rgb")) {
+      return value;
+    }
+    if (format === "rgb") {
+      return rgb;
+    }
+    if (format === "hex") {
+      return value.startsWith("#") ? value : normalizeColor(value);
+    }
     if (format === "hsl") {
       const m = rgb.match(/[\d.]+/g)?.map(Number);
-      if (!m || m.length < 3) return value;
+      if (!m || m.length < 3) {
+        return value;
+      }
       const [r, g, b] = m.slice(0, 3).map((v) => v / 255),
         max = Math.max(r, g, b),
         min = Math.min(r, g, b),
@@ -184,7 +148,9 @@ function ColorStudio({
             h = (r - g) / delta + 4;
         }
         h *= 60;
-        if (h < 0) h += 360;
+        if (h < 0) {
+          h += 360;
+        }
       }
       return `hsl(${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
     }
@@ -194,7 +160,9 @@ function ColorStudio({
     <Dialog.Root
       open
       onOpenChange={(open) => {
-        if (!open) close();
+        if (!open) {
+          close();
+        }
       }}
     >
       <Dialog.Portal>
@@ -301,6 +269,7 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
   const getSource = () =>
     getCMView()?.state.doc.toString() ??
     getEditor()?.value ??
+    document.querySelector<HTMLElement>(".cm-content")?.textContent ??
     ([...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)]
       .map((line) => line.textContent ?? "")
       .join("\n") ||
@@ -309,7 +278,6 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
   const applySource = (next: string): boolean => {
     const cmView = getCMView();
     if (cmView) {
-      installColorPlugin(cmView);
       replaceCodeMirrorDocument(cmView, next);
       setSourceVersion((version) => version + 1);
       return true;
@@ -331,7 +299,6 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     const refresh = () => {
       const next = [...document.querySelectorAll<HTMLElement>(CODE_LINE_SELECTOR)];
       const view = getCMView();
-      if (view) installColorPlugin(view);
       setAvailable(Boolean(view || getEditor() || getViewer() || document.querySelector(".cm-editor")));
       setLines((previous) =>
         previous.length === next.length && previous.every((line, index) => line === next[index])
@@ -343,7 +310,9 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     const observer = ctx.observe(
       document.body,
       () => {
-        if (scheduled) return;
+        if (scheduled) {
+          return;
+        }
         scheduled = true;
         queueMicrotask(() => {
           scheduled = false;
@@ -354,7 +323,9 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
     );
     return () => observer.disconnect();
   }, [ctx]);
-  if (!available) return null;
+  if (!available) {
+    return null;
+  }
   return (
     <>
       <button
@@ -367,18 +338,30 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
         🎨
       </button>
       {lines.flatMap((line, lineIndex) => {
-        const colors = scanColors(
-          [...line.childNodes]
-            .filter(
-              (node) => !(node instanceof HTMLElement && node.classList.contains("rcs-inline-swatches")),
-            )
-            .map((node) => node.textContent ?? "")
-            .join(""),
-        );
-        return colors.length
+        const source = [...line.childNodes]
+          .filter((node) => !(node instanceof HTMLElement && node.classList.contains("rcs-inline-swatches")))
+          .map((node) => node.textContent ?? "")
+          .join("");
+        const colors = scanColors(source);
+        const lineId =
+          line.closest('[id^="LC"], [id^="L"]')?.id.replace(/^LC/, "L") ||
+          line.closest("tr")?.querySelector('[id^="L"]')?.id;
+        const issue = todoIssueLink(new URL(location.href), source, lineId);
+        return colors.length || issue
           ? [
               createPortal(
-                <span className="rcs-inline-swatches" aria-label="Cores da linha" key={lineIndex}>
+                <span className="rcs-inline-swatches" aria-label="Ações da linha" key={lineIndex}>
+                  {issue && (
+                    <a
+                      className="rcs-todo-issue"
+                      href={issue.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {issue.searchParams.get("title")?.split(":")[0]} · Criar issue
+                    </a>
+                  )}
                   {colors.map((color) => (
                     <button
                       key={color.from}
@@ -415,7 +398,9 @@ function GitHubColorStudioApp({ ctx }: { ctx: ScriptContext }) {
 
 export default {
   init(ctx: ScriptContext): void {
-    if (!ctx.ui) return;
+    if (!ctx.ui) {
+      return;
+    }
     ctx.ui.pageStyle(css, { id: "rod-github-color-studio-style" });
     const dispose = ctx.ui.mountReact(<GitHubColorStudioApp ctx={ctx} />);
     ctx.onDispose(dispose);

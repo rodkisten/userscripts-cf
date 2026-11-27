@@ -1,3 +1,11 @@
+export type ThemeToken = "background" | "foreground" | "primary" | "primary-foreground" | "secondary" | "secondary-foreground" | "muted" | "muted-foreground" | "accent" | "accent-foreground" | "border" | "input" | "ring" | "destructive" | "destructive-foreground" | "success" | "success-foreground" | "warning" | "warning-foreground" | "info" | "info-foreground" | "overlay-shadow" | "radius";
+export interface MenuTheme {
+  hue?: number;
+  chroma?: number;
+  mode?: "light" | "dark" | "system";
+  tokens?: Partial<Record<ThemeToken, string>>;
+}
+
 export type SurfaceType = "bottom-sheet" | "modal" | "drawer" | "popover";
 
 export type Position = "top" | "bottom" | "left" | "right" | "center";
@@ -44,6 +52,7 @@ export interface ActionDefinition {
 }
 
 export interface MenuSchema {
+  theme?: MenuTheme;
   id: string;
   title?: string;
   subtitle?: string;

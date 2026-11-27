@@ -51,7 +51,9 @@ export function materialIcon(name: string, folder = false): string {
     ? "folder:" + (folders[lower] || "default")
     : names[lower] || extensions[lower.split(".").pop() || ""] || "default";
   const cached = iconCache.get(key);
-  if (cached) return cached;
+  if (cached) {
+    return cached;
+  }
   const colors: Record<string, string> = {
     ts: "#3178c6",
     tsx: "#38bdf8",
@@ -91,9 +93,21 @@ export function decorateGitHubFiles(ctx: {
   const marked = new WeakSet<Element>();
   const scan = () => {
     for (const link of document.querySelectorAll<HTMLAnchorElement>('a[href*="/blob/"],a[href*="/tree/"]')) {
-      if (marked.has(link) || link.closest("[data-ghft-dashboard]")) continue;
+      if (marked.has(link) || link.closest("[data-ghft-dashboard]")) {
+        continue;
+      }
       const text = link.textContent?.trim();
-      if (!text || text.length > 100 || link.querySelector("[data-ghft-material-icon]")) continue;
+      if (!text || text.length > 100 || link.querySelector("[data-ghft-material-icon]")) {
+        continue;
+      }
+      // GitHub already renders its own file/folder SVG in repository rows.
+      // Adding a second icon there made every entry look duplicated on mobile.
+      if (
+        link.querySelector("svg.octicon-file, svg.octicon-file-directory, svg.octicon-file-directory-fill")
+      ) {
+        marked.add(link);
+        continue;
+      }
       const folder = link.getAttribute("href")?.includes("/tree/") || false;
       const image = document.createElement("img");
       image.src = materialIcon(text, folder);

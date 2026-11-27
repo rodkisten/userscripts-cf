@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import ts from "typescript";
+import { parse } from "@babel/parser";
 import { analyzeRuntimeUsage } from "./runtime-usage.mjs";
 
 const extensions = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".json"];
@@ -50,16 +50,103 @@ async function resolveLocal(from, specifier) {
 }
 
 /**
- * Determina o ScriptKind do TypeScript com base na extensão do arquivo.
+ * Parse a source file with the same Babel parser already used by the build
+ * pipeline and collect every statically resolvable module edge.
+ *
+ * @param {string} source
  * @param {string} filename
- * @returns {ts.ScriptKind}
+ * @param {string} relPath
+ * @param {Set<string>} dynamicImportFiles Files that contain non-literal import() expressions
+ * @returns {Set<string>}
  */
-function getScriptKind(filename) {
-  if (/\.tsx$/i.test(filename)) return ts.ScriptKind.TSX;
-  if (/\.jsx$/i.test(filename)) return ts.ScriptKind.JSX;
-  if (/\.(ts|mts|cts)$/i.test(filename)) return ts.ScriptKind.TS;
-  if (/\.(js|mjs|cjs)$/i.test(filename)) return ts.ScriptKind.JS;
-  return ts.ScriptKind.TS;
+function collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles) {
+  const plugins = ["importAttributes", ["decorators", { decoratorsBeforeExport: true }]];
+  if (/\.(?:ts|mts|cts|tsx)$/i.test(filename)) plugins.unshift("typescript");
+  if (/\.(?:jsx|tsx)$/i.test(filename)) plugins.unshift("jsx");
+
+  const ast = parse(source, {
+    sourceType: "unambiguous",
+    plugins,
+    errorRecovery: false,
+  });
+
+  const specifiers = new Set();
+
+  for (const node of ast.program.body) {
+    if (
+      (node.type === "ImportDeclaration" ||
+        node.type === "ExportNamedDeclaration" ||
+        node.type === "ExportAllDeclaration") &&
+      node.source?.type === "StringLiteral"
+    ) {
+      specifiers.add(node.source.value);
+    }
+  }
+
+  walkBabelAst(ast.program, (node) => {
+    if (node.type === "ImportExpression") {
+      if (node.source?.type === "StringLiteral") {
+        specifiers.add(node.source.value);
+      } else if (node.source?.type === "TemplateLiteral" && node.source.expressions.length === 0) {
+        specifiers.add(node.source.quasis[0]?.value?.cooked ?? node.source.quasis[0]?.value?.raw ?? "");
+      } else {
+        dynamicImportFiles.add(relPath);
+      }
+      return;
+    }
+
+    if (node.type !== "CallExpression") return;
+
+    const argument = node.arguments?.[0];
+
+    if (node.callee?.type === "Import") {
+      if (argument?.type === "StringLiteral") {
+        specifiers.add(argument.value);
+      } else if (argument?.type === "TemplateLiteral" && argument.expressions.length === 0) {
+        specifiers.add(argument.quasis[0]?.value?.cooked ?? argument.quasis[0]?.value?.raw ?? "");
+      } else if (argument) {
+        dynamicImportFiles.add(relPath);
+      }
+      return;
+    }
+
+    if (node.callee?.type === "Identifier" && node.callee.name === "require") {
+      if (argument?.type === "StringLiteral") {
+        specifiers.add(argument.value);
+      } else if (argument?.type === "TemplateLiteral" && argument.expressions.length === 0) {
+        specifiers.add(argument.quasis[0]?.value?.cooked ?? argument.quasis[0]?.value?.raw ?? "");
+      }
+    }
+  });
+
+  specifiers.delete("");
+  return specifiers;
+}
+
+/**
+ * Walk Babel AST nodes without pulling in @babel/traverse.
+ *
+ * @param {any} node
+ * @param {(node: any) => void} visitor
+ */
+function walkBabelAst(node, visitor) {
+  if (!node || typeof node !== "object") return;
+  visitor(node);
+
+  for (const key of Object.keys(node)) {
+    if (key === "loc" || key === "start" || key === "end" || key === "tokens" || key === "comments") {
+      continue;
+    }
+
+    const child = node[key];
+    if (Array.isArray(child)) {
+      for (const item of child) {
+        if (item && typeof item.type === "string") walkBabelAst(item, visitor);
+      }
+    } else if (child && typeof child.type === "string") {
+      walkBabelAst(child, visitor);
+    }
+  }
 }
 
 /**
@@ -102,7 +189,11 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
   /** @type {Set<string>} */
   const features = new Set();
   /** @type {Set<string>} */
-  const dynamicFiles = new Set();
+  const paths = new Set();
+  /** @type {Set<string>} */
+  const dynamicContextFiles = new Set();
+  /** @type {Set<string>} */
+  const dynamicImportFiles = new Set();
   /** @type {{ file: string, sourceBytes: number }[]} */
   const modules = [];
 
@@ -126,44 +217,12 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     // Arquivos JSON não possuem código executável nem imports
     if (filename.endsWith(".json")) continue;
 
-    const usage = analyzeRuntimeUsage(source, filename);
+    const usage = analyzeRuntimeUsage(source, filename, { includePaths: true });
     for (const feature of usage.features) features.add(feature);
-    if (usage.dynamic) dynamicFiles.add(relPath);
+    for (const capabilityPath of usage.paths || []) paths.add(capabilityPath);
+    if (usage.dynamic) dynamicContextFiles.add(relPath);
 
-    // Coleta imports estáticos (import ... from / export ... from)
-    const info = ts.preProcessFile(source, true, true);
-    const specifiers = new Set(info.importedFiles.map((item) => item.fileName));
-
-    // Coleta imports dinâmicos: import(...) e require(...)
-    const ast = ts.createSourceFile(
-      filename,
-      source,
-      ts.ScriptTarget.Latest,
-      true,
-      getScriptKind(filename)
-    );
-
-    /** @param {ts.Node} node */
-    const inspectImports = (node) => {
-      if (
-        ts.isCallExpression(node) &&
-        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-          (ts.isIdentifier(node.expression) && node.expression.text === "require"))
-      ) {
-        const argument = node.arguments[0];
-        if (
-          argument &&
-          (ts.isStringLiteralLike(argument) || ts.isNoSubstitutionTemplateLiteral(argument))
-        ) {
-          specifiers.add(argument.text);
-        } else if (argument) {
-          dynamicFiles.add(relPath);
-        }
-      }
-      ts.forEachChild(node, inspectImports);
-    };
-
-    inspectImports(ast);
+    const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles);
 
     for (const specifier of specifiers) {
       const dependency = await resolveLocal(filename, specifier);
@@ -175,11 +234,16 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
 
   return {
     features: [...features].sort(),
-    dynamic: dynamicFiles.size > 0,
-    dynamicFiles: [...dynamicFiles].sort(),
-    files: [...visited]
-      .map((file) => path.relative(rootPath, file).split(path.sep).join("/"))
-      .sort(),
+    paths: [...paths].sort(),
+    // "dynamic" means ScriptContext access cannot be proven statically and
+    // therefore runtime feature tree-shaking must fall back to the full API.
+    // Non-literal import() is tracked independently: loading an arbitrary
+    // module does not imply arbitrary access to the userscript ScriptContext.
+    dynamic: dynamicContextFiles.size > 0,
+    dynamicFiles: [...dynamicContextFiles].sort(),
+    dynamicImports: dynamicImportFiles.size > 0,
+    dynamicImportFiles: [...dynamicImportFiles].sort(),
+    files: [...visited].map((file) => path.relative(rootPath, file).split(path.sep).join("/")).sort(),
     // Source bytes are diagnostic only; not bundled/minified byte attribution.
     sourceBytes: modules.reduce((sum, item) => sum + item.sourceBytes, 0),
     modules: modules.sort((a, b) => b.sourceBytes - a.sourceBytes || a.file.localeCompare(b.file)),

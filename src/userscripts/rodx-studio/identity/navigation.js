@@ -1,16 +1,20 @@
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import { RODX_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { extractIdentity } from "./account.js";
 import { SearchHistory } from "../search/history.tsx";
 import { state } from "../state/deck.js";
-import { loadAccount } from "../storage/account.js";
+import { loadAccount } from "../storage/persistence.js";
 import { ensureDock, repaint } from "../ui/dock.tsx";
-import { initializeRoot } from "../ui/root.tsx";
+import { initializeRoot } from "../ui/search-workbench.tsx";
 
 export function tick() {
-  if (!document.body) return;
-  if (!state.rootHost?.isConnected) initializeRoot();
+  if (!document.body) {
+    return;
+  }
+  if (!state.rootHost?.isConnected) {
+    initializeRoot();
+  }
   const route = `${location.pathname}${location.search}`;
   SearchHistory.currentRoute();
   if (route !== state.lastUrl) {

@@ -26,9 +26,13 @@ export function initializeDeckSearchHistory() {
     const lastCapture = new Map<any, any>();
     const accountKey = () => state.account || extractIdentity().key || "guest";
     function openDB() {
-      if (opening) return opening;
+      if (opening) {
+return opening;
+}
       opening = new Promise<any>((resolve, reject) => {
-        if (!("indexedDB" in window)) return reject(new Error("IndexedDB indisponível"));
+        if (!("indexedDB" in window)) {
+return reject(new Error("IndexedDB indisponível"));
+}
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = () => {
           const db = request.result;
@@ -80,11 +84,15 @@ export function initializeDeckSearchHistory() {
       const clean = String(query || "")
         .trim()
         .replace(/\s+/gu, " ");
-      if (!clean) return Promise.resolve(undefined);
+      if (!clean) {
+return Promise.resolve(undefined);
+}
       const id = JSON.stringify([account, clean]);
       const previous = lastCapture.get(id) || 0;
       if (Date.now() - previous < RUNTIME_LIMITS.searchHistory.duplicateWindowMs)
-        return Promise.resolve(undefined);
+        {
+return Promise.resolve(undefined);
+}
       lastCapture.set(id, Date.now());
       const work = async () => {
         const db = await openDB();
@@ -123,7 +131,9 @@ export function initializeDeckSearchHistory() {
       }
       const full = currentFullQuery() || data.query;
       const key = JSON.stringify([accountKey(), full, data.sort, location.pathname]);
-      if (observedKey === key) return;
+      if (observedKey === key) {
+return;
+}
       observedKey = key;
       void record(full, data.isHashtag ? "hashtag" : "search", data.sort);
     }
@@ -133,12 +143,16 @@ export function initializeDeckSearchHistory() {
         !(form instanceof Element) ||
         !form.querySelector<HTMLInputElement>(NATIVE_X_SELECTORS.nativeSearchInput)
       )
-        return;
+        {
+return;
+}
       const input = form.querySelector<HTMLInputElement>(NATIVE_X_SELECTORS.nativeSearchInput);
       void record(input.value, "submit", "live");
     }
     function onKeydown(event) {
-      if (event.key !== "Enter" || event.isComposing) return;
+      if (event.key !== "Enter" || event.isComposing) {
+return;
+}
       const input = event.target;
       if (input instanceof HTMLInputElement && input.matches(NATIVE_X_SELECTORS.nativeSearchBox)) {
         void record(input.value, "submit", "live");
@@ -157,13 +171,17 @@ export function initializeDeckSearchHistory() {
         cursor.onsuccess = () => {
           const result = cursor.result;
           if (!result)
-            return resolve({
+            {
+return resolve({
               rows,
               more,
             });
+}
           const row = result.value;
           if (!filter || row.query.toLocaleLowerCase().includes(filter)) {
-            if (matched >= offset && rows.length < count) rows.push(row);
+            if (matched >= offset && rows.length < count) {
+rows.push(row);
+}
             else if (rows.length >= count) {
               more = true;
               return resolve({
@@ -201,14 +219,18 @@ export function initializeDeckSearchHistory() {
       });
     }
     async function importRemote(account, entries) {
-      if (!Array.isArray(entries) || !entries.length) return;
+      if (!Array.isArray(entries) || !entries.length) {
+return;
+}
       const db = await openDB();
       await new Promise<any>((resolve, reject) => {
         const tx = db.transaction(STORE, "readwrite");
         const store = tx.objectStore(STORE);
         for (const remote of entries) {
           const query = String(remote.query || "").trim();
-          if (!query) continue;
+          if (!query) {
+continue;
+}
           const id = JSON.stringify([account, query]);
           const get = store.get(id);
           get.onsuccess = () => {
@@ -233,7 +255,9 @@ export function initializeDeckSearchHistory() {
     const exportPage = (account, offset, limit = RUNTIME_LIMITS.searchHistory.exportPageSize) =>
       page(account, offset, limit);
     function installStyle() {
-      if (document.getElementById("rodx-history-style")) return;
+      if (document.getElementById("rodx-history-style")) {
+return;
+}
       const sheet = document.createElement("style");
       sheet.id = "rodx-history-style";
       sheet.textContent = extractedCSS1;
@@ -244,7 +268,9 @@ export function initializeDeckSearchHistory() {
       dialog = null;
     }
     function placePanel() {
-      if (!dialog || !launch) return;
+      if (!dialog || !launch) {
+return;
+}
       const rect = launch.getBoundingClientRect();
       dialog.style.setProperty(
         "top",
@@ -291,13 +317,17 @@ export function initializeDeckSearchHistory() {
       void renderList();
     }
     async function renderList() {
-      if (!dialog) return;
+      if (!dialog) {
+return;
+}
       const generation = ++renderGeneration;
       const account = accountKey();
       const target = dialog.querySelector(RODX_SELECTORS.recentHistoryRows);
       try {
         const { rows, more } = await page(account, 0, visible, searchTerm);
-        if (generation !== renderGeneration || !dialog || account !== accountKey()) return;
+        if (generation !== renderGeneration || !dialog || account !== accountKey()) {
+return;
+}
         target.replaceChildren();
         if (!rows.length) {
           const empty = document.createElement("p");
@@ -350,8 +380,12 @@ export function initializeDeckSearchHistory() {
         edit.onclick = () => {
           close();
           const current = nativeSearch();
-          if (current) captureCurrent();
-          else newDraft();
+          if (current) {
+captureCurrent();
+}
+          else {
+newDraft();
+}
         };
         options.append(edit);
         if (rows.length && !searchTerm) {
@@ -391,8 +425,12 @@ export function initializeDeckSearchHistory() {
         recent.setAttribute("aria-label", "Pesquisas recentes");
         recent.onclick = (e) => {
           e.stopPropagation();
-          if (dialog) close();
-          else createPanel();
+          if (dialog) {
+close();
+}
+          else {
+createPanel();
+}
         };
         const builder = document.createElement("button");
         builder.type = "button";
@@ -403,8 +441,12 @@ export function initializeDeckSearchHistory() {
           e.stopPropagation();
           close();
           const c = nativeSearch();
-          if (c) captureCurrent();
-          else newDraft();
+          if (c) {
+captureCurrent();
+}
+          else {
+newDraft();
+}
         };
         launch.append(recent, builder);
         document.body.append(launch);
@@ -418,8 +460,12 @@ export function initializeDeckSearchHistory() {
       const spaceLeft = rect.left;
       let x;
       let two = true;
-      if (spaceRight >= 82) x = rect.right + 3;
-      else if (spaceLeft >= 82) x = rect.left - 79;
+      if (spaceRight >= 82) {
+x = rect.right + 3;
+}
+      else if (spaceLeft >= 82) {
+x = rect.left - 79;
+}
       else {
         two = false;
         x = spaceRight >= 40 ? rect.right + 2 : Math.max(2, rect.left - 39);
@@ -456,7 +502,9 @@ export function initializeDeckSearchHistory() {
         rect.width < 60 || rect.bottom < 0 || rect.top > innerHeight ? "none" : "flex",
         "important",
       );
-      if (dialog) placePanel();
+      if (dialog) {
+placePanel();
+}
       currentRoute();
     }
     document.addEventListener("submit", onSubmit, true);
@@ -464,7 +512,9 @@ export function initializeDeckSearchHistory() {
     document.addEventListener(
       "click",
       (e) => {
-        if (dialog && !dialog.contains(e.target) && !launch?.contains(e.target)) close();
+        if (dialog && !dialog.contains(e.target) && !launch?.contains(e.target)) {
+close();
+}
       },
       true,
     );

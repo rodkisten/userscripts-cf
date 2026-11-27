@@ -1,17 +1,16 @@
-import { Studio } from "./core/studio.js";
+import tokens from "../../styles/tokens.css?inline";
+import { Studio } from "./core/studio-runtime.js";
 import { ScriptContext } from "../../core/runtime";
-import { initializeNetwork } from "./bootstrap/initializeNetwork.js";
+import { initializeNetwork } from "./bootstrap/network.js";
 import { initializeDeck } from "./bootstrap/initializeDeck.js";
 import { openPanel, Preferences } from "./ui/preferences.js";
-import { configureSharedMount, disposeAllViews } from "./ui/react-mount.tsx";
-import { disposeRodxToast } from "./ui/toast.tsx";
+import { configureSharedMount, disposeAllViews } from "./ui/runtime.tsx";
+import { disposeRodxToast } from "./ui/runtime.tsx";
 
 // ============================================================================
 // Constantes Semânticas
 // ============================================================================
 const WINDOW_RODX_FLAG = "__rodxStudioV3";
-const DOM_CONTENT_LOADED_EVENT = "DOMContentLoaded";
-const DOCUMENT_LOADING_STATE = "loading";
 
 const DOCK_ACTIONS = {
   saved: { id: "saved", label: "Pesquisas", panel: "saved" as const },
@@ -40,8 +39,8 @@ function markRodXAsStarted(win: Window & typeof globalThis): void {
 }
 
 function scheduleDeckInitialization(ctx: ScriptContext): void {
-  if (document.readyState === DOCUMENT_LOADING_STATE) {
-    ctx.listen(document, DOM_CONTENT_LOADED_EVENT, initializeDeck, { once: true });
+  if (document.readyState === "loading") {
+    ctx.listen(document, "DOMContentLoaded", initializeDeck, { once: true });
   } else {
     initializeDeck();
   }
@@ -77,9 +76,16 @@ function registerStudioDockActions(ctx: ScriptContext): void {
 // Funções Públicas (Pontos de Referência / Entrada)
 // ============================================================================
 export function startRodX(ctx: ScriptContext): void {
-  if (hasRodXAlreadyStarted(window)) return;
+  if (hasRodXAlreadyStarted(window)) {
+    return;
+  }
   markRodXAsStarted(window);
-  configureSharedMount((component, target) => ctx.ui.mountReact(component, target));
+  if (!ctx.ui) {
+    throw new Error("RodX requires the shared UI runtime");
+  }
+  const ui = ctx.ui;
+  ui.pageStyle(tokens, { id: "rodx-design-tokens" });
+  configureSharedMount((component, target) => ui.mountReact(component, target));
 
   initializeNetwork();
   Studio.ctx = ctx;

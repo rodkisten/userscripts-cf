@@ -106,7 +106,9 @@ export function parseTags(title: string, description = ""): string[] {
 
   const extractBrackets = (text: string, whole = text, offset = 0) => {
     for (const matchResult of text.matchAll(BRACKET_MATCH_REGEX)) {
-      if (/^\s*\(/.test(whole.slice(offset + matchResult.index! + matchResult[0].length))) continue;
+      if (/^\s*\(/.test(whole.slice(offset + matchResult.index! + matchResult[0].length))) {
+continue;
+}
       const value = matchResult[1].replace(/\s+/g, " ").trim();
       if (value && !/^https?:\/\//i.test(value) && !/[<>]/.test(value)) {
         tags.push(value);
@@ -127,7 +129,9 @@ export function parseTags(title: string, description = ""): string[] {
   const seen = new Set<string>();
   return tags.filter((tag) => {
     const key = normalize(tag);
-    if (seen.has(key)) return false;
+    if (seen.has(key)) {
+return false;
+}
     seen.add(key);
     return true;
   });

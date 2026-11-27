@@ -11,7 +11,9 @@ export function diagnosticSpans(query) {
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (quote >= 0) {
-      if (c === '"' && !escaped) quote = -1;
+      if (c === '"' && !escaped) {
+quote = -1;
+}
       escaped = c === "\\" && !escaped;
       continue;
     }
@@ -19,35 +21,45 @@ export function diagnosticSpans(query) {
       quote = i;
       escaped = false;
     }
-    if (c === "(") stack.push(i);
+    if (c === "(") {
+stack.push(i);
+}
     if (c === ")") {
-      if (stack.length) stack.pop();
+      if (stack.length) {
+stack.pop();
+}
       else
-        issues.push({
+        {
+issues.push({
           start: i,
           end: i + 1,
           severity: "error",
           message: "Parêntese ) sem abertura",
           suggestion: "Remova ) ou adicione ( antes.",
         });
+}
     }
   }
   if (quote >= 0)
-    issues.push({
+    {
+issues.push({
       start: quote,
       end: text.length,
       severity: "error",
       message: "Aspas abertas",
       suggestion: 'Feche a frase com ".',
     });
+}
   for (const index of stack)
-    issues.push({
+    {
+issues.push({
       start: index,
       end: index + 1,
       severity: "error",
       message: "Parêntese ( não fechado",
       suggestion: "Acrescente ) no fim do grupo.",
     });
+}
   if (/\bOR\s+(?:links|linksre|textre):|(?:links|linksre|textre):\S+\s+OR\b/i.test(text)) {
     issues.push({
       start: Math.max(0, text.search(/\bOR\b/i)),
@@ -84,13 +96,15 @@ export function diagnosticSpans(query) {
   }
   const parts = parseLocalDirectives(text);
   if (parts.local.length && !parts.native.trim())
-    issues.push({
+    {
+issues.push({
       start: 0,
       end: text.length,
       severity: "error",
       message: "Regex de texto precisa de algum termo para o X carregar resultados",
       suggestion: "Exemplo: #assunto textre:/expressão/i. Regex é apenas um filtro local.",
     });
+}
   const tokens = [...text.matchAll(/[^\s()]+/g)].filter(
     (t) => !localSpans.some((x) => t.index >= x.from && t.index < x.end),
   );
@@ -103,24 +117,30 @@ export function diagnosticSpans(query) {
         i === tokens.length - 1 ||
         (/^(?:AND|OR|NOT)$/i.test(tokens[i - 1]?.[0] || "") && !/^NOT$/i.test(token)))
     )
-      issues.push({
+      {
+issues.push({
         start: index,
         end: index + token.length,
         severity: "error",
         message: `Operador ${token} sem termo`,
         suggestion: "Coloque termos antes e depois do operador.",
       });
+}
     if (/^-?#[\p{L}\p{N}_]+$/u.test(token)) {
       const key = token.toLocaleLowerCase();
       if (seen.has(key))
-        issues.push({
+        {
+issues.push({
           start: index,
           end: index + token.length,
           severity: "warning",
           message: `Hashtag repetida ${token}`,
           suggestion: "Remova a duplicata ou agrupe alternativas.",
         });
-      else seen.set(key, index);
+}
+      else {
+seen.set(key, index);
+}
     }
   }
   return issues;
@@ -131,7 +151,9 @@ export function highlightWithIssues(text, issues) {
   let from = 0;
   const sorted = issues.filter((i) => i.end > i.start).sort((a, b) => a.start - b.start || b.end - a.end);
   for (const issue of sorted) {
-    if (issue.start < from) continue;
+    if (issue.start < from) {
+continue;
+}
     nodes.push(highlightQuery(text.slice(from, issue.start)));
     nodes.push(
       <>
@@ -172,7 +194,9 @@ export function highlightQuery(source) {
                 : /^[()]/.test(token)
                   ? "syn-paren"
                   : "";
-    if (!whitespace) nextNegative = /^NOT$/i.test(token);
+    if (!whitespace) {
+nextNegative = /^NOT$/i.test(token);
+}
     return cls ? (
       <>
         <span className={cls}>{token}</span>

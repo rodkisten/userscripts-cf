@@ -1,6 +1,6 @@
 import { DOM_SELECTORS } from "../../../selectors.js";
-import { Studio } from "../core/studio.js";
-import { XDOM } from "../platform/selectors.js";
+import { Studio } from "../core/studio-runtime.js";
+import { NATIVE_X_SELECTORS as XDOM } from "../../../selectors.js";
 import { state } from "../state/deck.js";
 
 export let NativeTranslation;
@@ -13,19 +13,27 @@ export function initializeDeckNativeTranslation() {
     const LABEL =
       /^(?:translate(?:\s+(?:post|tweet))?|traduzir(?:\s+(?:post|publica[cç][aã]o|tweet))?|traducir(?:\s+(?:post|publicaci[oó]n|tweet))?)$/i;
     function scan() {
-      if (!state.visual.translatePosts || !document.body) return;
+      if (!state.visual.translatePosts || !document.body) {
+return;
+}
       const now = Date.now();
-      if (now - lastScan < 1100 || now - lastClick < 800) return;
+      if (now - lastScan < 1100 || now - lastClick < 800) {
+return;
+}
       lastScan = now;
       for (const article of Studio.dom.nodes(XDOM.tweet)) {
         const r = article.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > innerHeight + 160) continue;
+        if (r.bottom < 0 || r.top > innerHeight + 160) {
+continue;
+}
         for (const el of article.querySelectorAll(DOM_SELECTORS.clickableActions)) {
           if (
             attempted.has(el) ||
             !LABEL.test((el.innerText || el.textContent || "").trim().replace(/\s+/g, " "))
           )
-            continue;
+            {
+continue;
+}
           attempted.add(el);
           lastClick = now;
           // Use the X-provided translation, not an invented translation overlay.

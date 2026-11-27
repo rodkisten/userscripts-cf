@@ -24,14 +24,12 @@ declare const __ROD_FEATURE_CLIPBOARD__: boolean;
 declare const __ROD_FEATURE_HTTP__: boolean;
 declare const __ROD_FEATURE_DOM__: boolean;
 declare const __ROD_FEATURE_GM__: boolean;
+declare const __ROD_FEATURE_QUERY__: boolean;
+declare const __ROD_FEATURE_UI__: boolean;
+declare const __ROD_FEATURE_CSS__: boolean;
 
-import {
-  installCoreStyles,
-  applyComponentStyle,
-  clearComponentStyle,
-  setCssProperty,
-  setCssProperties,
-} from "./css.js";
+import { installCoreStyles, applyComponentStyle, clearComponentStyle } from "./css.js";
+import { setCssProperty, setCssProperties } from "./css-properties.js";
 
 export const STORAGE_NAMESPACE_PREFIX = "userscripts-cf/";
 export const DB_NAMESPACE_SEGMENT = "/db/";
@@ -89,7 +87,10 @@ export interface ScriptDefinition {
 export type ScriptContext = Record<string, unknown> & {
   readonly id: string;
   readonly signal: AbortSignal;
-  readonly events?: ReturnType<typeof createEventBus>;
+  readonly events?: ReturnType<typeof createEventBus> & {
+    readonly shared: ReturnType<typeof createSharedEvents>;
+    readonly dom: DomEventsEngine;
+  };
   readonly http: ReturnType<typeof createHttpFeature>["http"];
   readonly gm: ReturnType<typeof createGMFeature> | undefined;
   readonly dispose: () => Promise<void>;
@@ -104,13 +105,7 @@ export type ScriptContext = Record<string, unknown> & {
     delete(key: string): Promise<void>;
   };
   readonly dom: ReturnType<typeof createDomFeature>;
-  readonly ui?: ReturnType<typeof createUIFeature> & {
-    readonly root: ShadowRoot;
-    readonly host: HTMLDivElement;
-    mount(node: Node): Node;
-    style(css: string): HTMLStyleElement;
-    pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
-    registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+  readonly ui?: RuntimeUIBase & {
     mountReact(component: import("react").ReactElement, container?: Element | ShadowRoot): () => void;
   };
   readonly dock: { register(actions: ReadonlyArray<DockAction>): void };
@@ -154,6 +149,15 @@ export interface DomEventsEngine {
   dispose(): void;
 }
 
+export type RuntimeUIBase = {
+  readonly root: ShadowRoot;
+  readonly host: HTMLDivElement;
+  mount(node: Node): Node;
+  style(css: string): HTMLStyleElement;
+  pageStyle(css: string, options?: { id?: string }): HTMLStyleElement;
+  registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]): () => void;
+};
+
 export interface RuntimeAPI {
   readonly ready: Promise<void>;
   navigate: () => Promise<void>;
@@ -172,10 +176,81 @@ export function initializeRodFeatures(
         : undefined,
     toaster:
       (typeof __ROD_FEATURE_TOASTER__ === "undefined" || __ROD_FEATURE_TOASTER__) && mountSharedReact
-        ? createToasterFeature(mountSharedReact)
+        ? createToasterFeature(mountSharedReact, { ownerDocument: host.document })
         : undefined,
-    storage: createStorageFeature(host),
+    get storage() {
+      return createStorageFeature(host);
+    },
   };
+}
+
+function showLightweightUpdateNotice(
+  host: Window & typeof globalThis,
+  update: {
+    readonly id: string;
+    readonly name: string;
+    readonly installedVersion: string;
+    readonly latestVersion: string;
+    readonly downloadURL: string;
+  },
+  onDismiss: () => void,
+): () => void {
+  const document = host.document;
+  const id = `${UPDATE_PREFIX}notice-${update.id}`;
+  document.getElementById(id)?.remove();
+
+  const notice = document.createElement("aside");
+  notice.id = id;
+  notice.setAttribute("role", "status");
+  notice.style.cssText =
+    "all:initial;position:fixed;right:12px;bottom:12px;z-index:2147483647;" +
+    "display:grid;grid-template-columns:1fr auto;gap:8px 12px;max-width:min(360px,calc(100vw - 24px));" +
+    "box-sizing:border-box;padding:12px 14px;border:1px solid rgba(255,255,255,.14);" +
+    "border-radius:12px;background:#18181b;color:#fafafa;box-shadow:0 12px 36px rgba(0,0,0,.35);" +
+    "font:13px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+
+  const copy = document.createElement("div");
+  copy.style.cssText = "all:initial;display:grid;gap:2px;color:inherit;font:inherit";
+
+  const title = document.createElement("strong");
+  title.style.cssText = "all:initial;color:inherit;font:600 13px/1.4 system-ui,-apple-system,sans-serif";
+  title.textContent = `Atualização disponível · ${update.name}`;
+
+  const version = document.createElement("span");
+  version.style.cssText = "all:initial;color:#a1a1aa;font:12px/1.4 system-ui,-apple-system,sans-serif";
+  version.textContent = `${update.installedVersion} → ${update.latestVersion}`;
+  copy.append(title, version);
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.setAttribute("aria-label", "Dispensar atualização");
+  close.textContent = "×";
+  close.style.cssText =
+    "all:initial;align-self:start;cursor:pointer;color:#a1a1aa;font:20px/1 system-ui,-apple-system,sans-serif";
+
+  const action = document.createElement("a");
+  action.href = update.downloadURL;
+  action.target = "_blank";
+  action.rel = "noopener noreferrer";
+  action.textContent = UPDATE_LABEL;
+  action.style.cssText =
+    "all:initial;grid-column:1/-1;cursor:pointer;display:inline-flex;justify-content:center;" +
+    "padding:7px 10px;border-radius:8px;background:#fafafa;color:#18181b;" +
+    "font:600 12px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none";
+
+  const dispose = () => notice.remove();
+  close.addEventListener(
+    "click",
+    () => {
+      onDismiss();
+      dispose();
+    },
+    { once: true },
+  );
+
+  notice.append(copy, close, action);
+  (document.body || document.documentElement).append(notice);
+  return dispose;
 }
 
 export function setupUpdateChecker(
@@ -184,7 +259,8 @@ export function setupUpdateChecker(
   rod: ReturnType<typeof initializeRodFeatures>,
   updaterInstanceRef: { current: ReturnType<typeof createUpdateChecker> | null },
 ) {
-  return createUpdateChecker({
+  let disposeLightweightNotice: (() => void) | undefined;
+  const checker = createUpdateChecker({
     id: release.id,
     installedVersion: release.version,
     manifestURL: release.manifestURL,
@@ -197,24 +273,41 @@ export function setupUpdateChecker(
       }
     },
     notify(update) {
-      rod.toaster?.warning({
-        id: `${UPDATE_PREFIX}${update.id}-${update.latestVersion}`,
-        title: `Atualização disponível · ${update.name}`,
-        description: `${update.installedVersion} → ${update.latestVersion}`,
-        duration: 0,
-        closeButton: true,
-        actions: [
-          {
-            label: UPDATE_LABEL,
-            handle: () => {
-              host.open(update.downloadURL, "_blank", "noopener,noreferrer");
+      if (rod.toaster) {
+        rod.toaster.warning({
+          id: `${UPDATE_PREFIX}${update.id}-${update.latestVersion}`,
+          title: `Atualização disponível · ${update.name}`,
+          description: `${update.installedVersion} → ${update.latestVersion}`,
+          duration: 0,
+          closeButton: true,
+          actions: [
+            {
+              label: UPDATE_LABEL,
+              handle: () => {
+                host.open(update.downloadURL, "_blank", "noopener,noreferrer");
+              },
             },
-          },
-        ],
-        onDismiss: () => updaterInstanceRef.current?.dismiss(update.latestVersion),
+          ],
+          onDismiss: () => updaterInstanceRef.current?.dismiss(update.latestVersion),
+        });
+        return;
+      }
+
+      disposeLightweightNotice?.();
+      disposeLightweightNotice = showLightweightUpdateNotice(host, update, () => {
+        updaterInstanceRef.current?.dismiss(update.latestVersion);
       });
     },
   });
+
+  return {
+    ...checker,
+    stop() {
+      checker.stop();
+      disposeLightweightNotice?.();
+      disposeLightweightNotice = undefined;
+    },
+  };
 }
 
 export function createDomEventsEngine(
@@ -320,6 +413,7 @@ export function createCoreRuntime(
       readonly network: unknown;
       readonly rod: ReturnType<typeof initializeRodFeatures>;
       readonly queryService: unknown;
+      readonly ui: RuntimeUIBase | undefined;
       readonly updaterInstance: ReturnType<typeof createUpdateChecker> | null;
       readonly host: Window & typeof globalThis;
       readonly desiredURL: string;
@@ -329,6 +423,13 @@ export function createCoreRuntime(
     }) => Record<string, unknown>;
   },
 ) {
+  // Runtime-wide passive recorder: captures failed page requests once even
+  // when no individual userscript opts into diagnostics.
+  const stopNetworkDiagnostics = observeNetworkDiagnostics(
+    host,
+    undefined,
+    definitions.map((definition) => definition.id),
+  );
   const rod = initializeRodFeatures(host, options?.mountSharedReact);
   const updaterInstanceRef = { current: null as ReturnType<typeof createUpdateChecker> | null };
 
@@ -340,16 +441,42 @@ export function createCoreRuntime(
   const stores = new Map<string, ReturnType<typeof rod.storage.create>>();
   let queryClient: QueryClient | undefined;
 
-  const getQueryClient = () =>
-    (queryClient ??= new QueryClient({
-      defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },
-    }));
+  // Query is an optional runtime capability. Keeping the entire QueryClient
+  // construction behind a compile-time feature flag lets Rolldown remove
+  // @tanstack/query-core from userscripts that never touch ctx.query.
+  const queryService =
+    typeof __ROD_FEATURE_QUERY__ === "undefined" || __ROD_FEATURE_QUERY__
+      ? (() => {
+          const getQueryClient = () =>
+            (queryClient ??= new QueryClient({
+              defaultOptions: { queries: { retry: QUERY_RETRY_COUNT, gcTime: QUERY_GC_TIME } },
+            }));
 
-  const queryService = Object.freeze({
-    get client() {
-      return getQueryClient();
-    },
-  });
+          return Object.freeze({
+            get client() {
+              return getQueryClient();
+            },
+            createAsyncOptions(
+              createLoader: () => (
+                query: string,
+                context: { readonly signal?: AbortSignal },
+              ) => Promise<unknown> | unknown,
+              query: string,
+              options: Record<string, unknown> = {},
+            ) {
+              const queryKey = Array.isArray(options.queryKey)
+                ? options.queryKey
+                : [options.queryKey ?? "async"];
+              return {
+                ...options,
+                queryKey: [...queryKey, query],
+                queryFn: ({ signal }: { readonly signal?: AbortSignal } = {}) =>
+                  createLoader()(query, { signal }),
+              };
+            },
+          });
+        })()
+      : undefined;
 
   const clipboard =
     typeof __ROD_FEATURE_CLIPBOARD__ === "undefined" || __ROD_FEATURE_CLIPBOARD__
@@ -543,6 +670,43 @@ export function createCoreRuntime(
       return node;
     }
 
+    const uiFeature =
+      typeof __ROD_FEATURE_UI__ === "undefined" || __ROD_FEATURE_UI__ ? createUIFeature() : undefined;
+    const ui: RuntimeUIBase | undefined = uiFeature
+      ? Object.freeze({
+          get root() {
+            return ensureUIRoot();
+          },
+          get host() {
+            return ensureUIRoot().host as HTMLDivElement;
+          },
+          mount(node: Node) {
+            ensureUIRoot().append(node);
+            return node;
+          },
+          style(css: string) {
+            return addStyle(css, ensureUIRoot());
+          },
+          pageStyle(css: string, options?: { id?: string }) {
+            const target = host.document.head || host.document.documentElement;
+            const id = options?.id;
+            const existing = id ? host.document.getElementById(id) : null;
+            if (existing instanceof host.HTMLStyleElement) {
+              existing.textContent = String(css);
+              return existing;
+            }
+            const node = addStyle(css, target);
+            if (id) node.id = id;
+            return node;
+          },
+          registerStyles(...styles: import("../runtime/react-ui/shadow-styles.js").ShadowStyle[]) {
+            const dispose = uiFeature.registerShadowStyles(ensureUIRoot(), styles);
+            onDispose(dispose);
+            return dispose;
+          },
+        })
+      : undefined;
+
     function getStore() {
       let store = stores.get(definition.id);
       if (!store) {
@@ -647,6 +811,68 @@ export function createCoreRuntime(
 
     if (dom) onDispose(() => dom.dispose());
 
+    let events:
+      | (ReturnType<typeof createEventBus> & {
+          readonly shared: ReturnType<typeof createSharedEvents>;
+          readonly dom: DomEventsEngine;
+        })
+      | undefined;
+
+    function getEvents() {
+      if (events) return events;
+
+      const local = createEventBus({
+        namespace: definition.id,
+        onDiagnostic: () =>
+          captureDiagnostic(
+            new Error("Duplicate runtime event listener"),
+            LOG_TAG_EVENTS,
+            definition.id,
+            host,
+          ),
+      });
+      const shared = createSharedEvents({ host });
+      const dom = createDomEventsEngine(definition.id, host);
+      const disposeEvents = () => {
+        local.dispose();
+        shared.dispose();
+        dom.dispose();
+      };
+      abort.signal.addEventListener("abort", disposeEvents, { once: true });
+
+      events = Object.freeze(
+        Object.defineProperties(
+          {
+            on: local.on,
+            once: local.once,
+            off: local.off,
+            emit: local.emit,
+            waitFor: local.waitFor,
+            dispose: local.dispose,
+            shared,
+            dom,
+          },
+          {
+            size: {
+              enumerable: true,
+              get: () => local.size,
+            },
+          },
+        ),
+      ) as ReturnType<typeof createEventBus> & {
+        readonly shared: ReturnType<typeof createSharedEvents>;
+        readonly dom: DomEventsEngine;
+      };
+
+      onDispose(() => {
+        abort.signal.removeEventListener("abort", disposeEvents);
+        disposeEvents();
+        events = undefined;
+      });
+
+      return events;
+    }
+
     let resolvedContext: ScriptContext;
     const getContext = () => resolvedContext;
     const specificContext = options?.createSpecificContext
@@ -665,6 +891,7 @@ export function createCoreRuntime(
           network,
           rod,
           queryService,
+          ui,
           updaterInstance: updaterInstanceRef.current,
           host,
           desiredURL,
@@ -674,13 +901,14 @@ export function createCoreRuntime(
         })
       : {};
 
-    const instanceMenu = options?.mountSharedReact
-      ? createMenuFeature({
-          container: ensureUIRoot,
-          onDispose,
-          mountSharedReact: options.mountSharedReact,
-        })
-      : undefined;
+    const instanceMenu =
+      (typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__) && options?.mountSharedReact
+        ? createMenuFeature({
+            container: ensureUIRoot,
+            onDispose,
+            mountSharedReact: options.mountSharedReact,
+          })
+        : undefined;
 
     const baseContext = {
       id: definition.id,
@@ -688,14 +916,12 @@ export function createCoreRuntime(
         capture: (error: unknown, source = SOURCE_MANUAL) =>
           captureDiagnostic(error, source, definition.id, host),
         observeNetwork: () => {
-          const stop = observeNetworkDiagnostics(host, abort.signal);
+          const stop = observeNetworkDiagnostics(host, abort.signal, definition.id);
           onDispose(stop);
           return stop;
         },
       }),
-      query: {
-        ...queryService,
-      },
+      query: queryService,
       http: network?.http,
       interceptRequest: network?.interceptRequest ?? (() => {}),
       interceptResponse: network?.interceptResponse ?? (() => {}),
@@ -707,7 +933,11 @@ export function createCoreRuntime(
       dom,
       db,
       signal: abort.signal,
+      get events() {
+        return getEvents();
+      },
       storage,
+      ui,
       menu: typeof __ROD_FEATURE_MENU__ === "undefined" || __ROD_FEATURE_MENU__ ? instanceMenu : undefined,
       dock: Object.freeze({
         register(actions: ReadonlyArray<DockAction>) {
@@ -805,7 +1035,7 @@ export function createCoreRuntime(
       pageStyle(cssContent: string, options?: { id?: string }) {
         const id = options?.id;
         const existing = id ? host.document.getElementById(id) : null;
-        if (existing instanceof HTMLStyleElement) {
+        if (existing instanceof host.HTMLStyleElement) {
           existing.textContent = String(cssContent);
           return existing;
         }
@@ -813,13 +1043,16 @@ export function createCoreRuntime(
         if (id) node.id = id;
         return node;
       },
-      css: Object.freeze({
-        installCoreStyles,
-        applyComponentStyle,
-        clearComponentStyle,
-        setCssProperty,
-        setCssProperties,
-      }),
+      css:
+        typeof __ROD_FEATURE_CSS__ === "undefined" || __ROD_FEATURE_CSS__
+          ? Object.freeze({
+              installCoreStyles,
+              applyComponentStyle,
+              clearComponentStyle,
+              setCssProperty,
+              setCssProperties,
+            })
+          : undefined,
       async dispose() {
         const trace = (stage: string) => {
           if ((host as unknown as { __ROD_RUNTIME_TRACE__?: boolean }).__ROD_RUNTIME_TRACE__)
@@ -836,7 +1069,10 @@ export function createCoreRuntime(
       },
     };
 
-    resolvedContext = Object.assign(baseContext, specificContext) as ScriptContext;
+    // The selected runtime layer completes framework-specific capabilities
+    // (for example ui.mountReact) before script initialization. Keep the core
+    // object framework-free while preserving the public ScriptContext contract.
+    resolvedContext = Object.assign(baseContext, specificContext) as unknown as ScriptContext;
     return resolvedContext;
   }
 
@@ -909,6 +1145,7 @@ export function createCoreRuntime(
     },
     async dispose() {
       closed = true;
+      stopNetworkDiagnostics();
       if (options?.removeHelpers) {
         options.removeHelpers(installedHelpers);
       }

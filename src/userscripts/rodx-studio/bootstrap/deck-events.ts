@@ -5,9 +5,9 @@ import {
   COMPOSITE_SELECTORS,
   DOM_SELECTORS,
 } from "../../../selectors.js";
-import { createListsModule } from "../lists/index.js";
+import { createListsModule } from "../bootstrap/initializeLists.js";
 import { PREFIX } from "../config/search.js";
-import { Studio } from "../core/studio.js";
+import { Studio } from "../core/studio-runtime.js";
 import { FeedFilters } from "../feeds/filters.tsx";
 import { applyPostLimit } from "../feeds/local-limits.js";
 import { installRecommendationCleanup } from "../feeds/recommendations.js";
@@ -20,39 +20,28 @@ import { SocialAppLinks } from "../links/social.tsx";
 import { createListAccess } from "../lists/access.tsx";
 import { ProfileLists } from "../lists/profile.tsx";
 import { ImmersiveDownload } from "../media/download.tsx";
-import { VideoExperience } from "../media/experience.js";
-import { ImmersiveSwipe } from "../media/immersive.js";
-import { PlayerPreference } from "../media/player.js";
-import { SeekPreviews } from "../media/previews.js";
+import { VideoExperience, ViewportPlayback } from "../media/playback.js";
+import { ImmersiveSwipe } from "../media/gestures.tsx";
+import { PlayerPreference } from "../media/player.tsx";
+import { SeekPreviews } from "../media/seek-preview.tsx";
 import { VideoTransport } from "../media/transport.tsx";
-import { ViewportPlayback } from "../media/viewport.js";
-import { XDOM } from "../platform/selectors.js";
 import { newDraft } from "../search/actions.js";
 import { SearchAnchors } from "../search/anchors.tsx";
 import { installListTypeahead } from "../search/list-typeahead.tsx";
 import { state } from "../state/deck.js";
-import { saveState } from "../storage/account.js";
-import { gmAvailable } from "../storage/gm.js";
-import { normalizedPreset, normalizedSearch } from "../storage/normalize.js";
+import { saveState, gmAvailable, normalizedPreset, normalizedSearch } from "../storage/persistence.js";
 import { CloudSync } from "../sync/cloud.js";
 import { Relay } from "../telegram/relay.tsx";
 import { NativeTranslation } from "../translation/native.js";
 import { ResultEnhancer } from "../tweets/enhancer.tsx";
 import { ensureDock, repaint } from "../ui/dock.tsx";
 import { performAction } from "../ui/events.tsx";
-import { closePanel, openPanel } from "../ui/preferences.js";
+import { closePanel, openPanel } from "../ui/preferences.tsx";
 import { renderDock } from "../ui/search-workbench.tsx";
 
 // ============================================================================
 // Constantes Semânticas e Mensagens
 // ============================================================================
-const EVENT_TYPES = {
-  click: "click",
-  storage: "storage",
-  keydown: "keydown",
-  visibilityChange: "visibilitychange",
-} as const;
-
 const HOTKEYS = {
   keyS: "KeyS",
   escape: "Escape",
@@ -109,7 +98,9 @@ export let refreshingCloud = false;
 
 export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
   const el = event.target instanceof Element ? event.target : null;
-  if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) return;
+  if (!el || el.closest(RODX_SELECTORS.studioSelectionRoots)) {
+    return;
+  }
   if (
     !state.visual.blockTweetOpen ||
     event.defaultPrevented ||
@@ -119,18 +110,27 @@ export function blockNativeTweetOpenOnClicks(event: MouseEvent): void {
     event.ctrlKey ||
     event.shiftKey ||
     event.altKey
-  )
+  ) {
     return;
-  const article = el.closest<HTMLElement>(XDOM.tweet);
-  if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) return;
-  if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) return;
-  if (window.getSelection()?.toString().trim()) return;
+  }
+  const article = el.closest<HTMLElement>(NATIVE_X_SELECTORS.tweet);
+  if (!article || article.closest(NATIVE_X_SELECTORS.xOverlayLayers)) {
+    return;
+  }
+  if (el.closest(COMPOSITE_SELECTORS.tweetInteractiveElements())) {
+    return;
+  }
+  if (window.getSelection()?.toString().trim()) {
+    return;
+  }
   event.preventDefault();
   event.stopImmediatePropagation();
 }
 
 export function handleCrossTabStorageSynchronization(event: StorageEvent): void {
-  if (gmAvailable || event.key !== PREFIX + state.account) return;
+  if (gmAvailable || event.key !== PREFIX + state.account) {
+    return;
+  }
   try {
     const db = JSON.parse(event.newValue || "null");
     state.searches = Array.isArray(db?.searches) ? db.searches.map(normalizedSearch).filter(Boolean) : [];
@@ -193,13 +193,18 @@ export function configureStudioSpaNavigation(): void {
         a.search === target.search &&
         !a.closest(RODX_SELECTORS.studioOwnedElements),
     );
-    if (anchor) anchor.click();
-    else location.assign(target.href);
+    if (anchor) {
+      anchor.click();
+    } else {
+      location.assign(target.href);
+    }
   };
 }
 
 export function initializeStudioListsModule(): void {
-  if (Studio.enabled("lists")) createListsModule();
+  if (Studio.enabled("lists")) {
+    createListsModule();
+  }
 }
 
 export function setupStudioListTypeahead(): void {
@@ -226,7 +231,9 @@ export function bindListsSettingsEventEmitter(): void {
   Studio.on(
     "lists:settings",
     ({ id, settings }: { id?: string; settings: { hideReposts?: boolean; media?: string } }) => {
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const scope = "list:" + id;
       const mediaValue = settings.media;
       const mappedMedia = ["videos", "native"].includes(mediaValue || "")
@@ -242,7 +249,9 @@ export function bindListsSettingsEventEmitter(): void {
         media: mappedMedia,
       };
 
-      if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) return;
+      if (JSON.stringify(state.visual.feedFilters?.[scope]) === JSON.stringify(config)) {
+        return;
+      }
       state.visual.feedFilters = {
         ...state.visual.feedFilters,
         [scope]: config,
@@ -254,20 +263,28 @@ export function bindListsSettingsEventEmitter(): void {
 }
 
 export function setupInterfaceHygieneModule(): void {
-  if (Studio.enabled(STUDIO_GROUPS.hygiene)) XInterfaceHygiene.install();
+  if (Studio.enabled(STUDIO_GROUPS.hygiene)) {
+    XInterfaceHygiene.install();
+  }
 }
 
 export function resetDatabaseState(): void {
+  clearTimeout(databaseSaveTimer);
   databaseSaveTimer = undefined;
   refreshingCloud = false;
 }
 
 export function setupDatabaseDirtyAutoSaveWatcher(): void {
+  Studio.ctx?.onDispose(resetDatabaseState);
   Studio.on("database:dirty", () => {
-    if (refreshingCloud) return;
+    if (refreshingCloud) {
+      return;
+    }
     clearTimeout(databaseSaveTimer);
     databaseSaveTimer = setTimeout(() => {
-      if (state.account) void saveState().catch(console.warn);
+      if (state.account) {
+        void saveState().catch(console.warn);
+      }
     }, RUNTIME_LIMITS.bootstrapDeckEvents.databaseSaveDebounceMs);
   });
 }
@@ -276,7 +293,9 @@ export function registerCloudBackgroundSyncJob(): void {
   Studio.register(
     STUDIO_JOBS.cloudRefresh,
     async () => {
-      if (!state.account || refreshingCloud) return;
+      if (!state.account || refreshingCloud) {
+        return;
+      }
       refreshingCloud = true;
       try {
         await CloudSync.onAccountLoaded(state.account, state.accountGeneration);
@@ -289,8 +308,10 @@ export function registerCloudBackgroundSyncJob(): void {
 }
 
 export function setupVisibilityChangeCloudSyncTrigger(): void {
-  document.addEventListener(EVENT_TYPES.visibilityChange, () => {
-    if (!document.hidden) Studio.queue(STUDIO_JOBS.cloudRefresh);
+  Studio.ctx?.listen(document, "visibilitychange", () => {
+    if (!document.hidden) {
+      Studio.queue(STUDIO_JOBS.cloudRefresh);
+    }
   });
 }
 
@@ -376,12 +397,15 @@ export function registerMediaExperienceSetupJob(): void {
       SeekPreviews.scan();
       VideoExperience.scan();
       PlayerPreference.scan();
-      if (PlayerPreference.needsRodX()) VideoTransport.scan();
+      if (PlayerPreference.needsRodX()) {
+        VideoTransport.scan();
+      }
       ViewportPlayback.scan();
       ImmersiveSwipe.scan();
     },
     {
       group: STUDIO_GROUPS.media,
+      events: ["dom", "route", "state", "maintenance", "media"],
       minMs: RUNTIME_LIMITS.bootstrapDeckEvents.mediaSetupIntervalMs,
     },
   );
@@ -413,126 +437,14 @@ export function startStudioRuntimeEngine(): void {
 // Funções de Inicialização (Referências Limpas)
 // ============================================================================
 
-export function initializeRodX_deck_164(): void {
-  document.addEventListener(EVENT_TYPES.click, blockNativeTweetOpenOnClicks, true);
+export function bindTweetOpenGuard(): void {
+  Studio.ctx?.listen(document, "click", blockNativeTweetOpenOnClicks as EventListener, true);
 }
 
-export function initializeRodX_deck_169(): void {
-  window.addEventListener(EVENT_TYPES.storage, handleCrossTabStorageSynchronization);
+export function bindCrossTabStorage(): void {
+  Studio.ctx?.listen(window, "storage", handleCrossTabStorageSynchronization as EventListener);
 }
 
-export function initializeRodX_deck_170(): void {
-  window.addEventListener(EVENT_TYPES.keydown, handleGlobalKeyboardShortcuts);
-}
-
-export function initializeRodX_deck_171(): void {
-  registerTampermonkeyMenuCommands();
-}
-
-export function initializeRodX_deck_172(): void {
-  registerStudioListAccessService();
-}
-
-export function initializeRodX_deck_173(): void {
-  registerStudioCloudSyncService();
-}
-
-export function initializeRodX_deck_175(): void {
-  registerStudioDeckPanelService();
-}
-
-export function initializeRodX_deck_176(): void {
-  configureStudioSpaNavigation();
-}
-
-export function initializeRodX_deck_177(): void {
-  initializeStudioListsModule();
-}
-
-export function initializeRodX_deck_178(): void {
-  setupStudioListTypeahead();
-}
-
-export function initializeRodX_deck_179(): void {
-  setupStudioRecommendationCleanup();
-}
-
-export function initializeRodX_deck_180(): void {
-  bindListsDockEventEmitter();
-}
-
-export function initializeRodX_deck_181(): void {
-  bindListsChangeEventEmitter();
-}
-
-export function initializeRodX_deck_182(): void {
-  bindListsSettingsEventEmitter();
-}
-
-export function initializeRodX_deck_183(): void {
-  setupInterfaceHygieneModule();
-}
-
-export function initializeDeckDatabaseSaveTimerAndRefreshingCloud(): void {
-  resetDatabaseState();
-}
-
-export function initializeRodX_deck_185(): void {
-  setupDatabaseDirtyAutoSaveWatcher();
-}
-
-export function initializeRodX_deck_186(): void {
-  registerCloudBackgroundSyncJob();
-}
-
-export function initializeRodX_deck_187(): void {
-  setupVisibilityChangeCloudSyncTrigger();
-}
-
-export function initializeRodX_deck_188(): void {
-  registerIdentityNavigationJob();
-}
-
-export function initializeRodX_deck_189(): void {
-  registerDockRenderJob();
-}
-
-export function initializeRodX_deck_190(): void {
-  registerFeedFiltersScanJob();
-}
-
-export function initializeRodX_deck_191(): void {
-  registerSearchNavigationScanJob();
-}
-
-export function initializeRodX_deck_192(): void {
-  registerProfileListsScanJob();
-}
-
-export function initializeRodX_deck_193(): void {
-  registerTweetEnhancementScanJob();
-}
-
-export function initializeRodX_deck_194(): void {
-  registerLinksAndTelegramScanJob();
-}
-
-export function initializeRodX_deck_195(): void {
-  registerNativeTranslationScanJob();
-}
-
-export function initializeRodX_deck_196(): void {
-  registerMediaExperienceSetupJob();
-}
-
-export function initializeRodX_deck_197(): void {
-  registerLayoutTweetsAndChromeScanJob();
-}
-
-export function initializeRodX_deck_198(): void {
-  executeInitialIdentityTick();
-}
-
-export function initializeRodX_deck_199(): void {
-  startStudioRuntimeEngine();
+export function bindKeyboardShortcuts(): void {
+  Studio.ctx?.listen(window, "keydown", handleGlobalKeyboardShortcuts as EventListener);
 }

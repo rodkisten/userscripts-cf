@@ -12,6 +12,7 @@ function currentRepo() {
     ? parts[0] + "/" + parts[1]
     : "";
 }
+
 function Dashboard({
   ctx,
   controller,
@@ -42,21 +43,29 @@ function Dashboard({
     setSettings(defaults);
     setRuns([]);
     setWorkflows([]);
-    if (!repo) return;
+    if (!repo) {
+return;
+}
     void ctx.storage
       .get("githubDashboard:" + repo, defaults)
       .then((value: DashboardSettings) => {
-        if (active) setSettings({ ...defaults, ...value });
+        if (active) {
+setSettings({ ...defaults, ...value });
+}
       })
       .catch((error: unknown) => {
-        if (active) setMessage(String(error));
+        if (active) {
+setMessage(String(error));
+}
       });
     return () => {
       active = false;
     };
   }, [ctx, repo]);
   useEffect(() => {
-    if (!repo) return;
+    if (!repo) {
+return;
+}
     let active = true;
     setBusy(true);
     const get = async (path: string) => {
@@ -69,21 +78,29 @@ function Dashboard({
           ...(savedToken ? { Authorization: "Bearer " + savedToken } : {}),
         },
       });
-      if (!response.ok) throw new Error("GitHub API " + response.status);
+      if (!response.ok) {
+throw new Error("GitHub API " + response.status);
+}
       return response.json();
     };
     void Promise.all([get("/actions/workflows?per_page=100"), get("/actions/runs?per_page=20")])
       .then(([workflowData, runData]) => {
-        if (!active) return;
+        if (!active) {
+return;
+}
         setWorkflows(workflowData.workflows ?? []);
         setRuns(runData.workflow_runs ?? []);
         setMessage("");
       })
       .catch((error: unknown) => {
-        if (active && !ctx.signal.aborted) setMessage(String(error));
+        if (active && !ctx.signal.aborted) {
+setMessage(String(error));
+}
       })
       .finally(() => {
-        if (active) setBusy(false);
+        if (active) {
+setBusy(false);
+}
       });
     return () => {
       active = false;
@@ -122,7 +139,9 @@ function Dashboard({
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
-      if (!response.ok) throw new Error("GitHub API " + response.status);
+      if (!response.ok) {
+throw new Error("GitHub API " + response.status);
+}
       setMessage("Solicitação enviada.");
       setVersion((value) => value + 1);
     } catch (error) {
@@ -209,7 +228,9 @@ function Dashboard({
                   disabled={busy}
                   onClick={() => {
                     if (confirm("Executar " + workflow.name + " na main?"))
-                      void request("/actions/workflows/" + workflow.id + "/dispatches", { ref: "main" });
+                      {
+void request("/actions/workflows/" + workflow.id + "/dispatches", { ref: "main" });
+}
                   }}
                 >
                   ▶
@@ -227,7 +248,9 @@ function Dashboard({
                   disabled={busy || run.conclusion !== "failure"}
                   onClick={() => {
                     if (confirm("Reexecutar falhas #" + run.id + "?"))
-                      void request("/actions/runs/" + run.id + "/rerun-failed-jobs");
+                      {
+void request("/actions/runs/" + run.id + "/rerun-failed-jobs");
+}
                   }}
                 >
                   ↻
@@ -241,6 +264,7 @@ function Dashboard({
     </section>
   );
 }
+
 export function mountGitHubDashboard(ctx: any) {
   const controller = { toggleFile: (_name: string, _url: string) => {} };
   const stylesheet = ctx.ui.style(css);
@@ -263,7 +287,9 @@ const commitPending = new Map<string, Promise<CommitInfo | null>>();
 let commitActive = 0;
 const commitQueue: Array<() => void> = [];
 async function withCommitSlot<T>(work: () => Promise<T>): Promise<T> {
-  if (commitActive >= 3) await new Promise<void>((resolve) => commitQueue.push(resolve));
+  if (commitActive >= 3) {
+await new Promise<void>((resolve) => commitQueue.push(resolve));
+}
   commitActive++;
   try {
     return await work();
@@ -272,6 +298,7 @@ async function withCommitSlot<T>(work: () => Promise<T>): Promise<T> {
     commitQueue.shift()?.();
   }
 }
+
 async function fetchLatestCommit(props: {
   ctx: any;
   owner: string;
@@ -280,9 +307,13 @@ async function fetchLatestCommit(props: {
 }): Promise<CommitInfo | null> {
   const key = props.owner + "/" + props.repo + "/" + props.path;
   const cached = commitCache.get(key);
-  if (cached && cached.expires > Date.now()) return cached.value;
+  if (cached && cached.expires > Date.now()) {
+return cached.value;
+}
   const existing = commitPending.get(key);
-  if (existing) return existing;
+  if (existing) {
+return existing;
+}
   const task = withCommitSlot(async () => {
     const token = await props.ctx.storage.get("actionsToken", "");
     const url =
@@ -300,7 +331,9 @@ async function fetchLatestCommit(props: {
         ...(token ? { Authorization: "Bearer " + token } : {}),
       },
     });
-    if (!response.ok) throw Error("HTTP " + response.status);
+    if (!response.ok) {
+throw Error("HTTP " + response.status);
+}
     const entries = await response.json();
     const entry = entries[0];
     const value: CommitInfo | null = entry
@@ -312,7 +345,9 @@ async function fetchLatestCommit(props: {
       : null;
     commitCache.delete(key);
     commitCache.set(key, { expires: Date.now() + COMMIT_TTL_MS, value });
-    if (commitCache.size > COMMIT_CACHE_MAX) commitCache.delete(commitCache.keys().next().value!);
+    if (commitCache.size > COMMIT_CACHE_MAX) {
+commitCache.delete(commitCache.keys().next().value!);
+}
     return value;
   });
   commitPending.set(key, task);
@@ -322,6 +357,7 @@ async function fetchLatestCommit(props: {
     commitPending.delete(key);
   }
 }
+
 export function FileCommit(props: { ctx: any; owner: string; repo: string; path: string; href: string }) {
   const [commit, setCommit] = useState<CommitInfo | null>(null);
   const [error, setError] = useState("");
@@ -331,16 +367,22 @@ export function FileCommit(props: { ctx: any; owner: string; repo: string; path:
     setError("");
     void fetchLatestCommit(props)
       .then((entry) => {
-        if (active) setCommit(entry);
+        if (active) {
+setCommit(entry);
+}
       })
       .catch((caught) => {
-        if (active && !props.ctx.signal.aborted) setError(String(caught));
+        if (active && !props.ctx.signal.aborted) {
+setError(String(caught));
+}
       });
     return () => {
       active = false;
     };
   }, [props.ctx, props.owner, props.repo, props.path]);
-  if (!commit) return <span title={error} />;
+  if (!commit) {
+return <span title={error} />;
+}
   return (
     <span className={styles.commitHint} title={commit.author + " · " + commit.sha}>
       <a href={"/" + props.owner + "/" + props.repo + "/commit/" + commit.sha}>{commit.message}</a>

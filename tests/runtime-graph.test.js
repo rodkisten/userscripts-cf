@@ -29,7 +29,10 @@ describe("runtime graph analyzer", () => {
       await fs.writeFile(path.join(root, "entry.ts"), 'import "./child.js";');
       await fs.writeFile(path.join(root, "child.ts"), "export const value = (ctx, key) => ctx[key];");
       const result = await analyzeRuntimeGraph("entry.ts", { root });
+      expect(result.dynamic).toBe(true);
       expect(result.dynamicFiles).toEqual(["child.ts"]);
+      expect(result.dynamicImports).toBe(false);
+      expect(result.dynamicImportFiles).toEqual([]);
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }
@@ -71,13 +74,19 @@ describe("runtime graph analyzer", () => {
     }
   });
 
-  it("falls back to the full runtime for nonliteral lazy imports", async () => {
+  it("tracks nonliteral lazy imports without disabling runtime feature tree-shaking", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-dynamic-import-"));
     try {
-      await fs.writeFile(path.join(root, "entry.ts"), "export const lazy = (name) => import(name);");
+      await fs.writeFile(
+        path.join(root, "entry.ts"),
+        'export const lazy = (ctx, name) => { ctx.storage.get("key"); return import(name); };',
+      );
       const result = await analyzeRuntimeGraph("entry.ts", { root });
-      expect(result.dynamic).toBe(true);
-      expect(result.dynamicFiles).toEqual(["entry.ts"]);
+      expect(result.features).toEqual(["storage"]);
+      expect(result.dynamic).toBe(false);
+      expect(result.dynamicFiles).toEqual([]);
+      expect(result.dynamicImports).toBe(true);
+      expect(result.dynamicImportFiles).toEqual(["entry.ts"]);
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }

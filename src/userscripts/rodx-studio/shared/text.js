@@ -1,38 +1,21 @@
-export let html;
+export const html = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
-export function initializeDeckHtml() {
-  html = (value) =>
-    String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-}
+export const uid = () =>
+  globalThis.crypto?.randomUUID?.() ?? `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
-export let uid;
+export const tokens = (value) => (String(value).match(/"[^"\n]+"|[^\s,]+/g) ?? []).filter(Boolean);
 
-export function initializeDeckUid() {
-  uid = () =>
-    globalThis.crypto?.randomUUID?.() ??
-    `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
-export let tokens;
-
-export function initializeDeckTokens() {
-  tokens = (value) => (String(value).match(/"[^"\n]+"|[^\s,]+/g) ?? []).filter(Boolean);
-}
-
-export let splitAccounts;
-
-export function initializeDeckSplitAccounts() {
-  splitAccounts = (value) =>
-    String(value)
-      .split(/[\s,;]+/)
-      .map((x) => x.replace(/^@/, "").trim())
-      .filter(Boolean);
-}
+export const splitAccounts = (value) =>
+  String(value)
+    .split(/[\s,;]+/)
+    .map((x) => x.replace(/^@/, "").trim())
+    .filter(Boolean);
 
 export function requireAccountTokens(value, operator) {
   const accounts = splitAccounts(value);
@@ -49,7 +32,9 @@ export function requireAccountTokens(value, operator) {
 }
 
 export function dateUTCPlusOne(date) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Data final inválida.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("Data final inválida.");
+  }
   const parsed = new Date(`${date}T00:00:00.000Z`);
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
     throw new Error("Data final inválida.");
@@ -61,7 +46,9 @@ export function dateUTCPlusOne(date) {
 export function numberFilter(fields, minKey, maxKey, operator) {
   const items = [];
   const parse = (value, label) => {
-    if (value === "") return null;
+    if (value === "") {
+      return null;
+    }
     if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) > 1e12) {
       throw new Error(`${label}: informe um inteiro não negativo.`);
     }
@@ -72,7 +59,11 @@ export function numberFilter(fields, minKey, maxKey, operator) {
   if (min !== null && max !== null && min > max) {
     throw new Error(`Valor mínimo maior que máximo em ${operator}.`);
   }
-  if (min !== null) items.push(`${operator}:${min}`);
-  if (max !== null) items.push(`-${operator}:${max + 1}`);
+  if (min !== null) {
+    items.push(`${operator}:${min}`);
+  }
+  if (max !== null) {
+    items.push(`-${operator}:${max + 1}`);
+  }
   return items;
 }

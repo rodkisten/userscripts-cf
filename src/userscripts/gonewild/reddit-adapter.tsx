@@ -43,18 +43,24 @@ export function mountReddit(ctx: any, bridge: any) {
   const search = async (more = false) => {
     // Read the selection committed by this same click before building the query.
 
-    if (!enabled()) return;
+    if (!enabled()) {
+return;
+}
     searchRequest?.abort();
     searchRequest = new AbortController();
     const request = searchRequest,
       current = ++serial;
-    if (!state().search.active) returnURL = location.href;
+    if (!state().search.active) {
+returnURL = location.href;
+}
     const q = query();
     const url = new URL(`/r/${encodeURIComponent(sub())}/search/`, location.origin);
     url.searchParams.set("q", q);
     url.searchParams.set("restrict_sr", "1");
     url.searchParams.set("gws", "1");
-    if (!more) history.pushState({ gws: true }, "", url);
+    if (!more) {
+history.pushState({ gws: true }, "", url);
+}
     setState((draft) => {
       draft.search.active = true;
       draft.search.loading = true;
@@ -67,7 +73,9 @@ export function mountReddit(ctx: any, bridge: any) {
     schedule();
     try {
       const page = await searchPosts(sub(), q, more ? state().search.after : "", request.signal);
-      if (request.signal.aborted || current !== serial) return;
+      if (request.signal.aborted || current !== serial) {
+return;
+}
       setState((draft) => {
         const ids = new Set(draft.search.results.map((post) => post.id));
         draft.search.results.push(...page.posts.filter((post) => !ids.has(post.id)));
@@ -75,14 +83,18 @@ export function mountReddit(ctx: any, bridge: any) {
       });
     } catch (error) {
       if (!request.signal.aborted)
-        setState((draft) => {
+        {
+setState((draft) => {
           draft.search.error = (error as Error).message;
         });
+}
     } finally {
       if (!request.signal.aborted && current === serial)
-        setState((draft) => {
+        {
+setState((draft) => {
           draft.search.loading = false;
         });
+}
     }
   };
   const clear = () => {
@@ -141,15 +153,23 @@ export function mountReddit(ctx: any, bridge: any) {
   let root: { host: HTMLElement; dispose: () => void } | undefined;
   const setHidden = (node: Element, wanted: boolean) => {
     node.classList.toggle(styles["gws-hidden"], wanted);
-    if (wanted) hidden.add(node);
-    else hidden.delete(node);
+    if (wanted) {
+hidden.add(node);
+}
+    else {
+hidden.delete(node);
+}
   };
   const remove = (node: Element) => {
     for (const [anchor, link] of sourceLinks)
-      if (node.contains(anchor)) {
-        if (anchor.href === link.rewritten) anchor.href = link.original;
+      {
+if (node.contains(anchor)) {
+        if (anchor.href === link.rewritten) {
+anchor.href = link.original;
+}
         sourceLinks.delete(anchor);
       }
+}
     const record = mounts.get(node);
     record?.dispose();
     record?.title?.classList.remove(styles["gws-native-title"]);
@@ -158,8 +178,14 @@ export function mountReddit(ctx: any, bridge: any) {
     hidden.delete(node);
   };
   const scan = () => {
-    if (ctx.signal.aborted) return;
-    for (const [node] of mounts) if (!node.isConnected || !enabled()) remove(node);
+    if (ctx.signal.aborted) {
+return;
+}
+    for (const [node] of mounts) {
+if (!node.isConnected || !enabled()) {
+remove(node);
+}
+}
     const main = ctx.dom.one("main") || document.body;
     if (/^(?:www\.|old\.|new\.|sh\.)?reddit\.com$/i.test(location.hostname)) {
       if (!root?.host.isConnected) {
@@ -183,10 +209,14 @@ export function mountReddit(ctx: any, bridge: any) {
           mounts.has(node) ||
           [...mounts.keys()].some((known) => known.contains(node) || node.contains(known))
         )
-          continue;
+          {
+continue;
+}
         const post = readPost(node, sub());
         if (!post || !state().settings.subreddits.some((name) => normalize(name) === normalize(post.sub)))
-          continue;
+          {
+continue;
+}
         const title = ctx.dom.one(
           '[data-testid="post-title-text"], [slot="title"], h3, a.title, a[id^="post-title"]',
           node,
@@ -201,7 +231,9 @@ export function mountReddit(ctx: any, bridge: any) {
             native
             onAudio={(items) => {
               for (const anchor of ctx.dom.all("a[href]", node) as HTMLAnchorElement[]) {
-                if (anchor.closest("[data-react-mount]")) continue;
+                if (anchor.closest("[data-react-mount]")) {
+continue;
+}
                 const item = items.find((item) => {
                   try {
                     const source = new URL(item.external),
@@ -251,11 +283,15 @@ export function mountReddit(ctx: any, bridge: any) {
     for (const node of ctx.dom.all(
       'shreddit-ad-post, shreddit-ad, reddit-ad, ad-unit, [data-promoted="true"], shreddit-post[promoted], shreddit-post[is-promoted], shreddit-post[ad-type]',
     ))
-      setHidden(node, state().settings.removeAds);
+      {
+setHidden(node, state().settings.removeAds);
+}
     if (state().postCount !== mounts.size)
-      setState((draft) => {
+      {
+setState((draft) => {
         draft.postCount = mounts.size;
       });
+}
   };
   function schedule() {
     clearTimeout(scanTimer);
@@ -274,7 +310,9 @@ export function mountReddit(ctx: any, bridge: any) {
             ),
         )
       )
-        schedule();
+        {
+schedule();
+}
     },
     { subtree: true, childList: true },
   );
@@ -314,9 +352,15 @@ export function mountReddit(ctx: any, bridge: any) {
     root?.dispose();
     disposeShell?.();
     shellHost.remove();
-    for (const [node] of mounts) remove(node);
+    for (const [node] of mounts) {
+remove(node);
+}
     hidden.forEach((node) => node.classList.remove(styles["gws-hidden"]));
-    for (const [anchor, link] of sourceLinks) if (anchor.href === link.rewritten) anchor.href = link.original;
+    for (const [anchor, link] of sourceLinks) {
+if (anchor.href === link.rewritten) {
+anchor.href = link.original;
+}
+}
     disposeNetwork();
   });
 }

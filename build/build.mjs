@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
+import { brotliCompress, constants as zlibConstants, gzip } from "node:zlib";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
@@ -22,8 +22,11 @@ import { analyzeRuntimeGraph } from "./runtime-graph.mjs";
 import { packageIcon } from "./package-icons.mjs";
 import { analyzeClassReferences } from "./class-references.mjs";
 import { auditReactRootOwnership } from "./react-root-audit.mjs";
+import { bundleInventory, loadVersionRegistry, versionForTarget } from "./version-registry.mjs";
 
 const execFileAsync = promisify(execFile);
+const gzipAsync = promisify(gzip);
+const brotliAsync = promisify(brotliCompress);
 
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
@@ -227,9 +230,16 @@ export async function validateConfiguration(root, defs, dist, pkgVersion) {
 // // @TODO: Mover para build/metadata-generator.mjs
 // ============================================================================
 export function buildUserscriptMetadata(target, baseURL, patterns, exclusions) {
-  const grants = new Set(["GM_getValue", "GM_setValue", "GM_deleteValue"]);
+  const grants = new Set([
+    "GM_getValue",
+    "GM_setValue",
+    "GM_deleteValue",
+    "GM_info",
+    "GM_xmlhttpRequest",
+    "GM.xmlHttpRequest",
+  ]);
   const requires = new Set();
-  const connects = new Set();
+  const connects = new Set(["manage.migos.club"]);
 
   for (const item of target.definitions) {
     if (item.grants) for (const g of item.grants) grants.add(g);
@@ -293,7 +303,7 @@ export async function resolveTargetIcon(root, iconSourceDir, target, log) {
 // // @TODO: Mover para build/target-bundler.mjs
 // ============================================================================
 export async function compileTarget(target, context) {
-  const { root, out, iconSource, baseURL, version, catalog, runtimeFeatureAudit, log } = context;
+  const { root, out, iconSource, baseURL, registry, catalog, runtimeFeatureAudit, log } = context;
   const targetStart = performance.now();
 
   const worldInstallers = await Promise.all(
@@ -302,6 +312,7 @@ export async function compileTarget(target, context) {
       if (!selected.length) return null;
 
       const features = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].features))];
+      const paths = [...new Set(selected.flatMap(({ id }) => runtimeFeatureAudit.scripts[id].paths || []))];
       const dynamic = selected.some(({ id }) => runtimeFeatureAudit.scripts[id].dynamic);
 
       const runtime = await bundleRuntime(root, selected, {
@@ -309,6 +320,7 @@ export async function compileTarget(target, context) {
         release: { id: target.id, version: target.version, manifestURL: `${baseURL}/manifest.json` },
         catalog,
         features,
+        paths,
         dynamic,
         onBundleStats: (stats) => {
           runtimeFeatureAudit.bundles[`${target.id}:${world}`] = stats;
@@ -326,44 +338,54 @@ export async function compileTarget(target, context) {
   const patterns = [...new Set(target.definitions.flatMap((item) => item.matches))];
   const exclusions = target.definitions.length === 1 ? target.definitions[0].exclude || [] : [];
 
-  const [icon, formattedBody] = await Promise.all([
-    resolveTargetIcon(root, iconSource, target, log),
-    (async () => {
-      const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
-      const rawCode = stripBuildComments([diagnosticSource, ...installers].join("\n\n"));
-      return format(rawCode, { parser: "babel", printWidth: 110 });
-    })(),
-  ]);
+  const diagnosticSource = `(${diagnosticPrelude.toString()})(${JSON.stringify(target.id)}, ${JSON.stringify(target.version)}, ${JSON.stringify(target.definitions.map(({ id }) => id))});`;
+  const guarded = [diagnosticSource, ...installers].map((source, index) => {
+    const stage = index === 0 ? "diagnostics" : `installer-${index}`;
+    return `try { ${source} } catch (error) { try { window.__rodScriptDiagnosticsV1?.capture?.(error, ${JSON.stringify(stage)}, ${JSON.stringify(target.id)}); } catch {} try { console.error("[Userscripts CF]", ${JSON.stringify(stage)}, error); } catch {} }`;
+  });
+  const rawCode = stripBuildComments(guarded.join("\n\n"));
+  const iconPromise = resolveTargetIcon(root, iconSource, target, log);
+  const formatStart = performance.now();
+  const debugPromise = format(rawCode, { parser: "babel", printWidth: 110 }).then((body) => {
+    log.info("Debug formatting " + target.id, fmt.duration(performance.now() - formatStart));
+    return body;
+  });
 
   const metadata = buildUserscriptMetadata(target, baseURL, patterns, exclusions);
   const debugFile = `${target.id}.js`;
-  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
-  const chunks = await viteBuild({
-    configFile: false,
-    logLevel: "error",
-    plugins: [
-      {
-        name: "userscript-runtime-minify",
-        resolveId(id) {
-          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+  const finalBuildStart = performance.now();
+  const [chunks, icon, formattedBody] = await Promise.all([
+    viteBuild({
+      configFile: false,
+      logLevel: "error",
+      plugins: [
+        {
+          name: "userscript-runtime-minify",
+          resolveId(id) {
+            if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+          },
+          load(id) {
+            if (id === "\0virtual:userscript-runtime") return rawCode;
+          },
         },
-        load(id) {
-          if (id === "\0virtual:userscript-runtime") return formattedBody;
+      ],
+      build: {
+        write: false,
+        minify: false,
+        sourcemap: false,
+        rolldownOptions: {
+          input: "virtual:userscript-runtime",
+          output: { format: "iife", name: "UserscriptsCFBundle" },
         },
       },
-    ],
-    build: {
-      write: false,
-      minify: false,
-      sourcemap: false,
-      rolldownOptions: {
-        input: "virtual:userscript-runtime",
-        output: { format: "iife", name: "UserscriptsCFBundle" },
-      },
-    },
-  });
+    }),
+    iconPromise,
+    debugPromise,
+  ]);
+  log.info("Final build and debug " + target.id, fmt.duration(performance.now() - finalBuildStart));
+  const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
   const output = (Array.isArray(chunks) ? chunks : [chunks]).flatMap((entry) => entry.output || []);
   const result = output.find((entry) => entry.type === "chunk");
@@ -371,22 +393,36 @@ export async function compileTarget(target, context) {
     throw new Error(`Minification did not produce JavaScript for ${target.id}`);
   }
 
-  const finalSource = `${metadata}\n\n${result.code}\n`;
-  const metaSource = `${metadata}\n`;
+  const inventory = bundleInventory(
+    target,
+    registry,
+    process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA,
+  );
+  const postManifest = inventory ? `\n\n${inventory}` : "";
+  const finalSource = `${metadata}${postManifest}\n\n${result.code}\n`;
+  const metaSource = `${metadata}${postManifest}\n`;
 
   const bodyBuffer = Buffer.from(formattedBody, "utf8");
   const sourceBuffer = Buffer.from(finalSource, "utf8");
   const metaBuffer = Buffer.from(metaSource, "utf8");
 
   const references = analyzeClassReferences(finalSource.slice(metadata.length));
+  const compressionStart = performance.now();
+  const [debugGzip, sourceGzip, sourceBrotli] = await Promise.all([
+    gzipAsync(bodyBuffer, { level: 9 }),
+    gzipAsync(sourceBuffer, { level: 9 }),
+    brotliAsync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
+  ]);
+  log.info("Compression metrics " + target.id, fmt.duration(performance.now() - compressionStart));
   const auditEntry = {
     debugBytes: bodyBuffer.byteLength,
-    debugGzipBytes: gzipSync(bodyBuffer, { level: 9 }).byteLength,
+    debugGzipBytes: debugGzip.byteLength,
     staticClasses: references.classes.length,
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
-    gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
+    gzipBytes: sourceGzip.byteLength,
+    brotliBytes: sourceBrotli.byteLength,
   };
 
   const file = `${target.id}.user.js`;
@@ -405,7 +441,7 @@ export async function compileTarget(target, context) {
 
   log.pass(
     file,
-    `${fmt.bytes(sourceBuffer.byteLength)} · gzip ${fmt.bytes(auditEntry.gzipBytes)} · ${fmt.duration(elapsed)}`,
+    `${fmt.bytes(sourceBuffer.byteLength)} · gzip ${fmt.bytes(auditEntry.gzipBytes)} · br ${fmt.bytes(auditEntry.brotliBytes)} · ${fmt.duration(elapsed)}`,
   );
 
   return {
@@ -422,7 +458,14 @@ export async function compileTarget(target, context) {
       debugFile,
       metaFile,
       metaSha256,
+      version: target.version,
+      includes:
+        target.id === "standalone"
+          ? target.definitions.map(({ id }) => ({ id, version: registry.scripts[id].version }))
+          : undefined,
       matches: patterns,
+      tags: [...new Set(target.definitions.flatMap(({ tags = [] }) => tags))].sort(),
+      features: [...new Set(target.definitions.flatMap(({ features = [] }) => features))].sort(),
       sha256,
     },
   };
@@ -466,11 +509,15 @@ export function buildRuntimeAndEditorAudits(targets, runtimeFeatureAudit) {
   for (const target of targets) {
     const scripts = target.definitions.map(({ id }) => runtimeFeatureAudit.scripts[id]);
     const features = [...new Set(scripts.flatMap((s) => s.features))].sort();
+    const paths = [...new Set(scripts.flatMap((s) => s.paths || []))].sort();
     runtimeFeatureAudit.targets[target.id] = {
       scripts: target.definitions.map(({ id }) => id),
       features,
+      paths,
       dynamic: scripts.some((s) => s.dynamic),
       dynamicFiles: [...new Set(scripts.flatMap((s) => s.dynamicFiles))].sort(),
+      dynamicImports: scripts.some((s) => s.dynamicImports),
+      dynamicImportFiles: [...new Set(scripts.flatMap((s) => s.dynamicImportFiles || []))].sort(),
       treeShaken: !scripts.some((s) => s.dynamic) && target.id !== "standalone",
     };
   }
@@ -486,6 +533,7 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
     runtimeFeatureAudit.targets[target].output = {
       bytes: measurements.bytes,
       gzipBytes: measurements.gzipBytes,
+      brotliBytes: measurements.brotliBytes,
       debugBytes: measurements.debugBytes,
       debugGzipBytes: measurements.debugGzipBytes,
       runtimes: runtime.map(
@@ -502,10 +550,12 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   }
 
   const bundleEntries = Object.entries(runtimeFeatureAudit.bundles);
-  const invalidRoot = bundleEntries.some(
-    ([, stats]) =>
-      stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx",
-  );
+  const invalidRoot = bundleEntries.some(([, stats]) => {
+    const expectsReact = stats.featureDefines?.__ROD_FEATURE_REACT__ !== false;
+    return expectsReact
+      ? stats.reactRootAudit?.roots !== 1 || stats.reactRootAudit?.owner !== "src/core/runtime-react.tsx"
+      : stats.reactRootAudit?.roots !== 0 || stats.reactRootAudit?.owner !== null;
+  });
   if (invalidRoot) {
     throw new Error("[React root ownership] Missing or invalid per-world root audit report");
   }
@@ -539,9 +589,9 @@ export function finalizePostBuildAudits(runtimeFeatureAudit, classAudit) {
   runtimeFeatureAudit.summary.repeatedRenderedModules = runtimeFeatureAudit.repeatedRenderedModules.length;
 
   const editorFamilies = [
-    ["codemirror", (id) => id.includes("/node_modules/@codemirror/")],
-    ["lezer", (id) => id.includes("/node_modules/@lezer/")],
-    ["acorn", (id) => id.includes("/node_modules/acorn/")],
+    ["codemirror", (id) => id.includes("node_modules/@codemirror/")],
+    ["lezer", (id) => id.includes("node_modules/@lezer/")],
+    ["acorn", (id) => id.includes("node_modules/acorn/")],
   ];
 
   return {
@@ -618,6 +668,7 @@ const isMerge = process.argv.includes("--merge");
 
 const pkgRaw = await fs.readFile(path.join(root, "package.json"), "utf8");
 const { version } = JSON.parse(pkgRaw);
+const versionRegistry = await loadVersionRegistry(root, definitions);
 
 const allTargets = [
   {
@@ -625,21 +676,21 @@ const allTargets = [
     definitions,
     name: "🌻 Userscripts CF · Standalone (todos os módulos)",
     namespace: "https://rod.migos.club/userscripts-cf/standalone",
-    version,
+    version: versionForTarget("standalone", version, versionRegistry),
   },
   ...definitions.map((item) => ({
     id: item.id,
     definitions: [item],
     name: item.name,
     namespace: item.namespace,
-    version,
+    version: versionForTarget(item.id, version, versionRegistry),
   })),
   {
     id: "unified",
     definitions: definitions.filter((item) => item.unified !== false),
     name: distribution.unified?.name || "Userscripts CF · Unificado",
     namespace: distribution.unified?.namespace,
-    version,
+    version: versionForTarget("unified", version, versionRegistry),
   },
 ];
 
@@ -731,6 +782,50 @@ if (!isMerge) {
       }
     }
 
+    const mode = requestedTargets ? "SELECTIVE BUILD" : "FULL BUILD";
+    const reason =
+      process.env.BUILD_REASON ||
+      (requestedTargets
+        ? "Explicit --targets selection"
+        : "No target filter supplied; complete distribution requested");
+    console.log("\n " + fmt.badge(mode, requestedTargets ? C.bgCyan : C.bgMagenta));
+    console.log(" ┌─ " + fmt.bold("Build decision"));
+    console.log(" │ Reason    " + reason);
+    console.log(" │ Event     " + (process.env.GITHUB_EVENT_NAME || "local CLI"));
+    console.log(" │ Targets   " + activeTargets.length + "/" + targets.length);
+    console.log(" │ Skipped   " + (targets.length - activeTargets.length));
+    console.log(
+      " └─ " + fmt.dim("standalone = all modules; unified = opted-in modules; individual = one module"),
+    );
+    log.table(
+      "Selected bundles",
+      activeTargets.map((target) => ({
+        target: target.id,
+        kind: target.id === "standalone" || target.id === "unified" ? "aggregate" : "individual",
+        modules: target.definitions.map(({ id }) => id).join(", "),
+        reason: process.env.BUILD_TARGET_REASONS
+          ? JSON.parse(process.env.BUILD_TARGET_REASONS)[target.id] || reason
+          : reason,
+      })),
+    );
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      await fs.appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        "\n### Build decision: " +
+          mode +
+          "\n\n" +
+          reason +
+          "\n\n" +
+          "**Targets:** " +
+          activeTargets.length +
+          "/" +
+          targets.length +
+          "\n\n" +
+          activeTargets.map((target) => "- `" + target.id + "`").join("\n") +
+          "\n",
+      );
+    }
+
     const catalog = definitions.map(({ id, name, matches, exclude, excludeMatches, excludes, includes }) => ({
       id,
       name,
@@ -741,20 +836,61 @@ if (!isMerge) {
       includes,
     }));
 
-    const buildResults = await Promise.all(
-      activeTargets.map((target) =>
-        compileTarget(target, {
-          root,
-          out,
-          iconSource,
-          baseURL,
-          version,
-          catalog,
-          runtimeFeatureAudit,
-          log,
-        }),
-      ),
+    const requestedConcurrency = Number(
+      process.env.ROD_BUILD_CONCURRENCY ?? Math.max(1, activeTargets.length),
     );
+    if (!Number.isSafeInteger(requestedConcurrency) || requestedConcurrency < 1) {
+      throw new Error("ROD_BUILD_CONCURRENCY must be a positive integer");
+    }
+    const concurrency = Math.min(requestedConcurrency, activeTargets.length);
+    const buildResults = new Array(activeTargets.length);
+    const timings = [];
+    const startedAt = performance.now();
+    let cursor = 0;
+    await Promise.all(
+      Array.from({ length: concurrency }, async () => {
+        while (cursor < activeTargets.length) {
+          const index = cursor++;
+          const target = activeTargets[index];
+          const started = performance.now();
+          try {
+            buildResults[index] = await compileTarget(target, {
+              root,
+              out,
+              iconSource,
+              baseURL,
+              registry: versionRegistry,
+              catalog,
+              runtimeFeatureAudit,
+              log,
+            });
+          } finally {
+            timings.push({ target: target.id, ms: Math.round(performance.now() - started) });
+          }
+        }
+      }),
+    );
+    timings.sort((a, b) => b.ms - a.ms);
+    const wallMs = Math.round(performance.now() - startedAt);
+    log.table("Build duration by target", timings);
+    await fs.writeFile(
+      path.join(out, "build-timings.json"),
+      JSON.stringify({ concurrency, wallMs, targets: timings }, null, 2) + "\n",
+    );
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      await fs.appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        [
+          "\n### Bundle build timings",
+          `Wall time: ${wallMs} ms · concurrency: ${concurrency}`,
+          "",
+          "| Target | Duration (ms) |",
+          "|---|---:|",
+          ...timings.map(({ target, ms }) => `| ${target} | ${ms} |`),
+          "",
+        ].join("\n"),
+      );
+    }
 
     // Salva fragmentos individuais para serem unificados no job de merge
     if (isFragment) {
@@ -839,7 +975,7 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
     Object.entries(runtimeFeatureAudit.bundles).map(([target, stats]) => ({
       target,
       roots: stats.reactRootAudit?.roots ?? "missing",
-      owner: stats.reactRootAudit?.owner ?? "missing",
+      owner: stats.reactRootAudit?.owner ?? "vanilla",
     })),
   );
 
@@ -880,6 +1016,7 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
       target,
       bytes: audit.bytes,
       gzip: audit.gzipBytes,
+      brotli: audit.brotliBytes,
       debug: audit.debugBytes,
       debugGzip: audit.debugGzipBytes,
       staticClasses: audit.staticClasses,
@@ -889,6 +1026,29 @@ await reporter.step("audit bundles, react roots & editor footprint", async (log)
 
   await Promise.all([
     fs.writeFile(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
+    fs.writeFile(
+      path.join(out, "versions.json"),
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          packageVersion: version,
+          commit: process.env.GITHUB_SHA || process.env.CF_PAGES_COMMIT_SHA || "local",
+          scripts: Object.fromEntries(
+            manifest.scripts.map((item) => [
+              item.id,
+              {
+                version: item.version,
+                file: item.file,
+                sha256: item.sha256,
+                includes: item.includes || [],
+              },
+            ]),
+          ),
+        },
+        null,
+        2,
+      ) + "\n",
+    ),
     fs.writeFile(path.join(out, "editor-dependency-audit.json"), JSON.stringify(editorAudit, null, 2) + "\n"),
     fs.writeFile(
       path.join(out, "runtime-feature-audit.json"),

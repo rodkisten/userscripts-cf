@@ -190,8 +190,22 @@ async function processSourceFile(filename, { fix }) {
   const edits = collectStyleEdits(content, ast);
 
   if (fix && edits.length > 0) {
-    const updated = applyEdits(content, edits);
-    parse(updated, { sourceType: "module", plugins: ["typescript", "jsx"] });
+    let updated = content;
+    let pending = edits;
+    // Nested control statements have overlapping source ranges. Apply only
+    // innermost non-overlapping edits, then reparse before the next pass.
+    for (let pass = 0; pending.length; pass++) {
+      if (pass >= 100) throw new Error(`Style fix did not converge: ${filename}`);
+      const batch = pending.filter((edit) => !pending.some((other) =>
+        other !== edit && other.start >= edit.start && other.end <= edit.end &&
+        (other.start > edit.start || other.end < edit.end)
+      ));
+      const next = applyEdits(updated, batch);
+      if (next === updated) throw new Error(`Style fix stalled: ${filename}`);
+      const nextAst = parse(next, { sourceType: "module", plugins: ["typescript", "jsx"] });
+      updated = next;
+      pending = collectStyleEdits(updated, nextAst);
+    }
     await fs.writeFile(absolute, updated, "utf8");
   }
 

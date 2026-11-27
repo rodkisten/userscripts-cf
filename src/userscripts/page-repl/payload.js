@@ -6,47 +6,83 @@ export function runPayload(spec, execute) {
     logs = 0,
     sequence = 0;
   function pack(value, depth = 0, seen = new WeakSet()) {
-    if (depth === 0) seen.remaining = 2000;
-    if (seen.remaining-- <= 0) return "[limite total de nós]";
-    if (value === undefined) return { type: "undefined" };
-    if (typeof value === "bigint") return { type: "bigint", value: String(value) };
-    if (typeof value === "function") return { type: "function", value: String(value).slice(0, 1200) };
-    if (typeof value === "symbol") return { type: "symbol", value: String(value) };
-    if (typeof value === "number" && !Number.isFinite(value)) return { type: "number", value: String(value) };
+    if (depth === 0) {
+seen.remaining = 2000;
+}
+    if (seen.remaining-- <= 0) {
+return "[limite total de nós]";
+}
+    if (value === undefined) {
+return { type: "undefined" };
+}
+    if (typeof value === "bigint") {
+return { type: "bigint", value: String(value) };
+}
+    if (typeof value === "function") {
+return { type: "function", value: String(value).slice(0, 1200) };
+}
+    if (typeof value === "symbol") {
+return { type: "symbol", value: String(value) };
+}
+    if (typeof value === "number" && !Number.isFinite(value)) {
+return { type: "number", value: String(value) };
+}
     if (!value || typeof value !== "object")
-      return typeof value === "string" && value.length > spec.limit
+      {
+return typeof value === "string" && value.length > spec.limit
         ? value.slice(0, spec.limit) + "… [truncado]"
         : value;
+}
     if (value instanceof Error)
-      return {
+      {
+return {
         type: "error",
         name: value.name,
         message: value.message,
         stack: String(value.stack || "").slice(0, spec.limit),
       };
+}
     if (typeof Node !== "undefined" && value instanceof Node)
-      return {
+      {
+return {
         type: "DOM",
         tag: value.nodeName,
         id: value.id || "",
         text: String(value.textContent || "").slice(0, 500),
       };
-    if (depth > 5) return "[profundidade limitada]";
-    if (seen.has(value)) return "[referência repetida/circular]";
+}
+    if (depth > 5) {
+return "[profundidade limitada]";
+}
+    if (seen.has(value)) {
+return "[referência repetida/circular]";
+}
     seen.add(value);
-    if (value instanceof Date) return { type: "Date", value: String(value) };
-    if (value instanceof RegExp) return { type: "RegExp", value: String(value) };
+    if (value instanceof Date) {
+return { type: "Date", value: String(value) };
+}
+    if (value instanceof RegExp) {
+return { type: "RegExp", value: String(value) };
+}
     if (value instanceof Map)
-      return { type: "Map", entries: pack([...value.entries()].slice(0, 100), depth + 1, seen) };
+      {
+return { type: "Map", entries: pack([...value.entries()].slice(0, 100), depth + 1, seen) };
+}
     if (value instanceof Set)
-      return { type: "Set", values: pack([...value.values()].slice(0, 100), depth + 1, seen) };
+      {
+return { type: "Set", values: pack([...value.values()].slice(0, 100), depth + 1, seen) };
+}
     if (ArrayBuffer.isView(value))
-      return {
+      {
+return {
         type: value.constructor.name,
         bytes: value.byteLength,
         preview: [...new Uint8Array(value.buffer, value.byteOffset, Math.min(100, value.byteLength))],
       };
-    if (Array.isArray(value)) return value.slice(0, 100).map((item) => pack(item, depth + 1, seen));
+}
+    if (Array.isArray(value)) {
+return value.slice(0, 100).map((item) => pack(item, depth + 1, seen));
+}
     const result = {};
     for (const key of Object.keys(value).slice(0, 100)) {
       try {
@@ -85,11 +121,17 @@ export function runPayload(spec, execute) {
   }
   const output = {};
   for (const method of ["log", "info", "warn", "error", "debug", "table", "dir", "trace", "assert", "clear"])
-    output[method] = (...args) => {
-      if (settled || logs++ >= 100) return;
-      if (method === "assert" && args[0]) return;
+    {
+output[method] = (...args) => {
+      if (settled || logs++ >= 100) {
+return;
+}
+      if (method === "assert" && args[0]) {
+return;
+}
       emit("console", { method, args: pack(args) });
     };
+}
   const evidence = {
     href: location.href,
     windowIsGlobal: window === globalThis,

@@ -34,7 +34,9 @@ export default {
     const abort = ctx.signal;
     ctx.ui.registerStyles(css);
 
-    if (!ctx.menu) throw new Error("Instagram Bookmarks requires the runtime menu feature");
+    if (!ctx.menu) {
+throw new Error("Instagram Bookmarks requires the runtime menu feature");
+}
     const hub = installRodActions(ctx.menu, (component, container) => ({
       dispose: ctx.ui.mountReact(component, container),
     }));
@@ -42,6 +44,14 @@ export default {
       running: false,
       lastRun: 0,
       lastError: "",
+      progress: null as {
+        current: number;
+        total: number;
+        collection: string;
+        sent: number;
+        processed: number;
+        pageEligible: number;
+      } | null,
       open: false,
       form: { ...DEFAULTS, token: "", channels: [] } as Form,
     };
@@ -88,8 +98,10 @@ export default {
       return (
         <SavedPanel
           onOpen={() => void settingsApi.open()}
+          onSync={() => void run(true)}
           running={runtime.running}
           error={runtime.lastError}
+          progress={runtime.progress || undefined}
         />
       );
     }
@@ -121,11 +133,13 @@ export default {
     }
     const currentAccount = () => document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
     async function relay(config: Config, items: MediaPayload[], account: string, channels: string[]) {
-      if (currentAccount() !== account) throw Error("Conta alterada antes do envio ao Relay");
-      const response = await ctx.http.request(RELAY, {
+      if (currentAccount() !== account) {
+throw Error("Conta alterada antes do envio ao Relay");
+}
+      const relayOptions = {
         method: "POST",
-        transport: "gm",
-        cacheMode: "off",
+        transport: "gm" as const,
+        cacheMode: "off" as const,
         timeoutMs: 90000,
         signal: abort,
         headers: {
@@ -133,9 +147,12 @@ export default {
           Authorization: `Bearer ${config.token}`,
         },
         body: JSON.stringify({ items, channels, concurrency: 1, force: false }),
-      });
+      };
+      const response = await ctx.http.request(RELAY, relayOptions);
       abort.throwIfAborted();
-      if (currentAccount() !== account) throw Error("Conta alterada durante envio ao Relay");
+      if (currentAccount() !== account) {
+throw Error("Conta alterada durante envio ao Relay");
+}
       if (!response.ok) {
         const error = Error(`Relay HTTP ${response.status}`) as Error & {
           status?: number;
@@ -147,7 +164,9 @@ export default {
       }
       const data: unknown = await response.json();
       abort.throwIfAborted();
-      if (currentAccount() !== account) throw Error("Conta alterada após resposta do Relay");
+      if (currentAccount() !== account) {
+throw Error("Conta alterada após resposta do Relay");
+}
       if (!data || typeof data !== "object" || !("results" in data) || !Array.isArray(data.results)) {
         throw Error("Relay sem confirmação por item");
       }
@@ -173,15 +192,37 @@ export default {
       }
       const config = await get<Config | null>("config", null);
       const settings = { ...DEFAULTS, ...(await get("settings", {})) };
-      if (!settings.enabled || !settings.collectionIds?.length) {
+      const account = currentAccount();
+      const reason =
+        !settings.enabled && !manual
+          ? ""
+          : !settings.collectionIds?.length
+            ? "Selecione pelo menos uma coleção nas configurações."
+            : !config?.token?.trim()
+              ? "Configure o token do Relay antes de sincronizar."
+              : !config.channels?.length
+                ? "Configure pelo menos um canal de destino."
+                : !account
+                  ? "Não foi possível identificar a conta do Instagram. Entre na sua conta e tente novamente."
+                  : "";
+      if (reason) {
+        setRuntime((draft) => {
+          draft.lastError = reason;
+        });
+        if (manual) {
+          ctx.toaster?.({ title: reason });
+        }
         return;
       }
-      const account = document.cookie.match(/(?:^|;\s*)ds_user_id=([^;]+)/)?.[1];
-      if (!config?.token || !account) {
+      if (!settings.enabled && !manual) {
+        return;
+      }
+      if (!account || !config) {
         return;
       }
       setRuntime((draft) => {
         draft.running = true;
+        draft.progress = null;
         draft.lastRun = Date.now();
       });
       try {
@@ -190,21 +231,53 @@ export default {
         }
         await navigator.locks.request(`instagram-saved:${account}`, { ifAvailable: true }, async (lock) => {
           if (!lock) {
-            return;
+            throw Error("Outra aba já está sincronizando os salvos desta conta.");
           }
           abort.throwIfAborted();
           let count = 0;
-          for (const collectionId of settings.collectionIds) {
+          let processedTotal = 0;
+          const sessionLimit = Math.max(1, Math.floor(Number(settings.maxItemsPerSession) || 1));
+          for (const [index, collectionId] of settings.collectionIds.entries()) {
+            if (processedTotal >= sessionLimit) {
+break;
+}
+            let collectionProcessed = 0;
+            setRuntime((draft) => {
+              draft.progress = {
+                current: index + 1,
+                total: settings.collectionIds.length,
+                collection: collectionId,
+                sent: count,
+                processed: 0,
+                pageEligible: 0,
+              };
+            });
             abort.throwIfAborted();
-            if (currentAccount() !== account) throw Error("Conta alterada entre coleções");
+            if (currentAccount() !== account) {
+throw Error("Conta alterada entre coleções");
+}
             const stateKey = `delivered:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             const ledgerKey = `delivered-channels:v1:${account}:${collectionId}`;
             const cursorKey = `cursor:${account}:${collectionId}:${[...config.channels].sort().join(",")}`;
             count += await syncSaved({
               channels: config.channels,
               signal: abort,
+              onProgress: ({ processed, sent, pageEligible }) => {
+                collectionProcessed = processed;
+                setRuntime((draft) => {
+                  if (draft.progress?.collection === collectionId) {
+                    draft.progress.processed = processed;
+                    draft.progress.pageEligible = pageEligible;
+                    draft.progress.sent = count + sent;
+                  }
+                });
+              },
               pause,
-              settings: { ...settings, cursor: await get(cursorKey, "") },
+              settings: {
+                ...settings,
+                maxItemsPerSession: sessionLimit - processedTotal,
+                cursor: await get(cursorKey, ""),
+              },
               onCursor: (cursor) => set(cursorKey, cursor),
               load: () => get(stateKey, {}),
               save: (done) => set(stateKey, done),
@@ -222,10 +295,10 @@ export default {
                   if (cursor) {
                     url.searchParams.set("max_id", cursor);
                   }
-                  const response = await ctx.http.request(url, {
-                    transport: "fetch",
-                    cacheMode: "off",
-                    credentials: "same-origin",
+                  const instagramOptions = {
+                    transport: "fetch" as const,
+                    cacheMode: "off" as const,
+                    credentials: "same-origin" as const,
                     signal: abort,
                     headers: {
                       "X-IG-App-ID": "936619743392459",
@@ -234,7 +307,8 @@ export default {
                         document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] || "",
                       ),
                     },
-                  });
+                  };
+                  const response = await ctx.http.request(url, instagramOptions);
                   if (!response.ok) {
                     const error = Error(`Instagram HTTP ${response.status}`) as Error & {
                       status?: number;
@@ -246,9 +320,17 @@ export default {
                   }
                   const page = await response.json();
                   abort.throwIfAborted();
-                  if (currentAccount() !== account) throw Error("Conta alterada após leitura do Instagram");
+                  if (currentAccount() !== account) {
+throw Error("Conta alterada após leitura do Instagram");
+}
                   return page;
                 }, 50),
+            });
+            processedTotal += collectionProcessed;
+            setRuntime((draft) => {
+              if (draft.progress) {
+draft.progress.sent = count;
+}
             });
           }
           await set("lastError", null);
@@ -270,6 +352,7 @@ export default {
       } finally {
         setRuntime((draft) => {
           draft.running = false;
+          draft.progress = null;
         });
       }
     }

@@ -242,8 +242,8 @@ export interface FetchObserverEvent {
   status?: number;
   durationMs: number;
   responseUrl?: string;
-  body?: string | null;
   requestBody?: string | null;
+  body?: string | null;
   requestContentType?: string | null;
   responseContentType?: string | null;
   requestTruncated?: boolean;
@@ -267,8 +267,46 @@ interface FetchRegistryEntry {
   wrapped: typeof window.fetch;
   listeners: Set<FetchListenerEntry>;
 }
-
 const nativeFetchObservers = new WeakMap<Window & typeof globalThis, FetchRegistryEntry>();
+
+// Clone streams before consumption. Reading the clone must never consume the page's body.
+async function readBody(
+  stream: ReadableStream<Uint8Array> | null,
+  limit: number,
+  contentType: string | null,
+): Promise<{ text: string | null; truncated: boolean }> {
+  if (!stream || limit <= 0) return { text: null, truncated: false };
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  let truncated = false;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      const decoded = decoder.decode(chunk.value, { stream: true });
+      const remaining = limit - text.length;
+      if (decoded.length > remaining) {
+        text += decoded.slice(0, Math.max(0, remaining));
+        truncated = true;
+        break;
+      }
+      text += decoded;
+      if (text.length >= limit) {
+        truncated = true;
+        break;
+      }
+    }
+    if (!truncated) text += decoder.decode();
+  } finally {
+    if (truncated) void reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+  if (contentType && !/json|text|xml|javascript|graphql|html|form|yaml|csv|svg/i.test(contentType)) {
+    return { text: "[Binary body: preview unavailable]", truncated };
+  }
+  return { text, truncated };
+}
 
 export function observePageFetch(
   callback: (event: FetchObserverEvent) => void,
@@ -276,7 +314,6 @@ export function observePageFetch(
 ): () => void {
   if (typeof callback !== "function") throw new TypeError("Expected network observer");
   if (typeof host.fetch !== "function") return () => {};
-
   let entry = nativeFetchObservers.get(host);
   if (!entry) {
     const original = host.fetch;
@@ -332,16 +369,24 @@ export function observePageFetch(
           for (const listener of [...listeners]) {
             try {
               if (listener.maxBodyCharacters <= 0) {
-                listener.callback({ ...event, body: null, requestBody: undefined, truncated: false, requestTruncated: false });
+                listener.callback({
+                  ...event,
+                  body: null,
+                  requestBody: undefined,
+                  truncated: false,
+                  requestTruncated: false,
+                });
               } else {
                 listener.callback({
                   ...event,
                   body: event.body ? event.body.slice(0, listener.maxBodyCharacters) : event.body,
-                  requestBody: event.requestBody ? event.requestBody.slice(0, listener.maxBodyCharacters) : event.requestBody,
+                  requestBody: event.requestBody
+                    ? event.requestBody.slice(0, listener.maxBodyCharacters)
+                    : event.requestBody,
                 });
               }
             } catch {
-              /* Observer errors must not affect fetch. */
+              /* Observers must never break page requests. */
             }
           }
         },
@@ -360,10 +405,8 @@ export function observePageFetch(
           }
         },
       );
-
       return response;
     };
-
     host.fetch = wrapped;
     entry = { original, wrapped, listeners };
     nativeFetchObservers.set(host, entry);
@@ -380,10 +423,8 @@ export function observePageFetch(
     }
     signal?.removeEventListener("abort", off);
   };
-
   if (signal?.aborted) off();
   else signal?.addEventListener("abort", off, { once: true });
-
   return off;
 }
 
@@ -394,6 +435,9 @@ export function observePageFetch(
 export interface XHRObserverEvent {
   url: string;
   method: string;
+  requestBody?: string | null;
+  requestContentType?: string | null;
+  requestTruncated?: boolean;
   status?: number;
   durationMs: number;
   responseContentType?: string | null;
@@ -453,6 +497,26 @@ export function observePageXHR(
     const patchedSend = function (this: XMLHttpRequest, ...args: any[]) {
       const info = metadata.get(this) || { method: "GET", url: "" };
       const start = performance.now();
+      const bodyLimit = getEffectiveLimit();
+      let requestBody: string | null = null;
+      let requestTruncated = false;
+      try {
+        const body = args[0];
+        if (typeof body === "string") {
+          requestBody = body.slice(0, bodyLimit);
+          requestTruncated = body.length > bodyLimit;
+        } else if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) {
+          const serialized = body.toString();
+          requestBody = serialized.slice(0, bodyLimit);
+          requestTruncated = serialized.length > bodyLimit;
+        } else if (typeof FormData !== "undefined" && body instanceof FormData) {
+          const serialized = [...body.entries()]
+            .map(([key, value]) => `${key}=${typeof value === "string" ? value : `[File:${value.name}]`}`)
+            .join("&");
+          requestBody = serialized.slice(0, bodyLimit);
+          requestTruncated = serialized.length > bodyLimit;
+        } else if (body != null && bodyLimit > 0) requestBody = "[Binary or Stream Body]";
+      } catch {}
 
       this.addEventListener(
         "loadend",
@@ -460,6 +524,8 @@ export function observePageXHR(
           const responseContentType = this.getResponseHeader("content-type") || null;
           const event: XHRObserverEvent = {
             ...info,
+            requestBody,
+            requestTruncated,
             status: this.status,
             durationMs: Math.round(performance.now() - start),
             responseContentType,

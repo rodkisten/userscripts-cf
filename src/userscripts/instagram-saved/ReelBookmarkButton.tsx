@@ -28,7 +28,9 @@ export function ReelBookmarkButton({
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (!disabled) onActivate?.();
+        if (!disabled) {
+onActivate?.();
+}
       }}
     >
       <svg

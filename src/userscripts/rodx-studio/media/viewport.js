@@ -17,7 +17,9 @@ export function initializeDeckViewportPlayback() {
       const width = window.visualViewport?.width || innerWidth;
       const height = window.visualViewport?.height || innerHeight;
       const top = document.getElementById("rodx-active-tweetbar")?.hidden === false ? 40 : 0;
-      if (rect.width < 1 || rect.height < 1) return 0;
+      if (rect.width < 1 || rect.height < 1) {
+return 0;
+}
       const x = Math.max(0, Math.min(rect.right, width) - Math.max(rect.left, 0));
       const y = Math.max(0, Math.min(rect.bottom, height) - Math.max(rect.top, top));
       const possible = Math.min(rect.width, width) * Math.min(rect.height, height - top);
@@ -31,12 +33,16 @@ export function initializeDeckViewportPlayback() {
     }
     function update() {
       raf = 0;
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible") {
+return;
+}
       const start = state.visual.autoPlayEnterPercent / 100;
       const exit = Math.min(start - 0.05, Math.max(0, 1 - state.visual.autoPauseExitPercent / 100));
       const now = performance.now();
       for (const video of Studio.dom.nodes('main :is(article,[role="article"])[data-testid="tweet"] video')) {
-        if (!isFeed(video) || !video.isConnected) continue;
+        if (!isFeed(video) || !video.isConnected) {
+continue;
+}
         let item = info.get(video);
         if (!item) {
           item = {
@@ -56,7 +62,9 @@ export function initializeDeckViewportPlayback() {
         // auto-pause events are corrected on the next interval where allowed.
         if (visible >= start) {
           item.lowSince = null;
-          if (state.visual.videoMute && !video.dataset.rodxUserUnmuted) video.muted = true;
+          if (state.visual.videoMute && !video.dataset.rodxUserUnmuted) {
+video.muted = true;
+}
           if (
             video.paused &&
             !video.dataset.rodxGesturePaused &&
@@ -84,7 +92,9 @@ export function initializeDeckViewportPlayback() {
           item.lowSince = null;
           continue;
         }
-        if (item.lowSince === null) item.lowSince = now;
+        if (item.lowSince === null) {
+item.lowSince = now;
+}
         if (now - item.lowSince >= EXIT_GRACE_MS && !video.paused) {
           try {
             video.pause();
@@ -95,7 +105,9 @@ export function initializeDeckViewportPlayback() {
       }
     }
     function request() {
-      if (!raf) raf = requestAnimationFrame(update);
+      if (!raf) {
+raf = requestAnimationFrame(update);
+}
     }
     function scan() {
       if (!installed) {
@@ -125,20 +137,26 @@ export function initializeDeckViewportPlayback() {
                 String(button.getAttribute("aria-label") || "").trim(),
               )
             )
-              return;
+              {
+return;
+}
             const card = button.closest(NATIVE_X_SELECTORS.nativeTweets);
             const video = card?.querySelector(DOM_SELECTORS.videos);
             const item = video && info.get(video);
             if (item && !video.paused)
-              item.manuallyPausedUntil =
+              {
+item.manuallyPausedUntil =
                 performance.now() + RUNTIME_LIMITS.videoPlayback.manualPauseDurationMs;
+}
           },
           true,
         );
         document.addEventListener("visibilitychange", () => {
           // Safari and X decide whether background video can play. Do not
           // issue extra pause() calls as the app enters the background.
-          if (document.visibilityState === "visible") request();
+          if (document.visibilityState === "visible") {
+request();
+}
         });
       }
       request();

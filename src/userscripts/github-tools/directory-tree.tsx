@@ -1,59 +1,28 @@
 import { useState, useSyncExternalStore } from "react";
-import { materialIcon } from "./material-icons.ts";
+import { CopyPlus } from "lucide-react";
+import {
+  FileTree,
+  buildTree,
+  filterTree,
+  type FileTreeEntry as Entry,
+  type FileTreeNode as Node,
+} from "../../runtime/react-ui/uai/file-tree";
+import themeCss from "../../runtime/react-ui/theme.css?inline";
 import styles, { css } from "./GitHub.module.css";
 
-type Entry = { path: string; type: "blob" | "tree"; sha?: string };
-type Node = { name: string; path: string; folder: boolean; children: Node[]; sha?: string };
-const compare = (a: Node, b: Node) =>
-  Number(b.folder) - Number(a.folder) || a.name.localeCompare(b.name, undefined, { numeric: true });
-export function buildTree(entries: Entry[]): Node[] {
-  const root: Node = { name: "", path: "", folder: true, children: [] };
-  const known = new Map<string, Node>([["", root]]);
-  for (const entry of entries) {
-    if (!["blob", "tree"].includes(entry.type) || !entry.path || entry.path.startsWith("/")) continue;
-    const parts = entry.path.split("/");
-    for (let i = 1; i <= parts.length; i++) {
-      const path = parts.slice(0, i).join("/");
-      if (known.has(path)) continue;
-      const parent = known.get(parts.slice(0, i - 1).join("/"));
-      if (!parent) break;
-      const node: Node = {
-        name: parts[i - 1],
-        path,
-        folder: i < parts.length || entry.type === "tree",
-        children: [],
-        sha: i === parts.length ? entry.sha : undefined,
-      };
-      parent.children.push(node);
-      known.set(path, node);
-    }
-  }
-  const sort = (nodes: Node[]) => {
-    nodes.sort(compare);
-    nodes.forEach((node) => sort(node.children));
-  };
-  sort(root.children);
-  return root.children;
-}
-export function filterTree(nodes: Node[], term: string): Node[] {
-  const needle = term.trim().toLocaleLowerCase();
-  if (!needle) return nodes;
-  const visit = (node: Node): Node | null => {
-    if (node.name.toLocaleLowerCase().includes(needle)) return node;
-    const children = node.children.map(visit).filter((value): value is Node => value !== null);
-    return children.length ? { ...node, children } : null;
-  };
-  return nodes.map(visit).filter((value): value is Node => value !== null);
-}
+type CopyActions = { appendFile: (href: string, path: string) => Promise<void>; reset: () => void };
+export { buildTree, filterTree };
 export function splitTreeLocation(
   segments: string[],
   ref: string,
 ): { branch: string; current: string } | null {
   const refParts = ref.split("/");
-  if (!ref || refParts.some((part, i) => segments[i] !== part)) return null;
+  if (!ref || refParts.some((part, i) => segments[i] !== part)) {
+    return null;
+  }
   return { branch: ref, current: segments.slice(refParts.length).join("/") };
 }
-function selectedGitHubRef(): string {
+export function selectedGitHubRef(): string {
   const selectors = [
     "#branch-picker-repos-header-ref-selector",
     '[data-testid="branch-selector"]',
@@ -62,14 +31,61 @@ function selectedGitHubRef(): string {
   ];
   for (const selector of selectors) {
     const label = document.querySelector(selector)?.textContent?.trim();
-    if (label) return label.replace(/^Branch:\s*/i, "").trim();
+    if (label) {
+      return label.replace(/^Branch:\s*/i, "").trim();
+    }
   }
   return "";
 }
+
+const selectionStores = new Map<string, { paths: Set<string>; listeners: Set<() => void> }>();
+const emptySelection = new Set<string>();
+export function fileSelection(repo: { owner: string; repo: string }, branch: string) {
+  const key = "ghft:selection:" + JSON.stringify([repo.owner, repo.repo, branch]);
+  let store = selectionStores.get(key);
+  if (!store) {
+    let paths = new Set<string>();
+    try {
+      const saved: unknown = JSON.parse(sessionStorage.getItem(key) || "[]");
+      if (Array.isArray(saved)) {
+        paths = new Set(saved.filter((path): path is string => typeof path === "string"));
+      }
+    } catch {
+      // Selection remains available in memory.
+    }
+    store = { paths, listeners: new Set() };
+    selectionStores.set(key, store);
+  }
+  const current = store;
+  return {
+    get: () => (branch ? current.paths : emptySelection),
+    subscribe: (notify: () => void) => {
+      current.listeners.add(notify);
+      return () => {
+        current.listeners.delete(notify);
+      };
+    },
+    set: (update: (previous: Set<string>) => Set<string>) => {
+      if (!branch) {
+        return;
+      }
+      current.paths = update(current.paths);
+      try {
+        sessionStorage.setItem(key, JSON.stringify([...current.paths]));
+      } catch {
+        // Selection remains available in memory.
+      }
+      current.listeners.forEach((notify) => notify());
+    },
+  };
+}
+
 const treeCache = new Map<string, { expires: number; nodes: Node[] }>();
 export function readTreeCache(key: string, now = Date.now()): Node[] | null {
   const entry = treeCache.get(key);
-  if (!entry) return null;
+  if (!entry) {
+    return null;
+  }
   if (entry.expires <= now) {
     treeCache.delete(key);
     return null;
@@ -83,116 +99,69 @@ export function writeTreeCache(key: string, nodes: Node[], now = Date.now()) {
   treeCache.set(key, { nodes, expires: now + 300000 });
   while (treeCache.size > 12) {
     const oldest = treeCache.keys().next().value;
-    if (oldest === undefined) break;
+    if (oldest === undefined) {
+      break;
+    }
     treeCache.delete(oldest);
   }
 }
-function TreeRow(props: {
-  node: Node;
-  depth: number;
-  base: string;
-  branch: string;
-  current: string;
-  loadFolder: (node: Node) => Promise<Node[]>;
-}) {
-  const [children, setChildren] = useState(props.node.children);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const toggle = async (retry = false) => {
-    if (expanded && !retry) {
-      setExpanded(false);
-      return;
+
+export function restoreGitHubTreeScroll(path = location.pathname): boolean {
+  try {
+    const key = `ghft:scroll:${path}`;
+    const stored = sessionStorage.getItem(key);
+    if (stored === null || !Number.isFinite(Number(stored))) {
+      return false;
     }
-    setExpanded(true);
-    if (!props.node.sha || children.length) return;
-    setLoading(true);
-    setError("");
-    try {
-      setChildren(await props.loadFolder(props.node));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setLoading(false);
-    }
-  };
-  const [expanded, setExpanded] = useState(
-    props.current === props.node.path || props.current.startsWith(props.node.path + "/"),
-  );
-  const url = () =>
-    props.base +
-    "/" +
-    (props.node.folder ? "tree" : "blob") +
-    "/" +
-    props.branch.split("/").map(encodeURIComponent).join("/") +
-    "/" +
-    props.node.path.split("/").map(encodeURIComponent).join("/");
+    const top = Number(stored);
+    sessionStorage.removeItem(key);
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, top)));
+    return true;
+  } catch {
+    // Keep the browser's default restoration when storage is unavailable.
+    return false;
+  }
+}
+function CopyFileAction({ node, href, copy }: { node: Node; href: string; copy: CopyActions["appendFile"] }) {
+  const [status, setStatus] = useState("");
+  if (node.folder) return null;
   return (
     <>
-      <div
-        className={styles.treeRow}
-        role="treeitem"
-        aria-level={props.depth + 1}
-        aria-expanded={props.node.folder ? (expanded ? "true" : "false") : undefined}
-        style={{ paddingLeft: 10 + props.depth * 17 }}
+      <button
+        type="button"
+        className={styles.button}
+        aria-label={`Adicionar ${node.name} ao clipboard`}
+        onClick={() => {
+          setStatus("Copiando…");
+          void copy(new URL(href, location.origin).href, node.path).then(
+            () => setStatus("Adicionado ao clipboard"),
+            (error) => setStatus(String(error)),
+          );
+        }}
       >
-        {props.node.folder ? (
-          <button
-            className={styles.treeChevron}
-            aria-label={(expanded ? "Recolher " : "Expandir ") + props.node.name}
-            onClick={() => void toggle()}
-          >
-            {expanded ? "⌄" : "›"}
-          </button>
-        ) : (
-          <span className={styles.treeSpacer} />
-        )}
-        <img src={materialIcon(props.node.name, props.node.folder)} width="16" height="16" alt="" />
-        <a href={url()} title={props.node.path}>
-          {props.node.name}
-        </a>
-      </div>
-      {props.node.folder && expanded && (
-        <div role="group">
-          {loading && (
-            <>
-              <div
-                className={styles.treeSkeleton}
-                role="status"
-                aria-label="Carregando pasta"
-                style={{ width: "55%" }}
-              />
-              <div className={styles.treeSkeleton} style={{ width: "35%" }} />
-            </>
-          )}
-          {error && (
-            <div className={styles.treeError}>
-              {error}{" "}
-              <button
-                onClick={() => {
-                  void toggle(true);
-                }}
-              >
-                Tentar novamente
-              </button>
-            </div>
-          )}
-          {children.map((node) => (
-            <TreeRow
-              key={node.path}
-              node={node}
-              depth={props.depth + 1}
-              base={props.base}
-              branch={props.branch}
-              current={props.current}
-              loadFolder={props.loadFolder}
-            />
-          ))}
-        </div>
+        <CopyPlus size={16} />
+      </button>
+      {status && (
+        <span role="status" className={styles.treeCount}>
+          {status}
+        </span>
       )}
     </>
   );
 }
-export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: string; repo: string }) {
+export function mountDirectoryTree(
+  ctx: any,
+  container: Element,
+  repo: { owner: string; repo: string },
+  restoreScroll = false,
+  exportFiles: (
+    paths: string[],
+    branch: string,
+    download: boolean,
+    progress: (done: number, total: number) => void,
+  ) => Promise<void>,
+  copy: CopyActions,
+) {
   type ViewState = {
     state: "loading" | "ready" | "error";
     nodes: Node[];
@@ -229,6 +198,11 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const controller = new AbortController();
   const base = "/" + repo.owner + "/" + repo.repo;
   const path = location.pathname;
+  const restorePageScroll = () => {
+    if (restoreScroll) {
+      restoreGitHubTreeScroll(path);
+    }
+  };
   const isTree = path.startsWith(base + "/tree/");
   const encoded = isTree
     ? path
@@ -238,7 +212,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
     : [];
   let headers: Record<string, string> = { Accept: "application/vnd.github+json" };
   const loadFolder = async (node: Node): Promise<Node[]> => {
-    if (!node.sha) return node.children;
+    if (!node.sha) {
+      return node.children;
+    }
     const response = await fetch(
       "https://api.github.com/repos/" +
         repo.owner +
@@ -248,15 +224,37 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         encodeURIComponent(node.sha),
       { headers, signal: controller.signal },
     );
-    if (!response.ok) throw Error("HTTP " + response.status);
+    if (!response.ok) {
+      throw Error("HTTP " + response.status);
+    }
     const data = await response.json();
-    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path })));
+    return buildTree((data.tree || []).map((entry: Entry) => ({ ...entry, path: entry.path }))).map(
+      function prefix(child: Node): Node {
+        return { ...child, path: node.path + "/" + child.path, children: child.children.map(prefix) };
+      },
+    );
   };
   function DirectoryTreeView() {
     const { state, nodes, message, query, resolvedBranch, current } = useSyncExternalStore(
       subscribe,
       () => snapshot,
     );
+    const selection = fileSelection(repo, resolvedBranch);
+    const selected = useSyncExternalStore(selection.subscribe, selection.get);
+    const setSelected = selection.set;
+    const [busy, setBusy] = useState(false);
+    const [status, setStatus] = useState("");
+    const select = (path: string) =>
+      setSelected((previous) => {
+        const next = new Set(previous);
+        if (next.has(path)) {
+          next.delete(path);
+        } else {
+          next.add(path);
+        }
+        return next;
+      });
+
     return (
       <section className={styles.directoryTree} aria-label="Árvore de arquivos" data-ghft-tree="">
         <div className={styles.treeHeader}>
@@ -264,6 +262,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           <span className={styles.treeCount}>
             {state === "loading" ? "Carregando…" : nodes.length + " itens na raiz"}
           </span>
+          <button type="button" className={styles.button} onClick={copy.reset}>
+            Nova seleção de cópia
+          </button>
         </div>
         {state === "ready" && (
           <label className={styles.treeSearch}>
@@ -289,20 +290,92 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
             {message} <button onClick={() => location.reload()}>Tentar novamente</button>
           </div>
         )}
-        {state === "ready" && (
-          <div role="tree">
-            {filterTree(nodes, query).map((node) => (
-              <TreeRow
-                key={node.path}
-                node={node}
-                depth={0}
-                base={base}
-                branch={resolvedBranch}
-                current={current}
-                loadFolder={loadFolder}
-              />
+        {state === "ready" && exportFiles && (
+          <div className={styles.toolbar}>
+            <span>{selected.size} selecionados</span>
+            <button
+              className={styles.button}
+              disabled={busy}
+              onClick={() => {
+                const paths: string[] = [];
+                const visit = (entries: Node[]) =>
+                  entries.forEach((node) => {
+                    if (node.folder) {
+                      visit(node.children);
+                    } else {
+                      paths.push(node.path);
+                    }
+                  });
+                visit(filterTree(nodes, query));
+                setSelected((previous) => new Set([...previous, ...paths]));
+              }}
+            >
+              Selecionar carregados
+            </button>
+            <button
+              className={styles.button}
+              disabled={busy || !selected.size}
+              onClick={() => setSelected(() => new Set())}
+            >
+              Limpar
+            </button>
+            {[false, true].map((download) => (
+              <button
+                key={String(download)}
+                className={styles.button}
+                disabled={busy || !selected.size}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await exportFiles([...selected], resolvedBranch, download, (done, total) =>
+                      setStatus(`Lendo ${done}/${total}…`),
+                    );
+                    setStatus(download ? "Download solicitado" : "Copiado");
+                  } catch (error) {
+                    setStatus(String(error));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {download ? "Baixar TXT" : "Copiar"}
+              </button>
             ))}
+            <span role="status">{status}</span>
           </div>
+        )}
+        {state === "ready" && (
+          <FileTree
+            key={resolvedBranch}
+            nodes={nodes}
+            query={query}
+            current={current}
+            selected={selected}
+            onSelect={select}
+            loadFolder={loadFolder}
+            href={(node) =>
+              base +
+              "/" +
+              (node.folder ? "tree" : "blob") +
+              "/" +
+              resolvedBranch.split("/").map(encodeURIComponent).join("/") +
+              "/" +
+              node.path.split("/").map(encodeURIComponent).join("/")
+            }
+            renderActions={(node) => (
+              <CopyFileAction
+                node={node}
+                href={
+                  base +
+                  "/blob/" +
+                  resolvedBranch.split("/").map(encodeURIComponent).join("/") +
+                  "/" +
+                  node.path.split("/").map(encodeURIComponent).join("/")
+                }
+                copy={copy.appendFile}
+              />
+            )}
+          />
         )}
       </section>
     );
@@ -310,12 +383,15 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
   const host = document.createElement("div");
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
-  style.textContent = css;
+  style.textContent = themeCss + "\n" + css;
+  host.classList.add("rod-theme", "dark");
   shadow.append(style);
   container.parentNode!.insertBefore(host, container);
   const disposePortal = ctx.ui.mountReact(<DirectoryTreeView />, shadow);
   host.dataset.ghftTreeHost = "";
-  let originalDisplay = (container as HTMLElement).style.display;
+  const nativeList = container as HTMLElement;
+  const originalDisplay = nativeList.style.display;
+  nativeList.style.display = "none";
   const load = async () => {
     try {
       const token = await ctx.storage.get("actionsToken", "");
@@ -327,7 +403,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
         headers,
         signal: controller.signal,
       });
-      if (!info.ok) throw Error("GitHub API: " + info.status);
+      if (!info.ok) {
+        throw Error("GitHub API: " + info.status);
+      }
       const details = await info.json();
       const apiBase = "https://api.github.com/repos/" + repo.owner + "/" + repo.repo + "/git/trees/";
       const candidates = isTree
@@ -351,7 +429,7 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           setCurrent(cached.current);
           setNodes(nodes);
           setState("ready");
-          (container as HTMLElement).style.display = "none";
+          restorePageScroll();
           return;
         }
       }
@@ -359,7 +437,9 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
       let response: Response | undefined;
       let match: { branch: string; current: string } | undefined;
       for (const candidate of candidates) {
-        if (!candidate.branch || visited.has(candidate.branch)) continue;
+        if (!candidate.branch || visited.has(candidate.branch)) {
+          continue;
+        }
         visited.add(candidate.branch);
         const attempt = await fetch(apiBase + encodeURIComponent(candidate.branch) + "?recursive=1", {
           headers,
@@ -370,10 +450,13 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           match = candidate;
           break;
         }
-        if (attempt.status !== 404 && attempt.status !== 422)
+        if (attempt.status !== 404 && attempt.status !== 422) {
           throw Error("Árvore indisponível: HTTP " + attempt.status);
+        }
       }
-      if (!response || !match) throw Error("Não foi possível resolver a branch da URL");
+      if (!response || !match) {
+        throw Error("Não foi possível resolver a branch da URL");
+      }
       setResolvedBranch(match.branch);
       setCurrent(match.current);
       const data = await response.json();
@@ -383,26 +466,33 @@ export function mountDirectoryTree(ctx: any, container: Element, repo: { owner: 
           headers,
           signal: controller.signal,
         });
-        if (!root.ok) throw Error("Não foi possível carregar a raiz: HTTP " + root.status);
+        if (!root.ok) {
+          throw Error("Não foi possível carregar a raiz: HTTP " + root.status);
+        }
         const rootData = await root.json();
         entries = rootData.tree || [];
       }
       const tree = buildTree(entries);
       writeTreeCache(base + ":" + match.branch, tree);
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
       setNodes(tree);
       setState("ready");
-      (container as HTMLElement).style.display = "none";
+      restorePageScroll();
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
       setMessage(error instanceof Error ? error.message : String(error));
       setState("error");
+      nativeList.style.display = originalDisplay;
     }
   };
   void load();
   return () => {
     controller.abort();
-    (container as HTMLElement).style.display = originalDisplay;
+    nativeList.style.display = originalDisplay;
     disposePortal();
     host.remove();
   };

@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "workflows": [
+    {
+      "file": "validate.yml",
+      "name": "Validate & Preview",
+      "selector": "block",
+      "operations": [
+        {
+          "id": "all",
+          "inputs": {
+            "block": "all"
+          }
+        },
+        {
+          "id": "validate",
+          "inputs": {
+            "block": "validate"
+          }
+        },
+        {
+          "id": "audits",
+          "inputs": {
+            "block": "audits"
+          }
+        },
+        {
+          "id": "diagnostics",
+          "inputs": {
+            "block": "diagnostics"
+          }
+        },
+        {
+          "id": "tests",
+          "inputs": {
+            "block": "tests"
+          }
+        },
+        {
+          "id": "bundle",
+          "inputs": {
+            "block": "bundle"
+          }
+        }
+      ]
+    },
+    {
+      "file": "release.yml",
+      "name": "Deploy",
+      "selector": "target",
+      "operations": [
+        {
+          "id": "all",
+          "inputs": {
+            "target": "all"
+          },
+          "ref": "main"
+        },
+        {
+          "id": "production",
+          "inputs": {
+            "target": "production"
+          },
+          "ref": "main"
+        },
+        {
+          "id": "playground",
+          "inputs": {
+            "target": "playground"
+          },
+          "ref": "main"
+        }
+      ]
+    },
+    {
+      "file": "maintenance.yml",
+      "name": "Maintenance",
+      "selector": "block",
+      "operations": [
+        {
+          "id": "format",
+          "inputs": {
+            "block": "format"
+          }
+        },
+        {
+          "id": "lockfile",
+          "inputs": {
+            "block": "lockfile"
+          }
+        },
+        {
+          "id": "npm",
+          "inputs": {
+            "block": "npm"
+          }
+        },
+        {
+          "id": "style",
+          "inputs": {
+            "block": "style"
+          }
+        }
+      ]
+    }
+  ],
+  "aliases": {
+    "cloudflare-pr-preview.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "validate"
+      },
+      "note": "PR publication requires pull_request event"
+    },
+    "bundle-diet.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "bundle"
+      }
+    },
+    "rod-ast.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "tests"
+      }
+    },
+    "typescript-diagnostics.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "diagnostics"
+      }
+    },
+    "workflows-audit.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "audits"
+      }
+    },
+    "todo-ast-audit.yml": {
+      "file": "validate.yml",
+      "inputs": {
+        "block": "audits"
+      },
+      "note": "AST audit requires PR context"
+    },
+    "playground-pages.yml": {
+      "file": "release.yml",
+      "inputs": {
+        "target": "playground"
+      }
+    },
+    "prettier-full.yml": {
+      "file": "maintenance.yml",
+      "inputs": {
+        "block": "format"
+      }
+    },
+    "repair-lockfile.yml": {
+      "file": "maintenance.yml",
+      "inputs": {
+        "block": "lockfile"
+      }
+    },
+    "npm-operations.yml": {
+      "file": "maintenance.yml",
+      "inputs": {
+        "block": "npm"
+      }
+    },
+    "style-repair.yml": {
+      "file": "maintenance.yml",
+      "inputs": {
+        "block": "style"
+      }
+    }
+  }
+}

@@ -7,7 +7,6 @@ import type { ReactScriptContext } from "./react-context-contract.js";
 import { bindRuntime, useContext, useRuntime, useRuntimeWorld } from "./runtime-context-react.js";
 import { createCoreRuntime, type ScriptDefinition, type RuntimeAPI } from "./runtime.js";
 import { captureDiagnostic } from "../runtime/diagnostics.js";
-import { registerShadowStyles, type ShadowStyle } from "../runtime/react-ui/shadow-styles.js";
 import {
   createPortalRegistry,
   type PortalId,
@@ -51,7 +50,7 @@ const REACT_MOUNT_SOURCE = "react.mount" as const;
 // IMPROVEMENT: Replaced magic number `11` (`Node.DOCUMENT_FRAGMENT_NODE`) with a proper type guard.
 // Why: Eliminates unsafe `as ShadowRoot` casts and makes ShadowRoot host resolution self-documenting and type-safe.
 function isShadowRoot(target: PortalTarget): target is ShadowRoot {
-  return target.nodeType === Node.DOCUMENT_FRAGMENT_NODE && "host" in target;
+  return target.nodeType === 11 && "host" in target;
 }
 
 function getTargetHostNode(target: PortalTarget): Node {
@@ -103,9 +102,63 @@ export function createRuntime(
   let reactHost: HTMLDivElement | undefined;
   let reactRoot: Root | undefined;
   let portalObserver: MutationObserver | undefined;
+  const shadowObservers = new Map<ShadowRoot, MutationObserver>();
   let runtimeDisposed = false;
 
   const nextPortalId = (): PortalId => ++nextId as PortalId;
+
+  // Observe each shadow boundary because document observers cannot see inside it.
+  const handlePortalMutations = (records: MutationRecord[]): void => {
+    const connectedTargets = new Set<PortalTarget>();
+    for (const { target } of registry.getSnapshot()) {
+      const candidates: Node[] = [];
+      let node = getTargetHostNode(target);
+      while (true) {
+        candidates.push(node);
+        const root = node.getRootNode();
+        if (root.nodeType !== 11 || !("host" in root)) break;
+        node = (root as ShadowRoot).host;
+      }
+      for (const record of records) {
+        if (
+          Array.from(record.addedNodes).some((added) =>
+            candidates.some((candidate) => added === candidate || added.contains(candidate)),
+          )
+        ) {
+          connectedTargets.add(target);
+          break;
+        }
+      }
+    }
+    for (const id of registry.pruneDisconnected(connectedTargets)) portalDisposers.get(id)?.();
+    syncShadowObservers();
+  };
+
+  const syncShadowObservers = (): void => {
+    const roots = new Set<ShadowRoot>();
+    for (const { target } of registry.getSnapshot()) {
+      let node: Node = target;
+      while (true) {
+        const root = node.getRootNode();
+        if (root.nodeType !== 11 || !("host" in root)) break;
+        const shadow = root as ShadowRoot;
+        roots.add(shadow);
+        node = shadow.host;
+      }
+    }
+    for (const [root, observer] of shadowObservers) {
+      if (!roots.has(root)) {
+        observer.disconnect();
+        shadowObservers.delete(root);
+      }
+    }
+    for (const root of roots) {
+      if (shadowObservers.has(root)) continue;
+      const observer = new host.MutationObserver(handlePortalMutations);
+      observer.observe(root, { childList: true, subtree: true });
+      shadowObservers.set(root, observer);
+    }
+  };
 
   const ensureReactHost = (): void => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
@@ -115,33 +168,20 @@ export function createRuntime(
     reactHost.dataset.rodReactHost = "bundle";
     (host.document.body || host.document.documentElement).append(reactHost);
 
-    portalObserver = new host.MutationObserver((records) => {
-      const connectedTargets = new Set<PortalTarget>();
-      const entries = registry.getSnapshot();
-
-      for (const record of records) {
-        for (const addedNode of record.addedNodes) {
-          for (const { target } of entries) {
-            const candidate = getTargetHostNode(target);
-            if (addedNode === candidate || addedNode.contains(candidate)) {
-              connectedTargets.add(target);
-            }
-          }
-        }
-      }
-
-      for (const id of registry.pruneDisconnected(connectedTargets)) {
-        portalDisposers.get(id)?.();
-      }
-    });
+    portalObserver = new host.MutationObserver(handlePortalMutations);
 
     portalObserver.observe(host.document, { childList: true, subtree: true });
     reactRoot = createRoot(reactHost);
     reactRoot.render(<PortalOutlet registry={registry} />);
   };
 
+  const unsubscribeShadowObservers = registry.subscribe(syncShadowObservers);
+
   const disposeReactHost = (): void => {
     runtimeDisposed = true;
+    unsubscribeShadowObservers();
+    for (const observer of shadowObservers.values()) observer.disconnect();
+    shadowObservers.clear();
     portalObserver?.disconnect();
     portalObserver = undefined;
 
@@ -159,6 +199,18 @@ export function createRuntime(
 
   const mountSharedReact = (component: ReactElement, container: HTMLElement): MountedReactHandle => {
     if (runtimeDisposed) throw new Error("React bundle runtime already disposed");
+
+    // ReactDOM requires a browser-global window even when the runtime receives
+    // an injected Window (for example happy-dom in unit tests). Keep the
+    // container lifecycle valid in non-browser hosts without creating a fake
+    // global window. Real userscript/browser execution always takes the normal
+    // portal path below.
+    if (typeof window === "undefined") {
+      return {
+        update() {},
+        dispose() {},
+      };
+    }
 
     const id = nextPortalId();
     let disposed = false;
@@ -185,7 +237,12 @@ export function createRuntime(
       registry.add({ id, target: container, node: next });
     };
 
-    update(component);
+    try {
+      update(component);
+    } catch (error) {
+      dispose();
+      throw error;
+    }
     return { update, dispose };
   };
 
@@ -218,7 +275,7 @@ export function createRuntime(
       }
     },
 
-    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext }) => {
+    createSpecificContext: ({ definition, abort, onDispose, ensureUIRoot, getContext, ui }) => {
       onDispose(() => {
         const context = getContext();
         for (const entry of registry.getSnapshot()) {
@@ -228,54 +285,22 @@ export function createRuntime(
         }
       });
 
+      if (!ui) return {};
+
       return {
         ui: Object.freeze({
           get root() {
-            return ensureUIRoot();
+            return ui.root;
           },
 
           get host() {
-            return ensureUIRoot().host as unknown as HTMLDivElement;
+            return ui.host;
           },
 
-          mount(node: Node) {
-            ensureUIRoot().append(node);
-            return node;
-          },
-
-          style(css: string) {
-            const node = host.document.createElement("style");
-            node.textContent = String(css);
-            ensureUIRoot().append(node);
-            onDispose(() => node.remove());
-            return node;
-          },
-
-          pageStyle(css: string, options?: { id?: string }) {
-            const target = host.document.head || host.document.documentElement;
-            const id = options?.id;
-            const existing = id ? host.document.getElementById(id) : null;
-
-            // BUG FIX: Track `onDispose` cleanup even when reusing an existing `<style>` element by `id`, or avoid leaking orphaned styles if owned by this context.
-            // Why: Previously, if script A created a `pageStyle` with `id: "foo"` and script B updated it, script A disposing would remove script B's active stylesheet; conversely, if an external style existed, script B had no cleanup.
-            if (existing instanceof HTMLStyleElement) {
-              existing.textContent = String(css);
-              return existing;
-            }
-
-            const node = host.document.createElement("style");
-            if (id) node.id = id;
-            node.textContent = String(css);
-            target.append(node);
-            onDispose(() => node.remove());
-            return node;
-          },
-
-          registerStyles(...styles: ShadowStyle[]) {
-            const dispose = registerShadowStyles(ensureUIRoot(), styles);
-            onDispose(dispose);
-            return dispose;
-          },
+          mount: ui.mount,
+          style: ui.style,
+          pageStyle: ui.pageStyle,
+          registerStyles: ui.registerStyles,
 
           mountReact(component: ReactElement, container?: PortalTarget) {
             if (abort.signal.aborted) throw new Error("ScriptContext already disposed");
@@ -292,8 +317,6 @@ export function createRuntime(
               disposed = true;
               portalDisposers.delete(id);
               registry.remove(id);
-              // IMPROVEMENT: Replaced unsafe `(mountPoint as Element).remove()` cast with `!isShadowRoot` narrowing.
-              // Why: `ShadowRoot` does not have a `.remove()` method; narrowing proves `mountPoint` is an `Element`.
               if (owned && !isShadowRoot(mountPoint)) {
                 mountPoint.remove();
               }

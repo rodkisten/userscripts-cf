@@ -1,8 +1,12 @@
+// @TODO: extract unicode
+// @TODO: implement package.json parsing
+
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { execFileSync, spawnSync } from 'node:child_process';
 import { defaultLogger } from './ci-logger.mjs';
+import { execFileSync, spawn, spawnSync } from 'node:child_process'; // adicione `spawn` no topo
+
 
 // ============================================================================
 // GitHub Actions Environment, Inputs, Outputs & CLI Parsing
@@ -219,6 +223,57 @@ export function runCmd(cmd, args = [], options = {}) {
   }
 }
 
+export function runAsync(cmd, args = [], options = {}) {
+  const { silent = false, logger = defaultLogger, ...spawnOptions } = options;
+
+  if (!silent && logger) {
+    logger.cmdBlock(cmd, args);
+  }
+
+  return new Promise((resolve) => {
+    const hasSpinner = Boolean(logger?.activeSpinner);
+    const child = spawn(cmd, args, {
+      stdio: hasSpinner ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+      shell: process.platform === 'win32' && cmd.endsWith('.cmd'),
+      ...spawnOptions,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    if (hasSpinner) {
+      child.stdout?.on('data', (chunk) => {
+        stdout += chunk.toString();
+      });
+      child.stderr?.on('data', (chunk) => {
+        stderr += chunk.toString();
+      });
+    }
+
+    child.on('error', (err) => {
+      resolve({
+        ok: false,
+        status: 1,
+        stdout: stdout.trim(),
+        stderr: err.message,
+      });
+    });
+
+    child.on('close', (code) => {
+      const status = code ?? 1;
+      if (status !== 0 && hasSpinner && (stderr || stdout)) {
+        logger._writeLine((stderr || stdout).trim());
+      }
+      resolve({
+        ok: status === 0,
+        status,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+      });
+    });
+  });
+}
+
+
 export function runInteractive(cmd, args = [], options = {}) {
   const { silent = false, logger = defaultLogger, ...spawnOptions } = options;
 
@@ -298,7 +353,12 @@ export function createNativeGithubClient(token) {
         compareCommits: ({ owner, repo, base, head }) =>
           request('GET', `/repos/${owner}/${repo}/compare/${base}...${head}`),
       },
+      pulls: {
+        get: ({owner, repo, pull_number}) => request('GET', `/repos/${owner}/${repo}/pulls/${pull_number}`),
+        update: ({owner, repo, pull_number, body}) => request('PATCH', `/repos/${owner}/${repo}/pulls/${pull_number}`, {body}),
+      },
       issues: {
+        deleteComment: ({owner, repo, comment_id}) => request('DELETE', `/repos/${owner}/${repo}/issues/comments/${comment_id}`),
         listComments: ({ owner, repo, issue_number, per_page = 100, page = 1 }) =>
           request(
             'GET',

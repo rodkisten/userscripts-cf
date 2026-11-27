@@ -57,6 +57,7 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 12px;
+  flex-wrap: wrap;
 }
 .actions button {
   border: 1px solid #666;
@@ -64,6 +65,11 @@
   background: #303134;
   color: inherit;
   padding: 10px;
+  min-height: 44px;
+}
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .bookmark {
@@ -113,4 +119,67 @@
   .bookmarkSpinner {
     animation: none;
   }
+}
+
+.collectionPicker {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #555;
+  border-radius: 12px;
+}
+.collectionPicker legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.collectionList {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.collectionList .toggle {
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+.radixCheckbox {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #8b8b94;
+  border-radius: 6px;
+  background: #303134;
+  color: #fff;
+}
+.radixCheckbox[data-state="checked"] {
+  background: #6d28d9;
+  border-color: #a78bfa;
+}
+.radixCheckbox:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+}
+
+.collectionMenu {
+  z-index: 2147483647;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid #52525b;
+  border-radius: 10px;
+  background: #18181b;
+  color: #fafafa;
+  box-shadow: 0 12px 32px #0008;
+}
+.collectionMenu [role="menuitemcheckbox"] {
+  padding: 10px 12px;
+  min-height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+.collectionMenu [role="menuitemcheckbox"][data-highlighted] {
+  background: #3f3f46;
 }

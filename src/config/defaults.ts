@@ -217,10 +217,10 @@ export const DEFAULT_SETTINGS: DefaultSettingsSchema = deepFreezeObject({
   relay: {
     enabled: true,
     url: "https://xtelegram-cf.migos.club",
-    token: "",
+    token: "12345678",
     channels: "",
     autoCheck: true,
-    labelSent: true,
+    labelSent: false,
   },
   repost: {
     shareMode: "direct",

@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 import { runtimeHelpers } from "./build/runtime-helpers.mjs";
 import { rodAstPlugin } from "./build/rod-ast.mjs";
 import { inlineCSSModules } from "./build/css-modules.mjs";
@@ -11,6 +12,7 @@ export default defineConfig({
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
   plugins: [
     ...(process.env.ROD_AST === "1" ? [rodAstPlugin({ strict: true })] : []),
+    tailwindcss(),
     runtimeHelpers(),
     inlineCSSModules(),
     inlineSVG(),

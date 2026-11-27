@@ -1,9 +1,16 @@
-import { mountView } from "../ui/react-mount.tsx";
+import { mountView } from "../ui/runtime.tsx";
 import { RUNTIME_LIMITS } from "../../../config/runtime.js";
 import ListNotebookSVGIcon from "../../../assets/icons/list-notebook.svg?component";
 import { applyComponentStyle } from "../../../core/css.js";
 import { NATIVE_X_SELECTORS, DOM_SELECTORS, COMPOSITE_SELECTORS } from "../../../selectors.js";
-import { studioListIndex } from "./routes.js";
+
+export function studioListIndex(Studio) {
+  const profile = document.querySelector(NATIVE_X_SELECTORS.currentAccountLinks);
+  const fromLink = profile?.getAttribute("href")?.match(/^\/([\w]{1,15})\/?$/)?.[1];
+  const label = Studio.state.deck?.accountLabel?.replace(/^@/, "");
+  const user = fromLink || (/^[\w]{1,15}$/.test(label || "") ? label : "");
+  return user ? "/" + user + "/lists" : "/i/lists";
+}
 
 export function createListAccess(Studio, navigateSearch) {
   let footerButton, profileHost;
@@ -30,7 +37,9 @@ export function createListAccess(Studio, navigateSearch) {
   }
   async function open() {
     const service = Studio.services.lists;
-    if (!service) return;
+    if (!service) {
+      return;
+    }
     await service.refresh();
     const choices = service.all().map((list) => ({ value: list.id, label: service.displayName(list) }));
     const saved = Studio.config.listAccess || { media: "video", reposts: false, lastId: "" };
@@ -71,8 +80,9 @@ export function createListAccess(Studio, navigateSearch) {
           role: "submit",
           handler: async (ctx) => {
             const id = String(ctx.values.list || "");
-            if (!/^\d{1,30}$/.test(id))
+            if (!/^\d{1,30}$/.test(id)) {
               throw Error("Escolha uma lista. Se estiver vazio, abra Listas do X para sincronizar.");
+            }
             const media = ctx.values.media === "media" ? "media" : "video",
               reposts = ctx.values.reposts === true;
             const query = `list:${id} ${media === "video" ? "filter:native_video" : "(filter:images OR filter:native_video)"}${reposts ? "" : " -filter:retweets"}`;
@@ -124,15 +134,24 @@ export function createListAccess(Studio, navigateSearch) {
     }
     const home = document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.homeTabLink);
     let row = home?.parentElement;
-    while (row && row !== document.body && !row.querySelector<HTMLElement>(NATIVE_X_SELECTORS.exploreTabLink))
+    while (
+      row &&
+      row !== document.body &&
+      !row.querySelector<HTMLElement>(NATIVE_X_SELECTORS.exploreTabLink)
+    ) {
       row = row.parentElement;
+    }
     if (innerWidth < 800 && row && row !== document.body) {
       applyComponentStyle(footerButton, "rx-list-shortcut-tab", false);
-      if (footerButton.parentElement !== row) row.append(footerButton);
+      if (footerButton.parentElement !== row) {
+        row.append(footerButton);
+      }
     } else {
       // A compact fallback keeps access available when X temporarily unmounts its bottom navigation.
       applyComponentStyle(footerButton, "rx-list-shortcut-floating", false);
-      if (footerButton.parentElement !== document.body) document.body.append(footerButton);
+      if (footerButton.parentElement !== document.body) {
+        document.body.append(footerButton);
+      }
     }
   }
   function profile() {
@@ -148,7 +167,9 @@ export function createListAccess(Studio, navigateSearch) {
       document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) ||
       document.querySelector<HTMLElement>(DOM_SELECTORS.mainElement);
     const identity = main?.querySelector(COMPOSITE_SELECTORS.profileIdentityOrUserName);
-    if (!identity || identity.closest(DOM_SELECTORS.articles)) return;
+    if (!identity || identity.closest(DOM_SELECTORS.articles)) {
+      return;
+    }
     if (!profileHost) {
       profileHost = document.createElement("div");
       profileHost.id = "rodx-profile-add-list";
@@ -161,13 +182,16 @@ export function createListAccess(Studio, navigateSearch) {
         event.preventDefault();
         event.stopPropagation();
         const user = profileHost.dataset.handle;
-        if (user) void Studio.services.lists.picker(user, button);
+        if (user) {
+          void Studio.services.lists.picker(user, button);
+        }
       };
       profileHost.append(button);
     }
     profileHost.dataset.handle = handle;
-    if (!profileHost.isConnected || profileHost.parentElement !== identity.parentElement)
+    if (!profileHost.isConnected || profileHost.parentElement !== identity.parentElement) {
       identity.after(profileHost);
+    }
   }
   function scan() {
     footer();

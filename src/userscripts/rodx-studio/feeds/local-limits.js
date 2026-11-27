@@ -28,7 +28,9 @@ export function nativeSearch() {
       query = `#${match[1].replace(/^#/, "")}`;
     }
   }
-  if (!query.trim()) return null;
+  if (!query.trim()) {
+return null;
+}
   const f = url.searchParams.get("f") || "top";
   const sort = SORTS.some(([id]) => id === f) ? f : "top";
   return {
@@ -49,21 +51,29 @@ export function activeSearchRecord() {
 
 export function currentFullQuery() {
   const current = nativeSearch();
-  if (!current) return "";
+  if (!current) {
+return "";
+}
   const saved = state.searches.find((s) => parseLocalDirectives(s.query).native === current.query);
-  if (saved) return saved.query;
+  if (saved) {
+return saved.query;
+}
   try {
     const entry = JSON.parse(
       sessionStorage.getItem(PREFIX + "active-local:" + (state.account || "guest")) || "null",
     );
-    if (entry?.query === current.query && Date.now() - entry.at < 86400000) return entry.full;
+    if (entry?.query === current.query && Date.now() - entry.at < 86400000) {
+return entry.full;
+}
   } catch (_) {}
   return current.query;
 }
 
 export function visibleLimit() {
   const current = nativeSearch();
-  if (!current) return 0;
+  if (!current) {
+return 0;
+}
   const key = `${current.query}\u0000${current.sort}`;
   return state.sessionLimits.has(key) ? state.sessionLimits.get(key) : activeSearchRecord()?.resultLimit || 0;
 }
