@@ -120,8 +120,11 @@ export function createRuntime(
         node = (root as ShadowRoot).host;
       }
       for (const record of records) {
-        if (Array.from(record.addedNodes).some(added =>
-          candidates.some(candidate => added === candidate || added.contains(candidate)))) {
+        if (
+          Array.from(record.addedNodes).some((added) =>
+            candidates.some((candidate) => added === candidate || added.contains(candidate)),
+          )
+        ) {
           connectedTargets.add(target);
           break;
         }

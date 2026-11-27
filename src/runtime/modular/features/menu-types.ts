@@ -50,4 +50,3 @@ export interface MenuSchema {
   actions?: MenuAction[];
   initialValues?: Record<string, unknown>;
 }
-

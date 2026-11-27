@@ -81,7 +81,8 @@ export function createPortalRegistry<TNode = unknown, TContext = unknown>(): Por
     add(entry) {
       entries.set(entry.id, {
         ...entry,
-        wasConnected: entry.target.isConnected ||
+        wasConnected:
+          entry.target.isConnected ||
           (entries.get(entry.id)?.target === entry.target && entries.get(entry.id)?.wasConnected === true),
       });
       publish();
