@@ -1,18 +1,8 @@
-import {
-  autocompletion,
-  startCompletion,
-  completionKeymap,
-} from "@codemirror/autocomplete";
+import { autocompletion, startCompletion, completionKeymap } from "@codemirror/autocomplete";
 import { keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import { Button } from "./button";
-import {
-  Annotation,
-  Compartment,
-  EditorState,
-  Transaction,
-  type Extension,
-} from "@codemirror/state";
+import { Annotation, Compartment, EditorState, Transaction, type Extension } from "@codemirror/state";
 import { EditorView, placeholder as hint } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { javascript } from "@codemirror/lang-javascript";
@@ -62,9 +52,23 @@ export function CodeEditor({
   const themeConfig = useRef(new Compartment());
   const resolveLanguage = () => {
     const selected = language ?? (script || expression ? "text" : "yaml");
-    return selected === "yaml" ? yaml() : selected === "javascript" || selected === "typescript" ? javascript({typescript: selected === "typescript"}) : [];
+    return selected === "yaml"
+      ? yaml()
+      : selected === "javascript" || selected === "typescript"
+        ? javascript({ typescript: selected === "typescript" })
+        : [];
   };
-  const resolveTheme = () => [theme === "dark" ? oneDark : [], EditorView.theme({"&": {backgroundColor: "var(--background)", color: "var(--foreground)"}, ".cm-gutters": {backgroundColor: "var(--muted)", color: "var(--muted-foreground)"}, ".cm-activeLine,.cm-activeLineGutter": {backgroundColor: "var(--accent)"}}, {dark: theme === "dark"})];
+  const resolveTheme = () => [
+    theme === "dark" ? oneDark : [],
+    EditorView.theme(
+      {
+        "&": { backgroundColor: "var(--background)", color: "var(--foreground)" },
+        ".cm-gutters": { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" },
+        ".cm-activeLine,.cm-activeLineGutter": { backgroundColor: "var(--accent)" },
+      },
+      { dark: theme === "dark" },
+    ),
+  ];
   const access = useRef(new Compartment());
   const hints = useRef(new Compartment());
   useEffect(() => {
@@ -104,10 +108,7 @@ export function CodeEditor({
             : []),
           themeConfig.current.of(resolveTheme()),
           EditorView.lineWrapping,
-          access.current.of([
-            EditorState.readOnly.of(disabled),
-            EditorView.editable.of(!disabled),
-          ]),
+          access.current.of([EditorState.readOnly.of(disabled), EditorView.editable.of(!disabled)]),
           hints.current.of(hint(placeholder)),
           EditorView.contentAttributes.of({
             "aria-label": ariaLabel,
@@ -125,10 +126,7 @@ export function CodeEditor({
             ".cm-content": { padding: "6px 0" },
           }),
           EditorView.updateListener.of((u) => {
-            if (
-              u.docChanged &&
-              !u.transactions.some((t) => t.annotation(external))
-            )
+            if (u.docChanged && !u.transactions.some((t) => t.annotation(external)))
               change.current(u.state.doc.toString());
           }),
         ],
@@ -150,9 +148,15 @@ export function CodeEditor({
         annotations: [external.of(true), Transaction.addToHistory.of(false)],
       });
   }, [value]);
-  useEffect(() => { view.current?.dispatch({effects: languageConfig.current.reconfigure(resolveLanguage())}); }, [language, script, expression]);
-  useEffect(() => { view.current?.dispatch({effects: extraConfig.current.reconfigure(extensions)}); }, [extensions]);
-  useEffect(() => { view.current?.dispatch({effects: themeConfig.current.reconfigure(resolveTheme())}); }, [theme]);
+  useEffect(() => {
+    view.current?.dispatch({ effects: languageConfig.current.reconfigure(resolveLanguage()) });
+  }, [language, script, expression]);
+  useEffect(() => {
+    view.current?.dispatch({ effects: extraConfig.current.reconfigure(extensions) });
+  }, [extensions]);
+  useEffect(() => {
+    view.current?.dispatch({ effects: themeConfig.current.reconfigure(resolveTheme()) });
+  }, [theme]);
   useEffect(() => {
     view.current?.dispatch({
       effects: access.current.reconfigure([
@@ -193,8 +197,7 @@ export function CodeEditor({
             const editor = view.current;
             if (!editor || disabled || !e.target.value) return;
             const pos = editor.state.selection.main.head;
-            const prefix =
-              editor.state.sliceDoc(0, pos).match(/[\w.]+$/)?.[0] ?? "";
+            const prefix = editor.state.sliceDoc(0, pos).match(/[\w.]+$/)?.[0] ?? "";
             const insert = e.target.value;
             editor.dispatch({
               changes: { from: pos - prefix.length, to: pos, insert },
@@ -209,10 +212,7 @@ export function CodeEditor({
           ))}
         </select>
       )}
-      <div
-        ref={host}
-        className="min-w-0 overflow-hidden rounded-lg border border-border"
-      />
+      <div ref={host} className="min-w-0 overflow-hidden rounded-lg border border-border" />
     </div>
   );
 }

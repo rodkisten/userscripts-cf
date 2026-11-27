@@ -122,7 +122,18 @@ function serialize(value: unknown): string {
 
 const ignoreSourceChange = () => {};
 function CodeMirrorSource({ code }: { code: string }) {
-  return <div className="studio-code"><CodeEditor value={code} onChange={ignoreSourceChange} disabled script language="typescript" ariaLabel="Código de exemplo no CodeMirror 6" /></div>;
+  return (
+    <div className="studio-code">
+      <CodeEditor
+        value={code}
+        onChange={ignoreSourceChange}
+        disabled
+        script
+        language="typescript"
+        ariaLabel="Código de exemplo no CodeMirror 6"
+      />
+    </div>
+  );
 }
 
 const MemoizedRodMenuHost = memo(RodMenuHost);
