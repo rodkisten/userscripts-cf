@@ -14,7 +14,7 @@ type Mount = {
 
 let nextMountId = 0;
 const mounts = new Map<MountTarget, Mount>();
-let observer: MutationObserver | undefined;
+const observers = new Map<Document | ShadowRoot, MutationObserver>();
 let sharedMount: ((component: ReactElement, target: Element | ShadowRoot) => () => void) | undefined;
 
 function SharedView({ record }: { record: Mount }) {
@@ -42,29 +42,37 @@ function releaseDetachedViews() {
     if (target.isConnected) {
       record.connected = true;
     } else if (record.connected) {
-      record.dispose?.();
-      mounts.delete(target);
+      disposeView(target);
     }
   }
 }
 
-function observeMounts() {
-  if (observer || typeof MutationObserver === "undefined") {
-    return;
+function observeMounts(target: MountTarget) {
+  if (typeof MutationObserver === "undefined") return;
+  const roots = new Set<Document | ShadowRoot>([target.ownerDocument]);
+  let node: Node = target;
+  while (true) {
+    const root = node.getRootNode();
+    if (!(root instanceof ShadowRoot)) break;
+    roots.add(root);
+    node = root.host;
   }
-  observer = new MutationObserver(releaseDetachedViews);
-  observer.observe(document, { childList: true, subtree: true });
+  for (const root of roots) {
+    if (observers.has(root)) continue;
+    const observer = new MutationObserver(releaseDetachedViews);
+    observer.observe(root, { childList: true, subtree: true });
+    observers.set(root, observer);
+  }
 }
 
 export function mountView(target: MountTarget, read: () => ReactNode) {
   if (!sharedMount) {
     throw new Error("RodX React mount adapter must be configured before mounting views");
   }
-  observeMounts();
+  observeMounts(target);
   for (const [child, record] of mounts) {
     if (child !== target && target.contains(child)) {
-      record.dispose?.();
-      mounts.delete(child);
+      disposeView(child);
     }
   }
   const previous = mounts.get(target);
@@ -95,18 +103,25 @@ export function disposeView(target: MountTarget) {
   if (!record) {
     return;
   }
-  record.dispose?.();
   mounts.delete(target);
+  try {
+    record.dispose?.();
+  } finally {
+    record.listeners?.clear();
+  }
 }
 
 export function disposeAllViews() {
-  observer?.disconnect();
-  observer = undefined;
-  for (const record of mounts.values()) {
-    record.dispose?.();
-  }
-  mounts.clear();
+  for (const observer of observers.values()) observer.disconnect();
+  observers.clear();
   sharedMount = undefined;
+  for (const target of [...mounts.keys()]) {
+    try {
+      disposeView(target);
+    } catch (error) {
+      console.error("[RodX Studio] View disposal failed", error);
+    }
+  }
 }
 
 type ToastKind = "info" | "success" | "warning" | "error";
