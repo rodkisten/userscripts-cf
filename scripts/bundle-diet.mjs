@@ -190,7 +190,7 @@ async function upsertComment(body) {
   return existing ? "updated" : "created";
 }
 
-function makeReport(current, baseline) {
+function makeReport(current, baseline, compact = false) {
   const repository = process.env.GITHUB_REPOSITORY;
   const pr = Number(process.env.PR_NUMBER);
   const baseSha = process.env.PR_BASE_SHA || process.env.BASE_SHA;
@@ -213,14 +213,14 @@ function makeReport(current, baseline) {
     ? delta(current.totals.brotliBytes, baseline.totals.brotliBytes)
     : "baseline pending";
   const commitLines = commits.length
-    ? commits
+    ? (compact ? commits.slice(0, 15) : commits)
         .map(
           (item) =>
-            `- [\`${item.sha.slice(0, 8)}\`](${repoUrl}/commit/${item.sha}) ${escapeCell(item.message)}`,
+            `- [\`${item.sha.slice(0, 8)}\`](${repoUrl}/commit/${item.sha}) ${escapeCell(compact ? item.message.slice(0, 160) : item.message)}`,
         )
         .join("\n")
     : "- No commits detected between base and HEAD.";
-  const fileRows = files.slice(0, 40).map((file) => {
+  const fileRows = files.slice(0, compact ? 15 : 40).map((file) => {
     const bundle = bundleForFile(file.path, bundleIds);
     const preview = bundle
       ? `[install](${previewOrigin}/${pr}/${bundle}.user.js)`
@@ -256,6 +256,7 @@ ${rows.join("\n")}
 
 ### 🧾 Commits
 ${commitLines}
+${compact && commits.length > 15 ? `\n[All ${commits.length} commits](${repoUrl}/pull/${pr}/commits)` : ""}
 
 ### 🗂️ Files modified
 | File | Diff | Bundle | Preview |
@@ -284,7 +285,15 @@ async function report() {
   const body = makeReport(current, baseline);
   const summary = process.env.GITHUB_STEP_SUMMARY;
   if (summary) await fs.appendFile(summary, body.replace(marker, "") + "\n");
-  const result = await upsertComment(body);
+  let comment = body;
+  if (Buffer.byteLength(comment, "utf8") > 60000) {
+    comment = makeReport(current, baseline, true);
+  }
+  if (Buffer.byteLength(comment, "utf8") > 60000) {
+    const run = `${process.env.GITHUB_SERVER_URL || "https://github.com"}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+    comment = `${marker}\n## 📦 Bundle Diet\n\nFull report exceeds the comment limit. [View workflow summary](${run}).`;
+  }
+  const result = await upsertComment(comment);
   console.log("[bundle-diet] PR comment", result);
 }
 
