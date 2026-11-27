@@ -46,7 +46,9 @@ function formatDuration(ms) {
 }
 
 function readChangedFilesList() {
-  if (!fs.existsSync(CHANGED_FILES_PATH)) return [];
+  if (!fs.existsSync(CHANGED_FILES_PATH)) {
+    return [];
+  }
   return fs
     .readFileSync(CHANGED_FILES_PATH, "utf8")
     .split("\n")
@@ -116,7 +118,9 @@ function readPrCiScope(logger, step) {
 }
 
 function collectTestFilesRecursively(dir) {
-  if (!fs.existsSync(dir)) return [];
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
   const results = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.posix.join(dir, entry.name);
