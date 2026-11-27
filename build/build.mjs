@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { brotliCompressSync, constants as zlibConstants, gzipSync } from "node:zlib";
+import { brotliCompress, constants as zlibConstants, gzip } from "node:zlib";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance } from "node:perf_hooks";
@@ -25,6 +25,8 @@ import { auditReactRootOwnership } from "./react-root-audit.mjs";
 import { bundleInventory, loadVersionRegistry, versionForTarget } from "./version-registry.mjs";
 
 const execFileAsync = promisify(execFile);
+const gzipAsync = promisify(gzip);
+const brotliAsync = promisify(brotliCompress);
 
 // ============================================================================
 // // @TODO: Mover para build/vitest-reporter.mjs
@@ -399,16 +401,22 @@ export async function compileTarget(target, context) {
   const metaBuffer = Buffer.from(metaSource, "utf8");
 
   const references = analyzeClassReferences(finalSource.slice(metadata.length));
+  const compressionStart = performance.now();
+  const [debugGzip, sourceGzip, sourceBrotli] = await Promise.all([
+    gzipAsync(bodyBuffer, { level: 9 }),
+    gzipAsync(sourceBuffer, { level: 9 }),
+    brotliAsync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
+  ]);
+  log.info("Compression metrics " + target.id, fmt.duration(performance.now() - compressionStart));
   const auditEntry = {
     debugBytes: bodyBuffer.byteLength,
-    debugGzipBytes: gzipSync(bodyBuffer, { level: 9 }).byteLength,
+    debugGzipBytes: debugGzip.byteLength,
     staticClasses: references.classes.length,
     dynamicReferences: references.dynamic.length,
     dynamicMethods: [...new Set(references.dynamic)].sort(),
     bytes: sourceBuffer.byteLength,
-    gzipBytes: gzipSync(sourceBuffer, { level: 9 }).byteLength,
-    brotliBytes: brotliCompressSync(sourceBuffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } })
-      .byteLength,
+    gzipBytes: sourceGzip.byteLength,
+    brotliBytes: sourceBrotli.byteLength,
   };
 
   const file = `${target.id}.user.js`;
