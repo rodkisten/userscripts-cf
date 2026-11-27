@@ -265,7 +265,7 @@ export async function runValidation() {
 
         if (scopedTests.length > 0 && scopedTests[0] !== "none") {
           // Mantém a política de executar apenas a suíte unitária no escopo explícito
-          execOrFail("npm", ["run", "test:unit"], { logger: log, env: childEnv });
+          execOrFail("npm", ["run", "test:unit", ...(scopedTests.includes("all") ? [] : ["--", ...scopedTests])], { logger: log, env: childEnv });
         }
 
         appendStepSummary(
@@ -534,7 +534,7 @@ export async function runValidation() {
   if (uniqueTests.length > 0) {
     await log.step(`Executar suíte de testes (${uniqueTests.length} candidato(s))`, async (step) => {
       step.info("Testes selecionados", uniqueTests.join(", "));
-      execOrFail("npm", ["run", "test:unit"], { logger: log, env: childEnv });
+      execOrFail("npm", ["run", "test:unit", "--", "--candidates", ...uniqueTests], { logger: log, env: childEnv });
       step.pass("Testes unitários aprovados");
     });
   }
