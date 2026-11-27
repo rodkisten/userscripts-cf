@@ -23,62 +23,20 @@ async function walk(dir) {
 }
 await walk(root.pathname);
 suites.sort();
-// The compiled-runtime fixture performs a Vite build during module initialization.
-// Run it first in a single worker so it cannot inherit memory pressure from other suites.
-const compiledRuntimeSuite = "tests/runtime.test.js";
-const compiledRuntimeIndex = suites.indexOf(compiledRuntimeSuite);
-if (compiledRuntimeIndex !== -1) {
-  suites.splice(compiledRuntimeIndex, 1);
-  suites.unshift(compiledRuntimeSuite);
-}
-if (!suites.length) {
-  console.error("No eligible runtime/utility test suites found. Refusing silent success.");
-  process.exit(1);
-}
-console.log("Runtime and utility suites:", suites.join(", "));
-const timeoutMs = Number(process.env.RUNTIME_TEST_TIMEOUT_MS ?? 180_000);
-if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000) {
-  console.error("RUNTIME_TEST_TIMEOUT_MS must be a positive integer >= 1000");
+// Explicit paths are restricted to the runtime/utility allowlist.
+const requested = [...new Set(process.argv.slice(2).map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/")))];
+const selected = requested.length ? requested : suites;
+const invalid = selected.filter((path) => !suites.includes(path));
+if (invalid.length || !selected.length) {
+  console.error("Invalid or empty runtime/utility suite selection:", invalid.join(", "));
   process.exit(2);
 }
+console.log("Runtime and utility suites:", selected.join(", "));
 const startedAt = Date.now();
-const isolateSuites = process.env.RUNTIME_TEST_ISOLATE_SUITES !== "false";
-const batches = isolateSuites ? suites.map((suite) => [suite]) : [suites];
-for (const [index, batch] of batches.entries()) {
-  const batchStartedAt = Date.now();
-  console.log(`::group::Vitest runtime suite ${index + 1}/${batches.length}: ${batch.join(", ")}`);
-  const workers = batch.includes(compiledRuntimeSuite) ? 1 : 2;
-  console.log(`Starting Vitest (timeout: ${timeoutMs}ms, workers: ${workers}, isolated: ${isolateSuites})`);
-  const args = [
-    "vitest",
-    "run",
-    `--maxWorkers=${workers}`,
-    "--no-file-parallelism",
-    ...(batch.includes(compiledRuntimeSuite) ? ["--reporter=verbose", "--testTimeout=10000"] : []),
-    ...batch,
-  ];
-  const result = spawnSync("npx", args, {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-    timeout: timeoutMs,
-    killSignal: "SIGKILL",
-  });
-  console.log(
-    `Vitest batch finished after ${Date.now() - batchStartedAt}ms ` +
-      `(exit: ${result.status ?? "none"}, signal: ${result.signal ?? "none"})`,
-  );
-  if (result.error) {
-    console.error(`Vitest execution error: ${result.error.message}`);
-    if (result.error.code === "ETIMEDOUT") {
-      console.error(`Vitest exceeded ${timeoutMs}ms on: ${batch.join(", ")}`);
-    }
-  }
-  console.log("::endgroup::");
-  if (result.status !== 0 || result.error) {
-    console.error(
-      `Runtime suite failed: ${batch.join(", ")} ` + `(total elapsed: ${Date.now() - startedAt}ms)`,
-    );
-    process.exit(1);
-  }
-}
-console.log(`All ${suites.length} runtime/utility suites passed in ${Date.now() - startedAt}ms`);
+const result = spawnSync("npx", ["--no-install", "vitest", "run", ...selected], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+});
+if (result.error) console.error(result.error.message);
+console.log(`Vitest finished in ${Date.now() - startedAt}ms (exit: ${result.status ?? "none"})`);
+process.exit(result.status ?? 1);
