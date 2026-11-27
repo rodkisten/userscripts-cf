@@ -47,9 +47,14 @@ if (invalid.length || !selected.length) {
   console.error("Invalid or empty runtime/utility suite selection:", invalid.join(", "));
   process.exit(2);
 }
-console.log("Runtime and utility suites:", selected.join(", "));
+const runnable = process.env.AST_UNIT_DELEGATED === "true"
+  ? selected.filter((path) => path !== "tests/rod-ast.test.mjs")
+  : selected;
+if (runnable.length !== selected.length) console.log("AST unit suite delegated to required ast-tests job.");
+if (!runnable.length) process.exit(0);
+console.log("Runtime and utility suites:", runnable.join(", "));
 const startedAt = Date.now();
-const result = spawnSync("npx", ["--no-install", "vitest", "run", ...selected], {
+const result = spawnSync("npx", ["--no-install", "vitest", "run", ...runnable], {
   stdio: "inherit",
   shell: process.platform === "win32",
 });

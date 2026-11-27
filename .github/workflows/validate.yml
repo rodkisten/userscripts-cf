@@ -40,10 +40,13 @@ concurrency:
 
 jobs:
   validate:
-    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
+    needs: ast-impact
+    if: always() && !cancelled() && github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.block == 'all' || inputs.block == 'validate')
     name: "🔍 Validate affected files"
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      AST_UNIT_DELEGATED: ${{ (github.event_name == 'workflow_dispatch' && inputs.block == 'all') || needs.ast-impact.outputs.changed == 'true' || needs.ast-impact.result == 'failure' }}
     steps:
       - name: 🤖 Generate GitHub App token
         id: app_token
