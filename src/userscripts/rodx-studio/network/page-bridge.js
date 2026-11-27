@@ -11,7 +11,7 @@ export function studioPageBridge(page, channel, defaultSettings, runtimeLimits) 
   const document = page.document,
     doc = document,
     location = page.location;
-  const PREFIX = channel;
+  let PREFIX = channel;
   const nativeFetch = page.fetch.bind(page),
     headers = new page.Headers();
   let sessionReady = false;
@@ -856,12 +856,13 @@ emit("request", {
     };
   }
   const controllers = new Map();
-  document.addEventListener(PREFIX + ":cancel", (event) => {
+  const cancelCall = (event) => {
     try {
-      controllers.get(JSON.parse(event.detail).id)?.abort();
+      controllers.get(PREFIX + ":" + JSON.parse(event.detail).id)?.abort();
     } catch {}
-  });
-  document.addEventListener(PREFIX + ":call", async (event) => {
+  };
+  const handleCall = async (event) => {
+    const requestChannel = PREFIX;
     let call;
     try {
       call = JSON.parse(event.detail || "");
@@ -915,7 +916,7 @@ body = JSON.stringify(call.payload);
 }
       const controller = new AbortController();
       if (method === "GET") {
-controllers.set(call.id, controller);
+controllers.set(requestChannel + ":" + call.id, controller);
 }
       scriptTrace = traceBegin("fetch", url.toString(), method, reqHeaders, body, "script");
       const r = await nativeFetch(url.toString(), {
@@ -944,20 +945,32 @@ traceFinishText(scriptTrace, r, raw);
         remaining: r.headers.get("x-rate-limit-remaining"),
         reset: r.headers.get("x-rate-limit-reset"),
       };
-      emit("result", result);
+      if (requestChannel === PREFIX) emit("result", result);
     } catch (error) {
       if (scriptTrace) {
 traceError(scriptTrace, error);
 }
-      emit("result", {
+      if (requestChannel === PREFIX) emit("result", {
         id: call.id,
         status: 0,
         error: String(error?.message || error),
       });
     } finally {
-      controllers.delete(call.id);
+      controllers.delete(requestChannel + ":" + call.id);
     }
-  });
+  };
+  function bindChannel(next) {
+    document.removeEventListener(PREFIX + ":cancel", cancelCall);
+    document.removeEventListener(PREFIX + ":call", handleCall);
+    if (next !== PREFIX) {
+      for (const controller of controllers.values()) controller.abort();
+      controllers.clear();
+    }
+    PREFIX = next;
+    document.addEventListener(PREFIX + ":cancel", cancelCall);
+    document.addEventListener(PREFIX + ":call", handleCall);
+  }
+  bindChannel(channel);
   let navIndex = Number(page.history.state?.rodxNavIndex) || 0;
   const push = page.history.pushState,
     replace = page.history.replaceState;
@@ -1002,7 +1015,8 @@ traceError(scriptTrace, error);
     navIndex = Number(page.history.state?.rodxNavIndex) || 0;
     announceRoute();
   });
-  function announce() {
+  function announce(nextChannel) {
+    if (typeof nextChannel === "string" && nextChannel !== PREFIX) bindChannel(nextChannel);
     doc.documentElement?.setAttribute("data-rodx-feed-hook", "ready");
     announceRoute();
     emit("status", {
