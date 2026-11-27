@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#08110b" />
+  <link rel="stylesheet" href="./landing.css" />
+  <title>Broto · reactivity that grows only where it is touched</title>
+</head>
+<body>
+  <div class="spore-field" aria-hidden="true"></div>
+  <main class="broto-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Fine-grained reactive runtime / 0 framework ceremony</p>
+        <h1><span>State</span> grows.<br />The page follows.</h1>
+        <p class="lede">Broto is the small reactive root system under Fábrica. Signals, computed values, ownership, stores and resources stay precise so your UI does not have to drag a framework-shaped planet behind it.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#playground">Touch the graph</a>
+          <a class="button" href="../docs/broto-readme.html">Read the docs</a>
+        </div>
+      </div>
+      <aside class="runtime-orbit" aria-label="Broto reactive primitives">
+        <div class="orbit core"><strong>signal()</strong><span>one mutable root</span></div>
+        <div class="orbit computed"><strong>computed()</strong><span>derived, lazy, exact</span></div>
+        <div class="orbit effect"><strong>effect()</strong><span>work only when needed</span></div>
+        <div class="orbit store"><strong>store()</strong><span>deep state, no proxy fog</span></div>
+      </aside>
+    </section>
+
+    <section class="playground" id="playground">
+      <div class="section-heading">
+        <p class="kicker">Live reactive graph</p>
+        <h2>Move one atom.<br />Watch only its dependents wake up.</h2>
+      </div>
+      <div class="graph-stage">
+        <div class="graph-node source-node"><span>signal</span><strong id="count-value">2</strong><small>count</small></div>
+        <div class="graph-line line-a"></div>
+        <div class="graph-line line-b"></div>
+        <div class="graph-node derived-node"><span>computed</span><strong id="double-value">4</strong><small>count × 2</small></div>
+        <div class="graph-node derived-node alt"><span>computed</span><strong id="label-value">even</strong><small>parity</small></div>
+        <div class="graph-node sink-node"><span>effect</span><strong id="effect-runs">1</strong><small>render passes</small></div>
+      </div>
+      <div class="controls">
+        <button type="button" data-delta="-1">− mutate</button>
+        <input id="count-slider" type="range" min="0" max="24" value="2" aria-label="Signal value" />
+        <button type="button" data-delta="1">+ mutate</button>
+        <button class="burst" id="batch-button" type="button">batch × 5</button>
+      </div>
+    </section>
+
+    <section class="split-section">
+      <article class="manifesto-card">
+        <p class="index">01</p>
+        <h3>No virtual tree.</h3>
+        <p>Dependencies are recorded where values are read. Updates travel through a graph instead of asking the whole interface to audition again.</p>
+      </article>
+      <article class="manifesto-card hot">
+        <p class="index">02</p>
+        <h3>Ownership is lifecycle.</h3>
+        <p>Effects and resources belong to explicit owner scopes, so cleanup is not an afterthought hidden in a hook maze.</p>
+      </article>
+      <article class="manifesto-card wide">
+        <div>
+          <p class="index">03</p>
+          <h3>Deep state without Proxy magic tricks.</h3>
+          <p>Stores expose signal-shaped leaves, snapshots and batched patches. You can inspect the machinery because the machinery is not pretending to be plain JavaScript.</p>
+        </div>
+        <pre><code>const state = store({
+  user: { name: "Rod" },
+  panel: { open: false }
+})
+
+state.panel.open.set(true)
+state.user.name.set("Rodolfo")</code></pre>
+      </article>
+    </section>
+
+    <section class="code-river">
+      <div class="section-heading compact">
+        <p class="kicker">The whole mental model</p>
+        <h2>Read. Derive. React. Dispose.</h2>
+      </div>
+      <pre class="code-card"><code>import { signal, computed, effect } from "@rodkisten/broto"
+
+const count = signal(0)
+const doubled = computed(() =&gt; count() * 2)
+
+const dispose = effect(() =&gt; {
+  console.log(doubled())
+})
+
+count.update(value =&gt; value + 1)
+dispose()</code></pre>
+    </section>
+  </main>
+  <script type="module" src="./landing.ts"></script>
+</body>
+</html>

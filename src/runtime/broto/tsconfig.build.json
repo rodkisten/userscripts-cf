@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "exclude": [
+    "./test/**",
+    "**/*.test.ts",
+    "**/*.bench.ts",
+    "./examples/**",
+    "./vite.config.ts",
+    "./vitest.config.ts",
+    "./browser-entry.ts",
+    "./dist/**"
+  ]
+}

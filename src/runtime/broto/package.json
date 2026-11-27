@@ -1,0 +1,39 @@
+{
+  "name": "@rodkisten/broto",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Small reactive runtime for signals, computed values, effects, batching, stores and async resources.",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    },
+    "./*": {
+      "types": "./*.d.ts",
+      "import": "./*.js",
+      "default": "./*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "*.js.map",
+    "*.d.ts.map",
+    "!vitest.config.*",
+    "!vite.config.*",
+    "!tsconfig.json"
+  ],
+  "scripts": {
+    "build": "pnpm --dir .. exec tsx scripts/build-package.ts broto && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root .. --dir .",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

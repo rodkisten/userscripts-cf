@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx"
+  ],
+  "exclude": [
+    "./test/**",
+    "**/*.test.ts",
+    "**/*.bench.ts",
+    "./examples/**",
+    "./vite.config.ts",
+    "./vitest.config.ts",
+    "./dist/**"
+  ]
+}
