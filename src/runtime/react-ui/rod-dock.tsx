@@ -1,6 +1,8 @@
 /** @jsxImportSource react */
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
+import * as Checkbox from "@radix-ui/react-checkbox";
+import { Button } from "./uai/button.js";
 import * as Dialog from "@radix-ui/react-dialog";
 import { DockPanel, DockSearch } from "./dock-primitives.js";
 import {
@@ -49,10 +51,10 @@ const DOCK_POSITION_KEY = "rod-dock:position";
 
 const css = `
   :host {
-    --rd-bg-panel: #09090b;
-    --rd-bg-surface: #18181b;
-    --rd-bg-control: #27272a;
-    --rd-bg-control-hover: #323238;
+    --rd-bg-panel: var(--background, #09090b);
+    --rd-bg-surface: var(--card, #18181b);
+    --rd-bg-control: var(--secondary, #27272a);
+    --rd-bg-control-hover: var(--muted, #323238);
     --rd-bg-overlay: rgba(0, 0, 0, 0.6);
 
     --rd-glass-bg: rgba(24, 24, 27, 0.58);
@@ -60,16 +62,16 @@ const css = `
     --rd-glass-border: rgba(255, 255, 255, 0.16);
     --rd-glass-highlight: rgba(255, 255, 255, 0.22);
 
-    --rd-border-subtle: #27272a;
-    --rd-border-strong: #3f3f46;
+    --rd-border-subtle: var(--border, #27272a);
+    --rd-border-strong: var(--border, #3f3f46);
 
-    --rd-text-primary: #fafafa;
-    --rd-text-secondary: #a1a1aa;
-    --rd-text-muted: #71717a;
+    --rd-text-primary: var(--foreground, #fafafa);
+    --rd-text-secondary: var(--muted-foreground, #a1a1aa);
+    --rd-text-muted: var(--muted-foreground, #71717a);
 
-    --rd-accent: #7c3aed;
-    --rd-accent-hover: #6d28d9;
-    --rd-accent-soft: #a78bfa;
+    --rd-accent: var(--primary, #7c3aed);
+    --rd-accent-hover: var(--primary, #6d28d9);
+    --rd-accent-soft: var(--ring, #a78bfa);
 
     --rd-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --rd-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -255,27 +257,6 @@ const css = `
     border-radius: 999px;
   }
 
-  .btn {
-    border: 1px solid var(--rd-border-strong);
-    background: var(--rd-bg-control);
-    color: var(--rd-text-primary);
-    border-radius: var(--rd-radius-md);
-    padding: 6px 10px;
-    font-size: var(--rd-font-sm);
-    line-height: 1.3;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .btn:hover {
-    background: var(--rd-bg-control-hover);
-  }
-
-  .btn--icon {
-    padding: 5px 8px;
-    font-size: var(--rd-font-base);
-    line-height: 1;
-  }
-
   .btn[data-reorder-id] {
     touch-action: none;
     user-select: none;
@@ -291,28 +272,12 @@ const css = `
     outline-offset: 2px;
   }
 
-  .input {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: var(--rd-radius-md);
-    background: var(--rd-bg-control);
-    color: var(--rd-text-primary);
-    border: 1px solid var(--rd-border-strong);
-    font-size: var(--rd-font-sm);
-    outline: none;
-  }
-
+  .dock-search { min-height: 36px; }
   @media (pointer: coarse) {
-    .input { font-size: 16px; }
+    .dock-search { font-size: 16px; }
     .launcher { min-width: 32px; min-height: 44px; }
   }
-
   .launcher[hidden] { display: none; }
-
-  .input:focus {
-    border-color: var(--rd-accent-soft);
-  }
-
   .input--spaced {
     margin-top: 10px;
   }
@@ -373,11 +338,24 @@ const css = `
 
   .checkbox {
     flex-shrink: 0;
-    accent-color: var(--rd-accent-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--rd-border-strong);
+    border-radius: 4px;
+    background: var(--rd-bg-control);
+    color: var(--rd-text-primary);
     width: 16px;
     height: 16px;
     cursor: pointer;
   }
+
+  .checkbox[data-state="checked"] {
+    background: var(--rd-accent);
+    color: var(--primary-foreground, #fff);
+  }
+  .checkbox:focus-visible { outline: 2px solid var(--rd-accent-soft); }
 
   .diagnostic-item {
     margin: 8px 0 0;
@@ -489,7 +467,7 @@ function DockView({ controller }: { controller: DockController }) {
           setOpen(next);
         }}
       >
-        <button
+        <Button variant="outline"
           type="button"
           className="btn"
           onClick={() => {
@@ -498,7 +476,7 @@ function DockView({ controller }: { controller: DockController }) {
           }}
         >
           Preferências
-        </button>
+        </Button>
 
         <details className="module" open>
           <summary>Scripts ({scripts.length})</summary>
@@ -526,12 +504,14 @@ function DockView({ controller }: { controller: DockController }) {
                       {!enabled ? "Desativado" : permitted ? "Permitido" : "Fora da página"}
                     </small>
                   </span>
-                  <input
+                  <Checkbox.Root
                     className="checkbox"
-                    type="checkbox"
+                    aria-label={`Ativar ${script.name ?? script.id}`}
                     checked={enabled}
-                    onChange={(event) => toggleScript(script.id, event.target.checked)}
-                  />
+                    onCheckedChange={(checked) => toggleScript(script.id, checked === true)}
+                  >
+                    <Checkbox.Indicator>✓</Checkbox.Indicator>
+                  </Checkbox.Root>
                 </label>
               );
             })}
@@ -543,7 +523,7 @@ function DockView({ controller }: { controller: DockController }) {
             <summary>{module.name}</summary>
             <div className="actions">
               {module.actions.map((action) => (
-                <button
+                <Button variant="outline"
                   type="button"
                   className={`btn${dropTarget === action.id ? " drop-target" : ""}`}
                   key={action.id}
@@ -618,7 +598,7 @@ function DockView({ controller }: { controller: DockController }) {
                   aria-grabbed={action.reorder ? dragging === action.id : undefined}
                 >
                   {action.label}
-                </button>
+                </Button>
               ))}
             </div>
           </details>
@@ -627,7 +607,7 @@ function DockView({ controller }: { controller: DockController }) {
         <details className="module">
           <summary>Diagnósticos ({diagnostics.length})</summary>
           <div className="actions">
-            <button
+            <Button variant="outline"
               type="button"
               className="btn"
               onClick={() => {
@@ -643,7 +623,7 @@ function DockView({ controller }: { controller: DockController }) {
               }}
             >
               Exportar JSON
-            </button>
+            </Button>
           </div>
 
           {diagnostics.slice(0, 30).map((item, index) => (
@@ -674,7 +654,7 @@ function DockView({ controller }: { controller: DockController }) {
           onChange={setSettingsSearch}
         />
         <div className="actions">
-          <button
+          <Button variant="outline"
             type="button"
             className="btn"
             onClick={() => {
@@ -683,8 +663,8 @@ function DockView({ controller }: { controller: DockController }) {
             }}
           >
             Aplicar
-          </button>
-          <Dialog.Close className="btn">Cancelar</Dialog.Close>
+          </Button>
+          <Dialog.Close asChild><Button type="button" variant="outline">Cancelar</Button></Dialog.Close>
         </div>
       </DockPanel>
     </>

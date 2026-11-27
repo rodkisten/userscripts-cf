@@ -1,5 +1,7 @@
 /** @jsxImportSource react */
 import type { ReactNode } from "react";
+import { Button } from "./uai/button.js";
+import { Input } from "./uai/input.js";
 import * as Dialog from "@radix-ui/react-dialog";
 
 /** Presentation-only primitive; independent of userscript runtime state. */
@@ -7,8 +9,8 @@ export function DockHeader({ title, closeLabel }: { title: string; closeLabel: s
   return (
     <header className="panel-header">
       <Dialog.Title className="panel-title">{title}</Dialog.Title>
-      <Dialog.Close className="btn btn--icon" aria-label={closeLabel}>
-        ✕
+      <Dialog.Close asChild>
+        <Button type="button" variant="ghost" size="icon-sm" aria-label={closeLabel}>✕</Button>
       </Dialog.Close>
     </header>
   );
@@ -30,10 +32,10 @@ export function DockSearch({
   onChange: (value: string) => void;
 }) {
   return (
-    <input
+    <Input
       id={id}
       aria-label={label}
-      className={`input input--${variant}`}
+      className={`dock-search input--${variant}`}
       type="search"
       autoCapitalize="none"
       autoCorrect="off"
