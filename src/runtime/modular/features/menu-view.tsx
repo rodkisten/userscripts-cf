@@ -23,7 +23,7 @@ function DropdownItems({ items, portal }: { items: DropdownItem[]; portal: HTMLE
         const key = item.id ?? `${item.type ?? "item"}-${item.label ?? index}`;
         if (item.type === "separator") {
           return (
-            <DropdownMenu.Separator key={key} style={{ height: 1, margin: "4px 0", background: "#3f3f46" }} />
+            <DropdownMenu.Separator key={key} style={{ height: 1, margin: "4px 0", background: "var(--border, #3f3f46)" }} />
           );
         }
         if (item.children?.length) {
@@ -209,7 +209,7 @@ function RadixSwitchField({
         borderRadius: 999,
         border: "none",
         padding: 2,
-        background: checked ? "#6d28d9" : "#3f3f46",
+        background: checked ? "var(--primary, #6d28d9)" : "var(--muted, #3f3f46)",
         cursor: field.disabled ? "not-allowed" : "pointer",
         display: "inline-flex",
         alignItems: "center",
@@ -222,7 +222,7 @@ function RadixSwitchField({
           width: 18,
           height: 18,
           borderRadius: "50%",
-          background: "#fafafa",
+          background: "var(--primary-foreground, #fafafa)",
           transform: checked ? "translateX(18px)" : "translateX(0px)",
           transition: "transform 150ms ease",
         }}
@@ -258,9 +258,9 @@ function RadixCheckboxField({
         width: 20,
         height: 20,
         borderRadius: 6,
-        border: "1px solid #52525b",
-        background: checked ? "#6d28d9" : "#27272a",
-        color: "#fafafa",
+        border: "1px solid var(--border, #52525b)",
+        background: checked ? "var(--primary, #6d28d9)" : "var(--secondary, #27272a)",
+        color: "var(--primary-foreground, #fafafa)",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
@@ -351,7 +351,7 @@ function DialogField({
           }
           placeholder={field.placeholder}
           defaultValue={String(value ?? "")}
-          className={menuViewStyles.control}
+          className="min-h-[42px] text-base"
           onChange={(event) => {
             values[name] =
               field.type === "number" && event.target.value !== ""
