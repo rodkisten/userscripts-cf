@@ -184,12 +184,14 @@ describe("createRuntime (runtime-react)", () => {
         name: "Test Script Context",
         match: () => true,
         setup(ctx) {
-          const ui = (ctx as unknown as {
-            ui: {
-              host: HTMLDivElement;
-              mountReact(el: React.ReactElement): () => void;
-            };
-          }).ui;
+          const ui = (
+            ctx as unknown as {
+              ui: {
+                host: HTMLDivElement;
+                mountReact(el: React.ReactElement): () => void;
+              };
+            }
+          ).ui;
 
           disposePortal = ui.mountReact(<ContextReader />);
         },
@@ -201,7 +203,8 @@ describe("createRuntime (runtime-react)", () => {
       await flushMicrotasks();
 
       expect(capturedScriptId).toBe("test-script-ctx");
-      const shadowHost = document.body.querySelector("[data-rod-script='test-script-ctx']") ||
+      const shadowHost =
+        document.body.querySelector("[data-rod-script='test-script-ctx']") ||
         Array.from(document.body.children).find((el) => el.shadowRoot !== null);
 
       expect(shadowHost?.shadowRoot?.textContent).toContain("Script: test-script-ctx");
@@ -226,11 +229,13 @@ describe("createRuntime (runtime-react)", () => {
         name: "Shadow Target Script",
         match: () => true,
         setup(ctx) {
-          const ui = (ctx as unknown as {
-            ui: {
-              mountReact(el: React.ReactElement, target?: ShadowRoot): () => void;
-            };
-          }).ui;
+          const ui = (
+            ctx as unknown as {
+              ui: {
+                mountReact(el: React.ReactElement, target?: ShadowRoot): () => void;
+              };
+            }
+          ).ui;
 
           disposePortal = ui.mountReact(<div className="inside-shadow">Shadow Content</div>, externalShadow);
         },
@@ -261,13 +266,15 @@ describe("createRuntime (runtime-react)", () => {
         name: "Style Script A",
         match: () => true,
         setup(ctx) {
-          const ui = (ctx as unknown as {
-            ui: {
-              style(css: string): HTMLStyleElement;
-              pageStyle(css: string, opts?: { id?: string }): HTMLStyleElement;
-              mount(node: Node): Node;
-            };
-          }).ui;
+          const ui = (
+            ctx as unknown as {
+              ui: {
+                style(css: string): HTMLStyleElement;
+                pageStyle(css: string, opts?: { id?: string }): HTMLStyleElement;
+                mount(node: Node): Node;
+              };
+            }
+          ).ui;
 
           createdShadowStyle = ui.style(".box { color: red; }");
           createdPageStyle = ui.pageStyle("body { --accent: blue; }", { id: "shared-page-style" });
@@ -282,11 +289,13 @@ describe("createRuntime (runtime-react)", () => {
         name: "Style Script B",
         match: () => true,
         setup(ctx) {
-          const ui = (ctx as unknown as {
-            ui: {
-              pageStyle(css: string, opts?: { id?: string }): HTMLStyleElement;
-            };
-          }).ui;
+          const ui = (
+            ctx as unknown as {
+              ui: {
+                pageStyle(css: string, opts?: { id?: string }): HTMLStyleElement;
+              };
+            }
+          ).ui;
 
           // Atualiza o mesmo <style id="shared-page-style">
           ui.pageStyle("body { --accent: green; }", { id: "shared-page-style" });
@@ -300,9 +309,7 @@ describe("createRuntime (runtime-react)", () => {
 
       expect(createdShadowStyle?.textContent).toBe(".box { color: red; }");
       expect(createdPageStyle?.id).toBe("shared-page-style");
-      expect(document.getElementById("shared-page-style")?.textContent).toBe(
-        "body { --accent: green; }",
-      );
+      expect(document.getElementById("shared-page-style")?.textContent).toBe("body { --accent: green; }");
 
       await runtime.dispose();
 
@@ -318,12 +325,14 @@ describe("createRuntime (runtime-react)", () => {
         name: "Register Styles Script",
         match: () => true,
         setup(ctx) {
-          const ui = (ctx as unknown as {
-            ui: {
-              root: ShadowRoot;
-              registerStyles(...styles: string[]): () => void;
-            };
-          }).ui;
+          const ui = (
+            ctx as unknown as {
+              ui: {
+                root: ShadowRoot;
+                registerStyles(...styles: string[]): () => void;
+              };
+            }
+          ).ui;
 
           disposeStyles = ui.registerStyles(".btn { display: inline-flex; }");
           expect(ui.root).toBeInstanceOf(ShadowRoot);
@@ -348,9 +357,11 @@ describe("createRuntime (runtime-react)", () => {
         name: "Aborted Script",
         match: () => true,
         setup(ctx) {
-          capturedMountReact = (ctx as unknown as {
-            ui: { mountReact(el: React.ReactElement): () => void };
-          }).ui.mountReact;
+          capturedMountReact = (
+            ctx as unknown as {
+              ui: { mountReact(el: React.ReactElement): () => void };
+            }
+          ).ui.mountReact;
         },
       };
 
@@ -359,9 +370,7 @@ describe("createRuntime (runtime-react)", () => {
       await runtime.ready;
       await runtime.dispose();
 
-      expect(() => capturedMountReact(<div>Late Mount</div>)).toThrow(
-        "ScriptContext already disposed",
-      );
+      expect(() => capturedMountReact(<div>Late Mount</div>)).toThrow("ScriptContext already disposed");
     });
   });
 });

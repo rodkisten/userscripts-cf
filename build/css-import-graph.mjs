@@ -41,7 +41,11 @@ const resolve = (from, spec, files) => {
   if (!spec.startsWith(".") && !spec.startsWith("@/")) return null;
 
   const cleanSpec = spec.split(/[?#]/, 1)[0];
-  const base = norm(cleanSpec.startsWith("@/") ? path.posix.join("src", cleanSpec.slice(2)) : path.posix.join(path.posix.dirname(from), cleanSpec));
+  const base = norm(
+    cleanSpec.startsWith("@/")
+      ? path.posix.join("src", cleanSpec.slice(2))
+      : path.posix.join(path.posix.dirname(from), cleanSpec),
+  );
 
   const candidates = new Set([base]);
 
@@ -84,12 +88,7 @@ export function analyzeImportGraph(sources, { includeDynamic = true } = {}) {
     try {
       ast = parse(content, {
         sourceType: "unambiguous",
-        plugins: [
-          "typescript",
-          "jsx",
-          "importAttributes",
-          ["decorators", { decoratorsBeforeExport: true }],
-        ],
+        plugins: ["typescript", "jsx", "importAttributes", ["decorators", { decoratorsBeforeExport: true }]],
         errorRecovery: false,
       });
     } catch (error) {

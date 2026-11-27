@@ -1,27 +1,27 @@
 // @ts-check
-import ts from 'typescript';
-import fs from 'node:fs';
-import path from 'node:path';
+import ts from "typescript";
+import fs from "node:fs";
+import path from "node:path";
 
 const CONFIG = {
   rootDir: process.cwd(),
-  srcDirName: 'src',
-  aliasPrefix: '@/',
-  reportPath: '.cache/import-migration.json',
+  srcDirName: "src",
+  aliasPrefix: "@/",
+  reportPath: ".cache/import-migration.json",
   excludedDirs: new Set([
-    'node_modules',
-    '.git',
-    '.pnpm',
-    '.cache',
-    '.turbo',
-    '.vite',
-    '.output',
-    'dist',
-    'build',
-    'coverage',
-    'vendor',
-    'fixtures',
-    '__snapshots__',
+    "node_modules",
+    ".git",
+    ".pnpm",
+    ".cache",
+    ".turbo",
+    ".vite",
+    ".output",
+    "dist",
+    "build",
+    "coverage",
+    "vendor",
+    "fixtures",
+    "__snapshots__",
   ]),
   sourceFileRegex: /\.(?:[cm]?[jt]s|[jt]sx)$/,
   ignoredFileRegex: /(?:\.d\.[cm]?ts|\.min\.[cm]?js|\.user\.js)$/,
@@ -36,7 +36,7 @@ const CONFIG = {
 function parseCliArgs(argv) {
   const args = new Set(argv);
 
-  if (args.has('--help') || args.has('-h')) {
+  if (args.has("--help") || args.has("-h")) {
     console.log(`
 Usage: node migrate-imports.js [options]
 
@@ -49,19 +49,19 @@ Options:
     process.exit(0);
   }
 
-  const write = args.has('--write');
-  const check = args.has('--check');
-  const quiet = args.has('--quiet');
+  const write = args.has("--write");
+  const check = args.has("--check");
+  const quiet = args.has("--quiet");
 
   if (write && check) {
-    throw new Error('--write and --check are mutually exclusive');
+    throw new Error("--write and --check are mutually exclusive");
   }
 
   return {
     write,
     check,
     quiet,
-    mode: write ? 'write' : check ? 'check' : 'dry-run',
+    mode: write ? "write" : check ? "check" : "dry-run",
   };
 }
 
@@ -77,20 +77,16 @@ function loadCompilerOptions(rootDir) {
     allowJs: true,
   };
 
-  const configPath = ts.findConfigFile(rootDir, ts.sys.fileExists, 'tsconfig.json');
+  const configPath = ts.findConfigFile(rootDir, ts.sys.fileExists, "tsconfig.json");
   if (!configPath) return defaults;
 
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   if (config.error) {
-    const message = ts.flattenDiagnosticMessageText(config.error.messageText, '\n');
+    const message = ts.flattenDiagnosticMessageText(config.error.messageText, "\n");
     throw new Error(`Unable to read tsconfig.json: ${message}`);
   }
 
-  const parsed = ts.parseJsonConfigFileContent(
-    config.config,
-    ts.sys,
-    path.dirname(configPath),
-  );
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, path.dirname(configPath));
 
   return { ...defaults, ...parsed.options };
 }
@@ -103,8 +99,8 @@ function loadCompilerOptions(rootDir) {
 function isInside(parent, target) {
   const relative = path.relative(parent, target);
   return (
-    relative !== '' &&
-    relative !== '..' &&
+    relative !== "" &&
+    relative !== ".." &&
     !relative.startsWith(`..${path.sep}`) &&
     !path.isAbsolute(relative)
   );
@@ -148,30 +144,20 @@ function extractModuleSpecifier(node) {
 
   if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
     candidate = node.moduleSpecifier;
-  } else if (
-    ts.isImportEqualsDeclaration(node) &&
-    ts.isExternalModuleReference(node.moduleReference)
-  ) {
+  } else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
     candidate = node.moduleReference.expression;
-  } else if (
-    ts.isImportTypeNode(node) &&
-    ts.isLiteralTypeNode(node.argument)
-  ) {
+  } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
     candidate = node.argument.literal;
   } else if (ts.isCallExpression(node)) {
     const isDynamicImport = node.expression.kind === ts.SyntaxKind.ImportKeyword;
-    const isRequire =
-      ts.isIdentifier(node.expression) && node.expression.text === 'require';
+    const isRequire = ts.isIdentifier(node.expression) && node.expression.text === "require";
 
     if (isDynamicImport || isRequire) {
       candidate = node.arguments[0];
     }
   }
 
-  if (
-    candidate &&
-    (ts.isStringLiteral(candidate) || ts.isNoSubstitutionTemplateLiteral(candidate))
-  ) {
+  if (candidate && (ts.isStringLiteral(candidate) || ts.isNoSubstitutionTemplateLiteral(candidate))) {
     return candidate;
   }
 
@@ -189,11 +175,7 @@ function main() {
 
   const srcRealPath = fs.realpathSync(srcDir);
   const compilerOptions = loadCompilerOptions(rootRealPath);
-  const resolutionCache = ts.createModuleResolutionCache(
-    rootRealPath,
-    (name) => name,
-    compilerOptions,
-  );
+  const resolutionCache = ts.createModuleResolutionCache(rootRealPath, (name) => name, compilerOptions);
 
   /** @type {UnresolvedImport[]} */
   const unresolved = [];
@@ -216,17 +198,13 @@ function main() {
 
     const suffixIndex = specifier.search(/[?#]/);
     const pathname = suffixIndex < 0 ? specifier : specifier.slice(0, suffixIndex);
-    const suffix = suffixIndex < 0 ? '' : specifier.slice(suffixIndex);
+    const suffix = suffixIndex < 0 ? "" : specifier.slice(suffixIndex);
     const targetPath = path.resolve(path.dirname(containingFile), pathname);
     if (!isInside(srcRealPath, targetPath)) return null;
 
-    const resolved = ts.resolveModuleName(
-      pathname,
-      containingFile,
-      compilerOptions,
-      ts.sys,
-      resolutionCache,
-    ).resolvedModule?.resolvedFileName ??
+    const resolved =
+      ts.resolveModuleName(pathname, containingFile, compilerOptions, ts.sys, resolutionCache).resolvedModule
+        ?.resolvedFileName ??
       (fs.existsSync(targetPath) && fs.statSync(targetPath).isFile() ? targetPath : undefined);
 
     if (!resolved) {
@@ -243,17 +221,14 @@ function main() {
       return null;
     }
 
-    const relativeToSrc = path
-      .relative(srcRealPath, targetPath)
-      .split(path.sep)
-      .join('/');
+    const relativeToSrc = path.relative(srcRealPath, targetPath).split(path.sep).join("/");
 
     return `${CONFIG.aliasPrefix}${relativeToSrc}${suffix}`;
   }
 
   for (const file of walkSourceFiles(rootRealPath)) {
     scanned++;
-    const original = fs.readFileSync(file, 'utf8');
+    const original = fs.readFileSync(file, "utf8");
     const sourceFile = ts.createSourceFile(file, original, ts.ScriptTarget.Latest, true);
 
     /** @type {{ start: number, end: number, from: string, to: string }[]} */
@@ -304,12 +279,12 @@ function main() {
 
   if (cli.write && !abortedWrite) {
     for (const { file, output } of pendingWrites) {
-      fs.writeFileSync(file, output, 'utf8');
+      fs.writeFileSync(file, output, "utf8");
     }
   }
 
   const report = {
-    mode: abortedWrite ? 'write (aborted)' : cli.mode,
+    mode: abortedWrite ? "write (aborted)" : cli.mode,
     scanned,
     changed: fileReports.length,
     migrated: migratedCount,
@@ -353,7 +328,7 @@ function printSummary(report, quiet) {
   }
 
   if (report.unresolved.length > 0) {
-    console.error('\nUnresolved imports (write aborted):');
+    console.error("\nUnresolved imports (write aborted):");
     for (const item of report.unresolved) {
       console.error(`  ${item.file}: ${item.specifier}`);
     }
