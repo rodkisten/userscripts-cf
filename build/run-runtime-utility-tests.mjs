@@ -55,10 +55,27 @@ if (runnable.length !== selected.length) console.log("AST unit suite delegated t
 if (!runnable.length) process.exit(0);
 console.log("Runtime and utility suites:", runnable.join(", "));
 const startedAt = Date.now();
-const result = spawnSync("npx", ["--no-install", "vitest", "run", "--project", "runtime", "--project", "compiler", "--project", "tooling", "--project", "runtime-integration", ...runnable], {
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
+const result = spawnSync(
+  "npx",
+  [
+    "--no-install",
+    "vitest",
+    "run",
+    "--project",
+    "runtime",
+    "--project",
+    "compiler",
+    "--project",
+    "tooling",
+    "--project",
+    "runtime-integration",
+    ...runnable,
+  ],
+  {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  },
+);
 if (result.error) console.error(result.error.message);
 console.log(`Vitest finished in ${Date.now() - startedAt}ms (exit: ${result.status ?? "none"})`);
 process.exit(result.status ?? 1);
