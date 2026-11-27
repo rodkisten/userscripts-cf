@@ -38,14 +38,6 @@ function markRodXAsStarted(win: Window & typeof globalThis): void {
   win[WINDOW_RODX_FLAG] = true;
 }
 
-function scheduleDeckInitialization(ctx: ScriptContext): void {
-  if (document.readyState === "loading") {
-    ctx.listen(document, "DOMContentLoaded", initializeDeck, { once: true });
-  } else {
-    initializeDeck();
-  }
-}
-
 function registerStudioDockActions(ctx: ScriptContext): void {
   ctx.dock?.register([
     {
@@ -79,23 +71,52 @@ export function startRodX(ctx: ScriptContext): void {
   if (hasRodXAlreadyStarted(window)) {
     return;
   }
-  markRodXAsStarted(window);
   if (!ctx.ui) {
     throw new Error("RodX requires the shared UI runtime");
   }
   const ui = ctx.ui;
-  ui.pageStyle(tokens, { id: "rodx-design-tokens" });
-  configureSharedMount((component, target) => ui.mountReact(component, target));
-
-  initializeNetwork();
+  let active = true;
+  const cleanup = () => {
+    if (!active) return;
+    active = false;
+    try {
+      disposeRodxToast();
+    } finally {
+      try {
+        disposeAllViews();
+      } finally {
+        if (Studio.ctx === ctx) {
+          delete window[WINDOW_RODX_FLAG];
+        }
+      }
+    }
+  };
+  ctx.onDispose(cleanup);
+  markRodXAsStarted(window);
   Studio.ctx = ctx;
-  scheduleDeckInitialization(ctx);
-  // Release the startup guard when the script context is disposed (SPA navigation).
-  ctx.onDispose(() => {
-    disposeRodxToast();
-    disposeAllViews();
-    delete window[WINDOW_RODX_FLAG];
-  });
+  try {
+    ui.pageStyle(tokens, { id: "rodx-design-tokens" });
+    configureSharedMount((component, target) => ui.mountReact(component, target));
+    initializeNetwork();
+    const startDeck = () => {
+      if (!active) return;
+      try {
+        initializeDeck();
+      } catch (error) {
+        cleanup();
+        console.error("[RodX Studio] Deck initialization failed", error);
+        throw error;
+      }
+    };
+    if (document.readyState === "loading") {
+      ctx.listen(document, "DOMContentLoaded", startDeck, { once: true });
+    } else {
+      startDeck();
+    }
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
 
 export default {
