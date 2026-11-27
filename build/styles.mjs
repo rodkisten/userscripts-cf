@@ -36,7 +36,13 @@ export function stylesPipeline({ scope = "module", includeBase = true } = {}) {
           let parent = declaration.parent;
           while (parent) {
             // Only style rules accept !important; at-rule descriptors (e.g. @property) do not.
-            if (parent.type === "atrule" && /^(?:property|font-face|counter-style|font-palette-values|page|position-try)$|keyframes$/i.test(parent.name)) return;
+            if (
+              parent.type === "atrule" &&
+              /^(?:property|font-face|counter-style|font-palette-values|page|position-try)$|keyframes$/i.test(
+                parent.name,
+              )
+            )
+              return;
             parent = parent.parent;
           }
           declaration.important = true;
