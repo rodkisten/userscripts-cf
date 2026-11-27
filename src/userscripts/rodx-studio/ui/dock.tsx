@@ -132,7 +132,7 @@ function syncSharedDock(force = false) {
   }
   document.dispatchEvent(
     new CustomEvent("rod-dock:registry", {
-      detail: { type: "register", module: { id: "rodx-studio", name: "RodX Studio", actions } },
+      detail: { type: "register", module: { id: "rodx-studio-shortcuts", name: "RodX Studio · Atalhos", actions } },
     }),
   );
 }
@@ -144,7 +144,7 @@ function unregisterSharedDock() {
   sharedDockSignature = "";
   document.dispatchEvent(
     new CustomEvent("rod-dock:registry", {
-      detail: { type: "unregister", id: "rodx-studio" },
+      detail: { type: "unregister", id: "rodx-studio-shortcuts" },
     }),
   );
 }
@@ -165,11 +165,11 @@ export function ensureDock() {
   const primary =
     onHome || onSearch ? document.querySelector<HTMLElement>(NATIVE_X_SELECTORS.primaryColumn) : null;
   if (!primary) {
-    unregisterSharedDock();
     state.dockHost?.remove();
     state.dockHost = null;
     state.dockShadow = null;
     state.dockRoute = "";
+    syncSharedDock();
     return;
   }
   if (!state.dockHost) {
@@ -235,6 +235,7 @@ export let DragDock: any;
 
 
 export function initializeDeckDragDock() {
+  Studio.ctx?.onDispose(unregisterSharedDock);
   DragDock = (() => {
     let active = null,
       swallowUntil = 0;
