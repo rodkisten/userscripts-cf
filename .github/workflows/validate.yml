@@ -172,6 +172,27 @@ jobs:
         run: npm run lint
         timeout-minutes: 5
 
+      - name: ⏳ Wait for stable revision
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          DEBOUNCE_SECONDS: ${{ vars.CI_DEBOUNCE_SECONDS || '60' }}
+          FORCE_DEPLOY: ${{ vars.CI_DEPLOY_BYPASS_DEBOUNCE || 'true' }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEBOUNCE_SECONDS" =~ ^[0-9]{1,4}$ ]] || { echo "::error::Invalid CI_DEBOUNCE_SECONDS"; exit 1; }
+          if [[ "$FORCE_DEPLOY" == true ]] && git log -1 --format=%B "$EXPECTED_SHA" | grep -Fq '[deploy]'; then
+            echo "Explicit deploy: bypassing debounce"
+          else
+            echo "Waiting ${DEBOUNCE_SECONDS}s for a stable revision; newer runs cancel this run."
+            sleep "$DEBOUNCE_SECONDS"
+          fi
+          if [[ "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Checkout changed; waiting for validation of the new revision."
+            exit 1
+          fi
+
       - name: Build all userscripts
         if: steps.plan.outputs.run == 'true' && steps.install.outcome == 'success' && steps.plan.outputs.full == 'true' && github.event_name != 'pull_request'
         run: npm run build
