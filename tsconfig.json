@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -12,8 +13,19 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["react", "react-dom"]
+    "types": ["react", "react-dom"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/userscripts/**/*.ts", "src/userscripts/**/*.tsx", "src/types/**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "build", "coverage"]
+  "include": [
+    "src/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage"
+  ]
 }
