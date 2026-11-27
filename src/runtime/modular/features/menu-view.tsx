@@ -10,6 +10,8 @@ import * as Switch from "@radix-ui/react-switch";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import * as Tabs from "@radix-ui/react-tabs";
 import type { DropdownItem, DropdownOptions, MenuSchema, MenuField } from "./menu-types.js";
+import { Button } from "../../react-ui/uai/button.js";
+import { Input } from "../../react-ui/uai/input.js";
 import menuViewStyles, { css as menuViewCss } from "./menu-view.module.css";
 
 const EMPTY_SELECT_VALUE = "__rod_empty_option__";
@@ -341,7 +343,7 @@ function DialogField({
           }}
         />
       ) : (
-        <input
+        <Input
           id={fieldId}
           disabled={field.disabled}
           type={
@@ -483,7 +485,8 @@ function DialogView({
 
             <div className={menuViewStyles.actions}>
               {(schema.actions ?? []).map((action) => (
-                <button
+                <Button
+                  variant={action === primaryAction ? "default" : "outline"}
                   key={action.id}
                   type={action === primaryAction ? "submit" : "button"}
                   disabled={pending || action.disabled}
@@ -494,12 +497,12 @@ function DialogView({
                   }}
                 >
                   {action.label}
-                </button>
+                </Button>
               ))}
               <Dialog.Close asChild>
-                <button type="button" className={menuViewStyles.action}>
+                <Button type="button" variant="outline" className={menuViewStyles.action}>
                   Fechar
-                </button>
+                </Button>
               </Dialog.Close>
             </div>
           </form>
