@@ -1,0 +1,130 @@
+
+name: Migrate Import Aliases
+
+run-name: Import aliases · ${{ inputs.mode }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Migration mode
+        type: choice
+        options:
+          - dry-run
+          - migrate
+        default: dry-run
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-import-aliases-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Analyze, migrate and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Preview migration
+        run: pnpm imports:preview
+
+      - name: Apply migration
+        if: inputs.mode == 'migrate'
+        run: pnpm imports:migrate
+
+      - name: Verify migration is idempotent
+        if: inputs.mode == 'migrate'
+        run: pnpm imports:check
+
+      - name: Validate diff
+        run: git diff --check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm exec vitest run
+
+      - name: Build userscripts
+        run: pnpm build
+
+      - name: Generate report
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Import Alias Migration"
+            echo ""
+            echo "Mode: ${{ inputs.mode }}"
+            echo ""
+            echo '```'
+            git diff --stat
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          mkdir -p .cache
+          git diff > .cache/import-migration.patch
+
+      - name: Upload migration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-migration-${{ github.run_id }}
+          path: |
+            .cache/import-migration.json
+            .cache/import-migration.patch
+          retention-days: 7
+
+      - name: Create migration pull request
+        if: success() && inputs.mode == 'migrate'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: refactor/import-aliases
+          delete-branch: true
+          commit-message: "refactor: migrate imports to root alias [deploy]"
+          title: "♻️ Migrate source imports to @/ alias"
+          body: |
+            ## Import alias migration
+
+            - AST-based source migration
+            - Static and dynamic imports
+            - Type imports and reexports
+            - Idempotency verified
+            - Typecheck, unit tests and build passed
+
+            Generated automatically by the migration workflow.
+          add-paths: |
+            *.ts
+            *.tsx
+            *.js
+            *.jsx
+            *.mts
+            *.cts
+            *.mjs
+            *.cjs
