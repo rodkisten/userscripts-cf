@@ -1,13 +1,13 @@
-import { debug } from "@rodkisten/broto/debug";
-import { getOwnerRoots, inspectOwnerGraph } from "@rodkisten/broto/owner";
-import { inspectEffects, inspectScheduler, inspectSignals } from "@rodkisten/broto/reactivity";
+import { debug } from "./debug.js";
+import { getOwnerRoots, inspectOwnerGraph } from "./owner.js";
+import { inspectEffects, inspectScheduler, inspectSignals } from "./reactivity.js";
 import type {
   BrotoLeakRecord,
   BrotoLeakSnapshot,
   BrotoRuntimeSnapshot,
   Owner,
   OwnerGraphSnapshot,
-} from "@rodkisten/broto/types";
+} from "./types.js";
 
 /**
  * Creates a complete runtime snapshot for debug panels and devtools adapters.

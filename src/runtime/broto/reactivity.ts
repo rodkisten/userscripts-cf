@@ -1,4 +1,4 @@
-import { brotoDebugState } from "@rodkisten/broto/debug";
+import { brotoDebugState } from "./debug.js";
 import {
   cleanupOwner,
   createOwner,
@@ -7,8 +7,8 @@ import {
   handleOwnerError,
   onOwnerCleanup,
   runWithOwner,
-} from "@rodkisten/broto/owner";
-import { isSignal, markSignal } from "@rodkisten/broto/signal";
+} from "./owner.js";
+import { isSignal, markSignal } from "./signal.js";
 import type {
   Cleanup,
   CleanupRegistrar,
@@ -21,7 +21,7 @@ import type {
   SignalDebugSnapshot,
   SignalOptions,
   SchedulerMode,
-} from "@rodkisten/broto/types";
+} from "./types.js";
 
 /** Queued async effects waiting for the next scheduler flush. */
 const effectQueue = new Set<EffectRunner>();

@@ -1,4 +1,4 @@
-import type { GraphEdge } from "@rodkisten/broto/types";
+import type { GraphEdge } from "./types.js";
 
 /** Tiny directed graph used by devtools, experiments and dependency inspection. */
 export class Graph {

@@ -1,4 +1,4 @@
-import type { BrotoDebugOptions, BrotoDebugSnapshot } from "@rodkisten/broto/types";
+import type { BrotoDebugOptions, BrotoDebugSnapshot } from "./types.js";
 
 /** Mutable debug counters for Broto. */
 export const brotoDebugState: BrotoDebugSnapshot = {

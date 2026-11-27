@@ -7,7 +7,7 @@ import type {
   OwnerGraphSnapshot,
   OwnerOptions,
   OwnerScope,
-} from "@rodkisten/broto/types";
+} from "./types.js";
 
 let ownerId = 0;
 const ownerStack: Array<Owner | null> = [];

@@ -1,3 +1,5 @@
+import { signal } from "../../../runtime/broto/reactivity.js";
+import type { Signal } from "../../../runtime/broto/types.js";
 import type { ScriptContext } from "../../../core/runtime.js";
 import { readLegacyPageJSON } from "../../../runtime/modular/features/legacy-storage.js";
 import { RUNTIME_LIMITS, STUDIO_RANGES } from "../../../config/runtime.js";
@@ -87,6 +89,7 @@ export interface StudioServices extends Record<string, unknown> {
 
 export interface StudioRuntime {
   state: StudioState;
+  readonly routeSignal: Signal<string>;
   config: StudioConfig;
   on(type: string, fn: EventCallback): () => void;
   emit(type: string, data?: unknown): void;
@@ -165,6 +168,7 @@ export function createStudioRuntime(): StudioRuntime {
     ),
   };
 
+  const routeSignal = signal(location.pathname + location.search);
   const state: StudioState = {
     config,
     network: {
@@ -172,7 +176,12 @@ export function createStudioRuntime(): StudioRuntime {
       authReady: false,
       error: "",
     },
-    route: location.pathname + location.search,
+    get route() {
+      return routeSignal();
+    },
+    set route(value: string) {
+      routeSignal.set(value);
+    },
   };
 
   const listeners = new Map<string, Set<EventCallback>>();
@@ -560,6 +569,7 @@ export function createStudioRuntime(): StudioRuntime {
 
   const runtime: StudioRuntime = {
     state,
+    routeSignal,
     config,
     on,
     emit,
