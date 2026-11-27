@@ -1025,6 +1025,9 @@ traceError(scriptTrace, error);
 export function connectStudioNetwork(Studio) {
   const channel =
     "rodx-studio-" + Array.from(crypto.getRandomValues(new Uint32Array(3)), (n) => n.toString(36)).join("");
+  const lifecycle = new AbortController();
+  let observer, timeout;
+  Studio.state.network.ready = false;
   const pending = new Map(),
     buffer = [];
   let id = 0,
@@ -1080,7 +1083,7 @@ bufferBytes -= buffer.shift()[2];
         }
         Studio.emit("network:" + type, data);
       }
-    });
+    }, { signal: lifecycle.signal });
 }
   Studio.net = {
     subscribe(request, response) {
@@ -1093,7 +1096,7 @@ bufferBytes -= buffer.shift()[2];
       bufferBytes = 0;
     },
     request(path, options = {}) {
-      if (!Studio.state.network.ready)
+      if (lifecycle.signal.aborted || !Studio.state.network.ready)
         {
 return Promise.reject(Error("Ponte de rede indisponível. Recarregue o X."));
 }
@@ -1145,6 +1148,21 @@ call("cancel", {
       });
     },
   };
+  Studio.ctx?.onDispose(() => {
+    lifecycle.abort();
+    observer?.disconnect();
+    clearTimeout(timeout);
+    for (const [number, task] of pending) {
+      clearTimeout(task.timer);
+      task.cleanup?.();
+      call("cancel", { id: number });
+      task.reject(new DOMException("RodX disposed", "AbortError"));
+    }
+    pending.clear();
+    buffer.length = 0;
+    bufferBytes = 0;
+    Studio.state.network.ready = false;
+  });
   try {
     if (typeof unsafeWindow !== "undefined")
       {
@@ -1152,8 +1170,8 @@ studioPageBridge(unsafeWindow, channel, DEFAULT_SETTINGS, RUNTIME_LIMITS.network
 }
   } catch {}
   const tried = new Set();
-  let observer, timeout;
   function inject() {
+    if (lifecycle.signal.aborted) return;
     if (Studio.state.network.ready) {
       observer?.disconnect();
       clearTimeout(timeout);
