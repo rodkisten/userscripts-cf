@@ -356,30 +356,34 @@ export async function compileTarget(target, context) {
 
   // TODO(SOURCEMAP): REIMPLEMENT STANDALONE SOURCE MAPS.
   const finalBuildStart = performance.now();
-  const [chunks, icon, formattedBody] = await Promise.all([viteBuild({
-    configFile: false,
-    logLevel: "error",
-    plugins: [
-      {
-        name: "userscript-runtime-minify",
-        resolveId(id) {
-          if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+  const [chunks, icon, formattedBody] = await Promise.all([
+    viteBuild({
+      configFile: false,
+      logLevel: "error",
+      plugins: [
+        {
+          name: "userscript-runtime-minify",
+          resolveId(id) {
+            if (id === "virtual:userscript-runtime") return "\0virtual:userscript-runtime";
+          },
+          load(id) {
+            if (id === "\0virtual:userscript-runtime") return rawCode;
+          },
         },
-        load(id) {
-          if (id === "\0virtual:userscript-runtime") return rawCode;
+      ],
+      build: {
+        write: false,
+        minify: false,
+        sourcemap: false,
+        rolldownOptions: {
+          input: "virtual:userscript-runtime",
+          output: { format: "iife", name: "UserscriptsCFBundle" },
         },
       },
-    ],
-    build: {
-      write: false,
-      minify: false,
-      sourcemap: false,
-      rolldownOptions: {
-        input: "virtual:userscript-runtime",
-        output: { format: "iife", name: "UserscriptsCFBundle" },
-      },
-    },
-  }), iconPromise, debugPromise]);
+    }),
+    iconPromise,
+    debugPromise,
+  ]);
   log.info("Final build and debug " + target.id, fmt.duration(performance.now() - finalBuildStart));
   const normalizedBody = formattedBody.endsWith("\n") ? formattedBody : `${formattedBody}\n`;
 
