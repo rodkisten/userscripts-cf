@@ -10,6 +10,7 @@ import { RodMenu, RodMenuHost } from "../src/runtime/react-ui/index";
 import { ObjectInspector } from "../src/runtime/react-ui/src/ObjectInspector";
 import type { FieldDefinition, MenuSchema, SurfaceType } from "../src/runtime/react-ui/types";
 import studioCss from "./studio.css?inline";
+import uaiTheme from "../src/runtime/react-ui/theme.css?inline";
 
 const STYLE_ATTR = "data-rod-studio-style";
 let studioStyle = document.querySelector<HTMLStyleElement>(`style[${STYLE_ATTR}]`);
@@ -18,7 +19,8 @@ if (!studioStyle) {
   studioStyle.setAttribute(STYLE_ATTR, "");
   document.head.append(studioStyle);
 }
-studioStyle.textContent = studioCss;
+studioStyle.textContent = uaiTheme + "\n" + studioCss;
+document.documentElement.classList.add("rod-theme", "dark");
 
 type Demo = {
   id: string;
