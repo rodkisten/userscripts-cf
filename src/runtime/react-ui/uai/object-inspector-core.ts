@@ -458,10 +458,19 @@ export function createEntrySource(value: object, options: NormalizedInspectorOpt
       for (const item of iterator) {
         if (entries.length >= options.inspectItems) break;
         const key = entries.length;
-        entries.push(map ? { kind: "map-entry", key, mapKey: item[0], value: item[1], enumerable: true } : { kind: "set-entry", key, value: item, enumerable: true });
+        entries.push(
+          map
+            ? { kind: "map-entry", key, mapKey: item[0], value: item[1], enumerable: true }
+            : { kind: "set-entry", key, value: item, enumerable: true },
+        );
       }
     }, undefined);
-    source = { count: entries.length, total, hasMore: total > entries.length, get: index => entries[index] };
+    source = {
+      count: entries.length,
+      total,
+      hasMore: total > entries.length,
+      get: (index) => entries[index],
+    };
   } else source = createObjectSource(value, options);
 
   return withPrototype(source, value, options);
