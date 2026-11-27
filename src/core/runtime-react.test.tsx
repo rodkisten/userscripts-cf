@@ -2,9 +2,9 @@
 /** @jsxImportSource react */
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createRuntime, type RuntimeBridge } from "../src/core/runtime-react.js";
-import { useContext, useRuntime, useRuntimeWorld } from "../src/core/runtime-context-react.js";
-import type { ScriptDefinition } from "../src/core/runtime.js";
+import { createRuntime, type RuntimeBridge } from "@/core/runtime-react.js";
+import { useContext, useRuntime, useRuntimeWorld } from "@/core/runtime-context-react.js";
+import type { ScriptDefinition } from "@/core/runtime.js";
 
 function createMockBridge(): RuntimeBridge {
   return {

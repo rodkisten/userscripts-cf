@@ -214,16 +214,20 @@ function main() {
     // Only process relative imports
     if (!/^\.{1,2}(?:\/|$)/.test(specifier)) return null;
 
-    const targetPath = path.resolve(path.dirname(containingFile), specifier);
+    const suffixIndex = specifier.search(/[?#]/);
+    const pathname = suffixIndex < 0 ? specifier : specifier.slice(0, suffixIndex);
+    const suffix = suffixIndex < 0 ? '' : specifier.slice(suffixIndex);
+    const targetPath = path.resolve(path.dirname(containingFile), pathname);
     if (!isInside(srcRealPath, targetPath)) return null;
 
     const resolved = ts.resolveModuleName(
-      specifier,
+      pathname,
       containingFile,
       compilerOptions,
       ts.sys,
       resolutionCache,
-    ).resolvedModule?.resolvedFileName;
+    ).resolvedModule?.resolvedFileName ??
+      (fs.existsSync(targetPath) && fs.statSync(targetPath).isFile() ? targetPath : undefined);
 
     if (!resolved) {
       unresolved.push({
@@ -244,7 +248,7 @@ function main() {
       .split(path.sep)
       .join('/');
 
-    return `${CONFIG.aliasPrefix}${relativeToSrc}`;
+    return `${CONFIG.aliasPrefix}${relativeToSrc}${suffix}`;
   }
 
   for (const file of walkSourceFiles(rootRealPath)) {

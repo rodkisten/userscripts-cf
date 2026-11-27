@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { runtimeHelpers } from "./build/runtime-helpers.mjs";
@@ -8,6 +9,7 @@ import { stylesPipeline } from "./build/styles.mjs";
 
 // React-only: no Solid compiler, runtime detection, or compatibility layer.
 export default defineConfig({
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   publicDir: false,
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
   plugins: [

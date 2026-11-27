@@ -38,10 +38,10 @@ const norm = (value) => path.posix.normalize(value.replaceAll("\\", "/")).replac
  * @returns {string | null}
  */
 const resolve = (from, spec, files) => {
-  if (!spec.startsWith(".")) return null;
+  if (!spec.startsWith(".") && !spec.startsWith("@/")) return null;
 
   const cleanSpec = spec.split(/[?#]/, 1)[0];
-  const base = norm(path.posix.join(path.posix.dirname(from), cleanSpec));
+  const base = norm(cleanSpec.startsWith("@/") ? path.posix.join("src", cleanSpec.slice(2)) : path.posix.join(path.posix.dirname(from), cleanSpec));
 
   const candidates = new Set([base]);
 
@@ -113,7 +113,7 @@ export function analyzeImportGraph(sources, { includeDynamic = true } = {}) {
       const target = resolve(file, spec, files);
       if (target) {
         imports.push({ target, spec, kind, ...(isTypeOnly ? { isTypeOnly: true } : {}) });
-      } else if (spec.startsWith(".")) {
+      } else if (spec.startsWith(".") || spec.startsWith("@/")) {
         diagnostics.push({ file, code: "unresolved-module", spec });
       }
     };
