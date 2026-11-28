@@ -17,7 +17,7 @@ export async function init(ctx: ScriptContext) {
   const firstPost: Element | null = document.querySelector(".post");
   const posts: NodeListOf<Element> = document.querySelectorAll(".post");
   const nativeNode: HTMLDivElement = document.createElement("div");
-  const ticker: number = setInterval(() => console.log("tick"), 1000);
+  const ticker: ReturnType<typeof setInterval> = setInterval(() => console.log("tick"), 1000);
   const onClick: EventListener = () => console.log("clicked");
   document.addEventListener("click", onClick);
   ctx.onDispose(() => document.removeEventListener("click", onClick));

@@ -31,6 +31,6 @@ describe("Broto signal protocol", () => {
 
     expect(unwrapSignal(value)).toBe("expanded");
     expect(unwrapSignal("plain")).toBe("plain");
-    expect(unwrapSignal(callback)).toBe(callback);
+    expect(unwrapSignal<typeof callback>(callback)).toBe(callback);
   });
 });
