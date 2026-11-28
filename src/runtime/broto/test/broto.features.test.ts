@@ -35,7 +35,10 @@ describe("Broto kitchen sink", () => {
     const count = signal(0);
     const spy = vi.fn();
 
-    const unsubscribe = effect(() => { count(); spy(); });
+    const unsubscribe = effect(() => {
+      count();
+      spy();
+    });
     spy.mockClear();
 
     expect(count()).toBe(0);
