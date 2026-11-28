@@ -14,8 +14,8 @@ const scriptExtRegex = /\.(?:[cm]?[jt]sx?)$/i;
  * @param {string} specifier Especificador do import
  * @returns {Promise<string | null>}
  */
-async function resolveLocal(from, specifier) {
-  if (!specifier.startsWith(".")) return null;
+async function resolveLocal(from, specifier, root) {
+  if (!specifier.startsWith(".") && !specifier.startsWith("@/")) return null;
 
   const cleanSpecifier = specifier.split(/[?#]/, 1)[0];
   // Ignora assets estáticos (ex: .css, .png, .svg), mas permite extensões de script e .json
@@ -27,7 +27,9 @@ async function resolveLocal(from, specifier) {
     return null;
   }
 
-  const base = path.resolve(path.dirname(from), cleanSpecifier);
+  const base = cleanSpecifier.startsWith("@/")
+    ? path.resolve(root, "src", cleanSpecifier.slice(2))
+    : path.resolve(path.dirname(from), cleanSpecifier);
   const candidates = new Set([base]);
 
   if (scriptExtRegex.test(base)) {
@@ -225,7 +227,7 @@ export async function analyzeRuntimeGraph(entry, { root = process.cwd() } = {}) 
     const specifiers = collectModuleSpecifiers(source, filename, relPath, dynamicImportFiles);
 
     for (const specifier of specifiers) {
-      const dependency = await resolveLocal(filename, specifier);
+      const dependency = await resolveLocal(filename, specifier, rootPath);
       if (dependency && !visited.has(dependency)) {
         pending.push(dependency);
       }

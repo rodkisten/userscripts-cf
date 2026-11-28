@@ -45,23 +45,35 @@ jobs:
 
       - name: Preview migration
         run: |
-          npm run imports:preview
-          cp .cache/import-migration.json \
-             .cache/import-preview.json
+          status=0
+          rm -f .cache/import-migration.json
+          npm run imports:preview || status=$?
+          if [[ -f .cache/import-migration.json ]]; then
+            cp .cache/import-migration.json .cache/import-preview.json
+          fi
+          exit "$status"
 
       - name: Apply migration
         if: inputs.mode == 'migrate'
         run: |
-          npm run imports:migrate
-          cp .cache/import-migration.json \
-             .cache/import-applied.json
+          status=0
+          rm -f .cache/import-migration.json
+          npm run imports:migrate || status=$?
+          if [[ -f .cache/import-migration.json ]]; then
+            cp .cache/import-migration.json .cache/import-applied.json
+          fi
+          exit "$status"
 
       - name: Verify migration is idempotent
         if: inputs.mode == 'migrate'
         run: |
-          npm run imports:check
-          cp .cache/import-migration.json \
-             .cache/import-check.json
+          status=0
+          rm -f .cache/import-migration.json
+          npm run imports:check || status=$?
+          if [[ -f .cache/import-migration.json ]]; then
+            cp .cache/import-migration.json .cache/import-check.json
+          fi
+          exit "$status"
 
       - name: Validate diff
         run: git diff --check
@@ -129,6 +141,7 @@ jobs:
             .cache/import-applied.json
             .cache/import-check.json
             .cache/import-migration.patch
+          include-hidden-files: true
           retention-days: 7
           if-no-files-found: warn
 
@@ -138,6 +151,7 @@ jobs:
         with:
           name: validated-migration-patch
           path: .cache/import-migration.patch
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 

@@ -20,7 +20,7 @@ export function composeRuntime<
   base: Base,
   features: Features,
 ): ComposedRuntime<Base & { [K in keyof Features]: ReturnType<Features[K]["create"]> }> {
-  const context: Record<string, unknown> = { ...base };
+  const context: Record<string, unknown> = Object.assign({}, base);
   const cleanup: Array<() => void | Promise<void>> = [];
   let disposed = false;
   try {

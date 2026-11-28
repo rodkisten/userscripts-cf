@@ -55,7 +55,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions) {
   const fallbackCache: { checked?: number; dismissed?: string } = {};
   const key = `rod:updates:${options.id}`;
   let enabled = options.enabled !== false;
-  let timer: ReturnType<typeof setInterval> | undefined;
+  let timer: ReturnType<Window["setInterval"]> | undefined;
   let pending: Promise<AvailableUpdate | null> | undefined;
   let lastChecked = 0;
   let lastNotified = "";

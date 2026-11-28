@@ -33,6 +33,8 @@
  * // @connect raw.githubusercontent.com
  */
 
+export {};
+
 declare const unsafeWindow: (Window & typeof globalThis) | undefined;
 declare const GM_addElement: ((tag: string, attributes?: Record<string, unknown>) => Element) | undefined;
 declare const GM_xmlhttpRequest: ((options: Record<string, unknown>) => void) | undefined;
