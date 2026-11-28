@@ -133,6 +133,10 @@ export {
 
 import * as BrotoApi from "@rodkisten/broto/public-api";
 
+declare global {
+  interface Window { Broto: typeof BrotoApi }
+}
+
 if (typeof window !== "undefined") {
   window.Broto = BrotoApi;
 }

@@ -125,7 +125,7 @@ export function createNetworkInspector(Studio) {
     if (!state.open || renderTimer) {
       return;
     }
-    renderTimer = setTimeout(() => {
+    renderTimer = window.setTimeout(() => {
       renderTimer = 0;
       renderRows();
       renderDetail();

@@ -388,7 +388,7 @@ export function initializeDeckQuickUI() {
       }
       function queueSuggestions() {
         clearTimeout(refreshTimer);
-        refreshTimer = setTimeout(
+        refreshTimer = window.setTimeout(
           () => void suggestions(),
           RUNTIME_LIMITS.uiQuickActions.queueSuggestionsDelayMs,
         );

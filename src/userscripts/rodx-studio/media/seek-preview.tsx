@@ -244,7 +244,7 @@ export function createSeekPreviews(Studio, getOptions) {
       }
       const time = Math.max(0, Math.min(1, (x - rect.left) / rect.width)) * video.duration;
       clearTimeout(timer);
-      timer = setTimeout(() => void capture(item, time), RUNTIME_LIMITS.mediaSeekPreview.attachDelayMs);
+      timer = window.setTimeout(() => void capture(item, time), RUNTIME_LIMITS.mediaSeekPreview.attachDelayMs);
     };
     slider.addEventListener("pointerdown", schedule, {
       passive: true,

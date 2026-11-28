@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Window } from "happy-dom";
-import { createPortalRegistry } from "../src/core/portal-registry.js";
+import { createPortalRegistry, createPortalId, type PortalTarget } from "../src/core/portal-registry.js";
 
 describe("React portal registry ownership", () => {
   it("keeps snapshots stable until a registry mutation", async () => {
@@ -10,12 +10,12 @@ describe("React portal registry ownership", () => {
     const registry = createPortalRegistry<string, object>();
 
     const initial = registry.getSnapshot();
-    registry.add({ id: 1, target, node: "first" });
+    registry.add({ id: createPortalId(1), target: target as unknown as PortalTarget, node: "first" });
     const updated = registry.getSnapshot();
 
     expect(updated).not.toBe(initial);
     expect(registry.getSnapshot()).toBe(updated);
-    registry.remove(1);
+    registry.remove(createPortalId(1));
     expect(registry.getSnapshot()).not.toBe(updated);
     await host.happyDOM.abort();
   });
@@ -26,10 +26,10 @@ describe("React portal registry ownership", () => {
     const detached = host.document.createElement("div");
     const attached = host.document.createElement("div");
 
-    registry.add({ id: 1, target: detached, node: "not-yet-mounted" });
+    registry.add({ id: createPortalId(1), target: detached as unknown as PortalTarget, node: "not-yet-mounted" });
     expect(registry.pruneDisconnected()).toEqual([]);
     host.document.body.append(detached, attached);
-    registry.add({ id: 2, target: attached, node: "mounted" });
+    registry.add({ id: createPortalId(2), target: attached as unknown as PortalTarget, node: "mounted" });
     attached.remove();
 
     expect(registry.pruneDisconnected()).toEqual([2]);
@@ -42,7 +42,7 @@ describe("React portal registry ownership", () => {
     const target = host.document.createElement("div");
     host.document.body.append(target);
     const registry = createPortalRegistry<string, object>();
-    registry.add({ id: 1, target, node: "stable" });
+    registry.add({ id: createPortalId(1), target: target as unknown as PortalTarget, node: "stable" });
 
     target.remove();
     host.document.body.append(target);
@@ -56,7 +56,7 @@ describe("React portal registry ownership", () => {
     const host = new Window();
     const target = host.document.createElement("div");
     const registry = createPortalRegistry<string, object>();
-    registry.add({ id: 1, target, node: "transient" });
+    registry.add({ id: createPortalId(1), target: target as unknown as PortalTarget, node: "transient" });
 
     // MutationObserver records retain the inserted node even if it is detached
     // again before the observer callback runs.
@@ -64,7 +64,7 @@ describe("React portal registry ownership", () => {
     target.remove();
 
     expect(target.isConnected).toBe(false);
-    expect(registry.pruneDisconnected(new Set([target]))).toEqual([1]);
+    expect(registry.pruneDisconnected(new Set([target as unknown as PortalTarget]))).toEqual([1]);
     expect(registry.getSnapshot()).toEqual([]);
     await host.happyDOM.abort();
   });
@@ -75,12 +75,12 @@ describe("React portal registry ownership", () => {
     const target = host.document.createElement("div");
     ancestor.append(target);
     const registry = createPortalRegistry<string, object>();
-    registry.add({ id: 1, target, node: "nested" });
+    registry.add({ id: createPortalId(1), target: target as unknown as PortalTarget, node: "nested" });
 
     host.document.body.append(ancestor);
     ancestor.remove();
 
-    expect(registry.pruneDisconnected(new Set([target]))).toEqual([1]);
+    expect(registry.pruneDisconnected(new Set([target as unknown as PortalTarget]))).toEqual([1]);
     expect(registry.getSnapshot()).toEqual([]);
     await host.happyDOM.abort();
   });
@@ -95,8 +95,8 @@ describe("React portal registry ownership", () => {
     const registry = createPortalRegistry<string, object>();
     const listener = vi.fn();
     registry.subscribe(listener);
-    registry.add({ id: 1, target: firstTarget, node: "first", context: firstContext });
-    registry.add({ id: 2, target: secondTarget, node: "second", context: secondContext });
+    registry.add({ id: createPortalId(1), target: firstTarget as unknown as PortalTarget, node: "first", context: firstContext });
+    registry.add({ id: createPortalId(2), target: secondTarget as unknown as PortalTarget, node: "second", context: secondContext });
     listener.mockClear();
 
     registry.removeContext(firstContext);
@@ -114,7 +114,7 @@ describe("React portal registry ownership", () => {
     const listener = vi.fn();
     const unsubscribe = registry.subscribe(listener);
 
-    registry.add({ id: 1, target, node: "one" });
+    registry.add({ id: createPortalId(1), target: target as unknown as PortalTarget, node: "one" });
     unsubscribe();
     registry.clear();
     registry.clear();

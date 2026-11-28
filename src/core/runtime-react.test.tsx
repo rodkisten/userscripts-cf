@@ -182,7 +182,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptDef: ScriptDefinition = {
         id: "test-script-ctx",
         name: "Test Script Context",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           const ui = (
             ctx as unknown as {
@@ -227,7 +227,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptDef: ScriptDefinition = {
         id: "shadow-target-script",
         name: "Shadow Target Script",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           const ui = (
             ctx as unknown as {
@@ -264,7 +264,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptA: ScriptDefinition = {
         id: "style-script-a",
         name: "Style Script A",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           const ui = (
             ctx as unknown as {
@@ -287,7 +287,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptB: ScriptDefinition = {
         id: "style-script-b",
         name: "Style Script B",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           const ui = (
             ctx as unknown as {
@@ -323,7 +323,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptDef: ScriptDefinition = {
         id: "register-styles-script",
         name: "Register Styles Script",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           const ui = (
             ctx as unknown as {
@@ -355,7 +355,7 @@ describe("createRuntime (runtime-react)", () => {
       const scriptDef: ScriptDefinition = {
         id: "aborted-script",
         name: "Aborted Script",
-        match: () => true,
+        match: "*://*/*",
         setup(ctx) {
           capturedMountReact = (
             ctx as unknown as {
