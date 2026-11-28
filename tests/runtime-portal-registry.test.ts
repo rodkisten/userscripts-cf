@@ -26,7 +26,11 @@ describe("React portal registry ownership", () => {
     const detached = host.document.createElement("div");
     const attached = host.document.createElement("div");
 
-    registry.add({ id: createPortalId(1), target: detached as unknown as PortalTarget, node: "not-yet-mounted" });
+    registry.add({
+      id: createPortalId(1),
+      target: detached as unknown as PortalTarget,
+      node: "not-yet-mounted",
+    });
     expect(registry.pruneDisconnected()).toEqual([]);
     host.document.body.append(detached, attached);
     registry.add({ id: createPortalId(2), target: attached as unknown as PortalTarget, node: "mounted" });
@@ -95,8 +99,18 @@ describe("React portal registry ownership", () => {
     const registry = createPortalRegistry<string, object>();
     const listener = vi.fn();
     registry.subscribe(listener);
-    registry.add({ id: createPortalId(1), target: firstTarget as unknown as PortalTarget, node: "first", context: firstContext });
-    registry.add({ id: createPortalId(2), target: secondTarget as unknown as PortalTarget, node: "second", context: secondContext });
+    registry.add({
+      id: createPortalId(1),
+      target: firstTarget as unknown as PortalTarget,
+      node: "first",
+      context: firstContext,
+    });
+    registry.add({
+      id: createPortalId(2),
+      target: secondTarget as unknown as PortalTarget,
+      node: "second",
+      context: secondContext,
+    });
     listener.mockClear();
 
     registry.removeContext(firstContext);
